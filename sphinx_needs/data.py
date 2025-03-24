@@ -167,6 +167,12 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
             "default": {},
         },
     },
+    "is_import": {
+        "description": "If true, the need was derived from an import.",
+        "schema": {"type": "boolean", "default": False},
+        "exclude_external": True,
+        "exclude_import": True,
+    },
     "is_external": {
         "description": "If true, no node is created and need is referencing external url.",
         "schema": {"type": "boolean", "default": False},
@@ -408,6 +414,9 @@ class NeedsInfoType(TypedDict, total=False):
     # TODO why is it called arch?
     arch: Required[dict[str, str]]
     """Mapping of uml key to uml content."""
+
+    is_import: Required[bool]
+    """If true, the need was derived from an import."""
 
     # external reference information
     is_external: Required[bool]

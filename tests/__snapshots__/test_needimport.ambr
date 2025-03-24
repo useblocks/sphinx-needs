@@ -10,6 +10,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'IMPL_01',
+            'is_import': True,
             'lineno': 4,
             'links': list([
               'OWN_ID_123',
@@ -30,6 +31,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'OWN_ID_123',
+            'is_import': True,
             'lineno': 4,
             'links': list([
               'R_F4722',
@@ -55,6 +57,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'REQ_001',
+            'is_import': True,
             'lineno': 4,
             'links_back': list([
               'S_503A1',
@@ -89,6 +92,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'ROLES_REQ_1',
+            'is_import': True,
             'lineno': 4,
             'links_back': list([
               'ROLES_REQ_2',
@@ -105,6 +109,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'ROLES_REQ_2',
+            'is_import': True,
             'lineno': 4,
             'links': list([
               'ROLES_REQ_1',
@@ -121,6 +126,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'R_22EB2',
+            'is_import': True,
             'lineno': 4,
             'section_name': 'TEST DOCUMENT IMPORT',
             'sections': list([
@@ -139,6 +145,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'R_2A9D0',
+            'is_import': True,
             'lineno': 4,
             'section_name': 'TEST DOCUMENT IMPORT',
             'sections': list([
@@ -162,6 +169,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'R_F4722',
+            'is_import': True,
             'lineno': 4,
             'links_back': list([
               'OWN_ID_123',
@@ -199,6 +207,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'S_01A67',
+            'is_import': True,
             'lineno': 4,
             'section_name': 'TEST DOCUMENT IMPORT',
             'sections': list([
@@ -224,6 +233,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'S_503A1',
+            'is_import': True,
             'lineno': 4,
             'links': list([
               'REQ_001',
@@ -245,6 +255,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'S_D70B0',
+            'is_import': True,
             'lineno': 4,
             'section_name': 'TEST DOCUMENT IMPORT',
             'sections': list([
@@ -264,6 +275,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TEST_01',
+            'is_import': True,
             'lineno': 4,
             'section_name': 'TEST DOCUMENT IMPORT',
             'sections': list([
@@ -277,6 +289,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'T_5CCAA',
+            'is_import': True,
             'lineno': 4,
             'parent_needs_back': list([
               'T_C3893',
@@ -301,6 +314,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'T_C3893',
+            'is_import': True,
             'lineno': 4,
             'links': list([
               'OWN_ID_123',
@@ -329,6 +343,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_IMPL_01',
+            'is_import': True,
             'lineno': 16,
             'links': list([
               'collapsed_OWN_ID_123',
@@ -355,6 +370,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_OWN_ID_123',
+            'is_import': True,
             'lineno': 16,
             'links': list([
               'collapsed_R_F4722',
@@ -385,6 +401,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_REQ_001',
+            'is_import': True,
             'lineno': 16,
             'links_back': list([
               'collapsed_S_503A1',
@@ -408,6 +425,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_ROLES_REQ_1',
+            'is_import': True,
             'lineno': 16,
             'links_back': list([
               'collapsed_ROLES_REQ_2',
@@ -430,6 +448,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_ROLES_REQ_2',
+            'is_import': True,
             'lineno': 16,
             'links': list([
               'collapsed_ROLES_REQ_1',
@@ -452,6 +471,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_R_22EB2',
+            'is_import': True,
             'lineno': 16,
             'section_name': 'COLLAPSED',
             'sections': list([
@@ -474,6 +494,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_R_2A9D0',
+            'is_import': True,
             'lineno': 16,
             'section_name': 'COLLAPSED',
             'sections': list([
@@ -501,6 +522,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_R_F4722',
+            'is_import': True,
             'lineno': 16,
             'links_back': list([
               'collapsed_OWN_ID_123',
@@ -527,6 +549,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_S_01A67',
+            'is_import': True,
             'lineno': 16,
             'section_name': 'COLLAPSED',
             'sections': list([
@@ -556,6 +579,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_S_503A1',
+            'is_import': True,
             'lineno': 16,
             'links': list([
               'collapsed_REQ_001',
@@ -581,6 +605,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_S_D70B0',
+            'is_import': True,
             'lineno': 16,
             'section_name': 'COLLAPSED',
             'sections': list([
@@ -604,6 +629,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_TEST_01',
+            'is_import': True,
             'lineno': 16,
             'section_name': 'COLLAPSED',
             'sections': list([
@@ -623,6 +649,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_T_5CCAA',
+            'is_import': True,
             'lineno': 16,
             'parent_needs_back': list([
               'collapsed_T_C3893',
@@ -651,6 +678,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'collapsed_T_C3893',
+            'is_import': True,
             'lineno': 16,
             'links': list([
               'collapsed_OWN_ID_123',
@@ -683,6 +711,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'filter_IMPL_01',
+            'is_import': True,
             'lineno': 29,
             'links': list([
               'OWN_ID_123',
@@ -704,6 +733,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_IMPL_01',
+            'is_import': True,
             'lineno': 9,
             'links': list([
               'hidden_OWN_ID_123',
@@ -735,6 +765,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_OWN_ID_123',
+            'is_import': True,
             'lineno': 9,
             'links': list([
               'hidden_R_F4722',
@@ -770,6 +801,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_REQ_001',
+            'is_import': True,
             'lineno': 9,
             'links_back': list([
               'hidden_S_503A1',
@@ -798,6 +830,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_ROLES_REQ_1',
+            'is_import': True,
             'lineno': 9,
             'links_back': list([
               'hidden_ROLES_REQ_2',
@@ -825,6 +858,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_ROLES_REQ_2',
+            'is_import': True,
             'lineno': 9,
             'links': list([
               'hidden_ROLES_REQ_1',
@@ -852,6 +886,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_R_22EB2',
+            'is_import': True,
             'lineno': 9,
             'parent_need': 'hidden_ROLES_REQ_2',
             'parent_needs': list([
@@ -879,6 +914,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_R_2A9D0',
+            'is_import': True,
             'lineno': 9,
             'parent_need': 'hidden_R_22EB2',
             'parent_needs': list([
@@ -911,6 +947,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_R_F4722',
+            'is_import': True,
             'lineno': 9,
             'links_back': list([
               'hidden_OWN_ID_123',
@@ -942,6 +979,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_S_01A67',
+            'is_import': True,
             'lineno': 9,
             'parent_need': 'hidden_R_F4722',
             'parent_needs': list([
@@ -976,6 +1014,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_S_503A1',
+            'is_import': True,
             'lineno': 9,
             'links': list([
               'hidden_REQ_001',
@@ -1006,6 +1045,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_S_D70B0',
+            'is_import': True,
             'lineno': 9,
             'parent_need': 'hidden_S_503A1',
             'parent_needs': list([
@@ -1034,6 +1074,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_TEST_01',
+            'is_import': True,
             'lineno': 9,
             'parent_needs_back': list([
               'hidden_IMPL_01',
@@ -1054,6 +1095,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_T_5CCAA',
+            'is_import': True,
             'lineno': 9,
             'parent_need': 'hidden_S_D70B0',
             'parent_needs': list([
@@ -1084,6 +1126,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'hidden_T_C3893',
+            'is_import': True,
             'lineno': 9,
             'links': list([
               'hidden_OWN_ID_123',
@@ -1113,6 +1156,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'ids_ROLES_REQ_1',
+            'is_import': True,
             'lineno': 34,
             'links_back': list([
               'ids_ROLES_REQ_2',
@@ -1133,6 +1177,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'ids_ROLES_REQ_2',
+            'is_import': True,
             'lineno': 34,
             'links': list([
               'ids_ROLES_REQ_1',
@@ -1154,6 +1199,7 @@
             'docname': 'subdoc/filter',
             'external_css': 'external_link',
             'id': 'small2_TEST_03',
+            'is_import': True,
             'lineno': 8,
             'section_name': 'Filter',
             'sections': list([
@@ -1169,6 +1215,7 @@
             'docname': 'subdoc/filter',
             'external_css': 'external_link',
             'id': 'small_TEST_02',
+            'is_import': True,
             'lineno': 4,
             'section_name': 'Filter',
             'sections': list([
@@ -1188,6 +1235,7 @@
             'docname': 'subdoc/abs_path_import',
             'external_css': 'external_link',
             'id': 'small_abs_path_TEST_02',
+            'is_import': True,
             'lineno': 6,
             'section_name': 'Absolute path import test',
             'sections': list([
@@ -1207,6 +1255,7 @@
             'docname': 'subdoc/deprecated_rel_path_import',
             'external_css': 'external_link',
             'id': 'small_depr_rel_path_TEST_01',
+            'is_import': True,
             'lineno': 6,
             'section_name': 'Deprecated Relative path import test',
             'sections': list([
@@ -1221,6 +1270,7 @@
             'docname': 'subdoc/rel_path_import',
             'external_css': 'external_link',
             'id': 'small_rel_path_TEST_01',
+            'is_import': True,
             'lineno': 6,
             'section_name': 'Relative path import test',
             'sections': list([
@@ -1235,6 +1285,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_IMPL_01',
+            'is_import': True,
             'lineno': 23,
             'links': list([
               'test_OWN_ID_123',
@@ -1260,6 +1311,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_OWN_ID_123',
+            'is_import': True,
             'lineno': 23,
             'links': list([
               'test_R_F4722',
@@ -1289,6 +1341,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_REQ_001',
+            'is_import': True,
             'lineno': 23,
             'links_back': list([
               'test_S_503A1',
@@ -1311,6 +1364,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_ROLES_REQ_1',
+            'is_import': True,
             'lineno': 23,
             'links_back': list([
               'test_ROLES_REQ_2',
@@ -1332,6 +1386,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_ROLES_REQ_2',
+            'is_import': True,
             'lineno': 23,
             'links': list([
               'test_ROLES_REQ_1',
@@ -1353,6 +1408,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_R_22EB2',
+            'is_import': True,
             'lineno': 23,
             'section_name': 'TEST',
             'sections': list([
@@ -1374,6 +1430,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_R_2A9D0',
+            'is_import': True,
             'lineno': 23,
             'section_name': 'TEST',
             'sections': list([
@@ -1400,6 +1457,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_R_F4722',
+            'is_import': True,
             'lineno': 23,
             'links_back': list([
               'test_OWN_ID_123',
@@ -1425,6 +1483,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_S_01A67',
+            'is_import': True,
             'lineno': 23,
             'section_name': 'TEST',
             'sections': list([
@@ -1453,6 +1512,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_S_503A1',
+            'is_import': True,
             'lineno': 23,
             'links': list([
               'test_REQ_001',
@@ -1477,6 +1537,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_S_D70B0',
+            'is_import': True,
             'lineno': 23,
             'section_name': 'TEST',
             'sections': list([
@@ -1499,6 +1560,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_TEST_01',
+            'is_import': True,
             'lineno': 23,
             'section_name': 'TEST',
             'sections': list([
@@ -1517,6 +1579,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_T_5CCAA',
+            'is_import': True,
             'lineno': 23,
             'parent_needs_back': list([
               'test_T_C3893',
@@ -1544,6 +1607,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'test_T_C3893',
+            'is_import': True,
             'lineno': 23,
             'links': list([
               'test_OWN_ID_123',
@@ -1710,6 +1774,12 @@
             'is_external': dict({
               'default': False,
               'description': 'If true, no node is created and need is referencing external url.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_import': dict({
+              'default': False,
+              'description': 'If true, the need was derived from an import.',
               'field_type': 'core',
               'type': 'boolean',
             }),
@@ -2009,6 +2079,7 @@
             'extra1': 'value1',
             'extra2': '1',
             'id': 'TEST_01',
+            'is_import': True,
             'lineno': 4,
             'section_name': 'TEST DOCUMENT IMPORT',
             'sections': list([
@@ -2054,6 +2125,7 @@
       'id_parent': 'IMP_TEST_101',
       'id_prefix': '',
       'is_external': False,
+      'is_import': True,
       'is_modified': False,
       'is_need': True,
       'is_part': False,
@@ -2131,6 +2203,7 @@
       'id_parent': 'SPEC_1',
       'id_prefix': '',
       'is_external': False,
+      'is_import': False,
       'is_modified': False,
       'is_need': True,
       'is_part': False,
@@ -2207,6 +2280,7 @@
       'id_parent': 'STORY_1',
       'id_prefix': '',
       'is_external': False,
+      'is_import': False,
       'is_modified': False,
       'is_need': True,
       'is_part': False,

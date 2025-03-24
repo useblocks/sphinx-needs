@@ -22,6 +22,7 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'IMP_REQ_01',
+            'is_import': True,
             'layout': '',
             'lineno': 4,
             'section_name': 'Title',
@@ -172,6 +173,12 @@
             'is_external': dict({
               'default': False,
               'description': 'If true, no node is created and need is referencing external url.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_import': dict({
+              'default': False,
+              'description': 'If true, the need was derived from an import.',
               'field_type': 'core',
               'type': 'boolean',
             }),
@@ -722,6 +729,12 @@
             'is_external': dict({
               'default': False,
               'description': 'If true, no node is created and need is referencing external url.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_import': dict({
+              'default': False,
+              'description': 'If true, the need was derived from an import.',
               'field_type': 'core',
               'type': 'boolean',
             }),

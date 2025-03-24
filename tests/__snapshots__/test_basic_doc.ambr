@@ -28,6 +28,7 @@
             'id': 'ST_001',
             'id_prefix': '',
             'is_external': False,
+            'is_import': False,
             'is_modified': False,
             'is_need': True,
             'is_part': False,
@@ -96,6 +97,7 @@
             'id': 'US_38823',
             'id_prefix': '',
             'is_external': False,
+            'is_import': False,
             'is_modified': False,
             'is_need': True,
             'is_part': False,
@@ -280,6 +282,12 @@
             'is_external': dict({
               'default': False,
               'description': 'If true, no node is created and need is referencing external url.',
+              'field_type': 'core',
+              'type': 'boolean',
+            }),
+            'is_import': dict({
+              'default': False,
+              'description': 'If true, the need was derived from an import.',
               'field_type': 'core',
               'type': 'boolean',
             }),

@@ -265,6 +265,8 @@ class NeedimportDirective(SphinxDirective):
             need_params["docname"] = self.docname
             need_params["lineno"] = self.lineno
 
+            need_params["is_import"] = True
+
             try:
                 nodes = add_need(self.env.app, self.state, **need_params)  # type: ignore[call-arg]
             except InvalidNeedException as err:
