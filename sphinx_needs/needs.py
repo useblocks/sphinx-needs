@@ -42,6 +42,7 @@ from sphinx_needs.defaults import (
     NEEDFLOW_CONFIG_DEFAULTS,
 )
 from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
+from sphinx_needs.directives.listneeds import ListNeedsDirective
 from sphinx_needs.directives.need import (
     NeedDirective,
     analyse_need_locations,
@@ -213,6 +214,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_directive("needuml", NeedumlDirective)
     app.add_directive("needarch", NeedarchDirective)
     app.add_directive("list2need", List2NeedDirective)
+    app.add_directive(ListNeedsDirective.directive_name, ListNeedsDirective)
 
     ########################################################################
     # ROLES

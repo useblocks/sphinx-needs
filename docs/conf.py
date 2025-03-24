@@ -50,6 +50,8 @@ nitpick_ignore = [
     ("py:class", "sphinx_needs.debug.T"),
     ("py:class", "sphinx_needs.views._LazyIndexes"),
     ("py:class", "sphinx_needs.config.NeedsSphinxConfig"),
+    ("py:class", "sphinx_needs.nodes.Need"),
+    ("py:class", "sphinx_needs.data.SphinxNeedsData"),
 ]
 
 rst_epilog = """

@@ -465,11 +465,16 @@ def _create_need_node(
     """
     source = env.doc2path(data["docname"]) if data["docname"] else None
 
-    style_classes = ["need", f"need-{data['type'].lower()}"]
-    if data["style"]:
-        style_classes.append(data["style"])
-
-    node_need = Need("", classes=style_classes, ids=[data["id"]], refid=data["id"])
+    node_need = Need(
+        "",
+        classes=[
+            "need",
+            f"need-{data['type'].lower()}",
+            *([data["style"]] if data["style"] else []),
+        ],
+        ids=[data["id"]],
+        refid=data["id"],
+    )
     node_need.source, node_need.line = source, data["lineno"]
 
     if data["hide"]:
@@ -513,35 +518,8 @@ def _create_need_node(
             match_titles=False,
         )
 
-    # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
-    data["arch"] = {}
-    node_need_needumls_without_key = []
-    node_need_needumls_key_names = []
-    for child in node_need.children:
-        if isinstance(child, Needuml):
-            needuml_id = child.rawsource
-            if needuml := SphinxNeedsData(env).get_or_create_umls().get(needuml_id):
-                try:
-                    key_name = needuml["key"]
-                    if key_name:
-                        # check if key_name already exists in needs_info["arch"]
-                        if key_name in node_need_needumls_key_names:
-                            raise NeedumlException(
-                                f"Inside need: {data['id']}, found duplicate Needuml option key name: {key_name}"
-                            )
-                        else:
-                            data["arch"][key_name] = needuml["content"]
-                            node_need_needumls_key_names.append(key_name)
-                    else:
-                        node_need_needumls_without_key.append(needuml)
-                except KeyError:
-                    pass
+    add_arch(data, node_need, SphinxNeedsData(env))
 
-    # only store the first needuml-node which has no key option under diagram
-    if node_need_needumls_without_key:
-        data["arch"]["diagram"] = node_need_needumls_without_key[0]["content"]
-
-    data["parts"] = {}
     need_parts = find_parts(node_need)
     update_need_with_parts(env, data, need_parts)
 
@@ -561,6 +539,36 @@ def _create_need_node(
         return_nodes.extend(node.children)
 
     return return_nodes
+
+
+def add_arch(data: NeedsInfoType, node_need: Need, needs: SphinxNeedsData) -> None:
+    """Extract plantuml diagrams and store needumls with keys in arch, e.g. ``need_info['arch']['diagram']``"""
+    data["arch"] = {}
+    node_need_needumls_without_key = []
+    node_need_needumls_key_names = []
+    for child in node_need.children:
+        if isinstance(child, Needuml):
+            needuml_id = child.rawsource
+            if needuml := needs.get_or_create_umls().get(needuml_id):
+                try:
+                    key_name = needuml["key"]
+                    if key_name:
+                        # check if key_name already exists in needs_info["arch"]
+                        if key_name in node_need_needumls_key_names:
+                            raise NeedumlException(
+                                f"Inside need: {data['id']}, found duplicate Needuml option key name: {key_name}"
+                            )
+                        else:
+                            data["arch"][key_name] = needuml["content"]
+                            node_need_needumls_key_names.append(key_name)
+                    else:
+                        node_need_needumls_without_key.append(needuml)
+                except KeyError:
+                    pass
+
+    # only store the first needuml-node which has no key option under diagram
+    if node_need_needumls_without_key:
+        data["arch"]["diagram"] = node_need_needumls_without_key[0]["content"]
 
 
 def del_need(app: Sphinx, need_id: str) -> None:
