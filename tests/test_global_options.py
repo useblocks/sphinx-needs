@@ -65,7 +65,7 @@ def test_doc_global_option(test_app, snapshot):
         "WARNING: needs_global_options 'link3' has a default value that is not of type 'str_list' [needs.config]",
         "WARNING: needs_global_options 'bad_value_type' has a default value that is not of type 'str' [needs.config]",
         "WARNING: needs_global_options 'too_many_params', 'predicates', must be a list of (filter string, value) pairs [needs.config]",
-        "WARNING: needs_global_options 'unknown' must also exist in needs_extra_options, needs_extra_links, or ['constraints', 'layout', 'status', 'style', 'tags'] [needs.config]",
+        "WARNING: needs_global_options 'unknown' must also exist in needs_extra_options, needs_extra_links, or ['constraints', 'layout', 'post_template', 'pre_template', 'status', 'style', 'tags'] [needs.config]",
     ]
 
     needs_config = NeedsSphinxConfig(test_app.config)
