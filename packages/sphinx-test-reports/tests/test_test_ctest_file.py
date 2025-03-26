@@ -36,6 +36,9 @@ def test_test_ctest_file(test_app):
     assert "WARNING" not in out.stdout.decode("utf-8")
 
     html = Path(app.outdir, "index.html").read_text()
+    # print(html)
     assert html
     assert "TEST_CTEST_1" in html  # suite id
+    assert "more_info" in html  # extra added option displayed
     assert "CTESTFILE_1" in html  # case id
+    assert "This is a test" in html  # content correct

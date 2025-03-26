@@ -16,6 +16,7 @@ Usage
       :case: my_case
       :classname: my_test_class
       :id: TESTCASE_1
+      :other_option: This is some text that we have defined. Wow
 
 
 The following options can be set:
@@ -41,6 +42,11 @@ or if it selects only the first found test case. The best case is to always try 
 * **time**: Needed time for running the test case
 
 These options can also be used to :ref:`filter for certain test-files <filter>`.
+
+You can add custom options to the ``test-case`` directive by configuring the :ref:`tr_extra_options` value in your ``conf.py``.
+These must also be defined in either ``needs_extra_options`` or ``needs_extra_links``. 
+
+
 
 Example
 -------
@@ -71,6 +77,7 @@ Example
    :file: ../tests/doc_test/utils/pytest_data.xml
    :suite: pytest
    :classname: sphinxcontrib.test_reports.test_reports
+   :more_info: This is some text that we have defined. Wow
    :case: FLAKE8
    :links: TESTSUITE_1
 
@@ -83,6 +90,4 @@ Example
    :id: TESTCASE_2
 
    A nosetest test case.
-
-
 

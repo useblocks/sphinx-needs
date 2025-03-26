@@ -148,8 +148,10 @@ class TestCaseDirective(TestCommonDirective):
         if case_parameter is None:
             case_parameter = ""
 
-        main_section = []
         docname = self.state.document.settings.env.docname
+
+        main_section = []
+        # Merge all options including extra ones
         main_section += add_need(
             self.app,
             self.state,
@@ -172,6 +174,7 @@ class TestCaseDirective(TestCommonDirective):
             result=result,
             time=time,
             style=style,
+            **self.extra_options,
         )
 
         add_doc(self.env, docname)

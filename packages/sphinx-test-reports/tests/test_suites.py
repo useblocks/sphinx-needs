@@ -23,6 +23,9 @@ def test_doc_testsuites_html(test_app):
     assert "TimerTest" in html
     assert "test_Timer_getdT" in html
 
+    assert "more_info" in html  # 'tr_extra_options'
+    assert "More content inside the new option" in html  # 'tr_extra_options'
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -36,3 +39,5 @@ def test_doc_many_testsuites_html(test_app):
     assert html
     assert "TEST_001_FFDBD67" in html  # suite id
     assert "TEST_001_FFDBD67_81152CFAF6" in html  # case id
+    assert "more_info" in html  # 'tr_extra_options'
+    assert "More content inside the new option" in html  # 'tr_extra_options'

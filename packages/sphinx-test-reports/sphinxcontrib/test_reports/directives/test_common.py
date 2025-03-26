@@ -51,8 +51,19 @@ class TestCommonDirective(Directive):
         self.test_status = None
         self.collapse = None
         self.need_type = None
+        self.extra_options = None
 
         self.log = logging.getLogger(__name__)
+
+    def collect_extra_options(self):
+        """Collect any extra options and their values that were specified in the directive"""
+        tr_extra_options = getattr(self.app.config, "tr_extra_options", [])
+        self.extra_options = {}
+
+        if tr_extra_options:
+            for option_name in tr_extra_options:
+                if option_name in self.options:
+                    self.extra_options[option_name] = self.options[option_name]
 
     def load_test_file(self):
         """
@@ -135,3 +146,6 @@ class TestCommonDirective(Directive):
                 raise Exception("collapse attribute must be true or false")
         else:
             self.collapse = getattr(self.app.config, "needs_collapse_details", True)
+
+        # Also collect any extra options while we're at it
+        self.collect_extra_options()

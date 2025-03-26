@@ -85,6 +85,7 @@ class TestFileDirective(TestCommonDirective):
             skipped=skipped,
             failed=failed,
             errors=errors,
+            **self.extra_options,
         )
 
         if "auto_cases" in self.options.keys() and "auto_suites" not in self.options.keys():  # noqa W 503

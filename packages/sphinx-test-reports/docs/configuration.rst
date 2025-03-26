@@ -106,6 +106,38 @@ This may be needed, if a junit-xml files contains many test cases.
 
 Default: **5**
 
+
+.. _tr_extra_options:
+
+tr_extra_options
+----------------
+.. versionadded:: 1.2.0 
+
+Defines extra options you can use in `test-file` `test-case` and `test-suite`.
+These options also have to be registered in either needs_extra_options or needs_extra_links.
+
+**Example**
+
+.. code-block:: python
+
+   # In conf.py
+   tr_extra_options = ['more_info', 'related_to', 'priority']
+   
+   # Define as regular options
+   needs_extra_options = ['more_info', 'priority']
+   
+You can then use these options in your directives:
+
+.. code-block:: rst
+
+   .. test-file:: Enhanced test data
+      :file: path/to/test_data.xml
+      :id: TESTFILE_EXTRA
+      :more_info: This is additional information about the test
+      :priority: high
+
+   This test file contains enhanced metadata using custom extra options.
+
 .. _tr_import_encoding:
 
 tr_import_encoding

@@ -67,6 +67,8 @@ plantuml_output_format = "png"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates", "ub_theme/templates"]
+needs_extra_options = ["more_info"]
+tr_extra_options = ["more_info"]
 # Add a custom test report template. Please add a relative path from this conf.py
 # tr_report_template = "./custom_test_report_template.txt"
 

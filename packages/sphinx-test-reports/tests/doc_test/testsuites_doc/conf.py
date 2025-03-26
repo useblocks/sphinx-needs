@@ -34,6 +34,8 @@ extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
+needs_extra_options = ["more_info"]
+tr_extra_options = ["more_info"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:

@@ -21,6 +21,7 @@ from sphinxcontrib.test_reports.directives.test_suite import (
     TestSuite, TestSuiteDirective)
 from sphinxcontrib.test_reports.environment import install_styles_static_files
 from sphinxcontrib.test_reports.functions import tr_link
+from docutils.parsers.rst import directives
 
 sphinx_version = sphinx.__version__
 if Version(sphinx_version) >= Version("1.6"):
@@ -30,7 +31,7 @@ else:
 
 # fmt: on
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 
 
 def setup(app):
@@ -40,6 +41,7 @@ def setup(app):
     * test_env
     * test_report
     """
+
     log = logging.getLogger(__name__)
     log.info("Setting up sphinx-test-reports extension")
 
@@ -68,6 +70,7 @@ def setup(app):
     app.add_config_value("tr_suite_id_length", 3, "html")
     app.add_config_value("tr_case_id_length", 5, "html")
     app.add_config_value("tr_import_encoding", "utf8", "html")
+    app.add_config_value("tr_extra_options", [], "env")
 
     json_mapping = {
         "json_config": {
@@ -116,11 +119,28 @@ def setup(app):
     app.connect("config-inited", tr_preparation)
     app.connect("config-inited", sphinx_needs_update)
 
+    app.connect("builder-inited", register_tr_extra_options)
+
     return {
         "version": VERSION,  # identifies the version of our extension
         "parallel_read_safe": True,  # support parallel modes
         "parallel_write_safe": True,
     }
+
+
+def register_tr_extra_options(app):
+    """Register extra options with directives."""
+
+    log = logging.getLogger(__name__)
+    tr_extra_options = getattr(app.config, "tr_extra_options", [])
+    log.debug(f"tr_extra_options = {tr_extra_options}")
+
+    if tr_extra_options:
+        for direc in [TestSuiteDirective, TestFileDirective, TestCaseDirective]:
+            for option_name in tr_extra_options:
+                direc.option_spec[option_name] = directives.unchanged
+                log.debug(f"Registered {option_name} with {direc}")
+                log.debug(f"{direc}.option_spec now has keys: {list(direc.option_spec.keys())}")
 
 
 def tr_preparation(app, *args):

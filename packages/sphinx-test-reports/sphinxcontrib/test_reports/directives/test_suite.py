@@ -93,6 +93,7 @@ class TestSuiteDirective(TestCommonDirective):
             skipped=skipped,
             failed=failed,
             errors=errors,
+            **self.extra_options,
         )
 
         # TODO double nested logic
