@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sphinx-test-reports"
-version = "1.1.0"
+version = "1.2.0"
 description = "Sphinx extension for showing test results and test environment information inside sphinx documentations"
 readme = "README.rst"
 requires-python = ">=3.6"

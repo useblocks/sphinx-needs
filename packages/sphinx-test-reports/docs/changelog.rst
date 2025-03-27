@@ -3,9 +3,20 @@
 Changelog
 =========
 
-1.1.1
+1.2.1
 -----
 :Released: under development
+
+
+1.2.0
+-----
+:Released: 27.03.2025
+
+* Improvement: Introducing :ref:`tr_extra_options` for setting custom options in all derrived 
+  test-cases from ``test-file`` and co.
+  `#96 <https://github.com/useblocks/sphinx-test-reports/issues/96>`_
+* Improvement: JSON-Parser allows to set custom options in test-cases, like ``status`` or even ``id``.
+  See :ref:`tr_json_mapping` for examples. `#99 <https://github.com/useblocks/sphinx-test-reports/issues/99>`_
 
 1.1.0
 -----
