@@ -107,3 +107,33 @@ def test_json_complex_parser_build_html(test_app):
     assert "PARSER_JSON_001" in html
 
     assert "test case 2" in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/json_parser_custom"}],
+    indirect=True,
+)
+def test_json_custom_parser_build_html(test_app):
+    app = test_app
+    app.build()
+    html = Path(app.outdir, "index.html").read_text()
+
+    assert '<span class="needs_data">Test-File</span>' in html
+    assert "JSON Parser Test" in html
+    assert "PARSER_JSON_001" in html
+
+    # checks: ID got set from json
+    assert 'title="TEST_CASE_3"' in html
+
+    # checks: Status git set from json
+    assert '<span class="needs_data">closed</span>' in html
+
+    # checks: Priority taken from json
+    assert '<span class="needs_data">2</span>' in html
+
+    # checks: Priority taken as default from need_file directive
+    assert '<span class="needs_data">0</span>' in html
+
+    # checks: Not set id in json leads to default id generation
+    assert "PARSER_JSON_001_50D_3840C" in html

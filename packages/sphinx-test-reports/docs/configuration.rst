@@ -187,8 +187,40 @@ Given the above JSON example, the following "selector" will address the value ``
 
    ["level_1", "level_2", 1, "value"]
 
+Additional meta-data
+~~~~~~~~~~~~~~~~~~~~
+The JSON Parser allows to set additional options for the created test-case, for instance
+a status, tags or even the ID of the test case.
 
-**Example config**
+Just use the name in the ``tr_json_mapping`` and make sure new options
+are registered via ``needs_extra_options``.
+
+Default data
+~~~~~~~~~~~~
+The mapping of ``tr_json_mapping`` allows to set a default value, if the key can't be found in the 
+json data itself.
+However, with :ref:`tr_extra_options` exists another way to set defaults, defined 
+by the directives like ``need-file`` and co.
+
+If this directive-default shall be taken, set the default value in ``tr_json_mapping`` to
+``""`` (empty string) or ``None``.
+
+ID from result file
+~~~~~~~~~~~~~~~~~~~
+If the ``id`` for the Sphinx-Needs test-case object shall be taken from the JSON result file,
+just create a mapping for it::
+
+   "id": (["id"], None)
+
+Do not set a default value in this case, otherwise multiple objects with the same ID (the default value)
+may be created, which is not allowed by Sphinx-Needs.
+
+If no ``id`` value is set by the Parser, Sphinx-Test-Reports will automatically
+fall back to its default implementation and generate a hash-based id.
+
+
+Example config
+~~~~~~~~~~~~~~
 
 This example contains **all** internal elements and a mapping as example.
 For ``testsuite`` the value ``testcases`` defines the location of nested testcases.
@@ -220,8 +252,8 @@ An example of a JSON file, which supports the below configuration, can be seen i
             "text":        (["text"], "unknown"),
             "message":     (["message"], "unknown"),
             "system-out":  (["system-out"], "unknown"),
+            "id":          (["id"], None),
+            "my-option":   (["my_opt"], "default"),
          }
       }
    }
-
-

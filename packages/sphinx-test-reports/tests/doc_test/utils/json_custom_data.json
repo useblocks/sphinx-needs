@@ -1,0 +1,72 @@
+[
+  {
+    "name": "test suite 1",
+    "tests": 3,
+    "errors": 0,
+    "failures": 1,
+    "skips": 1,
+    "passed": 1,
+    "time": "20230515-15:04:32",
+    "testcase": [
+      {
+        "name": "test case 1",
+        "classname": "class name 1" ,
+        "file": "my/test/file_1",
+        "line": 123,
+        "time": "20230515-15:04:32",
+        "result": "failure",
+        "type": "test type",
+        "text": "test text",
+        "message": "all went wrong :( (message)",
+        "system-out": "system-out text",
+        "id": "TEST_CASE_1",
+        "status": "open",
+        "tags": "a,b,c",
+        "priority": "1"
+      },
+      {
+        "name": "test case 2",
+        "classname": "class name 2",
+        "file": "my/test/file_2",
+        "line": 123,
+        "time": "20230515-15:04:32",
+        "result": "passed",
+        "type": "test type",
+        "text": "test text",
+        "message": "all went great :) (message)",
+        "system-out": "system-out text",
+        "id": "TEST_CASE_2",
+        "status": "closed",
+        "tags": "a,b",
+        "priority": "2"
+      },
+      {
+        "name": "test case 3",
+        "classname": "class name 3",
+        "file": "my/test/file_3",
+        "line": 123,
+        "time": "20230515-15:04:32",
+        "result": "skipped",
+        "type": "test type",
+        "text": "test text",
+        "message": "all went wrong :( (message)",
+        "system-out": "system-out text",
+        "id": "TEST_CASE_3",
+        "status": "",
+        "tags": "a"
+      },
+      {
+        "name": "test case 4",
+        "classname": "class name 4",
+        "file": "my/test/file_3",
+        "line": 123,
+        "time": "20230515-15:04:32",
+        "result": "skipped",
+        "type": "test type",
+        "text": "test text",
+        "message": "all went wrong :( (message)",
+        "system-out": "system-out text"
+      }
+    ]
+  }
+]

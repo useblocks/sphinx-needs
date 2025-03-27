@@ -3,6 +3,7 @@ from docutils.parsers.rst import directives
 from sphinx_needs.api import add_need
 from sphinx_needs.utils import add_doc
 
+from sphinxcontrib.test_reports.config import DEFAULT_OPTIONS
 from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
 from sphinxcontrib.test_reports.exceptions import TestReportInvalidOption
 
@@ -147,6 +148,18 @@ class TestCaseDirective(TestCommonDirective):
 
         if case_parameter is None:
             case_parameter = ""
+
+        # Set extra data, which is not part of the Sphinx-Test-Reports default options
+        for key, value in case.items():
+            if key == "id" and value not in ["", None]:
+                self.test_id = str(value)
+            elif key == "status" and value not in ["", None]:
+                self.test_status = str(value)
+            elif key == "tags":
+                self.test_tags = ",".join([self.test_tags, str(value)])
+            elif key not in DEFAULT_OPTIONS and value not in ["", None]:
+                # May overwrite globally set values
+                self.extra_options[key] = str(value)
 
         docname = self.state.document.settings.env.docname
 
