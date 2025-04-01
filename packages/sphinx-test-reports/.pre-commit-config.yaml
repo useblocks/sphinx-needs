@@ -10,7 +10,6 @@ repos:
     hooks:
       - id: black
         args: [--line-length=120]
-
   - repo: https://github.com/pycqa/flake8
     rev: 6.0.0
     hooks:
@@ -21,14 +20,15 @@ repos:
           - flake8-simplify
           # - flake8-isort
           - pep8-naming
-
         # ignore sim118 ("do not use dict.keys()") for clarity
         args: [--max-line-length=120, --ignore=SIM118]
-
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.3.1
     hooks:
       - id: pyupgrade
         args:
           - --py36-plus
-
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.16.0
+    hooks:
+      - id: yamlfmt

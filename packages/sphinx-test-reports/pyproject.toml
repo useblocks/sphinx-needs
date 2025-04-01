@@ -42,3 +42,16 @@ include = ["*"]
 
 [project.optional-dependencies]
 development = ["wheel"]
+
+[tool.mypy]
+files = "sphinxcontrib"
+strict = true
+show_error_codes = true
+implicit_reexport = false
+namespace_packages = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+# disallow_any_unimported = true
+# disallow_any_explicit = true
+# disallow_any_expr = true
+# disallow_any_decorated = true
