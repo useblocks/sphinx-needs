@@ -1,7 +1,0 @@
-[flake8]
-max-line-length = 120
-extend-ignore = E713, E203, E231
-per-file-ignores =
-    sphinxcontrib/test_reports/__init__.py: F401
-    sphinxcontrib/test_reports/directives/__init__.py: F401
-

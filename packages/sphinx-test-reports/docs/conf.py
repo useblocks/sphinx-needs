@@ -19,7 +19,7 @@ import sys
 
 sys.path.append(os.path.abspath("."))
 
-from ub_theme.conf import html_theme_options  # noqa
+from ub_theme.conf import html_theme_options
 
 # -- Project information -----------------------------------------------------
 

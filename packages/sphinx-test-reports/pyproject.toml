@@ -43,6 +43,28 @@ include = ["*"]
 [project.optional-dependencies]
 development = ["wheel"]
 
+[tool.ruff.lint]
+# TODO enable and fix commented rules
+extend-select = [
+  "B",    # flake8-bugbear
+  "C4",   # flake8-comprehensions
+  "FURB", # refurb (modernising code)
+  "I",    # isort
+  "ICN",  # flake8-import-conventions
+  "ISC",  # flake8-implicit-str-concat
+  "N",    # pep8-naming
+  "PERF", # perflint (performance anti-patterns)
+  "PGH",  # pygrep-hooks
+  "PIE",  # flake8-pie
+  # "PL",   # pylint
+  # "PTH",  # flake8-use-pathlib
+  # "RUF",  # Ruff-specific rules
+  # "SIM",  # flake8-simplify
+  "SLF", # private member access
+  # "UP",   # pyupgrade
+  # "T20",  # flake8-print
+]
+
 [tool.mypy]
 files = "sphinxcontrib"
 strict = true

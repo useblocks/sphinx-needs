@@ -19,7 +19,11 @@ def copy_srcdir_to_tmpdir(srcdir, tmp):
     srcdir = Path(__file__).parent.absolute() / srcdir
     tmproot = tmp / Path(srcdir).name
     shutil.copytree(srcdir, tmproot)
-    return tmproot if Version(sphinx_version) >= Version("7.2") else path(tmproot.absolute())
+    return (
+        tmproot
+        if Version(sphinx_version) >= Version("7.2")
+        else path(tmproot.absolute())
+    )
 
 
 @pytest.fixture(scope="function")

@@ -82,7 +82,9 @@ def test_json_parser_build_html(test_app):
     # Check TestCase need object(s)
     case_name = "test case 2"
     case_classname = "class name 2"
-    hash_c = hashlib.sha1(case_classname.encode("UTF-8") + case_name.encode("UTF-8")).hexdigest()
+    hash_c = hashlib.sha1(
+        case_classname.encode("UTF-8") + case_name.encode("UTF-8")
+    ).hexdigest()
     case_id = f"{suite_id}_{hash_c.upper()[: app.config.tr_case_id_length]}"
 
     assert '<span class="needs_data">Test-Case</span>' in html

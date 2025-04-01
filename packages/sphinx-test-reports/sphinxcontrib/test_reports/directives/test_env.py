@@ -77,15 +77,18 @@ class EnvReportDirective(Directive):
         with open(json_path) as fp_json:
             try:
                 results = json.load(fp_json)
-            except ValueError:
-                raise InvalidJsonFile("The given file {} is not a valid JSON".format(json_path.split("/")[-1]))
+            except ValueError as exc:
+                raise InvalidJsonFile(
+                    "The given file {} is not a valid JSON".format(
+                        json_path.split("/")[-1]
+                    )
+                ) from exc
 
         # check to see if environment is present in JSON or not
         if self.req_env_list is not None:
-            not_present_env = []
-            for req_env in self.req_env_list:
-                if req_env not in results:
-                    not_present_env.append(req_env)
+            not_present_env = [
+                req_env for req_env in self.req_env_list if req_env not in results
+            ]
             for not_env in not_present_env:
                 self.req_env_list.remove(not_env)
                 logger.warning(f"environment '{not_env}' is not present in JSON file")
@@ -114,7 +117,9 @@ class EnvReportDirective(Directive):
                     # option check
                     for opt in self.data_option_list:
                         if opt not in temp_dict2[enviro]:
-                            logger.warning(f"option '{opt}' is not present in JSON file")
+                            logger.warning(
+                                f"option '{opt}' is not present in JSON file"
+                            )
 
                 del temp_dict
 
@@ -140,7 +145,9 @@ class EnvReportDirective(Directive):
                 # option check
                 for opt in self.data_option_list:
                     if opt not in temp_dict2[enviro]:
-                        logger.warning(f"option '{opt}' is not present in '{enviro}' environment file")
+                        logger.warning(
+                            f"option '{opt}' is not present in '{enviro}' environment file"
+                        )
 
                 del temp_dict
 

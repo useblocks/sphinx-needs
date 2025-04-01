@@ -1,33 +1,17 @@
 repos:
 
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.2
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
   - repo: https://github.com/ComPWA/taplo-pre-commit
     rev: v0.9.3
     hooks:
       - id: taplo-format
 
-  - repo: https://github.com/psf/black
-    rev: 23.1.0
-    hooks:
-      - id: black
-        args: [--line-length=120]
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8-bugbear
-          - flake8-comprehensions
-          - flake8-simplify
-          # - flake8-isort
-          - pep8-naming
-        # ignore sim118 ("do not use dict.keys()") for clarity
-        args: [--max-line-length=120, --ignore=SIM118]
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
-    hooks:
-      - id: pyupgrade
-        args:
-          - --py36-plus
   - repo: https://github.com/google/yamlfmt
     rev: v0.16.0
     hooks:

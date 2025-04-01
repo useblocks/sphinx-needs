@@ -7,7 +7,7 @@ from sphinx_needs.utils import add_doc
 
 import sphinxcontrib.test_reports.directives.test_suite
 from sphinxcontrib.test_reports.directives.test_common import TestCommonDirective
-from sphinxcontrib.test_reports.exceptions import TestReportIncompleteConfiguration
+from sphinxcontrib.test_reports.exceptions import TestReportIncompleteConfigurationError
 
 
 class TestFile(nodes.General, nodes.Element):
@@ -88,9 +88,13 @@ class TestFileDirective(TestCommonDirective):
             **self.extra_options,
         )
 
-        if "auto_cases" in self.options.keys() and "auto_suites" not in self.options.keys():  # noqa W 503
-            raise TestReportIncompleteConfiguration(
-                "option auto_cases must be used together with " "auto_suites for test-file directives."
+        if (
+            "auto_cases" in self.options.keys()
+            and "auto_suites" not in self.options.keys()
+        ):
+            raise TestReportIncompleteConfigurationError(
+                "option auto_cases must be used together with "
+                "auto_suites for test-file directives."
             )
 
         if "auto_suites" in self.options.keys():
@@ -98,7 +102,7 @@ class TestFileDirective(TestCommonDirective):
                 suite_id = self.test_id
                 suite_id += (
                     "_"
-                    + hashlib.sha1(suite["name"].encode("UTF-8"))  # noqa: W503
+                    + hashlib.sha1(suite["name"].encode("UTF-8"))
                     .hexdigest()
                     .upper()[: self.app.config.tr_suite_id_length]
                 )
@@ -107,7 +111,7 @@ class TestFileDirective(TestCommonDirective):
                     self.suite_ids[suite_id] = suite["name"]
                 else:
                     raise Exception(
-                        f'Suite ID {suite_id} already exists by {self.suite_ids[suite_id]} ({suite["name"]})'
+                        f"Suite ID {suite_id} already exists by {self.suite_ids[suite_id]} ({suite['name']})"
                     )
 
                 options = self.options
@@ -120,16 +124,18 @@ class TestFileDirective(TestCommonDirective):
                     options["links"] = options["links"] + ";" + self.test_id
 
                 arguments = [suite["name"]]
-                suite_directive = sphinxcontrib.test_reports.directives.test_suite.TestSuiteDirective(
-                    self.app.config.tr_suite[0],
-                    arguments,
-                    options,
-                    "",
-                    self.lineno,  # no content
-                    self.content_offset,
-                    self.block_text,
-                    self.state,
-                    self.state_machine,
+                suite_directive = (
+                    sphinxcontrib.test_reports.directives.test_suite.TestSuiteDirective(
+                        self.app.config.tr_suite[0],
+                        arguments,
+                        options,
+                        "",
+                        self.lineno,  # no content
+                        self.content_offset,
+                        self.block_text,
+                        self.state,
+                        self.state_machine,
+                    )
                 )
 
                 main_section += suite_directive.run()

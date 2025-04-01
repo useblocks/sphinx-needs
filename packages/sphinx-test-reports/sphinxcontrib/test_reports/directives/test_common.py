@@ -12,7 +12,9 @@ from sphinx.util import logging
 from sphinx_needs.config import NeedsSphinxConfig
 
 from sphinxcontrib.test_reports.exceptions import (
-    SphinxError, TestReportFileNotSetException)
+    SphinxError,
+    TestReportFileNotSetError,
+)
 from sphinxcontrib.test_reports.jsonparser import JsonParser
 from sphinxcontrib.test_reports.junitparser import JUnitParser
 
@@ -74,7 +76,7 @@ class TestCommonDirective(Directive):
         :return: None
         """
         if self.test_file is None:
-            raise TestReportFileNotSetException("Option test_file must be set.")
+            raise TestReportFileNotSetError("Option test_file must be set.")
 
         test_path = pathlib.Path(self.test_file)
         if not test_path.is_absolute():
@@ -83,7 +85,9 @@ class TestCommonDirective(Directive):
         self.test_file = str(test_path)
         if not test_path.exists():
             # raise TestReportFileInvalidException('Given test_file path invalid: {}'.format(self.test_file))
-            self.log.warning(f"Given test_file path invalid: {self.test_file} in {self.docname} (Line: {self.lineno})")
+            self.log.warning(
+                f"Given test_file path invalid: {self.test_file} in {self.docname} (Line: {self.lineno})"
+            )
             return None
 
         if self.test_file not in self.app.testreport_data.keys():
@@ -116,7 +120,9 @@ class TestCommonDirective(Directive):
                     NeedsSphinxConfig(self.app.config),
                 )
             else:  # Sphinx-Needs < 4
-                hashed_id = make_hashed_id(self.app, self.need_type, self.test_name, self.test_content)
+                hashed_id = make_hashed_id(
+                    self.app, self.need_type, self.test_name, self.test_content
+                )
 
             self.test_id = self.options.get(
                 "id",

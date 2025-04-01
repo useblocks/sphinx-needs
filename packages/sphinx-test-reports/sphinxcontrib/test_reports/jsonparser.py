@@ -57,15 +57,23 @@ class JsonParser:
 
         def parse_testcase(json_dict) -> Dict[str, Any]:
             tc_mapping = self.json_mapping.get("testcase")
-            tc_dict = {k: dict_get(json_dict, v[0], v[1]) for k, v in tc_mapping.items()}
+            tc_dict = {
+                k: dict_get(json_dict, v[0], v[1]) for k, v in tc_mapping.items()
+            }
             return tc_dict
 
         def parse_testsuite(json_dict) -> Dict[str, Any]:
             ts_mapping = self.json_mapping.get("testsuite")
-            ts_dict = {k: dict_get(json_dict, v[0], v[1]) for k, v in ts_mapping.items() if k != "testcases"}
+            ts_dict = {
+                k: dict_get(json_dict, v[0], v[1])
+                for k, v in ts_mapping.items()
+                if k != "testcases"
+            }
             ts_dict.update({"testcases": [], "testsuite_nested": []})
 
-            testcases = dict_get(json_dict, ts_mapping["testcases"][0], ts_mapping["testcases"][1])
+            testcases = dict_get(
+                json_dict, ts_mapping["testcases"][0], ts_mapping["testcases"][1]
+            )
             for tc in testcases:
                 new_testcase = parse_testcase(tc)
                 ts_dict["testcases"].append(new_testcase)

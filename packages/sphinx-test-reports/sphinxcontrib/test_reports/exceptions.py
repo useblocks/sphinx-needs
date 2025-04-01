@@ -1,25 +1,25 @@
 from sphinx.errors import SphinxError, SphinxWarning
 
 
-class TestReportFileNotSetException(SphinxError):
+class TestReportFileNotSetError(SphinxError):
     """
     Raised if a needed test_file path is not given in directive.
     """
 
 
-class TestReportFileInvalidException(SphinxError):
+class TestReportFileInvalidError(SphinxError):
     """
     Raised if the given path is not valid.
     """
 
 
-class TestReportInvalidOption(SphinxError):
+class TestReportInvalidOptionError(SphinxError):
     """
     Raised if an option is not given or invalid.
     """
 
 
-class TestReportIncompleteConfiguration(SphinxWarning):
+class TestReportIncompleteConfigurationError(SphinxWarning):
     """
     Raised if given arguments / options are not correct configured
     """
