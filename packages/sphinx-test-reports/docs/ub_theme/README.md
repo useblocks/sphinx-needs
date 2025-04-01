@@ -1,7 +1,7 @@
 # useblocks-theme
 This repository contains the theme for all Useblock documentation sites.
 
-> **NOTE:** 
+> **NOTE:**
 > - Useblocks uses the Sphinx-Immaterial theme so ensure that the theme is already installed and applied.
 > - Install `sphinx_immaterial` by running this command: `pip install sphinx-immaterial`.
 > - Then activate the theme by adding it to the `extension` variable under **conf.py**: `extensions = ["sphinx_immaterial"]`
@@ -16,14 +16,14 @@ To install the files from this repository, you must have [Git](https://git-scm.c
   ```
 * Download the files from the repository:
   ```bash
-  git clone https://github.com/useblocks/useblocks-theme.git 
+  git clone https://github.com/useblocks/useblocks-theme.git
   ```
 
 ## Configuration
 
 You must configure the following in the **conf.py** file of the Sphinx documentation project.
 
-* In order to import the **ub_theme** package, Python searches through the directories on `sys.path` looking for the package subdirectory. 
+* In order to import the **ub_theme** package, Python searches through the directories on `sys.path` looking for the package subdirectory.
     * Add the parent path of the **ub_theme** folder to `sys.path`.
       ```python
       import os
@@ -61,7 +61,7 @@ You must configure the following in the **conf.py** file of the Sphinx documenta
       ```python
       html_js_files = ["ub-theme.js"]
         ```
-  
+
 The final configuration should look like below:
 ```python
 import sys
@@ -97,4 +97,4 @@ html_js_files = ["ub-theme.js"]
 ## Changelog
 
 * 13.01.2023 - Updated CSS stylesheets and docs on how to apply the theme customization.
-* 28.12.2022 - Setup and added the initial Useblocks theme codes. 
+* 28.12.2022 - Setup and added the initial Useblocks theme codes.

@@ -52,4 +52,3 @@ Result:
       :id: SPEC_001
 
       Used as simple link target. See Sphinx-Needs for details.
-

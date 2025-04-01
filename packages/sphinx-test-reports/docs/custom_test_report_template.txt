@@ -50,5 +50,3 @@ The following rst-code is used to generate the report.
 
 .. literalinclude:: ../custom_test_report_template.txt
    :language: rst
-
-

@@ -111,4 +111,3 @@ Raw output
    :raw:
    :data: name, host, installed_packages
    :env: py27
-

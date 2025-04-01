@@ -22,5 +22,3 @@ Fastest way of reaching us is via e-mail: mail@useblocks.com.
    :align: center
    :width: 100px
    :target: http://useblocks.com
-
-

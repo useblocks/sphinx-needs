@@ -21,4 +21,3 @@ test-cases.
 More details can be find in the
 `installation-guide <https://sphinx-needs.readthedocs.io/en/latest/installation.html>`_
 of ``Sphinx-Needs``.
-

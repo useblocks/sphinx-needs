@@ -9,4 +9,3 @@ Basic Document
    :auto_suites:
    :auto_cases:
    :tags: unit-test
-

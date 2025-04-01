@@ -48,5 +48,3 @@ Only the parser cares about the format. Other internal functions (like directive
 data representation and rely on it.
 So parsers are not allowed to rename or even extend this internal representation.
 If this is needed, all available parsers need to be updated as well.
-
-

@@ -111,7 +111,7 @@ Default: **5**
 
 tr_extra_options
 ----------------
-.. versionadded:: 1.2.0 
+.. versionadded:: 1.2.0
 
 Defines extra options you can use in `test-file` `test-case` and `test-suite`.
 These options also have to be registered in either needs_extra_options or needs_extra_links.
@@ -122,10 +122,10 @@ These options also have to be registered in either needs_extra_options or needs_
 
    # In conf.py
    tr_extra_options = ['more_info', 'related_to', 'priority']
-   
+
    # Define as regular options
    needs_extra_options = ['more_info', 'priority']
-   
+
 You can then use these options in your directives:
 
 .. code-block:: rst
@@ -197,9 +197,9 @@ are registered via ``needs_extra_options``.
 
 Default data
 ~~~~~~~~~~~~
-The mapping of ``tr_json_mapping`` allows to set a default value, if the key can't be found in the 
+The mapping of ``tr_json_mapping`` allows to set a default value, if the key can't be found in the
 json data itself.
-However, with :ref:`tr_extra_options` exists another way to set defaults, defined 
+However, with :ref:`tr_extra_options` exists another way to set defaults, defined
 by the directives like ``need-file`` and co.
 
 If this directive-default shall be taken, set the default value in ``tr_json_mapping`` to

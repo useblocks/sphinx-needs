@@ -44,7 +44,7 @@ or if it selects only the first found test case. The best case is to always try 
 These options can also be used to :ref:`filter for certain test-files <filter>`.
 
 You can add custom options to the ``test-case`` directive by configuring the :ref:`tr_extra_options` value in your ``conf.py``.
-These must also be defined in either ``needs_extra_options`` or ``needs_extra_links``. 
+These must also be defined in either ``needs_extra_options`` or ``needs_extra_links``.
 
 
 
@@ -90,4 +90,3 @@ Example
    :id: TESTCASE_2
 
    A nosetest test case.
-

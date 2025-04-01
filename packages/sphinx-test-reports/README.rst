@@ -11,5 +11,3 @@ Functions
 
 * Shows test results of **junit based test xml reports** as table
 * Shows test environment information of **tox-envreport based json reports** as table
-
-

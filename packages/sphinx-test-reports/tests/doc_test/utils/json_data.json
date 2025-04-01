@@ -10,7 +10,7 @@
     "testcase": [
       {
         "name": "test case 1",
-        "classname": "class name 1" ,
+        "classname": "class name 1",
         "file": "my/test/file_1",
         "line": 123,
         "time": "20230515-15:04:32",

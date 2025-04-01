@@ -218,4 +218,3 @@ Other tools are:
 `sphinx-needs <http://sphinx-needs.readthedocs.io/en/latest/>`__,
 `sphinx-collections <https://sphinx-collections.readthedocs.io/en/latest/>`__ and
 `tox-envreport <http://tox-envreport.readthedocs.io/en/latest/>`__.
-
