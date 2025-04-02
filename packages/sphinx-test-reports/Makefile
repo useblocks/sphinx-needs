@@ -1,11 +1,9 @@
-SRC_FILES = sphinxcontrib/ tests/ noxfile.py
-
 .PHONY: list
 list:
-	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | egrep -v -e '^[^[:alnum:]]' -e '^$@$$'
+	@$(MAKE) -pRrq -f $(lastword $(MAKEFILE_LIST)) : 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | sort | grep -E -v -e '^[^[:alnum:]]' -e '^$@$$'
 
-.PHONY: lint
-lint:
+.PHONY: lint format
+lint format:
 	pre-commit run --all-files
 
 .PHONY: test
@@ -23,8 +21,3 @@ docs-html:
 .PHONY: docs-linkcheck
 docs-linkcheck:
 	make --directory docs/ linkcheck
-
-.PHONY: format
-format:
-	black ${SRC_FILES}
-	# isort ${SRC_FILES}
