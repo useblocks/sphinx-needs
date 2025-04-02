@@ -19,3 +19,5 @@ _build
 .venv
 .vscode
 .VSCodeCounter
+
+uv.lock

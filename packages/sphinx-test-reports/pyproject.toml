@@ -1,16 +1,14 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
 
 [project]
 name = "sphinx-test-reports"
 version = "1.2.0"
 description = "Sphinx extension for showing test results and test environment information inside sphinx documentations"
 readme = "README.rst"
-requires-python = ">=3.6"
 license = { text = "MIT" }
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
-dependencies = ["sphinx>4.0", "lxml", "sphinx-needs>=1.0.1"]
 classifiers = [
   "Framework :: Sphinx",
   "Framework :: Sphinx :: Extension",
@@ -27,19 +25,38 @@ classifiers = [
   "Topic :: Documentation",
 ]
 keywords = ["sphinx", "documentation", "test-reports"]
+requires-python = ">=3.9"
+dependencies = ["sphinx>4.0", "lxml", "sphinx-needs>=1.0.1"]
+
+[project.optional-dependencies]
+test = [
+  "nox>=2025.2.9",
+  "pytest-xdist",
+  "pytest>=7.0",
+  "sphinx_design",
+  "sphinxcontrib-plantuml",
+]
+docs = [
+  "pillow",
+  "sphinx-design",
+  "sphinx-immaterial",
+  "sphinx-needs>=4",
+  "sphinx-test-reports>=0.3.3",
+  "sphinx==7",
+  "sphinxcontrib-plantuml",
+]
+
+[dependency-groups]
+dev = ["pre-commit~=3.0", "nox>=2025.2.9"]
+
+[tool.flit.module]
+name = "sphinxcontrib.test_reports"
 
 [project.urls]
-
 Homepage = "https://github.com/useblocks/sphinx-test-reports"
 Repository = "https://github.com/useblocks/sphinx-test-reports.git"
 Documentation = "https://sphinx-test-reports.readthedocs.io/en/latest/"
 download-url = "http://pypi.python.org/pypi/sphinx-test-reports"
-
-[tool.setuptools.packages.find]
-include = ["*"]
-
-[project.optional-dependencies]
-development = ["wheel"]
 
 [tool.ruff.lint]
 # TODO enable and fix commented rules
