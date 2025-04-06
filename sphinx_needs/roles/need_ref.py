@@ -85,8 +85,12 @@ def process_need_ref(
         need_id_full = node_need_ref["reftarget"]
         need_id_main, need_id_part = split_need_id(need_id_full)
 
-        if need_id_main in all_needs:
-            target_need = all_needs[need_id_main]
+        if need_id_main in all_needs or need_id_full in all_needs:
+            if need_id_main in all_needs:
+                target_need = all_needs[need_id_main]
+            else:  # ie need_id_full in all_needs
+                target_need = all_needs[need_id_full]
+                need_id_part = None
 
             dict_need = transform_need_to_dict(
                 target_need
