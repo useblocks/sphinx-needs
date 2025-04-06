@@ -88,7 +88,7 @@ def process_need_ref(
         if need_id_main in all_needs or need_id_full in all_needs:
             if need_id_main in all_needs:
                 target_need = all_needs[need_id_main]
-            else:  # ie need_id_full in all_needs
+            else:  # ie need_id_full in all_needs
                 target_need = all_needs[need_id_full]
                 need_id_part = None
 
