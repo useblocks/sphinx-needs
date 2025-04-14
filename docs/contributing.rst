@@ -85,7 +85,7 @@ Or use tox (recommended):
 
 .. code-block:: bash
 
-   tox -e py38
+   tox -e py39
 
 Note some tests use `syrupy <https://github.com/tophat/syrupy>`__ to perform snapshot testing.
 These snapshots can be updated by running:
