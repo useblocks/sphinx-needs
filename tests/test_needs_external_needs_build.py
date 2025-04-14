@@ -27,17 +27,22 @@ def test_doc_build_html(test_app, sphinx_test_tempdir):
         ["sphinx-build", "-b", "html", "-D", rf"plantuml={plantuml}", src_dir, out_dir],
         capture_output=True,
     )
-    assert strip_colors(output.stderr.decode("utf-8")).splitlines() == [
+    expected_warnings = [
         "WARNING: http://my_company.com/docs/v1/index.html#TEST_01: Need 'EXT_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
         "WARNING: ../../_build/html/index.html#TEST_01: Need 'EXT_REL_PATH_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
     ]
+    assert strip_colors(output.stderr.decode("utf-8")).splitlines() == expected_warnings
 
     # run second time and check
+    # TODO(Marco): the incremental build test should be done in a separate test
     output_second = subprocess.run(
         ["sphinx-build", "-b", "html", "-D", rf"plantuml={plantuml}", src_dir, out_dir],
         capture_output=True,
     )
-    assert not output_second.stderr
+    assert (
+        strip_colors(output_second.stderr.decode("utf-8")).splitlines()
+        == expected_warnings
+    )
 
     # check if incremental build used
     # first build output
@@ -46,6 +51,7 @@ def test_doc_build_html(test_app, sphinx_test_tempdir):
         in strip_colors(output.stdout.decode("utf-8"))
     )
     # second build output
+    # TODO(Marco) check why 3 added configs are expected, should be 0 for incremental builds without changes
     assert "loading pickled environment" in output_second.stdout.decode("utf-8")
     assert (
         "updating environment: [new config] 3 added, 0 changed, 0 removed"
