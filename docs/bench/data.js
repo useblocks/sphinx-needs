@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744655237025,
+  "lastUpdate": 1744662141582,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12816,6 +12816,42 @@ window.BENCHMARK_DATA = {
             "value": 61.33816904700001,
             "unit": "s",
             "extra": "Commit: d620e40723fd15445b86f064b6edc6b750e26940\nBranch: master\nTime: 2025-04-14T20:25:19+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ee26285d340c7e9154fe82481f6faa448153758",
+          "message": "🔧 Use ubuntu-latest in CI (#1439)\n\nUbuntu 20.04 is phased out.",
+          "timestamp": "2025-04-14T22:20:27+02:00",
+          "tree_id": "b9dca92e1aba9ecbcb24ee7fb67175202e8f7b37",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9ee26285d340c7e9154fe82481f6faa448153758"
+        },
+        "date": 1744662124635,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1992186980000099,
+            "unit": "s",
+            "extra": "Commit: 9ee26285d340c7e9154fe82481f6faa448153758\nBranch: master\nTime: 2025-04-14T22:20:27+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.313380905,
+            "unit": "s",
+            "extra": "Commit: 9ee26285d340c7e9154fe82481f6faa448153758\nBranch: master\nTime: 2025-04-14T22:20:27+02:00"
           }
         ]
       }
