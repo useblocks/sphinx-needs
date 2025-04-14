@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1742841628493,
+  "lastUpdate": 1744655237025,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12780,6 +12780,42 @@ window.BENCHMARK_DATA = {
             "value": 60.35858905499998,
             "unit": "s",
             "extra": "Commit: cd5327c5260404be94a07c9a7339b033915a0987\nBranch: master\nTime: 2025-03-24T19:38:26+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d620e40723fd15445b86f064b6edc6b750e26940",
+          "message": "📚 update tox version to py39 (#1438)",
+          "timestamp": "2025-04-14T20:25:19+02:00",
+          "tree_id": "2442ed654700ba84ebfc9ad09718f3ef512ac882",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d620e40723fd15445b86f064b6edc6b750e26940"
+        },
+        "date": 1744655220450,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20511772000000406,
+            "unit": "s",
+            "extra": "Commit: d620e40723fd15445b86f064b6edc6b750e26940\nBranch: master\nTime: 2025-04-14T20:25:19+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.33816904700001,
+            "unit": "s",
+            "extra": "Commit: d620e40723fd15445b86f064b6edc6b750e26940\nBranch: master\nTime: 2025-04-14T20:25:19+02:00"
           }
         ]
       }
