@@ -7,10 +7,6 @@ import responses
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
-from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.directives.needimport import NeedimportException
-from sphinx_needs.needsfile import SphinxNeedsFileException
-
 
 @pytest.mark.parametrize(
     "test_app",
@@ -131,6 +127,9 @@ def test_need_schema_warnings(test_app, snapshot):
 )
 def test_empty_file_check(test_app):
     """Checks that an empty needs.json throws an exception"""
+
+    from sphinx_needs.needsfile import SphinxNeedsFileException
+
     app = test_app
 
     with pytest.raises(SphinxNeedsFileException):
@@ -183,6 +182,8 @@ def test_import_builder(test_app, snapshot):
     indirect=True,
 )
 def test_needimport_needs_json_download(test_app, snapshot):
+    from sphinx_needs.data import SphinxNeedsData
+
     app = test_app
 
     # Mock requests
@@ -258,6 +259,8 @@ def test_needimport_needs_json_download(test_app, snapshot):
     indirect=True,
 )
 def test_needimport_needs_json_download_negative(test_app):
+    from sphinx_needs.directives.needimport import NeedimportException
+
     with pytest.raises(NeedimportException) as err:
         test_app.build()
     assert (

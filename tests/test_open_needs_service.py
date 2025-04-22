@@ -3,8 +3,6 @@ from pathlib import Path
 import pytest
 import responses
 
-from sphinx_needs.services.manager import ServiceManager
-
 MOCK_NEEDS = [
     {
         "key": "NEP_001",
@@ -71,6 +69,8 @@ MOCK_NEEDS = [
     indirect=True,
 )
 def test_ons_service(test_app):
+    from sphinx_needs.services.manager import ServiceManager
+
     responses.post(
         "http://127.0.0.1:9595/auth/jwt/login",
         status=200,

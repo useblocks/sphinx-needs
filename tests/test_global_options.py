@@ -6,8 +6,6 @@ import pytest
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
-from sphinx_needs.config import NeedsSphinxConfig
-
 
 @pytest.mark.parametrize(
     "test_app",
@@ -21,6 +19,8 @@ from sphinx_needs.config import NeedsSphinxConfig
     indirect=True,
 )
 def test_doc_global_option_old(test_app, snapshot):
+    from sphinx_needs.config import NeedsSphinxConfig
+
     test_app.build()
     warnings = strip_colors(
         test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
@@ -57,6 +57,8 @@ def test_doc_global_option_old(test_app, snapshot):
     indirect=True,
 )
 def test_doc_global_option(test_app, snapshot):
+    from sphinx_needs.config import NeedsSphinxConfig
+
     test_app.build()
     warnings = strip_colors(
         test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
