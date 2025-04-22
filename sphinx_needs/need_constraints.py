@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import jinja2
 
-from sphinx_needs.api.exceptions import NeedsConstraintFailed
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable
+from sphinx_needs.exceptions import NeedsConstraintFailed
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger, log_warning
 

@@ -16,10 +16,10 @@ from jinja2 import Template
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs.api.exceptions import InvalidNeedException
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, NeedsPartType, SphinxNeedsData
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
+from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.nodes import Need

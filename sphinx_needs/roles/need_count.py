@@ -9,9 +9,9 @@ from __future__ import annotations
 from docutils import nodes
 from sphinx.application import Sphinx
 
-from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs_parts
 from sphinx_needs.logging import get_logger
 

@@ -11,9 +11,9 @@ from typing import Callable
 from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter
 
-from sphinx_needs.api.exceptions import NeedsApiConfigException
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType
+from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.functions.functions import DynamicFunction
 
 

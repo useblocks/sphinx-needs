@@ -15,10 +15,10 @@ from jinja2 import Environment, Template
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
+from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
