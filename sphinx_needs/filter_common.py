@@ -19,7 +19,6 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
     NeedsFilteredBaseType,
@@ -27,6 +26,7 @@ from sphinx_needs.data import (
     NeedsMutable,
 )
 from sphinx_needs.debug import measure_time, measure_time_func
+from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
