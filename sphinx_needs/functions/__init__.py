@@ -15,6 +15,7 @@ from sphinx_needs.functions.functions import (  # noqa: F401
     resolve_variants_options,
 )
 
+# some comment
 NEEDS_COMMON_FUNCTIONS: list[DynamicFunction] = [
     test,
     echo,
