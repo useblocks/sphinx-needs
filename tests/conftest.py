@@ -308,6 +308,10 @@ def test_app(make_app, sphinx_test_tempdir, request):
 
     app.cleanup()
 
+    for key in list(sys.modules.keys()):
+        if key.startswith("sphinx_needs"):
+            del sys.modules[key]
+
     # Clean up the srcdir of each Sphinx app after the test function has executed
     if request.config.getoption("--sn-build-dir") is None:
         shutil.rmtree(parent_path, ignore_errors=True)
