@@ -4,6 +4,7 @@ import pytest
 from sphinx.application import Sphinx
 
 from sphinx_needs.services.base import BaseService
+from sphinx_needs.services.manager import ServiceManager
 
 
 class ServiceTest(BaseService):
@@ -58,8 +59,6 @@ class NoDebugService(BaseService):
     indirect=True,
 )
 def test_service_creation(test_app):
-    from sphinx_needs.services.manager import ServiceManager
-
     app = test_app
     app.build()
     assert isinstance(app._needs_services, ServiceManager)
