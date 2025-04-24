@@ -2,6 +2,8 @@ import ast
 import inspect
 from typing import ForwardRef
 
+from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
+
 
 def test_consistent():
     """
@@ -10,8 +12,6 @@ def test_consistent():
     So at least here, we check that they are consistent with each other.
     """
     # check fields are consistent
-    from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
-
     assert set(NeedsCoreFields).issubset(set(NeedsInfoType.__annotations__))
 
     # check field types are consistent with schema
