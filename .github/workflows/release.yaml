@@ -5,13 +5,13 @@ on:
       - '[0-9].[0-9]+.[0-9]+'
 
 jobs:
-    publish:
+  publish:
 
-      name: Publish to PyPi
-      # needs: check
-      # if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
-      runs-on: ubuntu-latest
-      steps:
+    name: Publish to PyPi
+    # needs: check
+    # if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+    runs-on: ubuntu-latest
+    steps:
       - name: Checkout source
         uses: actions/checkout@v4
       - name: Set up Python 3.10

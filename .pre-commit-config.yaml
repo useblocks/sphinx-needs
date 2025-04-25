@@ -8,22 +8,27 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.9
     hooks:
-    - id: ruff
-      args: [--fix]
-    - id: ruff-format
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.16.0
+    hooks:
+      - id: yamlfmt
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.15.0
     hooks:
-    - id: mypy
-      files: sphinx_needs/.*
-      args: []
-      additional_dependencies:
-      - sphinx==7.4.7
-      - docutils==0.20
-      - types-docutils==0.20.0.20240201
-      - types-jsonschema
-      - types-requests
+      - id: mypy
+        files: sphinx_needs/.*
+        args: []
+        additional_dependencies:
+          - sphinx==7.4.7
+          - docutils==0.20
+          - types-docutils==0.20.0.20240201
+          - types-jsonschema
+          - types-requests
 
   # TODO this does not work on pre-commit.ci
   # - repo: https://github.com/astral-sh/uv-pre-commit
@@ -40,5 +45,5 @@ repos:
         entry: rst2html.py README.rst --halt=warning
         pass_filenames: false
         additional_dependencies:
-        - docutils==0.20.1
-        - pygments
+          - docutils==0.20.1
+          - pygments

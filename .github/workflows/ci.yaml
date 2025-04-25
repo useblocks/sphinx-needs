@@ -9,18 +9,18 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-    - uses: pre-commit/action@v3.0.1
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - uses: pre-commit/action@v3.0.1
 
   tests-core:
     name: "Core py${{ matrix.python-version }} sphinx~=${{ matrix.sphinx-version }} ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false  # Set on "false" to get the results of ALL builds
+      fail-fast: false # Set on "false" to get the results of ALL builds
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.10", "3.12"]
@@ -122,26 +122,26 @@ jobs:
           python -m pytest -v tests/no_mpl_tests.py
       - name: Run HTML build
         # the docs should build without matplotlib (just issuing warnings)
-        run: sphinx-build -b html . _build 
+        run: sphinx-build -b html . _build
         working-directory: docs
 
   check:
-  
+
     # This job does nothing and is only used for the branch protection
     # see https://github.com/marketplace/actions/alls-green#why
 
     if: always()
 
     needs:
-    - lint
-    - tests-core
-    - tests-js
-    - tests-no-mpl
+      - lint
+      - tests-core
+      - tests-js
+      - tests-no-mpl
 
     runs-on: ubuntu-latest
 
     steps:
-    - name: Decide whether the needed jobs succeeded or failed
-      uses: re-actors/alls-green@release/v1
-      with:
-        jobs: ${{ toJSON(needs) }}
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}

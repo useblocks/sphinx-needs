@@ -27,7 +27,7 @@ jobs:
           path: ./cache
           key: ${{ runner.os }}-benchmark
       - name: Extract benchmark data
-        run:  python .github/scripts/extract_benchmark_data.py output.json output_action.json
+        run: python .github/scripts/extract_benchmark_data.py output.json output_action.json
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
@@ -58,5 +58,5 @@ jobs:
           cp mem_out.html docs/memory.html
           git add docs/memory.html
           git -c "user.name=Sphinx-Needs CI" -c "user.email=ci@sphinx-needs.com" commit -m "memory.html update"
-      - name: Push changes   
+      - name: Push changes
         run: git push origin benchmarks

@@ -4,47 +4,45 @@ jobs:
   js_tests:
     runs-on: ubuntu-latest
     steps:
-    - name: Set Up Python 3.10.8
-      uses: actions/setup-python@v5
-      with:
-        python-version: 3.10.8
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 18
-    - uses: actions/checkout@v4
-    - name: Update pip
-      run: |
-        pip install -U wheel
-        pip install -U setuptools
-        python -m pip install -U pip
-    - name: Get pip cache dir
-      id: pip-cache
-      run: |
-        echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
-    - name: Pip cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ steps.pip-cache.outputs.dir }}
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    - name: Install package
-      run: |
-        pip install -e .[docs]
-    - name: Install Node dependencies
-      run: npm install cypress
-    - name: Build Docs
-      id: sphinx-build-docs
-      run: sphinx-build -a -T -E -j 4 -b html -d /tmp/sphinx_build/doctrees ./docs /tmp/sphinx_build/html
-    - name: E2E Cypress Test on Chrome
-      uses: cypress-io/github-action@v6
-      with:
-        browser: chrome
-        config-file: tests/js_test/cypress.config.js
-        start: npm start
-        # quote the url to be safe against YML parsing surprises
-        wait-on: 'http://localhost:8080'
-
-
+      - name: Set Up Python 3.10.8
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.10.8
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - uses: actions/checkout@v4
+      - name: Update pip
+        run: |
+          pip install -U wheel
+          pip install -U setuptools
+          python -m pip install -U pip
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "dir=$(pip cache dir)" >> $GITHUB_OUTPUT
+      - name: Pip cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Install package
+        run: |
+          pip install -e .[docs]
+      - name: Install Node dependencies
+        run: npm install cypress
+      - name: Build Docs
+        id: sphinx-build-docs
+        run: sphinx-build -a -T -E -j 4 -b html -d /tmp/sphinx_build/doctrees ./docs /tmp/sphinx_build/html
+      - name: E2E Cypress Test on Chrome
+        uses: cypress-io/github-action@v6
+        with:
+          browser: chrome
+          config-file: tests/js_test/cypress.config.js
+          start: npm start
+          # quote the url to be safe against YML parsing surprises
+          wait-on: 'http://localhost:8080'
 
