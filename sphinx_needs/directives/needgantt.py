@@ -4,6 +4,7 @@ import os
 import re
 from collections.abc import Sequence
 from datetime import datetime
+from typing import Any, Callable
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -34,6 +35,19 @@ class Needgantt(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = {
+    "starts_with_links": directives.unchanged,
+    "starts_after_links": directives.unchanged,
+    "ends_with_links": directives.unchanged,
+    "milestone_filter": directives.unchanged,
+    "start_date": directives.unchanged,
+    "timeline": directives.unchanged,
+    "duration_option": directives.unchanged,
+    "completion_option": directives.unchanged,
+    "no_color": directives.flag,
+}
+
+
 class NeedganttDirective(FilterBase, DiagramBase):
     """
     Directive to get gantt diagrams.
@@ -41,21 +55,19 @@ class NeedganttDirective(FilterBase, DiagramBase):
 
     optional_arguments = 1
     final_argument_whitespace = True
-    option_spec = {
-        "starts_with_links": directives.unchanged,
-        "starts_after_links": directives.unchanged,
-        "ends_with_links": directives.unchanged,
-        "milestone_filter": directives.unchanged,
-        "start_date": directives.unchanged,
-        "timeline": directives.unchanged,
-        "duration_option": directives.unchanged,
-        "completion_option": directives.unchanged,
-        "no_color": directives.flag,
-    }
+
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
     option_spec.update(DiagramBase.base_option_spec)
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT
+        cls.option_spec.update(FilterBase.base_option_spec)
+        cls.option_spec.update(DiagramBase.base_option_spec)
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env

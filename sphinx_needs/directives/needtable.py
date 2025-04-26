@@ -28,6 +28,19 @@ class Needtable(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = {
+    "show_filters": directives.flag,
+    "show_parts": directives.flag,
+    "columns": directives.unchanged_required,
+    "colwidths": directives.unchanged_required,
+    "style": directives.unchanged_required,
+    "style_row": directives.unchanged_required,
+    "style_col": directives.unchanged_required,
+    "sort": directives.unchanged_required,
+    "class": directives.unchanged_required,
+}
+
+
 class NeedtableDirective(FilterBase):
     """
     Directive present filtered needs inside a table.
@@ -35,20 +48,17 @@ class NeedtableDirective(FilterBase):
 
     optional_arguments = 1
     final_argument_whitespace = True
-    option_spec = {
-        "show_filters": directives.flag,
-        "show_parts": directives.flag,
-        "columns": directives.unchanged_required,
-        "colwidths": directives.unchanged_required,
-        "style": directives.unchanged_required,
-        "style_row": directives.unchanged_required,
-        "style_col": directives.unchanged_required,
-        "sort": directives.unchanged_required,
-        "class": directives.unchanged_required,
-    }
+
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT
+        cls.option_spec.update(FilterBase.base_option_spec)
 
     @profile("NEEDTABLE_RUN")
     def run(self) -> Sequence[nodes.Node]:
