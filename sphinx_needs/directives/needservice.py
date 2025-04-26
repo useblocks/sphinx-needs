@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Callable
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -22,18 +22,27 @@ class Needservice(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = {
+    "debug": directives.flag,
+}
+
+
 class NeedserviceDirective(SphinxDirective):
     has_content = True
 
     required_arguments = 1
     optional_arguments = 0
 
-    option_spec = {
-        "debug": directives.flag,
-    }
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
 
     # Support all options from a common need.
     option_spec.update(NeedDirective.option_spec)
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT.copy()
+        cls.option_spec.update(NeedDirective.option_spec)
 
     final_argument_whitespace = True
 

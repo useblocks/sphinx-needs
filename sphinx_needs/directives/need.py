@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, Callable
 
 from docutils import nodes
 from sphinx.addnodes import desc_name, desc_signature
@@ -50,9 +50,14 @@ class NeedDirective(SphinxDirective):
 
     required_arguments = 1
     optional_arguments = 0
-    option_spec = NEED_DEFAULT_OPTIONS
+    option_spec: dict[str, Callable[[str], Any]] = NEED_DEFAULT_OPTIONS.copy()
 
     final_argument_whitespace = True
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = NEED_DEFAULT_OPTIONS.copy()
 
     @measure_time("need")
     def run(self) -> Sequence[nodes.Node]:
