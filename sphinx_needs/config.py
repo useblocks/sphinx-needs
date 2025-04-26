@@ -104,7 +104,7 @@ class _Config:
                     None,
                 )
             else:
-                from sphinx_needs.api.exceptions import (
+                from sphinx_needs.exceptions import (
                     NeedsApiConfigWarning,  # avoid circular import
                 )
 

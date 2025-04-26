@@ -8,7 +8,6 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
-from sphinx_needs.api.exceptions import NeedsInvalidException
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, NeedsTableType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -18,6 +17,7 @@ from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
     used_filter_paragraph,
 )
+from sphinx_needs.exceptions import NeedsInvalidException
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.roles.need_part import iter_need_parts

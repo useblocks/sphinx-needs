@@ -7,11 +7,11 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
-from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsPieType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import no_needs_found_paragraph
+from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import FilterBase, filter_needs_parts
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (

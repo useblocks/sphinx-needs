@@ -31,7 +31,7 @@ Need
 Exceptions
 ----------
 
-.. automodule:: sphinx_needs.api.exceptions
+.. automodule:: sphinx_needs.exceptions
    :members:
 
 Data

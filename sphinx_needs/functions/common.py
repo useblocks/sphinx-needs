@@ -12,9 +12,9 @@ from typing import Any
 
 from sphinx.application import Sphinx
 
-from sphinx_needs.api.exceptions import NeedsInvalidFilter
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, NeedsMutable
+from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import (
     filter_needs,
     filter_single_need,
