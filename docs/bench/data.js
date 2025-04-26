@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745664118814,
+  "lastUpdate": 1745665692835,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12888,6 +12888,42 @@ window.BENCHMARK_DATA = {
             "value": 55.726619080000006,
             "unit": "s",
             "extra": "Commit: 97f9e89c7a481a0f912c3b19ce86cb68f8d6dee6\nBranch: master\nTime: 2025-04-26T12:40:15+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "500a4486e32c37f6c6d85a67d257f6d5a97d9456",
+          "message": "🐛 Fix cyclic imports (#1443)\n\nThis PR fixes circular SN imports by moving `exceptions.py` to the root.\n\n---------\n\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2025-04-26T13:06:25+02:00",
+          "tree_id": "eab1f7a737729cc33b784ec33c6e44f59cc00dd9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/500a4486e32c37f6c6d85a67d257f6d5a97d9456"
+        },
+        "date": 1745665679056,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14326903799999968,
+            "unit": "s",
+            "extra": "Commit: 500a4486e32c37f6c6d85a67d257f6d5a97d9456\nBranch: master\nTime: 2025-04-26T13:06:25+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.01831344600001,
+            "unit": "s",
+            "extra": "Commit: 500a4486e32c37f6c6d85a67d257f6d5a97d9456\nBranch: master\nTime: 2025-04-26T13:06:25+02:00"
           }
         ]
       }
