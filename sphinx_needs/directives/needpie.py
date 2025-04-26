@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Iterable, Sequence
+from typing import Any, Callable
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -29,6 +30,17 @@ class Needpie(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = {
+    "legend": directives.flag,
+    "explode": directives.unchanged_required,
+    "labels": directives.unchanged_required,
+    "style": directives.unchanged_required,
+    "colors": directives.unchanged_required,
+    "text_color": directives.unchanged_required,
+    "shadow": directives.flag,
+}
+
+
 class NeedpieDirective(FilterBase):
     """
     Directive to plot diagrams with the help of matplotlib
@@ -42,17 +54,26 @@ class NeedpieDirective(FilterBase):
     optional_arguments = 1
     final_argument_whitespace = True
 
-    option_spec = {
-        "legend": directives.flag,
-        "explode": directives.unchanged_required,
-        "labels": directives.unchanged_required,
-        "style": directives.unchanged_required,
-        "colors": directives.unchanged_required,
-        "text_color": directives.unchanged_required,
-        "shadow": directives.flag,
-        "filter-func": FilterBase.base_option_spec["filter-func"],
-        "filter_warning": FilterBase.base_option_spec["filter_warning"],
-    }
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
+
+    # Update the options_spec with values defined in the FilterBase class
+    option_spec.update(
+        {
+            "filter-func": FilterBase.base_option_spec["filter-func"],
+            "filter_warning": FilterBase.base_option_spec["filter_warning"],
+        }
+    )
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT
+        cls.option_spec.update(
+            {
+                "filter-func": FilterBase.base_option_spec["filter-func"],
+                "filter_warning": FilterBase.base_option_spec["filter_warning"],
+            }
+        )
 
     # Update the options_spec only with value filter-func defined in the FilterBase class
 
