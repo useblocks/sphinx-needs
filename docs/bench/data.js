@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1744662141582,
+  "lastUpdate": 1745664118814,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12852,6 +12852,42 @@ window.BENCHMARK_DATA = {
             "value": 59.313380905,
             "unit": "s",
             "extra": "Commit: 9ee26285d340c7e9154fe82481f6faa448153758\nBranch: master\nTime: 2025-04-14T22:20:27+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "97f9e89c7a481a0f912c3b19ce86cb68f8d6dee6",
+          "message": "🔧 Added yamlfmt pre-commit (#1446)",
+          "timestamp": "2025-04-26T12:40:15+02:00",
+          "tree_id": "01608428b20e64c9eca8cab980be50d8ab3f94d7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/97f9e89c7a481a0f912c3b19ce86cb68f8d6dee6"
+        },
+        "date": 1745664105821,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18639214500001344,
+            "unit": "s",
+            "extra": "Commit: 97f9e89c7a481a0f912c3b19ce86cb68f8d6dee6\nBranch: master\nTime: 2025-04-26T12:40:15+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.726619080000006,
+            "unit": "s",
+            "extra": "Commit: 97f9e89c7a481a0f912c3b19ce86cb68f8d6dee6\nBranch: master\nTime: 2025-04-26T12:40:15+02:00"
           }
         ]
       }
