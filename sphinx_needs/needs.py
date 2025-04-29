@@ -295,9 +295,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
     ########################################################################
     # Make connections to events
     app.connect("config-inited", load_config_from_toml, priority=10)  # runs early
-    app.connect(
-        "config-inited", load_schemas_config_from_json, priority=10
-    )  # runs early
     app.connect("config-inited", load_config)
     app.connect("config-inited", merge_default_configs)
     app.connect("config-inited", check_configuration, priority=600)  # runs late
@@ -591,6 +588,8 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             "config",
             None,
         )
+
+    load_schemas_config_from_json(app, app.config)
 
 
 def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
