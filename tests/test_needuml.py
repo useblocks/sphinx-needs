@@ -126,6 +126,7 @@ def test_needuml_save_with_abs_path(test_app):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
+    # this fails before plantuml is required, so the plantuml path is not provided
     out = subprocess.run(
         ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
     )

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import os
+import posixpath
 import time
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, TypedDict
@@ -107,7 +108,7 @@ class NeedumlDirective(SphinxDirective):
         save_path = self.options.get("save")
         plantuml_code_out_path = None
         if save_path:
-            if os.path.isabs(save_path):
+            if posixpath.isabs(save_path):
                 raise NeedumlException(
                     f"Given save path: {save_path}, is not a relative path."
                 )
