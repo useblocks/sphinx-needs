@@ -1,10 +1,11 @@
+import contextlib
 import json
 import re
+import sys
 import uuid
 from pathlib import Path
 from random import randrange
 
-import memray
 import pytest
 import responses
 
@@ -14,6 +15,10 @@ from tests.data.service_github import (
     GITHUB_SPECIFIC_COMMIT_ANSWER,
     GITHUB_SPECIFIC_ISSUE_ANSWER,
 )
+
+with contextlib.suppress(ImportError):
+    # not available for Windows
+    import memray
 
 
 def random_data_callback(request):
@@ -69,6 +74,9 @@ def test_official_time(test_app, benchmark):
     "test_app",
     [{"buildername": "html", "srcdir": "../docs", "parallel": 1}],
     indirect=True,
+)
+@pytest.mark.skipif(
+    sys.platform.startswith("win"), reason="memray not available on Windows"
 )
 def test_official_memory(test_app):
     responses.add_callback(
