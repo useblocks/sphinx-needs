@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745665692835,
+  "lastUpdate": 1745917153584,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12924,6 +12924,42 @@ window.BENCHMARK_DATA = {
             "value": 56.01831344600001,
             "unit": "s",
             "extra": "Commit: 500a4486e32c37f6c6d85a67d257f6d5a97d9456\nBranch: master\nTime: 2025-04-26T13:06:25+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c25df13fd903bfbcf20bab3fccbdd09ec4e1ab2e",
+          "message": "🔧 benchmark group non win32 (#1450)\n\nThe memray dependency is only available for linux and macos.",
+          "timestamp": "2025-04-29T10:57:28+02:00",
+          "tree_id": "35f27725b058521de267b34c38d76f9f3338ad52",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c25df13fd903bfbcf20bab3fccbdd09ec4e1ab2e"
+        },
+        "date": 1745917138574,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14144969599999513,
+            "unit": "s",
+            "extra": "Commit: c25df13fd903bfbcf20bab3fccbdd09ec4e1ab2e\nBranch: master\nTime: 2025-04-29T10:57:28+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.83071988399999,
+            "unit": "s",
+            "extra": "Commit: c25df13fd903bfbcf20bab3fccbdd09ec4e1ab2e\nBranch: master\nTime: 2025-04-29T10:57:28+02:00"
           }
         ]
       }
