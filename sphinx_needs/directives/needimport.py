@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import posixpath
 import re
 from collections.abc import Sequence
 from urllib.parse import urlparse
@@ -81,7 +82,7 @@ class NeedimportDirective(SphinxDirective):
         else:
             logger.info(f"Importing needs from {need_import_path}")
 
-            if not os.path.isabs(need_import_path):
+            if not posixpath.isabs(need_import_path):
                 # Relative path should start from current rst file directory
                 curr_dir = os.path.dirname(self.docname)
                 new_need_import_path = os.path.join(
