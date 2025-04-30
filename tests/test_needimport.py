@@ -20,17 +20,8 @@ from sphinx_needs.needsfile import SphinxNeedsFileException
 def test_import_json(test_app):
     app = test_app
     app.build()
-    warnings = app._warning.getvalue()
-    warnings_list = strip_colors(
-        warnings.replace(str(app.srcdir) + os.sep + "subdoc" + os.sep, "srcdir/subdoc/")
-    ).splitlines()
-
-    if os.name != "nt":
-        assert warnings_list == [
-            "srcdir/subdoc/deprecated_rel_path_import.rst:6: WARNING: Deprecation warning: Relative path must be relative to the current document in future, not to the conf.py location. Use a starting '/', like '/needs.json', to make the path relative to conf.py. [needs.deprecated]"
-        ]
-    else:
-        assert "Deprecation" in warnings
+    assert app.statuscode == 0
+    assert not app.warning_list
 
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html
