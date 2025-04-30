@@ -62,7 +62,7 @@ needs_json = """
             "needs": {
                 "TEST_01": {
                     "id": "TEST_01",
-                    "title": "TEST IMPORT DESCRIPTION",
+                    "title": "TEST IMPORT TITLE",
                     "type": "impl"
                 }
             },
@@ -108,6 +108,10 @@ def test_import_rel_abs_sphinx_paths(test_app, index_content):
     assert app.statuscode == 0
     assert not app.warning_list
 
+    html = Path(app.outdir, "index.html").read_text()
+    assert "TEST IMPORT TITLE" in html
+    assert "TEST_01" in html
+
 
 @pytest.mark.parametrize("path_sep", ["/", "\\", "\\\\"])
 @pytest.mark.parametrize(
@@ -138,6 +142,10 @@ def test_import_abs_paths_win(test_app, path_sep):
     assert app.statuscode == 0
     assert not app.warning_list
 
+    html = Path(app.outdir, "index.html").read_text()
+    assert "TEST IMPORT TITLE" in html
+    assert "TEST_01" in html
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -165,6 +173,10 @@ def test_import_abs_paths_lin_mac(test_app):
     app.build()
     assert app.statuscode == 0
     assert not app.warning_list
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert "TEST IMPORT TITLE" in html
+    assert "TEST_01" in html
 
 
 @pytest.mark.parametrize(
