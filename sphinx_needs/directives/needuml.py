@@ -4,6 +4,7 @@ import html
 import os
 import time
 from collections.abc import Sequence
+from pathlib import PurePosixPath
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from docutils import nodes
@@ -107,7 +108,12 @@ class NeedumlDirective(SphinxDirective):
         save_path = self.options.get("save")
         plantuml_code_out_path = None
         if save_path:
-            plantuml_code_out_path = self.env.relfn2path(save_path, self.env.docname)[1]
+            if PurePosixPath(save_path).is_absolute():
+                raise NeedumlException(
+                    f"Given save path: {save_path}, is not a relative posix path."
+                )
+            else:
+                plantuml_code_out_path = save_path
 
         SphinxNeedsData(env).get_or_create_umls()[targetid] = {
             "docname": env.docname,

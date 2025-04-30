@@ -134,7 +134,7 @@ def test_needuml_save_with_abs_path(test_app):
 
     assert (
         "sphinx_needs.directives.needuml.NeedumlException: "
-        "Given save path: /_out/my_needuml.puml, is not a relative path."
+        "Given save path: /_out/my_needuml.puml, is not a relative posix path."
         in out.stderr.decode("utf-8")
     )
 
