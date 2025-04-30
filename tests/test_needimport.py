@@ -109,6 +109,7 @@ def test_import_rel_abs_sphinx_paths(test_app, index_content):
     assert not app.warning_list
 
 
+@pytest.mark.parametrize("path_sep", ["/", "\\", "\\\\"])
 @pytest.mark.parametrize(
     "test_app",
     [
@@ -124,11 +125,12 @@ def test_import_rel_abs_sphinx_paths(test_app, index_content):
     indirect=True,
 )
 @pytest.mark.skipif(sys.platform != "win32", reason="Test only runs on Windows")
-def test_import_abs_paths_win(test_app):
+def test_import_abs_paths_win(test_app, path_sep):
     """Test various relative and absolute import file paths."""
     # write the parametrized index.rst content
     index_path = Path(test_app.srcdir, "index.rst")
     json_abs_path = str((Path(test_app.srcdir).resolve() / "needs.json").absolute())
+    json_abs_path = json_abs_path.replace(os.path.sep, path_sep)
     index_path.write_text(f".. needimport:: {json_abs_path}")
 
     app = test_app
