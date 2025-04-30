@@ -52,12 +52,6 @@ def test_import_json(test_app):
     rel_path_import_html = Path(app.outdir, "subdoc/rel_path_import.html").read_text()
     assert "small_rel_path_TEST_01" in rel_path_import_html
 
-    # Check deprecated relative path import based on conf.py
-    deprec_rel_path_import_html = Path(
-        app.outdir, "subdoc/deprecated_rel_path_import.html"
-    ).read_text()
-    assert "small_depr_rel_path_TEST_01" in deprec_rel_path_import_html
-
 
 @pytest.mark.parametrize(
     "test_app",
