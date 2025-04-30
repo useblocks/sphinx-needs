@@ -26,26 +26,34 @@ The directive argument can be one of the following formats:
 - A remote URL from which to download the ``needs.json``:
 
   .. code-block:: rst
-   
+
      .. needimport:: https://my_company.com/docs/remote-needs.json
 
 - A local path relative to the containing document:
 
   .. code-block:: rst
-   
+
      .. needimport:: needs.json
 
 - A local path starting with ``/`` is relative to the Sphinx source directory:
 
   .. code-block:: rst
-   
+
      .. needimport:: /path/to/needs.json
 
-- For an absolute path, make sure to start with two ``//`` (on Linux/OSX):
+- For an absolute path on Linux/OSX, make sure to start with two ``//``:
 
   .. code-block:: rst
-   
+
      .. needimport:: //absoulte/path/to/needs.json
+
+- For an absolute path on Windows, just use the normal drive letters with either forward or backward slashes:
+
+  .. code-block:: rst
+
+     .. needimport:: c:/absoulte/path/to/needs.json
+
+     .. needimport:: c:\absoulte\path\to\needs.json
 
 Options
 -------
