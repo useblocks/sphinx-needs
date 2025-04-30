@@ -45,15 +45,15 @@ The directive argument can be one of the following formats:
 
   .. code-block:: rst
 
-     .. needimport:: //absoulte/path/to/needs.json
+     .. needimport:: //absolute/path/to/needs.json
 
 - For an absolute path on Windows, just use the normal drive letters with either forward or backward slashes:
 
   .. code-block:: rst
 
-     .. needimport:: c:/absoulte/path/to/needs.json
+     .. needimport:: c:/absolute/path/to/needs.json
 
-     .. needimport:: c:\absoulte\path\to\needs.json
+     .. needimport:: c:\absolute\path\to\needs.json
 
 Options
 -------
