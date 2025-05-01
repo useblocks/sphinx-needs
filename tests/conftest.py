@@ -22,8 +22,6 @@ from sphinx.util.console import strip_colors
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 from xprocess import ProcessStarter
 
-from sphinx_needs.reset import sphinx_needs_reset
-
 pytest_plugins = "sphinx.testing.fixtures"
 
 
@@ -309,8 +307,6 @@ def test_app(make_app, sphinx_test_tempdir, request):
     yield app
 
     app.cleanup()
-
-    sphinx_needs_reset()
 
     # Clean up the srcdir of each Sphinx app after the test function has executed
     if request.config.getoption("--sn-build-dir") is None:

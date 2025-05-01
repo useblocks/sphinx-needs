@@ -50,14 +50,9 @@ class NeedDirective(SphinxDirective):
 
     required_arguments = 1
     optional_arguments = 0
-    option_spec = NEED_DEFAULT_OPTIONS.copy()
+    option_spec = NEED_DEFAULT_OPTIONS
 
     final_argument_whitespace = True
-
-    @classmethod
-    def reset(cls) -> None:
-        """Reset the directive to its initial state."""
-        cls.option_spec = NEED_DEFAULT_OPTIONS
 
     @measure_time("need")
     def run(self) -> Sequence[nodes.Node]:
