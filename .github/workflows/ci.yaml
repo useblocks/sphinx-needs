@@ -3,8 +3,8 @@ on:
   push:
     branches: [master]
   pull_request:
-jobs:
 
+jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
