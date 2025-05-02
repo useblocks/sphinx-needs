@@ -27,10 +27,11 @@ def test_doc_build_html(test_app: SphinxTestApp, sphinx_test_tempdir):
         ["sphinx-build", "-b", "html", "-D", rf"plantuml={plantuml}", src_dir, out_dir],
         capture_output=True,
     )
-    assert strip_colors(output.stderr.decode("utf-8")).splitlines() == [
+    expected_warnings = [
         "WARNING: http://my_company.com/docs/v1/index.html#TEST_01: Need 'EXT_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
         "WARNING: ../../_build/html/index.html#TEST_01: Need 'EXT_REL_PATH_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
     ]
+    assert strip_colors(output.stderr.decode("utf-8")).splitlines() == expected_warnings
 
     # run second time and check
     output_second = subprocess.run(
@@ -40,7 +41,7 @@ def test_doc_build_html(test_app: SphinxTestApp, sphinx_test_tempdir):
 
     # Sphinx 8.2 removed an early return in case no documents were updated in
     # https://github.com/sphinx-doc/sphinx/pull/13236
-    # which leads to SN warnings not being emitted
+    # which leads to some SN warnings not being emitted for incremental builds
     if version_info < (8, 2):
         expected_warnings = []
     assert (
