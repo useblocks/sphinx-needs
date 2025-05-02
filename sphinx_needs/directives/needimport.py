@@ -4,6 +4,7 @@ import json
 import os
 import re
 from collections.abc import Sequence
+from typing import Any, Callable
 from urllib.parse import urlparse
 
 import requests
@@ -27,28 +28,36 @@ class Needimport(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = {
+    "version": directives.unchanged_required,
+    "hide": directives.flag,
+    "collapse": string_to_boolean,
+    "ids": directives.unchanged_required,
+    "filter": directives.unchanged_required,
+    "id_prefix": directives.unchanged_required,
+    "tags": directives.unchanged_required,
+    "style": directives.unchanged_required,
+    "layout": directives.unchanged_required,
+    "template": directives.unchanged_required,
+    "pre_template": directives.unchanged_required,
+    "post_template": directives.unchanged_required,
+}
+
+
 class NeedimportDirective(SphinxDirective):
     has_content = False
 
     required_arguments = 1
     optional_arguments = 0
 
-    option_spec = {
-        "version": directives.unchanged_required,
-        "hide": directives.flag,
-        "collapse": string_to_boolean,
-        "ids": directives.unchanged_required,
-        "filter": directives.unchanged_required,
-        "id_prefix": directives.unchanged_required,
-        "tags": directives.unchanged_required,
-        "style": directives.unchanged_required,
-        "layout": directives.unchanged_required,
-        "template": directives.unchanged_required,
-        "pre_template": directives.unchanged_required,
-        "post_template": directives.unchanged_required,
-    }
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
 
     final_argument_whitespace = True
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT
 
     @measure_time("needimport")
     def run(self) -> Sequence[nodes.Node]:

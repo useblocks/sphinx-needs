@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import math
 from collections.abc import Sequence
+from typing import Any, Callable
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -26,6 +27,27 @@ class Needbar(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = {
+    "style": directives.unchanged_required,
+    "colors": directives.unchanged_required,
+    "text_color": directives.unchanged_required,
+    "x_axis_title": directives.unchanged_required,
+    "xlabels": directives.unchanged_required,
+    "xlabels_rotation": directives.unchanged_required,
+    "y_axis_title": directives.unchanged_required,
+    "ylabels": directives.unchanged_required,
+    "ylabels_rotation": directives.unchanged_required,
+    "separator": directives.unchanged_required,
+    "legend": directives.flag,
+    "stacked": directives.flag,
+    "show_sum": directives.flag,
+    "show_top_sum": directives.flag,
+    "sum_rotation": directives.unchanged_required,
+    "transpose": directives.flag,
+    "horizontal": directives.flag,
+}
+
+
 class NeedbarDirective(FilterBase):
     """
     Directive to plot diagrams with the help of matplotlib
@@ -39,25 +61,12 @@ class NeedbarDirective(FilterBase):
     optional_arguments = 1
     final_argument_whitespace = True
 
-    option_spec = {
-        "style": directives.unchanged_required,
-        "colors": directives.unchanged_required,
-        "text_color": directives.unchanged_required,
-        "x_axis_title": directives.unchanged_required,
-        "xlabels": directives.unchanged_required,
-        "xlabels_rotation": directives.unchanged_required,
-        "y_axis_title": directives.unchanged_required,
-        "ylabels": directives.unchanged_required,
-        "ylabels_rotation": directives.unchanged_required,
-        "separator": directives.unchanged_required,
-        "legend": directives.flag,
-        "stacked": directives.flag,
-        "show_sum": directives.flag,
-        "show_top_sum": directives.flag,
-        "sum_rotation": directives.unchanged_required,
-        "transpose": directives.flag,
-        "horizontal": directives.flag,
-    }
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT
 
     # Algorithm:
     # 1. define constants

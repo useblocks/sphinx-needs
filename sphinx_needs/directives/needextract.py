@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from typing import Any, Callable
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -30,6 +31,13 @@ class Needextract(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = {
+    "layout": directives.unchanged_required,
+    "style": directives.unchanged_required,
+    "show_filters": directives.flag,
+}
+
+
 class NeedextractDirective(FilterBase):
     """
     Directive to filter needs and present them as normal needs with given layout and style.
@@ -38,13 +46,16 @@ class NeedextractDirective(FilterBase):
     optional_arguments = 1
     final_argument_whitespace = True
 
-    option_spec = {
-        "layout": directives.unchanged_required,
-        "style": directives.unchanged_required,
-        "show_filters": directives.flag,
-    }
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
+
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT
+        cls.option_spec.update(FilterBase.base_option_spec)
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env

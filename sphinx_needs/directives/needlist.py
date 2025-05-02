@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any, Callable
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -24,19 +25,28 @@ class Needlist(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = option_spec = {
+    "show_status": directives.flag,
+    "show_tags": directives.flag,
+    "show_filters": directives.flag,
+}
+
+
 class NeedlistDirective(FilterBase):
     """
     Directive to filter needs and present them inside a list
     """
 
-    option_spec = {
-        "show_status": directives.flag,
-        "show_tags": directives.flag,
-        "show_filters": directives.flag,
-    }
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
 
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT
+        cls.option_spec.update(FilterBase.base_option_spec)
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env

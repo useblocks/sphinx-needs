@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any, Callable
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -15,16 +16,24 @@ from sphinx_needs.utils import add_doc
 
 LOGGER = logging.getLogger(__name__)
 
+OPTION_SPEC_DEFAULT = {
+    "types": directives.flag,
+    "links": directives.flag,
+    "options": directives.flag,
+    "usage": directives.flag,
+    "template": directives.unchanged,
+}
+
 
 class NeedReportDirective(SphinxDirective):
     final_argument_whitespace = True
-    option_spec = {
-        "types": directives.flag,
-        "links": directives.flag,
-        "options": directives.flag,
-        "usage": directives.flag,
-        "template": directives.unchanged,
-    }
+
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT
 
     def run(self) -> Sequence[nodes.raw]:
         env = self.env

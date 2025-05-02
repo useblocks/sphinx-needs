@@ -5,7 +5,7 @@ import os
 import time
 from collections.abc import Sequence
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Any, TypedDict
+from typing import TYPE_CHECKING, Any, Callable, TypedDict
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -41,6 +41,17 @@ class Needuml(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = {
+    "align": directives.unchanged_required,
+    "scale": directives.unchanged_required,
+    "debug": directives.flag,
+    "config": directives.unchanged_required,
+    "extra": directives.unchanged_required,
+    "key": directives.unchanged_required,
+    "save": directives.unchanged_required,
+}
+
+
 class NeedumlDirective(SphinxDirective):
     """
     Directive to get flow charts.
@@ -49,15 +60,13 @@ class NeedumlDirective(SphinxDirective):
     has_content = True
     optional_arguments = 1
     final_argument_whitespace = True
-    option_spec = {
-        "align": directives.unchanged_required,
-        "scale": directives.unchanged_required,
-        "debug": directives.flag,
-        "config": directives.unchanged_required,
-        "extra": directives.unchanged_required,
-        "key": directives.unchanged_required,
-        "save": directives.unchanged_required,
-    }
+
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
