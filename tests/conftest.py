@@ -54,6 +54,19 @@ def copy_srcdir_to_tmpdir(srcdir: path, tmp: path) -> path:
     return tmproot
 
 
+def create_src_files_in_tmpdir(files: list[tuple[Path, str]], tmp: path) -> path:
+    """Create source files in a temporary directory under the subdir src."""
+    subdir = path("src")
+    tmproot = tmp.joinpath(generate_random_string()) / subdir
+    tmproot.makedirs(exist_ok=True)
+    for file in files:
+        file_path, content = file
+        file_abs = tmproot.joinpath(str(file_path))
+        file_abs.parent.makedirs(exist_ok=True)
+        file_abs.write_text(content)
+    return tmproot
+
+
 def get_abspath(relpath: str) -> str:
     """
     Get the absolute path from a relative path.
@@ -264,9 +277,18 @@ def test_app(make_app, sphinx_test_tempdir, request):
         )
         sphinx_conf_overrides.update(plantuml=plantuml)
 
-    # copy test srcdir to test temporary directory sphinx_test_tempdir
     srcdir = builder_params.get("srcdir")
-    src_dir = copy_srcdir_to_tmpdir(srcdir, sphinx_test_tempdir)
+    files = builder_params.get("files")
+    if (srcdir is None) == (files is None):
+        raise ValueError("Exactly one of srcdir, files must not be None")
+
+    if srcdir is not None:
+        # copy test srcdir to test temporary directory sphinx_test_tempdir
+        src_dir = copy_srcdir_to_tmpdir(srcdir, sphinx_test_tempdir)
+    else:
+        # create given files in tmpdir
+        src_dir = create_src_files_in_tmpdir(files, sphinx_test_tempdir)
+
     parent_path = Path(str(src_dir.parent.abspath()))
 
     if version_info >= (7, 2):

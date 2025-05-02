@@ -10,6 +10,7 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from jsonschema import Draft202012Validator, SchemaError
 from sphinx.application import Sphinx
+from sphinx.builders import Builder
 from sphinx.config import Config
 from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
@@ -17,6 +18,7 @@ from sphinx.errors import SphinxError
 
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
 from sphinx_needs import __version__
+from sphinx_needs.api import get_needs_view
 from sphinx_needs.api.need import _split_list_with_dyn_funcs
 from sphinx_needs.builder import (
     NeedsBuilder,
@@ -333,6 +335,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
 
     app.connect("write-started", process_schemas)
+    app.connect("write-started", ensure_post_process_needs_data)
 
     app.connect("build-finished", process_warnings)
     app.connect("build-finished", build_needs_json)
@@ -351,6 +354,15 @@ def setup(app: Sphinx) -> dict[str, Any]:
         "parallel_write_safe": True,
         "env_version": ENV_DATA_VERSION,
     }
+
+
+def ensure_post_process_needs_data(app: Sphinx, builder: Builder) -> None:
+    """
+    Make sure post_process_needs_data is called at least once.
+
+    Warnings are emitted in that step, even when no docs are updated.
+    """
+    get_needs_view(app)
 
 
 def process_creator(

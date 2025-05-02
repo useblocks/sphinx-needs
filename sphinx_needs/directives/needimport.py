@@ -81,34 +81,9 @@ class NeedimportDirective(SphinxDirective):
         else:
             logger.info(f"Importing needs from {need_import_path}")
 
-            if not os.path.isabs(need_import_path):
-                # Relative path should start from current rst file directory
-                curr_dir = os.path.dirname(self.docname)
-                new_need_import_path = os.path.join(
-                    self.env.app.srcdir, curr_dir, need_import_path
-                )
-
-                correct_need_import_path = new_need_import_path
-                if not os.path.exists(new_need_import_path):
-                    # Check the old way that calculates relative path starting from conf.py directory
-                    old_need_import_path = os.path.join(
-                        self.env.app.srcdir, need_import_path
-                    )
-                    if os.path.exists(old_need_import_path):
-                        correct_need_import_path = old_need_import_path
-                        log_warning(
-                            logger,
-                            "Deprecation warning: Relative path must be relative to the current document in future, "
-                            "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
-                            "relative to conf.py.",
-                            "deprecated",
-                            location=(self.env.docname, self.lineno),
-                        )
-            else:
-                # Absolute path starts with /, based on the source directory. The / need to be striped
-                correct_need_import_path = os.path.join(
-                    self.env.app.srcdir, need_import_path[1:]
-                )
+            correct_need_import_path = self.env.relfn2path(
+                need_import_path, self.env.docname
+            )[1]
 
             if not os.path.exists(correct_need_import_path):
                 raise ReferenceError(
