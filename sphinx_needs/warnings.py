@@ -5,6 +5,8 @@ Cares about handling and execution warnings.
 
 from __future__ import annotations
 
+from inspect import signature
+
 from sphinx.application import Sphinx
 from sphinx.util import logging
 
@@ -74,8 +76,13 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
                 # custom defined filter code used from conf.py
                 result = []
                 for need in needs_view.values():
-                    if warning_filter(need, logger):
-                        result.append(need)
+                    sig = signature(warning_filter)
+                    if len(sig.parameters) >= 3:
+                        if warning_filter(need, logger, needs_view):  # type: ignore[call-arg]
+                            result.append(need)
+                    else:
+                        if warning_filter(need, logger):
+                            result.append(need)
             else:
                 log_warning(logger, f"Unknown needs warnings filter {warning_filter}!")
 
