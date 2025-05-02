@@ -56,6 +56,7 @@ def test_doc_build_html(test_app: SphinxTestApp, sphinx_test_tempdir):
         in strip_colors(output.stdout.decode("utf-8"))
     )
     # second build output
+    # TODO(Marco) check why 3 added configs are expected, should be 0 for incremental builds without changes
     assert "loading pickled environment" in output_second.stdout.decode("utf-8")
     assert (
         "updating environment: [new config] 3 added, 0 changed, 0 removed"
