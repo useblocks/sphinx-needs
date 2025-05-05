@@ -4,7 +4,7 @@ import copy
 from enum import Enum
 from typing import Any, cast
 
-from jsonschema import Draft202012Validator, ValidationError
+from jsonschema import Draft202012Validator, FormatChecker, ValidationError
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.schema.config import (
@@ -166,7 +166,7 @@ def get_localschema_errors(
 
     :raises jsonschema_rs.ValidationError: If the schema is invalid cannot be built.
     """
-    validator = Draft202012Validator(schema)
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
     return list(validator.iter_errors(instance=need))
 
 

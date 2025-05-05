@@ -6,6 +6,8 @@ from typing import Callable
 
 import pytest
 import sphinx
+import tomli_w
+import tomllib
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
@@ -57,14 +59,20 @@ needs_from_toml = "ubproject.toml"
 
 
 def gen_param_tuple(
-    ubproject_schemas_rst: str,
+    ubproject: str,
     schemas_json: list[dict],
     rst_content: str,
     warnings: list[str],
 ) -> tuple[str, str, str]:
     """Generate dedented strings for ubproject, schemas, and rst content."""
+    ubproject_base_obj = tomllib.loads(UBPROJECT_BASE)
+    ubproject_obj = tomllib.loads(ubproject)
+    # merge dictionaries on root needs level, so we can override
+    # the base needs config
+    ubproject_base_obj["needs"].update(ubproject_obj["needs"])
+    toml_content = tomli_w.dumps(ubproject_base_obj)
     return (
-        dedent(UBPROJECT_BASE + ubproject_schemas_rst),
+        toml_content,
         json.dumps(schemas_json),
         dedent(rst_content),
         warnings,
@@ -201,6 +209,9 @@ def gen_param_tuple(
         ),
         gen_param_tuple(
             """
+            [needs]
+            schemas_debug_active = true
+            schemas_debug_ignore = []
             [[needs.extra_options]]
             name = "start_date"
             [needs.extra_options.schema]
@@ -213,7 +224,11 @@ def gen_param_tuple(
                :id: FEAT_01
                :start_date: not-a-date
             """,
-            ["should fail"],
+            [
+                "properties > start_date > format",
+                "'not-a-date' is not a 'date'",
+                "[sn_schema.validation_fail]",
+            ],
         ),
     ],
 )
