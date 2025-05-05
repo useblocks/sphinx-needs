@@ -209,9 +209,6 @@ def gen_param_tuple(
         ),
         gen_param_tuple(
             """
-            [needs]
-            schemas_debug_active = true
-            schemas_debug_ignore = []
             [[needs.extra_options]]
             name = "start_date"
             [needs.extra_options.schema]
