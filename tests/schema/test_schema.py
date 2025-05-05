@@ -6,8 +6,8 @@ from typing import Callable
 
 import pytest
 import sphinx
+import tomli
 import tomli_w
-import tomllib
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
@@ -65,8 +65,8 @@ def gen_param_tuple(
     warnings: list[str],
 ) -> tuple[str, str, str]:
     """Generate dedented strings for ubproject, schemas, and rst content."""
-    ubproject_base_obj = tomllib.loads(UBPROJECT_BASE)
-    ubproject_obj = tomllib.loads(ubproject)
+    ubproject_base_obj = tomli.loads(UBPROJECT_BASE)
+    ubproject_obj = tomli.loads(ubproject)
     # merge dictionaries on root needs level, so we can override
     # the base needs config
     ubproject_base_obj["needs"].update(ubproject_obj["needs"])
