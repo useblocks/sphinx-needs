@@ -60,10 +60,11 @@ needs_from_toml = "ubproject.toml"
 
 def gen_param_tuple(
     ubproject: str,
-    schemas_json: list[dict],
     rst_content: str,
-    warnings: list[str],
-) -> tuple[str, str, str]:
+    schemas_json: list[dict] | None = None,
+    warnings: list[str] | None = None,
+    warning_type: str | None = None,
+) -> tuple[str, str, str, list[str], str | None]:
     """Generate dedented strings for ubproject, schemas, and rst content."""
     ubproject_base_obj = tomli.loads(UBPROJECT_BASE)
     ubproject_obj = tomli.loads(ubproject)
@@ -71,29 +72,30 @@ def gen_param_tuple(
     # the base needs config
     ubproject_base_obj["needs"].update(ubproject_obj["needs"])
     toml_content = tomli_w.dumps(ubproject_base_obj)
+    schemas_json = schemas_json or []
+    warnings = warnings or []
     return (
         toml_content,
-        json.dumps(schemas_json),
         dedent(rst_content),
+        json.dumps(schemas_json),
         warnings,
+        warning_type,
     )
 
 
 @pytest.mark.parametrize(
-    "ubproject_schemas_rst",
+    "ubproject_rst_schemas_warnings_type",
     [
         gen_param_tuple(
             """
             [[needs.extra_options]]
             name = "asil"
             """,
-            [],
             """
             .. feat:: feat wrong id
                :id: FEAT_01
                :asil: QM
             """,
-            [],
         ),
         gen_param_tuple(
             """
@@ -102,13 +104,11 @@ def gen_param_tuple(
             [needs.extra_options.schema]
             type = "string"
             """,
-            [],
             """
             .. feat:: feat wrong id
                :id: FEAT_01
                :asil: QM
             """,
-            [],
         ),
         gen_param_tuple(
             """
@@ -117,13 +117,14 @@ def gen_param_tuple(
             [needs.extra_options.schema]
             type = "integer"
             """,
-            [],
             """
             .. feat:: feat wrong id
                :id: FEAT_01
                :asil: QM
             """,
-            ["cannot coerce 'QM' to integer", "[sn_schema.option_type_error]"],
+            [],
+            ["cannot coerce 'QM' to integer"],
+            "sn_schema.option_type_error",
         ),
         gen_param_tuple(
             """
@@ -132,13 +133,14 @@ def gen_param_tuple(
             [needs.extra_options.schema]
             type = "boolean"
             """,
-            [],
             """
             .. feat:: feat wrong id
                :id: FEAT_01
                :asil: QM
             """,
-            ["cannot coerce 'QM' to boolean", "[sn_schema.option_type_error]"],
+            [],
+            ["cannot coerce 'QM' to boolean"],
+            "sn_schema.option_type_error",
         ),
         gen_param_tuple(
             """
@@ -147,13 +149,14 @@ def gen_param_tuple(
             [needs.extra_options.schema]
             type = "number"
             """,
-            [],
             """
             .. feat:: feat wrong id
                :id: FEAT_01
                :asil: QM
             """,
-            ["cannot coerce 'QM' to number", "[sn_schema.option_type_error]"],
+            [],
+            ["cannot coerce 'QM' to number"],
+            "sn_schema.option_type_error",
         ),
         gen_param_tuple(
             """
@@ -163,13 +166,11 @@ def gen_param_tuple(
             type = "string"
             enum = ["QM", "A", "B", "C", "D"]
             """,
-            [],
             """
             .. feat:: feat wrong id
                :id: FEAT_01
                :asil: QM
             """,
-            [],
         ),
         gen_param_tuple(
             """
@@ -179,17 +180,17 @@ def gen_param_tuple(
             type = "string"
             enum = ["QM", "A", "B", "C", "D"]
             """,
-            [],
             """
             .. feat:: feat wrong id
                :id: FEAT_01
                :asil: E
             """,
+            [],
             [
                 "properties > asil > enum",
                 "'E' is not one of ['QM', 'A', 'B', 'C', 'D']",
-                "[sn_schema.validation_fail]",
             ],
+            "sn_schema.validation_fail",
         ),
         gen_param_tuple(
             """
@@ -199,13 +200,11 @@ def gen_param_tuple(
             type = "string"
             format = "date"
             """,
-            [],
             """
             .. feat:: feat wrong id
                :id: FEAT_01
                :start_date: 2023-01-01
             """,
-            [],
         ),
         gen_param_tuple(
             """
@@ -215,32 +214,33 @@ def gen_param_tuple(
             type = "string"
             format = "date"
             """,
-            [],
             """
             .. feat:: feat wrong id
                :id: FEAT_01
                :start_date: not-a-date
             """,
+            [],
             [
                 "properties > start_date > format",
                 "'not-a-date' is not a 'date'",
-                "[sn_schema.validation_fail]",
             ],
+            "sn_schema.validation_fail",
         ),
     ],
 )
 def test_schema_validations(
     tmpdir: Path,
-    ubproject_schemas_rst: tuple[str, str, str],
+    ubproject_rst_schemas_warnings_type: tuple[str, str, str],
     make_app: Generator[Callable[[], SphinxTestApp]],
 ):
     """Test matching option type."""
     conf_py_path = tmpdir / "conf.py"
     conf_py_path.write_text(CONF_PY_BASE, encoding="utf-8")
 
-    ubproject_content, schemas_content, rst_content, expected_warnings = (
-        ubproject_schemas_rst
+    ubproject_content, rst_content, schemas_content, expected_warnings, warning_type = (
+        ubproject_rst_schemas_warnings_type
     )
+
     toml_path = tmpdir / "ubproject.toml"
     json_path = tmpdir / "schemas.json"
     rst_path = tmpdir / "index.rst"
@@ -265,6 +265,12 @@ def test_schema_validations(
         assert warnings_count == 1
     else:
         assert warnings_count == 0, f"Warnings found: {warnings}"
+
+    if warning_type and sphinx.version_info[0] >= 8:
+        # check if the warning type is correct
+        assert any(f"[{warning_type}]" in warning for warning in warnings), (
+            f"Expected warning type not found: {warning_type} ({warnings})"
+        )
 
 
 @pytest.mark.parametrize(
