@@ -11,6 +11,8 @@ import tomli_w
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
+from tests.schema.param_data import SCHEMA_VALIDATION_PARAMS
+
 CURR_DIR = Path(__file__).parent
 
 
@@ -59,6 +61,7 @@ needs_from_toml = "ubproject.toml"
 
 
 def gen_param_tuple(
+    test_name: str,
     ubproject: str,
     rst_content: str,
     schemas_json: Optional[list[dict]] = None,
@@ -75,6 +78,7 @@ def gen_param_tuple(
     schemas_json = schemas_json or []
     warnings = warnings or []
     return (
+        test_name,
         toml_content,
         dedent(rst_content),
         json.dumps(schemas_json),
@@ -84,162 +88,32 @@ def gen_param_tuple(
 
 
 @pytest.mark.parametrize(
-    "ubproject_rst_schemas_warnings_type",
+    "name_ubproject_rst_schemas_warnings_type",
     [
-        gen_param_tuple(
-            """
-            [[needs.extra_options]]
-            name = "asil"
-            """,
-            """
-            .. feat:: feat wrong id
-               :id: FEAT_01
-               :asil: QM
-            """,
-        ),
-        gen_param_tuple(
-            """
-            [[needs.extra_options]]
-            name = "asil"
-            [needs.extra_options.schema]
-            type = "string"
-            """,
-            """
-            .. feat:: feat wrong id
-               :id: FEAT_01
-               :asil: QM
-            """,
-        ),
-        gen_param_tuple(
-            """
-            [[needs.extra_options]]
-            name = "asil"
-            [needs.extra_options.schema]
-            type = "integer"
-            """,
-            """
-            .. feat:: feat wrong id
-               :id: FEAT_01
-               :asil: QM
-            """,
-            [],
-            ["cannot coerce 'QM' to integer"],
-            "sn_schema.option_type_error",
-        ),
-        gen_param_tuple(
-            """
-            [[needs.extra_options]]
-            name = "asil"
-            [needs.extra_options.schema]
-            type = "boolean"
-            """,
-            """
-            .. feat:: feat wrong id
-               :id: FEAT_01
-               :asil: QM
-            """,
-            [],
-            ["cannot coerce 'QM' to boolean"],
-            "sn_schema.option_type_error",
-        ),
-        gen_param_tuple(
-            """
-            [[needs.extra_options]]
-            name = "asil"
-            [needs.extra_options.schema]
-            type = "number"
-            """,
-            """
-            .. feat:: feat wrong id
-               :id: FEAT_01
-               :asil: QM
-            """,
-            [],
-            ["cannot coerce 'QM' to number"],
-            "sn_schema.option_type_error",
-        ),
-        gen_param_tuple(
-            """
-            [[needs.extra_options]]
-            name = "asil"
-            [needs.extra_options.schema]
-            type = "string"
-            enum = ["QM", "A", "B", "C", "D"]
-            """,
-            """
-            .. feat:: feat wrong id
-               :id: FEAT_01
-               :asil: QM
-            """,
-        ),
-        gen_param_tuple(
-            """
-            [[needs.extra_options]]
-            name = "asil"
-            [needs.extra_options.schema]
-            type = "string"
-            enum = ["QM", "A", "B", "C", "D"]
-            """,
-            """
-            .. feat:: feat wrong id
-               :id: FEAT_01
-               :asil: E
-            """,
-            [],
-            [
-                "properties > asil > enum",
-                "'E' is not one of ['QM', 'A', 'B', 'C', 'D']",
-            ],
-            "sn_schema.validation_fail",
-        ),
-        gen_param_tuple(
-            """
-            [[needs.extra_options]]
-            name = "start_date"
-            [needs.extra_options.schema]
-            type = "string"
-            format = "date"
-            """,
-            """
-            .. feat:: feat wrong id
-               :id: FEAT_01
-               :start_date: 2023-01-01
-            """,
-        ),
-        gen_param_tuple(
-            """
-            [[needs.extra_options]]
-            name = "start_date"
-            [needs.extra_options.schema]
-            type = "string"
-            format = "date"
-            """,
-            """
-            .. feat:: feat wrong id
-               :id: FEAT_01
-               :start_date: not-a-date
-            """,
-            [],
-            [
-                "properties > start_date > format",
-                "'not-a-date' is not a 'date'",
-            ],
-            "sn_schema.validation_fail",
-        ),
+        *[
+            gen_param_tuple(name, *params)
+            for name, params in SCHEMA_VALIDATION_PARAMS.items()
+        ],
     ],
+    ids=lambda params: params[0],
 )
 def test_schema_validations(
     tmpdir: Path,
-    ubproject_rst_schemas_warnings_type: tuple[str, str, str],
+    name_ubproject_rst_schemas_warnings_type: tuple[str, str, str],
     make_app: Generator[Callable[[], SphinxTestApp]],
 ):
     """Test matching option type."""
     conf_py_path = tmpdir / "conf.py"
     conf_py_path.write_text(CONF_PY_BASE, encoding="utf-8")
 
-    ubproject_content, rst_content, schemas_content, expected_warnings, warning_type = (
-        ubproject_rst_schemas_warnings_type
-    )
+    (
+        _,
+        ubproject_content,
+        rst_content,
+        schemas_content,
+        expected_warnings,
+        warning_type,
+    ) = name_ubproject_rst_schemas_warnings_type
 
     toml_path = tmpdir / "ubproject.toml"
     json_path = tmpdir / "schemas.json"
@@ -258,6 +132,9 @@ def test_schema_validations(
         assert any(expected_warning in warning for warning in warnings), (
             f"Expected warning not found: '{expected_warning}' ({warnings})"
         )
+
+    errors_count = len([item for item in warnings if "ERROR: " in item])
+    assert errors_count == 0, f"Errors found: {errors_count} ({warnings})"
 
     warnings_count = len([item for item in warnings if item.startswith("WARNING:")])
     if expected_warnings:
