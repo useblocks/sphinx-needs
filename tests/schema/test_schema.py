@@ -2,7 +2,7 @@ import json
 from collections.abc import Generator
 from pathlib import Path
 from textwrap import dedent
-from typing import Callable
+from typing import Callable, Optional
 
 import pytest
 import sphinx
@@ -61,10 +61,10 @@ needs_from_toml = "ubproject.toml"
 def gen_param_tuple(
     ubproject: str,
     rst_content: str,
-    schemas_json: list[dict] | None = None,
-    warnings: list[str] | None = None,
-    warning_type: str | None = None,
-) -> tuple[str, str, str, list[str], str | None]:
+    schemas_json: Optional[list[dict]] = None,
+    warnings: Optional[list[str]] = None,
+    warning_type: Optional[str] = None,
+) -> tuple[str, str, str, list[str], Optional[str]]:
     """Generate dedented strings for ubproject, schemas, and rst content."""
     ubproject_base_obj = tomli.loads(UBPROJECT_BASE)
     ubproject_obj = tomli.loads(ubproject)
