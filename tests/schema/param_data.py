@@ -26,6 +26,63 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """
         .. feat:: title
            :id: FEAT_01
+           :asil: QM
+        """,
+        [
+            {"local_schema": {"required": ["asil"]}},
+        ],
+    ],
+    "extra_option_conditionlly_required_valid": [
+        """
+        [[needs.extra_options]]
+        name = "asil"
+        [[needs.extra_options]]
+        name = "efforts"
+        """,
+        """
+        .. feat:: title
+           :id: FEAT_01
+        """,
+        [
+            {
+                "trigger_schema": {
+                    "properties": {"efforts": {"minimum": 15}},
+                    "required": ["efforts"],
+                },
+                "local_schema": {"required": ["asil"]},
+            },
+        ],
+    ],
+    "extra_option_conditionlly_required_invalid": [
+        """
+        [[needs.extra_options]]
+        name = "asil"
+        [[needs.extra_options]]
+        name = "efforts"
+        """,
+        """
+        .. feat:: title
+           :id: FEAT_01
+           :efforts: 14
+        """,
+        [
+            {
+                "trigger_schema": {
+                    "properties": {"efforts": {"minimum": 15}},
+                    "required": ["efforts"],
+                },
+                "local_schema": {"required": ["asil"]},
+            },
+        ],
+    ],
+    "extra_option_required_invalid": [
+        """
+        [[needs.extra_options]]
+        name = "asil"
+        """,
+        """
+        .. feat:: title
+           :id: FEAT_01
         """,
         [
             {"local_schema": {"required": ["asil"]}},
