@@ -383,7 +383,7 @@ def calc_sum(
     for check_need in check_needs:
         if filter:
             try:
-                if not filter_single_need(check_need, needs_config, filter):
+                if not filter_single_need(check_need, needs_config, filter, needs = needs.values()):
                     continue
             except ValueError:
                 pass
