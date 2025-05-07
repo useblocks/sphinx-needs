@@ -277,6 +277,19 @@ SCHEMA_CONFIG_ERROR_PARAMS: dict[
         """
         [[needs.extra_options]]
         name = "asil"
+        [needs.extra_options.schema]
+        format = "date"
+        """,
+        """
+        .. feat:: title
+           :id: FEAT_01
+           :asil: QM
+        """,
+        [],
+        ["Missing types in schema definition for extra_options: asil"],
+    ],
+    "extra_option_missing_type_trigger_schema": [
+        """
         [[needs.extra_options]]
         name = "efforts"
         """,
@@ -288,7 +301,25 @@ SCHEMA_CONFIG_ERROR_PARAMS: dict[
         [
             {
                 "trigger_schema": {"properties": {"efforts": {"minimum": 15}}},
-                "local_schema": {"required": ["asil"]},
+            },
+        ],
+        [
+            "Schemas entry [0] is referencing extra option 'efforts' without a type specification"
+        ],
+    ],
+    "extra_option_missing_type_local_schema": [
+        """
+        [[needs.extra_options]]
+        name = "efforts"
+        """,
+        """
+        .. feat:: title
+           :id: FEAT_01
+           :efforts: 14
+        """,
+        [
+            {
+                "local_schema": {"properties": {"efforts": {"minimum": 15}}},
             },
         ],
         [

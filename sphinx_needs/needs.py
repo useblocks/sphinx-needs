@@ -788,7 +788,8 @@ def check_configuration(app: Sphinx, config: Config) -> None:
 def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
     """Validates schemas for extra_options, extra_links, and schemas in needs_config."""
     # validate all given schemas against the meta schema for extra options
-    extra_options_missing_types = set()
+    extra_options_w_schema_missing_type = set()
+    extra_options_wo_schema_missing_type = set()
     for option, value in needs_config.extra_options.items():
         if value.schema is not None:
             try:
@@ -806,9 +807,9 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
                     f"Allowed types are: {allowed_types}"
                 )
             if type_ is None:
-                extra_options_missing_types.add(option)
+                extra_options_w_schema_missing_type.add(option)
         else:
-            extra_options_missing_types.add(option)
+            extra_options_wo_schema_missing_type.add(option)
 
     # validate schemas for extra links
     for extra_link in needs_config.extra_links:
@@ -822,6 +823,9 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
                 ) from exc
 
     # validate each schema entry in needs_config.schemas
+    extra_options_missing_type = (
+        extra_options_w_schema_missing_type | extra_options_wo_schema_missing_type
+    )
     for idx, schema in enumerate(needs_config.schemas):
         schema_id = schema.get("id")
         schema_name = f"{schema_id}[{idx}]" if schema_id else f"[{idx}]"
@@ -842,12 +846,17 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
                 properties = schema[user_schema]["properties"].keys()
                 for prop in properties:
                     if (
-                        prop in extra_options_missing_types
+                        prop in extra_options_missing_type
                         and "type" not in schema[user_schema]["properties"][prop]
                     ):
                         raise NeedsConfigException(
                             f"Schemas entry {schema_name} is referencing extra option '{prop}' without a type specification"
                         )
+    if extra_options_w_schema_missing_type:
+        missing = ", ".join(sorted(extra_options_w_schema_missing_type))
+        raise NeedsConfigException(
+            f"Missing types in schema definition for extra_options: {missing}"
+        )
 
 
 def _gather_field_defaults(
