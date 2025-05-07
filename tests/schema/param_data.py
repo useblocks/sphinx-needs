@@ -326,4 +326,53 @@ SCHEMA_CONFIG_ERROR_PARAMS: dict[
             "Schemas entry [0] is referencing extra option 'efforts' without a type specification"
         ],
     ],
+    "extra_option_broken_schema": [
+        """
+        [[needs.extra_options]]
+        name = "efforts"
+        [needs.extra_options.schema]
+        type = "unknown_type"
+        """,
+        """
+        .. feat:: title
+           :id: FEAT_01
+           :efforts: 14
+        """,
+        [],
+        ["'unknown_type' is not valid under any of the given schemas"],
+    ],
+    "extra_option_broken_trigger_schema": [
+        """
+        [[needs.extra_options]]
+        name = "efforts"
+        """,
+        """
+        .. feat:: title
+           :id: FEAT_01
+           :efforts: 14
+        """,
+        [
+            {
+                "trigger_schema": {"properties": {"efforts": {"type": "unknown_type"}}},
+            },
+        ],
+        ["'unknown_type' is not valid under any of the given schemas"],
+    ],
+    "extra_option_broken_local_schema": [
+        """
+        [[needs.extra_options]]
+        name = "efforts"
+        """,
+        """
+        .. feat:: title
+           :id: FEAT_01
+           :efforts: 14
+        """,
+        [
+            {
+                "local_schema": {"properties": {"efforts": {"type": "unknown_type"}}},
+            },
+        ],
+        ["'unknown_type' is not valid under any of the given schemas"],
+    ],
 }

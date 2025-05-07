@@ -829,12 +829,6 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
     for idx, schema in enumerate(needs_config.schemas):
         schema_id = schema.get("id")
         schema_name = f"{schema_id}[{idx}]" if schema_id else f"[{idx}]"
-        try:
-            Draft202012Validator.check_schema(schema)
-        except SchemaError as exc:
-            raise NeedsConfigException(
-                f"Schemas entry {schema_name} is not valid: {exc}"
-            ) from exc
 
         # Gather all used extra options in trigger_schema and local_schema properties
         user_schemas: list[Literal["trigger_schema", "local_schema"]] = [
@@ -842,7 +836,19 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
             "local_schema",
         ]
         for user_schema in user_schemas:
-            if user_schema in schema and "properties" in schema[user_schema]:
+            if user_schema not in schema:
+                continue
+            schema_in_object = {
+                "type": "object",
+                **schema[user_schema],
+            }
+            try:
+                Draft202012Validator.check_schema(schema_in_object)
+            except SchemaError as exc:
+                raise NeedsConfigException(
+                    f"Schemas entry {schema_name} is not valid: {exc}"
+                ) from exc
+            if "properties" in schema[user_schema]:
                 properties = schema[user_schema]["properties"].keys()
                 for prop in properties:
                     if (
