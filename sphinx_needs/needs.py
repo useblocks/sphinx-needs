@@ -782,7 +782,13 @@ def check_configuration(app: Sphinx, config: Config) -> None:
 
     _gather_field_defaults(needs_config, set(link_types))
 
-    # validate all given schemas against the meta schema
+    validate_schemas_config(needs_config)
+
+
+def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
+    """Validates schemas for extra_options, extra_links, and schemas in needs_config."""
+    # validate all given schemas against the meta schema for extra options
+    extra_options_missing_types = set()
     for option, value in needs_config.extra_options.items():
         if value.schema is not None:
             try:
@@ -791,34 +797,57 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 raise NeedsConfigException(
                     f"Schema for extra option {option} is not valid: {exc}"
                 ) from exc
-            allowed_types = {
-                "string",
-                "integer",
-                "number",
-                "boolean",
-            }
+            # TODO consider array in future also for extra options
+            allowed_types = {"string", "integer", "number", "boolean"}
             type_ = value.schema.get("type")
             if type_ is not None and type_ not in allowed_types:
                 raise NeedsConfigException(
                     f"Schema for extra option {option} has invalid type: {type_}. "
                     f"Allowed types are: {allowed_types}"
                 )
+            if type_ is None:
+                extra_options_missing_types.add(option)
+        else:
+            extra_options_missing_types.add(option)
 
+    # validate schemas for extra links
     for extra_link in needs_config.extra_links:
-        if extra_link.get("schema") is not None:
+        extra_link_schema = extra_link.get("schema")
+        if extra_link_schema is not None:
             try:
-                Draft202012Validator.check_schema(extra_link["schema"])
+                Draft202012Validator.check_schema(extra_link_schema)
             except SchemaError as exc:
                 raise NeedsConfigException(
                     f"Schema for extra link {extra_link['option']} is not valid: {exc}"
                 ) from exc
+
+    # validate each schema entry in needs_config.schemas
     for idx, schema in enumerate(needs_config.schemas):
+        schema_id = schema.get("id")
+        schema_name = f"{schema_id}[{idx}]" if schema_id else f"[{idx}]"
         try:
             Draft202012Validator.check_schema(schema)
         except SchemaError as exc:
             raise NeedsConfigException(
-                f"Schemas entry index [{idx}] is not valid: {exc}"
+                f"Schemas entry {schema_name} is not valid: {exc}"
             ) from exc
+
+        # Gather all used extra options in trigger_schema and local_schema properties
+        user_schemas: list[Literal["trigger_schema", "local_schema"]] = [
+            "trigger_schema",
+            "local_schema",
+        ]
+        for user_schema in user_schemas:
+            if user_schema in schema and "properties" in schema[user_schema]:
+                properties = schema[user_schema]["properties"].keys()
+                for prop in properties:
+                    if (
+                        prop in extra_options_missing_types
+                        and "type" not in schema[user_schema]["properties"][prop]
+                    ):
+                        raise NeedsConfigException(
+                            f"Schemas entry {schema_name} is referencing extra option '{prop}' without a type specification"
+                        )
 
 
 def _gather_field_defaults(

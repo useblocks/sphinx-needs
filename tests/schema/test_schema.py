@@ -11,7 +11,8 @@ import tomli_w
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
-from tests.schema.param_data import SCHEMA_VALIDATION_PARAMS
+from sphinx_needs.needs import NeedsConfigException
+from tests.schema.param_data import SCHEMA_CONFIG_ERROR_PARAMS, SCHEMA_VALIDATION_PARAMS
 
 CURR_DIR = Path(__file__).parent
 
@@ -40,35 +41,20 @@ title = "Specification"
 prefix = "SPEC_"
 """
 
-schemas_json = """
-[
-  {
-    "severity": "warning",
-    "message": "id must be uppercase",
-    "local_schema": {
-      "properties": {
-        "id": { "pattern": "^[A-Z0-9_]+$" }
-      }
-    }
-  }
-]
-"""
-
 CONF_PY_BASE = """
 extensions = ["sphinx_needs"]
 needs_from_toml = "ubproject.toml"
 """
 
 
-def gen_param_tuple(
+def gen_param_tuple_without_type(
     test_name: str,
     ubproject: str,
     rst_content: str,
     schemas_json: Optional[list[dict]] = None,
     warnings: Optional[list[str]] = None,
-    warning_type: Optional[str] = None,
 ) -> tuple[str, str, str, list[str], Optional[str]]:
-    """Generate dedented strings for ubproject, schemas, and rst content."""
+    """Prepare test case parametrisation tuple without warning type."""
     ubproject_base_obj = tomli.loads(UBPROJECT_BASE)
     ubproject_obj = tomli.loads(ubproject)
     # merge dictionaries on root needs level, so we can override
@@ -83,6 +69,22 @@ def gen_param_tuple(
         dedent(rst_content),
         json.dumps(schemas_json),
         warnings,
+    )
+
+
+def gen_param_tuple_with_type(
+    test_name: str,
+    ubproject: str,
+    rst_content: str,
+    schemas_json: Optional[list[dict]] = None,
+    warnings: Optional[list[str]] = None,
+    warning_type: Optional[str] = None,
+) -> tuple[str, str, str, list[str], Optional[str]]:
+    """Prepare test case parametrisation tuple with warning type."""
+    return (
+        *gen_param_tuple_without_type(
+            test_name, ubproject, rst_content, schemas_json, warnings
+        ),
         warning_type,
     )
 
@@ -91,7 +93,7 @@ def gen_param_tuple(
     "name_ubproject_rst_schemas_warnings_type",
     [
         *[
-            gen_param_tuple(name, *params)
+            gen_param_tuple_with_type(name, *params)
             for name, params in SCHEMA_VALIDATION_PARAMS.items()
         ],
     ],
@@ -147,6 +149,52 @@ def test_schema_validations(
         # check if the warning type is correct
         assert any(f"[{warning_type}]" in warning for warning in warnings), (
             f"Expected warning type not found: {warning_type} ({warnings})"
+        )
+
+
+@pytest.mark.parametrize(
+    "name_ubproject_rst_schemas_warnings",
+    [
+        *[
+            gen_param_tuple_without_type(name, *params)
+            for name, params in SCHEMA_CONFIG_ERROR_PARAMS.items()
+        ],
+    ],
+    ids=lambda params: params[0],
+)
+def test_schema_config_errors(
+    tmpdir: Path,
+    name_ubproject_rst_schemas_warnings: tuple[str, str, str],
+    make_app: Generator[Callable[[], SphinxTestApp]],
+):
+    """Test matching option type."""
+    conf_py_path = tmpdir / "conf.py"
+    conf_py_path.write_text(CONF_PY_BASE, encoding="utf-8")
+
+    (
+        _,
+        ubproject_content,
+        rst_content,
+        schemas_content,
+        expected_warnings,
+    ) = name_ubproject_rst_schemas_warnings
+
+    toml_path = tmpdir / "ubproject.toml"
+    json_path = tmpdir / "schemas.json"
+    rst_path = tmpdir / "index.rst"
+
+    toml_path.write_text(ubproject_content, encoding="utf-8")
+    json_path.write_text(schemas_content, encoding="utf-8")
+    rst_path.write_text(rst_content, encoding="utf-8")
+
+    with pytest.raises(NeedsConfigException) as excinfo:
+        make_app(srcdir=Path(tmpdir), freshenv=True)
+    assert expected_warnings, (
+        "NeedsConfigException exception was raised, expected_warnings should not be empty"
+    )
+    for expected_warning in expected_warnings:
+        assert expected_warning in str(excinfo.value), (
+            f"Expected warning '{expected_warning}' not found in exception message: {excinfo.value}"
         )
 
 

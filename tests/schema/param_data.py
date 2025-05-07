@@ -32,12 +32,14 @@ SCHEMA_VALIDATION_PARAMS: dict[
             {"local_schema": {"required": ["asil"]}},
         ],
     ],
-    "extra_option_conditionlly_required_valid": [
+    "extra_option_cond_required_dep_missing_valid": [
         """
         [[needs.extra_options]]
         name = "asil"
         [[needs.extra_options]]
         name = "efforts"
+        [needs.extra_options.schema]
+        type = "integer"
         """,
         """
         .. feat:: title
@@ -53,12 +55,17 @@ SCHEMA_VALIDATION_PARAMS: dict[
             },
         ],
     ],
-    "extra_option_conditionlly_required_invalid": [
+    "extra_option_cond_required_dep_min_valid": [
         """
+        [needs]
+        schemas_debug_active = true
+        schemas_debug_ignore = []
         [[needs.extra_options]]
         name = "asil"
         [[needs.extra_options]]
         name = "efforts"
+        [needs.extra_options.schema]
+        type = "integer"
         """,
         """
         .. feat:: title
@@ -67,13 +74,33 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         [
             {
-                "trigger_schema": {
-                    "properties": {"efforts": {"minimum": 15}},
-                    "required": ["efforts"],
-                },
+                "trigger_schema": {"properties": {"efforts": {"minimum": 15}}},
                 "local_schema": {"required": ["asil"]},
             },
         ],
+    ],
+    "extra_option_cond_required_dep_min_invalid": [
+        """
+        [[needs.extra_options]]
+        name = "asil"
+        [[needs.extra_options]]
+        name = "efforts"
+        [needs.extra_options.schema]
+        type = "integer"
+        """,
+        """
+        .. feat:: title
+           :id: FEAT_01
+           :efforts: 16
+        """,
+        [
+            {
+                "trigger_schema": {"properties": {"efforts": {"minimum": 15}}},
+                "local_schema": {"required": ["asil"]},
+            },
+        ],
+        ["'asil' is a required property"],
+        "sn_schema.validation_fail",
     ],
     "extra_option_required_invalid": [
         """
@@ -238,5 +265,34 @@ SCHEMA_VALIDATION_PARAMS: dict[
             "'not-a-date' is not a 'date'",
         ],
         "sn_schema.validation_fail",
+    ],
+}
+
+# structure:
+# test_name, ubproject, rst_content, schemas_json, warnings
+SCHEMA_CONFIG_ERROR_PARAMS: dict[
+    str, list[str, str, str, Optional[list[dict]], str]
+] = {
+    "extra_option_missing_type": [
+        """
+        [[needs.extra_options]]
+        name = "asil"
+        [[needs.extra_options]]
+        name = "efforts"
+        """,
+        """
+        .. feat:: title
+           :id: FEAT_01
+           :efforts: 14
+        """,
+        [
+            {
+                "trigger_schema": {"properties": {"efforts": {"minimum": 15}}},
+                "local_schema": {"required": ["asil"]},
+            },
+        ],
+        [
+            "Schemas entry [0] is referencing extra option 'efforts' without a type specification"
+        ],
     ],
 }
