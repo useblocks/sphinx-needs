@@ -2,6 +2,42 @@
 
 from typing import Optional
 
+_bool_valid_base = [
+    """
+    [[needs.extra_options]]
+    name = "accepted"
+    [needs.extra_options.schema]
+    type = "boolean"
+    """,
+    """
+    .. feat:: title
+        :id: FEAT_1
+        :accepted: {value}
+    """,
+]
+_bool_valid_params = {
+    f"extra_option_type_boolean_{value}_valid": [
+        _bool_valid_base[0],
+        _bool_valid_base[1].format(value=value),
+    ]
+    for value in [
+        "true",
+        "True",
+        "false",
+        "False",
+        "y",
+        "Y",
+        "n",
+        "N",
+        "1",
+        "0",
+        "on",
+        "On",
+        "off",
+        "Off",
+    ]
+}
+
 # structure:
 # test_name, ubproject, rst_content, schemas_json, warnings, warning_type
 SCHEMA_VALIDATION_PARAMS: dict[
@@ -181,6 +217,20 @@ SCHEMA_VALIDATION_PARAMS: dict[
         [],
         ["cannot coerce 'QM' to boolean"],
         "sn_schema.option_type_error",
+    ],
+    **_bool_valid_params,
+    "extra_option_type_boolean_True_valid": [
+        """
+        [[needs.extra_options]]
+        name = "accepted"
+        [needs.extra_options.schema]
+        type = "boolean"
+        """,
+        """
+        .. feat:: title
+            :id: FEAT_1
+            :accepted: True
+        """,
     ],
     "extra_option_type_number_invalid": [
         """
