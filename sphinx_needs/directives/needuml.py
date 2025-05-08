@@ -4,7 +4,8 @@ import html
 import os
 import time
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, TypedDict
+from pathlib import PurePosixPath
+from typing import TYPE_CHECKING, Any, Callable, TypedDict
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -40,6 +41,17 @@ class Needuml(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = {
+    "align": directives.unchanged_required,
+    "scale": directives.unchanged_required,
+    "debug": directives.flag,
+    "config": directives.unchanged_required,
+    "extra": directives.unchanged_required,
+    "key": directives.unchanged_required,
+    "save": directives.unchanged_required,
+}
+
+
 class NeedumlDirective(SphinxDirective):
     """
     Directive to get flow charts.
@@ -48,15 +60,13 @@ class NeedumlDirective(SphinxDirective):
     has_content = True
     optional_arguments = 1
     final_argument_whitespace = True
-    option_spec = {
-        "align": directives.unchanged_required,
-        "scale": directives.unchanged_required,
-        "debug": directives.flag,
-        "config": directives.unchanged_required,
-        "extra": directives.unchanged_required,
-        "key": directives.unchanged_required,
-        "save": directives.unchanged_required,
-    }
+
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
@@ -107,9 +117,9 @@ class NeedumlDirective(SphinxDirective):
         save_path = self.options.get("save")
         plantuml_code_out_path = None
         if save_path:
-            if os.path.isabs(save_path):
+            if PurePosixPath(save_path).is_absolute():
                 raise NeedumlException(
-                    f"Given save path: {save_path}, is not a relative path."
+                    f"Given save path: {save_path}, is not a relative posix path."
                 )
             else:
                 plantuml_code_out_path = save_path

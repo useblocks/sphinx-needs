@@ -4,6 +4,7 @@ import json
 import os
 import re
 from collections.abc import Sequence
+from typing import Any, Callable
 from urllib.parse import urlparse
 
 import requests
@@ -27,28 +28,36 @@ class Needimport(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = {
+    "version": directives.unchanged_required,
+    "hide": directives.flag,
+    "collapse": string_to_boolean,
+    "ids": directives.unchanged_required,
+    "filter": directives.unchanged_required,
+    "id_prefix": directives.unchanged_required,
+    "tags": directives.unchanged_required,
+    "style": directives.unchanged_required,
+    "layout": directives.unchanged_required,
+    "template": directives.unchanged_required,
+    "pre_template": directives.unchanged_required,
+    "post_template": directives.unchanged_required,
+}
+
+
 class NeedimportDirective(SphinxDirective):
     has_content = False
 
     required_arguments = 1
     optional_arguments = 0
 
-    option_spec = {
-        "version": directives.unchanged_required,
-        "hide": directives.flag,
-        "collapse": string_to_boolean,
-        "ids": directives.unchanged_required,
-        "filter": directives.unchanged_required,
-        "id_prefix": directives.unchanged_required,
-        "tags": directives.unchanged_required,
-        "style": directives.unchanged_required,
-        "layout": directives.unchanged_required,
-        "template": directives.unchanged_required,
-        "pre_template": directives.unchanged_required,
-        "post_template": directives.unchanged_required,
-    }
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
 
     final_argument_whitespace = True
+
+    @classmethod
+    def reset(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT
 
     @measure_time("needimport")
     def run(self) -> Sequence[nodes.Node]:
@@ -81,34 +90,9 @@ class NeedimportDirective(SphinxDirective):
         else:
             logger.info(f"Importing needs from {need_import_path}")
 
-            if not os.path.isabs(need_import_path):
-                # Relative path should start from current rst file directory
-                curr_dir = os.path.dirname(self.docname)
-                new_need_import_path = os.path.join(
-                    self.env.app.srcdir, curr_dir, need_import_path
-                )
-
-                correct_need_import_path = new_need_import_path
-                if not os.path.exists(new_need_import_path):
-                    # Check the old way that calculates relative path starting from conf.py directory
-                    old_need_import_path = os.path.join(
-                        self.env.app.srcdir, need_import_path
-                    )
-                    if os.path.exists(old_need_import_path):
-                        correct_need_import_path = old_need_import_path
-                        log_warning(
-                            logger,
-                            "Deprecation warning: Relative path must be relative to the current document in future, "
-                            "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
-                            "relative to conf.py.",
-                            "deprecated",
-                            location=(self.env.docname, self.lineno),
-                        )
-            else:
-                # Absolute path starts with /, based on the source directory. The / need to be striped
-                correct_need_import_path = os.path.join(
-                    self.env.app.srcdir, need_import_path[1:]
-                )
+            correct_need_import_path = self.env.relfn2path(
+                need_import_path, self.env.docname
+            )[1]
 
             if not os.path.exists(correct_need_import_path):
                 raise ReferenceError(

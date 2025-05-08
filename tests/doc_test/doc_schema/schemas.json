@@ -1,0 +1,100 @@
+[
+  {
+    "severity": "warning",
+    "message": "id must be uppercase",
+    "local_schema": {
+      "properties": {
+        "id": { "pattern": "^[A-Z0-9_]+$" }
+      }
+    }
+  },
+  {
+    "id": "req",
+    "types": ["req"],
+    "trigger_schema": {},
+    "local_schema": {
+      "properties": {
+        "id": { "pattern": "^REQ[a-zA-Z0-9_-]*$" },
+        "efforts": { "minimum": 0 }
+      },
+      "unevaluatedProperties": true
+    }
+  },
+  {
+    "id": "req-approved",
+    "severity": "info",
+    "message": "Approval required due to high efforts",
+    "types": ["req"],
+    "trigger_schema": {
+      "properties": {
+        "efforts": { "minimum": 15 }
+      }
+    },
+    "local_schema": {
+      "properties": {
+        "approved": { "enum": [true] }
+      },
+      "required": ["approved"]
+    }
+  },
+  {
+    "id": "safe-req",
+    "types": ["req"],
+    "trigger_schema": {},
+    "local_schema": {
+      "properties": {
+        "asil": { "enum": ["A", "B", "C", "D"] }
+      },
+      "required": ["asil"]
+    },
+    "dependency": true
+  },
+  {
+    "id": "safe-need",
+    "types": [],
+    "trigger_schema": {},
+    "local_schema": {
+      "properties": {
+        "asil": { "enum": ["A", "B", "C", "D"] }
+      },
+      "required": ["asil"]
+    },
+    "dependency": true
+  },
+  {
+    "id": "safe-feat",
+    "types": ["feat"],
+    "trigger_schema": {},
+    "local_schema": {
+      "properties": { "asil": { "enum": ["A", "B", "C", "D"] } },
+      "required": ["asil"]
+    },
+    "dependency": true
+  },
+  {
+    "id": "safe-req--links--safe-feat",
+    "types": ["req"],
+    "trigger_schema_id": "safe-req",
+    "link_schema": {
+      "links": {
+        "schema_id": "safe-feat",
+        "minItems": 1,
+        "maxItems": 4,
+        "unevaluatedItems": false
+      }
+    }
+  },
+  {
+    "id": "safe-spec--links--safe-req--links--safe-feat",
+    "message": "Safe spec links to safe req to safe feat",
+    "types": ["spec"],
+    "trigger_schema_id": "safe-need",
+    "link_schema": {
+      "links": {
+        "schema_id": "safe-req--links--safe-feat",
+        "minItems": 1,
+        "unevaluatedItems": false
+      }
+    }
+  }
+]
