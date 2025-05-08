@@ -485,7 +485,57 @@ def validate_need(
                             validation_msg=msg,
                             field=link_type,
                         )
-
+                else:
+                    # link schema without schema_id, just count links
+                    cnt_matching = len(need[link_type])
+                    if (
+                        "minItems" in link_schema
+                        and cnt_matching < link_schema["minItems"]
+                    ):
+                        msg = (
+                            f"Need '{need['id']}' has too few links of type"
+                            f" '{link_type}' ({cnt_matching} <"
+                            f" {link_schema['minItems']})"
+                        )
+                        report_message(
+                            config=config,
+                            warnings=warnings,
+                            need=need,
+                            schema=dict(type_schema),
+                            rule=MessageRuleEnum.too_few_links,
+                            need_path=[*need_path, link_type],
+                            schema_path=[
+                                *schema_path_new,
+                                "link_schema",
+                                link_type,
+                            ],
+                            validation_msg=msg,
+                            field=link_type,
+                        )
+                    if (
+                        "maxItems" in link_schema
+                        and cnt_matching > link_schema["maxItems"]
+                    ):
+                        msg = (
+                            f"Need '{need['id']}' has too many links of type"
+                            f" '{link_type}' ({cnt_matching} >"
+                            f" {link_schema['maxItems']})"
+                        )
+                        report_message(
+                            config=config,
+                            warnings=warnings,
+                            need=need,
+                            schema=dict(type_schema),
+                            rule=MessageRuleEnum.too_many_links,
+                            need_path=[*need_path, link_type],
+                            schema_path=[
+                                *schema_path_new,
+                                "link_schema",
+                                link_type,
+                            ],
+                            validation_msg=msg,
+                            field=link_type,
+                        )
         if type_schema.get("local_schema"):
             picked_schema_idxs.append(idx)
             all_of.append({**type_schema["local_schema"]})

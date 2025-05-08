@@ -278,13 +278,84 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         [
             {
+                "types": ["impl"],
+                "link_schema": {
+                    "links": {
+                        "minItems": 1,
+                    }
+                },
+            }
+        ],
+    ],
+    "link_option_min_invalid": [
+        "",
+        """
+        .. spec:: title
+            :id: SPEC_1
+
+        .. impl:: title
+            :id: IMPL_1
+            :links: SPEC_1
+        """,
+        [
+            {
+                "types": ["impl"],
                 "link_schema": {
                     "links": {
                         "minItems": 2,
                     }
-                }
+                },
             }
         ],
+        ["Need 'IMPL_1' has too few links of type 'links' (1 < 2)"],
+        "sn_schema.too_few_links",
+    ],
+    "link_option_max_valid": [
+        "",
+        """
+        .. spec:: title
+            :id: SPEC_1
+
+        .. impl:: title
+            :id: IMPL_1
+            :links: SPEC_1
+        """,
+        [
+            {
+                "types": ["impl"],
+                "link_schema": {
+                    "links": {
+                        "maxItems": 1,
+                    }
+                },
+            }
+        ],
+    ],
+    "link_option_max_invalid": [
+        "",
+        """
+        .. spec:: title
+            :id: SPEC_1
+
+        .. spec:: title
+            :id: SPEC_2
+            
+        .. impl:: title
+            :id: IMPL_1
+            :links: SPEC_1, SPEC_2
+        """,
+        [
+            {
+                "types": ["impl"],
+                "link_schema": {
+                    "links": {
+                        "maxItems": 1,
+                    }
+                },
+            }
+        ],
+        ["Need 'IMPL_1' has too many links of type 'links' (2 > 1)"],
+        "sn_schema.too_many_links",
     ],
 }
 
