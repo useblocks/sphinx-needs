@@ -31,15 +31,16 @@ title = "Feat"
 prefix = "Feat_"
 
 [[needs.types]]
-directive = "req"
-title = "Requirement"
-prefix = "REQ_"
-
-[[needs.types]]
 directive = "spec"
 title = "Specification"
 prefix = "SPEC_"
+
+[[needs.types]]
+directive = "impl"
+title = "Implementation"
+prefix = "IMPL_"
 """
+"""Need types config with linking impl->spec->feat."""
 
 CONF_PY_BASE = """
 extensions = ["sphinx_needs"]
@@ -59,7 +60,8 @@ def gen_param_tuple_without_type(
     ubproject_obj = tomli.loads(ubproject)
     # merge dictionaries on root needs level, so we can override
     # the base needs config
-    ubproject_base_obj["needs"].update(ubproject_obj["needs"])
+    if ubproject_obj:
+        ubproject_base_obj["needs"].update(ubproject_obj["needs"])
     toml_content = tomli_w.dumps(ubproject_base_obj)
     schemas_json = schemas_json or []
     warnings = warnings or []

@@ -42,8 +42,6 @@ class MessageRuleEnum(str, Enum):
 
     cfg_disallowed_keys = "cfg_disallowed_keys"
     """Schema has one of the keys listed in DISALLOWED_SCHEMA_KEYS."""
-    cfg_link_type_missing = "cfg_link_type_missing"
-    """A schema link type cannot be found in the need."""
     cfg_schema_error = "cfg_schema_error"
     """The user provided schema is invalid."""
     cfg_schema_ref_missing = "cfg_schema_ref_missing"
@@ -102,7 +100,6 @@ USER_CONFIG_SCHEMA_SEVERITIES = [
 ]
 MAP_RULE_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
     MessageRuleEnum.cfg_disallowed_keys: SeverityEnum.config_error,
-    MessageRuleEnum.cfg_link_type_missing: SeverityEnum.config_error,
     MessageRuleEnum.cfg_schema_error: SeverityEnum.config_error,
     MessageRuleEnum.cfg_schema_ref_missing: SeverityEnum.config_error,
     MessageRuleEnum.option_type_error: SeverityEnum.violation,

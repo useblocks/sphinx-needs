@@ -14,7 +14,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-            :id: FEAT_01
+            :id: FEAT_1
             :asil: QM
         """,
     ],
@@ -25,7 +25,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-           :id: FEAT_01
+           :id: FEAT_1
            :asil: QM
         """,
         [
@@ -43,7 +43,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-           :id: FEAT_01
+           :id: FEAT_1
         """,
         [
             {
@@ -69,7 +69,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-           :id: FEAT_01
+           :id: FEAT_1
            :efforts: 14
         """,
         [
@@ -90,7 +90,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-           :id: FEAT_01
+           :id: FEAT_1
            :efforts: 16
         """,
         [
@@ -109,7 +109,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-           :id: FEAT_01
+           :id: FEAT_1
         """,
         [
             {"local_schema": {"required": ["asil"]}},
@@ -127,7 +127,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-           :id: FEAT_01
+           :id: FEAT_1
            :start_date: not-a-date
         """,
         [],
@@ -146,7 +146,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-            :id: FEAT_01
+            :id: FEAT_1
             :asil: QM
         """,
     ],
@@ -159,7 +159,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-            :id: FEAT_01
+            :id: FEAT_1
             :asil: QM
         """,
         [],
@@ -175,7 +175,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-            :id: FEAT_01
+            :id: FEAT_1
             :asil: QM
         """,
         [],
@@ -191,7 +191,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-            :id: FEAT_01
+            :id: FEAT_1
             :asil: QM
         """,
         [],
@@ -208,7 +208,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-            :id: FEAT_01
+            :id: FEAT_1
             :asil: QM
         """,
     ],
@@ -222,7 +222,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-            :id: FEAT_01
+            :id: FEAT_1
             :asil: E
         """,
         [],
@@ -242,7 +242,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-            :id: FEAT_01
+            :id: FEAT_1
             :start_date: 2023-01-01
         """,
     ],
@@ -256,7 +256,7 @@ SCHEMA_VALIDATION_PARAMS: dict[
         """,
         """
         .. feat:: title
-            :id: FEAT_01
+            :id: FEAT_1
             :start_date: not-a-date
         """,
         [],
@@ -265,6 +265,26 @@ SCHEMA_VALIDATION_PARAMS: dict[
             "'not-a-date' is not a 'date'",
         ],
         "sn_schema.validation_fail",
+    ],
+    "link_option_min_valid": [
+        "",
+        """
+        .. spec:: title
+            :id: SPEC_1
+
+        .. impl:: title
+            :id: IMPL_1
+            :links: SPEC_1
+        """,
+        [
+            {
+                "link_schema": {
+                    "links": {
+                        "minItems": 2,
+                    }
+                }
+            }
+        ],
     ],
 }
 
@@ -280,11 +300,7 @@ SCHEMA_CONFIG_ERROR_PARAMS: dict[
         [needs.extra_options.schema]
         format = "date"
         """,
-        """
-        .. feat:: title
-           :id: FEAT_01
-           :asil: QM
-        """,
+        "",
         [],
         ["Missing types in schema definition for extra_options: asil"],
     ],
@@ -293,11 +309,7 @@ SCHEMA_CONFIG_ERROR_PARAMS: dict[
         [[needs.extra_options]]
         name = "efforts"
         """,
-        """
-        .. feat:: title
-           :id: FEAT_01
-           :efforts: 14
-        """,
+        "",
         [
             {
                 "trigger_schema": {"properties": {"efforts": {"minimum": 15}}},
@@ -312,11 +324,7 @@ SCHEMA_CONFIG_ERROR_PARAMS: dict[
         [[needs.extra_options]]
         name = "efforts"
         """,
-        """
-        .. feat:: title
-           :id: FEAT_01
-           :efforts: 14
-        """,
+        "",
         [
             {
                 "local_schema": {"properties": {"efforts": {"minimum": 15}}},
@@ -333,11 +341,7 @@ SCHEMA_CONFIG_ERROR_PARAMS: dict[
         [needs.extra_options.schema]
         type = "unknown_type"
         """,
-        """
-        .. feat:: title
-           :id: FEAT_01
-           :efforts: 14
-        """,
+        "",
         [],
         ["'unknown_type' is not valid under any of the given schemas"],
     ],
@@ -346,11 +350,7 @@ SCHEMA_CONFIG_ERROR_PARAMS: dict[
         [[needs.extra_options]]
         name = "efforts"
         """,
-        """
-        .. feat:: title
-           :id: FEAT_01
-           :efforts: 14
-        """,
+        "",
         [
             {
                 "trigger_schema": {"properties": {"efforts": {"type": "unknown_type"}}},
@@ -363,16 +363,26 @@ SCHEMA_CONFIG_ERROR_PARAMS: dict[
         [[needs.extra_options]]
         name = "efforts"
         """,
-        """
-        .. feat:: title
-           :id: FEAT_01
-           :efforts: 14
-        """,
+        "",
         [
             {
                 "local_schema": {"properties": {"efforts": {"type": "unknown_type"}}},
             },
         ],
         ["'unknown_type' is not valid under any of the given schemas"],
+    ],
+    "link_option_link_type_invalid": [
+        "",
+        "",
+        [
+            {
+                "link_schema": {
+                    "links2": {
+                        "minItems": 2,
+                    }
+                }
+            }
+        ],
+        ["Link type 'links2' in schema '[0]' is not defined in needs_extra_links"],
     ],
 }

@@ -787,9 +787,13 @@ def check_configuration(app: Sphinx, config: Config) -> None:
 
 def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
     """Validates schemas for extra_options, extra_links, and schemas in needs_config."""
-    # validate all given schemas against the meta schema for extra options
+
     extra_options_w_schema_missing_type = set()
+    """All extra options with schema but missing type."""
     extra_options_wo_schema_missing_type = set()
+    """All extra options without schema and missing type."""
+
+    # validate all given schemas against the meta schema for extra options
     for option, value in needs_config.extra_options.items():
         if value.schema is not None:
             try:
@@ -826,6 +830,7 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
     extra_options_missing_type = (
         extra_options_w_schema_missing_type | extra_options_wo_schema_missing_type
     )
+    """All extra options with missing type."""
     for idx, schema in enumerate(needs_config.schemas):
         schema_id = schema.get("id")
         schema_name = f"{schema_id}[{idx}]" if schema_id else f"[{idx}]"
@@ -858,6 +863,15 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
                         raise NeedsConfigException(
                             f"Schemas entry {schema_name} is referencing extra option '{prop}' without a type specification"
                         )
+        if "link_schema" in schema:
+            # validate link_schema
+            extra_links = {item["option"] for item in needs_config.extra_links}
+            for link_type in schema["link_schema"]:
+                if link_type not in extra_links:
+                    raise NeedsConfigException(
+                        f"Link type '{link_type}' in schema '{schema_name}' is not defined in needs_extra_links"
+                    )
+
     if extra_options_w_schema_missing_type:
         missing = ", ".join(sorted(extra_options_w_schema_missing_type))
         raise NeedsConfigException(

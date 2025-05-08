@@ -381,24 +381,6 @@ def validate_need(
                             field=link_type,
                         )
                         return warnings
-                    if link_type not in need:
-                        msg = f"Need '{need['id']}' is missing link type '{link_type}'."
-                        report_message(
-                            config=config,
-                            warnings=warnings,
-                            need=need,
-                            schema=final_localschema,
-                            rule=MessageRuleEnum.cfg_link_type_missing,
-                            need_path=need_path,
-                            schema_path=[
-                                *schema_path_new,
-                                "link_schema",
-                                link_type,
-                            ],
-                            validation_msg=msg,
-                            field=link_type,
-                        )
-                        return warnings
                     needs_matching: list[str] = []
                     needs_mismatching: list[str] = []
                     if need[link_type]:
