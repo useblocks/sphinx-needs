@@ -44,8 +44,6 @@ class MessageRuleEnum(str, Enum):
     """Schema has one of the keys listed in DISALLOWED_SCHEMA_KEYS."""
     cfg_schema_error = "cfg_schema_error"
     """The user provided schema is invalid."""
-    cfg_schema_ref_missing = "cfg_schema_ref_missing"
-    """A user provided schema reference is missing (schema_id or trigger_schema_id)."""
     option_type_error = "option_type_error"
     """A need extra option cannot be coerced to the type specified in the schema."""
     skipped_dependency = "skipped_dependency"
@@ -101,7 +99,6 @@ USER_CONFIG_SCHEMA_SEVERITIES = [
 MAP_RULE_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
     MessageRuleEnum.cfg_disallowed_keys: SeverityEnum.config_error,
     MessageRuleEnum.cfg_schema_error: SeverityEnum.config_error,
-    MessageRuleEnum.cfg_schema_ref_missing: SeverityEnum.config_error,
     MessageRuleEnum.option_type_error: SeverityEnum.violation,
     MessageRuleEnum.skipped_dependency: SeverityEnum.none,
     MessageRuleEnum.skipped_wrong_type: SeverityEnum.none,

@@ -831,9 +831,20 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
         extra_options_w_schema_missing_type | extra_options_wo_schema_missing_type
     )
     """All extra options with missing type."""
+
+    all_schema_ids = {schema["id"] for schema in needs_config.schemas if "id" in schema}
+
     for idx, schema in enumerate(needs_config.schemas):
         schema_id = schema.get("id")
         schema_name = f"{schema_id}[{idx}]" if schema_id else f"[{idx}]"
+
+        if (
+            "trigger_schema_id" in schema
+            and schema["trigger_schema_id"] not in all_schema_ids
+        ):
+            raise NeedsConfigException(
+                f"Schema '{schema_name}' is referencing trigger_schema_id '{schema['trigger_schema_id']}' which does not exist."
+            )
 
         # Gather all used extra options in trigger_schema and local_schema properties
         user_schemas: list[Literal["trigger_schema", "local_schema"]] = [
@@ -866,10 +877,17 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
         if "link_schema" in schema:
             # validate link_schema
             extra_links = {item["option"] for item in needs_config.extra_links}
-            for link_type in schema["link_schema"]:
+            for link_type, link_schema in schema["link_schema"].items():
                 if link_type not in extra_links:
                     raise NeedsConfigException(
                         f"Link type '{link_type}' in schema '{schema_name}' is not defined in needs_extra_links"
+                    )
+                if (
+                    "schema_id" in link_schema
+                    and link_schema["schema_id"] not in all_schema_ids
+                ):
+                    raise NeedsConfigException(
+                        f"Link type '{link_type}' in schema '{schema_name}' is referencing schema_id '{link_schema['schema_id']}' which does not exist."
                     )
 
     if extra_options_w_schema_missing_type:

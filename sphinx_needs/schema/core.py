@@ -303,29 +303,9 @@ def validate_need(
                 continue
 
         if type_schema.get("trigger_schema_id"):
-            try:
-                trigger_schema = get_schema_by_id(
-                    type_schema["trigger_schema_id"], all_type_schemas
-                )
-            except ValueError:
-                msg = (
-                    "Cannot resolve trigger reference"
-                    f" '{type_schema['trigger_schema_id']}'."
-                )
-                report_message(
-                    config=config,
-                    warnings=warnings,
-                    need=need,
-                    schema=final_localschema,
-                    rule=MessageRuleEnum.cfg_schema_ref_missing,
-                    need_path=need_path,
-                    schema_path=[
-                        *schema_path_new,
-                        f"trigger_schema_id[{type_schema['trigger_schema_id']}]",
-                    ],
-                    validation_msg=msg,
-                )
-                return warnings
+            trigger_schema = get_schema_by_id(
+                type_schema["trigger_schema_id"], all_type_schemas
+            )
 
             warnings_local = validate_need(
                 config=config,
@@ -355,32 +335,9 @@ def validate_need(
         if type_schema.get("link_schema"):
             for link_type, link_schema in type_schema["link_schema"].items():
                 if link_schema.get("schema_id"):
-                    try:
-                        linked_schema = get_schema_by_id(
-                            link_schema["schema_id"], all_type_schemas
-                        )
-                    except ValueError:
-                        msg = (
-                            "Cannot resolve link_schema reference"
-                            f" '{link_schema['schema_id']}'."
-                        )
-                        report_message(
-                            config=config,
-                            warnings=warnings,
-                            need=need,
-                            schema=final_localschema,
-                            rule=MessageRuleEnum.cfg_schema_ref_missing,
-                            need_path=need_path,
-                            schema_path=[
-                                *schema_path_new,
-                                "link_schema",
-                                link_type,
-                                f"schema_id[{link_schema['schema_id']}]",
-                            ],
-                            validation_msg=msg,
-                            field=link_type,
-                        )
-                        return warnings
+                    linked_schema = get_schema_by_id(
+                        link_schema["schema_id"], all_type_schemas
+                    )
                     needs_matching: list[str] = []
                     needs_mismatching: list[str] = []
                     if need[link_type]:

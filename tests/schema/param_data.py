@@ -385,4 +385,32 @@ SCHEMA_CONFIG_ERROR_PARAMS: dict[
         ],
         ["Link type 'links2' in schema '[0]' is not defined in needs_extra_links"],
     ],
+    "trigger_schema_id_invalid": [
+        "",
+        "",
+        [
+            {
+                "trigger_schema_id": "invalid_id",
+            }
+        ],
+        [
+            "Schema '[0]' is referencing trigger_schema_id 'invalid_id' which does not exist"
+        ],
+    ],
+    "link_schema_id_invalid": [
+        "",
+        "",
+        [
+            {
+                "link_schema": {
+                    "links": {
+                        "schema_id": "invalid_id",
+                    }
+                }
+            }
+        ],
+        [
+            "Link type 'links' in schema '[0]' is referencing schema_id 'invalid_id' which does not exist"
+        ],
+    ],
 }
