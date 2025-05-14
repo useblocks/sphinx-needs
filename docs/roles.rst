@@ -25,9 +25,9 @@ With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra options <nee
       :value: 20
       :unit: slices
 
-   | The requirement :need:`roles_req_1` is the most important one.
-   | But we can also set :need:`a custom link name <roles_req_1>`.
-   | And we can change the text even more e.g. :need:`[[value]] [[unit]] of [[title]] ([[id]] [[status]]) <roles_req_1>`.
+      | The requirement :need:`roles_req_1` is the most important one.
+      | But we can also set :need:`a custom link name <roles_req_1>`.
+      | And we can change the text even more e.g. :need:`[[value]] [[unit]] of [[title]] ([[id]] [[status]]) <roles_req_1>`.
 
 .. note::
 
@@ -61,7 +61,7 @@ The list contains the need IDs only, no title or any other information is printe
       :id: roles_req_2
       :links: roles_req_1
 
-   To get butter on our bread, we need to fulfill :need_outgoing:`roles_req_2`
+      To get butter on our bread, we need to fulfill :need_outgoing:`roles_req_2`
 
 .. _role_need_incoming:
 
