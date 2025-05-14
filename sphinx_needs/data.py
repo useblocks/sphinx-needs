@@ -281,6 +281,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "Template of the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
+        "allow_default": "str",
     },
     "pre_template": {
         "description": "Pre-template of the need.",
