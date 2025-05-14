@@ -21,13 +21,14 @@ classifiers = [
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
+  'Programming Language :: Python :: 3.13',
   'Topic :: Documentation',
   'Topic :: Utilities',
   'Framework :: Sphinx :: Extension',
 ]
 requires-python = ">=3.9,<4"
 dependencies = [
-  "sphinx>=7.0,<9",
+  "sphinx>=7.4,<9",
   "requests-file~=2.1",             # external links
   "requests~=2.32",                 # external links
   "jsonschema>=3.2.0",              # needsimport schema validation

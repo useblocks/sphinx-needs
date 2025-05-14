@@ -3,8 +3,8 @@ on:
   push:
     branches: [master]
   pull_request:
-jobs:
 
+jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -23,18 +23,25 @@ jobs:
       fail-fast: false # Set on "false" to get the results of ALL builds
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.10", "3.12"]
-        sphinx-version: ["7.0", "8.0"]
+        python-version: ["3.9", "3.12", "3.13"]
+        sphinx-version: ["7.4", "8.2"]
         include:
-          - os: "ubuntu-latest"
-            python-version: "3.9"
-            sphinx-version: "7.0"
+          # corner cases for Windows
           - os: "windows-latest"
             python-version: "3.9"
-            sphinx-version: "7.0"
+            sphinx-version: "7.4"
           - os: "windows-latest"
             python-version: "3.12"
-            sphinx-version: "8.0"
+            sphinx-version: "8.2"
+          - os: "windows-latest"
+            python-version: "3.13"
+            sphinx-version: "8.2"
+        exclude:
+          # Sphinx 8.2 only supports py3.11+
+          - os: "ubuntu-latest"
+            python-version: "3.9"
+            sphinx-version: "8.2"
+
     steps:
       - uses: actions/checkout@v4
       - name: Install graphviz (linux)
@@ -75,10 +82,10 @@ jobs:
         include:
           - os: "ubuntu-latest"
             python-version: "3.9"
-            sphinx-version: "7.0"
+            sphinx-version: "7.4"
           - os: "ubuntu-latest"
-            python-version: "3.12"
-            sphinx-version: "8.0"
+            python-version: "3.13"
+            sphinx-version: "8.2"
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js

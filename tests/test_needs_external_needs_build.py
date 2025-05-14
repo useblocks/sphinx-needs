@@ -5,6 +5,8 @@ from pathlib import Path
 import pytest
 import responses
 from docutils import __version__ as doc_ver
+from sphinx import version_info
+from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
 
@@ -13,13 +15,11 @@ from sphinx.util.console import strip_colors
     [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}],
     indirect=True,
 )
-def test_doc_build_html(test_app, sphinx_test_tempdir):
+def test_doc_build_html(test_app: SphinxTestApp, sphinx_test_tempdir):
     import subprocess
 
-    app = test_app
-
-    src_dir = Path(app.srcdir)
-    out_dir = Path(app.outdir)
+    src_dir = Path(test_app.srcdir)
+    out_dir = Path(test_app.outdir)
     plantuml = r"java -Djava.awt.headless=true -jar {}".format(
         os.path.join(sphinx_test_tempdir, "utils", "plantuml.jar")
     )
@@ -27,17 +27,27 @@ def test_doc_build_html(test_app, sphinx_test_tempdir):
         ["sphinx-build", "-b", "html", "-D", rf"plantuml={plantuml}", src_dir, out_dir],
         capture_output=True,
     )
-    assert strip_colors(output.stderr.decode("utf-8")).splitlines() == [
+    expected_warnings = [
         "WARNING: http://my_company.com/docs/v1/index.html#TEST_01: Need 'EXT_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
         "WARNING: ../../_build/html/index.html#TEST_01: Need 'EXT_REL_PATH_TEST_01' has unknown outgoing link 'SPEC_1' in field 'links' [needs.external_link_outgoing]",
     ]
+    assert strip_colors(output.stderr.decode("utf-8")).splitlines() == expected_warnings
 
     # run second time and check
     output_second = subprocess.run(
         ["sphinx-build", "-b", "html", "-D", rf"plantuml={plantuml}", src_dir, out_dir],
         capture_output=True,
     )
-    assert not output_second.stderr
+
+    # Sphinx 8.2 removed an early return in case no documents were updated in
+    # https://github.com/sphinx-doc/sphinx/pull/13236
+    # which leads to some SN warnings not being emitted for incremental builds
+    if version_info < (8, 2):
+        expected_warnings = []
+    assert (
+        strip_colors(output_second.stderr.decode("utf-8")).splitlines()
+        == expected_warnings
+    )
 
     # check if incremental build used
     # first build output
@@ -46,6 +56,7 @@ def test_doc_build_html(test_app, sphinx_test_tempdir):
         in strip_colors(output.stdout.decode("utf-8"))
     )
     # second build output
+    # TODO(Marco) check why 3 added configs are expected, should be 0 for incremental builds without changes
     assert "loading pickled environment" in output_second.stdout.decode("utf-8")
     assert (
         "updating environment: [new config] 3 added, 0 changed, 0 removed"
