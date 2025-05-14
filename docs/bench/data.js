@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1745917153584,
+  "lastUpdate": 1747212306646,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -12960,6 +12960,42 @@ window.BENCHMARK_DATA = {
             "value": 56.83071988399999,
             "unit": "s",
             "extra": "Commit: c25df13fd903bfbcf20bab3fccbdd09ec4e1ab2e\nBranch: master\nTime: 2025-04-29T10:57:28+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "55eaf917feebc7810c778edd07c14bfd9bc3ccc8",
+          "message": "⬆️ Drop Sphinx<7.4, test against Python 3.13 (#1447)\n\n- Sphinx 7.4 is needed for the\n[write-started](https://www.sphinx-doc.org/en/master/changes/7.4.html#release-7-4-0-released-jul-15-2024)\nevent, which is now used to ensure needs post-processing is always run\non incremental builds (via a call to `get_needs_view()`)\n- Expanded Python to 3.13. Keeping also 3.12 in the CI as it behaves\ndifferently for `os.path.isabs`.\n- Updated `test_app` fixture to accept a files request parameter to\nparametrize the src file generation.\n- Use the `self.env.relfn2path()` Sphinx function for `needimport`\nneeds.json paths.\n- Added test cases for `needimport` that also include absolute paths for\nall OS.",
+          "timestamp": "2025-05-14T10:43:18+02:00",
+          "tree_id": "581c12185bb27bd67a65438733e92e28662d6092",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/55eaf917feebc7810c778edd07c14bfd9bc3ccc8"
+        },
+        "date": 1747212292377,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14957384499999193,
+            "unit": "s",
+            "extra": "Commit: 55eaf917feebc7810c778edd07c14bfd9bc3ccc8\nBranch: master\nTime: 2025-05-14T10:43:18+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.10522190300003,
+            "unit": "s",
+            "extra": "Commit: 55eaf917feebc7810c778edd07c14bfd9bc3ccc8\nBranch: master\nTime: 2025-05-14T10:43:18+02:00"
           }
         ]
       }
