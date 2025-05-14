@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -20,17 +21,8 @@ from sphinx_needs.needsfile import SphinxNeedsFileException
 def test_import_json(test_app):
     app = test_app
     app.build()
-    warnings = app._warning.getvalue()
-    warnings_list = strip_colors(
-        warnings.replace(str(app.srcdir) + os.sep + "subdoc" + os.sep, "srcdir/subdoc/")
-    ).splitlines()
-
-    if os.name != "nt":
-        assert warnings_list == [
-            "srcdir/subdoc/deprecated_rel_path_import.rst:6: WARNING: Deprecation warning: Relative path must be relative to the current document in future, not to the conf.py location. Use a starting '/', like '/needs.json', to make the path relative to conf.py. [needs.deprecated]"
-        ]
-    else:
-        assert "Deprecation" in warnings
+    assert app.statuscode == 0
+    assert not app.warning_list
 
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html
@@ -61,11 +53,130 @@ def test_import_json(test_app):
     rel_path_import_html = Path(app.outdir, "subdoc/rel_path_import.html").read_text()
     assert "small_rel_path_TEST_01" in rel_path_import_html
 
-    # Check deprecated relative path import based on conf.py
-    deprec_rel_path_import_html = Path(
-        app.outdir, "subdoc/deprecated_rel_path_import.html"
-    ).read_text()
-    assert "small_depr_rel_path_TEST_01" in deprec_rel_path_import_html
+
+needs_json = """
+{
+    "current_version": "1",
+    "versions": {
+        "1": {
+            "needs": {
+                "TEST_01": {
+                    "id": "TEST_01",
+                    "title": "TEST IMPORT TITLE",
+                    "type": "impl"
+                }
+            },
+            "needs_amount": 1
+        }
+    }
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "index_content",
+    [
+        ".. needimport:: needs.json",
+        ".. needimport:: nested/needs.json",
+        ".. needimport:: /needs.json",
+        ".. needimport:: /nested/needs.json",
+    ],
+)
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                ("conf.py", 'extensions = ["sphinx_needs"]'),
+                ("needs.json", needs_json),
+                ("nested/needs.json", needs_json),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_import_rel_abs_sphinx_paths(test_app, index_content):
+    """Test various relative and absolute import file paths."""
+    # write the parametrized index.rst content
+    index_path = Path(test_app.srcdir, "index.rst")
+    index_path.write_text(index_content)
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert not app.warning_list
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert "TEST IMPORT TITLE" in html
+    assert "TEST_01" in html
+
+
+@pytest.mark.parametrize("path_sep", ["/", "\\", "\\\\"])
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                ("conf.py", 'extensions = ["sphinx_needs"]'),
+                ("needs.json", needs_json),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+@pytest.mark.skipif(sys.platform != "win32", reason="Test only runs on Windows")
+def test_import_abs_paths_win(test_app, path_sep):
+    """Test various relative and absolute import file paths."""
+    # write the parametrized index.rst content
+    index_path = Path(test_app.srcdir, "index.rst")
+    json_abs_path = str((Path(test_app.srcdir).resolve() / "needs.json").absolute())
+    json_abs_path = json_abs_path.replace(os.path.sep, path_sep)
+    index_path.write_text(f".. needimport:: {json_abs_path}")
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert not app.warning_list
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert "TEST IMPORT TITLE" in html
+    assert "TEST_01" in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                ("conf.py", 'extensions = ["sphinx_needs"]'),
+                ("needs.json", needs_json),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+@pytest.mark.skipif(sys.platform == "win32", reason="Test only runs on Linux and MacOS")
+def test_import_abs_paths_lin_mac(test_app):
+    """Test various relative and absolute import file paths."""
+    # write the parametrized index.rst content
+    index_path = Path(test_app.srcdir, "index.rst")
+    json_abs_path = str((Path(test_app.srcdir).resolve() / "needs.json").absolute())
+    index_path.write_text(f".. needimport:: /{json_abs_path}")
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert not app.warning_list
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert "TEST IMPORT TITLE" in html
+    assert "TEST_01" in html
 
 
 @pytest.mark.parametrize(

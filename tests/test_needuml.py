@@ -126,6 +126,7 @@ def test_needuml_save_with_abs_path(test_app):
     srcdir = Path(app.srcdir)
     out_dir = srcdir / "_build"
 
+    # this fails before plantuml is required, so the plantuml path is not provided
     out = subprocess.run(
         ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
     )
@@ -133,7 +134,7 @@ def test_needuml_save_with_abs_path(test_app):
 
     assert (
         "sphinx_needs.directives.needuml.NeedumlException: "
-        "Given save path: /_out/my_needuml.puml, is not a relative path."
+        "Given save path: /_out/my_needuml.puml, is not a relative posix path."
         in out.stderr.decode("utf-8")
     )
 
