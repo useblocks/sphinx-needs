@@ -40,7 +40,7 @@ class NeedextendDirective(SphinxDirective):
     option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
 
     @classmethod
-    def reset(cls) -> None:
+    def reset_options_spec(cls) -> None:
         """Reset the directive to its initial state."""
         cls.option_spec = OPTION_SPEC_DEFAULT.copy()
 

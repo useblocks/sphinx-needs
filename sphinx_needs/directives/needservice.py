@@ -39,7 +39,7 @@ class NeedserviceDirective(SphinxDirective):
     option_spec.update(NeedDirective.option_spec)
 
     @classmethod
-    def reset(cls) -> None:
+    def reset_options_spec(cls) -> None:
         """Reset the directive to its initial state."""
         cls.option_spec = OPTION_SPEC_DEFAULT.copy()
         cls.option_spec.update(NeedDirective.option_spec)

@@ -24,6 +24,6 @@ def sphinx_needs_reset() -> None:
     # also called at the end of setup()
     _NEEDS_CONFIG.clear()
 
-    NeedDirective.reset()
-    NeedextendDirective.reset()
-    NeedserviceDirective.reset()
+    NeedDirective.reset_options_spec()
+    NeedextendDirective.reset_options_spec()
+    NeedserviceDirective.reset_options_spec()

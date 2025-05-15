@@ -55,7 +55,7 @@ class NeedDirective(SphinxDirective):
     final_argument_whitespace = True
 
     @classmethod
-    def reset(cls) -> None:
+    def reset_options_spec(cls) -> None:
         """Reset the directive to its initial state."""
         cls.option_spec = NEED_DEFAULT_OPTIONS.copy()
 
