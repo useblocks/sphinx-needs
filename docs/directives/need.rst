@@ -299,17 +299,16 @@ By using :ref:`needs_extra_links <needs_extra_links>`, you can use the configure
 
 delete
 ~~~~~~
-There is a **:delete:** option. If the value of the option is set to ``true``, the need will be deleted completely
+
+There is a **:delete:** option. If the value of the option is set to **True**, the need will be deleted completely
 from any NeedLists or NeedDicts including the ``needs.json`` file.
 
 This option allows a user to have multiple need-objects with the same id, but only one is shown in the documentation.
 
-If set to ``false``, the need is not removed.
+Allowed values (case-insensitive):
 
-Allowed values:
-
-* ``true`` or ``yes`` or ``1``
-* ``false`` or ``no`` or ``0``
+:True: empty, ``true`` or ``yes``
+:False: ``false`` or ``no``
 
 Default: False
 
@@ -343,8 +342,15 @@ Default: False
 
 hide
 ~~~~
-There is a **:hide:** option. If this is set (no value is needed), the need will not be printed in the
-documentation. But you can use it with **need filters**.
+There is a **:hide:** option. If this is set to **True**, the need will not be printed in the documentation.
+But you can use it with **need filters**.
+
+Allowed values (case-insensitive):
+
+:True: empty, ``true`` or ``yes``
+:False: ``false`` or ``no``
+
+Default: False
 
 .. _need_collapse:
 
@@ -355,10 +361,10 @@ You can view the details by clicking on the forward arrow symbol near the need t
 
 If set to **False**, the need shows the details section.
 
-Allowed values:
+Allowed values (case-insensitive):
 
- * true; yes; 1
- * false; no; 0
+:True: empty, ``true`` or ``yes``
+:False: ``false`` or ``no``
 
 Default: False
 
@@ -389,10 +395,10 @@ and the data in :ref:`needs_filter_data`.
 
 If you set the option to **False**, you deactivate jinja-parsing for the need's content.
 
-Allowed values:
+Allowed values (case-insensitive):
 
-* empty, ``true`` or ``yes``
-* ``false`` or ``no``
+:True: empty, ``true`` or ``yes``
+:False: ``false`` or ``no``
 
 Default: False
 

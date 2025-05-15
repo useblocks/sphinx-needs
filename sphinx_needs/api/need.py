@@ -57,7 +57,7 @@ def generate_need(
     signature: str = "",
     sections: list[str] | None = None,
     jinja_content: None | bool = False,
-    hide: bool = False,
+    hide: None | bool = None,
     collapse: None | bool = None,
     style: None | str = None,
     layout: None | str = None,
@@ -113,8 +113,10 @@ def generate_need(
     :param tags: A list of tags, or a comma separated string.
     :param constraints: Constraints as single, comma separated, string.
     :param constraints_passed: Contains bool describing if all constraints have passed
-    :param hide: boolean value.
-    :param collapse: boolean value.
+    :param hide: If True then the need is not rendered.
+        ``None`` means that the value can be overriden by global defaults, else it is set to False.
+    :param collapse: If True, then hide the meta-data information of the need.
+        ``None`` means that the value can be overriden by global defaults, else it is set to False.
     :param style: String value of class attribute of node.
     :param layout: String value of layout definition to use
     :param template_root: Root path for template files, only required if the template_path config is relative.
@@ -217,7 +219,7 @@ def generate_need(
         "template": template,
         "pre_template": pre_template,
         "post_template": post_template,
-        "hide": hide,
+        "hide": hide or False,
         "jinja_content": jinja_content or False,
         "parts": parts or {},
         "is_part": False,
@@ -240,7 +242,12 @@ def generate_need(
 
     _add_extra_fields(needs_info, kwargs, needs_config)
     _add_link_fields(needs_info, kwargs, needs_config, location)
-    _set_field_defaults(needs_info, needs_config)
+    user_set = {
+        key
+        for key, value in (("hide", hide), ("collapse", collapse))
+        if value is not None
+    }
+    _set_field_defaults(needs_info, needs_config, user_set)
     _copy_links(needs_info, needs_config)
 
     if parent_needs := needs_info.get("parent_needs"):
@@ -299,7 +306,7 @@ def add_need(
     signature: str = "",
     sections: list[str] | None = None,
     jinja_content: None | bool = False,
-    hide: bool = False,
+    hide: None | bool = None,
     collapse: None | bool = None,
     style: None | str = None,
     layout: None | str = None,
@@ -357,8 +364,10 @@ def add_need(
     :param tags: A list of tags, or a comma separated string.
     :param constraints: Constraints as single, comma separated, string.
     :param constraints_passed: Contains bool describing if all constraints have passed
-    :param hide: boolean value.
-    :param collapse: boolean value.
+    :param hide: If True then the need is not rendered.
+        ``None`` means that the value can be overriden by global defaults, else it is set to False.
+    :param collapse: If True, then hide the meta-data information of the need.
+        ``None`` means that the value can be overriden by global defaults, else it is set to False.
     :param style: String value of class attribute of node.
     :param layout: String value of layout definition to use
     :param template: Template name to use for the content of this need
@@ -808,12 +817,21 @@ def _copy_links(needs_info: NeedsInfoType, config: NeedsSphinxConfig) -> None:
     needs_info["links"] += copy_links  # Set copied links to main-links
 
 
-def _set_field_defaults(needs_info: NeedsInfoType, config: NeedsSphinxConfig) -> None:
-    """Set default values."""
+def _set_field_defaults(
+    needs_info: NeedsInfoType, config: NeedsSphinxConfig, user_set: set[str]
+) -> None:
+    """Set default values.
+
+    This is used to set default values for fields that are not set in the need info.
+
+    :param needs_info: The need info dictionary.
+    :param config: The Sphinx configuration object.
+    :param user_set: The set of fields that were specifically set by the user.
+    """
     # TODO should defaults be applied to external/import needs?
     # currently any "falsy" value will be replaced by the default, even if it was explicitly set
     for key, defaults in config.field_defaults.items():
-        if key not in needs_info or needs_info[key]:
+        if key in user_set or key not in needs_info or needs_info[key]:
             continue
         for predicate, v in defaults.get("predicates", []):
             # use the first predicate that is satisfied

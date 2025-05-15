@@ -60,7 +60,7 @@ class CoreFieldParameters(TypedDict):
     """Description of the field."""
     schema: dict[str, Any]
     """JSON schema for the field."""
-    allow_default: NotRequired[Literal["str", "str_list"]]
+    allow_default: NotRequired[Literal["str", "str_list", "bool"]]
     """Whether the field allows custom default values to be set, and their type,
     via needs_global_options (False if not present).
     """
@@ -129,6 +129,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "collapse": {
         "description": "Hide the meta-data information of the need.",
         "schema": {"type": "boolean", "default": False},
+        "allow_default": "bool",
         "exclude_json": True,
         "exclude_external": True,
         "allow_extend": True,
@@ -136,6 +137,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "hide": {
         "description": "If true, the need is not rendered.",
         "schema": {"type": "boolean", "default": False},
+        "allow_default": "bool",
         "exclude_json": True,
         "exclude_external": True,
         "allow_extend": True,
