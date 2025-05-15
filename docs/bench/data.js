@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747212731477,
+  "lastUpdate": 1747309851769,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13032,6 +13032,42 @@ window.BENCHMARK_DATA = {
             "value": 58.517956793999986,
             "unit": "s",
             "extra": "Commit: bc1a52d9c66f5fdc5154aaf370790df20c5a30e5\nBranch: master\nTime: 2025-05-14T10:50:20+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "90368b010919f172d75af936073bf755dfc0e445",
+          "message": "Allow `collapse` and `hide` in `needs_global_options` (#1456)\n\n`needs_global_options`, a.k.a need field defaults, should only be used\nif the user does not specifically set their value,\ni.e. user specified values should take precedence over defaults.\n\nThe problem with the existing logic, was that the only check for if a\nvalue had been set, was if it was \"truthy\".\nThis does not work if the user wants to explicitly set a `False` value,\ne.g.\n\n```restructuredtext\n.. spec:: Specification 3\n   :id: SPEC_3\n   :collapse: false\n```\n\nFor `collapse` and `hide`, this is now accounted for, and so they can be\nallowed as defaults.\n(In future this logic maybe should be extended to all fields, accounting\nfor explicitly set empty strings and lists)",
+          "timestamp": "2025-05-15T13:49:05+02:00",
+          "tree_id": "da40f359be269c87b3bc8c3a3c991a99d72cdf66",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/90368b010919f172d75af936073bf755dfc0e445"
+        },
+        "date": 1747309836311,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.13840049200001658,
+            "unit": "s",
+            "extra": "Commit: 90368b010919f172d75af936073bf755dfc0e445\nBranch: master\nTime: 2025-05-15T13:49:05+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.61045201799999,
+            "unit": "s",
+            "extra": "Commit: 90368b010919f172d75af936073bf755dfc0e445\nBranch: master\nTime: 2025-05-15T13:49:05+02:00"
           }
         ]
       }
