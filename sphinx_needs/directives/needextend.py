@@ -22,6 +22,11 @@ class Needextend(nodes.General, nodes.Element):
     pass
 
 
+OPTION_SPEC_DEFAULT = {
+    "strict": directives.unchanged_required,
+}
+
+
 class NeedextendDirective(SphinxDirective):
     """
     Directive to modify existing needs
@@ -32,9 +37,12 @@ class NeedextendDirective(SphinxDirective):
     optional_arguments = 0
     final_argument_whitespace = True
 
-    option_spec: dict[str, Callable[[str], Any]] = {
-        "strict": directives.unchanged_required,
-    }
+    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
+
+    @classmethod
+    def reset_options_spec(cls) -> None:
+        """Reset the directive to its initial state."""
+        cls.option_spec = OPTION_SPEC_DEFAULT.copy()
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env

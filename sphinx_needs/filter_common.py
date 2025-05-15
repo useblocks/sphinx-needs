@@ -12,7 +12,7 @@ from collections.abc import Iterable
 from pathlib import Path
 from timeit import default_timer as timer
 from types import CodeType
-from typing import Any, TypedDict, overload
+from typing import Any, Callable, TypedDict, overload
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -48,7 +48,7 @@ class FilterAttributesType(TypedDict):
 class FilterBase(SphinxDirective):
     has_content = True
 
-    base_option_spec = {
+    base_option_spec: dict[str, Callable[[str], Any]] = {
         "status": directives.unchanged_required,
         "tags": directives.unchanged_required,
         "types": directives.unchanged_required,

@@ -485,6 +485,11 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     title_optional = needs_config.title_optional
     title_from_content = needs_config.title_from_content
 
+    # Reset directives to use default options, before we update them
+    NeedDirective.reset_options_spec()
+    NeedextendDirective.reset_options_spec()
+    NeedserviceDirective.reset_options_spec()
+
     # Update NeedDirective to use customized options
     NeedDirective.option_spec.update(
         {k: v.validator for k, v in _NEEDS_CONFIG.extra_options.items()}
