@@ -2330,3 +2330,189 @@ needs_debug_filters
 
 If set to ``True``, all calls to :ref:`filter processing <filter>` will be logged to a ``debug_filters.jsonl`` file in the build output directory,
 appending a single-line JSON for each filter call.
+
+.. _`needs_schemas`:
+
+needs_schemas
+~~~~~~~~~~~~~
+
+.. versionadded:: 6.0.0
+
+Defines validation schemas for needs using a definition format derived from JSON Schema.
+Schemas can be used to validate need fields, enforce constraints, and ensure data consistency.
+
+Default value: ``{}``
+
+.. code-block:: python
+
+   needs_schemas = {
+       "$defs": {
+           "type-spec": {
+               "properties": {"type": {"const": "spec"}}
+           },
+           "safe-need": {
+               "properties": {"asil": {"enum": ["A", "B", "C", "D"]}},
+               "required": ["asil"]
+           }
+       },
+       "schemas": [
+           {
+               "id": "unique-id-validation",
+               "severity": "warning",
+               "message": "ID must be uppercase",
+               "validate": {
+                   "local": {
+                       "properties": {
+                           "id": {"pattern": "^[A-Z0-9_]+$"}
+                       }
+                   }
+               }
+           },
+           {
+               "id": "safe-spec",
+               "validate": {
+                   "local": {
+                       "allOf": [
+                           {"$ref": "#/$defs/type-spec"},
+                           {"$ref": "#/$defs/safe-need"}
+                       ]
+                   }
+               }
+           }
+       ]
+   }
+
+See :ref:`schema_validation` for detailed documentation.
+
+.. _`needs_schemas_from_json`:
+
+needs_schemas_from_json
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 6.0.0
+
+Path to a JSON file containing schema definitions. This is the recommended approach for
+defining schemas as it provides better IDE support and maintainability.
+
+Default value: ``None``
+
+.. code-block:: python
+
+   needs_schemas_from_json = "schemas.json"
+
+The JSON file should contain the same structure as :ref:`needs_schemas`:
+
+.. _`needs_schemas_severity`:
+
+needs_schemas_severity
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 6.0.0
+
+Minimum severity level for schema validation reporting.
+Extra option and extra link schema errors are always reported as violations.
+For each entry in :ref:`needs_schemas` the severity can be defined by the user.
+
+Available severity levels:
+
+- ``info``: Informational message (default)
+- ``warning``: Warning message
+- ``violation``: Violation message
+
+The levels align with how `SHACL <https://www.w3.org/TR/shacl/#severity>`__ defines severity levels.
+
+Default value: ``"info"``
+
+.. code-block:: python
+
+   needs_schemas_severity = "warning"
+
+.. _`needs_schemas_debug_active`:
+
+needs_schemas_debug_active
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 6.0.0
+
+Activates debug mode for schema validation. When enabled, the validation dumps JSON files,
+schema files, and validation messages to help troubleshoot schema validation issues.
+
+Default value: ``False``
+
+.. code-block:: python
+
+   needs_schemas_debug_active = True
+
+Debug files are written to the directory specified by :ref:`needs_schemas_debug_path`.
+
+.. _`needs_schemas_debug_path`:
+
+needs_schemas_debug_path
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 6.0.0
+
+Directory path where schema debug files are stored when :ref:`needs_schemas_debug_active` is
+enabled.
+
+If the path is relative, it will be resolved relative to the ``conf.py`` directory.
+
+Default value: ``"schema_debug"``
+
+.. code-block:: python
+
+   needs_schemas_debug_path = "debug/schemas"
+
+.. _`needs_schemas_debug_ignore`:
+
+needs_schemas_debug_ignore
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 6.0.0
+
+List of validation scenarios to ignore when dumping debug information. This helps reduce
+noise in debug output by filtering out irrelevant validations.
+
+Default value::
+   
+   [
+      "extra_option_success",
+      "extra_link_success",
+      "select_success",
+      "select_fail",
+      "local_success",
+      "network_local_success"
+   ]
+
+.. code-block:: python
+
+   needs_schemas_debug_ignore = [
+       "extra_option_success",
+       "local_success",
+       "network_local_success"
+   ]
+
+To write all scenarios, set it to an empty list: ``[]``.
+
+Available scenarios that can be ignored:
+
+- ``cfg_schema_error``: The user provided schema is invalid
+- ``extra_link_fail``: Global extra link validation failed
+- ``extra_link_success``: Global extra link validations was successful
+- ``extra_option_fail``: Global extra option validation failed
+- ``extra_option_success``: Global extra option validation was successful
+- ``extra_option_type_error``: A need extra option cannot be coerced to the type specified in the schema
+- ``local_fail``: Need local validation failed
+- ``local_success``: Successful local validation
+- ``network_local_fail``: Need does not validate against the local schema in a network context
+- ``network_local_success``: Successful network local validation
+- ``network_missing_target``: An outgoing link target cannot be resolved
+- ``network_too_few_links``: minItems validation failed for the given link_schema link type
+- ``network_too_many_links``: maxItems validation failed for the given link_schema link type
+- ``network_unevaluated_items``: Disallowed additional links were found for the given link type
+- ``select_fail``: Failed schema selection
+- ``select_success``: Successful schema selection
+
+The debug information is written to the directory specified by :ref:`needs_schemas_debug_path`.
+The ``_success`` scenarios exist to analyze why a validation was successful and how the
+final need and schema looks like.

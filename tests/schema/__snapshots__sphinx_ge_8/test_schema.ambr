@@ -1,0 +1,999 @@
+# serializer version: 1
+# name: test_schema_benchmark[100]
+  list([
+    '''
+      Need 'FEAt_P01' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P01
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P01' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P01' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P01
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P01' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P01' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P01
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_P01' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P01
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P01' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P01' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P01
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P01' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P01' has validation errors:
+        Severity:       violation
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P01 > links
+        Schema path:    safe-spec-[links]->safe-feat[3] > validate > network > links
+        Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P01 / nok: FEAT_P01
+      
+          Details for FEAT_P01
+          Field:          asil
+          Need path:      SPEC_SAFE_UNSAFE_FEAT_P01 > links > FEAT_P01
+          Schema path:    safe-spec-[links]->safe-feat[3] > links > local > allOf > 0 > properties > asil > enum
+          Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_unevaluated_items]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P01' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P01
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P01' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'IMPL_SAFE_P01' has validation errors:
+        Severity:       violation
+        Need path:      IMPL_SAFE_P01 > links
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links
+        User message:   Safe impl links to safe spec to safe feat
+        Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE_UNSAFE_FEAT_P01
+      
+          Details for SPEC_SAFE_UNSAFE_FEAT_P01
+          Need path:      IMPL_SAFE_P01 > links > SPEC_SAFE_UNSAFE_FEAT_P01 > links
+          Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > validate > network > links
+          Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P01 / nok: FEAT_P01
+      
+            Details for FEAT_P01
+            Field:          asil
+            Need path:      IMPL_SAFE_P01 > links > SPEC_SAFE_UNSAFE_FEAT_P01 > links > FEAT_P01
+            Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > properties > asil > enum
+            Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_too_few_links]
+  
+    ''',
+    '''
+      Need 'FEAt_P02' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P02
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P02' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P02' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P02
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P02' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P02' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P02
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_P02' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P02
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P02' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P02' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P02
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P02' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P02' has validation errors:
+        Severity:       violation
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P02 > links
+        Schema path:    safe-spec-[links]->safe-feat[3] > validate > network > links
+        Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P02 / nok: FEAT_P02
+      
+          Details for FEAT_P02
+          Field:          asil
+          Need path:      SPEC_SAFE_UNSAFE_FEAT_P02 > links > FEAT_P02
+          Schema path:    safe-spec-[links]->safe-feat[3] > links > local > allOf > 0 > properties > asil > enum
+          Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_unevaluated_items]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P02' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P02
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P02' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'IMPL_SAFE_P02' has validation errors:
+        Severity:       violation
+        Need path:      IMPL_SAFE_P02 > links
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links
+        User message:   Safe impl links to safe spec to safe feat
+        Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE_UNSAFE_FEAT_P02
+      
+          Details for SPEC_SAFE_UNSAFE_FEAT_P02
+          Need path:      IMPL_SAFE_P02 > links > SPEC_SAFE_UNSAFE_FEAT_P02 > links
+          Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > validate > network > links
+          Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P02 / nok: FEAT_P02
+      
+            Details for FEAT_P02
+            Field:          asil
+            Need path:      IMPL_SAFE_P02 > links > SPEC_SAFE_UNSAFE_FEAT_P02 > links > FEAT_P02
+            Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > properties > asil > enum
+            Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_too_few_links]
+  
+    ''',
+    '''
+      Need 'FEAt_P03' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P03
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P03' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P03' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P03
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P03' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P03' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P03
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_P03' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P03
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P03' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P03' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P03
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P03' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P03' has validation errors:
+        Severity:       violation
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P03 > links
+        Schema path:    safe-spec-[links]->safe-feat[3] > validate > network > links
+        Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P03 / nok: FEAT_P03
+      
+          Details for FEAT_P03
+          Field:          asil
+          Need path:      SPEC_SAFE_UNSAFE_FEAT_P03 > links > FEAT_P03
+          Schema path:    safe-spec-[links]->safe-feat[3] > links > local > allOf > 0 > properties > asil > enum
+          Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_unevaluated_items]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P03' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P03
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P03' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'IMPL_SAFE_P03' has validation errors:
+        Severity:       violation
+        Need path:      IMPL_SAFE_P03 > links
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links
+        User message:   Safe impl links to safe spec to safe feat
+        Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE_UNSAFE_FEAT_P03
+      
+          Details for SPEC_SAFE_UNSAFE_FEAT_P03
+          Need path:      IMPL_SAFE_P03 > links > SPEC_SAFE_UNSAFE_FEAT_P03 > links
+          Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > validate > network > links
+          Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P03 / nok: FEAT_P03
+      
+            Details for FEAT_P03
+            Field:          asil
+            Need path:      IMPL_SAFE_P03 > links > SPEC_SAFE_UNSAFE_FEAT_P03 > links > FEAT_P03
+            Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > properties > asil > enum
+            Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_too_few_links]
+  
+    ''',
+    '''
+      Need 'FEAt_P04' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P04
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P04' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P04' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P04
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P04' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P04' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P04
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_P04' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P04
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P04' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P04' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P04
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P04' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P04' has validation errors:
+        Severity:       violation
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P04 > links
+        Schema path:    safe-spec-[links]->safe-feat[3] > validate > network > links
+        Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P04 / nok: FEAT_P04
+      
+          Details for FEAT_P04
+          Field:          asil
+          Need path:      SPEC_SAFE_UNSAFE_FEAT_P04 > links > FEAT_P04
+          Schema path:    safe-spec-[links]->safe-feat[3] > links > local > allOf > 0 > properties > asil > enum
+          Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_unevaluated_items]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P04' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P04
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P04' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'IMPL_SAFE_P04' has validation errors:
+        Severity:       violation
+        Need path:      IMPL_SAFE_P04 > links
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links
+        User message:   Safe impl links to safe spec to safe feat
+        Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE_UNSAFE_FEAT_P04
+      
+          Details for SPEC_SAFE_UNSAFE_FEAT_P04
+          Need path:      IMPL_SAFE_P04 > links > SPEC_SAFE_UNSAFE_FEAT_P04 > links
+          Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > validate > network > links
+          Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P04 / nok: FEAT_P04
+      
+            Details for FEAT_P04
+            Field:          asil
+            Need path:      IMPL_SAFE_P04 > links > SPEC_SAFE_UNSAFE_FEAT_P04 > links > FEAT_P04
+            Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > properties > asil > enum
+            Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_too_few_links]
+  
+    ''',
+    '''
+      Need 'FEAt_P05' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P05
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P05' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P05' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P05
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P05' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P05' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P05
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_P05' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P05
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P05' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P05' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P05
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P05' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P05' has validation errors:
+        Severity:       violation
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P05 > links
+        Schema path:    safe-spec-[links]->safe-feat[3] > validate > network > links
+        Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P05 / nok: FEAT_P05
+      
+          Details for FEAT_P05
+          Field:          asil
+          Need path:      SPEC_SAFE_UNSAFE_FEAT_P05 > links > FEAT_P05
+          Schema path:    safe-spec-[links]->safe-feat[3] > links > local > allOf > 0 > properties > asil > enum
+          Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_unevaluated_items]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P05' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P05
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P05' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'IMPL_SAFE_P05' has validation errors:
+        Severity:       violation
+        Need path:      IMPL_SAFE_P05 > links
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links
+        User message:   Safe impl links to safe spec to safe feat
+        Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE_UNSAFE_FEAT_P05
+      
+          Details for SPEC_SAFE_UNSAFE_FEAT_P05
+          Need path:      IMPL_SAFE_P05 > links > SPEC_SAFE_UNSAFE_FEAT_P05 > links
+          Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > validate > network > links
+          Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P05 / nok: FEAT_P05
+      
+            Details for FEAT_P05
+            Field:          asil
+            Need path:      IMPL_SAFE_P05 > links > SPEC_SAFE_UNSAFE_FEAT_P05 > links > FEAT_P05
+            Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > properties > asil > enum
+            Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_too_few_links]
+  
+    ''',
+    '''
+      Need 'FEAt_P06' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P06
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P06' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P06' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P06
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P06' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P06' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P06
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_P06' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P06
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P06' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P06' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P06
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P06' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P06' has validation errors:
+        Severity:       violation
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P06 > links
+        Schema path:    safe-spec-[links]->safe-feat[3] > validate > network > links
+        Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P06 / nok: FEAT_P06
+      
+          Details for FEAT_P06
+          Field:          asil
+          Need path:      SPEC_SAFE_UNSAFE_FEAT_P06 > links > FEAT_P06
+          Schema path:    safe-spec-[links]->safe-feat[3] > links > local > allOf > 0 > properties > asil > enum
+          Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_unevaluated_items]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P06' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P06
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P06' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'IMPL_SAFE_P06' has validation errors:
+        Severity:       violation
+        Need path:      IMPL_SAFE_P06 > links
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links
+        User message:   Safe impl links to safe spec to safe feat
+        Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE_UNSAFE_FEAT_P06
+      
+          Details for SPEC_SAFE_UNSAFE_FEAT_P06
+          Need path:      IMPL_SAFE_P06 > links > SPEC_SAFE_UNSAFE_FEAT_P06 > links
+          Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > validate > network > links
+          Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P06 / nok: FEAT_P06
+      
+            Details for FEAT_P06
+            Field:          asil
+            Need path:      IMPL_SAFE_P06 > links > SPEC_SAFE_UNSAFE_FEAT_P06 > links > FEAT_P06
+            Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > properties > asil > enum
+            Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_too_few_links]
+  
+    ''',
+    '''
+      Need 'FEAt_P07' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P07
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P07' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P07' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P07
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P07' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P07' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P07
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_P07' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P07
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P07' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P07' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P07
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P07' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P07' has validation errors:
+        Severity:       violation
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P07 > links
+        Schema path:    safe-spec-[links]->safe-feat[3] > validate > network > links
+        Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P07 / nok: FEAT_P07
+      
+          Details for FEAT_P07
+          Field:          asil
+          Need path:      SPEC_SAFE_UNSAFE_FEAT_P07 > links > FEAT_P07
+          Schema path:    safe-spec-[links]->safe-feat[3] > links > local > allOf > 0 > properties > asil > enum
+          Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_unevaluated_items]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P07' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P07
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P07' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'IMPL_SAFE_P07' has validation errors:
+        Severity:       violation
+        Need path:      IMPL_SAFE_P07 > links
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links
+        User message:   Safe impl links to safe spec to safe feat
+        Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE_UNSAFE_FEAT_P07
+      
+          Details for SPEC_SAFE_UNSAFE_FEAT_P07
+          Need path:      IMPL_SAFE_P07 > links > SPEC_SAFE_UNSAFE_FEAT_P07 > links
+          Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > validate > network > links
+          Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P07 / nok: FEAT_P07
+      
+            Details for FEAT_P07
+            Field:          asil
+            Need path:      IMPL_SAFE_P07 > links > SPEC_SAFE_UNSAFE_FEAT_P07 > links > FEAT_P07
+            Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > properties > asil > enum
+            Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_too_few_links]
+  
+    ''',
+    '''
+      Need 'FEAt_P08' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P08
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P08' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P08' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P08
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P08' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P08' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P08
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_P08' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P08
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P08' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P08' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P08
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P08' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P08' has validation errors:
+        Severity:       violation
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P08 > links
+        Schema path:    safe-spec-[links]->safe-feat[3] > validate > network > links
+        Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P08 / nok: FEAT_P08
+      
+          Details for FEAT_P08
+          Field:          asil
+          Need path:      SPEC_SAFE_UNSAFE_FEAT_P08 > links > FEAT_P08
+          Schema path:    safe-spec-[links]->safe-feat[3] > links > local > allOf > 0 > properties > asil > enum
+          Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_unevaluated_items]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P08' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P08
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P08' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'IMPL_SAFE_P08' has validation errors:
+        Severity:       violation
+        Need path:      IMPL_SAFE_P08 > links
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links
+        User message:   Safe impl links to safe spec to safe feat
+        Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE_UNSAFE_FEAT_P08
+      
+          Details for SPEC_SAFE_UNSAFE_FEAT_P08
+          Need path:      IMPL_SAFE_P08 > links > SPEC_SAFE_UNSAFE_FEAT_P08 > links
+          Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > validate > network > links
+          Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P08 / nok: FEAT_P08
+      
+            Details for FEAT_P08
+            Field:          asil
+            Need path:      IMPL_SAFE_P08 > links > SPEC_SAFE_UNSAFE_FEAT_P08 > links > FEAT_P08
+            Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > properties > asil > enum
+            Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_too_few_links]
+  
+    ''',
+    '''
+      Need 'FEAt_P09' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P09
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P09' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P09' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P09
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P09' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P09' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P09
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_P09' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P09
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P09' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P09' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P09
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P09' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P09' has validation errors:
+        Severity:       violation
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P09 > links
+        Schema path:    safe-spec-[links]->safe-feat[3] > validate > network > links
+        Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P09 / nok: FEAT_P09
+      
+          Details for FEAT_P09
+          Field:          asil
+          Need path:      SPEC_SAFE_UNSAFE_FEAT_P09 > links > FEAT_P09
+          Schema path:    safe-spec-[links]->safe-feat[3] > links > local > allOf > 0 > properties > asil > enum
+          Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_unevaluated_items]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P09' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P09
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P09' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'IMPL_SAFE_P09' has validation errors:
+        Severity:       violation
+        Need path:      IMPL_SAFE_P09 > links
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links
+        User message:   Safe impl links to safe spec to safe feat
+        Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE_UNSAFE_FEAT_P09
+      
+          Details for SPEC_SAFE_UNSAFE_FEAT_P09
+          Need path:      IMPL_SAFE_P09 > links > SPEC_SAFE_UNSAFE_FEAT_P09 > links
+          Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > validate > network > links
+          Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P09 / nok: FEAT_P09
+      
+            Details for FEAT_P09
+            Field:          asil
+            Need path:      IMPL_SAFE_P09 > links > SPEC_SAFE_UNSAFE_FEAT_P09 > links > FEAT_P09
+            Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > properties > asil > enum
+            Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_too_few_links]
+  
+    ''',
+    '''
+      Need 'FEAt_P10' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P10
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P10' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P10' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P10
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P10' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P10' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P10
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_P10' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P10
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P10' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P10' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P10
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P10' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P10' has validation errors:
+        Severity:       violation
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P10 > links
+        Schema path:    safe-spec-[links]->safe-feat[3] > validate > network > links
+        Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P10 / nok: FEAT_P10
+      
+          Details for FEAT_P10
+          Field:          asil
+          Need path:      SPEC_SAFE_UNSAFE_FEAT_P10 > links > FEAT_P10
+          Schema path:    safe-spec-[links]->safe-feat[3] > links > local > allOf > 0 > properties > asil > enum
+          Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_unevaluated_items]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P10' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P10
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P10' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'IMPL_SAFE_P10' has validation errors:
+        Severity:       violation
+        Need path:      IMPL_SAFE_P10 > links
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links
+        User message:   Safe impl links to safe spec to safe feat
+        Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE_UNSAFE_FEAT_P10
+      
+          Details for SPEC_SAFE_UNSAFE_FEAT_P10
+          Need path:      IMPL_SAFE_P10 > links > SPEC_SAFE_UNSAFE_FEAT_P10 > links
+          Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > validate > network > links
+          Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P10 / nok: FEAT_P10
+      
+            Details for FEAT_P10
+            Field:          asil
+            Need path:      IMPL_SAFE_P10 > links > SPEC_SAFE_UNSAFE_FEAT_P10 > links > FEAT_P10
+            Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > properties > asil > enum
+            Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_too_few_links]
+  
+    ''',
+  ])
+# ---
+# name: test_schema_benchmark[10]
+  list([
+    '''
+      Need 'FEAt_P1' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P1
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P1' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P1' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P1
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P1' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P1' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P1
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_P1' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P1
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P1' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P1' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P1
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P1' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P1' has validation errors:
+        Severity:       violation
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P1 > links
+        Schema path:    safe-spec-[links]->safe-feat[3] > validate > network > links
+        Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P1 / nok: FEAT_P1
+      
+          Details for FEAT_P1
+          Field:          asil
+          Need path:      SPEC_SAFE_UNSAFE_FEAT_P1 > links > FEAT_P1
+          Schema path:    safe-spec-[links]->safe-feat[3] > links > local > allOf > 0 > properties > asil > enum
+          Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_unevaluated_items]
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P1' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P1
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P1' does not match '^REQ[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  
+    ''',
+    '''
+      Need 'IMPL_SAFE_P1' has validation errors:
+        Severity:       violation
+        Need path:      IMPL_SAFE_P1 > links
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links
+        User message:   Safe impl links to safe spec to safe feat
+        Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE_UNSAFE_FEAT_P1
+      
+          Details for SPEC_SAFE_UNSAFE_FEAT_P1
+          Need path:      IMPL_SAFE_P1 > links > SPEC_SAFE_UNSAFE_FEAT_P1 > links
+          Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > validate > network > links
+          Schema message: 1 unevaluated links of type 'links' found / ok: FEAT_SAFE2_P1 / nok: FEAT_P1
+      
+            Details for FEAT_P1
+            Field:          asil
+            Need path:      IMPL_SAFE_P1 > links > SPEC_SAFE_UNSAFE_FEAT_P1 > links > FEAT_P1
+            Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > properties > asil > enum
+            Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_too_few_links]
+  
+    ''',
+  ])
+# ---
