@@ -11,6 +11,12 @@ from sphinx.config import Config as _SphinxConfig
 from sphinx_needs.data import GraphvizStyleType, NeedsCoreFields
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.schema.config import (
+    USER_CONFIG_SCHEMA_SEVERITIES,
+    MessageRuleEnum,
+    SchemaType,
+    SeverityEnum,
+)
 
 if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
@@ -23,6 +29,10 @@ if TYPE_CHECKING:
 LOGGER = get_logger(__name__)
 
 
+# TODO: checking any schema against the meta model
+# TODO: constrain the schema to disallow certain keys
+
+
 @dataclass
 class ExtraOptionParams:
     """Defines a single extra option for needs"""
@@ -31,6 +41,25 @@ class ExtraOptionParams:
     """A description of the option."""
     validator: Callable[[str | None], str]
     """A function to validate the directive option value."""
+    schema: dict[str, Any] | None
+    """A JSON schema for the option."""
+
+
+class ExtraLinkSchemaItemsType(TypedDict):
+    type: Literal["string"]
+
+
+class ExtraLinkSchemaType(TypedDict):
+    """Defines a schema for a need extra link."""
+
+    type: Literal["array"]
+    """Type for extra links, can only be array."""
+    items: ExtraLinkSchemaItemsType
+    """Schema constraints for link strings."""
+    minItems: NotRequired[int]
+    """Minimum number of items in the array."""
+    maxItems: NotRequired[int]
+    """Maximum number of items in the array."""
 
 
 class FieldDefault(TypedDict):
@@ -91,6 +120,7 @@ class _Config:
         name: str,
         description: str,
         *,
+        schema: dict[str, Any] | None = None,
         validator: Callable[[str | None], str] | None = None,
         override: bool = False,
     ) -> None:
@@ -110,7 +140,9 @@ class _Config:
 
                 raise NeedsApiConfigWarning(f"Option {name} already registered.")
         self._extra_options[name] = ExtraOptionParams(
-            description, directives.unchanged if validator is None else validator
+            description,
+            directives.unchanged if validator is None else validator,
+            schema,
         )
 
     @property
@@ -240,6 +272,13 @@ class LinkOptionsType(TypedDict, total=False):
     """Used for needflow. Default: '->'"""
     allow_dead_links: bool
     """If True, add a 'forbidden' class to dead links"""
+    schema: ExtraLinkSchemaType
+    """
+    A JSON schema for the link option.
+    
+    If given, the schema will apply to all needs that use this link option.
+    For more granular control and graph traversal, use the `needs_schemas` configuration.
+    """
 
 
 class NeedType(TypedDict):
@@ -263,6 +302,32 @@ class NeedExtraOption(TypedDict):
     name: str
     description: NotRequired[str]
     """A description of the option."""
+    type: NotRequired[Literal["string", "integer", "number", "boolean"]]
+    """
+    The data type for schema validation. The option will still be stored as a string,
+    but during schema validation, the value will be coerced to the given type.
+
+    The type semantics are align with JSON Schema, see
+    https://json-schema.org/understanding-json-schema/reference/type.
+
+    For booleans, a predefined set of truthy/falsy strings are accepted:
+    - truthy = {"true", "yes", "y", "on", "1"}
+    - falsy = {"false", "no", "n", "off", "0"}
+
+    ``null`` is not a valid value as Sphinx options cannot actively be set to ``null``.
+    Sphinx-Needs does not distinguish between extra options being not given and given as empty string.
+    Both cases are coerced to an empty string value ``''``.
+    """
+    schema: NotRequired[dict[str, Any]]
+    """
+    A JSON schema for the option.
+    
+    If given, the schema will apply to all needs that use this option.
+    For more granular control, use the `needs_schemas` configuration.
+    """
+    # TODO check schema on config-inited, disallow certain keys such as
+    #      [if, then, else, dependentSchemas, dependentRequired, anyOf, oneOf, not]
+    #      only allow those once usecases are requested
 
 
 class NeedStatusesOption(TypedDict):
@@ -365,6 +430,120 @@ class NeedsSphinxConfig:
         default_factory=list, metadata={"rebuild": "env", "types": (list,)}
     )
     """Path to the root table in the toml file to load configuration from."""
+    schemas: list[SchemaType] = field(
+        default_factory=list,
+        metadata={
+            "rebuild": "env",
+            "types": (list,),
+            "schema": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string", "pattern": "^[a-zA-Z0-9_-]+$"},
+                        "severity": {
+                            "type": "string",
+                            "enum": [
+                                e.name
+                                for e in SeverityEnum
+                                if e in USER_CONFIG_SCHEMA_SEVERITIES
+                            ],
+                        },
+                        "message": {"type": "string"},
+                        "types": {
+                            "type": "array",
+                            "items": {"type": "string", "minLength": 1},
+                        },
+                        "local_schema": {"type": "object"},
+                        "trigger_schema": {"type": "object"},
+                        "trigger_schema_id": {
+                            "type": "string",
+                            "pattern": "^[a-zA-Z0-9_-]+$",
+                        },
+                        "link_schema": {
+                            "type": "object",
+                            "patternProperties": {
+                                "^.*$": {
+                                    "type": "object",
+                                    "properties": {
+                                        "schema_id": {"type": "string"},
+                                        "minItems": {"type": "integer"},
+                                        "maxItems": {"type": "integer"},
+                                        "unevaluatedItems": {"type": "boolean"},
+                                    },
+                                    "additionalProperties": False,
+                                }
+                            },
+                            "additionalProperties": False,
+                        },
+                        "dependency": {"type": "boolean"},
+                    },
+                    "additionalProperties": False,
+                },
+            },
+        },
+    )
+    schemas_from_json: str | None = field(
+        default=None, metadata={"rebuild": "env", "types": (str, type(None))}
+    )
+    """Path to a JSON file to load the schemas from."""
+
+    schemas_severity: str = field(
+        default=SeverityEnum.info.name,
+        metadata={
+            "rebuild": "env",
+            "types": (str,),
+            "schema": {
+                "type": "string",
+                "enum": [
+                    e.name for e in SeverityEnum if e in USER_CONFIG_SCHEMA_SEVERITIES
+                ],
+            },
+        },
+    )
+    """Severity level for the schema validation reporting."""
+
+    schemas_debug_active: bool = field(
+        default=False,
+        metadata={"rebuild": "env", "types": (bool,), "schema": {"type": "boolean"}},
+    )
+    """Activate the debug mode for schema validation to dump JSON/schema files and messages."""
+
+    schemas_debug_path: str = field(
+        default="schema_debug",
+        metadata={
+            "rebuild": "env",
+            "types": (str,),
+            "schema": {"type": "string", "minLength": 1},
+        },
+    )
+    """
+    Path to the directory where the debug files are stored.
+
+    If the path is relative, the caller needs to make sure
+    it gets converted to a use case specific absolute path, e.g.
+    with confdir for Sphinx.
+    """
+
+    schemas_debug_ignore: list[str] = field(
+        default_factory=lambda: [
+            "skipped_dependency",
+            "skipped_wrong_type",
+            "validation_success",
+        ],
+        metadata={
+            "rebuild": "env",
+            "types": (list,),
+            "schema": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "enum": [e.value for e in MessageRuleEnum],
+                },
+            },
+        },
+    )
+    """List of scenarios that are ignored for dumping debug information."""
 
     types: list[NeedType] = field(
         default_factory=lambda: [

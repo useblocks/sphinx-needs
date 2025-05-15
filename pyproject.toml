@@ -49,6 +49,8 @@ test = [
   "lxml>=4.6.5,<6.0",
   "responses~=0.22.0",
   "pytest-xprocess~=1.0",
+  "tomli ~= 2.2.1",
+  "tomli-w ~= 1.2.0",
 ]
 test-parallel = ["pytest-xdist"]
 benchmark = [
@@ -73,6 +75,7 @@ dev = ["pre-commit~=3.0", "tox~=4.23", "tox-uv~=1.15"]
 [tool.pytest.ini_options]
 markers = [
   "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
+  "benchmark: marks tests as expensive benchmark test (deselect with '-m \"not benchmark\"')",
 ]
 filterwarnings = [
   "ignore:.*removed in Python 3.14.*:DeprecationWarning",
