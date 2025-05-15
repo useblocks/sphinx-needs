@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747309851769,
+  "lastUpdate": 1747318045951,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13068,6 +13068,42 @@ window.BENCHMARK_DATA = {
             "value": 56.61045201799999,
             "unit": "s",
             "extra": "Commit: 90368b010919f172d75af936073bf755dfc0e445\nBranch: master\nTime: 2025-05-15T13:49:05+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6ec1f9cf25e558abecee246ae3ebc2a964401f74",
+          "message": "👌 Reset directive option specs at start of build (#1448)\n\nThis fixes the problem, that the `option_spec` attributes are modified\non a class level for:\n\n- `NeedDirective`\n- `NeedextendDirective`\n- `NeedserviceDirective`\n\nand thus remain changed for subsequent sphinx runs in the same\ninterpreter session.\n\nThe problem was a finding of\nhttps://github.com/useblocks/sphinx-needs/pull/1441.\n\nThis is particularly of issue for SN test cases, which all run in the\nsame Python interpreter,\nand should ideally be reproducible, independent of any preceding tests\nrun.\n\nThe PR defines a `reset_options_spec` class method for modified\ndirectives,\nto revert the runtime changes during the `config-inited` event.\n\n---------\n\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2025-05-15T16:05:24+02:00",
+          "tree_id": "14bd54974c655dd64de44bf7ac3d03013b339b65",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6ec1f9cf25e558abecee246ae3ebc2a964401f74"
+        },
+        "date": 1747318030234,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1940179110000031,
+            "unit": "s",
+            "extra": "Commit: 6ec1f9cf25e558abecee246ae3ebc2a964401f74\nBranch: master\nTime: 2025-05-15T16:05:24+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.06322826799999,
+            "unit": "s",
+            "extra": "Commit: 6ec1f9cf25e558abecee246ae3ebc2a964401f74\nBranch: master\nTime: 2025-05-15T16:05:24+02:00"
           }
         ]
       }
