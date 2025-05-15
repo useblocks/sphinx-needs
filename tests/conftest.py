@@ -22,8 +22,6 @@ from sphinx.util.console import strip_colors
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 from xprocess import ProcessStarter
 
-from sphinx_needs.reset import sphinx_needs_reset
-
 pytest_plugins = "sphinx.testing.fixtures"
 
 
@@ -361,14 +359,3 @@ def snapshot_doctree(snapshot):
     except AttributeError:
         # fallback for older versions of pytest-snapshot
         return snapshot.use_extension(DoctreeSnapshotExtension)
-
-
-@pytest.fixture(autouse=True)
-def reset_sn():
-    """
-    Fixture to reset Sphinx Needs after each test.
-
-    This prevents side effects between test cases.
-    """
-    yield
-    sphinx_needs_reset()
