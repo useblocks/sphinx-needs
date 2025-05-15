@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
 
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
@@ -11,6 +11,17 @@ from sphinx.config import Config as _SphinxConfig
 from sphinx_needs.data import GraphvizStyleType, NeedsCoreFields
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.schema.config import (
+    ExtraLinkSchemaType,
+    ExtraOptionBooleanSchemaType,
+    ExtraOptionIntegerSchemaType,
+    ExtraOptionMultiValueSchemaType,
+    ExtraOptionNumberSchemaType,
+    ExtraOptionSchemaTypes,
+    ExtraOptionStringSchemaType,
+    SchemasFileRootType,
+    SeverityEnum,
+)
 
 if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
@@ -31,6 +42,15 @@ class ExtraOptionParams:
     """A description of the option."""
     validator: Callable[[str | None], str]
     """A function to validate the directive option value."""
+    schema: (
+        ExtraOptionStringSchemaType
+        | ExtraOptionBooleanSchemaType
+        | ExtraOptionIntegerSchemaType
+        | ExtraOptionNumberSchemaType
+        | ExtraOptionMultiValueSchemaType
+        | None
+    )
+    """A JSON schema for the option."""
 
 
 class FieldDefault(TypedDict):
@@ -91,6 +111,12 @@ class _Config:
         name: str,
         description: str,
         *,
+        schema: ExtraOptionStringSchemaType
+        | ExtraOptionBooleanSchemaType
+        | ExtraOptionIntegerSchemaType
+        | ExtraOptionNumberSchemaType
+        | ExtraOptionMultiValueSchemaType
+        | None = None,
         validator: Callable[[str | None], str] | None = None,
         override: bool = False,
     ) -> None:
@@ -110,7 +136,9 @@ class _Config:
 
                 raise NeedsApiConfigWarning(f"Option {name} already registered.")
         self._extra_options[name] = ExtraOptionParams(
-            description, directives.unchanged if validator is None else validator
+            description,
+            directives.unchanged if validator is None else validator,
+            schema,
         )
 
     @property
@@ -240,6 +268,14 @@ class LinkOptionsType(TypedDict, total=False):
     """Used for needflow. Default: '->'"""
     allow_dead_links: bool
     """If True, add a 'forbidden' class to dead links"""
+    schema: NotRequired[ExtraLinkSchemaType]
+    """
+    A JSON schema for the link option.
+    
+    If given, the schema will apply to all needs that use this link option.
+    The schema is applied locally on unresolved links, i.e. on the list of string ids.
+    For more granular control and graph traversal, use the `needs_schemas` configuration.
+    """
 
 
 class NeedType(TypedDict):
@@ -263,6 +299,13 @@ class NeedExtraOption(TypedDict):
     name: str
     description: NotRequired[str]
     """A description of the option."""
+    schema: NotRequired[ExtraOptionSchemaTypes]
+    """
+    A JSON schema definition for the option.
+    
+    If given, the schema will apply to all needs that use this option.
+    For more granular control, use the `needs_schemas` configuration.
+    """
 
 
 class NeedStatusesOption(TypedDict):
@@ -365,6 +408,54 @@ class NeedsSphinxConfig:
         default_factory=list, metadata={"rebuild": "env", "types": (list,)}
     )
     """Path to the root table in the toml file to load configuration from."""
+    schemas: SchemasFileRootType = field(
+        default_factory=lambda: cast(SchemasFileRootType, {}),
+        metadata={"rebuild": "env", "types": (dict,)},
+    )
+    schemas_from_json: str | None = field(
+        default=None, metadata={"rebuild": "env", "types": (str, type(None))}
+    )
+    """Path to a JSON file to load the schemas from."""
+
+    schemas_severity: str = field(
+        default=SeverityEnum.info.name,
+        metadata={"rebuild": "env", "types": (str,)},
+    )
+    """Severity level for the schema validation reporting."""
+
+    schemas_debug_active: bool = field(
+        default=False,
+        metadata={"rebuild": "env", "types": (bool,)},
+    )
+    """Activate the debug mode for schema validation to dump JSON/schema files and messages."""
+
+    schemas_debug_path: str = field(
+        default="schema_debug",
+        metadata={"rebuild": "env", "types": (str,)},
+    )
+    """
+    Path to the directory where the debug files are stored.
+
+    If the path is relative, the caller needs to make sure
+    it gets converted to a use case specific absolute path, e.g.
+    with confdir for Sphinx.
+    """
+
+    schemas_debug_ignore: list[str] = field(
+        default_factory=lambda: [
+            "extra_option_success",
+            "extra_link_success",
+            "select_success",
+            "select_fail",
+            "local_success",
+            "network_local_success",
+        ],
+        metadata={
+            "rebuild": "env",
+            "types": (list,),
+        },
+    )
+    """List of scenarios that are ignored for dumping debug information."""
 
     types: list[NeedType] = field(
         default_factory=lambda: [

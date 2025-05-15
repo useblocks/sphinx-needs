@@ -492,7 +492,6 @@ def _create_need_node(
         # nor will it find/add any child needs
         node_need["hidden"] = True
         return [node_need]
-
     return_nodes: list[nodes.Node] = []
 
     if pre_content := data.get("pre_content"):

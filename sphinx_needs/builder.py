@@ -41,7 +41,8 @@ class NeedsBuilder(Builder):
         updated_docnames: Sequence[str],
         method: str = "update",
     ) -> None:
-        return
+        # make sure schema validation is done
+        self.events.emit("write-started", self)
 
     def finish(self) -> None:
         from sphinx_needs.filter_common import filter_needs_view
@@ -257,3 +258,39 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
     needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)  # type: ignore[assignment]
 
     needs_builder.finish()
+
+
+class SchemaBuilder(Builder):
+    """Only validate needs schema, no output is generated."""
+
+    name = "schema"
+
+    def write(
+        self,
+        build_docnames: Iterable[str] | None,
+        updated_docnames: Sequence[str],
+        method: str = "update",
+    ) -> None:
+        # make sure schema validation is done
+        self.events.emit("write-started", self)
+
+    def write_doc(self, docname: str, doctree: nodes.document) -> None:
+        pass
+
+    def finish(self) -> None:
+        pass
+
+    def get_outdated_docs(self) -> Iterable[str]:
+        return []
+
+    def prepare_writing(self, _docnames: set[str]) -> None:
+        pass
+
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
+        pass
+
+    def cleanup(self) -> None:
+        pass
+
+    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:
+        return ""

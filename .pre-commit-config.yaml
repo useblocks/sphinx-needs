@@ -29,6 +29,7 @@ repos:
           - types-docutils==0.20.0.20240201
           - types-jsonschema
           - types-requests
+          - typeguard
 
   # TODO this does not work on pre-commit.ci
   # - repo: https://github.com/astral-sh/uv-pre-commit
