@@ -68,7 +68,7 @@ class NeedDirective(SphinxDirective):
 
         collapse = self.options.get("collapse")
         jinja_content = self.options.get("jinja_content")
-        hide = "hide" in self.options
+        hide = self.options.get("hide")
 
         id = self.options.get("id")
         status = self.options.get("status")
@@ -105,10 +105,10 @@ class NeedDirective(SphinxDirective):
                 lineno_content=self.content_offset + 1,
                 status=status,
                 tags=tags,
-                hide=hide,
                 template=template,
                 pre_template=pre_template,
                 post_template=post_template,
+                hide=hide,
                 collapse=collapse,
                 style=style,
                 layout=layout,

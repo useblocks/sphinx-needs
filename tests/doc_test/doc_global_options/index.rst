@@ -13,3 +13,5 @@ GLOBAL OPTIONS
 .. spec:: Specification 3
     :id: SPEC_3
     :status: other
+    :collapse: false
+    :hide: true

@@ -31,7 +31,7 @@ def test_doc_global_option_old(test_app, snapshot):
         "WARNING: needs_global_options 'link3' has a default value that is not of type 'str_list' [needs.config]",
         "WARNING: needs_global_options 'bad_value_type' has a default value that is not of type 'str' [needs.config]",
         "WARNING: needs_global_options 'too_many_params' has an unknown value format [needs.config]",
-        "WARNING: needs_global_options 'unknown' must also exist in needs_extra_options, needs_extra_links, or ['constraints', 'layout', 'post_template', 'pre_template', 'status', 'style', 'tags', 'template'] [needs.config]",
+        "WARNING: needs_global_options 'unknown' must also exist in needs_extra_options, needs_extra_links, or ['collapse', 'constraints', 'hide', 'layout', 'post_template', 'pre_template', 'status', 'style', 'tags', 'template'] [needs.config]",
         "WARNING: needs_global_options uses old, non-dict, format. please update to new format: {'layout': {'default': 'clean_l'}, 'option_1': {'default': 'test_global'}, 'option_2': {'default': \"[[copy('id')]]\"}, 'option_3': {'predicates': [('status == \"implemented\"', 'STATUS_IMPL')]}, 'option_4': {'predicates': [('status == \"closed\"', 'STATUS_CLOSED')], 'default': 'STATUS_UNKNOWN'}, 'option_5': {'predicates': [('status == \"implemented\"', 'STATUS_IMPL'), ('status == \"closed\"', 'STATUS_CLOSED')], 'default': 'final'}, 'link1': {'default': ['SPEC_1']}, 'link2': {'predicates': [('status == \"implemented\"', ['SPEC_2', \"[[copy('link1')]]\"]), ('status == \"closed\"', ['SPEC_3'])], 'default': ['SPEC_1']}, 'tags': {'predicates': [('status == \"implemented\"', ['a', 'b']), ('status == \"closed\"', ['c'])], 'default': ['d']}} [needs.deprecated]",
     ]
 
@@ -65,7 +65,7 @@ def test_doc_global_option(test_app, snapshot):
         "WARNING: needs_global_options 'link3' has a default value that is not of type 'str_list' [needs.config]",
         "WARNING: needs_global_options 'bad_value_type' has a default value that is not of type 'str' [needs.config]",
         "WARNING: needs_global_options 'too_many_params', 'predicates', must be a list of (filter string, value) pairs [needs.config]",
-        "WARNING: needs_global_options 'unknown' must also exist in needs_extra_options, needs_extra_links, or ['constraints', 'layout', 'post_template', 'pre_template', 'status', 'style', 'tags', 'template'] [needs.config]",
+        "WARNING: needs_global_options 'unknown' must also exist in needs_extra_options, needs_extra_links, or ['collapse', 'constraints', 'hide', 'layout', 'post_template', 'pre_template', 'status', 'style', 'tags', 'template'] [needs.config]",
     ]
 
     needs_config = NeedsSphinxConfig(test_app.config)

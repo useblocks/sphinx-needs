@@ -37,6 +37,8 @@ needs_extra_options = [
 ]
 
 needs_global_options = {
+    "collapse": {"default": True},
+    "hide": {"default": False},
     "layout": {"default": "clean_l"},
     "option_1": {"default": "test_global"},
     "option_2": {"default": "[[copy('id')]]"},
@@ -75,3 +77,11 @@ needs_global_options = {
 
 needs_build_json = True
 needs_json_remove_defaults = True
+needs_json_exclude_fields = [
+    "id_complete",
+    "id_parent",
+    "lineno_content",
+    "type_color",
+    "type_prefix",
+    "type_style",
+]
