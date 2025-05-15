@@ -755,7 +755,7 @@ def _gather_field_defaults(
     needs_config: NeedsSphinxConfig, link_types: set[str]
 ) -> None:
     """gather defaults from needs_global_options and set on config"""
-    allowed_internal_defaults: dict[str, Literal["str", "str_list"]] = {
+    allowed_internal_defaults: dict[str, Literal["str", "str_list", "bool"]] = {
         k: v["allow_default"]
         for k, v in NeedsCoreFields.items()
         if "allow_default" in v
@@ -883,11 +883,13 @@ def _gather_field_defaults(
 def _check_type(
     key: str,
     default: FieldDefault,
-    type_name: Literal["str", "str_list"],
+    type_name: Literal["str", "str_list", "bool"],
 ) -> bool:
     """Check the values in a FieldDefault are the given type."""
-    assert type_name in ("str", "str_list")
-    type_ = str if type_name == "str" else (str, list)
+    assert type_name in ("str", "str_list", "bool")
+    type_ = (
+        str if type_name == "str" else (bool if type_name == "bool" else (str, list))
+    )
     if "default" in default:
         if not isinstance(default["default"], type_):
             log_warning(

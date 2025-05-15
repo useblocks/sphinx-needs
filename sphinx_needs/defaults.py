@@ -261,7 +261,7 @@ NEED_DEFAULT_OPTIONS: dict[str, Any] = {
     "collapse": string_to_boolean,
     "delete": string_to_boolean,
     "jinja_content": string_to_boolean,
-    "hide": directives.flag,
+    "hide": string_to_boolean,
     "title_from_content": directives.flag,
     "style": directives.unchanged_required,
     "layout": directives.unchanged_required,
