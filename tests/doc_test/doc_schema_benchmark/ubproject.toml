@@ -1,0 +1,65 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+[needs]
+id_required = true
+a = ["a", 3, { "a" = "b" }]
+id_regex = "^[A-Z0-9_]{3,}"
+schemas_severity = 'info'
+
+[[needs.extra_options]]
+name = "efforts"
+description = "FTE days"
+
+[needs.extra_options.schema]
+type = "integer"
+minimum = 0
+
+[[needs.extra_options]]
+name = "priority"
+description = "Priority level, 1-5 where 1 is highest and 5 is lowest"
+
+[needs.extra_options.schema]
+type = "integer"
+minimum = 1
+maximum = 5
+
+[[needs.extra_options]]
+name = "asil"
+description = "Automotive Safety Integrity Level"
+
+[needs.extra_options.schema]
+type = "string"
+enum = ["QM", "A", "B", "C", "D"]
+
+[[needs.extra_options]]
+name = "approved"
+description = "Approval flag"
+
+[needs.extra_options.schema]
+type = "boolean"
+
+[[needs.extra_links]]
+option = "links"
+outgoing = "links"
+incoming = "linked by"
+
+[needs.extra_links.schema]
+type = "array"
+items = { type = "string", pattern = "^[A-Z0-9_]{3,}" }
+
+[[needs.types]]
+directive = "feat"
+title = "Feat"
+prefix = "Feat_"
+
+[[needs.types]]
+directive = "spec"
+title = "Specification"
+prefix = "SPEC_"
+
+[[needs.types]]
+directive = "impl"
+title = "Implementation"
+prefix = "IMPL_"
+
+# link modeling impl -[links]-> spec -[links]-> feat

@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import contextlib
+import json
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, Callable, Literal
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from jsonschema import Draft202012Validator, SchemaError
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 from sphinx.config import Config
+from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
 from sphinx.errors import SphinxError
 
@@ -21,6 +24,7 @@ from sphinx_needs.builder import (
     NeedsBuilder,
     NeedsIdBuilder,
     NeedumlsBuilder,
+    SchemaBuilder,
     build_needs_id_json,
     build_needs_json,
     build_needumls_pumls,
@@ -115,6 +119,7 @@ from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
+from sphinx_needs.schema.process import process_schemas
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import node_match
@@ -124,6 +129,7 @@ try:
     import tomllib  # added in python 3.11
 except ImportError:
     import tomli as tomllib
+
 
 VERSION = __version__
 
@@ -158,6 +164,28 @@ NODE_TYPES: _NODE_TYPES_T = {
 LOGGER = get_logger(__name__)
 
 
+def load_schemas_config_from_json(app: Sphinx, config: _SphinxConfig) -> None:
+    """Merge the configuration from the JSON file into the Sphinx config."""
+    needs_config = NeedsSphinxConfig(config)
+    if needs_config.schemas_from_json is None:
+        return
+    json_file = Path(app.confdir, needs_config.schemas_from_json).resolve()
+
+    if not json_file.exists():
+        raise NeedsConfigException(
+            f"'sn_schema_from_json' file does not exist: {json_file}"
+        )
+
+    try:
+        with Path(json_file).open("rb") as fp:
+            json_data = json.load(fp)
+        assert isinstance(json_data, list), "Data must be a list"
+    except Exception as exc:
+        raise NeedsConfigException(f"Could not load JSON file: {exc}") from exc
+
+    config["needs_schemas"] = json_data
+
+
 def setup(app: Sphinx) -> dict[str, Any]:
     LOGGER.debug("Starting setup of Sphinx-Needs")
     LOGGER.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
@@ -168,6 +196,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_builder(NeedsBuilder)
     app.add_builder(NeedumlsBuilder)
     app.add_builder(NeedsIdBuilder)
+    app.add_builder(SchemaBuilder)
 
     NeedsSphinxConfig.add_config_values(app)
 
@@ -307,6 +336,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
 
+    app.connect("write-started", process_schemas)
     app.connect("write-started", ensure_post_process_needs_data)
 
     app.connect("build-finished", process_warnings)
@@ -442,6 +472,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
 
     for option in needs_config._extra_options:
         description = "Added by needs_extra_options config"
+        schema = None
         if isinstance(option, str):
             name = option
         elif isinstance(option, dict):
@@ -456,6 +487,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 )
                 continue
             description = option.get("description", description)
+            schema = option.get("schema")
         else:
             log_warning(
                 LOGGER,
@@ -465,7 +497,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             )
             continue
 
-        _NEEDS_CONFIG.add_extra_option(name, description, override=True)
+        _NEEDS_CONFIG.add_extra_option(name, description, schema=schema, override=True)
 
     # ensure options for ``needgantt`` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
@@ -575,6 +607,8 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             "config",
             None,
         )
+
+    load_schemas_config_from_json(app, app.config)
 
 
 def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
@@ -754,6 +788,120 @@ def check_configuration(app: Sphinx, config: Config) -> None:
             )
 
     _gather_field_defaults(needs_config, set(link_types))
+
+    validate_schemas_config(needs_config)
+
+
+def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
+    """Validates schemas for extra_options, extra_links, and schemas in needs_config."""
+
+    extra_options_w_schema_missing_type = set()
+    """All extra options with schema but missing type."""
+    extra_options_wo_schema_missing_type = set()
+    """All extra options without schema and missing type."""
+
+    # validate all given schemas against the meta schema for extra options
+    for option, value in needs_config.extra_options.items():
+        if value.schema is not None:
+            try:
+                Draft202012Validator.check_schema(value.schema)
+            except SchemaError as exc:
+                raise NeedsConfigException(
+                    f"Schema for extra option {option} is not valid: {exc}"
+                ) from exc
+            # TODO consider array in future also for extra options
+            allowed_types = {"string", "integer", "number", "boolean"}
+            type_ = value.schema.get("type")
+            if type_ is not None and type_ not in allowed_types:
+                raise NeedsConfigException(
+                    f"Schema for extra option {option} has invalid type: {type_}. "
+                    f"Allowed types are: {allowed_types}"
+                )
+            if type_ is None:
+                extra_options_w_schema_missing_type.add(option)
+        else:
+            extra_options_wo_schema_missing_type.add(option)
+
+    # validate schemas for extra links
+    for extra_link in needs_config.extra_links:
+        extra_link_schema = extra_link.get("schema")
+        if extra_link_schema is not None:
+            try:
+                Draft202012Validator.check_schema(extra_link_schema)
+            except SchemaError as exc:
+                raise NeedsConfigException(
+                    f"Schema for extra link {extra_link['option']} is not valid: {exc}"
+                ) from exc
+
+    # validate each schema entry in needs_config.schemas
+    extra_options_missing_type = (
+        extra_options_w_schema_missing_type | extra_options_wo_schema_missing_type
+    )
+    """All extra options with missing type."""
+
+    all_schema_ids = {schema["id"] for schema in needs_config.schemas if "id" in schema}
+
+    for idx, schema in enumerate(needs_config.schemas):
+        schema_id = schema.get("id")
+        schema_name = f"{schema_id}[{idx}]" if schema_id else f"[{idx}]"
+
+        if (
+            "trigger_schema_id" in schema
+            and schema["trigger_schema_id"] not in all_schema_ids
+        ):
+            raise NeedsConfigException(
+                f"Schema '{schema_name}' is referencing trigger_schema_id '{schema['trigger_schema_id']}' which does not exist."
+            )
+
+        # Gather all used extra options in trigger_schema and local_schema properties
+        user_schemas: list[Literal["trigger_schema", "local_schema"]] = [
+            "trigger_schema",
+            "local_schema",
+        ]
+        for user_schema in user_schemas:
+            if user_schema not in schema:
+                continue
+            schema_in_object = {
+                "type": "object",
+                **schema[user_schema],
+            }
+            try:
+                Draft202012Validator.check_schema(schema_in_object)
+            except SchemaError as exc:
+                raise NeedsConfigException(
+                    f"Schemas entry {schema_name} is not valid: {exc}"
+                ) from exc
+            if "properties" in schema[user_schema]:
+                properties = schema[user_schema]["properties"].keys()
+                for prop in properties:
+                    if (
+                        prop in extra_options_missing_type
+                        and "type" not in schema[user_schema]["properties"][prop]
+                    ):
+                        raise NeedsConfigException(
+                            f"Schemas entry {schema_name} is referencing extra option '{prop}' without a type specification"
+                        )
+        if "link_schema" in schema:
+            # validate link_schema
+            extra_links = {item["option"] for item in needs_config.extra_links}
+            for link_type, link_schema in schema["link_schema"].items():
+                if link_type not in extra_links:
+                    raise NeedsConfigException(
+                        f"Link type '{link_type}' in schema '{schema_name}' is not defined in needs_extra_links"
+                    )
+                if (
+                    "schema_id" in link_schema
+                    and link_schema["schema_id"] not in all_schema_ids
+                ):
+                    raise NeedsConfigException(
+                        f"Link type '{link_type}' in schema '{schema_name}' is referencing schema_id '{link_schema['schema_id']}' which does not exist."
+                    )
+
+    if extra_options_w_schema_missing_type:
+        missing = ", ".join(sorted(extra_options_w_schema_missing_type))
+        raise NeedsConfigException(
+            f"Missing types in schema definition for extra_options: {missing}"
+        )
 
 
 def _gather_field_defaults(
