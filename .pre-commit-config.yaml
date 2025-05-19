@@ -6,7 +6,7 @@ repos:
       - id: taplo-format
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.9
+    rev: v0.11.10
     hooks:
       - id: ruff
         args: [--fix]
