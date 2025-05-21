@@ -49,13 +49,22 @@ def process_need_outgoing(
             need_id_main, need_id_part = split_need_id(need_id_full)
 
             # If the need target exists, let's create the reference
-            if (need_id_main in needs_all_needs and not need_id_part) or (
-                need_id_part
-                and need_id_main in needs_all_needs
-                and need_id_part in needs_all_needs[need_id_main]["parts"]
+            if (
+                (need_id_main in needs_all_needs and not need_id_part)
+                or (
+                    need_id_part
+                    and need_id_main in needs_all_needs
+                    and need_id_part in needs_all_needs[need_id_main]["parts"]
+                )
+                or (need_id_full in needs_all_needs)
             ):
                 try:
-                    target_need = needs_all_needs[need_id_main]
+                    if need_id_main in needs_all_needs:
+                        target_need = needs_all_needs[need_id_main]
+                    else:
+                        target_need = needs_all_needs[need_id_full]
+                        need_id_part = None
+
                     if need_id_part and need_id_part in target_need["parts"]:
                         part_content = target_need["parts"][need_id_part]["content"]
                         target_title = (
