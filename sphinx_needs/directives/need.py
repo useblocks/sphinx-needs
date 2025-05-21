@@ -392,7 +392,10 @@ def check_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
             for need_id_full in need_link_value:
                 need_id_main, need_id_part = split_need_id(need_id_full)
 
-                if need_id_main not in needs or (
+                if (
+                    need_id_main not in needs
+                    and need_id_full not in needs
+                ) or (
                     need_id_main in needs
                     and need_id_part
                     and need_id_part not in needs[need_id_main]["parts"]
