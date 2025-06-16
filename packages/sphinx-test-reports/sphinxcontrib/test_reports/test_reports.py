@@ -4,6 +4,8 @@ import os
 import sphinx
 from docutils.parsers.rst import directives
 from packaging.version import Version
+from sphinx.application import Sphinx
+from sphinx.config import Config
 
 # from docutils import nodes
 from sphinx_needs.api import add_dynamic_function, add_extra_option, add_need_type
@@ -37,7 +39,7 @@ else:
 VERSION = "1.1.1"
 
 
-def setup(app):
+def setup(app: Sphinx):
     """
     Setup following directives:
     * test_results
@@ -167,7 +169,7 @@ def tr_preparation(app, *args):
     app.add_directive(app.config.tr_case[0], TestCaseDirective)
 
 
-def sphinx_needs_update(app, *args):
+def sphinx_needs_update(app: Sphinx, config: Config) -> None:
     """
     sphinx-needs configuration
     """

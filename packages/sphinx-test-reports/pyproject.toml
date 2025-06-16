@@ -46,7 +46,7 @@ docs = [
 ]
 
 [dependency-groups]
-dev = ["pre-commit~=3.0", "nox>=2025.2.9"]
+dev = ["pre-commit~=3.0", "nox>=2025.2.9", "mypy>=1.16.0"]
 
 [tool.flit.module]
 name = "sphinxcontrib.test_reports"
@@ -80,14 +80,54 @@ extend-select = [
 ]
 
 [tool.mypy]
-files = "sphinxcontrib"
+packages = ["sphinxcontrib.test_reports"]
 strict = true
 show_error_codes = true
-implicit_reexport = false
-namespace_packages = true
+# TODO: reactivate below files and fix issues in future PRs
+exclude = [
+  "^sphinxcontrib/test_reports/__init__\\.py$",
+  "^sphinxcontrib/test_reports/config\\.py$",
+  "^sphinxcontrib/test_reports/directives/__init__\\.py$",
+  "^sphinxcontrib/test_reports/directives/test_case\\.py$",
+  "^sphinxcontrib/test_reports/directives/test_common\\.py$",
+  "^sphinxcontrib/test_reports/directives/test_env\\.py$",
+  "^sphinxcontrib/test_reports/directives/test_file\\.py$",
+  "^sphinxcontrib/test_reports/directives/test_report\\.py$",
+  "^sphinxcontrib/test_reports/directives/test_results\\.py$",
+  "^sphinxcontrib/test_reports/directives/test_suite\\.py$",
+  "^sphinxcontrib/test_reports/environment\\.py$",
+  "^sphinxcontrib/test_reports/exceptions\\.py$",
+  "^sphinxcontrib/test_reports/functions",
+  "^sphinxcontrib/test_reports/jsonparser\\.py$",
+  "^sphinxcontrib/test_reports/junitparser\\.py$",
+  "^sphinxcontrib/test_reports/test_reports\\.py$",
+]
+# Disallow dynamic typing
+disallow_any_unimported = true
+disallow_any_expr = true
+disallow_any_decorated = true
 disallow_any_generics = true
+disallow_any_explicit = true
 disallow_subclassing_any = true
-# disallow_any_unimported = true
-# disallow_any_explicit = true
-# disallow_any_expr = true
-# disallow_any_decorated = true
+
+# Disallow untyped definitions and calls
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+# disallow_incomplete_defs = true
+# check_untyped_defs = true
+# disallow_untyped_decorators = true
+
+# # None and optional handling
+# no_implicit_optional = true
+
+# # Configuring warnings
+# warn_unused_ignores = true
+# warn_no_return = true
+# warn_return_any = true
+# warn_redundant_casts = true
+
+# # Misc things
+# strict_equality = true
+
+# # Config file
+# warn_unused_configs = true
