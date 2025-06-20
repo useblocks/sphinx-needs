@@ -90,20 +90,22 @@ def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     if builder.name == "needs":
         return
 
-    logger.info("Copying static files for sphinx-needs datatables support")
+    logger.info("Copying static files for sphinx-needs gridJS support")
 
     statics_dir = Path(builder.outdir) / _STATIC_DIR_NAME
     source_dir = Path(__file__).parent / "libs" / "html"
     destination_dir = statics_dir / "sphinx-needs" / "libs" / "html"
 
-    # "Copying static files for sphinx-needs datatables support..."
+    # "Copying static files for sphinx-needs gridJS support..."
     copy_asset(str(source_dir), str(destination_dir))
 
-    # Add the needed datatables js and css file
+    # Add the needed gridJS js and css file
     lib_path = Path("sphinx-needs") / "libs" / "html"
-    _add_js_file(app, lib_path.joinpath("datatables.min.js"))
-    _add_js_file(app, lib_path.joinpath("datatables_loader.js"))
-    _add_css_file(app, lib_path.joinpath("datatables.min.css"))
+    _add_css_file(app, lib_path.joinpath("GridJS/gridjs-theme.min.css"))
+    _add_js_file(app, lib_path.joinpath("GridJS/gridjs.umd.js"))
+    _add_js_file(app, lib_path.joinpath("GridJS/jspdf.umd.min.js"))
+    _add_js_file(app, lib_path.joinpath("GridJS/jspdf.plugin.autotable.min.js"))
+    _add_js_file(app, lib_path.joinpath("gridjs_loader.js"))
     _add_js_file(app, lib_path.joinpath("sphinx_needs_collapse.js"))
 
 

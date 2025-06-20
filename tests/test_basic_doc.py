@@ -34,8 +34,11 @@ def test_build_html(test_app: SphinxTestApp, snapshot_doctree):
     build_dir = Path(app.outdir) / "_static" / "sphinx-needs" / "libs" / "html"
     files = [f for f in build_dir.glob("**/*") if f.is_file()]
     assert build_dir / "sphinx_needs_collapse.js" in files
-    assert build_dir / "datatables_loader.js" in files
-    assert build_dir / "DataTables-1.10.16" / "js" / "jquery.dataTables.min.js" in files
+    assert build_dir / "gridjs_loader.js" in files
+    assert build_dir / "GridJS" / "gridjs-theme.min.css" in files
+    assert build_dir / "GridJS" / "gridjs.umd.js" in files
+    assert build_dir / "GridJS" / "jspdf.umd.min.js" in files
+    assert build_dir / "GridJS" / "jspdf.plugin.autotable.min.js" in files
 
 
 @pytest.mark.skipif(
@@ -56,7 +59,7 @@ def test_html_head_files(test_app: SphinxTestApp):
     root_tree = html_parser.parse(html_path)
     script_nodes = root_tree.xpath("/html/head/script")
     script_files = [x.attrib["src"].rsplit("?", 1)[0] for x in script_nodes]
-    assert script_files.count("_static/sphinx-needs/libs/html/datatables.min.js") == 1
+    assert script_files.count("_static/sphinx-needs/libs/html/gridjs_loader.js") == 1
 
     link_nodes = root_tree.xpath("/html/head/link")
     link_files = [x.attrib["href"].rsplit("?", 1)[0] for x in link_nodes]
