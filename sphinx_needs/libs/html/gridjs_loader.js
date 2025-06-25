@@ -148,7 +148,6 @@ function addDownloadButtons(tableId, headers, rows) {
     downloadBtns.appendChild(pdfDownloadBtns);
     downloadBtns.id = `${tableId}-download-btns`;
     downloadBtns.className = 'gridjs-download-btns';
-    downloadBtns.style.float = 'right';
 
     const headerNames = headers.map(header => header.name);
     const textRows = rows.map(row => 
@@ -168,8 +167,35 @@ function addDownloadButtons(tableId, headers, rows) {
     }
 }
 
+function addGridJSWrapperScrollListener() {
+    document.querySelectorAll('.gridjs-wrapper').forEach(wrapper => {
+        wrapper.addEventListener('scroll', () => {
+            if (wrapper.scrollTop > 0 || wrapper.scrollLeft > 0) {
+                wrapper.classList.add('scrolled');
+            } else {
+                wrapper.classList.remove('scrolled');
+            }
+        });
+    });
+}
+
 async function initializeGridJS() {
     await loadGridJSandJSPDF();
+
+    const languageSettings = {
+        search: {
+            'placeholder': '🔍 Search...'
+        },
+        pagination: {
+            previous: '⬅️ Previous',
+            next: '➡️ Next',
+            showing: '📺 Displaying',
+            results: 'rows'
+        },
+        loading: 'Loading...',
+        noRecordsFound: 'No matching records found',
+        error: 'Error occurred while fetching the data. Please refresh page',
+    };
     
     document.querySelectorAll('table.NEEDS_DATATABLES').forEach(table => {
         const tableId = (table.id?.replace(/[^a-zA-Z0-9_-]/g, '_') || `gridjs-table-${Math.random().toString(36).substring(2, 11)}`);
@@ -212,23 +238,14 @@ async function initializeGridJS() {
             style: {
                 table: {width: '100%', height: '500px', display: 'table'},
             },
-            language: {
-                'search': {
-                    'placeholder': '🔍 Search...'
-                },
-                'pagination': {
-                    'previous': '⬅️ Previous',
-                    'next': '➡️ Next',
-                    'showing': '😃 Displaying',
-                    'results': () => 'rows'
-                }
-            },
+            language: languageSettings,
         });
 
         gridInstance.render(wrapper);
 
         setTimeout(() => {
             addDownloadButtons(tableId, headers, rows);
+            addGridJSWrapperScrollListener();
         }, 100);
 
         // Remove the original table

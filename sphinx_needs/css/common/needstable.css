@@ -21,86 +21,123 @@ div.needstable_wrapper {
     padding: 0;
 }
 
-/* These are "overrides" for CSS added by the bundled https://datatables.net JS package */
-
-table.dataTable {
-    border-collapse: collapse;
-    border: none;
+table.docutils.docutils td, table.docutils.docutils th {
+    background: var(--sn-color-datatable-body-bg);
+    border: 1px solid var(--sn-color-table-border);
+    color: var(--sn-color-datatable-label);
 }
 
-table.dataTable tbody tr {
+table.docutils.docutils th {
+    border-bottom: 1px solid var(--sn-color-datatable-btn-border);
+}
+/* GridJS styles for to override the default GridJS styles
+to match the Sphinx Needs theme and to ensure a consistent look and feel
+with the rest of the Sphinx Needs documentation.
+
+The 3 sections of a GridJS container .gridjs-head, .gridjs-wrapper and .gridjs-footer */
+div.gridjs-container {
+    color: var(--sn-color-datatable-label);
+}
+
+div.gridjs-wrapper {
+    border-radius: 0px;
+    box-shadow: none;
+}
+
+div.gridjs-footer {
+    background-color: var(--sn-color-datatable-body-bg);
+    border: 1px solid var(--sn-color-datatable-btn-border);
+    box-shadow: none;
+    padding: 12px;
+    border-top-width: 0px;
+}
+
+/* .gridjs-head */
+.gridjs-search {
+    float: left;
+}
+
+div.gridjs-download-btns {
+    float: right;
+}
+
+div.gridjs-download-btns button {
+    border-radius: 6px;
+    outline: 0;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+/* .gridjs-wrapper */
+.gridjs-wrapper.scrolled .gridjs-th-fixed {
+    background-color: #4f4f4f54;
+    z-index: 999;
+    outline: 1px solid var(--sn-color-table-border);
+}
+
+table thead.gridjs-thead th.gridjs-th {
+    padding: 8px;
+}
+
+th.gridjs-th .gridjs-th-content {
+    text-overflow: initial;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+button.gridjs-sort-neutral, button.gridjs-sort-asc, button.gridjs-sort-desc{
+    filter: brightness(0) saturate(100%) invert(40%) sepia(10%) saturate(366%) hue-rotate(182deg) brightness(94%) contrast(89%);
+}
+tbody.gridjs-tbody {
     background-color: var(--sn-color-datatable-body-bg);
 }
 
-div.dataTables_length {
-    margin-bottom: 10px;
+table tbody.gridjs-tbody td.gridjs-td {
+    padding: 8px;
 }
-
-div.dataTables_wrapper {
-    overflow-x: auto;
-    padding: 0px 5px;
-    /*Space needed for table borders */
-}
-
-.dataTables_wrapper .dataTables_paginate .paginate_button {
-    padding: 0.15em 0.75em;
-    background: none;
-}
-
-.dataTables_wrapper .dataTables_paginate .paginate_button.current,
-.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-    background: none;
-}
-
-div.dataTables_length select {
-    background: none;
-    color: var(--sn-color-datatable-label);
-    border: 1px solid var(--sn-color-datatable-btn-border);
-    border-radius: 2px;
-    cursor: pointer;
-}
-
-div.dt-buttons {
-    margin-left: 0.5em;
-}
-
-div.dt-buttons button {
-    padding: 0.1em 1em;
-    border: 1px solid var(--sn-color-datatable-btn-border);
-    border-radius: 2px;
-    font-size: 0.88em;
-    line-height: inherit;
-    color: var(--sn-color-datatable-label);
-    white-space: nowrap;
-    overflow: hidden;
-    background-color: inherit;
-    background-image: none;
-}
-
-.dataTables_wrapper .dataTables_filter input {
-    max-width: 100px;
-    border: 1px solid var(--sn-color-datatable-btn-border);
-    margin-bottom: 10px;
-    background-color: transparent;
-    border-radius: 2px;
-}
-
-.dataTables_wrapper.dataTables_wrapper .dataTables_length,
-.dataTables_wrapper.dataTables_wrapper .dataTables_filter,
-.dataTables_wrapper.dataTables_wrapper .dataTables_info,
-.dataTables_wrapper.dataTables_wrapper .dataTables_processing {
+/* .gridjs-footer */
+.gridjs-pagination {
     color: var(--sn-color-datatable-label);
 }
 
-.dataTables_wrapper.dataTables_wrapper .dataTables_paginate,
-.dataTables_wrapper.dataTables_wrapper .dataTables_paginate a.paginate_button,
-.dataTables_wrapper.dataTables_wrapper .dataTables_paginate a.paginate_button.current {
-    /* datatables set this as !important, so unfortunately we have to do the same */
-    color: var(--sn-color-datatable-label) !important;
+.gridjs-pagination .gridjs-pages button {
+    background-color: var(--sn-color-datatable-body-bg);
+    color: var(--sn-color-datatable-label);
+    border: 1px solid var(--sn-color-datatable-btn-border);
+    padding: 8px;
+    border-right: none
 }
 
-.dataTables_wrapper.dataTables_wrapper .dataTables_paginate a.paginate_button.disabled {
-    filter: saturate(0.5);
+.gridjs-pagination .gridjs-pages button:hover {
+    background-color: var(--sn-color-datatable-body-bg);
+    color: var(--sn-color-datatable-label);
+    opacity: 0.7;
 }
 
-/* TODO: Ideally, if there is only one page, then the paginate buttons should be hidden. */
+.gridjs-pagination .gridjs-pages button:disabled, .gridjs-pagination .gridjs-pages button:hover:disabled, .gridjs-pagination .gridjs-pages button[disabled] {
+    background-color: var(--sn-color-datatable-body-bg);
+    filter: saturate(0.25);
+}
+.gridjs-pagination .gridjs-pages button.gridjs-currentPage {
+    background-color: var(--sn-color-datatable-body-bg);
+    color: var(--sn-color-datatable-label);
+    font-weight: bolder;
+}
+.gridjs-pagination .gridjs-pages button.gridjs-spread {
+    background-color: var(--sn-color-datatable-body-bg);
+}
+
+.gridjs-pagination .gridjs-pages button:last-child {
+    border: 1px solid var(--sn-color-datatable-btn-border);
+}
+
+/* Other GridJS style override */
+input.gridjs-input, div.gridjs-download-btns button {
+    background-color: var(--sn-color-datatable-body-bg);
+    color: var(--sn-color-datatable-label);
+    border: 1px solid var(--sn-color-datatable-btn-border);
+    padding: 8px;
+}
