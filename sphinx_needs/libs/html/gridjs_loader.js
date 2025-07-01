@@ -142,8 +142,8 @@ function addDownloadButtons(tableId, headers, rows) {
 
     csvDownloadBtns.id = `${tableId}-download-csv`;
     pdfDownloadBtns.id = `${tableId}-download-pdf`;
-    csvDownloadBtns.textContent = "Download CSV";
-    pdfDownloadBtns.textContent = "Download PDF";
+    csvDownloadBtns.textContent = "CSV";
+    pdfDownloadBtns.textContent = "PDF";
     downloadBtns.appendChild(csvDownloadBtns);
     downloadBtns.appendChild(pdfDownloadBtns);
     downloadBtns.id = `${tableId}-download-btns`;
@@ -167,6 +167,47 @@ function addDownloadButtons(tableId, headers, rows) {
     }
 }
 
+function addPaginationLimitSelector(gridInstance, tableId, headers, rows, selected_option = 10) {
+    const paginationLimitDiv = document.createElement('div');
+    paginationLimitDiv.className = 'gridjs-pagination-limit-div';
+    const paginationLimitSelector = document.createElement('select');
+    paginationLimitSelector.id = `${tableId}-pagination-limit`;
+    paginationLimitSelector.className = 'gridjs-pagination-limit';
+
+    const options = [10, 25, 50, "all"];
+    options.forEach(limit => {
+        if (rows.length >= limit || limit === "all") {
+            const option = document.createElement('option');
+            option.value = limit;
+            option.textContent = limit === "all" ? "All" : limit;
+            option.selected = limit === "all" ? (selected_option === "all") : (limit === parseInt(selected_option, 10));
+            paginationLimitSelector.appendChild(option);
+        }
+    });
+
+    paginationLimitSelector.addEventListener('change', (event) => {
+        const selectedValue = event.target.value;
+        const newLimit = selectedValue === "all" ? rows.length : parseInt(selectedValue, 10);
+        if (gridInstance) {
+            gridInstance.updateConfig({
+                pagination: {
+                    limit: newLimit
+                }
+            }).forceRender();
+            applyCustomFunctions(gridInstance, tableId, headers, rows, selectedValue);
+        }
+    });
+
+    paginationLimitDiv.appendChild(document.createTextNode('Show'));
+    paginationLimitDiv.appendChild(paginationLimitSelector);
+    paginationLimitDiv.appendChild(document.createTextNode('rows'));
+
+    const gridJSHeadDiv = document.querySelector(`#gridjs-wrapper-${tableId} .gridjs-head`);
+    if (gridJSHeadDiv) {
+        gridJSHeadDiv.appendChild(paginationLimitDiv);
+    }
+}
+
 function addGridJSWrapperScrollListener() {
     document.querySelectorAll('.gridjs-wrapper').forEach(wrapper => {
         wrapper.addEventListener('scroll', () => {
@@ -179,17 +220,25 @@ function addGridJSWrapperScrollListener() {
     });
 }
 
+function applyCustomFunctions(gridInstance, tableId, headers, rows, selected_option = 10) {
+    setTimeout(() => {
+        addPaginationLimitSelector(gridInstance, tableId, headers, rows, selected_option);
+        addDownloadButtons(tableId, headers, rows);
+        addGridJSWrapperScrollListener();
+    }, 100);
+}
+
 async function initializeGridJS() {
     await loadGridJSandJSPDF();
 
     const languageSettings = {
         search: {
-            'placeholder': '🔍 Search...'
+            'placeholder': 'Search...'
         },
         pagination: {
-            previous: '⬅️ Previous',
-            next: '➡️ Next',
-            showing: '📺 Displaying',
+            previous: 'Prev',
+            next: 'Next',
+            showing: 'Displaying',
             results: 'rows'
         },
         loading: 'Loading...',
@@ -243,13 +292,9 @@ async function initializeGridJS() {
 
         gridInstance.render(wrapper);
 
-        setTimeout(() => {
-            addDownloadButtons(tableId, headers, rows);
-            addGridJSWrapperScrollListener();
-        }, 100);
-
-        // Remove the original table
-        table.remove();
+        applyCustomFunctions(gridInstance, tableId, headers, rows);
+        // Hide the original table
+        table.style.display = 'none';
     });
 }
 

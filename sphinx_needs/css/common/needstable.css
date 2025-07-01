@@ -23,12 +23,12 @@ div.needstable_wrapper {
 
 table.docutils.docutils td, table.docutils.docutils th {
     background: var(--sn-color-datatable-body-bg);
-    border: 1px solid var(--sn-color-table-border);
+    border: 0.05rem solid color-mix(in srgb, var(--sn-color-table-border) 40%, transparent);
     color: var(--sn-color-datatable-label);
 }
 
 table.docutils.docutils th {
-    border-bottom: 1px solid var(--sn-color-datatable-btn-border);
+    border-bottom: 0.05rem solid color-mix(in srgb, var(--sn-color-datatable-btn-border) 40%, transparent);
 }
 /* GridJS styles for to override the default GridJS styles
 to match the Sphinx Needs theme and to ensure a consistent look and feel
@@ -40,13 +40,14 @@ div.gridjs-container {
 }
 
 div.gridjs-wrapper {
+    border: none;
     border-radius: 0px;
-    box-shadow: none;
+    box-shadow: 0 1px 3px 0 color-mix(in srgb, var(--sn-color-datatable-btn-border) 10%, transparent),0 1px 2px 0 color-mix(in srgb, var(--sn-color-datatable-btn-border) 26%, transparent);
 }
 
 div.gridjs-footer {
     background-color: var(--sn-color-datatable-body-bg);
-    border: 1px solid var(--sn-color-datatable-btn-border);
+    border: none;
     box-shadow: none;
     padding: 12px;
     border-top-width: 0px;
@@ -57,25 +58,51 @@ div.gridjs-footer {
     float: left;
 }
 
-div.gridjs-download-btns {
+div.gridjs-pagination-limit-div {
+    display: inline-block;
+    margin-left: 6px;
+}
+
+div.gridjs-pagination-limit-div select.gridjs-pagination-limit {
+    margin: 0 6px;
+    padding: 2px;
+}
+
+div.gridjs-download-btns, div.gridjs-pagination-limit-div {
     float: right;
 }
 
-div.gridjs-download-btns button {
-    border-radius: 6px;
+div.gridjs-download-btns button, select.gridjs-pagination-limit {
+    background-color: var(--sn-color-datatable-body-bg);
+    color: var(--sn-color-datatable-label);
+    border: 0.05rem solid color-mix(in srgb, var(--sn-color-datatable-btn-border) 30%, transparent);
+    padding: 4px;
+    border-radius: 3px;
     outline: 0;
     -webkit-user-select: none;
     -moz-user-select: none;
     user-select: none;
     cursor: pointer;
-    margin-left: 10px;
+    margin-left: 6px;
+}
+
+div.gridjs-download-btns button::before{
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZT0iI2EyYTJhMiI+PHBhdGggc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNMyAxNi41djIuMjVBMi4yNSAyLjI1IDAgMCAwIDUuMjUgMjFoMTMuNUEyLjI1IDIuMjUgMCAwIDAgMjEgMTguNzVWMTYuNU0xNi41IDEyIDEyIDE2LjVtMCAwTDcuNSAxMm00LjUgNC41VjMiIC8+PC9zdmc+');
+    margin-right: 2px;
 }
 
 /* .gridjs-wrapper */
 .gridjs-wrapper.scrolled .gridjs-th-fixed {
-    background-color: #4f4f4f54;
+    background-color: #a2a2a2;
+    color: #1c1c1c;
     z-index: 999;
-    outline: 1px solid var(--sn-color-table-border);
+    outline: 0.05rem solid color-mix(in srgb, var(--sn-color-table-border) 70%, transparent);
 }
 
 table thead.gridjs-thead th.gridjs-th {
@@ -106,9 +133,8 @@ table tbody.gridjs-tbody td.gridjs-td {
 .gridjs-pagination .gridjs-pages button {
     background-color: var(--sn-color-datatable-body-bg);
     color: var(--sn-color-datatable-label);
-    border: 1px solid var(--sn-color-datatable-btn-border);
+    border: none;
     padding: 8px;
-    border-right: none
 }
 
 .gridjs-pagination .gridjs-pages button:hover {
@@ -131,13 +157,13 @@ table tbody.gridjs-tbody td.gridjs-td {
 }
 
 .gridjs-pagination .gridjs-pages button:last-child {
-    border: 1px solid var(--sn-color-datatable-btn-border);
+    border: none;
 }
 
 /* Other GridJS style override */
-input.gridjs-input, div.gridjs-download-btns button {
+input.gridjs-input {
     background-color: var(--sn-color-datatable-body-bg);
     color: var(--sn-color-datatable-label);
-    border: 1px solid var(--sn-color-datatable-btn-border);
-    padding: 8px;
+    border: 0.05rem solid color-mix(in srgb, var(--sn-color-datatable-btn-border) 40%, transparent);
+    padding: 4px;
 }
