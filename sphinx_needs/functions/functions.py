@@ -112,7 +112,9 @@ def execute_func(
         )
         return "??"
 
-    if func_return is not None and not isinstance(func_return, str | int | float | list):
+    if func_return is not None and not isinstance(
+        func_return, str | int | float | list
+    ):
         log_warning(
             logger,
             f"Return value of function {func_name!r} is of type {type(func_return)}. Allowed are str, int, float, list",
