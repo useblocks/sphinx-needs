@@ -390,7 +390,9 @@ def process_needbar(
 
             if current_needbar["stacked"]:
                 # handle stacked bar
-                y_offset = [i + j for i, j in zip(y_offset, local_data_number[x])]
+                y_offset = [
+                    i + j for i, j in zip(y_offset, local_data_number[x], strict=False)
+                ]
 
             if current_needbar["show_sum"]:
                 try:
@@ -427,7 +429,8 @@ def process_needbar(
                 matplotlib.pyplot.setp(bar_labels, rotation=int(sum_rotation))
 
         centers = [
-            (i + j) / 2.0 for i, j in zip(index[0], index[len(local_data_number) - 1])
+            (i + j) / 2.0
+            for i, j in zip(index[0], index[len(local_data_number) - 1], strict=False)
         ]
         if not current_needbar["horizontal"]:
             # We want to support even older version of matplotlib, which do not support axes.set_xticks(labels)

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import contextlib
+from collections.abc import Callable
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from docutils import nodes
 from docutils.parsers.rst import directives

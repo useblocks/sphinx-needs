@@ -5,9 +5,10 @@ import importlib
 import operator
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache, reduce, wraps
-from typing import TYPE_CHECKING, Any, Callable, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
