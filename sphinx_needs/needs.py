@@ -783,9 +783,9 @@ def _gather_field_defaults(
                 k: v for k, v in value.items() if k in {"predicates", "default"}
             }
             if "predicates" in single_default and (
-                not isinstance(single_default["predicates"], (list, tuple))
+                not isinstance(single_default["predicates"], list | tuple)
                 or not all(
-                    isinstance(x, (list, tuple))
+                    isinstance(x, list | tuple)
                     and len(x) == 2
                     and isinstance(x[0], str)
                     for x in single_default["predicates"]
@@ -799,9 +799,9 @@ def _gather_field_defaults(
                 )
                 continue
         elif (
-            isinstance(value, (list, tuple))
+            isinstance(value, list | tuple)
             and len(value) > 0
-            and all(isinstance(x, (list, tuple)) for x in value)
+            and all(isinstance(x, list | tuple) for x in value)
         ):
             old_format = True
             single_default = {"predicates": []}
@@ -831,7 +831,7 @@ def _gather_field_defaults(
                         "config",
                         None,
                     )
-        elif isinstance(value, (list, tuple)):
+        elif isinstance(value, list | tuple):
             old_format = True
             if len(value) == 2:
                 # single (value, predicate) pair

@@ -112,7 +112,7 @@ def execute_func(
         )
         return "??"
 
-    if func_return is not None and not isinstance(func_return, (str, int, float, list)):
+    if func_return is not None and not isinstance(func_return, str | int | float | list):
         log_warning(
             logger,
             f"Return value of function {func_name!r} is of type {type(func_return)}. Allowed are str, int, float, list",
@@ -122,7 +122,7 @@ def execute_func(
         return "??"
     if isinstance(func_return, list):
         for i, element in enumerate(func_return):
-            if not isinstance(element, (str, int, float)):
+            if not isinstance(element, str | int | float):
                 log_warning(
                     logger,
                     f"Return value item {i} of function {func_name!r} is of type {type(element)}. Allowed are str, int, float",
@@ -204,7 +204,7 @@ def find_and_replace_node_content(
         return node
     else:
         for child in node.children:
-            if isinstance(child, (nodes.literal_block, nodes.literal, Need)):
+            if isinstance(child, nodes.literal_block | nodes.literal | Need):
                 # Do not parse literal blocks or nested needs
                 new_children.append(child)
                 continue
@@ -253,7 +253,7 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
         for need_option in need:
             if need_option not in allowed_fields:
                 continue
-            if not isinstance(need[need_option], (list, set)):
+            if not isinstance(need[need_option], list | set):
                 func_call: str | None = "init"
                 while func_call:
                     try:
@@ -314,7 +314,7 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
                         )
                     if func_call is None:
                         new_values.append(element)
-                    elif isinstance(func_return, (list, set)):
+                    elif isinstance(func_return, list | set):
                         new_values += func_return
                     else:
                         new_values += [func_return]
@@ -370,7 +370,7 @@ def resolve_variants_options(
         for var_option in variants_options:
             if (
                 var_option in need
-                and isinstance(need[var_option], (str, list, tuple, set))
+                and isinstance(need[var_option], str | list | tuple | set)
                 and (
                     result := match_variants(
                         need[var_option],
@@ -476,7 +476,7 @@ def _analyze_func_string(
     for arg in func_call.args:
         if isinstance(arg, ast.Num):
             func_args.append(arg.n)
-        elif isinstance(arg, (ast.Str, ast.BoolOp)):
+        elif isinstance(arg, ast.Str | ast.BoolOp):
             func_args.append(arg.s)  # type: ignore
         elif isinstance(arg, ast.List):
             arg_list: list[Any] = []

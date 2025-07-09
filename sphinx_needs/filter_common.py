@@ -318,8 +318,8 @@ def _analyze_and_apply_expr(
     :returns: the needs (potentially filtered),
         and a boolean denoting if it still requires python eval filtering
     """
-    if isinstance(expr, (ast.Str, ast.Constant)):
-        if isinstance(expr.s, (str, bool)):
+    if isinstance(expr, ast.Str | ast.Constant):
+        if isinstance(expr.s, str | bool):
             # "value" / True / False
             return needs if expr.s else needs.filter_ids([]), False
 
@@ -335,13 +335,13 @@ def _analyze_and_apply_expr(
             if (
                 isinstance(expr.left, ast.Name)
                 and len(expr.comparators) == 1
-                and isinstance(expr.comparators[0], (ast.Str, ast.Constant))
+                and isinstance(expr.comparators[0], ast.Str | ast.Constant)
             ):
                 # x == "value"
                 field = expr.left.id
                 value = expr.comparators[0].s
             elif (
-                isinstance(expr.left, (ast.Str, ast.Constant))
+                isinstance(expr.left, ast.Str | ast.Constant)
                 and len(expr.comparators) == 1
                 and isinstance(expr.comparators[0], ast.Name)
             ):
@@ -369,9 +369,9 @@ def _analyze_and_apply_expr(
             if (
                 isinstance(expr.left, ast.Name)
                 and len(expr.comparators) == 1
-                and isinstance(expr.comparators[0], (ast.List, ast.Tuple, ast.Set))
+                and isinstance(expr.comparators[0], ast.List | ast.Tuple | ast.Set)
                 and all(
-                    isinstance(elt, (ast.Str, ast.Constant))
+                    isinstance(elt, ast.Str | ast.Constant)
                     for elt in expr.comparators[0].elts
                 )
             ):
@@ -386,7 +386,7 @@ def _analyze_and_apply_expr(
                     # type in ["a", "b", ...]
                     return needs.filter_types(values), False
             elif (
-                isinstance(expr.left, (ast.Str, ast.Constant))
+                isinstance(expr.left, ast.Str | ast.Constant)
                 and len(expr.comparators) == 1
                 and isinstance(expr.comparators[0], ast.Name)
                 and expr.comparators[0].id == "tags"
