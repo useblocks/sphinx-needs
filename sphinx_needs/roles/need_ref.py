@@ -50,7 +50,7 @@ def value_to_string(value: Any) -> str:
         return value
     elif isinstance(value, dict):
         return ";".join([str(i) for i in value.items()])
-    elif isinstance(value, (Iterable, list, tuple)):
+    elif isinstance(value, Iterable | list | tuple):
         return ";".join([str(i) for i in value])
 
     return str(value)

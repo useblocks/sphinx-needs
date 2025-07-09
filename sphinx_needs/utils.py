@@ -5,9 +5,10 @@ import importlib
 import operator
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache, reduce, wraps
-from typing import TYPE_CHECKING, Any, Callable, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -98,7 +99,7 @@ def row_col_maker(
 
     if need_key in need_info and need_info[need_key] is not None:  # type: ignore[literal-required]
         value = need_info[need_key]  # type: ignore[literal-required]
-        if isinstance(value, (list, set)):
+        if isinstance(value, list | set):
             data = value
         elif isinstance(value, str) and need_key in needs_string_links_option:
             data = re.split(r",|;", value)
@@ -530,7 +531,7 @@ def match_variants(
             for i in options_list
             if i not in (None, ";", "", " ")
         ]
-    elif isinstance(options, (list, set, tuple)):
+    elif isinstance(options, list | set | tuple):
         options_list = [str(opt) for opt in options]
     else:
         raise TypeError(

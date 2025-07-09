@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import html
 import textwrap
+from collections.abc import Callable
 from functools import cache
-from typing import Callable, Literal, TypedDict
+from typing import Literal, TypedDict
 from urllib.parse import urlparse
 
 from docutils import nodes

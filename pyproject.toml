@@ -17,7 +17,6 @@ classifiers = [
   'Operating System :: OS Independent',
   'Programming Language :: Python',
   'Programming Language :: Python :: 3',
-  'Programming Language :: Python :: 3.9',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
@@ -26,7 +25,7 @@ classifiers = [
   'Topic :: Utilities',
   'Framework :: Sphinx :: Extension',
 ]
-requires-python = ">=3.9,<4"
+requires-python = ">=3.10,<4"
 dependencies = [
   "sphinx>=7.4,<9",
   "requests-file~=2.1",             # external links
@@ -145,19 +144,19 @@ disable_error_code = ["no-redef"]
 
 legacy_tox_ini = """
 [tox]
-envlist = py39
+envlist = py10
 
 [testenv]
 usedevelop = true
 
-[testenv:py{39,310,311,312,313}]
+[testenv:py{310,311,312,313}]
 extras =
   test
   test-parallel
 commands =
   pytest --ignore tests/benchmarks {posargs:tests}
 
-[testenv:py{39,310,311,312,313}-benchmark]
+[testenv:py{310,311,312,313}-benchmark]
 extras =
   test
   benchmark
