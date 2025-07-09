@@ -13,7 +13,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
       - uses: pre-commit/action@v3.0.1
 
   tests-core:
@@ -23,12 +23,12 @@ jobs:
       fail-fast: false # Set on "false" to get the results of ALL builds
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.9", "3.12", "3.13"]
+        python-version: ["3.10", "3.12", "3.13"]
         sphinx-version: ["7.4", "8.2"]
         include:
           # corner cases for Windows
           - os: "windows-latest"
-            python-version: "3.9"
+            python-version: "3.10"
             sphinx-version: "7.4"
           - os: "windows-latest"
             python-version: "3.12"
@@ -39,7 +39,7 @@ jobs:
         exclude:
           # Sphinx 8.2 only supports py3.11+
           - os: "ubuntu-latest"
-            python-version: "3.9"
+            python-version: "3.10"
             sphinx-version: "8.2"
 
     steps:
@@ -81,7 +81,7 @@ jobs:
       matrix:
         include:
           - os: "ubuntu-latest"
-            python-version: "3.9"
+            python-version: "3.10"
             sphinx-version: "7.4"
           - os: "ubuntu-latest"
             python-version: "3.13"
