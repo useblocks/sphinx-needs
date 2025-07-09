@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Mapping
 from itertools import chain
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from sphinx_needs.data import NeedsInfoType
 
 
-_IdSet = list[tuple[str, Optional[str]]]
+_IdSet = list[tuple[str, str | None]]
 """Set of (need, part) ids."""
 
 

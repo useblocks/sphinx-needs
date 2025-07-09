@@ -6,7 +6,7 @@ All functions here are available under ``sphinx_needs.api``.
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter

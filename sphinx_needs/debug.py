@@ -8,11 +8,12 @@ from __future__ import annotations
 import inspect
 import json
 import os.path
+from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx

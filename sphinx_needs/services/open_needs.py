@@ -142,7 +142,7 @@ class OpenNeedsService(BaseService):
         for item in data:
             extra_data = {}
             for name, selector in self.extra_data.items():
-                if not isinstance(selector, (tuple, list, str)):
+                if not isinstance(selector, tuple | list | str):
                     raise InvalidConfigException(
                         f"Given selector for {name} of extra_data must be a list or tuple. "
                         f'Got {type(selector)} with value "{selector}"'
@@ -172,7 +172,7 @@ class OpenNeedsService(BaseService):
 
             need_values = {}
             for name, selector in self.mappings.items():
-                if not isinstance(selector, (tuple, list, str)):
+                if not isinstance(selector, tuple | list | str):
                     raise InvalidConfigException(
                         f"Given selector for {name} of mapping must be a list or tuple. "
                         f'Got {type(selector)} with value "{selector}"'
@@ -186,7 +186,7 @@ class OpenNeedsService(BaseService):
                     need_values[name] = selector
                 else:
                     value = dict_get(item, selector)
-                    if isinstance(value, (tuple, list)):
+                    if isinstance(value, tuple | list):
                         if name == "links":
                             # Add a prefix to the referenced link if it is an ID of a need object in
                             # the data retrieved from the Open Needs Server or don't add prefix

@@ -9,11 +9,11 @@ from __future__ import annotations
 import os
 import re
 import uuid
+from collections.abc import Callable
 from contextlib import suppress
 from functools import lru_cache
 from optparse import Values
 from pathlib import Path
-from typing import Callable
 from urllib.parse import urlparse
 
 import requests
