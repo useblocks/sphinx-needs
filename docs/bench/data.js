@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1747318045951,
+  "lastUpdate": 1752051846057,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13104,6 +13104,42 @@ window.BENCHMARK_DATA = {
             "value": 61.06322826799999,
             "unit": "s",
             "extra": "Commit: 6ec1f9cf25e558abecee246ae3ebc2a964401f74\nBranch: master\nTime: 2025-05-15T16:05:24+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fa75f221b536400c770911d4bfe3412a5ff93ec4",
+          "message": "⬆️ Drop Python 3.9 (#1468)\n\nPython 3.9 reaches its end of life on [2025-10](https://devguide.python.org/versions/).",
+          "timestamp": "2025-07-09T11:02:12+02:00",
+          "tree_id": "1bec7caee65c633660c10669c8f5b81a69ca2e81",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/fa75f221b536400c770911d4bfe3412a5ff93ec4"
+        },
+        "date": 1752051829938,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20243926499999532,
+            "unit": "s",
+            "extra": "Commit: fa75f221b536400c770911d4bfe3412a5ff93ec4\nBranch: master\nTime: 2025-07-09T11:02:12+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.631032584,
+            "unit": "s",
+            "extra": "Commit: fa75f221b536400c770911d4bfe3412a5ff93ec4\nBranch: master\nTime: 2025-07-09T11:02:12+02:00"
           }
         ]
       }
