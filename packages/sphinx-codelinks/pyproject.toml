@@ -1,0 +1,172 @@
+[project]
+name = "sphinx-codelinks"
+version = "0.1.0"
+description = "Add your description here"
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+maintainers = [
+  { name = "Marco Heinemann", email = "marco.heinemann@useblocks.com" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">= 3.12"
+dependencies = [
+  "comment-parser>=1.2.4",
+  "gitignore-parser>=0.1.11",
+  "typer>=0.16.0",
+  "jsonschema",
+  "sphinx>=7.4,<9",
+  "sphinx-needs>=4.2.0",
+  # unconstrained versions, to be pinned by user or Sphinx
+  "jinja2",
+  "pygments",
+  "docutils", # constrained by user or Sphinx
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+  "types-docutils",
+  "types-Pygments",
+  "syrupy>=4.9.1",
+  "furo>=2024.5.6",
+  "moto ~= 5.0",
+  "mypy>=1.12.1",
+  "myst-parser>=4.0.0",
+  "pydantic ~= 2.9",
+  "pip-licenses>=5.0.0",
+  "psutil>=7.0.0",
+  "pytest-cov>=5.0.0",
+  "pytest>=8.2.2",
+  "simple-build>=0.0.2",
+  "sphinx-design>=0.6.1",
+  "types-psutil>=7.0.0.20250218",
+  "uv>=0.5.5",
+  "pytest-docker>=3.1.2",
+  "shiv>=1.0.8",
+  "insta-science>=0.2.1",
+  "types-jsonschema>=4.23.0.20241208",
+  "toml>=0.10.2",
+  "sphinx-code-tabs>=0.5.5",
+  "sphinxcontrib-typer>=0.5.1",
+]
+
+[project.scripts]
+codelinks = "sphinx_codelinks.cmd:app"
+
+[tool.rye.scripts]
+# linting and formatting
+"mypy:all" = "mypy ."
+"rye:lint" = "rye lint"
+"rye:format" = "rye format"
+"check" = { chain = ["rye:format", "rye:lint", "mypy:all"] }
+# docs html
+"docs:rm" = "rm -rf docs/_build/html"
+"docs" = "sphinx-build -nW --keep-going -b html -T -c docs docs/source docs/_build/html"
+"docs:clean" = { chain = ["docs:rm", "docs"] }
+
+[tool.ruff.lint]
+extend-select = [
+  # "ANN",
+  "S",
+  "ARG",
+  "B",    # flake8-bugbear
+  "C4",   # flake8-comprehensions
+  "FURB", # refurb (modernising code)
+  "I",    # isort
+  "ICN",  # flake8-import-conventions
+  "ISC",  # flake8-implicit-str-concat
+  "N",    # pep8-naming
+  "PERF", # perflint (performance anti-patterns)
+  "PGH",  # pygrep-hooks
+  "PIE",  # flake8-pie
+  "PL",   # pylint
+  "PTH",  # flake8-use-pathlib
+  "RUF",  # Ruff-specific rules
+  "SIM",  # flake8-simplify
+  "SLF",  # private member access
+  "UP",   # pyupgrade
+  "T20",  # flake8-print
+]
+extend-ignore = [
+  "ISC001", # implicit-str-concat
+]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+force-sort-within-sections = true
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = [
+  "ARG001",  # unused-function-argument - fixtures
+  "ARG005",  # unused-lambda-argument - monkeypatches
+  "PLR2004", # magic-value-comparison - valueable for tests
+  "S101",    # assert - needed for tests
+]
+"**/build_hooks_*/**" = [
+  "S607", # start-process-with-partial-path - pyarmor call in rye context
+  "S603", # subprocess-without-shell-equals-true - pyarmor call
+]
+"scripts/*.py" = [
+  "T201", # print - used for output
+  "S607", # start-process-with-partial-path - pyarmor call in rye context
+  "S603", # subprocess-without-shell-equals-true - build scripts
+]
+"src/sphinx_codelinks/sphinx_extension/debug.py" = [
+  "T201",  # print - used for output
+  "UP047", # on-pep695-generic-function - it's generic
+]
+"src/sphinx_codelinks/cmd.py" = [
+  "PLC0415", # import on top - only import relevant modules by use cases
+]
+
+[tool.mypy]
+exclude = ["tests/", "dist/", "docs/_build/", "docs/conf.py"]
+show_error_codes = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+strict = true
+# disallow dynamic typing
+disallow_any_unimported = true
+disallow_any_expr = true
+# disallow_any_decorated = true
+disallow_any_explicit = true
+disallow_any_generics = true
+disallow_subclassing_any = true
+# dissallow untyped definitions and calls
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+
+plugins = ["pydantic.mypy"]
+mypy_path = "typings"
+
+[[tool.mypy.overrides]]
+module = ["licensing.*", "tomlkit.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_any_explicit = false
+disallow_any_unimported = false
+disallow_untyped_defs = false
+disallow_any_expr = false
+
+[[tool.mypy.overrides]]
+module = "sphinx_codelinks.*"
+disallow_any_unimported = false
+disallow_untyped_defs = false
+disallow_any_expr = false
+
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

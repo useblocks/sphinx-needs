@@ -1,0 +1,93 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+  pull_request:
+    types: [closed, labeled, reopened, unlabeled, synchronize, opened]
+
+concurrency:
+  # For PRs, cancel in progress runs, if a new commit is pushed
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# These permissions are needed to interact with GitHub's OIDC Token endpoint.
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  pre-commit:
+    name: Pre-commit
+    runs-on: [self-hosted, linux, x64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      - run: python -m pip install pre-commit pre-commit-uv
+      # - uses: pre-commit/action@v3.0.1  # note we don't use this, since it calls ations/cache, which actually takes longer than without it
+      - run: pre-commit run --all --show-diff-on-failure --color=always
+
+  mypy:
+    name: MyPy
+    runs-on: [self-hosted, linux, x64]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_rye
+      - run: rye run mypy:all
+
+  pytest:
+    name: Pytest (${{ matrix.os }}-${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: linux
+            arch: x64
+          - os: linux
+            arch: arm64
+          - os: windows
+            arch: x64
+          - os: macos
+            arch: arm64
+
+    runs-on: [self-hosted, "${{ matrix.os }}", "${{ matrix.arch }}"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_rye
+      - run: rye test -a
+
+  docs:
+    name: Documentation build
+    runs-on: [self-hosted, linux, x64]
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup_rye
+      - name: Run documentation build
+        run: rye run docs
+
+  all_good:
+    # This job does nothing and is only used for the branch protection
+    # see https://github.com/marketplace/actions/alls-green#why
+
+    if: ${{ !cancelled() }}
+
+    needs:
+      - pre-commit
+      - mypy
+      - pytest
+      - docs
+
+    runs-on: [self-hosted, linux, x64]
+
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}

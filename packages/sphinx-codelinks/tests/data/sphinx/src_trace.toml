@@ -1,0 +1,28 @@
+[src_trace]
+set_local_url = true
+local_url_field = "local-url"
+set_remote_url = true
+remote_url_field = "remote-url"
+debug_measurement = true
+
+[src_trace.projects.dcdc]
+comment_type = "cpp"
+src_dir = "../dcdc"
+remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+exclude = ["dcdc/src/ubt/ubt.cpp"]
+include = ["**/*.cpp", "**/*.hpp"]
+gitignore = true
+
+[src_trace.projects.dcdc.oneline_comment_style]
+start_sequence = "[["
+end_sequence = "]]" # default is newline character
+field_split_char = ","
+needs_fields = [
+  { "name" = "id" },
+  { "name" = "title" },
+  { "name" = "type", "default" = "impl" },
+  { "name" = "links", "type" = "list[str]", "default" = [
+  ] },
+  { "name" = "status", "default" = "open" },
+  { "name" = "priority", "default" = "low" },
+]

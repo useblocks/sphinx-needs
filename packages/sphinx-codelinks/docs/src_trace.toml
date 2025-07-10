@@ -1,0 +1,29 @@
+[src_trace]
+# Configuration for source tracing
+set_local_url = true            # Set to true to enable local code html and URL generation
+local_url_field = "local-url"   # Need's field name for local URL
+set_remote_url = true           # Set to true to enable remote url to be generated
+remote_url_field = "remote-url" # Need's field name for remote URL
+
+[src_trace.projects.dcdc]
+# Configuration for source tracing project "dcdc"
+comment_type = "cpp"                                                                              # Type of the comment, only support C/C++ for now
+src_dir = "../tests/data/dcdc"                                                                    # Relative path from conf.py to the source directory
+remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}" # URL pattern for remote source code
+exclude = ["dcdc/src/ubt/ubt.cpp"]                                                                # Exclude files from source tracing
+include = ["**/*.cpp", "**/*.hpp"]                                                                # Include files for source tracing
+gitignore = true                                                                                  # Respect .gitignore to filter files
+
+[src_trace.projects.dcdc.oneline_comment_style]
+# Configuration for oneline comment style
+start_sequence = "[["  # Start sequence for oneline comments
+end_sequence = "]]"    # End sequence for the online comments; default is newline character
+field_split_char = "," # Character to split fields in the comment
+# Fields that are defined in the oneline comment style
+needs_fields = [
+  { "name" = "id", "type" = "str" },
+  { "name" = "title", "type" = "str" },
+  { "name" = "type", "type" = "str", "default" = "impl" },
+  { "name" = "links", "type" = "list[str]", "default" = [
+  ] },
+]

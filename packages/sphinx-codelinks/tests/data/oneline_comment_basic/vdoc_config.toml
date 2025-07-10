@@ -1,0 +1,19 @@
+src_dir = "./"
+comment_type = "c"
+exclude = []
+include = ["**/*.c", "**/*.h"]
+gitignore = false
+
+[oneline_comment_style]
+start_sequence = "[["
+end_sequence = "]]" # default is newline character
+field_split_char = ","
+needs_fields = [
+  { "name" = "id" },
+  { "name" = "title" },
+  { "name" = "type", "default" = "impl" },
+  { "name" = "links", "type" = "list[str]", "default" = [
+  ] },
+  { "name" = "status", "default" = "open" },
+  { "name" = "priority", "default" = "low" },
+]

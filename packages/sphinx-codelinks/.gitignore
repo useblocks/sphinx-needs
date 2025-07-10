@@ -1,0 +1,21 @@
+# python generated files
+.ruff_cache
+.pytest_cache
+.mypy_cache
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+.venv
+
+# lock files
+requirements.lock
+requirements-dev.lock
+
+# Sphinx build output
+**/_build
+
+# rye is the primary tool, uv is only used for on-the-fly setups
+uv.lock
