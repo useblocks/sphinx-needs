@@ -19,7 +19,10 @@ def test_doc_need_parts(test_app, snapshot):
         app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
     ).splitlines()
     # print(warnings)
-    assert warnings == []
+    assert warnings == [
+        "srcdir/index.rst:26: WARNING: Need part not associated with a need. [needs.part]",
+        "srcdir/index.rst:36: WARNING: linked need part SP_TOO_001.unknown_part not found [needs.link_ref]",
+    ]
 
     html = Path(app.outdir, "index.html").read_text()
     assert (

@@ -144,7 +144,7 @@ disable_error_code = ["no-redef"]
 
 legacy_tox_ini = """
 [tox]
-envlist = py10
+envlist = py310
 
 [testenv]
 usedevelop = true
