@@ -8,6 +8,7 @@ Directives for creating and modifying needs:
 
    need
    list2need
+   list-needs
    needextend
    needextract
    needimport
