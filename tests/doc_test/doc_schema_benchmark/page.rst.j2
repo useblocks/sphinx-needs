@@ -1,0 +1,56 @@
+basic test
+==========
+
+.. feat:: feat wrong id
+   :id: FEAt_P{{ page_nr }}
+   :asil: QM
+
+.. feat:: feat
+   :id: FEAT_P{{ page_nr }}
+   :asil: QM
+
+.. feat:: feat
+   :id: FEAT_SAFE_P{{ page_nr }}
+   :asil: C
+
+.. feat:: feat
+   :id: FEAT_SAFE2_P{{ page_nr }}
+   :asil: D
+
+.. spec:: spec missing approval
+   :id: SPEC_MISSING_APPROVAL_P{{ page_nr }}
+   :efforts: 20
+   :priority: 1
+   :asil: QM
+
+.. spec:: spec
+   :id: SPEC_P{{ page_nr }}
+   :efforts: 10
+   :priority: 1
+   :asil: QM
+
+.. spec:: safe spec links unsafe feat
+   :id: SPEC_SAFE_UNSAFE_FEAT_P{{ page_nr }}
+   :efforts: 20
+   :priority: 1
+   :asil: B
+   :links: FEAT_P{{ page_nr }}, FEAT_SAFE2_P{{ page_nr }}
+   :approved: yes
+
+.. spec:: safe spec
+   :id: SPEC_SAFE_P{{ page_nr }}
+   :efforts: 20
+   :priority: 1
+   :asil: B
+   :links: FEAT_SAFE_P{{ page_nr }}, FEAT_SAFE2_P{{ page_nr }}
+   :approved: yes
+
+.. impl:: impl
+   :id: IMPL_P{{ page_nr }}
+   :efforts: 30
+   :links: SPEC_P{{ page_nr }}
+
+.. impl:: safe impl
+   :id: IMPL_SAFE_P{{ page_nr }}
+   :asil: A
+   :links: SPEC_SAFE_UNSAFE_FEAT_P{{ page_nr }}

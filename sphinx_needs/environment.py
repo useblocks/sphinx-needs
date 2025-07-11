@@ -40,7 +40,7 @@ def _add_js_file(app: Sphinx, rel_path: Path) -> None:
 def install_styles_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     builder = app.builder
     # Do not copy static_files for our "needs" builder
-    if builder.name == "needs":
+    if builder.name in ["needs", "schema"]:
         return
 
     logger.info("Copying static style files for sphinx-needs")
@@ -87,7 +87,7 @@ def install_lib_static_files(app: Sphinx, env: BuildEnvironment) -> None:
     """
     builder = app.builder
     # Do not copy static_files for our "needs" builder
-    if builder.name == "needs":
+    if builder.name in ["needs", "schema"]:
         return
 
     logger.info("Copying static files for sphinx-needs datatables support")
@@ -116,7 +116,7 @@ def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:
     """
     builder = app.builder
     # Do not copy static_files for our "needs" builder
-    if builder.name == "needs":
+    if builder.name in ["needs", "schema"]:
         return
 
     # load jinja template

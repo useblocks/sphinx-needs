@@ -1,0 +1,163 @@
+missing_type_select:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schemas_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  schemas:
+    schemas:
+      - select:
+          properties:
+            efforts: {minimum: 15}
+        validate:
+          local:
+            required: [efforts]
+  exception:
+    - "Schemas entry '[0]' is not valid"
+    - "value of key 'select' of dict did not match any element in the union"
+    - 'sphinx_needs.schema.config.ExtraOptionStringSchemaType: has unexpected extra key(s): "minimum"'
+    - "sphinx_needs.schema.config.ExtraOptionIntegerSchemaType: value of key 'type' is not any of ('integer')"
+
+missing_type_validate_local:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schemas_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              efforts: {minimum: 15}
+  exception:
+    - "Schemas entry '[0]' is not valid"
+    - "value of key 'local' of value of key 'validate' of dict did not match any element in the union"
+    - 'sphinx_needs.schema.config.ExtraOptionStringSchemaType: has unexpected extra key(s): "minimum"'
+    - "sphinx_needs.schema.config.ExtraOptionIntegerSchemaType: value of key 'type' is not any of ('integer')"
+
+type_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+    schema.type = "unknown"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  exception:
+    - "Schema for extra option 'efforts' has invalid type: unknown. Allowed types are: string, boolean, integer, number, array"
+
+select_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schemas_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  schemas:
+    schemas:
+      - select:
+          properties:
+            efforts: {type: "unknown"}
+  exception:
+    - "Config error in schema '[0]': Field 'efforts' has type 'unknown', but expected 'string'."
+
+local_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schemas_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              efforts: {type: "unknown"}
+  exception:
+    - "Config error in schema '[0]': Field 'efforts' has type 'unknown', but expected 'string'."
+
+network_link_not_exist:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_schemas_from_json = "schemas.json"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    schemas:
+      - validate:
+          network:
+            links2:
+              minItems: 2
+  exception:
+    - "Schema '[0]' defines an unknown network link type 'links2'"
+
+ref_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_schemas_from_json = "schemas.json"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs:
+      type-impl:
+        properties:
+          type:
+            const: impl
+    schemas:
+      - validate:
+          local:
+            $ref: "#/$defs/not-exist"
+  exception:
+    - "Reference 'not-exist' not found in definitions"
+
+ref_mixed_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_schemas_from_json = "schemas.json"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs:
+      type-impl:
+        properties:
+          type:
+            const: impl
+    schemas:
+      - validate:
+          local:
+            $ref: "#/$defs/not-exist"
+            required: [type]
+  exception:
+    - "Invalid $ref entry, expected a single $ref key"
+    - "{'$ref': '#/$defs/not-exist', 'required': ['type']}"
