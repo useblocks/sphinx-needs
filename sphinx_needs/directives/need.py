@@ -392,7 +392,7 @@ def check_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
             for need_id_full in need_link_value:
                 need_id_main, need_id_part = split_need_id(need_id_full)
 
-                if need_id_main not in needs or (
+                if (need_id_main not in needs and need_id_full not in needs) or (
                     need_id_main in needs
                     and need_id_part
                     and need_id_part not in needs[need_id_main]["parts"]
@@ -438,18 +438,22 @@ def create_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
             for need_id_full in need_link_value:
                 need_id_main, need_id_part = split_need_id(need_id_full)
 
-                if need_id_main in needs:
-                    if key not in needs[need_id_main][option_back]:  # type: ignore[literal-required]
-                        needs[need_id_main][option_back].append(key)  # type: ignore[literal-required]
+                if need_id_main in needs or need_id_full in needs:
+                    if need_id_main in needs:
+                        back_need = needs[need_id_main]
+                    else:
+                        back_need = needs[need_id_full]
+                        need_id_part = None
+
+                    if key not in back_need[option_back]:  # type: ignore[literal-required]
+                        back_need[option_back].append(key)  # type: ignore[literal-required]
 
                     # Handling of links to need_parts inside a need
-                    if need_id_part and need_id_part in needs[need_id_main]["parts"]:
-                        if (
-                            option_back
-                            not in needs[need_id_main]["parts"][need_id_part]
-                        ):
-                            needs[need_id_main]["parts"][need_id_part][option_back] = []  # type: ignore[literal-required]
-                        needs[need_id_main]["parts"][need_id_part][option_back].append(  # type: ignore[literal-required]
+                    if need_id_part and need_id_part in back_need["parts"]:
+                        if option_back not in back_need["parts"][need_id_part]:
+                            back_need["parts"][need_id_part][option_back] = []  # type: ignore[literal-required]
+
+                        back_need["parts"][need_id_part][option_back].append(  # type: ignore[literal-required]
                             key
                         )
 
