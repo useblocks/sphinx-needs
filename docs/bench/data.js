@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752051846057,
+  "lastUpdate": 1752218740608,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13140,6 +13140,42 @@ window.BENCHMARK_DATA = {
             "value": 59.631032584,
             "unit": "s",
             "extra": "Commit: fa75f221b536400c770911d4bfe3412a5ff93ec4\nBranch: master\nTime: 2025-07-09T11:02:12+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6e9359af070b09b32079b7f4a5d3f2a08c76bb91",
+          "message": "👌 Improve need part processing (#1469)\n\nThe `need_part`/`np` role is not a reference and should not use an\n`XRefRole` subclass (see #1437).\n\nIn addition, the processing now correctly handles and warns on need\nparts that are not part of a need and `need` roles that reference an\nunknown part.",
+          "timestamp": "2025-07-11T09:23:51+02:00",
+          "tree_id": "1c00ae55888e8523d80472c4c3f97e269a990ba5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6e9359af070b09b32079b7f4a5d3f2a08c76bb91"
+        },
+        "date": 1752218726191,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15976420199999808,
+            "unit": "s",
+            "extra": "Commit: 6e9359af070b09b32079b7f4a5d3f2a08c76bb91\nBranch: master\nTime: 2025-07-11T09:23:51+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.75089914800001,
+            "unit": "s",
+            "extra": "Commit: 6e9359af070b09b32079b7f4a5d3f2a08c76bb91\nBranch: master\nTime: 2025-07-11T09:23:51+02:00"
           }
         ]
       }
