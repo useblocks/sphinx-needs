@@ -85,7 +85,24 @@ def process_need_ref(
         need_id_full = node_need_ref["reftarget"]
         need_id_main, need_id_part = split_need_id(need_id_full)
 
-        if need_id_main in all_needs:
+        if need_id_main not in all_needs:
+            log_warning(
+                log,
+                f"linked need {node_need_ref['reftarget']} not found",
+                "link_ref",
+                location=node_need_ref,
+            )
+        elif (
+            need_id_part is not None
+            and need_id_part not in all_needs[need_id_main]["parts"]
+        ):
+            log_warning(
+                log,
+                f"linked need part {node_need_ref['reftarget']} not found",
+                "link_ref",
+                location=node_need_ref,
+            )
+        else:
             target_need = all_needs[need_id_main]
 
             dict_need = transform_need_to_dict(
@@ -161,13 +178,5 @@ def process_need_ref(
                         target_need["external_url"], fromdocname
                     )
                     new_node_ref["classes"].append(target_need["external_css"])
-
-        else:
-            log_warning(
-                log,
-                f"linked need {node_need_ref['reftarget']} not found",
-                "link_ref",
-                location=node_need_ref,
-            )
 
         node_need_ref.replace_self(new_node_ref)
