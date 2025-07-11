@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1752218740608,
+  "lastUpdate": 1752219431655,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13176,6 +13176,42 @@ window.BENCHMARK_DATA = {
             "value": 60.75089914800001,
             "unit": "s",
             "extra": "Commit: 6e9359af070b09b32079b7f4a5d3f2a08c76bb91\nBranch: master\nTime: 2025-07-11T09:23:51+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4e138d48b2b75fe44f5eb14b659de71d02824403",
+          "message": "📚 Fix escape sequences (#1470)\n\nThis fixes the docs build warnings emitted by RST highlighting:\n```\n<unknown>:1: SyntaxWarning: invalid escape sequence '\\.'\n<string>:1: SyntaxWarning: invalid escape sequence '\\.'\n<unknown>:1: SyntaxWarning: invalid escape sequence '\\w'\n<string>:1: SyntaxWarning: invalid escape sequence '\\w'\n```",
+          "timestamp": "2025-07-11T09:35:24+02:00",
+          "tree_id": "bc72f38d3908742b6517033856739a6566942ac7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4e138d48b2b75fe44f5eb14b659de71d02824403"
+        },
+        "date": 1752219415507,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15916006499998048,
+            "unit": "s",
+            "extra": "Commit: 4e138d48b2b75fe44f5eb14b659de71d02824403\nBranch: master\nTime: 2025-07-11T09:35:24+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.99903956899999,
+            "unit": "s",
+            "extra": "Commit: 4e138d48b2b75fe44f5eb14b659de71d02824403\nBranch: master\nTime: 2025-07-11T09:35:24+02:00"
           }
         ]
       }
