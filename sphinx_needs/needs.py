@@ -114,7 +114,7 @@ from sphinx_needs.roles.need_count import NeedCount, process_need_count
 from sphinx_needs.roles.need_func import NeedFunc, NeedFuncRole, process_need_func
 from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
-from sphinx_needs.roles.need_part import NeedPart, process_need_part
+from sphinx_needs.roles.need_part import NeedPart, NeedPartRole, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.open_needs import OpenNeedsService
@@ -242,19 +242,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
         ),
     )
 
-    app.add_role(
-        "need_part",
-        NeedsXRefRole(
-            nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True
-        ),
-    )
-    # Shortcut for need_part
-    app.add_role(
-        "np",
-        NeedsXRefRole(
-            nodeclass=NeedPart, innernodeclass=nodes.inline, warn_dangling=True
-        ),
-    )
+    app.add_role("need_part", NeedPartRole())
+    app.add_role("np", NeedPartRole())  # Shortcut for need_part
 
     app.add_role(
         "need_count",

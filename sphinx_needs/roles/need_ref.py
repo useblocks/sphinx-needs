@@ -166,12 +166,4 @@ def process_need_ref(
                     )
                     new_node_ref["classes"].append(target_need["external_css"])
 
-        else:
-            log_warning(
-                log,
-                f"linked need {node_need_ref['reftarget']} not found",
-                "link_ref",
-                location=node_need_ref,
-            )
-
         node_need_ref.replace_self(new_node_ref)

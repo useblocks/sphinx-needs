@@ -23,6 +23,7 @@ NEED PARTS
 
         Part in nested need: :need_part:`(nested_id)something`
 
+:np:`hallo`
 
 :need:`SP_TOO_001.1`
 
@@ -31,3 +32,5 @@ NEED PARTS
 :need:`SP_TOO_001.awesome_id`
 
 :need:`My custom link name <SP_TOO_001.awesome_id>`
+
+:need:`SP_TOO_001.unknown_part`
