@@ -1,10 +1,11 @@
 [project]
 name = "sphinx-codelinks"
 version = "0.1.0"
-description = "Add your description here"
+description = "Fast Source Code Traceability for Sphinx-Needs"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 maintainers = [
   { name = "Marco Heinemann", email = "marco.heinemann@useblocks.com" },
+  { name = "Jui-Wen Chen", email = "jui-wen.chen@useblocks.com" },
 ]
 license = { file = "LICENSE" }
 readme = "README.md"
