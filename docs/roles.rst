@@ -153,7 +153,7 @@ See :ref:`filter_string` for more information.
    | Specification needs: :need_count:`type=='spec'`
    | Open specification needs: :need_count:`type=='spec' and status=='open'`
    | Needs with tag *test*: :need_count:`'test' in tags`
-   | Needs with title longer 10 chars: :need_count:`search("[\\w\\s]{10,}", title)`
+   | Needs with title longer 10 chars: :need_count:`search(r"[\w\s]{10,}", title)`
    | All need_parts: :need_count:`is_part`
    | All needs containing need_parts: :need_count:`is_need and len(parts)>0`
 
