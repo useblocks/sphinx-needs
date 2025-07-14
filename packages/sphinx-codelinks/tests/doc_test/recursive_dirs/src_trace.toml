@@ -12,15 +12,3 @@ remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit
 exclude = ["dcdc/src/ubt/ubt.cpp"]
 include = ["**/*.cpp", "**/*.hpp"]
 gitignore = true
-
-[src_trace.projects.dummy_src.oneline_comment_style]
-start_sequence = "[["
-end_sequence = "]]" # default is newline character
-field_split_char = ","
-needs_fields = [
-  { "name" = "id", "type" = "str" },
-  { "name" = "title", "type" = "str" },
-  { "name" = "type", "type" = "str", "default" = "impl" },
-  { "name" = "links", "type" = "list[str]", "default" = [
-  ] },
-]

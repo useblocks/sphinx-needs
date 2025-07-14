@@ -9,13 +9,13 @@ from gitignore_parser import parse_gitignore  # type: ignore[import-untyped]
 class SourceDiscover:
     def __init__(
         self,
-        root_dir: Path,
+        src_dir: Path,
         exclude: list[str] | None = None,
         include: list[str] | None = None,
         gitignore: bool = True,
         file_types: list[str] | None = None,
     ):
-        self.root_path = root_dir
+        self.root_path = src_dir
         self.exclude = exclude
         self.include = include
         # Only gitignore at source root is considered.

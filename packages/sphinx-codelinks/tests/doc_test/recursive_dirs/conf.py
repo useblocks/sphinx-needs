@@ -25,42 +25,4 @@ html_theme = "alabaster"
 
 extensions = ["sphinx_needs", "sphinx_codelinks"]
 
-needs_types = [
-    {
-        "directive": "story",
-        "title": "User Story",
-        "prefix": "US_",
-        "color": "#BFD8D2",
-        "style": "node",
-    },
-    {
-        "directive": "spec",
-        "title": "Specification",
-        "prefix": "SP_",
-        "color": "#FEDCD2",
-        "style": "node",
-    },
-    {
-        "directive": "implement",
-        "title": "Implementation",
-        "prefix": "IM_",
-        "color": "#DF744A",
-        "style": "node",
-    },
-    {
-        "directive": "impl",
-        "title": "Impl",
-        "prefix": "IMPL_",
-        "color": "#DFd44A",
-        "style": "node",
-    },
-    {
-        "directive": "test",
-        "title": "Test Case",
-        "prefix": "TC_",
-        "color": "#DCB239",
-        "style": "node",
-    },
-]
-
 src_trace_config_from_toml = "src_trace.toml"
