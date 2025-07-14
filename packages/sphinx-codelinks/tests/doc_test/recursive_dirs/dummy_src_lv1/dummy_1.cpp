@@ -1,7 +1,7 @@
 
 #include <iostream>
 
-// [[ directive:implement, title: implement req 1, id: IMPL_1, link: REQ_1 ]]
+// @ implement req 1, IMPL_1, impl, [REQ_1]
 void singleLineExample()
 {
     std::cout << "Single-line comment example" << std::endl;

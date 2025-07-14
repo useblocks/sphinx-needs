@@ -26,7 +26,7 @@
   * Some code here.
   *
   *  Feature F - Data visualization
-  * [[IMPL_processAggregate]]
+  * [[IMPL_processAggregate, processAggregate]]
   */
  void processAggregate(){
      //...
