@@ -1,4 +1,5 @@
 from dataclasses import MISSING, dataclass, field, fields
+from pathlib import Path
 from typing import Any, Literal, TypedDict, cast
 
 from jsonschema import ValidationError, validate
@@ -42,7 +43,7 @@ class SrcTraceProjectConfigFileType(TypedDict):
 class SrcTraceProjectConfigType(TypedDict):
     # only support C/C++ for now
     comment_type: Literal["cpp", "hpp", "c", "h"]
-    src_dir: str
+    src_dir: Path
     remote_url_pattern: str
     exclude: list[str]
     include: list[str]
@@ -317,7 +318,7 @@ def adpat_src_discovery_config(project_config: SrcTraceProjectConfigType) -> Non
                 comment_type = "cpp"
             else:
                 comment_type = file_types[0]
-            project_config[key] = comment_type
+            project_config[key] = comment_type  # type: ignore[literal-required]  # dynamically assign
             continue
 
-        project_config[key] = getattr(src_discovery_config, _field.name)
+        project_config[key] = getattr(src_discovery_config, _field.name)  # type: ignore[literal-required]  # dynamically assign
