@@ -1,4 +1,5 @@
 from collections.abc import Callable
+import os
 from pathlib import Path
 import subprocess
 from typing import Any, ClassVar, cast
@@ -174,11 +175,13 @@ class SourceTracingDirective(SphinxDirective):
         remote_url_field = None
         if src_trace_sphinx_config.set_local_url:
             local_url_field = src_trace_sphinx_config.local_url_field
-            escaped_out_dir = str(out_dir).replace("\\", "\\\\")
+            to_remove_str = f"{out_dir!s}{os.sep}"
+            if os.name == "nt":
+                to_remove_str = to_remove_str.replace("\\", "\\\\")
             self.env.config.needs_string_links[local_url_field] = {
                 "regex": r"^(?P<value>.+?)\.[^\.]+#L(?P<lineno>\d+)",
                 "link_url": ("file://{{value}}.html#L-{{lineno}}"),
-                "link_name": f"{{{{value | replace('{escaped_out_dir}', '')}}}}#L{{{{lineno}}}}",
+                "link_name": f"{{{{value | replace('{to_remove_str}', '')}}}}#L{{{{lineno}}}}",
                 "options": [local_url_field],
             }
         if (
