@@ -57,9 +57,11 @@ Contents
    :maxdepth: 1
    :caption: Components
 
-   components/configuration
-   components/oneline
    components/cli
+   components/configuration
+   components/directive
+   components/oneline
+
 
 .. toctree::
    :maxdepth: 1

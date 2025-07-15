@@ -7,12 +7,8 @@ remote_url_field = "remote-url" # Need's field name for remote URL
 
 [src_trace.projects.dcdc]
 # Configuration for source tracing project "dcdc"
-comment_type = "cpp"                                                                              # Type of the comment, only support C/C++ for now
 src_dir = "../tests/data/dcdc"                                                                    # Relative path from conf.py to the source directory
 remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}" # URL pattern for remote source code
-exclude = ["dcdc/src/ubt/ubt.cpp"]                                                                # Exclude files from source tracing
-include = ["**/*.cpp", "**/*.hpp"]                                                                # Include files for source tracing
-gitignore = true                                                                                  # Respect .gitignore to filter files
 
 [src_trace.projects.dcdc.oneline_comment_style]
 # Configuration for oneline comment style
@@ -27,3 +23,7 @@ needs_fields = [
   { "name" = "links", "type" = "list[str]", "default" = [
   ] },
 ]
+
+[src_trace.projects.src]
+src_dir = "../tests/doc_test/minimum_config"
+remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
