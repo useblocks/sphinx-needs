@@ -1,7 +1,9 @@
 Quick Start
 ===========
 
-Three steps to quickly run ``CodeLinks``:
+.. image:: local_link.gif
+
+Three steps to quickly run ``CodeLinks`` to achieve **the above**:
 
 - Configure Sphinx
 - Apply One-line comment for a ``Sphinx-Needs`` need item
@@ -46,5 +48,7 @@ Example
 
 .. src-trace:: dummy src
    :project: src
+
+.. note:: **local-url** is not working on the website as it only supports local browse
 
 Section :ref:`Directive <directive>` provides more adavanced usage.
