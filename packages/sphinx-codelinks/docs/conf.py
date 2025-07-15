@@ -59,8 +59,8 @@ html_theme_options = {
     "source_repository": "https://github.com/useblocks/sphinx-codelinks",
     "source_branch": "main",
     "source_directory": "docs/source/",
-    "light_logo": "sphinx-codelinks-logo_dark.svg",
-    "dark_logo": "sphinx-codelinks-logo_light.svg",
+    "light_logo": "sphinx-codelinks-logo_light.svg",
+    "dark_logo": "sphinx-codelinks-logo_dark.svg",
 }
 html_css_files = ["furo.css"]
 
