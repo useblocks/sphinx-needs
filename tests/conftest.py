@@ -483,3 +483,20 @@ def check_ontology_warnings():
         )
 
     return _inner
+
+
+@pytest.fixture
+def get_warnings_list():
+    """
+    Fixture to get a list of warnings from a SphinxTestApp.
+
+    The split happens in each occurence of "WARNING: ".
+    Each warning is returned as a string with \n as multi line speparator.
+    """
+
+    def _get_warnings_list(app: SphinxTestApp) -> list[str]:
+        warnings_raw = strip_colors(app.warning.getvalue())
+        warnings_split = [part for part in warnings_raw.split("WARNING: ") if part]
+        return warnings_split
+
+    return _get_warnings_list
