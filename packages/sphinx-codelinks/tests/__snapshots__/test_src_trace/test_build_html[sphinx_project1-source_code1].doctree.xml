@@ -1,3 +1,11 @@
 <document source="<source>">
     <target anonymous="" ids="ST_670E3" refid="ST_670E3">
     <Need classes="need need-srctrace" ids="ST_670E3" refid="ST_670E3">
+    <target anonymous="" ids="IMPL_1" refid="IMPL_1">
+    <Need classes="need need-impl" ids="IMPL_1" refid="IMPL_1">
+    <target anonymous="" ids="IMPL_2" refid="IMPL_2">
+    <Need classes="need need-impl" ids="IMPL_2" refid="IMPL_2">
+    <target anonymous="" ids="IMPL_3" refid="IMPL_3">
+    <Need classes="need need-impl" ids="IMPL_3" refid="IMPL_3">
+    <target anonymous="" ids="IMPL_4" refid="IMPL_4">
+    <Need classes="need need-impl" ids="IMPL_4" refid="IMPL_4">

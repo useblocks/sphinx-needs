@@ -43,7 +43,7 @@ class SrcTraceProjectConfigFileType(TypedDict):
 class SrcTraceProjectConfigType(TypedDict):
     # only support C/C++ for now
     comment_type: Literal["cpp", "hpp", "c", "h"]
-    src_dir: str
+    src_dir: Path
     remote_url_pattern: str
     exclude: list[str]
     include: list[str]
@@ -241,9 +241,8 @@ def check_project_configuration(config: SrcTraceSphinxConfig) -> list[str]:
     for project_name, project_config in config.projects.items():
         project_errors: list[str] = []
         oneline_errors = validate_oneline_comment_style(project_config)
-        src_discovery_dict, src_discovery_errors = build_src_discovery_dict(
-            project_config
-        )
+        src_discovery_dict = build_src_discovery_dict(project_config)
+        src_discovery_errors = []
         if src_discovery_dict is not None:
             src_discovery_config = SourceDiscoveryConfig(**src_discovery_dict)
             src_discovery_errors.extend(src_discovery_config.check_schema())
@@ -286,22 +285,40 @@ def validate_oneline_comment_style(
 
 def build_src_discovery_dict(
     project_config: SrcTraceProjectConfigType,
-) -> tuple[SourceDiscoveryConfigType | None, list[str]]:
+) -> SourceDiscoveryConfigType | None:
     src_discovery_dict = cast(SourceDiscoveryConfigType, {})
-    src_discovery_errors = []
-    if "src_dir" in project_config:
-        if isinstance(project_config["src_dir"], str):
-            src_discovery_dict["root_dir"] = Path(project_config["src_dir"])
-        else:
-            src_discovery_errors.append("src_dir must be a string")
-    for key in ("exclude", "include", "gitignore"):
+    # adapt the configs between source tracing and source discovery
+    if "comment_type" in project_config:
+        # comment type error will be taken care by SourceDiscovery class later
+        src_discovery_dict["file_types"] = (
+            list(SUPPORTED_COMMENT_TYPES)
+            if project_config["comment_type"] in SUPPORTED_COMMENT_TYPES
+            else [project_config["comment_type"]]
+        )
+    for key in ("exclude", "include", "gitignore", "src_dir"):
         if key in project_config:
             src_discovery_dict[key] = project_config[key]
-    if "comment_type" in project_config:
-        if project_config["comment_type"] not in SUPPORTED_COMMENT_TYPES:
-            src_discovery_errors.append(
-                f"comment_type must be one of {sorted(SUPPORTED_COMMENT_TYPES)}"
-            )
-        else:
-            src_discovery_dict["file_types"] = list(SUPPORTED_COMMENT_TYPES)
-    return src_discovery_dict, src_discovery_errors
+
+    return src_discovery_dict
+
+
+def adpat_src_discovery_config(project_config: SrcTraceProjectConfigType) -> None:
+    src_discovery_dict = build_src_discovery_dict(project_config)
+    if src_discovery_dict:
+        src_discovery_config = SourceDiscoveryConfig(**src_discovery_dict)
+    else:
+        src_discovery_config = SourceDiscoveryConfig()
+
+    for _field in fields(src_discovery_config):
+        key = "comment_type" if _field.name == "file_types" else _field.name
+
+        if key == "comment_type":
+            file_types = getattr(src_discovery_config, _field.name)
+            if set(file_types) == SUPPORTED_COMMENT_TYPES:
+                comment_type = "cpp"
+            else:
+                comment_type = file_types[0]
+            project_config[key] = comment_type  # type: ignore[literal-required]  # dynamically assign
+            continue
+
+        project_config[key] = getattr(src_discovery_config, _field.name)  # type: ignore[literal-required]  # dynamically assign

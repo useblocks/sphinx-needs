@@ -1,4 +1,5 @@
 from collections.abc import Callable
+import os
 from pathlib import Path
 import subprocess
 from typing import Any, ClassVar, cast
@@ -35,13 +36,23 @@ logger = logging.getLogger(__name__)
 
 
 def generate_str_link_name(
-    comment: UBTComment, target_filepath: Path, target_dir: str
+    comment: UBTComment,
+    target_filepath: Path,
+    dirs: dict[str, Path],
+    local: bool = False,
 ) -> str:
     if comment.start_line == comment.end_line:
         lineno = f"L{comment.start_line}"
     else:
         lineno = f"L{comment.start_line}-L{comment.end_line}"
-    url = str(target_filepath.relative_to(target_dir)) + f"#{lineno}"
+    # url = str(target_filepath.relative_to(target_dir)) + f"#{lineno}"
+    if local:
+        url = str(target_filepath) + f"#{lineno}"
+    else:
+        remote_path = dirs["remote_src_dir"] / target_filepath.relative_to(
+            dirs["target_dir"]
+        )
+        url = f"{remote_path!s}#{lineno}"
 
     return url
 
@@ -151,6 +162,12 @@ class SourceTracingDirective(SphinxDirective):
         )
         needs.extend(src_trace_need)
 
+        dirs = {
+            "src_dir": src_dir,
+            "out_dir": out_dir,
+            "target_dir": target_dir,
+        }
+
         # inject needs_string_links config before add_need()
         # https://sphinx-needs.readthedocs.io/en/latest/configuration.html#needs-string-links
         # local URL
@@ -158,12 +175,13 @@ class SourceTracingDirective(SphinxDirective):
         remote_url_field = None
         if src_trace_sphinx_config.set_local_url:
             local_url_field = src_trace_sphinx_config.local_url_field
+            to_remove_str = f"{out_dir!s}{os.sep}"
+            if os.name == "nt":
+                to_remove_str = to_remove_str.replace("\\", "\\\\")
             self.env.config.needs_string_links[local_url_field] = {
                 "regex": r"^(?P<value>.+?)\.[^\.]+#L(?P<lineno>\d+)",
-                "link_url": (
-                    f"file://{target_dir!s}/{{{{value}}}}.html#L-{{{{lineno}}}}"
-                ),
-                "link_name": "{{value}}#L{{lineno}}",
+                "link_url": ("file://{{value}}.html#L-{{lineno}}"),
+                "link_name": f"{{{{value | replace('{to_remove_str}', '')}}}}#L{{{{lineno}}}}",
                 "options": [local_url_field],
             }
         if (
@@ -178,9 +196,11 @@ class SourceTracingDirective(SphinxDirective):
                 remote_src_dir = src_dir
             else:
                 remote_src_dir = src_dir.relative_to(git_root_path)
+            dirs["remote_src_dir"] = remote_src_dir
             remote_url_pattern = src_trace_conf["remote_url_pattern"].format(
                 commit=commit_id,
-                path=f"{remote_src_dir}/" + "{{value}}",
+                # path=f"{remote_src_dir}/" + "{{value}}",
+                path="{{value}}",
                 line="{{lineno}}",
             )
             self.env.config.needs_string_links[remote_url_field] = {
@@ -189,11 +209,7 @@ class SourceTracingDirective(SphinxDirective):
                 "link_name": "{{value}}#L{{lineno}}",
                 "options": [remote_url_field],
             }
-        dirs = {
-            "src_dir": src_dir,
-            "out_dir": out_dir,
-            "target_dir": target_dir,
-        }
+
         # render needs from the source files
         rendered_needs = self.render_needs(
             virtual_docs,
@@ -287,13 +303,18 @@ class SourceTracingDirective(SphinxDirective):
                 target_filepath.parent.mkdir(parents=True, exist_ok=True)
                 target_filepath.write_text(filepath.read_text())
             for comment in virtual_doc.comments:
-                # Always generate link_name to avoid unbound errors
-                link_name = None
-                if local_url_field or remote_url_field:
+                local_link_name = None
+                remote_link_name = None
+                if local_url_field:
                     # generate link name
-                    link_name = generate_str_link_name(
-                        comment, target_filepath, str(dirs["target_dir"])
+                    local_link_name = generate_str_link_name(
+                        comment, target_filepath, dirs, local=True
                     )
+                if remote_url_field:
+                    remote_link_name = generate_str_link_name(
+                        comment, target_filepath, dirs, local=False
+                    )
+
                 if comment.resolved_marker:
                     # render needs from one-line marker
                     kwargs: dict[str, str | list[str]] = {
@@ -306,12 +327,12 @@ class SourceTracingDirective(SphinxDirective):
                         ]  # title and type are mandatory for add_need()
                     }
 
-                    if local_url_field and link_name is not None:
-                        kwargs[local_url_field] = link_name
-                    if remote_url_field and link_name is not None:
-                        kwargs[remote_url_field] = link_name
+                    if local_url_field and local_link_name is not None:
+                        kwargs[local_url_field] = local_link_name
+                    if remote_url_field and remote_link_name is not None:
+                        kwargs[remote_url_field] = remote_link_name
 
-                    marker_needs: list[nodes.Node] = add_need(
+                    oneline_needs: list[nodes.Node] = add_need(
                         app=self.env.app,  # The Sphinx application object
                         state=self.state,  # The docutils state object
                         docname=self.env.docname,  # The current document name
@@ -324,7 +345,7 @@ class SourceTracingDirective(SphinxDirective):
                         ),  # The title of the need
                         **cast(dict[str, Any], kwargs),  # type: ignore[explicit-any]
                     )
-                    rendered_needs.extend(marker_needs)
+                    rendered_needs.extend(oneline_needs)
                     if local_url_field:
                         # save the mapping of need links and line numbers of source codes
                         # for the later use in `html-collect-pages`

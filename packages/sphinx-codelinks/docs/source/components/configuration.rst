@@ -37,9 +37,9 @@ but with the ``src_trace_`` prefix removed.
 src_trace_set_local_url
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Set this option to ``False``, if the local link between a need to the local source code where it is defined is not required.
+Set this option to ``True``, if the local link between a need to the local source code where it is defined is required.
 
-Default: **True**
+Default: **False**
 
 .. tabs::
 
@@ -77,12 +77,12 @@ Default: **local-url**
 src_trace_set_remote_url
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Set this option to ``False``, if the remote link between a need to the remote source code
-where it is defined is not required.
+Set this option to ``True``, if the remote link between a need to the remote source code
+where it is defined is required.
 
 The remote means where the source code is hosted such as GitHub.
 
-Default: **True**
+Default: **False**
 
 .. tabs::
 

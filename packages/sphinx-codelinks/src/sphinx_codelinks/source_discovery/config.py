@@ -6,7 +6,7 @@ from jsonschema import ValidationError, validate
 
 
 class SourceDiscoveryConfigType(TypedDict, total=False):
-    root_dir: Path
+    src_dir: Path
     exclude: list[str]
     include: list[str]
     gitignore: bool
@@ -19,8 +19,8 @@ class SourceDiscoveryConfig:
     def field_names(cls) -> set[str]:
         return {item.name for item in fields(cls)}
 
-    root_dir: Path = field(
-        default_factory=lambda: Path.cwd(), metadata={"schema": {"type": "string"}}
+    src_dir: Path = field(
+        default_factory=lambda: Path("./"), metadata={"schema": {"type": "string"}}
     )
     """The root of the source directory."""
 
@@ -41,7 +41,9 @@ class SourceDiscoveryConfig:
 
     file_types: list[str] = field(
         default_factory=lambda: ["c", "h", "cpp", "hpp"],
-        metadata={"schema": {"type": "array", "items": {"type": "string"}}},
+        metadata={
+            "schema": {"type": "array", "items": {"enum": ["c", "h", "cpp", "hpp"]}}
+        },
     )
     """The file types to discover."""
 

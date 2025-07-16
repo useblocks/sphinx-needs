@@ -11,19 +11,17 @@ from sphinx_codelinks.source_discovery.source_discover import SourceDiscover
     [
         (
             {
-                "root_dir": 123,
+                "src_dir": 123,
                 "exclude": ["exclude1", "exclude2"],
                 "include": ["include1", "include2"],
                 "gitignore": True,
                 "file_types": ["cpp", "hpp"],
             },
-            [
-                "Schema validation error in field 'root_dir': 123 is not of type 'string'"
-            ],
+            ["Schema validation error in field 'src_dir': 123 is not of type 'string'"],
         ),
         (
             {
-                "root_dir": "/path/to/root",
+                "src_dir": "/path/to/root",
                 "exclude": ["exclude1", "exclude2"],
                 "include": ["include1", "include2"],
                 "gitignore": "TrueAsString",
@@ -33,12 +31,24 @@ from sphinx_codelinks.source_discovery.source_discover import SourceDiscover
                 "Schema validation error in field 'gitignore': 'TrueAsString' is not of type 'boolean'"
             ],
         ),
+        (
+            {
+                "src_dir": "/path/to/root",
+                "exclude": ["exclude1", "exclude2"],
+                "include": ["include1", "include2"],
+                "gitignore": True,
+                "file_types": ["py", "hpp"],
+            },
+            [
+                "Schema validation error in field 'file_types': 'py' is not one of ['c', 'h', 'cpp', 'hpp']"
+            ],
+        ),
     ],
 )
 def test_schema_negative(config, msgs):
     source_discovery_config = SourceDiscoveryConfig(**config)
     errors = source_discovery_config.check_schema()
-    assert errors.sort() == msgs.sort()
+    assert sorted(errors) == sorted(msgs)
 
 
 @pytest.mark.parametrize(
@@ -46,7 +56,7 @@ def test_schema_negative(config, msgs):
     [
         {},
         {
-            "root_dir": "/path/to/root",
+            "src_dir": "/path/to/root",
             "exclude": ["exclude1", "exclude2"],
             "include": ["include1", "include2"],
             "gitignore": True,

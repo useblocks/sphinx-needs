@@ -1,0 +1,2 @@
+[src_trace.projects.src]
+remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"

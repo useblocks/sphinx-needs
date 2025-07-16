@@ -26,7 +26,7 @@ app = typer.Typer(
 
 @app.command(no_args_is_help=True)
 def discover(
-    root_dir: Annotated[
+    src_dir: Annotated[
         Path,
         typer.Argument(
             ...,
@@ -68,7 +68,7 @@ def discover(
     from sphinx_codelinks.source_discovery.source_discover import SourceDiscover
 
     source_discover = SourceDiscover(
-        root_dir=root_dir,
+        src_dir=src_dir,
         exclude=exclude,
         include=include,
         file_types=file_types,
@@ -134,8 +134,8 @@ def vdoc(
     if oneline_errors:
         errors.appendleft("Invalid oneline comment style configuration:")
         errors.extend(oneline_errors)
-
-    src_discovery_dict, src_discovery_errors = build_src_discovery_dict(project_config)
+    src_discovery_errors = []
+    src_discovery_dict = build_src_discovery_dict(project_config)
     if src_discovery_dict:
         src_discovery_config = SourceDiscoveryConfig(**src_discovery_dict)
     else:
@@ -151,9 +151,9 @@ def vdoc(
 
     from sphinx_codelinks.source_discovery.source_discover import SourceDiscover
 
-    src_root_dir = (config.parent / src_discovery_config.root_dir).resolve()
+    src_dir = (config.parent / src_discovery_config.src_dir).resolve()
     source_discover = SourceDiscover(
-        root_dir=src_root_dir,
+        src_dir=src_dir,
         exclude=src_discovery_config.exclude,
         include=src_discovery_config.include,
         file_types=src_discovery_config.file_types,
@@ -164,7 +164,7 @@ def vdoc(
 
     virtual_docs = VirtualDocs(
         src_files=source_discover.source_paths,
-        src_dir=str(src_root_dir),
+        src_dir=str(src_dir),
         output_dir=str(output_dir),
         oneline_comment_style=oneline_comment_style,
         comment_type=src_discovery_config.file_types[0]
@@ -178,7 +178,7 @@ def vdoc(
         typer.echo("The virtual documents are generated:")
         for v_doc in virtual_docs.virtual_docs:
             json_path = output_dir / v_doc.filepath.with_suffix(".json").relative_to(
-                src_root_dir
+                src_dir
             )
             typer.echo(json_path)
     else:

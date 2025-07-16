@@ -21,6 +21,7 @@ from sphinx_codelinks.sphinx_extension.config import (
     SrcTraceConfigType,
     SrcTraceProjectConfigType,
     SrcTraceSphinxConfig,
+    adpat_src_discovery_config,
     check_configuration,
     file_lineno_href,
 )
@@ -155,6 +156,10 @@ def set_config_to_sphinx(
             for project_config in cast(
                 dict[str, SrcTraceProjectConfigType], value
             ).values():
+                # address SourceDiscovery related config
+                adpat_src_discovery_config(project_config)
+
+                # address OneLoneCommenyStyle config and its default
                 oneline_comment_style: OneLineCommentStyleType | None = cast(
                     OneLineCommentStyleType, project_config.get("oneline_comment_style")
                 )
@@ -165,6 +170,8 @@ def set_config_to_sphinx(
                             project_config["oneline_comment_style"],
                         )
                     )
+                else:
+                    project_config["oneline_comment_style"] = OneLineCommentStyle()
 
         config[f"src_trace_{key}"] = value
 

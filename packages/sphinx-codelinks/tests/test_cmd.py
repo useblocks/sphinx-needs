@@ -197,7 +197,7 @@ def test_vdoc(options, lines, tmp_path):
             },
             [
                 "Invalid value: Invalid source discovery configuration:",
-                "src_dir must be a string",
+                "Schema validation error in field 'src_dir': 123 is not of type 'string'",
                 "Schema validation error in field 'exclude': 123 is not of type 'array'",
                 "Schema validation error in field 'include': 123 is not of type 'array'",
             ],

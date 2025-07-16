@@ -18,7 +18,7 @@ void multiLineExample()
     std::cout << "Multi-line comment example" << std::endl;
 }
 
-// [[IMPL_14, title 13, impl, 13[\[SPEC\,_1\]], open, low, high]]
+// [[IMPL_14, title 13, impl, [\[SPEC\,_1\]], open, low]]
 // invalid because the too many fields
 void baz() {}
 

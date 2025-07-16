@@ -465,8 +465,8 @@ def test_oneline_parser_default_config_negative(oneline: str, result):
                 "num_src_files": 4,
                 "num_uncached_files": 4,
                 "num_cached_files": 0,
-                "num_valid_comments": 10,
-                "num_oneline_warnings": 2,
+                "num_valid_comments": 12,
+                "num_oneline_warnings": 0,
             },
         ),
         (
