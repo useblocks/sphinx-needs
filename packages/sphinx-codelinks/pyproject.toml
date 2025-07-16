@@ -1,6 +1,6 @@
 [project]
 name = "sphinx-codelinks"
-version = "0.1.1"
+version = "0.1.2"
 description = "Fast Source Code Traceability for Sphinx-Needs"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 maintainers = [
