@@ -1,0 +1,724 @@
+# serializer version: 1
+# name: test_schema_benchmark[100]
+  list([
+    '''
+      Need 'FEAt_P01' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P01
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P01' does not match '^[A-Z0-9_]+$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P01' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P01
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P01' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P01' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P01
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property
+  
+    ''',
+    '''
+      Need 'SPEC_P01' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P01
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P01' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P01' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P01
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P01' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P01' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P01
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P01' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'FEAT_P01' has validation errors:
+        Severity:       violation
+        Field:          asil
+        Need path:      IMPL_SAFE_P01 > links > SPEC_SAFE_UNSAFE_FEAT_P01 > links > FEAT_P01
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D']
+  
+    ''',
+    '''
+      Need 'FEAt_P02' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P02
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P02' does not match '^[A-Z0-9_]+$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P02' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P02
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P02' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P02' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P02
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property
+  
+    ''',
+    '''
+      Need 'SPEC_P02' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P02
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P02' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P02' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P02
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P02' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P02' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P02
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P02' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'FEAT_P02' has validation errors:
+        Severity:       violation
+        Field:          asil
+        Need path:      IMPL_SAFE_P02 > links > SPEC_SAFE_UNSAFE_FEAT_P02 > links > FEAT_P02
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D']
+  
+    ''',
+    '''
+      Need 'FEAt_P03' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P03
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P03' does not match '^[A-Z0-9_]+$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P03' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P03
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P03' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P03' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P03
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property
+  
+    ''',
+    '''
+      Need 'SPEC_P03' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P03
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P03' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P03' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P03
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P03' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P03' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P03
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P03' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'FEAT_P03' has validation errors:
+        Severity:       violation
+        Field:          asil
+        Need path:      IMPL_SAFE_P03 > links > SPEC_SAFE_UNSAFE_FEAT_P03 > links > FEAT_P03
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D']
+  
+    ''',
+    '''
+      Need 'FEAt_P04' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P04
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P04' does not match '^[A-Z0-9_]+$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P04' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P04
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P04' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P04' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P04
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property
+  
+    ''',
+    '''
+      Need 'SPEC_P04' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P04
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P04' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P04' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P04
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P04' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P04' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P04
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P04' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'FEAT_P04' has validation errors:
+        Severity:       violation
+        Field:          asil
+        Need path:      IMPL_SAFE_P04 > links > SPEC_SAFE_UNSAFE_FEAT_P04 > links > FEAT_P04
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D']
+  
+    ''',
+    '''
+      Need 'FEAt_P05' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P05
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P05' does not match '^[A-Z0-9_]+$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P05' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P05
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P05' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P05' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P05
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property
+  
+    ''',
+    '''
+      Need 'SPEC_P05' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P05
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P05' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P05' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P05
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P05' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P05' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P05
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P05' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'FEAT_P05' has validation errors:
+        Severity:       violation
+        Field:          asil
+        Need path:      IMPL_SAFE_P05 > links > SPEC_SAFE_UNSAFE_FEAT_P05 > links > FEAT_P05
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D']
+  
+    ''',
+    '''
+      Need 'FEAt_P06' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P06
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P06' does not match '^[A-Z0-9_]+$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P06' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P06
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P06' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P06' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P06
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property
+  
+    ''',
+    '''
+      Need 'SPEC_P06' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P06
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P06' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P06' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P06
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P06' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P06' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P06
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P06' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'FEAT_P06' has validation errors:
+        Severity:       violation
+        Field:          asil
+        Need path:      IMPL_SAFE_P06 > links > SPEC_SAFE_UNSAFE_FEAT_P06 > links > FEAT_P06
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D']
+  
+    ''',
+    '''
+      Need 'FEAt_P07' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P07
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P07' does not match '^[A-Z0-9_]+$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P07' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P07
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P07' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P07' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P07
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property
+  
+    ''',
+    '''
+      Need 'SPEC_P07' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P07
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P07' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P07' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P07
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P07' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P07' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P07
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P07' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'FEAT_P07' has validation errors:
+        Severity:       violation
+        Field:          asil
+        Need path:      IMPL_SAFE_P07 > links > SPEC_SAFE_UNSAFE_FEAT_P07 > links > FEAT_P07
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D']
+  
+    ''',
+    '''
+      Need 'FEAt_P08' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P08
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P08' does not match '^[A-Z0-9_]+$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P08' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P08
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P08' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P08' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P08
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property
+  
+    ''',
+    '''
+      Need 'SPEC_P08' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P08
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P08' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P08' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P08
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P08' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P08' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P08
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P08' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'FEAT_P08' has validation errors:
+        Severity:       violation
+        Field:          asil
+        Need path:      IMPL_SAFE_P08 > links > SPEC_SAFE_UNSAFE_FEAT_P08 > links > FEAT_P08
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D']
+  
+    ''',
+    '''
+      Need 'FEAt_P09' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P09
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P09' does not match '^[A-Z0-9_]+$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P09' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P09
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P09' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P09' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P09
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property
+  
+    ''',
+    '''
+      Need 'SPEC_P09' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P09
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P09' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P09' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P09
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P09' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P09' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P09
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P09' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'FEAT_P09' has validation errors:
+        Severity:       violation
+        Field:          asil
+        Need path:      IMPL_SAFE_P09 > links > SPEC_SAFE_UNSAFE_FEAT_P09 > links > FEAT_P09
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D']
+  
+    ''',
+    '''
+      Need 'FEAt_P10' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P10
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P10' does not match '^[A-Z0-9_]+$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P10' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P10
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P10' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P10' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P10
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property
+  
+    ''',
+    '''
+      Need 'SPEC_P10' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P10
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P10' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P10' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P10
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P10' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P10' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P10
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P10' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'FEAT_P10' has validation errors:
+        Severity:       violation
+        Field:          asil
+        Need path:      IMPL_SAFE_P10 > links > SPEC_SAFE_UNSAFE_FEAT_P10 > links > FEAT_P10
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D']
+  
+    ''',
+  ])
+# ---
+# name: test_schema_benchmark[10]
+  list([
+    '''
+      Need 'FEAt_P1' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      FEAt_P1
+        Schema path:    [0] > local > properties > id > pattern
+        User message:   id must be uppercase
+        Schema message: 'FEAt_P1' does not match '^[A-Z0-9_]+$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P1' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_MISSING_APPROVAL_P1
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_MISSING_APPROVAL_P1' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_MISSING_APPROVAL_P1' has validation errors:
+        Severity:       violation
+        Field:          
+        Need path:      SPEC_MISSING_APPROVAL_P1
+        Schema path:    spec-approved[2] > local > required
+        User message:   Approval required due to high efforts
+        Schema message: 'approved' is a required property
+  
+    ''',
+    '''
+      Need 'SPEC_P1' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_P1
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_P1' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_UNSAFE_FEAT_P1' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_UNSAFE_FEAT_P1
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_UNSAFE_FEAT_P1' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'SPEC_SAFE_P1' has validation errors:
+        Severity:       violation
+        Field:          id
+        Need path:      SPEC_SAFE_P1
+        Schema path:    spec[1] > local > properties > id > pattern
+        Schema message: 'SPEC_SAFE_P1' does not match '^REQ[a-zA-Z0-9_-]*$'
+  
+    ''',
+    '''
+      Need 'FEAT_P1' has validation errors:
+        Severity:       violation
+        Field:          asil
+        Need path:      IMPL_SAFE_P1 > links > SPEC_SAFE_UNSAFE_FEAT_P1 > links > FEAT_P1
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > links > links > local > allOf > 0 > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D']
+  
+    ''',
+  ])
+# ---
