@@ -41,7 +41,12 @@ class NeedsBuilder(Builder):
         updated_docnames: Sequence[str],
         method: str = "update",
     ) -> None:
-        # make sure schema validation is done
+        # we override this method, to stop any document output files from being written,
+        # however, from this method triggers the `write-started` event,
+        # which we still want for triggering schema validation.
+        # TODO since sphinx 8.1 `Builder.write` is typed as `final` and a new `Builder.write_documents` method is added,
+        # see https://github.com/sphinx-doc/sphinx/commit/d135d2eba39136941da101e7933a958362dfa999
+        # once sphinx 7 is not supported, we should remove this `write` method and override `write_documents` to "do nothing"
         self.events.emit("write-started", self)
 
     def finish(self) -> None:
