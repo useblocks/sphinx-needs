@@ -164,6 +164,8 @@ Default: **cpp**
       [src_trace.projects.project_name]
       comment_type = "c"
 
+.. _source_dir:
+
 src_dir
 ~~~~~~~
 
