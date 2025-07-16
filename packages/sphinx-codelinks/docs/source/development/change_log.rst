@@ -3,6 +3,16 @@
 Changelog
 =========
 
+0.1.2
+-----
+
+:Released: 16.07.2025
+
+Fixed:
+
+- Applying default configs when not given
+- ``local-url`` in multi-projects
+
 0.1.1
 -----
 
