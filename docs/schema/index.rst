@@ -632,7 +632,7 @@ Each schema can specify a severity level:
      "message": "Approval required due to high efforts"
    }
 
-The config :ref:`needs_schemas_severity` can be used to define a minimum severity level for a
+The config :ref:`needs_schema_severity` can be used to define a minimum severity level for a
 warning to be reported.
 
 Schema Definitions ($defs)

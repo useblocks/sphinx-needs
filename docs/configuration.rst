@@ -2388,10 +2388,10 @@ Default value: ``None``
 
 The JSON file should contain the same structure as :ref:`needs_schema_definitions`:
 
-.. _`needs_schemas_severity`:
+.. _`needs_schema_severity`:
 
-needs_schemas_severity
-~~~~~~~~~~~~~~~~~~~~~~
+needs_schema_severity
+~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 6.0.0
 
@@ -2411,12 +2411,12 @@ Default value: ``"info"``
 
 .. code-block:: python
 
-   needs_schemas_severity = "warning"
+   needs_schema_severity = "warning"
 
-.. _`needs_schemas_debug_active`:
+.. _`needs_schema_debug_active`:
 
-needs_schemas_debug_active
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+needs_schema_debug_active
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 6.0.0
 
@@ -2427,18 +2427,18 @@ Default value: ``False``
 
 .. code-block:: python
 
-   needs_schemas_debug_active = True
+   needs_schema_debug_active = True
 
-Debug files are written to the directory specified by :ref:`needs_schemas_debug_path`.
+Debug files are written to the directory specified by :ref:`needs_schema_debug_path`.
 
-.. _`needs_schemas_debug_path`:
+.. _`needs_schema_debug_path`:
 
-needs_schemas_debug_path
-~~~~~~~~~~~~~~~~~~~~~~~~
+needs_schema_debug_path
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 6.0.0
 
-Directory path where schema debug files are stored when :ref:`needs_schemas_debug_active` is
+Directory path where schema debug files are stored when :ref:`needs_schema_debug_active` is
 enabled.
 
 If the path is relative, it will be resolved relative to the ``conf.py`` directory.
@@ -2447,12 +2447,12 @@ Default value: ``"schema_debug"``
 
 .. code-block:: python
 
-   needs_schemas_debug_path = "debug/schemas"
+   needs_schema_debug_path = "debug/schemas"
 
-.. _`needs_schemas_debug_ignore`:
+.. _`needs_schema_debug_ignore`:
 
-needs_schemas_debug_ignore
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+needs_schema_debug_ignore
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 6.0.0
 
@@ -2472,7 +2472,7 @@ Default value::
 
 .. code-block:: python
 
-   needs_schemas_debug_ignore = [
+   needs_schema_debug_ignore = [
        "extra_option_success",
        "local_success",
        "network_local_success"
@@ -2498,6 +2498,6 @@ Available scenarios that can be ignored:
 - ``select_fail``: Failed schema selection
 - ``select_success``: Successful schema selection
 
-The debug information is written to the directory specified by :ref:`needs_schemas_debug_path`.
+The debug information is written to the directory specified by :ref:`needs_schema_debug_path`.
 The ``_success`` scenarios exist to analyze why a validation was successful and how the
 final need and schema looks like.
