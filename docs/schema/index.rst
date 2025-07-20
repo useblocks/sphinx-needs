@@ -16,7 +16,9 @@ See :ref:`migration_from_warnings_constraints` for details on how to migrate.
 
    The validation is coercing need extra options only for the schema validation,
    so type constraints can be enforced. It does not yet change the Sphinx-Needs internal type
-   system. This will come in a second step in the near future and it will affect
+   system. The goal of this first implementation is to agree on the interface definition
+   format and give users time to migrate their warnings/constraints.
+   A fully typed Sphinx-Needs will come in a second step in the near future and it will affect
    dynamic functions, filters and exported/imported needs.
 
 Imagine the following modeling of need items:
@@ -930,10 +932,9 @@ Migration from Legacy Validation
 The schema validation system is designed to replace the older :ref:`needs_constraints` and
 :ref:`needs_warnings` configuration options, offering significant advantages:
 
-**Advantages over needs_constraints and needs_warnings:**
-
 - **Declarative**: JSON-based configuration instead of Python code
-- **Performance**: Pre-compiled schemas with optimized validation
+- **Powerful**: Supports selection, local, and network validation
+- **Performance**: Schema validation is faster than custom validations written in Python
 - **IDE Support**: Full IntelliSense and validation in supported editors like `ubCode`_
 - **Type Safety**: Strong typing with comprehensive data type support
 - **Network Validation**: Multi-hop link validation capabilities
