@@ -2483,21 +2483,28 @@ To write all scenarios, set it to an empty list: ``[]``.
 Available scenarios that can be ignored:
 
 - ``cfg_schema_error``: The user provided schema is invalid
-- ``extra_link_fail``: Global extra link validation failed
-- ``extra_link_success``: Global extra link validations was successful
-- ``extra_option_fail``: Global extra option validation failed
-- ``extra_option_success``: Global extra option validation was successful
 - ``extra_option_type_error``: A need extra option cannot be coerced to the type specified in the schema
-- ``local_fail``: Need local validation failed
+- ``extra_option_success``: Global extra option validation was successful
+- ``extra_option_fail``: Global extra option validation failed
+- ``extra_link_success``: Global extra link validations was successful
+- ``extra_link_fail``: Global extra link validation failed
+- ``select_success``: Successful select validation
+- ``select_fail``: Failed select validation
 - ``local_success``: Successful local validation
-- ``network_local_fail``: Need does not validate against the local schema in a network context
-- ``network_local_success``: Successful network local validation
+- ``local_fail``: Need local validation failed
 - ``network_missing_target``: An outgoing link target cannot be resolved
 - ``network_contains_too_few``: minContains or minItems validation failed for the given link_schema link type
 - ``network_contains_too_many``: maxContains or maxItems validation failed for the given link_schema link type
-- ``select_fail``: Failed schema selection
-- ``select_success``: Successful schema selection
+- ``network_items_fail``: items validation failed for the given link_schema link type
+- ``network_local_success``: Successful network local validation
+- ``network_local_fail``: Need does not validate against the local schema in a network context
+- ``network_max_nest_level``: The maximum nesting level of network links was exceeded
 
 The debug information is written to the directory specified by :ref:`needs_schema_debug_path`.
 The ``_success`` scenarios exist to analyze why a validation was successful and how the
 final need and schema looks like.
+
+.. note::
+
+   For large need counts, the debug output can become very large.
+   Writing debug output also affects the validation performance negatively.
