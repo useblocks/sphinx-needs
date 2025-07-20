@@ -105,6 +105,45 @@ select_error:
   exception:
     - "Config error in schema '[0]': Field 'efforts' has type 'unknown', but expected 'string'."
 
+both_definitions_and_json_given:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions = {
+      "schemas": [
+          {
+              "select": {
+                  "properties": {
+                      "efforts": {"minimum": 15}
+                  }
+              },
+              "validate": {
+                  "local": {
+                      "required": ["efforts"]
+                  }
+              }
+          }
+      ]
+    }
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  schemas:
+    schemas:
+      - select:
+          properties:
+            efforts: {minimum: 15}
+        validate:
+          local:
+            required: [efforts]
+  exception:
+    - "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time"
+
 local_error:
   conf: |
     extensions = ["sphinx_needs"]
