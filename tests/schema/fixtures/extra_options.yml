@@ -892,3 +892,33 @@ coerce_to_boolean_from_string_error:
       - "Schema path # extra_options > schema"
       - "Schema message # Field 'approved': cannot coerce 'not-a-boolean' to boolean"
       - sphinx8: ["sn_schema.extra_option_type_error"]
+
+default_accepted:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts1"
+    schema.type = "number"
+    schema.default = 0
+    [[needs.extra_options]]
+    name = "efforts2"
+    schema.type = "string"
+    schema.default = "high"
+    [[needs.extra_options]]
+    name = "approved"
+    schema.type = "boolean"
+    schema.default = false
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts1: 6.6
+        :efforts2: 4.4
+        :approved: true
+
+    .. impl:: title
+        :id: IMPL_2
+        :efforts1: 6.6
+        :efforts2: 4.4
+  warnings: []
