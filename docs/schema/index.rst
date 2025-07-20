@@ -12,6 +12,13 @@ on need items and their relations in Sphinx-Needs. It is supposed to replace the
 :ref:`needs_constraints` and :ref:`needs_warnings` configuration options.
 See :ref:`migration_from_warnings_constraints` for details on how to migrate.
 
+.. note::
+
+   The validation is coercing need extra options only for the schema validation,
+   so type constraints can be enforced. It does not yet change the Sphinx-Needs internal type
+   system. This will come in a second step in the near future and it will affect
+   dynamic functions, filters and exported/imported needs.
+
 Imagine the following modeling of need items:
 
 .. figure:: 01_basic_setup.drawio.png
