@@ -62,7 +62,7 @@ const:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -85,7 +85,7 @@ const_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -114,7 +114,7 @@ enum:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -137,7 +137,7 @@ enum_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -166,7 +166,7 @@ auto_inject_type:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -188,7 +188,7 @@ required:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -208,7 +208,7 @@ required_missing:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -233,7 +233,7 @@ auto_inject_type_wrong_const:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -261,7 +261,7 @@ required_based_on_select_field_missing:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -288,7 +288,7 @@ required_based_on_select_field_below_threshold:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -316,7 +316,7 @@ required_based_on_select_field_over_threshold:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"

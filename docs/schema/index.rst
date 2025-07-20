@@ -45,12 +45,12 @@ JSON file.
 **JSON File Configuration (recommended)**
 
 The preferred approach is to define schemas in a separate JSON file and load them using the
-:ref:`needs_schemas_from_json` configuration option:
+:ref:`needs_schema_definitions_from_json` configuration option:
 
 .. code-block:: python
 
    # conf.py
-   needs_schemas_from_json = "schemas.json"
+   needs_schema_definitions_from_json = "schemas.json"
 
 Then create a ``schemas.json`` file in your project root:
 
@@ -90,12 +90,12 @@ Then create a ``schemas.json`` file in your project root:
 
 **Python Configuration (Alternative)**
 
-Alternatively, schemas can be configured directly using the :ref:`needs_schemas`
+Alternatively, schemas can be configured directly using the :ref:`needs_schema_definitions`
 configuration option in ``conf.py``:
 
 .. code-block:: python
 
-   needs_schemas = {
+   needs_schema_definitions = {
      "$defs": {
        # reusable schema components
        "type-spec": {

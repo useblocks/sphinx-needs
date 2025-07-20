@@ -4,7 +4,7 @@
 id_required = true
 a = ["a", 3, { "a" = "b" }]
 id_regex = "^[A-Z0-9_]{3,}"
-schemas_severity = 'info'
+schema_severity = 'info'
 
 [[needs.extra_options]]
 name = "efforts"

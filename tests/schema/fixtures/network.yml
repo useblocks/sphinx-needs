@@ -2,7 +2,7 @@ schemas_in_conf:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas = {
+    needs_schema_definitions = {
       "schemas": [
         {
           "select": {
@@ -41,7 +41,7 @@ schemas_in_conf_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas = {
+    needs_schema_definitions = {
       "schemas": [
         {
           "select": {
@@ -86,7 +86,7 @@ min_contains:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -119,7 +119,7 @@ min_contains_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -157,7 +157,7 @@ max_contains:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -190,7 +190,7 @@ max_contains_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -230,7 +230,7 @@ link_chain_w_refs:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -317,7 +317,7 @@ link_chain_hop_1_min_contains_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -378,7 +378,7 @@ link_chain_hop_2_min_contains_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -465,7 +465,7 @@ local_min_items:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -492,7 +492,7 @@ local_min_items_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -524,7 +524,7 @@ local_max_items:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -554,7 +554,7 @@ local_max_items_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -589,7 +589,7 @@ max_network_levels:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "asil"

@@ -274,7 +274,7 @@ class LinkOptionsType(TypedDict, total=False):
     
     If given, the schema will apply to all needs that use this link option.
     The schema is applied locally on unresolved links, i.e. on the list of string ids.
-    For more granular control and graph traversal, use the `needs_schemas` configuration.
+    For more granular control and graph traversal, use the `needs_schema_definitions` configuration.
     """
 
 
@@ -304,7 +304,7 @@ class NeedExtraOption(TypedDict):
     A JSON schema definition for the option.
     
     If given, the schema will apply to all needs that use this option.
-    For more granular control, use the `needs_schemas` configuration.
+    For more granular control, use the `needs_schema_definitions` configuration.
     """
 
 
@@ -408,28 +408,31 @@ class NeedsSphinxConfig:
         default_factory=list, metadata={"rebuild": "env", "types": (list,)}
     )
     """Path to the root table in the toml file to load configuration from."""
-    schemas: SchemasFileRootType = field(
+
+    schema_definitions: SchemasFileRootType = field(
         default_factory=lambda: cast(SchemasFileRootType, {}),
         metadata={"rebuild": "env", "types": (dict,)},
     )
-    schemas_from_json: str | None = field(
+    """Schema definitions to write complex valdations based on selectors."""
+
+    schema_definitions_from_json: str | None = field(
         default=None, metadata={"rebuild": "env", "types": (str, type(None))}
     )
     """Path to a JSON file to load the schemas from."""
 
-    schemas_severity: str = field(
+    schema_severity: str = field(
         default=SeverityEnum.info.name,
         metadata={"rebuild": "env", "types": (str,)},
     )
     """Severity level for the schema validation reporting."""
 
-    schemas_debug_active: bool = field(
+    schema_debug_active: bool = field(
         default=False,
         metadata={"rebuild": "env", "types": (bool,)},
     )
     """Activate the debug mode for schema validation to dump JSON/schema files and messages."""
 
-    schemas_debug_path: str = field(
+    schema_debug_path: str = field(
         default="schema_debug",
         metadata={"rebuild": "env", "types": (str,)},
     )
@@ -441,7 +444,7 @@ class NeedsSphinxConfig:
     with confdir for Sphinx.
     """
 
-    schemas_debug_ignore: list[str] = field(
+    schema_debug_ignore: list[str] = field(
         default_factory=lambda: [
             "extra_option_success",
             "extra_link_success",

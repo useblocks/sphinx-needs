@@ -341,7 +341,7 @@ USER_CONFIG_SCHEMA_SEVERITIES = [
     SeverityEnum.violation,
 ]
 """
-Severity levels that can be set in the user provided schemas and for the schemas_severity config."""
+Severity levels that can be set in the user provided schemas and for the schema_severity config."""
 
 MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
     MessageRuleEnum.cfg_schema_error: SeverityEnum.config_error,

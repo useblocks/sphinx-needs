@@ -3,7 +3,7 @@
 [needs]
 id_required = true
 id_regex = "^[A-Z0-9_]{3,}"
-schemas_severity = 'warning'
+schema_severity = 'warning'
 
 [[needs.extra_options]]
 name = "string_option_wo_schema"

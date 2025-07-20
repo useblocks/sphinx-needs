@@ -43,32 +43,34 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
     validate_regex_patterns_extra_options(needs_config)
     validate_regex_patterns_extra_links(needs_config)
 
-    if not needs_config.schemas:
+    if not needs_config.schema_definitions:
         # nothing to validate
         return
 
-    if not isinstance(needs_config.schemas, dict):
+    if not isinstance(needs_config.schema_definitions, dict):
         raise NeedsConfigException("Schemas entry 'schemas' is not a dict.")
 
-    if "schemas" not in needs_config.schemas:
+    if "schemas" not in needs_config.schema_definitions:
         # nothing to validate (also no need to check for $defs)
         return
 
-    if not isinstance(needs_config.schemas["schemas"], list):
-        raise NeedsConfigException("The 'schemas' key in needs_schemas is not a list.")
+    if not isinstance(needs_config.schema_definitions["schemas"], list):
+        raise NeedsConfigException(
+            "The 'schemas' key in needs_schema_definitions is not a list."
+        )
 
-    if not needs_config.schemas["schemas"]:
+    if not needs_config.schema_definitions["schemas"]:
         # nothing to validate
         return
 
     # resolve $ref entries in schema; this is done before the typeguard check
     # to check the final schema structure and give feedback based on it
-    if "$defs" in needs_config.schemas:
-        defs = needs_config.schemas["$defs"]
-        resolve_refs(defs, needs_config.schemas, set())
+    if "$defs" in needs_config.schema_definitions:
+        defs = needs_config.schema_definitions["$defs"]
+        resolve_refs(defs, needs_config.schema_definitions, set())
 
     # set idx for logging purposes, it's part of the schema name
-    for idx, schema in enumerate(needs_config.schemas["schemas"]):
+    for idx, schema in enumerate(needs_config.schema_definitions["schemas"]):
         schema["idx"] = idx
 
     # inject extra option types to schema, this is required before typeguard check
@@ -76,7 +78,7 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
     # this improves error messages
     extra_links = {link["option"] for link in needs_config.extra_links}
     core_field_type_map = get_core_field_type_map()
-    for schema in needs_config.schemas["schemas"]:
+    for schema in needs_config.schema_definitions["schemas"]:
         schema_name = get_schema_name(schema)
         populate_field_type(
             schema,
@@ -87,7 +89,7 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
         )
 
     # validate schemas against type hints at runtime
-    for schema in needs_config.schemas["schemas"]:
+    for schema in needs_config.schema_definitions["schemas"]:
         try:
             check_type(schema, SchemasRootType)
         except TypeCheckError as exc:
@@ -98,12 +100,12 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
 
     # check if network links are defined as extra links
     check_network_links_against_extra_links(
-        needs_config.schemas["schemas"],
+        needs_config.schema_definitions["schemas"],
         extra_links,
     )
 
     # check severity and inject default if not set
-    validate_severity(needs_config.schemas["schemas"])
+    validate_severity(needs_config.schema_definitions["schemas"])
 
     # check safe regex patterns of schemas
     validate_regex_patterns_schemas(needs_config)
@@ -189,7 +191,7 @@ def validate_regex_patterns_extra_links(needs_config: NeedsSphinxConfig) -> None
 
 def validate_regex_patterns_schemas(needs_config: NeedsSphinxConfig) -> None:
     """Validate regex patterns of schemas."""
-    for schema in needs_config.schemas["schemas"]:
+    for schema in needs_config.schema_definitions["schemas"]:
         schema_name = get_schema_name(schema)
         try:
             validate_schema_patterns(schema, f"schemas.{schema_name}")
@@ -247,7 +249,7 @@ def inject_type_and_validate_extra_option_schemas(
         if value.schema is None:
             # nothing to check, leave it at None so it is explicitly unset;
             # remember the type in case it needs to be injected to
-            # needs_config.schemas later
+            # needs_config.schema_definitions later
             option_type_map[option] = "string"
             continue
         if "type" not in value.schema:

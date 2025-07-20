@@ -79,8 +79,8 @@ def filter_warnings_severity(
     Filter warnings by severity.
 
     There are multiple severity sources:
-    - needs_config.schemas_severity: the minimum severity for warnings to be reported
-    - needs_config.schemas: contains a severity field that determines the reported rule severity
+    - needs_config.schema_severity: the minimum severity for warnings to be reported
+    - needs_config.schema_definitions: contains a severity field that determines the reported rule severity
     - schemas.config.MAP_RULE_DEFAULT_SEVERITY: default if the schemas severities field is not set
 
     Precedence for reporting:
@@ -89,7 +89,7 @@ def filter_warnings_severity(
     - if the schema root severity is set, it overrides the rule severity
     - if the schema root severity is not set, the rule default severity is used
     """
-    min_severity_for_report = SeverityEnum[config.schemas_severity]
+    min_severity_for_report = SeverityEnum[config.schema_severity]
     filtered_warnings = []
     for warning in warnings:
         rule_default_severity = MAP_RULE_DEFAULT_SEVERITY[warning["rule"]]
@@ -118,7 +118,7 @@ def save_debug_files(
     :param config: NeedsSphinxConfig object with debug settings.
     :param warnings: List of OntologyWarning objects to save.
     """
-    if not config.schemas_debug_active:
+    if not config.schema_debug_active:
         return
     for warning in warnings:
         save_debug_file(config, warning)
@@ -129,11 +129,11 @@ def save_debug_file(
     warning: OntologyWarning,
 ) -> None:
     """Write debug json and schema files."""
-    if not config.schemas_debug_active:
+    if not config.schema_debug_active:
         return
-    if warning["rule"].name in config.schemas_debug_ignore:
+    if warning["rule"].name in config.schema_debug_ignore:
         return
-    debug_dir = Path(config.schemas_debug_path)
+    debug_dir = Path(config.schema_debug_path)
 
     filename = _field_sep.join(warning["need_path"])
     if schema_path := warning.get("schema_path"):
@@ -276,7 +276,7 @@ def get_warning_msg(base_lvl: int, warning: OntologyWarning) -> str:
 
 
 def clear_debug_dir(config: NeedsSphinxConfig) -> None:
-    debug_path = Path(config.schemas_debug_path)
+    debug_path = Path(config.schema_debug_path)
     if debug_path.exists():
         for file in debug_path.glob("*"):
             file.unlink()

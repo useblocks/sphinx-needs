@@ -2,7 +2,7 @@ unevaluated_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
     needs_schemas_debug_active = True
   ubproject: |
     [[needs.extra_options]]
@@ -31,7 +31,7 @@ unevaluated_allof_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
     needs_schemas_debug_active = True
   ubproject: |
     [[needs.extra_options]]

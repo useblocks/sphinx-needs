@@ -35,7 +35,7 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     # upfront work
     any_static_found = merge_static_schemas(config)
 
-    if not (any_static_found or (config.schemas.get("schemas"))):
+    if not (any_static_found or (config.schema_definitions.get("schemas"))):
         # nothing to validate
         return
 
@@ -43,12 +43,12 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     needs_schema = generate_needs_schema(config)["properties"]
     _needs_schema.update(needs_schema)
 
-    orig_debug_path = Path(config.schemas_debug_path)
+    orig_debug_path = Path(config.schema_debug_path)
     if not orig_debug_path.is_absolute():
         # make it relative to confdir
-        config.schemas_debug_path = str((Path(app.confdir) / orig_debug_path).resolve())
+        config.schema_debug_path = str((Path(app.confdir) / orig_debug_path).resolve())
 
-    if config.schemas_debug_active:
+    if config.schema_debug_active:
         clear_debug_dir(config)
 
     # Start timer before validation loop
@@ -58,8 +58,8 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     # validate needs
     type_schemas: list[SchemasRootType] = []
-    if config.schemas and "schemas" in config.schemas:
-        type_schemas = config.schemas["schemas"]
+    if config.schema_definitions and "schemas" in config.schema_definitions:
+        type_schemas = config.schema_definitions["schemas"]
     for need in needs.values():
         nested_warnings = validate_need(
             config=config,

@@ -24,7 +24,7 @@ missing_type_select:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -50,7 +50,7 @@ missing_type_validate_local:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -89,7 +89,7 @@ select_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -109,7 +109,7 @@ local_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -129,7 +129,7 @@ local_error:
 network_link_not_exist:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -145,7 +145,7 @@ network_link_not_exist:
 ref_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -165,7 +165,7 @@ ref_error:
 ref_mixed_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -187,7 +187,7 @@ ref_mixed_error:
 ref_recursive:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -245,7 +245,7 @@ extra_link_pattern_unsafe_error:
 schemas_select_pattern_unsafe_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -265,7 +265,7 @@ schemas_select_pattern_unsafe_error:
 schemas_validate_pattern_unsafe_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -284,7 +284,7 @@ schemas_validate_pattern_unsafe_error:
 schemas_validate_pattern_backref_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -303,7 +303,7 @@ schemas_validate_pattern_backref_error:
 schemas_validate_pattern_nested_quantifiers_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -322,7 +322,7 @@ schemas_validate_pattern_nested_quantifiers_error:
 schemas_validate_pattern_recursive_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -343,7 +343,7 @@ schemas_validate_pattern_possessive_quantifiers_error:
     min_python: [3, 11]
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -364,7 +364,7 @@ schemas_validate_pattern_atomic_groups_error:
     min_python: [3, 11]
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -383,7 +383,7 @@ schemas_validate_pattern_atomic_groups_error:
 schemas_validate_pattern_unicode_property_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -402,7 +402,7 @@ schemas_validate_pattern_unicode_property_error:
 schemas_validate_pattern_named_groups_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -421,7 +421,7 @@ schemas_validate_pattern_named_groups_error:
 schemas_validate_pattern_unnamed_groups_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -440,7 +440,7 @@ schemas_validate_pattern_unnamed_groups_error:
 schemas_validate_pattern_comment_groups_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -459,7 +459,7 @@ schemas_validate_pattern_comment_groups_error:
 schemas_validate_pattern_conditional_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -478,7 +478,7 @@ schemas_validate_pattern_conditional_error:
 schemas_validate_pattern_unicode_escapes_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -497,7 +497,7 @@ schemas_validate_pattern_unicode_escapes_error:
 schemas_validate_pattern_subroutine_calls_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -516,7 +516,7 @@ schemas_validate_pattern_subroutine_calls_error:
 schemas_validate_pattern_relative_subroutine_error:
   conf: |
     extensions = ["sphinx_needs"]
-    needs_schemas_from_json = "schemas.json"
+    needs_schema_definitions_from_json = "schemas.json"
   rst: |
     .. impl:: title
         :id: IMPL_1

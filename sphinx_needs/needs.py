@@ -5,7 +5,7 @@ import json
 from collections.abc import Callable
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -119,6 +119,7 @@ from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, NeedPartRole, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
+from sphinx_needs.schema.config import SchemasFileRootType
 from sphinx_needs.schema.config_utils import validate_schemas_config
 from sphinx_needs.schema.process import process_schemas
 from sphinx_needs.services.github import GithubService
@@ -168,9 +169,13 @@ LOGGER = get_logger(__name__)
 def load_schemas_config_from_json(app: Sphinx, config: _SphinxConfig) -> None:
     """Merge the configuration from the JSON file into the Sphinx config."""
     needs_config = NeedsSphinxConfig(config)
-    if needs_config.schemas_from_json is None:
+    if needs_config.schema_definitions_from_json is None:
         return
-    json_file = Path(app.confdir, needs_config.schemas_from_json).resolve()
+    if needs_config.schema_definitions:
+        raise NeedsConfigException(
+            "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
+        )
+    json_file = Path(app.confdir, needs_config.schema_definitions_from_json).resolve()
 
     if not json_file.exists():
         raise NeedsConfigException(
@@ -184,7 +189,8 @@ def load_schemas_config_from_json(app: Sphinx, config: _SphinxConfig) -> None:
     except Exception as exc:
         raise NeedsConfigException(f"Could not load JSON file: {exc}") from exc
 
-    config["needs_schemas"] = json_data
+    # schema_definitions are checked later in validate_schemas_config()
+    needs_config.schema_definitions = cast(SchemasFileRootType, json_data)
 
 
 def setup(app: Sphinx) -> dict[str, Any]:
@@ -406,6 +412,9 @@ def process_creator(
 def load_config_from_toml(app: Sphinx, config: Config) -> None:
     """
     Load config from toml file, if defined in conf.py
+
+    All configs starting with "schema_" are loaded from a dedicated
+    "schema" table in the toml file.
     """
     needs_config = NeedsSphinxConfig(config)
     if needs_config.from_toml is None:
@@ -429,6 +438,11 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         for key in (*toml_path, "needs"):
             toml_data = toml_data[key]
         assert isinstance(toml_data, dict), "Data must be a dict"
+        if "schema" in toml_data:
+            assert isinstance(toml_data["schema"], dict), (
+                "'schema' table must be a dict"
+            )
+
     except Exception as e:
         log_warning(
             LOGGER,
@@ -439,10 +453,16 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         return
 
     allowed_keys = NeedsSphinxConfig.field_names()
+
     for key, value in toml_data.items():
         if key not in allowed_keys:
             continue
         config["needs_" + key] = value
+
+    for key, value in toml_data.get("schema", {}).items():
+        if key not in allowed_keys:
+            continue
+        config["needs_schema_"][key] = value
 
 
 def load_config(app: Sphinx, *_args: Any) -> None:
