@@ -39,10 +39,11 @@ Find below a list of all warnings, which can be suppressed:
 
 .. need-warnings::
 
-.. _inc_build:
+.. _`inc_build`:
 
 Incremental build support
 -------------------------
+
 Sphinx does not use its incremental build feature, if you assign functions directly to Sphinx options.
 To avoid this, please use the :ref:`Sphinx-Needs API <api_configuration>` to register functions directly.
 
@@ -86,7 +87,7 @@ Options
 
 All configuration options starts with the prefix ``needs_`` for **Sphinx-Needs**.
 
-.. _needs_from_toml:
+.. _`needs_from_toml`:
 
 needs_from_toml
 ~~~~~~~~~~~~~~~
@@ -124,27 +125,29 @@ For example to read from a ``[tool.needs]`` table:
 
 needs_include_needs
 ~~~~~~~~~~~~~~~~~~~
+
 Set this option to False, if no needs should be documented inside the generated documentation.
 
 Default: **True**
 
 .. code-block:: python
 
-    needs_include_needs = False
+   needs_include_needs = False
 
-.. _needs_id_length:
+.. _`needs_id_length`:
 
 needs_id_length
 ~~~~~~~~~~~~~~~
+
 This option defines the length of an automated generated ID (the length of the prefix does not count).
 
 Default: **5**
 
 .. code-block:: python
 
-    needs_id_length = 3
+   needs_id_length = 3
 
-.. _needs_types:
+.. _`needs_types`:
 
 needs_types
 ~~~~~~~~~~~
@@ -155,13 +158,13 @@ By default it is set to:
 
 .. code-block:: python
 
-    needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
-                   dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
-                   dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
-                   dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
-                   # Kept for backwards compatibility
-                   dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")
-               ]
+   needs_types = [dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2", style="node"),
+                  dict(directive="spec", title="Specification", prefix="S_", color="#FEDCD2", style="node"),
+                  dict(directive="impl", title="Implementation", prefix="I_", color="#DF744A", style="node"),
+                  dict(directive="test", title="Test Case", prefix="T_", color="#DCB239", style="node"),
+                  # Kept for backwards compatibility
+                  dict(directive="need", title="Need", prefix="N_", color="#9856a5", style="node")
+              ]
 
 ``needs_types`` must be a list of dictionaries where each dictionary must contain the following items:
 
@@ -187,8 +190,7 @@ By default it is set to:
 
    Please take a look into the  `PlantUML Manual <https://plantuml.com/>`_ for more details.
 
-
-.. _needs_extra_options:
+.. _`needs_extra_options`:
 
 needs_extra_options
 ~~~~~~~~~~~~~~~~~~~
@@ -204,7 +206,6 @@ You can set ``needs_extra_options`` as a list inside **conf.py** as follows:
 
    needs_extra_options = ['introduced', 'updated', 'impacts']
 
-
 And use it like:
 
 .. code-block:: rst
@@ -216,9 +217,10 @@ And use it like:
       :tags: important;complex;
       :impacts: really everything
 
-.. note:: To filter on these options in `needlist`, `needtable`, etc. you
-          must use the :ref:`filter` option.
+.. note::
 
+   To filter on these options in `needlist`, `needtable`, etc. you
+   must use the :ref:`filter` option.
 
 .. dropdown:: Show example
 
@@ -258,70 +260,72 @@ And use it like:
 
 .. versionadded:: 4.1.0
 
-    Values in the list can also be dictionaries, with keys:
+   Values in the list can also be dictionaries, with keys:
 
-    * ``name``: The name of the option (required).
-    * ``description``: A description of the option (optional).
-        This will be output in the schema of the :ref:`needs.json <needs_builder_format>`,
-        and can be used by other tools.
+   * ``name``: The name of the option (required).
+   * ``description``: A description of the option (optional).
+       This will be output in the schema of the :ref:`needs.json <needs_builder_format>`,
+       and can be used by other tools.
 
-    For example:
+   For example:
 
-    .. code-block:: python
+   .. code-block:: python
 
-       needs_extra_options = [
-           "my_extra_option",
-           {"name": "my_other_option", "description": "This is a description of the option"}
-       ]
+      needs_extra_options = [
+          "my_extra_option",
+          {"name": "my_other_option", "description": "This is a description of the option"}
+      ]
 
-.. _needs_global_options:
-.. _global_option_filters:
+.. _`needs_global_options`:
+.. _`global_option_filters`:
 
 needs_global_options
 ~~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 0.3.0
+
 .. versionchanged:: 5.1.0
 
-    The format of the global options was change to be more explicit.
+   The format of the global options was change to be more explicit.
 
-    Unknown keys are also no longer accepted,
-    these should also be set in the :ref:`needs_extra_options` list.
+   Unknown keys are also no longer accepted,
+   these should also be set in the :ref:`needs_extra_options` list.
 
-    .. dropdown:: Comparison to old format
+   .. dropdown:: Comparison to old format
 
-        .. code-block:: python
-            :caption: Old format
+      .. code-block:: python
+         :caption: Old format
 
-            needs_global_options = {
-                "field1": "a",
-                "field2": ("a", 'status == "done"'),
-                "field3": ("a", 'status == "done"', "b"),
-                "field4": [
-                    ("a", 'status == "done"'),
-                    ("b", 'status == "ongoing"'),
-                    ("c", 'status == "other"', "d"),
-                ],
-            }
+         needs_global_options = {
+             "field1": "a",
+             "field2": ("a", 'status == "done"'),
+             "field3": ("a", 'status == "done"', "b"),
+             "field4": [
+                 ("a", 'status == "done"'),
+                 ("b", 'status == "ongoing"'),
+                 ("c", 'status == "other"', "d"),
+             ],
+         }
 
-        .. code-block:: python
-            :caption: New format
+      .. code-block:: python
+         :caption: New format
 
-            needs_global_options = {
-                "field1": {"default": "a"},
-                "field2": {"predicates": [('status == "done"', "a")]},
-                "field3": {
-                    "predicates": [('status == "done"', "a")],
-                    "default": "b",
-                },
-                "field4": {
-                    "predicates": [
-                        ('status == "done"', "a"),
-                        ('status == "ongoing"', "b"),
-                        ('status == "other"', "c"),
-                    ],
-                    "default": "d",
-                },
-            }
+         needs_global_options = {
+             "field1": {"default": "a"},
+             "field2": {"predicates": [('status == "done"', "a")]},
+             "field3": {
+                 "predicates": [('status == "done"', "a")],
+                 "default": "b",
+             },
+             "field4": {
+                 "predicates": [
+                     ('status == "done"', "a"),
+                     ('status == "ongoing"', "b"),
+                     ('status == "other"', "c"),
+                 ],
+                 "default": "d",
+             },
+         }
 
 This configuration allows for global defaults to be set for all needs,
 for any of the following fields:
@@ -366,15 +370,15 @@ If no predicates match, the ``default`` value is used (if present).
    }
 
 .. tip::
-    
-    You can combine global options with :ref:`dynamic_functions` to automate data handling.
 
-    .. code-block:: python
+   You can combine global options with :ref:`dynamic_functions` to automate data handling.
 
-        needs_extra_options = ["option1"]
-        needs_global_options = {
-                "option1": {"default": '[[copy("id")]]'}
-        }
+   .. code-block:: python
+
+      needs_extra_options = ["option1"]
+      needs_global_options = {
+              "option1": {"default": '[[copy("id")]]'}
+      }
 
 .. warning::
 
@@ -387,16 +391,16 @@ If no predicates match, the ``default`` value is used (if present).
    Default replacements are done, for each field, in the order they are defined in the configuration,
    so a filter string should not depend on the value of a field below it in the configuration.
 
-.. _needs_report_dead_links:
+.. _`needs_report_dead_links`:
 
 needs_report_dead_links
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. deprecated:: 2.1.0
 
-    Instead add ``needs.link_outgoing`` to the `suppress_warnings <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings>`__ list::
+   Instead add ``needs.link_outgoing`` to the `suppress_warnings <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings>`__ list::
 
-        suppress_warnings = ["needs.link_outgoing"]
+     suppress_warnings = ["needs.link_outgoing"]
 
 Deactivate/activate log messages of disallowed outgoing dead links. If set to ``False``, then deactivate.
 
@@ -406,9 +410,9 @@ Configuration example:
 
 .. code-block:: python
 
-    needs_report_dead_links = False
+   needs_report_dead_links = False
 
-.. _needs_extra_links:
+.. _`needs_extra_links`:
 
 needs_extra_links
 ~~~~~~~~~~~~~~~~~
@@ -429,7 +433,6 @@ Each configured link should define:
 * **style** (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
 * **style_part** (optional): Same as **style**, but get used if link is connected to a :ref:`need_part`.
   See :ref:`links_style`.
-
 
 Configuration example:
 
@@ -454,19 +457,17 @@ Configuration example:
       }
    ]
 
-
 The above example configuration allows the following usage:
 
 .. need-example::
 
-    .. req:: My requirement
-        :id: EXTRA_REQ_001
+   .. req:: My requirement
+      :id: EXTRA_REQ_001
 
-    .. test:: Test of requirements
-        :id: EXTRA_TEST_001
-        :checks: EXTRA_REQ_001, DEAD_LINK_NOT_ALLOWED
-        :triggers: DEAD_LINK
-
+   .. test:: Test of requirements
+      :id: EXTRA_TEST_001
+      :checks: EXTRA_REQ_001, DEAD_LINK_NOT_ALLOWED
+      :triggers: DEAD_LINK
 
 .. attention:: The used option name can not be reused in the configuration of :ref:`needs_global_options`.
 
@@ -474,7 +475,7 @@ Link types with option-name **links** and **parent_needs** are added by default.
 You are free to overwrite the default config by defining your own type with option name **links** or **parent_needs**.
 This type will be used as default configuration for all links.
 
-.. _allow_dead_links:
+.. _`allow_dead_links`:
 
 allow_dead_links
 ++++++++++++++++
@@ -486,6 +487,7 @@ Instead the same text gets printed as log message on level ``INFO``.
 
 Filtering
 ^^^^^^^^^
+
 Need objects have the two attributes ``has_dead_links`` and ``has_forbidden_dead_links``.
 ``has_dead_links`` gets set to ``True``, if any dead link was found in the need.
 And ``has_forbidden_dead_links`` is set to ``True`` only, if dead links were not allowed
@@ -500,8 +502,7 @@ with ``allow_dead_links`` not set or set to ``False``.
 
 By default not allowed dead links will be shown in red , allowed ones in gray (see above example).
 
-
-.. _links_style:
+.. _`links_style`:
 
 style / style_part
 ++++++++++++++++++
@@ -519,7 +520,7 @@ Valid configuration examples are:
 
 An empty string uses the default plantuml settings.
 
-.. _needflow_style_start:
+.. _`needflow_style_start`:
 
 style_start / style_end
 +++++++++++++++++++++++
@@ -572,8 +573,7 @@ Use ``style_start`` and ``style_end`` like this:
    and orientation (`left`, `rigth`, `up` and `down`). We suggest to set the orientation
    in `style_end` like in the example above, as this is more often supported.
 
-
-.. _needs_filter_data:
+.. _`needs_filter_data`:
 
 needs_filter_data
 ~~~~~~~~~~~~~~~~~
@@ -592,7 +592,6 @@ Configuration example:
        "sphinx_tag": custom_defined_func(),
    }
 
-
 The defined ``needs_filter_data`` must be a dictionary. Its values can be a string variable or a custom defined
 function. The function get executed during config loading and must return a string.
 
@@ -605,7 +604,6 @@ The defined extra filter data can be used like this:
 
    .. needextend:: type == "req" and sphinx_tag in tags
       :+tags: my_external_tag
-
 
 or if project has :ref:`needs_extra_options` defined like:
 
@@ -625,8 +623,7 @@ The defined extra filter data can also be used like:
       :layout: clean
       :style: green_border
 
-
-.. _needs_allow_unsafe_filters:
+.. _`needs_allow_unsafe_filters`:
 
 needs_allow_unsafe_filters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -636,9 +633,7 @@ Allow unsafe filter for :ref:`filter_func`. Default is ``False``.
 If set to True, the filtered results will keep all fields as they are returned by the dynamic functions.
 Fields can be added or existing fields can even be manipulated.
 
-.. note::
-
-   Keep in mind this only affects the filter results, original needs as displayed somewhere else are not modified.
+.. note:: Keep in mind this only affects the filter results, original needs as displayed somewhere else are not modified.
 
 If set to False, the filter results contains the original need fields and any manipulations of need fields are lost.
 
@@ -646,8 +641,7 @@ If set to False, the filter results contains the original need fields and any ma
 
    needs_allow_unsafe_filters = True
 
-
-.. _needs_filter_max_time:
+.. _`needs_filter_max_time`:
 
 needs_filter_max_time
 ~~~~~~~~~~~~~~~~~~~~~
@@ -656,7 +650,7 @@ needs_filter_max_time
 
 If set, warn if any :ref:`filter processing <filter>` call takes longer than the given time in seconds.
 
-.. _needs_uml_process_max_time:
+.. _`needs_uml_process_max_time`:
 
 needs_uml_process_max_time
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -665,7 +659,7 @@ needs_uml_process_max_time
 
 If set, warn if any :ref:`needuml` or :ref:`needarch` jinja content rendering takes longer than the given time in seconds.
 
-.. _needs_flow_engine:
+.. _`needs_flow_engine`:
 
 needs_flow_engine
 ~~~~~~~~~~~~~~~~~
@@ -677,7 +671,7 @@ Select between the rendering engines for :ref:`needflow` diagrams,
 * ``plantuml``: Use `PlantUML <https://plantuml.com/>`__ to render the diagrams (default).
 * ``graphviz``: Use `Graphviz <https://graphviz.org>`__ to render the diagrams.
 
-.. _needs_flow_show_links:
+.. _`needs_flow_show_links`:
 
 needs_flow_show_links
 ~~~~~~~~~~~~~~~~~~~~~
@@ -690,12 +684,11 @@ Used to de/activate the output of link type names beside the connection in the :
 
    needs_flow_show_links = True
 
-
 Default value: ``False``
 
 Can be configured also for each :ref:`needflow` directive via :ref:`needflow_show_link_names`.
 
-.. _needs_flow_link_types:
+.. _`needs_flow_link_types`:
 
 needs_flow_link_types
 ~~~~~~~~~~~~~~~~~~~~~
@@ -713,7 +706,7 @@ See also :ref:`needflow_link_types` for more details.
 
 Default value: ``['links']``
 
-.. _needs_flow_configs:
+.. _`needs_flow_configs`:
 
 needs_flow_configs
 ~~~~~~~~~~~~~~~~~~
@@ -743,17 +736,17 @@ This configurations can then be used like this:
 
 .. need-example::
 
-    .. needflow::
-        :tags: flow_example
-        :types: spec
-        :config: lefttoright,my_config
+   .. needflow::
+      :tags: flow_example
+      :types: spec
+      :config: lefttoright,my_config
 
 Multiple configurations can be used by separating them with a comma,
 these will be applied in the order they are defined.
 
 See :ref:`needflow config option <needflow_config>` for more details and already available configurations.
 
-.. _needs_graphviz_styles:
+.. _`needs_graphviz_styles`:
 
 needs_graphviz_styles
 ~~~~~~~~~~~~~~~~~~~~~
@@ -765,30 +758,30 @@ These configs can then be selected when using :ref:`needflow` and the engine is 
 
 .. code-block:: python
 
-    needs_graphviz_styles = {
-        "my_config": {
-            "graph": {
-                "rankdir": "LR",
-                "bgcolor": "transparent",
-            },
-            "node": {
-                "fontname": "sans-serif",
-                "fontsize": 12,
-            },
-            "edge": {
-                "color": "#57ACDC",
-                "fontsize": 10,
-            },
-        }
-    }
+   needs_graphviz_styles = {
+       "my_config": {
+           "graph": {
+               "rankdir": "LR",
+               "bgcolor": "transparent",
+           },
+           "node": {
+               "fontname": "sans-serif",
+               "fontsize": 12,
+           },
+           "edge": {
+               "color": "#57ACDC",
+               "fontsize": 10,
+           },
+       }
+   }
 
 This configurations can then be used like this:
 
 .. code-block:: restructuredtext
 
-    .. needflow::
-        :engine: graphviz
-        :config: lefttoright,my_config
+   .. needflow::
+       :engine: graphviz
+       :config: lefttoright,my_config
 
 Multiple configurations can be used by separating them with a comma,
 these will be merged in the order they are defined.
@@ -796,26 +789,26 @@ For example ``my_config1,my_config2`` would be the same as ``my_config3``:
 
 .. code-block:: python
 
-    needs_graphviz_styles = {
-        "my_config1": {
-            "graph": {
-                "rankdir": "LR",
-            }
-        },
-        "my_config2": {
-            "graph": {
-                "bgcolor": "transparent",
-            }
-        }
-        "my_config3": {
-            "graph": {
-                "rankdir": "LR",
-                "bgcolor": "transparent",
-            }
-        }
-    }
+   needs_graphviz_styles = {
+       "my_config1": {
+           "graph": {
+               "rankdir": "LR",
+           }
+       },
+       "my_config2": {
+           "graph": {
+               "bgcolor": "transparent",
+           }
+       }
+       "my_config3": {
+           "graph": {
+               "rankdir": "LR",
+               "bgcolor": "transparent",
+           }
+       }
+   }
 
-.. _needs_report_template:
+.. _`needs_report_template`:
 
 needs_report_template
 ~~~~~~~~~~~~~~~~~~~~~
@@ -913,8 +906,6 @@ If you do not set ``needs_report_template``, the default template used is:
    {% endif %}
    {# Output for needs metrics #}
 
-   
-
 The plugin provides the following variables which you can use in your custom Jinja template:
 
 * types - list of :ref:`need types <needs_types>`
@@ -938,21 +929,19 @@ valid:
 
 .. code-block:: python
 
-    'node "YOUR_TEMPLATE" as need_id [[need_link]]'
+   'node "YOUR_TEMPLATE" as need_id [[need_link]]'
 
 By default the following template is used:
 
 .. code-block:: jinja
 
-    {%- if is_need -%}
-    <size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
-    {%- else -%}
-    <size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
-    {%- endif -%}
-    
+   {%- if is_need -%}
+   <size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
+   {%- else -%}
+   <size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
+   {%- endif -%}
 
-
-.. _needs_id_required:
+.. _`needs_id_required`:
 
 needs_id_required
 ~~~~~~~~~~~~~~~~~
@@ -965,7 +954,7 @@ So no ID is autogenerated any more, if this option is set to True:
 
 .. code-block:: python
 
-    needs_id_required = True
+   needs_id_required = True
 
 By default this option is set to **False**.
 
@@ -973,19 +962,19 @@ By default this option is set to **False**.
 
 .. code-block:: rst
 
-    .. With needs_id_required = True
+   .. With needs_id_required = True
 
-    .. req:: Working Requirement
-       :id: R_001
+   .. req:: Working Requirement
+      :id: R_001
 
-    .. req:: **Not working**, because :id: is not set.
+   .. req:: **Not working**, because :id: is not set.
 
 
-    .. With needs_id_required = False
+   .. With needs_id_required = False
 
-    .. req:: This works now!
+   .. req:: This works now!
 
-.. _needs_id_from_title:
+.. _`needs_id_from_title`:
 
 needs_id_from_title
 ~~~~~~~~~~~~~~~~~~~
@@ -997,17 +986,17 @@ will be calculated based on the current need directive prefix, title, and a hash
 
 .. need-example::
 
-    .. req:: Group big short
-    
+   .. req:: Group big short
+
 The calculated need ID will be: `R_GROUP_BIG_SHORT_{hashed value}`, if the need ID length doesn't
 exceed the setting from :ref:`needs_id_length`.
 
 .. note::
 
-   The user needs to ensure the uniqueness of the given title, and also match the settings of 
+   The user needs to ensure the uniqueness of the given title, and also match the settings of
    :ref:`needs_id_length` and :ref:`needs_id_regex`.
 
-.. _needs_title_optional:
+.. _`needs_title_optional`:
 
 needs_title_optional
 ~~~~~~~~~~~~~~~~~~~~
@@ -1018,8 +1007,8 @@ Normally a title is required to follow the need directive as follows:
 
 .. code-block:: rst
 
-    .. req:: This is the required title
-        :id: R_9999
+   .. req:: This is the required title
+       :id: R_9999
 
 By default this option is set to **False**.
 
@@ -1040,14 +1029,13 @@ sentence of the requirement.
 
 .. need-example::
 
-    .. req::
-        :title_from_content:
+   .. req::
+      :title_from_content:
 
-        This will be my title.  Anything after the first sentence will not be
-        part of the title.
+      This will be my title.  Anything after the first sentence will not be
+      part of the title.
 
-
-.. _needs_title_from_content:
+.. _`needs_title_from_content`:
 
 needs_title_from_content
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1070,16 +1058,15 @@ will be used over the generated title.
 
 .. need-example::
 
-    .. req::
+   .. req::
 
-        The tool must have error logging.
-        All critical errors must be written to the console.
+      The tool must have error logging.
+      All critical errors must be written to the console.
 
-
-.. _needs_max_title_length:
+.. _`needs_max_title_length`:
 
 needs_max_title_length
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 This option is used in conjunction with auto-generated titles as controlled by
 needs_title_from_content_ and :ref:`title_from_content`. By default, there is no
@@ -1094,17 +1081,18 @@ still be used.
 Example:
 
 .. req::
-    :title_from_content:
+   :title_from_content:
 
-    This is a requirement with a very long title that will need to be
-    shortened to prevent our titles from being too long.
-    Additional content can be provided in the requirement and not be part
-    of the title.
+   This is a requirement with a very long title that will need to be
+   shortened to prevent our titles from being too long.
+   Additional content can be provided in the requirement and not be part
+   of the title.
 
-.. _needs_show_link_type:
+.. _`needs_show_link_type`:
 
 needs_show_link_type
 ~~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 0.1.27
 
 This option mostly affects the roles :ref:`role_need_outgoing` and :ref:`role_need_incoming` by showing
@@ -1116,12 +1104,13 @@ Activate it by setting it on True in your **conf.py**:
 
 .. code-block:: python
 
-    needs_show_link_type = True
+   needs_show_link_type = True
 
-.. _needs_show_link_title:
+.. _`needs_show_link_title`:
 
 needs_show_link_title
 ~~~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 0.1.27
 
 This option mostly affects the roles :ref:`role_need_outgoing` and :ref:`role_need_incoming` by showing
@@ -1133,12 +1122,13 @@ Activate it by setting it on True in your **conf.py**:
 
 .. code-block:: python
 
-    needs_show_link_title = True
+   needs_show_link_title = True
 
-.. _needs_show_link_id:
+.. _`needs_show_link_id`:
 
 needs_show_link_id
 ~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 1.0.3
 
 This option mostly affects the roles :ref:`role_need_outgoing` and :ref:`role_need_incoming` by showing
@@ -1146,21 +1136,21 @@ the *ID*  of the linked need.
 
 Can be combined with :ref:`needs_show_link_type` and :ref:`needs_show_link_title`.
 
-
 .. code-block:: python
 
-    needs_show_link_id = True
+   needs_show_link_id = True
 
-.. _needs_file:
+.. _`needs_file`:
 
 needs_file
 ~~~~~~~~~~
+
 .. versionadded:: 0.1.30
 
 Defines the location of a JSON file, which is used by the builder :ref:`needs_builder` as input source.
 Default value: *needs.json*.
 
-.. _needs_statuses:
+.. _`needs_statuses`:
 
 needs_statuses
 ~~~~~~~~~~~~~~
@@ -1175,17 +1165,17 @@ Activate it by setting it like this:
 
 .. code-block:: python
 
-    needs_statuses = [
-        dict(name="open", description="Nothing done yet"),
-        dict(name="in progress", description="Someone is working on it"),
-        dict(name="implemented", description="Work is done and implemented"),
-    ]
+   needs_statuses = [
+       dict(name="open", description="Nothing done yet"),
+       dict(name="in progress", description="Someone is working on it"),
+       dict(name="implemented", description="Work is done and implemented"),
+   ]
 
 If parameter is not set or set to *False*, no checks will be performed.
 
 Default value: *[]*.
 
-.. _needs_tags:
+.. _`needs_tags`:
 
 needs_tags
 ~~~~~~~~~~
@@ -1200,17 +1190,16 @@ Activate it by setting it like this:
 
 .. code-block:: python
 
-    needs_tags = [
-        dict(name="new", description="new needs"),
-        dict(name="security", description="tag for security needs"),
-    ]
+   needs_tags = [
+       dict(name="new", description="new needs"),
+       dict(name="security", description="tag for security needs"),
+   ]
 
 If parameter is not set or set to *[]*, no checks will be performed.
 
 Default value: *[]*.
 
-
-.. _needs_css:
+.. _`needs_css`:
 
 needs_css
 ~~~~~~~~~
@@ -1230,22 +1219,20 @@ Use it like this:
 
 .. code-block:: python
 
-    needs_css = "blank.css"
-
+   needs_css = "blank.css"
 
 To provide your own CSS file, the path must be absolute. Example:
 
 .. code-block:: python
 
-    import os
+   import os
 
-    conf_py_folder = os.path.dirname(__file__)
-    needs_css =  os.path.join(conf_py_folder, "my_styles.css")
+   conf_py_folder = os.path.dirname(__file__)
+   needs_css =  os.path.join(conf_py_folder, "my_styles.css")
 
 See :ref:`styles_css` for available CSS selectors and more.
 
-
-.. _needs_role_need_template:
+.. _`needs_role_need_template`:
 
 needs_role_need_template
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1259,7 +1246,7 @@ By default a referenced need is described by the following string:
 
 .. code-block:: jinja
 
-    {title} ({id})
+   {title} ({id})
 
 By using ``needs_role_need_template`` this representation can be easily adjusted to own requirements.
 
@@ -1267,12 +1254,12 @@ Here are some ideas, how it could be used inside the **conf.py** file:
 
 .. code-block:: python
 
-    needs_role_need_template = "[{id}]: {title}"
-    needs_role_need_template = "-{id}-"
-    needs_role_need_template = "{type}: {title} ({status})"
-    needs_role_need_template = "{title} ({tags})"
-    needs_role_need_template = "{title:*^20s} - {content:.30}"
-    needs_role_need_template = "[{id}] {title} ({status}) {type_name}/{type} - {tags} - {links} - {links_back} - {content}"
+   needs_role_need_template = "[{id}]: {title}"
+   needs_role_need_template = "-{id}-"
+   needs_role_need_template = "{type}: {title} ({status})"
+   needs_role_need_template = "{title} ({tags})"
+   needs_role_need_template = "{title:*^20s} - {content:.30}"
+   needs_role_need_template = "[{id}] {title} ({status}) {type_name}/{type} - {tags} - {links} - {links_back} - {content}"
 
 ``needs_role_need_template`` must be a string, which supports the following placeholders:
 
@@ -1291,10 +1278,11 @@ Please see https://pyformat.info/ for more information.
 
 RST-attributes like ``**bold**`` are **not** supported.
 
-.. _needs_role_need_max_title_length:
+.. _`needs_role_need_max_title_length`:
 
 needs_role_need_max_title_length
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 0.3.14
 
 Defines the maximum length of need title that is shown in need references.
@@ -1308,13 +1296,14 @@ If set to -1 the title will never be shortened.
 
 .. code-block:: python
 
-    # conf.py
-    needs_role_need_max_title_length = 45
+   # conf.py
+   needs_role_need_max_title_length = 45
 
-.. _needs_table_style:
+.. _`needs_table_style`:
 
 needs_table_style
 ~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 0.2.0
 
 Defines the default style for each table. Can be overridden for specific tables by setting parameter
@@ -1322,8 +1311,8 @@ Defines the default style for each table. Can be overridden for specific tables 
 
 .. code-block:: python
 
-    # conf.py
-    needs_table_style = "datatables"
+   # conf.py
+   needs_table_style = "datatables"
 
 Default value: ``"datatables"``
 
@@ -1332,11 +1321,11 @@ Supported values:
 * **table**: Default Sphinx table
 * **datatables**: Table with activated DataTables functions (Sort, search, export, ...).
 
-
-.. _needs_table_columns:
+.. _`needs_table_columns`:
 
 needs_table_columns
 ~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 0.2.0
 
 Defines the default columns for each table. Can be overridden for specific tables by setting parameter
@@ -1344,8 +1333,8 @@ Defines the default columns for each table. Can be overridden for specific table
 
 .. code-block:: python
 
-    # conf.py
-    needs_table_columns = "title;status;tags"
+   # conf.py
+   needs_table_columns = "title;status;tags"
 
 Default value: ``"id;title;status;type;outgoing;tags"``
 
@@ -1359,7 +1348,7 @@ Supported values:
 * incoming
 * outgoing
 
-.. _needs_id_regex:
+.. _`needs_id_regex`:
 
 needs_id_regex
 ~~~~~~~~~~~~~~
@@ -1382,7 +1371,7 @@ The ID length must be at least 3 characters.
    If you change the regular expression, you should also set :ref:`needs_id_required`
    so that authors are forced to set an valid ID.
 
-.. _needs_functions:
+.. _`needs_functions`:
 
 needs_functions
 ~~~~~~~~~~~~~~~
@@ -1415,18 +1404,16 @@ It is better to use the following way in your **conf.py** file:
 
 .. code-block:: python
 
-     from sphinx_needs.api import add_dynamic_function
+   from sphinx_needs.api import add_dynamic_function
 
-        def my_function(app, need, needs, *args, **kwargs):
-            # Do magic here
-            return "some data"
+      def my_function(app, need, needs, *args, **kwargs):
+          # Do magic here
+          return "some data"
 
-        def setup(app):
-              add_dynamic_function(app, my_function)
+      def setup(app):
+            add_dynamic_function(app, my_function)
 
-
-
-.. _needs_part_prefix:
+.. _`needs_part_prefix`:
 
 needs_part_prefix
 ~~~~~~~~~~~~~~~~~
@@ -1445,11 +1432,11 @@ The default value contains an arrow right and a non breaking space.
 
 See :ref:`needtable_show_parts` for an example output.
 
-
-.. _needs_warnings:
+.. _`needs_warnings`:
 
 needs_warnings
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
+
 .. versionadded:: 0.5.0
 
 ``needs_warnings`` allows the definition of warnings which all needs must avoid during a Sphinx build.
@@ -1495,26 +1482,26 @@ Example output:
 
 .. code-block:: text
 
-  ...
-  looking for now-outdated files... none found
-  pickling environment... done
-  checking consistency... WARNING: Sphinx-Needs warnings were raised. See console / log output for details.
+   ...
+   looking for now-outdated files... none found
+   pickling environment... done
+   checking consistency... WARNING: Sphinx-Needs warnings were raised. See console / log output for details.
 
-  Checking Sphinx-Needs warnings
-    type_check: passed
-    invalid_status: failed
-        failed needs: 11 (STYLE_005, EX_ROW_1, EX_ROW_3, copy_2, clv_1, clv_2, clv_3, clv_4, clv_5, T_C3893, R_AD4A0)
-        used filter: status not in ["open", "in progress", "closed", "done"] and status is not None
+   Checking Sphinx-Needs warnings
+     type_check: passed
+     invalid_status: failed
+         failed needs: 11 (STYLE_005, EX_ROW_1, EX_ROW_3, copy_2, clv_1, clv_2, clv_3, clv_4, clv_5, T_C3893, R_AD4A0)
+         used filter: status not in ["open", "in progress", "closed", "done"] and status is not None
 
-    type_match: failed
-        failed needs: 1 (TC_001)
-        used filter: <function my_custom_warning_check at 0x7faf3fbcd1f0>
-  done
-  ...
+     type_match: failed
+         failed needs: 1 (TC_001)
+         used filter: <function my_custom_warning_check at 0x7faf3fbcd1f0>
+   done
+   ...
 
 Due to the nature of Sphinx logging, a sphinx-warning may be printed wherever in the log.
 
-.. _needs_warnings_always_warn:
+.. _`needs_warnings_always_warn`:
 
 needs_warnings_always_warn
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1528,7 +1515,7 @@ For example, set this option to True:
 
 .. code-block:: python
 
-    needs_warnings_always_warn = True
+   needs_warnings_always_warn = True
 
 Using Sphinx build command ``sphinx-build -M html {srcdir} {outdir} -w error.log``, all the :ref:`needs_warnings` not passed will be
 logged into a **error.log** file as you specified.
@@ -1536,10 +1523,11 @@ logged into a **error.log** file as you specified.
 If you use ``sphinx-build -M html {srcdir} {outdir} -W -w error.log``, the first :ref:`needs_warnings` not passed will stop the build and
 be logged into the file error.log.
 
-.. _needs_layouts:
+.. _`needs_layouts`:
 
 needs_layouts
 ~~~~~~~~~~~~~
+
 .. versionadded:: 0.5.0
 
 You can use ``needs_layouts`` to define custom grid-based layouts with custom data.
@@ -1553,26 +1541,27 @@ Example:
 
 .. code-block:: python
 
-    needs_layouts = {
-        'my_layout': {
-            'grid': 'simple',
-            'layout': {
-                'head': ['my custom head'],
-                'meta': ['my first meta line',
-                         'my second meta line']
-            }
-        }
-    }
+   needs_layouts = {
+       'my_layout': {
+           'grid': 'simple',
+           'layout': {
+               'head': ['my custom head'],
+               'meta': ['my first meta line',
+                        'my second meta line']
+           }
+       }
+   }
 
 .. note::
 
    **Sphinx-Needs** provides some default layouts. These layouts cannot be overwritten.
    See :ref:`layout list <layouts>` for more information.
 
-.. _needs_default_layout:
+.. _`needs_default_layout`:
 
 needs_default_layout
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 0.5.0
 
 ``needs_default_layout`` defines the layout to use by default.
@@ -1584,12 +1573,13 @@ Default value of ``needs_default_layout`` is ``clean``.
 
 .. code-block:: python
 
-      needs_default_layout = 'my_own_layout'
+   needs_default_layout = 'my_own_layout'
 
-.. _needs_default_style:
+.. _`needs_default_style`:
 
 needs_default_style
 ~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 0.5.0
 
 The value of ``needs_default_style`` is used as default value for each need which does not define its own
@@ -1601,7 +1591,6 @@ See :ref:`styles` for a list of default style names.
 
    needs_default_layout = 'border_yellow'
 
-
 A combination of multiple styles is possible:
 
 .. code-block:: python
@@ -1610,7 +1599,7 @@ A combination of multiple styles is possible:
 
 Custom values can be set as well, if your projects provides the needed CSS-files for it.
 
-.. _needs_template_folder:
+.. _`needs_template_folder`:
 
 needs_template_folder
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1624,7 +1613,7 @@ The folder must already exist, otherwise an exception gets thrown, if a need tri
 
 Read also :ref:`need_template option description <need_template>` for information of how to use templates.
 
-.. _needs_duration_option:
+.. _`needs_duration_option`:
 
 needs_duration_option
 ~~~~~~~~~~~~~~~~~~~~~
@@ -1637,7 +1626,7 @@ See also :ref:`needgantt_duration_option`, which overrides this value for specif
 
 Default: :ref:`need_duration`
 
-.. _needs_completion_option:
+.. _`needs_completion_option`:
 
 needs_completion_option
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -1650,7 +1639,7 @@ See also :ref:`needgantt_completion_option`, which overrides this value for spec
 
 Default: :ref:`need_completion`
 
-.. _needs_services:
+.. _`needs_services`:
 
 needs_services
 ~~~~~~~~~~~~~~
@@ -1661,18 +1650,18 @@ Takes extra configuration options for :ref:`services`:
 
 .. code-block:: python
 
-    needs_services = {
-        'jira': {
-            'url': 'my_jira_server.com',
-        },
-        'git': {
-            'url': 'my_git_server.com',
-        },
-        'my_service': {
-            'class': MyServiceClass,
-            'config_1': 'value_x',
-        }
-    }
+   needs_services = {
+       'jira': {
+           'url': 'my_jira_server.com',
+       },
+       'git': {
+           'url': 'my_git_server.com',
+       },
+       'my_service': {
+           'class': MyServiceClass,
+           'config_1': 'value_x',
+       }
+   }
 
 Each key-value-pair in ``needs_services`` describes a service specific configuration.
 
@@ -1682,7 +1671,7 @@ Config options are service specific and are described by :ref:`services`.
 
 See also :ref:`needservice`.
 
-.. _needs_service_all_data:
+.. _`needs_service_all_data`:
 
 needs_service_all_data
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -1696,10 +1685,9 @@ Default: ``False``.
 
 .. code-block:: python
 
-    needs_service_all_data = True
+   needs_service_all_data = True
 
-
-.. _needs_import_keys:
+.. _`needs_import_keys`:
 
 needs_import_keys
 ~~~~~~~~~~~~~~~~~
@@ -1708,7 +1696,7 @@ needs_import_keys
 
 For use with the :ref:`needimport` directive, mapping keys to file paths, see :ref:`needimport-keys`.
 
-.. _needs_external_needs:
+.. _`needs_external_needs`:
 
 needs_external_needs
 ~~~~~~~~~~~~~~~~~~~~
@@ -1720,83 +1708,83 @@ Allows to reference and use external needs without having their representation i
 
 .. code-block:: python
 
-    needs_external_needs = [
-      {
-        'base_url': 'http://mydocs/my_project',
-        'json_url':  'http://mydocs/my_project/needs.json',
-        'version': '1.0',
-        'id_prefix': 'ext_',
-        'css_class': 'external_link',
-      },
-      {
-        'base_url': 'http://mydocs/another_project/',
-        'json_path':  'my_folder/needs.json',
-        'version': '2.5',
-        'id_prefix': 'other_',
-        'css_class': 'project_x',
-      },
-      {
-        'base_url': '<relative_path_from_my_build_html_to_my_project>/<relative_path_to_another_project_build_html>',
-        'json_path':  'my_folder/needs.json',
-        'version': '2.5',
-        'id_prefix': 'ext_',
-        'css_class': 'project_x',
-      },
-      {
-        "base_url": "http://my_company.com/docs/v1/",
-        "target_url": "issue/{{need['id']}}",
-        "json_path": "needs_test.json",
-        "id_prefix": "ext_need_id_",
-      },
-      {
-        "base_url": "http://my_company.com/docs/v1/",
-        "target_url": "issue/{{need['type']|upper()}}",
-        "json_path": "needs_test.json",
-        "id_prefix": "ext_need_type_",
-      },
-      {
-        "base_url": "http://my_company.com/docs/v1/",
-        "target_url": "issue/fixed_string",
-        "json_path": "needs_test.json",
-        "id_prefix": "ext_string_",
-      },
-    ]
+   needs_external_needs = [
+     {
+       'base_url': 'http://mydocs/my_project',
+       'json_url':  'http://mydocs/my_project/needs.json',
+       'version': '1.0',
+       'id_prefix': 'ext_',
+       'css_class': 'external_link',
+     },
+     {
+       'base_url': 'http://mydocs/another_project/',
+       'json_path':  'my_folder/needs.json',
+       'version': '2.5',
+       'id_prefix': 'other_',
+       'css_class': 'project_x',
+     },
+     {
+       'base_url': '<relative_path_from_my_build_html_to_my_project>/<relative_path_to_another_project_build_html>',
+       'json_path':  'my_folder/needs.json',
+       'version': '2.5',
+       'id_prefix': 'ext_',
+       'css_class': 'project_x',
+     },
+     {
+       "base_url": "http://my_company.com/docs/v1/",
+       "target_url": "issue/{{need['id']}}",
+       "json_path": "needs_test.json",
+       "id_prefix": "ext_need_id_",
+     },
+     {
+       "base_url": "http://my_company.com/docs/v1/",
+       "target_url": "issue/{{need['type']|upper()}}",
+       "json_path": "needs_test.json",
+       "id_prefix": "ext_need_type_",
+     },
+     {
+       "base_url": "http://my_company.com/docs/v1/",
+       "target_url": "issue/fixed_string",
+       "json_path": "needs_test.json",
+       "id_prefix": "ext_string_",
+     },
+   ]
 
 ``needs_external_needs`` must be a list of dictionary elements and each dictionary must/can have the following
 keys:
 
 :base_url: Base url which is used to calculate the final, specific need url. Normally the path under which the ``index.html`` is provided.
-           Base url supports also relative path, which starts from project build html folder (normally where ``index.html`` is located).
+  Base url supports also relative path, which starts from project build html folder (normally where ``index.html`` is located).
 :target_url: Allows to config the final caculated need url. (*optional*)
-             |br| If provided, ``target_url`` will be appended to ``base_url`` as the final calculate need url, e.g. ``base_url/target_url``.
-             If not, the external need url uses the default calculated ``base_url``.
-             |br| The ``target_url`` supports Jinja context ``{{need[]}}``, ``need option`` used as key, e.g ``{{need['id']}}`` or ``{{need['type']}}``.
+  |br| If provided, ``target_url`` will be appended to ``base_url`` as the final calculate need url, e.g. ``base_url/target_url``.
+  If not, the external need url uses the default calculated ``base_url``.
+  |br| The ``target_url`` supports Jinja context ``{{need[]}}``, ``need option`` used as key, e.g ``{{need['id']}}`` or ``{{need['type']}}``.
 :json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
 :json_path: The path to a ``needs.json`` file located inside your documentation project. Can not be used together with
-            ``json_url``. |br| The value must be a relative path, which is relative to the project configuration folder
-            (where the **conf.py** is stored). (Since version `0.7.1`)
+  ``json_url``. |br| The value must be a relative path, which is relative to the project configuration folder
+  (where the **conf.py** is stored). (Since version `0.7.1`)
 :version: Defines the version to use inside the ``needs.json`` file (*optional*).
 :id_prefix: Prefix as string, which will be added to all id of external needs. Needed, if there is the risk that
-            needs from different projects may have the same id (*optional*).
+  needs from different projects may have the same id (*optional*).
 :css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
-            The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
-            (*optional*) (*default*: ``external_link``)
+  The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
+  (*optional*) (*default*: ``external_link``)
 
-
-
-.. _needs_needextend_strict:
+.. _`needs_needextend_strict`:
 
 needs_needextend_strict
 ~~~~~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 1.0.3
 
 ``needs_needextend_strict`` allows you to deactivate or activate
 the :ref:`strict <needextend_strict>` option behaviour for all :ref:`needextend` directives.
 
-.. _needs_table_classes:
+.. _`needs_table_classes`:
 
 needs_table_classes
 ~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 0.7.2
 
 Allows to define custom CSS classes which get set for the HTML tables of  ``need`` and ``needtable``.
@@ -1809,10 +1797,11 @@ This may be needed to avoid custom table handling of some specific Sphinx theme 
 These classes are not set for needtables using the ``table`` style, which is using the normal Sphinx table layout
 and therefore must be handled by themes.
 
-.. _needs_builder_filter:
+.. _`needs_builder_filter`:
 
 needs_builder_filter
 ~~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 0.7.2
 
 Defines a :ref:`filter_string` used to filter needs for the builder :ref:`needs_builder`.
@@ -1824,10 +1813,11 @@ Need objects imported via :ref:`needs_external_needs` get sorted out.
 
    needs_builder_filter = 'status=="open"'
 
-.. _needs_string_links:
+.. _`needs_string_links`:
 
 needs_string_links
 ~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 0.7.4
 
 Transforms a given option value to a link.
@@ -1836,14 +1826,14 @@ Helpful e.g. to generate a link to a ticket system based on the given ticket num
 
 .. code-block:: python
 
-    needs_string_links = {
-        'custom_name': {
-            'regex': "...",
-            'link_url' : "...",
-            'link_name': '...'
-            'options': ['status', '...']
-        }
-    }
+   needs_string_links = {
+       'custom_name': {
+           'regex': "...",
+           'link_url' : "...",
+           'link_name': '...'
+           'options': ['status', '...']
+       }
+   }
 
 :regex: Must be a valid regular expression. Named capture groups are supported.
 :link_url: The final url as string. Supports Jinja.
@@ -1856,28 +1846,26 @@ link name and url.
 
 **Example**:
 
-
 .. code-block:: python
 
-    # conf.py
+   # conf.py
 
-    needs_string_links = {
-        # Adds link to the Sphinx-Needs configuration page
-        'config_link': {
-            'regex': r'^(?P<value>\w+)$',
-            'link_url': 'https://sphinx-needs.readthedocs.io/en/latest/configuration.html#{{value | replace("_", "-")}}',
-            'link_name': 'Sphinx-Needs docs for {{value | replace("_", "-") }}',
-            'options': ['config']
-        },
-        # Links to the related github issue
-        'github_link': {
-            'regex': r'^(?P<value>\w+)$',
-            'link_url': 'https://github.com/useblocks/sphinx-needs/issues/{{value}}',
-            'link_name': 'GitHub #{{value}}',
-            'options': ['github']
-        }
-    }
-
+   needs_string_links = {
+       # Adds link to the Sphinx-Needs configuration page
+       'config_link': {
+           'regex': r'^(?P<value>\w+)$',
+           'link_url': 'https://sphinx-needs.readthedocs.io/en/latest/configuration.html#{{value | replace("_", "-")}}',
+           'link_name': 'Sphinx-Needs docs for {{value | replace("_", "-") }}',
+           'options': ['config']
+       },
+       # Links to the related github issue
+       'github_link': {
+           'regex': r'^(?P<value>\w+)$',
+           'link_url': 'https://github.com/useblocks/sphinx-needs/issues/{{value}}',
+           'link_name': 'GitHub #{{value}}',
+           'options': ['github']
+       }
+   }
 
 .. need-example::
 
@@ -1888,11 +1876,9 @@ link name and url.
 
       Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 
-.. note::
+.. note:: You must define the options specified under :ref:`needs_string_links` inside :ref:`needs_extra_options` as well.
 
-   You must define the options specified under :ref:`needs_string_links` inside :ref:`needs_extra_options` as well.
-
-.. _needs_build_json:
+.. _`needs_build_json`:
 
 needs_build_json
 ~~~~~~~~~~~~~~~~
@@ -1904,7 +1890,7 @@ Builds a ``needs.json`` file during other builds, like ``html``.
 This allows to have one single Sphinx-Build for two output formats, which may save some time.
 
 All other ``needs.json`` related configuration values, like :ref:`needs_file`,
-:ref:`needs_build_json_per_id` and :ref:`needs_json_remove_defaults` 
+:ref:`needs_build_json_per_id` and :ref:`needs_json_remove_defaults`
 are taken into account.
 
 Default: False
@@ -1913,7 +1899,7 @@ Example:
 
 .. code-block:: python
 
-      needs_build_json = True
+   needs_build_json = True
 
 .. hint::
 
@@ -1922,9 +1908,9 @@ Example:
 
    See :ref:`this section <needs_builder_format>`, for an explanation of the output format.
 
-.. _needs_reproducible_json:
+.. _`needs_reproducible_json`:
 
-needs_reproducible_json 
+needs_reproducible_json
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.0.0
@@ -1932,7 +1918,7 @@ needs_reproducible_json
 Setting ``needs_reproducible_json = True`` will ensure the ``needs.json`` output is reproducible,
 e.g. by removing timestamps from the output.
 
-.. _needs_json_exclude_fields:
+.. _`needs_json_exclude_fields`:
 
 needs_json_exclude_fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1943,9 +1929,9 @@ Setting ``needs_json_exclude_fields = ["key1", "key2"]`` will exclude the given 
 
 Default: :need_config_default:`json_exclude_fields`
 
-.. _needs_json_remove_defaults:
+.. _`needs_json_remove_defaults`:
 
-needs_json_remove_defaults 
+needs_json_remove_defaults
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.1.0
@@ -1956,15 +1942,15 @@ The defaults can be retrieved from the ``needs_schema`` now also output in the J
 
 Default: :need_config_default:`json_remove_defaults`
 
-.. _needs_build_json_per_id:
+.. _`needs_build_json_per_id`:
 
-needs_build_json_per_id 
+needs_build_json_per_id
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.0.0
-    
+
 Builds list json files for each need. The name of each file is the ``id`` of need.
-This option works like :ref:`needs_build_json`. 
+This option works like :ref:`needs_build_json`.
 
 Default: False
 
@@ -1972,19 +1958,17 @@ Example:
 
 .. code-block:: python
 
-    needs_build_json_per_id = False
+   needs_build_json_per_id = False
 
-.. hint::
+.. hint:: The created single json file per need, located in :ref:`needs_build_json_per_id_path` folder, e.g ``_build/needs_id/abc_432.json``
 
-    The created single json file per need, located in :ref:`needs_build_json_per_id_path` folder, e.g ``_build/needs_id/abc_432.json``
- 
-.. _needs_build_json_per_id_path:
+.. _`needs_build_json_per_id_path`:
 
-needs_build_json_per_id_path 
+needs_build_json_per_id_path
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 2.0.0
-    
+
 This option sets the location of the set of ``needs.json`` for every needs-id.
 
 Default value: ``needs_id``
@@ -1993,13 +1977,11 @@ Example:
 
 .. code-block:: python
 
-    needs_build_json_per_id_path = "needs_id"
+   needs_build_json_per_id_path = "needs_id"
 
-.. hint::
+.. hint:: The created ``needs_id`` folder gets stored in the ``outdir`` of the current builder. The final location is e.g. ``_build/needs_id``
 
-    The created ``needs_id`` folder gets stored in the ``outdir`` of the current builder. The final location is e.g. ``_build/needs_id``
-
-.. _needs_build_needumls:
+.. _`needs_build_needumls`:
 
 needs_build_needumls
 ~~~~~~~~~~~~~~~~~~~~
@@ -2016,11 +1998,11 @@ Example:
 
 .. code-block:: python
 
-    needs_build_needumls = "my_needumls"
+   needs_build_needumls = "my_needumls"
 
 As a result, all the :ref:`needuml` data will be exported into folder in the ``outdir`` of the current builder, e.g. ``_build/html/my_needumls/``.
 
-.. _needs_permalink_file:
+.. _`needs_permalink_file`:
 
 needs_permalink_file
 ~~~~~~~~~~~~~~~~~~~~
@@ -2031,13 +2013,13 @@ which will be copied to the html build directory during build.
 The permalink web site will load a ``needs.json`` file as specified
 by :ref:`needs_permalink_data` and re-direct the web browser to the html document
 of the need, which is specified by appending the need ID as a query
-parameter, e.g., ``http://localhost:8000/permalink.html?id=REQ_4711``. 
+parameter, e.g., ``http://localhost:8000/permalink.html?id=REQ_4711``.
 
 Example:
 
 .. code-block:: python
 
-    needs_permalink_file = "my_permalink.html"
+   needs_permalink_file = "my_permalink.html"
 
 Results in a file ``my_permalink.html`` in the
 html build directory.
@@ -2046,13 +2028,13 @@ available at ``http://localhost:8000/my_permalink.html``.
 
 Default value: ``permalink.html``
 
-.. _needs_permalink_data:
+.. _`needs_permalink_data`:
 
 needs_permalink_data
 ~~~~~~~~~~~~~~~~~~~~
 
-This options sets the location of a ``needs.json`` file. 
-This file is used to create permanent links for needs as described 
+This options sets the location of a ``needs.json`` file.
+This file is used to create permanent links for needs as described
 in :ref:`needs_permalink_file`.
 
 The path can be a relative path (relative to the permalink html file),
@@ -2060,8 +2042,7 @@ an absolute path (on the web server) or an URL.
 
 Default value: ``needs.json``
 
-
-.. _needs_constraints:
+.. _`needs_constraints`:
 
 needs_constraints
 ~~~~~~~~~~~~~~~~~
@@ -2070,25 +2051,25 @@ needs_constraints
 
 .. code-block:: python
 
-    needs_constraints = {
+   needs_constraints = {
 
-        "critical": {
-            "check_0": "'critical' in tags",
-            "check_1": "'security_req' in links",
-            "severity": "CRITICAL"
-        },
+       "critical": {
+           "check_0": "'critical' in tags",
+           "check_1": "'security_req' in links",
+           "severity": "CRITICAL"
+       },
 
-        "security": {
-            "check_0": "'security' in tags",
-            "severity": "HIGH"
-        },
+       "security": {
+           "check_0": "'security' in tags",
+           "severity": "HIGH"
+       },
 
-        "team": {
-            "check_0": "author == \"Bob\"",
-            "severity": "LOW"
-        },
+       "team": {
+           "check_0": "author == \"Bob\"",
+           "severity": "LOW"
+       },
 
-    }
+   }
 
 needs_constraints needs to be enabled by adding "constraints" to :ref:`needs_extra_options`
 
@@ -2104,94 +2085,92 @@ constraints_results is a dictionary similar in structure to needs_constraints ab
 
 .. versionadded:: 2.0.0
 
-    The ``"error_message"`` key can contain a string, with Jinja templating, which will be displayed if the constraint fails, and saved on the need as ``constraints_error``:
+   The ``"error_message"`` key can contain a string, with Jinja templating, which will be displayed if the constraint fails, and saved on the need as ``constraints_error``:
 
-    .. code-block:: python
+   .. code-block:: python
 
-        needs_constraints = {
+      needs_constraints = {
 
-            "critical": {
-                "check_0": "'critical' in tags",
-                "severity": "CRITICAL",
-                "error_message": "need {{id}} does not fulfill CRITICAL constraint, because tags are {{tags}}"
-            }
-        
-        }
+          "critical": {
+              "check_0": "'critical' in tags",
+              "severity": "CRITICAL",
+              "error_message": "need {{id}} does not fulfill CRITICAL constraint, because tags are {{tags}}"
+          }
 
+      }
 
 .. code-block:: rst
 
-    .. req::
-        :id: SECURITY_REQ
+   .. req::
+       :id: SECURITY_REQ
 
-        This is a requirement describing security processes.
+       This is a requirement describing security processes.
 
-    .. req::
-        :tags: critical
-        :links: SECURITY_REQ
-        :constraints: critical
+   .. req::
+       :tags: critical
+       :links: SECURITY_REQ
+       :constraints: critical
 
-        Example of a successful constraint.
+       Example of a successful constraint.
 
-    .. req::
-        :id: FAIL_01
-        :author: "Alice"
-        :constraints: team
+   .. req::
+       :id: FAIL_01
+       :author: "Alice"
+       :constraints: team
 
-        Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`
-
-
-.. req::
-    :id: SECURITY_REQ
-
-    This is a requirement describing security processes.
+       Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`
 
 .. req::
-    :tags: critical
-    :links: SECURITY_REQ
-    :constraints: critical
+   :id: SECURITY_REQ
 
-    Example of a successful constraint.
+   This is a requirement describing security processes.
 
 .. req::
-    :id: FAIL_01
-    :author: "Alice"
-    :constraints: team
+   :tags: critical
+   :links: SECURITY_REQ
+   :constraints: critical
 
-    Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`
+   Example of a successful constraint.
 
-.. _needs_constraint_failed_options:
+.. req::
+   :id: FAIL_01
+   :author: "Alice"
+   :constraints: team
+
+   Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`
+
+.. _`needs_constraint_failed_options`:
 
 needs_constraint_failed_options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
-    needs_constraint_failed_options = {
-        "CRITICAL": {
-            "on_fail": ["warn"],
-            "style": ["red_bar"],
-            "force_style": True
-        },
+   needs_constraint_failed_options = {
+       "CRITICAL": {
+           "on_fail": ["warn"],
+           "style": ["red_bar"],
+           "force_style": True
+       },
 
-        "HIGH": {
-            "on_fail": ["warn"],
-            "style": ["orange_bar"],
-            "force_style": True
-        },
+       "HIGH": {
+           "on_fail": ["warn"],
+           "style": ["orange_bar"],
+           "force_style": True
+       },
 
-        "MEDIUM": {
-            "on_fail": ["warn"],
-            "style": ["yellow_bar"],
-            "force_style": False
-        },
+       "MEDIUM": {
+           "on_fail": ["warn"],
+           "style": ["yellow_bar"],
+           "force_style": False
+       },
 
-        "LOW": {
-            "on_fail": [],
-            "style": ["yellow_bar"],
-            "force_style": False
-        }
-    }
+       "LOW": {
+           "on_fail": [],
+           "style": ["yellow_bar"],
+           "force_style": False
+       }
+   }
 
 needs_constraint_failed_options must be a dictionary which stores what to do if a certain constraint fails.
 Dictionary keys correspond to the severity set when creating a constraint.
@@ -2205,10 +2184,11 @@ Each entry describes in an "on_fail" action what to do:
 
 If "force style" is set, all other styles are removed and just the constraint_failed style remains.
 
-.. _needs_variants:
+.. _`needs_variants`:
 
 needs_variants
 ~~~~~~~~~~~~~~
+
 .. versionadded:: 1.0.2
 
 ``needs_variants`` configuration option must be a dictionary which has pre-defined variants assigned to
@@ -2228,10 +2208,11 @@ The value is a string which consists of a Python-supported "filter string".
 
 Default: ``{}``
 
-.. _needs_variant_options:
+.. _`needs_variant_options`:
 
 needs_variant_options
 ~~~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 1.0.2
 
 ``needs_variant_options`` must be a list which consists of the options to apply variants handling.
@@ -2259,10 +2240,11 @@ Default: ``[]``
       - :ref:`extra links <needs_extra_links>`.
    2. By default, if ``needs_variant_options`` is empty, we deactivate variants handling for need options.
 
-.. _needs_render_context:
+.. _`needs_render_context`:
 
 needs_render_context
-~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 1.0.3
 
 This option allows you to use custom data as context when rendering `Jinja <https://jinja.palletsprojects.com/>`__ templates or strings.
@@ -2271,45 +2253,49 @@ Configuration example:
 
 .. code-block:: python
 
-    def custom_defined_func():
-        return "my_tag"
+   def custom_defined_func():
+       return "my_tag"
 
-    needs_render_context = {
-        "custom_data_1": "Project_X",
-        "custom_data_2": custom_defined_func(),
-        "custom_data_3": True,
-        "custom_data_4": [("Daniel", 811982), ("Marco", 234232)],
-    }
+   needs_render_context = {
+       "custom_data_1": "Project_X",
+       "custom_data_2": custom_defined_func(),
+       "custom_data_3": True,
+       "custom_data_4": [("Daniel", 811982), ("Marco", 234232)],
+   }
 
 The``needs_render_context`` configuration option must be a dictionary.
 The dictionary consists of key-value pairs where the key is a string used as reference to the value.
 The value can be any data type (string, integer, list, dict, etc.)
 
-.. warning:: The value can also be a custom defined function, 
-    however, this will deactivate the caching and incremental build feature of Sphinx.
+.. warning::
+
+   The value can also be a custom defined function,
+   however, this will deactivate the caching and incremental build feature of Sphinx.
 
 The data passed via needs_render_context will be available as variable(s) when rendering Jinja templates or strings.
 You can use the data passed via needs_render_context as shown below:
 
 .. need-example::
 
-    .. req:: Need with jinja_content enabled
-       :id: JINJA1D8913
-       :jinja_content: true
+   .. req:: Need with jinja_content enabled
+      :id: JINJA1D8913
+      :jinja_content: true
 
-       Need with alias {{ custom_data_1 }} and ``jinja_content`` option set to {{ custom_data_3 }}.
+      Need with alias {{ custom_data_1 }} and ``jinja_content`` option set to {{ custom_data_3 }}.
 
-       {{ custom_data_2 }}
-       {% for author in custom_data_4 %}
-          * author[0]
-            + author[1]
-       {% endfor %}
+      {{ custom_data_2 }}
+      {% for author in custom_data_4 %}
 
+        * author[0]
+          + author[1]
 
-.. _needs_debug_measurement:
+      {% endfor %}
+
+.. _`needs_debug_measurement`:
 
 needs_debug_measurement
 ~~~~~~~~~~~~~~~~~~~~~~~
+
 .. versionadded:: 1.3.0
 
 Activates :ref:`runtime_debugging`, which measures the execution time of different functions and creates a helpful
@@ -2319,9 +2305,9 @@ See :ref:`runtime_debugging` for details.
 
 To activate it, set it to ``True``::
 
-   needs_debug_measurement = True
+  needs_debug_measurement = True
 
-.. _needs_debug_filters:
+.. _`needs_debug_filters`:
 
 needs_debug_filters
 ~~~~~~~~~~~~~~~~~~~
