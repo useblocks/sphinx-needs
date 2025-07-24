@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753258972449,
+  "lastUpdate": 1753385260969,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13248,6 +13248,42 @@ window.BENCHMARK_DATA = {
             "value": 59.78692945400002,
             "unit": "s",
             "extra": "Commit: 9824a37f8e2f2f2613913c5e0c1883f98146ccd7\nBranch: master\nTime: 2025-07-23T10:21:00+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9d86602d510f8526dd5f0e6b8581ee9db1fa9bb3",
+          "message": "✨ Schema validation (#1467)\n\nThis is the implementation of the discussion\nhttps://github.com/useblocks/sphinx-needs/discussions/1451\nand a follow-up on https://github.com/useblocks/sphinx-needs/pull/1441.\n\nThe PR adds schema validation to Sphinx-Needs that\nsupports local validation and network validation.\nThe Sphinx-Needs internal data type representation is not changed yet,\nall types are still strings. This will come shortly after merge.\nUsers can already try out the new interface and provide feedback.\n\nDifferences to PR 1441:\n- Aligning with standards in JSON schema for re-using subschemas via\n`$defs` and `$ref`\n- Fully typed implementation including runtime checks of valid schema\nuser input\n- Auto inject the default string type if not given\n- Replace `trigger_schema` with `select` which aligns with query\nlanguage terminology\n- Replace `trigger_schema_id` with the mentioned `$ref` mechanism\n- New schemas root key `validate` with sub-keys `local` and `network`\nfor the 2 validation types\n- Network validation items does not allow the `select` key anymore as\nthe selection happens by linking target needs.\n  This cleans up an ambiguity in the other PR.\n- Network validation errors now bubble up to the root json schema and\nare displayed to see exactly why the chain fails\n- More network rule types for better control over debug schema output\n- Rewrite test cases to use a declarative definition as yaml, so all\npieces can be given in one place:\n  - conf.py\n  - ubproject.toml\n  - index.rst\n  - schemas.json\n  - expected ontology warnings\n- Simplified the code logic\n- String patterns (regex) are constrained to a basic subset that works\nacross engines\n- Added docs\n  - Examples and explanations\n- Comparison with `needs_warnings` and `needs_constraints` and migration\npath\n- Many more test cases\n- `items` with `minItems` and `maxItems` and `contains` with\n`minContains` and `maxContains` are now semantically equivalent to JSON\nschema spec\n\n---------\n\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2025-07-24T21:25:48+02:00",
+          "tree_id": "bc7e239016c6d093928bfe0f181e769b8b93e9ce",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9d86602d510f8526dd5f0e6b8581ee9db1fa9bb3"
+        },
+        "date": 1753385244183,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17930579400000113,
+            "unit": "s",
+            "extra": "Commit: 9d86602d510f8526dd5f0e6b8581ee9db1fa9bb3\nBranch: master\nTime: 2025-07-24T21:25:48+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.53107305099999,
+            "unit": "s",
+            "extra": "Commit: 9d86602d510f8526dd5f0e6b8581ee9db1fa9bb3\nBranch: master\nTime: 2025-07-24T21:25:48+02:00"
           }
         ]
       }
