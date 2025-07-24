@@ -11,10 +11,28 @@ no_schema:
         :asil: QM
   warnings: []
 
+beta_warn_for_extra_option:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    schema.type = "string"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  warnings:
+    - - "Schema interface and validation are still in beta"
+      - "Interface and validation logic may change when moving to a typed core implementation"
+      - sphinx8: ["needs.beta"]
+
 set_type_string:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -29,6 +47,7 @@ auto_inject_string:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -43,6 +62,7 @@ wrong_type:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -63,6 +83,7 @@ const:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -86,6 +107,7 @@ const_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -115,6 +137,7 @@ enum:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -138,6 +161,7 @@ enum_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -167,6 +191,7 @@ auto_inject_type:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -189,6 +214,7 @@ required:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -209,6 +235,7 @@ required_missing:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -234,6 +261,7 @@ auto_inject_type_wrong_const:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -262,6 +290,7 @@ required_based_on_select_field_missing:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -289,6 +318,7 @@ required_based_on_select_field_below_threshold:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -317,6 +347,7 @@ required_based_on_select_field_over_threshold:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -349,6 +380,7 @@ string_type:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -363,6 +395,7 @@ string_format_date:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "start_date"
@@ -378,6 +411,7 @@ string_format_date_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "start_date"
@@ -399,6 +433,7 @@ string_format_date_time:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "start_date"
@@ -414,6 +449,7 @@ string_format_date_time_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "start_date"
@@ -435,6 +471,7 @@ string_format_time:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "time"
@@ -450,6 +487,7 @@ string_format_time_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "time"
@@ -471,6 +509,7 @@ string_format_duration:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "start_date"
@@ -486,6 +525,7 @@ string_format_duration_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "duration"
@@ -507,6 +547,7 @@ string_format_email:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "email"
@@ -522,6 +563,7 @@ string_format_email_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "email"
@@ -543,6 +585,7 @@ string_format_uri:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "uri"
@@ -558,6 +601,7 @@ string_format_uri_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "uri"
@@ -579,6 +623,7 @@ string_format_uuid:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "uuid"
@@ -594,6 +639,7 @@ string_format_uuid_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "uuid"
@@ -615,6 +661,7 @@ coerce_to_integer:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "efforts1"
@@ -637,6 +684,7 @@ integer_multiple_of:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "efforts1"
@@ -662,6 +710,7 @@ integer_multiple_of_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -683,6 +732,7 @@ number_multiple_of:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "efforts1"
@@ -708,6 +758,7 @@ number_multiple_of_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -729,6 +780,7 @@ coerce_to_integer_from_string_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -749,6 +801,7 @@ coerce_to_number:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "efforts1"
@@ -771,6 +824,7 @@ coerce_to_number_from_string_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -791,6 +845,7 @@ coerce_to_integer_from_float_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -811,6 +866,7 @@ coerce_to_boolean:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "accepted"
@@ -877,6 +933,7 @@ coerce_to_boolean_from_string_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "approved"
@@ -897,6 +954,7 @@ default_accepted:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
+    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "efforts1"

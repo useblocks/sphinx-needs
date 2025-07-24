@@ -10,6 +10,7 @@ from typeguard import TypeCheckError, check_type
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.exceptions import NeedsConfigException
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.schema.config import (
     EXTRA_OPTION_BASE_TYPES_STR,
     EXTRA_OPTION_BASE_TYPES_TYPE,
@@ -27,6 +28,27 @@ from sphinx_needs.schema.config import (
     ValidateSchemaType,
 )
 
+log = get_logger(__name__)
+
+
+def has_any_global_extra_schema_defined(needs_config: NeedsSphinxConfig) -> bool:
+    """
+    Check if any extra option or extra link has a schema defined.
+
+    :return: True if any extra option or extra link has a schema set, False otherwise.
+    """
+    # Check extra options
+    for option_value in needs_config.extra_options.values():
+        if option_value.schema is not None:
+            return True
+
+    # Check extra links
+    for extra_link in needs_config.extra_links:
+        if "schema" in extra_link and extra_link["schema"] is not None:
+            return True
+
+    return False
+
 
 def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
     """
@@ -43,8 +65,21 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
     validate_regex_patterns_extra_options(needs_config)
     validate_regex_patterns_extra_links(needs_config)
 
+    # emit warning if global or schema definitions are used
+    if (
+        has_any_global_extra_schema_defined(needs_config)
+        or needs_config.schema_definitions
+    ):
+        log_warning(
+            log,
+            "Schema interface and validation are still in beta. Interface and validation logic may change "
+            "when moving to a typed core implementation.",
+            "beta",
+            location=None,
+        )
+
     if not needs_config.schema_definitions:
-        # nothing to validate
+        # nothing to validate, resolve or inject
         return
 
     if not isinstance(needs_config.schema_definitions, dict):

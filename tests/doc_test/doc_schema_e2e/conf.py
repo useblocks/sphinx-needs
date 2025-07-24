@@ -11,3 +11,5 @@ needs_from_toml = "ubproject.toml"
 needs_schema_definitions_from_json = "schemas.json"
 
 html_theme = "alabaster"
+
+suppress_warnings = ["needs.beta"]

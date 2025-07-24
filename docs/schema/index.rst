@@ -364,7 +364,6 @@ Example network validation schema:
                },
                "minContains": 1,
                "maxContains": 1,
-               "unevaluatedItems": false
              }
            }
          }
@@ -380,7 +379,6 @@ Example network validation schema:
                  "local": { "$ref": "#/$defs/safe-spec" }
                },
                "minContains": 1,
-               "unevaluatedItems": false
              }
            }
          }
@@ -467,36 +465,6 @@ This validates that:
 1. A safe implementation links to safe specifications
 #. Those specifications in turn link to safe features
 #. Both link levels have minimum/maximum count requirements
-
-**Unevaluated Items Control**
-
-The ``unevaluatedItems`` property controls whether links that don't match the ``items`` schema are
-allowed:
-
-- ``unevaluatedItems: false`` - Only links matching the ``items`` schema are allowed
-- ``unevaluatedItems: true`` (default) - Additional links not matching ``items`` are permitted
-
-.. code-block:: json
-
-   {
-       "validate": {
-           "network": {
-               "links": {
-                   "contains": {
-                       "local": {"$ref": "#/$defs/approved-spec"}
-                   },
-                   "unevaluatedItems": false  // Reject any non-approved specs
-               }
-           }
-       }
-   }
-
-When ``unevaluatedItems: false`` is set and a need links to items that don't match the
-``items`` schema, the validation will report an error like:
-
-.. code-block:: text
-
-   Schema message: 1 unevaluated links of type 'links' found / ok: SPEC_APPROVED / nok: SPEC_UNAPPROVED
 
 Schema Components
 -----------------
@@ -848,9 +816,9 @@ Multi-value options supporting arrays of the above basic types:
      "properties": {
        "tags": {
          "type": "array",
-         "contains": {"type": "string"},
-         "minContains": 1,
-         "maxContains": 10,
+         "items": {"type": "string"},
+         "minItems": 1,
+         "maxItems": 10,
          "splitChar": ","
        }
      }
@@ -859,9 +827,8 @@ Multi-value options supporting arrays of the above basic types:
 **Array Properties**:
 
 - ``items``: Schema for individual array elements
-- ``minContains`` / ``maxContains``: Array size constraints
+- ``minItems`` / ``maxItems``: Array size constraints
 - ``splitChar``: Character used to split string input (default: ``,``)
-- ``unevaluatedItems``: Control whether non-matching items are allowed
 
 .. note::
 
