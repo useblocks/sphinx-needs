@@ -1,0 +1,669 @@
+schemas_in_conf:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions = {
+      "schemas": [
+        {
+          "select": {
+            "properties": {
+              "type": {"const": "impl"}
+            }
+          },
+          "validate": {
+            "network": {
+              "links": {
+                "contains": {
+                  "local": {
+                    "properties": {"type": {"const": "spec"}}
+                  }
+                },
+                "minContains": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  warnings: []
+
+schemas_in_conf_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions = {
+      "schemas": [
+        {
+          "select": {
+            "properties": {
+              "type": {"const": "impl"}
+            }
+          },
+          "validate": {
+            "network": {
+              "links": {
+                "contains": {
+                  "local": {
+                    "properties": {"type": {"const": "req"}}
+                  }
+                },
+                "minContains": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  warnings:
+    - - "Severity # violation"
+      - "Field # links"
+      - "Need path # IMPL_1 > links"
+      - "Schema path # [0] > validate > network > links"
+      - "Schema message # Too few valid links of type 'links' (0 < 1) / nok: SPEC_1"
+      - sphinx8: ["sn_schema.network_contains_too_few"]
+
+min_contains:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type:
+              const: "impl"
+        validate:
+          network:
+            links:
+              "contains":
+                "local":
+                  "properties":
+                    "type":
+                      "const": "spec"
+              minContains: 1
+  warnings: []
+
+min_contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type:
+              const: "impl"
+        validate:
+          network:
+            links:
+              "contains":
+                "local":
+                  "properties":
+                    "type":
+                      "const": "spec"
+              minContains: 2
+  warnings:
+    - - "Severity # violation"
+      - "Need path # IMPL_1 > links"
+      - "Schema path # [0] > validate > network > links"
+      - "Schema message # Too few valid links of type 'links' (1 < 2) / ok: SPEC_1"
+      - sphinx8: ["sn_schema.network_contains_too_few"]
+
+max_contains:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type:
+              const: "impl"
+        validate:
+          network:
+            links:
+              "contains":
+                "local":
+                  "properties":
+                    "type":
+                      "const": "spec"
+              maxContains: 1
+  warnings: []
+
+max_contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_2
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1, SPEC_2
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          network:
+            links:
+              "contains":
+                "local":
+                  "properties":
+                    "type":
+                      "const": "spec"
+              maxContains: 1
+  warnings:
+    - - "Severity # violation"
+      - "Need path # IMPL_1 > links"
+      - "Schema path # [0] > validate > network > links"
+      - "Schema message # Too many valid links of type 'links' (2 > 1) / ok: SPEC_1, SPEC_2"
+      - sphinx8: ["sn_schema.network_contains_too_many"]
+
+link_chain_w_refs:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    schema.enum = ["QM", "A", "B", "C", "D"]
+  rst: |
+    .. req:: safe req
+       :id: REQ_SAFE
+       :asil: C
+
+    .. spec:: safe spec
+       :id: SPEC_SAFE
+       :asil: B
+       :links: REQ_SAFE
+
+    .. impl:: safe impl
+       :id: IMPL_SAFE
+       :asil: A
+       :links: SPEC_SAFE
+  schemas:
+    $defs:
+      type-req:
+        properties:
+          type:
+            const: req
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-impl:
+        properties:
+          type:
+            const: impl
+      safe-req:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-req"
+      safe-spec:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-spec"
+      safe-impl:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-impl"
+      safe-need:
+        properties:
+          asil:
+            enum: [A, B, C, D]
+        required:
+          - asil
+    schemas:
+      - id: "safe-impl-[links]->safe-spec"
+        message: Safe impl links to safe spec
+        select:
+          $ref: "#/$defs/safe-impl"
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/safe-spec"
+              minContains: 1
+              maxContains: 4
+      - id: "safe-impl-[links]->safe-spec-[links]->safe-req"
+        message: Safe impl links to safe spec links to safe req
+        select:
+          $ref: "#/$defs/safe-impl"
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/safe-spec"
+                network:
+                  links:
+                    contains:
+                      local:
+                        $ref: "#/$defs/safe-req"
+                    minContains: 1
+              minContains: 1
+  warnings: []
+
+link_chain_hop_1_min_contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    schema.enum = ["QM", "A", "B", "C", "D"]
+  rst: |
+    .. spec:: unsafe spec
+        :id: SPEC_UNSAFE
+        :asil: QM
+
+    .. impl:: safe impl
+       :id: IMPL_SAFE
+       :asil: A
+       :links: SPEC_UNSAFE
+  schemas:
+    $defs:
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-impl:
+        properties:
+          type:
+            const: impl
+      safe-spec:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-spec"
+      safe-impl:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-impl"
+      safe-need:
+        properties:
+          asil:
+            enum: [A, B, C, D]
+        required:
+          - asil
+    schemas:
+      - id: "safe-impl-[links]->safe-spec"
+        message: Safe impl links to safe spec
+        select:
+          $ref: "#/$defs/safe-impl"
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/safe-spec"
+              minContains: 1
+  warnings:
+    - - "Severity # violation"
+      - "Need path # IMPL_SAFE > links"
+      - "Schema path # safe-impl-[links]->safe-spec[0] > validate > network > links"
+      - "Schema message # Too few valid links of type 'links' (0 < 1) / nok: SPEC_UNSAFE"
+      - sphinx8: ["sn_schema.network_contains_too_few"]
+
+link_chain_hop_2_min_contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    schema.enum = ["QM", "A", "B", "C", "D"]
+  rst: |
+    .. req:: unsafe req
+       :id: REQ_UNSAFE
+       :asil: QM
+
+    .. spec:: safe spec
+       :id: SPEC_SAFE
+       :asil: B
+       :links: REQ_UNSAFE
+
+    .. impl:: safe impl
+       :id: IMPL_SAFE
+       :asil: A
+       :links: SPEC_SAFE
+  schemas:
+    $defs:
+      type-req:
+        properties:
+          type:
+            const: req
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-impl:
+        properties:
+          type:
+            const: impl
+      safe-req:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-req"
+      safe-spec:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-spec"
+      safe-impl:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-impl"
+      safe-need:
+        properties:
+          asil:
+            enum: [A, B, C, D]
+        required:
+          - asil
+    schemas:
+      - id: "safe-impl-[links]->safe-spec-[links]->safe-req"
+        message: Safe impl links to safe spec links to safe req
+        select:
+          $ref: "#/$defs/safe-impl"
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/safe-spec"
+                network:
+                  links:
+                    contains:
+                      local:
+                        $ref: "#/$defs/safe-req"
+                    minContains: 1
+              minContains: 1
+  warnings:
+    - - "Severity # violation"
+      - "Need path # IMPL_SAFE > links"
+      - "Schema path # safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links"
+      - "Schema message # Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE"
+      - "Details for SPEC_SAFE"
+      - "Schema message # Too few valid links of type 'links' (0 < 1) / nok: REQ_UNSAFE"
+      - "Details for REQ_UNSAFE"
+      - "Field # asil"
+      - "Need path # IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE"
+      - "Schema path # safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum"
+      - "Schema message # 'QM' is not one of ['A', 'B', 'C', 'D']"
+      - sphinx8: ["sn_schema.network_contains_too_few"]
+
+local_min_items:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          local:
+            properties:
+              links: {minItems: 1}
+  warnings: []
+
+local_min_items_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          local:
+            properties:
+              links: {minItems: 2}
+  warnings:
+    - - "Severity # violation"
+      - "Need path # IMPL_1"
+      - "Schema path # [0] > local > properties > links > minItems"
+      - "Schema message # ['SPEC_1'] is too short"
+      - sphinx8: ["sn_schema.local_fail"]
+
+local_max_items:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_2
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1, SPEC_2
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          local:
+            properties:
+              links: {maxItems: 2}
+  warnings: []
+
+local_max_items_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_2
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1, SPEC_2
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          local:
+            properties:
+              links: {maxItems: 1}
+  warnings:
+    - - "Severity # violation"
+      - "Need path # IMPL_1"
+      - "Schema path # [0] > local > properties > links > maxItems"
+      - "Schema message # ['SPEC_1', 'SPEC_2'] is too long"
+      - sphinx8: ["sn_schema.local_fail"]
+
+max_network_levels:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["needs.beta"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_2
+        :links: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_3
+        :links: SPEC_2
+
+    .. spec:: title
+        :id: SPEC_4
+        :links: SPEC_3
+
+    .. spec:: title
+        :id: SPEC_5
+        :links: SPEC_4
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_5
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type:
+              const: impl
+        validate:
+          network:
+            links:
+              items:
+                network:
+                  links:
+                    items:
+                      network:
+                        links:
+                          items:
+                            network:
+                              links:
+                                items:
+                                  network:
+                                    links:
+                                      items:
+                                        network:
+                                          links:
+                                            items:
+                                              local:
+                                                properties:
+                                                  type:
+                                                    const: spec
+  warnings:
+    - - "Need 'SPEC_1' has validation errors"
+      - "Severity # violation"
+      - "Need path # IMPL_1 > links > SPEC_5 > links > SPEC_4 > links > SPEC_3 > links > SPEC_2 > links > SPEC_1"
+      - "Schema path # [0] > links > links > links > links > links"
+      - "Schema message # Maximum network validation recursion level 4 reached"
+      - sphinx8: ["sn_schema.network_max_nest_level"]

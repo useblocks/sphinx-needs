@@ -1,18 +1,19 @@
 from __future__ import annotations
 
 import contextlib
+import json
 from collections.abc import Callable
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 from sphinx.config import Config
+from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
-from sphinx.errors import SphinxError
 
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
 from sphinx_needs import __version__
@@ -22,6 +23,7 @@ from sphinx_needs.builder import (
     NeedsBuilder,
     NeedsIdBuilder,
     NeedumlsBuilder,
+    SchemaBuilder,
     build_needs_id_json,
     build_needs_json,
     build_needumls_pumls,
@@ -105,6 +107,7 @@ from sphinx_needs.environment import (
     install_permalink_file,
     install_styles_static_files,
 )
+from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
 from sphinx_needs.logging import get_logger, log_warning
@@ -116,6 +119,9 @@ from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, NeedPartRole, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
+from sphinx_needs.schema.config import SchemasFileRootType
+from sphinx_needs.schema.config_utils import validate_schemas_config
+from sphinx_needs.schema.process import process_schemas
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import node_match
@@ -125,6 +131,7 @@ try:
     import tomllib  # added in python 3.11
 except ImportError:
     import tomli as tomllib
+
 
 VERSION = __version__
 
@@ -159,6 +166,33 @@ NODE_TYPES: _NODE_TYPES_T = {
 LOGGER = get_logger(__name__)
 
 
+def load_schemas_config_from_json(app: Sphinx, config: _SphinxConfig) -> None:
+    """Merge the configuration from the JSON file into the Sphinx config."""
+    needs_config = NeedsSphinxConfig(config)
+    if needs_config.schema_definitions_from_json is None:
+        return
+    if needs_config.schema_definitions:
+        raise NeedsConfigException(
+            "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
+        )
+    json_file = Path(app.confdir, needs_config.schema_definitions_from_json).resolve()
+
+    if not json_file.exists():
+        raise NeedsConfigException(
+            f"'sn_schema_from_json' file does not exist: {json_file}"
+        )
+
+    try:
+        with Path(json_file).open("rb") as fp:
+            json_data = json.load(fp)
+        assert isinstance(json_data, dict), "Data must be a dict"
+    except Exception as exc:
+        raise NeedsConfigException(f"Could not load JSON file: {exc}") from exc
+
+    # schema_definitions are checked later in validate_schemas_config()
+    needs_config.schema_definitions = cast(SchemasFileRootType, json_data)
+
+
 def setup(app: Sphinx) -> dict[str, Any]:
     LOGGER.debug("Starting setup of Sphinx-Needs")
     LOGGER.debug("Load Sphinx-Data-Viewer for Sphinx-Needs")
@@ -169,6 +203,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_builder(NeedsBuilder)
     app.add_builder(NeedumlsBuilder)
     app.add_builder(NeedsIdBuilder)
+    app.add_builder(SchemaBuilder)
 
     NeedsSphinxConfig.add_config_values(app)
 
@@ -297,6 +332,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("doctree-resolved", process_need_nodes)
     app.connect("doctree-resolved", process_creator(NODE_TYPES))
 
+    app.connect("write-started", process_schemas)
     app.connect("write-started", ensure_post_process_needs_data)
 
     app.connect("build-finished", process_warnings)
@@ -376,6 +412,9 @@ def process_creator(
 def load_config_from_toml(app: Sphinx, config: Config) -> None:
     """
     Load config from toml file, if defined in conf.py
+
+    All configs starting with "schema_" are loaded from a dedicated
+    "schema" table in the toml file.
     """
     needs_config = NeedsSphinxConfig(config)
     if needs_config.from_toml is None:
@@ -399,6 +438,11 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         for key in (*toml_path, "needs"):
             toml_data = toml_data[key]
         assert isinstance(toml_data, dict), "Data must be a dict"
+        if "schema" in toml_data:
+            assert isinstance(toml_data["schema"], dict), (
+                "'schema' table must be a dict"
+            )
+
     except Exception as e:
         log_warning(
             LOGGER,
@@ -409,10 +453,16 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         return
 
     allowed_keys = NeedsSphinxConfig.field_names()
+
     for key, value in toml_data.items():
         if key not in allowed_keys:
             continue
         config["needs_" + key] = value
+
+    for key, value in toml_data.get("schema", {}).items():
+        if key not in allowed_keys:
+            continue
+        config["needs_schema_"][key] = value
 
 
 def load_config(app: Sphinx, *_args: Any) -> None:
@@ -432,6 +482,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
 
     for option in needs_config._extra_options:
         description = "Added by needs_extra_options config"
+        schema = None
         if isinstance(option, str):
             name = option
         elif isinstance(option, dict):
@@ -446,6 +497,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 )
                 continue
             description = option.get("description", description)
+            schema = option.get("schema")
         else:
             log_warning(
                 LOGGER,
@@ -455,7 +507,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             )
             continue
 
-        _NEEDS_CONFIG.add_extra_option(name, description, override=True)
+        _NEEDS_CONFIG.add_extra_option(name, description, schema=schema, override=True)
 
     # ensure options for ``needgantt`` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
@@ -565,6 +617,8 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             "config",
             None,
         )
+
+    load_schemas_config_from_json(app, app.config)
 
 
 def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
@@ -744,6 +798,8 @@ def check_configuration(app: Sphinx, config: Config) -> None:
             )
 
     _gather_field_defaults(needs_config, set(link_types))
+
+    validate_schemas_config(needs_config)
 
 
 def _gather_field_defaults(
@@ -925,10 +981,6 @@ def _check_type(
                 for predicate, value in default["predicates"]
             ]
     return True
-
-
-class NeedsConfigException(SphinxError):
-    pass
 
 
 def release_data_locks(app: Sphinx, _exception: Exception) -> None:
