@@ -74,3 +74,7 @@ class NeedsConstraintFailed(SphinxError):
 
 class NeedsInvalidFilter(SphinxError):
     pass
+
+
+class NeedsConfigException(SphinxError):
+    pass
