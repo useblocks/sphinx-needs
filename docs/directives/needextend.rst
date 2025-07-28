@@ -108,6 +108,13 @@ which do not have the status set explicitly, to ``open``.
    .. needextend:: c.this_doc() and status is None
       :status: open
 
+To address all needs in the current document, use this syntax:
+
+.. need-example::
+
+   .. needextend:: "c.this_doc()"
+      :status: open
+
 See also, :ref:`filter_current_page` and :ref:`needs_global_options` for setting a default option value for all needs.
 
 Changing links
