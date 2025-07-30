@@ -5,7 +5,7 @@ Introduction
 to trace the :external+needs:doc:`Sphinx-Needs <index>` need items defined in source files.
 
 Instead of putting RST syntax in the comment, the need definition in source code is simplified to one-liner only,
-so that users can just write their `customized one-line comment <oneline>`_ to have the traceability
+so that users can just write their :ref:`customized one-line comment <oneline>` to have the traceability
 from the link between source code and documentation.
 
 The provided directive leverages the other two modules ``SourceDiscovery`` and ``VirtualDocs``,
