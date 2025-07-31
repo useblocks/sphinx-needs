@@ -21,7 +21,7 @@ permissions:
 jobs:
   pre-commit:
     name: Pre-commit
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -33,7 +33,7 @@ jobs:
 
   mypy:
     name: MyPy
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -41,21 +41,17 @@ jobs:
       - run: rye run mypy:all
 
   pytest:
-    name: Pytest (${{ matrix.os }}-${{ matrix.arch }})
+    name: Pytest (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: linux
-            arch: x64
-          - os: linux
-            arch: arm64
-          - os: windows
-            arch: x64
-          - os: macos
-            arch: arm64
+          - os: ubuntu-latest
+          - os: ubuntu-24.04-arm
+          - os: windows-latest
+          - os: macos-latest
 
-    runs-on: [self-hosted, "${{ matrix.os }}", "${{ matrix.arch }}"]
+    runs-on: ["${{ matrix.os }}"]
 
     steps:
       - uses: actions/checkout@v4
@@ -64,7 +60,7 @@ jobs:
 
   docs:
     name: Documentation build
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -84,7 +80,7 @@ jobs:
       - pytest
       - docs
 
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Decide whether the needed jobs succeeded or failed
