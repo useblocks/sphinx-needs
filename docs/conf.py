@@ -40,7 +40,7 @@ extensions = [
 if DOCS_THEME == "sphinx_immaterial":
     extensions.append("sphinx_immaterial")
 
-suppress_warnings = ["needs.link_outgoing"]
+suppress_warnings = ["needs.link_outgoing", "needs.github"]
 
 nitpicky = True
 nitpick_ignore = [

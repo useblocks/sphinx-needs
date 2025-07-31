@@ -776,17 +776,10 @@ def _add_extra_fields(
     needs_info: NeedsInfoType, kwargs: dict[str, Any], config: NeedsSphinxConfig
 ) -> None:
     """Add extra option fields to the needs_info dictionary."""
-    extra_keys = set(kwargs).difference(set(needs_info))
-    for key in config.extra_options:
-        if key in extra_keys:
-            # TODO really we should not need to do this,
-            # but the `add_extra_option` function does not guard against the keys clashing with existing internal fields,
-            # this occurs in the core code with the github service adding `type` as an extra option
-
-            # note we already warn if value not string in external/import code
-            needs_info[key] = str(kwargs.get(key, ""))
-        elif key not in needs_info:
-            needs_info[key] = ""
+    # note we already warn if value not string in external/import code,
+    # but still allow it and convert it here, for backward-comptibility
+    extras = {key: str(kwargs.get(key, "")) for key in config.extra_options}
+    needs_info.update(extras)  # type: ignore[typeddict-item]
 
 
 def _add_link_fields(
