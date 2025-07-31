@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
@@ -28,7 +29,12 @@ class ServiceManager:
 
         # Register options from service class
         for option in klass.options:
-            if option not in _NEEDS_CONFIG.extra_options:
+            if option == "type":
+                # TODO this should probably be done a bit more systematically;
+                # the github service adds a "type" option,
+                # but this is related to the core need field NOT an extra option
+                NeedserviceDirective.option_spec["type"] = directives.unchanged
+            elif option not in _NEEDS_CONFIG.extra_options:
                 self.log.debug(f'Register option "{option}" for service "{name}"')
                 _NEEDS_CONFIG.add_extra_option(option, f"Added by service {name}")
                 # Register new option directly in Service directive, as its class options got already

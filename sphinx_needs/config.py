@@ -121,6 +121,16 @@ class _Config:
         override: bool = False,
     ) -> None:
         """Adds an extra option to the configuration."""
+        if name in NeedsCoreFields:
+            from sphinx_needs.exceptions import (
+                NeedsApiConfigWarning,  # avoid circular import
+            )
+
+            raise NeedsApiConfigWarning(
+                f"Cannot add extra option with name {name!r}"
+                + (f" ({description!r})" if description else "")
+                + ", as it is already used as a core field name."
+            )
         if name in self._extra_options:
             if override:
                 log_warning(
