@@ -1,16 +1,37 @@
+import json
 from pathlib import Path
 
 from docutils.nodes import document
 import pytest
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 
+from sphinx_codelinks.analyse.config import OneLineCommentStyle
+
 pytest_plugins = "sphinx.testing.fixtures"
 
 TEST_DIR = Path(__file__).parent
+DATA_DIR = TEST_DIR / "data"
 SRC_TRACE_TOML = TEST_DIR / "data" / "sphinx" / "src_trace.toml"
-BASIC_VDOC_TOML = TEST_DIR / "data" / "oneline_comment_basic" / "vdoc_config.toml"
-DEFAULT_VDOC_TOML = TEST_DIR / "data" / "oneline_comment_default" / "vdoc_config.toml"
-RECURSIVE_DIR_VDOC_TOML = TEST_DIR / "doc_test" / "recursive_dirs" / "src_trace.toml"
+BASIC_analyse_TOML = TEST_DIR / "data" / "oneline_comment_basic" / "analyse_config.toml"
+DEFAULT_analyse_TOML = (
+    TEST_DIR / "data" / "oneline_comment_default" / "analyse_config.toml"
+)
+RECURSIVE_DIR_analyse_TOML = TEST_DIR / "doc_test" / "recursive_dirs" / "src_trace.toml"
+ONELINE_COMMENT_STYLE = OneLineCommentStyle(
+    start_sequence="[[",
+    end_sequence="]]",
+    field_split_char=",",
+    needs_fields=[
+        {"name": "id"},
+        {"name": "title"},
+        {"name": "type", "default": "impl"},
+        {"name": "links", "type": "list[str]", "default": []},
+        {"name": "status", "default": "open"},
+        {"name": "priority", "default": "low"},
+    ],
+)
+
+ONELINE_COMMENT_STYLE_DEFAULT = OneLineCommentStyle()
 
 
 @pytest.fixture(scope="session")
@@ -63,3 +84,24 @@ def snapshot_doctree(snapshot):
     except AttributeError:
         # fallback for older versions of pytest-snapshot
         return snapshot.use_extension(DoctreeSnapshotExtension)
+
+
+class AnchorsSnapshotExtension(SingleFileSnapshotExtension):
+    _write_mode = WriteMode.TEXT
+    _file_extension = "anchors.json"
+
+    def serialize(self, data, **_kwargs):
+        if not isinstance(data, list):
+            raise TypeError(f"Expected list, got {type(data)}")
+        anchors = data
+
+        return json.dumps(anchors, indent=2)
+
+
+@pytest.fixture
+def snapshot_marks(snapshot):
+    """Snapshot fixture for reqif.
+
+    Sanitize the reqif, to make the snapshots reproducible.
+    """
+    return snapshot.with_defaults(extension_class=AnchorsSnapshotExtension)

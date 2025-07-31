@@ -1,12 +1,14 @@
 from dataclasses import MISSING, dataclass, field, fields
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, Required, TypedDict, cast
 
 from jsonschema import ValidationError, validate
 
+from sphinx_codelinks.analyse.config import SUPPORTED_COMMENT_TYPES
 
-class SourceDiscoveryConfigType(TypedDict, total=False):
-    src_dir: Path
+
+class SourceDiscoverConfigType(TypedDict, total=False):
+    src_dir: Required[Path]
     exclude: list[str]
     include: list[str]
     gitignore: bool
@@ -14,7 +16,7 @@ class SourceDiscoveryConfigType(TypedDict, total=False):
 
 
 @dataclass
-class SourceDiscoveryConfig:
+class SourceDiscoverConfig:
     @classmethod
     def field_names(cls) -> set[str]:
         return {item.name for item in fields(cls)}
@@ -40,9 +42,12 @@ class SourceDiscoveryConfig:
     """Whether to respect .gitignore to exclude files."""
 
     file_types: list[str] = field(
-        default_factory=lambda: ["c", "h", "cpp", "hpp"],
+        default_factory=lambda: list(SUPPORTED_COMMENT_TYPES),
         metadata={
-            "schema": {"type": "array", "items": {"enum": ["c", "h", "cpp", "hpp"]}}
+            "schema": {
+                "type": "array",
+                "items": {"type": "string", "enum": sorted(SUPPORTED_COMMENT_TYPES)},
+            }
         },
     )
     """The file types to discover."""

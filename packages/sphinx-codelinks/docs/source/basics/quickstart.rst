@@ -3,11 +3,11 @@ Quick Start
 
 .. image:: local_link.gif
 
-Three steps to quickly run ``CodeLinks`` to achieve **the above**:
+Three steps to quickly run ``CodeLinks`` to generate links to your source code:
 
 - Configure Sphinx
-- Apply One-line comment for a ``Sphinx-Needs`` need item
-- Use ``src-trace`` directive
+- Add a one-line comment to your source code to define a ``Sphinx-Needs`` item.
+- Use the ``src-trace`` directive in your documentation.
 
 Sphinx Config
 -------------
@@ -51,4 +51,4 @@ Example
 
 .. note:: **local-url** is not working on the website as it only supports local browse
 
-Section :ref:`Directive <directive>` provides more adavanced usage.
+Section :ref:`Directive <directive>` provides more advanced usage.

@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
 import logging
-import os
 
-from sphinx_codelinks.virtual_docs.config import (
+from sphinx_codelinks.analyse.config import (
     ESCAPE,
     SUPPORTED_COMMENT_TYPES,
+    UNIX_NEWLINE,
     OneLineCommentStyle,
 )
 
@@ -38,7 +38,7 @@ class OnelineParserInvalidWarning:
 
 def oneline_parser(  # noqa: PLR0912, PLR0911 # handel warnings
     oneline: str, oneline_config: OneLineCommentStyle
-) -> dict[str, str | list[str]] | OnelineParserInvalidWarning | None:
+) -> dict[str, str | list[str] | int] | OnelineParserInvalidWarning | None:
     """
     Extract the string from the custom one-line comment style with the following steps.
 
@@ -57,7 +57,8 @@ def oneline_parser(  # noqa: PLR0912, PLR0911 # handel warnings
         return None
 
     # extract the string wrapped by start and end
-    string = oneline[start_idx + len(oneline_config.start_sequence) : end_idx]
+    start_idx = start_idx + len(oneline_config.start_sequence)
+    string = oneline[start_idx:end_idx]
 
     # numbers of needs_fields which are required
     cnt_required_fields = oneline_config.get_cnt_required_fields()
@@ -84,7 +85,7 @@ def oneline_parser(  # noqa: PLR0912, PLR0911 # handel warnings
             sub_type=WarningSubTypeEnum.too_many_fields,
             msg=f"{len(string_fields)} given fields. They shall be less than {max_fields}",
         )
-    resolved: dict[str, str | list[str]] = {}
+    resolved: dict[str, str | list[str] | int] = {}
     for idx in range(len(oneline_config.needs_fields)):
         field_name: str = oneline_config.needs_fields[idx]["name"]
         if len(string_fields) > idx:
@@ -99,23 +100,23 @@ def oneline_parser(  # noqa: PLR0912, PLR0911 # handel warnings
                 resolved[field_name] = string_fields[idx]
             elif oneline_config.needs_fields[idx]["type"] == "list[str]":
                 # find the indices of "[" and "]"
-                start_idx = string_fields[idx].find("[")
-                end_idx = string_fields[idx].rfind("]")
-                if start_idx == -1 or end_idx == -1:
+                list_start_idx = string_fields[idx].find("[")
+                list_end_idx = string_fields[idx].rfind("]")
+                if list_start_idx == -1 or list_end_idx == -1:
                     # brackets are not  found
                     return OnelineParserInvalidWarning(
                         sub_type=WarningSubTypeEnum.missing_square_brackets,
                         msg=f"Field {field_name} with 'type': '{oneline_config.needs_fields[idx]['type']}' must be given with '[]' brackets",
                     )
 
-                if start_idx != 0 or end_idx != len(string_fields[idx]) - 1:
+                if list_start_idx != 0 or list_end_idx != len(string_fields[idx]) - 1:
                     # brackets are found but not at the beginning and the end
                     return OnelineParserInvalidWarning(
                         sub_type=WarningSubTypeEnum.not_start_or_end_with_square_brackets,
                         msg=f"Field {field_name} with 'type': '{oneline_config.needs_fields[idx]['type']}' must start with '[' and end with ']'",
                     )
 
-                string_items = string_fields[idx][start_idx + 1 : end_idx]
+                string_items = string_fields[idx][list_start_idx + 1 : list_end_idx]
 
                 if not string_items.strip():
                     # the case where the empty string ("") or only spaces between "[" "]"
@@ -130,6 +131,8 @@ def oneline_parser(  # noqa: PLR0912, PLR0911 # handel warnings
                 continue
             resolved[field_name] = default
 
+    resolved["start_column"] = start_idx
+    resolved["end_column"] = end_idx
     return resolved
 
 
@@ -200,7 +203,7 @@ def is_newline_in_field(field: str) -> bool:
     """
     Check if the field contains a new line character.
     """
-    return os.linesep in field
+    return UNIX_NEWLINE in field
 
 
 def get_file_types(comment_type: str) -> list[str] | None:

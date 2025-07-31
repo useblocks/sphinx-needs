@@ -4,7 +4,7 @@ One Line Comment Style
 ======================
 
 Many users have raised concerns about the complexity of defining ``Sphinx-Needs`` need items with RST in source code.
-Therefore, ``CodeLinks`` provides a customizable one-line comment style pattern to define ``a need items``
+Therefore, ``CodeLinks`` provides a customizable one-line comment style pattern to define ``need items``
 to simplify the effort required to create a need in source code.
 
 :ref:`Here <oneline_comment_style>` is the default one-line comment style.
@@ -12,12 +12,12 @@ to simplify the effort required to create a need in source code.
 Start and End sequences
 -----------------------
 
-To have better understanding of its the syntax of one-line comment, we will break it down to the following:
+To have a better understanding of the syntax of a one-line comment, we will break it down into the following:
 
 **start_sequence** defines the characters where the one-line comment starts.
 **end_sequence** defines the characters where the one-line comment ends.
 
-The text between **start_sequence** and **end_sequence** contains the fields of ``need items``
+The text between **start_sequence** and **end_sequence** contains the fields of a ``need item``.
 
 field_split_char
 ----------------
@@ -95,7 +95,7 @@ For example, with the following **needs_fields** configuration:
        {"name": "links", "type": "list[str]", "default": []},
    ],
 
-the online line comment shall be defined as the following
+the one-line comment shall be defined as the following
 
 .. tabs::
 

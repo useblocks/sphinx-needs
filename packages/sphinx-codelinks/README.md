@@ -27,7 +27,7 @@ Full documentation: https://codelinks.useblocks.com
 
 ## Components
 
-- **Source Discovery** ([`src/sphinx_codelinks/source_discovery`](src/sphinx_codelinks/source_discovery)): Code analysis and discovery
+- **Source Discovery** ([`src/sphinx_codelinks/source_discover`](src/sphinx_codelinks/source_discover)): Code analysis and discovery
 - **Virtual Docs** ([`src/sphinx_codelinks/virtual_docs`](src/sphinx_codelinks/virtual_docs)): Documentation generation
 - **Sphinx Extension** ([`src/sphinx_codelinks/sphinx_extension`](src/sphinx_codelinks/sphinx_extension)): Sphinx integration
 - **Command Line** ([`src/sphinx_codelinks/cmd.py`](src/sphinx_codelinks/cmd.py)): CLI interface

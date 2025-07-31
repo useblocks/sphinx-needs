@@ -2,8 +2,11 @@ from pathlib import Path
 
 import pytest
 
-from sphinx_codelinks.source_discovery.config import SourceDiscoveryConfig
-from sphinx_codelinks.source_discovery.source_discover import SourceDiscover
+from sphinx_codelinks.source_discover.config import (
+    SourceDiscoverConfig,
+    SourceDiscoverConfigType,
+)
+from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 
 
 @pytest.mark.parametrize(
@@ -37,17 +40,17 @@ from sphinx_codelinks.source_discovery.source_discover import SourceDiscover
                 "exclude": ["exclude1", "exclude2"],
                 "include": ["include1", "include2"],
                 "gitignore": True,
-                "file_types": ["py", "hpp"],
+                "file_types": "py",
             },
             [
-                "Schema validation error in field 'file_types': 'py' is not one of ['c', 'h', 'cpp', 'hpp']"
+                "Schema validation error in field 'file_types': 'py' is not of type 'array'"
             ],
         ),
     ],
 )
 def test_schema_negative(config, msgs):
-    source_discovery_config = SourceDiscoveryConfig(**config)
-    errors = source_discovery_config.check_schema()
+    source_discover_config = SourceDiscoverConfig(**config)
+    errors = source_discover_config.check_schema()
     assert sorted(errors) == sorted(msgs)
 
 
@@ -65,41 +68,61 @@ def test_schema_negative(config, msgs):
     ],
 )
 def test_schema_positive(config):
-    source_discovery_config = SourceDiscoveryConfig(**config)
-    errors = source_discovery_config.check_schema()
+    source_discover_config = SourceDiscoverConfig(**config)
+    errors = source_discover_config.check_schema()
     assert len(errors) == 0
 
 
-def test_source_discover_all_files(source_directory: Path):
-    source_discover = SourceDiscover(source_directory, gitignore=False)
-    assert len(source_discover.source_paths) == 5
-
-
-def test_source_discover_gitignore(source_directory: Path):
-    source_discover = SourceDiscover(source_directory, gitignore=True)
-    assert len(source_discover.source_paths) == 4
-
-
-def test_source_discover_includes(source_directory: Path):
-    source_discover = SourceDiscover(
-        source_directory,
-        gitignore=True,
-        exclude=["charge/*.cpp"],
-        include=["**/*.cpp"],
-    )
-    assert len(source_discover.source_paths) == 5
-
-
-def test_source_discover_excludes(source_directory: Path):
-    source_discover = SourceDiscover(
-        source_directory, gitignore=True, exclude=["charge/*.cpp"]
-    )
-    assert len(source_discover.source_paths) == 3
-
-
-def test_source_discover_type(source_directory: Path):
-    source_discover = SourceDiscover(
-        source_directory, gitignore=False, file_types=["cpp"]
-    )
-    assert len(source_discover.source_paths) == 4
-    assert all(path.suffix == ".cpp" for path in source_discover.source_paths)
+@pytest.mark.parametrize(
+    ("config", "num_files", "suffix"),
+    [
+        (
+            {
+                "gitignore": False,
+            },
+            4,
+            "",
+        ),
+        (
+            {
+                "gitignore": True,
+            },
+            3,
+            "",
+        ),
+        (
+            {
+                "gitignore": True,
+                "exclude": ["charge/*.cpp"],
+                "include": ["**/*.cpp"],
+            },
+            4,
+            "",
+        ),
+        (
+            {
+                "gitignore": True,
+                "exclude": ["charge/*.cpp"],
+            },
+            2,
+            "",
+        ),
+        (
+            {"gitignore": False, "file_types": ["cpp"]},
+            4,
+            "cpp",
+        ),
+    ],
+)
+def test_source_discover(
+    config: SourceDiscoverConfigType,
+    num_files: int,
+    suffix: str,
+    source_directory: Path,
+) -> None:
+    config["src_dir"] = source_directory
+    src_discover_config = SourceDiscoverConfig(**config)
+    source_discover = SourceDiscover(src_discover_config)
+    assert len(source_discover.source_paths) == num_files
+    if suffix:
+        assert all(path.suffix == ".cpp" for path in source_discover.source_paths)

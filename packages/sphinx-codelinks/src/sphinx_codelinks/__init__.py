@@ -1,4 +1,4 @@
-"""CodeLinks source code analyzer"""
+"""CodeLinks source code analyser"""
 
 from sphinx_codelinks.sphinx_extension.source_tracing import setup
 

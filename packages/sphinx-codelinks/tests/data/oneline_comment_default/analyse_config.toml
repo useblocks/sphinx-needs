@@ -1,3 +1,4 @@
+[source_discover]
 src_dir = "./"
 comment_type = "c"
 exclude = []

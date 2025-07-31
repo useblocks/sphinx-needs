@@ -1,18 +1,14 @@
+import json
 from pathlib import Path
 
 import pytest
 import toml
 from typer.testing import CliRunner
 
+from sphinx_codelinks.analyse.config import CommentType
 from sphinx_codelinks.cmd import app
 
-from .conftest import (
-    BASIC_VDOC_TOML,
-    DEFAULT_VDOC_TOML,
-    RECURSIVE_DIR_VDOC_TOML,
-    SRC_TRACE_TOML,
-    TEST_DIR,
-)
+from .conftest import DATA_DIR, TEST_DIR
 
 ONELINE_COMMENT_TEMPLATE = {
     "start_sequence": "[[",
@@ -24,13 +20,15 @@ ONELINE_COMMENT_TEMPLATE = {
         {"name": "type"},
     ],
 }
-
-VDOC_CONFIG_TEMPLATE = {
+SRC_DISCOVER_TEMPLATE = {
     "src_dir": str(TEST_DIR / "data" / "dcdc"),
     "exclude": ["**/charge/demo_1.cpp", "**/discharge/demo_3.cpp"],
     "include": ["**/charge/demo_2.cpp", "**/supercharge.cpp"],
     "gitignore": True,
-    "file_types": ["cpp"],
+    "comment_type": [CommentType.cpp.value],
+}
+ANALYSER_CONFIG_TEMPLATE = {
+    "source_discover": SRC_DISCOVER_TEMPLATE,
     "oneline_comment_style": ONELINE_COMMENT_TEMPLATE,
 }
 
@@ -39,15 +37,32 @@ runner = CliRunner()
 
 
 @pytest.mark.parametrize(
+    ("config_path"), [(DATA_DIR / "analyse" / "default_config.toml")]
+)
+def test_analyse(config_path: Path, tmp_path: Path) -> None:
+    options: list[str] = ["analyse", str(config_path), "--outdir", str(tmp_path)]
+    result = runner.invoke(app, options)
+
+    output_path = tmp_path / "marked_content.json"
+
+    assert output_path.exists()
+    assert result.exit_code == 0
+
+    with output_path.open("r") as f:
+        marked_content = json.load(f)
+    assert marked_content
+
+
+@pytest.mark.parametrize(
     ("options", "stdout"),
     [
         (
             ["discover", str(TEST_DIR / "data" / "dcdc"), "--no-gitignore"],
-            "5 files discovered",
+            "4 files discovered",
         ),
         (
             ["discover", str(TEST_DIR / "data" / "dcdc"), "--gitignore"],
-            "4 files discovered",
+            "3 files discovered",
         ),
     ],
 )
@@ -58,122 +73,18 @@ def test_discover(options, stdout):
 
 
 @pytest.mark.parametrize(
-    ("options", "lines"),
-    [
-        (
-            [
-                "vdoc",
-                "--config",
-                SRC_TRACE_TOML,
-                "--project",
-                "dcdc",
-            ],
-            [
-                "The virtual documents are generated:",
-                Path("charge") / "demo_1.json",
-                Path("charge") / "demo_2.json",
-                Path("discharge") / "demo_3.json",
-                Path("supercharge.json"),
-                "The cached files are:",
-                TEST_DIR / "data" / "dcdc" / "charge" / "demo_1.cpp",
-                TEST_DIR / "data" / "dcdc" / "charge" / "demo_2.cpp",
-                TEST_DIR / "data" / "dcdc" / "discharge" / "demo_3.cpp",
-                TEST_DIR / "data" / "dcdc" / "supercharge.cpp",
-            ],
-        ),
-        (
-            [
-                "vdoc",
-                "--config",
-                BASIC_VDOC_TOML,
-            ],
-            [
-                "The virtual documents are generated:",
-                Path("basic_oneliners.json"),
-                "The cached files are:",
-                TEST_DIR / "data" / "oneline_comment_basic" / "basic_oneliners.c",
-            ],
-        ),
-        (
-            [
-                "vdoc",
-                "--config",
-                DEFAULT_VDOC_TOML,
-            ],
-            [
-                "The virtual documents are generated:",
-                Path("default_oneliners.json"),
-                "The cached files are:",
-                TEST_DIR / "data" / "oneline_comment_default" / "default_oneliners.c",
-            ],
-        ),
-        (
-            ["vdoc", "--config", RECURSIVE_DIR_VDOC_TOML, "--project", "dummy_src"],
-            [
-                "The virtual documents are generated:",
-                Path("dummy_1.json"),
-                Path("dummy_lv2") / "dummy_2.json",
-                Path("dummy_lv2") / "dummy_lv3" / "dummy_3.json",
-                Path("dummy_lv2") / "dummy_lv3" / "dummy_lv4" / "dummy_4.json",
-                "The cached files are:",
-                TEST_DIR
-                / "doc_test"
-                / "recursive_dirs"
-                / "dummy_src_lv1"
-                / "dummy_1.cpp",
-                TEST_DIR
-                / "doc_test"
-                / "recursive_dirs"
-                / "dummy_src_lv1"
-                / "dummy_lv2"
-                / "dummy_2.cpp",
-                TEST_DIR
-                / "doc_test"
-                / "recursive_dirs"
-                / "dummy_src_lv1"
-                / "dummy_lv2"
-                / "dummy_lv3"
-                / "dummy_3.cpp",
-                TEST_DIR
-                / "doc_test"
-                / "recursive_dirs"
-                / "dummy_src_lv1"
-                / "dummy_lv2"
-                / "dummy_lv3"
-                / "dummy_lv4"
-                / "dummy_4.cpp",
-            ],
-        ),
-    ],
-)
-def test_vdoc(options, lines, tmp_path):
-    options.append("--output-dir")
-    options.append(tmp_path)
-    for i in range(len(lines)):
-        if lines[i] == "The virtual documents are generated:":
-            continue
-        if lines[i] == "The cached files are:":
-            break
-        lines[i] = tmp_path / lines[i]
-
-    lines = [str(line) for line in lines]
-
-    result = runner.invoke(
-        app,
-        options,
-    )
-
-    assert result.exit_code == 0
-    assert result.stdout.splitlines() == lines
-
-
-@pytest.mark.parametrize(
     ("config_dict", "output_lines"),
     [
         (
             {
-                key: (123 if key == "exclude" else value)
-                for key, value in VDOC_CONFIG_TEMPLATE.items()
+                key: {
+                    src_key: (123 if src_key == "exclude" else src_value)
+                    for src_key, src_value in value.items()
+                    if isinstance(value, dict)
+                }
+                if isinstance(value, dict) and key == "source_discover"
+                else value
+                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid source discovery configuration:",
@@ -182,8 +93,13 @@ def test_vdoc(options, lines, tmp_path):
         ),
         (
             {
-                key: (123 if key == "include" else value)
-                for key, value in VDOC_CONFIG_TEMPLATE.items()
+                key: {
+                    src_key: (123 if src_key == "include" else src_value)
+                    for src_key, src_value in value.items()
+                }
+                if isinstance(value, dict) and key == "source_discover"
+                else value
+                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid source discovery configuration:",
@@ -192,8 +108,17 @@ def test_vdoc(options, lines, tmp_path):
         ),
         (
             {
-                key: (123 if key in ("exclude", "include", "src_dir") else value)
-                for key, value in VDOC_CONFIG_TEMPLATE.items()
+                key: {
+                    src_key: (
+                        123
+                        if src_key in ("exclude", "include", "src_dir")
+                        else src_value
+                    )
+                    for src_key, src_value in value.items()
+                }
+                if isinstance(value, dict) and key == "source_discover"
+                else value
+                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid source discovery configuration:",
@@ -207,7 +132,7 @@ def test_vdoc(options, lines, tmp_path):
                 key: (
                     {"not_expected": 123} if key == "oneline_comment_style" else value
                 )
-                for key, value in VDOC_CONFIG_TEMPLATE.items()
+                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid oneline comment style configuration:",
@@ -222,7 +147,7 @@ def test_vdoc(options, lines, tmp_path):
                     if key == "oneline_comment_style"
                     else value
                 )
-                for key, value in VDOC_CONFIG_TEMPLATE.items()
+                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid oneline comment style configuration:",
@@ -232,18 +157,17 @@ def test_vdoc(options, lines, tmp_path):
         ),
     ],
 )
-def test_vdoc_config_negative(config_dict, output_lines, tmp_path: Path) -> None:
+def test_analyse_config_negative(config_dict, output_lines, tmp_path: Path) -> None:
     # Force disable Rich styling
-    config_file = tmp_path / "vdoc_config.toml"
+    config_file = tmp_path / "analyse_config.toml"
     with config_file.open("w", encoding="utf-8") as f:
         toml.dump(config_dict, f)
 
     options = [
-        "vdoc",
-        "--config",
+        "analyse",
         str(config_file),
     ]
     result = runner.invoke(app, options)
     assert result.exit_code != 0
     for line in output_lines:
-        assert line in result.stderr
+        assert line in result.stdout

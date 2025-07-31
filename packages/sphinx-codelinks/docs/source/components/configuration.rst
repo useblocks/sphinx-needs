@@ -1,14 +1,14 @@
 .. _configuration:
 
-Configuration
-=============
+Configuration[Sphinx]
+=====================
 
-The configuration for ``CodeLinks`` take place in the project's :external+sphinx:ref:`conf.py file <build-config>`.
+The configuration for ``CodeLinks`` takes place in the project's :external+sphinx:ref:`conf.py file <build-config>`.
 
 Each source code project may have different configurations because of its programming language or its locations.
 Therefore, based on such consideration, there are **global options** and **project-specific options** for ``CodeLinks``
 
-All configuration options starts with the prefix ``src_trace_`` for **Sphinx-CodeLinks**.
+All configuration options start with the prefix ``src_trace_`` for **Sphinx-CodeLinks**.
 
 Global Options
 --------------
@@ -143,7 +143,7 @@ and its corresponding value is a dictionary containing the options specific to t
 comment_type
 ~~~~~~~~~~~~
 
-The option defined the comment type used in source code of the project.
+This option defines the comment type used in the source code of the project.
 
 Default: **cpp**
 
@@ -360,4 +360,4 @@ it is equivalent to the following RST
 
 .. caution:: **type** and **title** must be configured in **needs_fields** as they are mandatory for Sphinx-Needs
 
-More uses cases can be found in `tests <https://github.com/useblocks/sphinx-codelinks/tests>`__
+More uses cases can be found in `tests <https://github.com/useblocks/sphinx-codelinks/tree/main/tests>`__
