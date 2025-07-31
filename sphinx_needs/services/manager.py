@@ -31,8 +31,7 @@ class ServiceManager:
         for option in klass.options:
             if option == "type":
                 # TODO this should probably be done a bit more systematically;
-                # the github service adds a "type" option,
-                # but this is related to the core need field NOT an extra option
+                # the github service adds a "type" option, but this is related to the core need field NOT an extra option
                 NeedserviceDirective.option_spec["type"] = directives.unchanged
             elif option not in _NEEDS_CONFIG.extra_options:
                 self.log.debug(f'Register option "{option}" for service "{name}"')
