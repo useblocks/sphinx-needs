@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753882449338,
+  "lastUpdate": 1753981420877,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13320,6 +13320,42 @@ window.BENCHMARK_DATA = {
             "value": 63.159630699999994,
             "unit": "s",
             "extra": "Commit: 6e4134e72e49f049c8cc353d3aff1b8b72d2ce4b\nBranch: master\nTime: 2025-07-30T15:32:08+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "54d82a82b15ef818ced3180a1dc2507452f4045f",
+          "message": "‼️ Disallow `add_extra_option` overriding an internal field (#1477)\n\nThis is an issue, because all need fields (internal and custom user\nones) are stored / serialized in a \"flat\" dictionary, and so they cannot\noverlap.\n\nPreviously there was no check in place to disallow the API from doing\nthis",
+          "timestamp": "2025-07-31T19:01:45+02:00",
+          "tree_id": "b853412014ad7a2690a0a178d3835e35b8371ebd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/54d82a82b15ef818ced3180a1dc2507452f4045f"
+        },
+        "date": 1753981405177,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16130230499999954,
+            "unit": "s",
+            "extra": "Commit: 54d82a82b15ef818ced3180a1dc2507452f4045f\nBranch: master\nTime: 2025-07-31T19:01:45+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.099078165,
+            "unit": "s",
+            "extra": "Commit: 54d82a82b15ef818ced3180a1dc2507452f4045f\nBranch: master\nTime: 2025-07-31T19:01:45+02:00"
           }
         ]
       }
