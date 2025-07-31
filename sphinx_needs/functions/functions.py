@@ -365,7 +365,7 @@ def resolve_variants_options(
             **needs_config.filter_data
         )  # Add needs_filter_data to filter context
         need_context.update(
-            **{tag: True for tag in tags}
+            **dict.fromkeys(tags, True)
         )  # Add sphinx tags to filter context
         location = (need["docname"], need["lineno"]) if need.get("docname") else None
 
