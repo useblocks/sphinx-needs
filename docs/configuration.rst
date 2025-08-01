@@ -349,7 +349,22 @@ Defaults will be used if the field is not set specifically by the user and thus 
    }
 
 To set a default based on a one or more predicates, use the ``predicates`` key.
-These predicates are a list of (:ref:`filter string <filter_string>`, value), evaluated in order, with the first match set as the default value.
+These predicates are a list of ``(match expression, value)``, evaluated in order, with the first match set as the default value.
+
+A match expression is a string, using Python syntax, that will be evaluated against data from each need (before the resolution of defaults or dynamic functions etc):
+
+- `id` (`str`)
+- `type` (`str`)
+- `title` (`str`)
+- `tags` (`tuple[str, ...]`)
+- `status` (`str | None`)
+- `docname` (`str | None`)
+- `is_external` (`bool`)
+- `is_import` (`bool`)
+- :ref:`needs_extra_options` (`str`)
+- :ref:`needs_extra_links` (`tuple[str, ...]`)
+- :ref:`needs_filter_data`
+
 If no predicates match, the ``default`` value is used (if present).
 
 .. code-block:: python
@@ -379,17 +394,6 @@ If no predicates match, the ``default`` value is used (if present).
       needs_global_options = {
               "option1": {"default": '[[copy("id")]]'}
       }
-
-.. warning::
-
-   The filter string gets executed against the current need only and has no access to other needs.
-   So avoid any references to other needs in the filter string.
-
-   If you need access to other needs for complex filtering, you can maybe provide your own :ref:`dynamic_functions`
-   and perform the filtering there.
-
-   Default replacements are done, for each field, in the order they are defined in the configuration,
-   so a filter string should not depend on the value of a field below it in the configuration.
 
 .. _`needs_report_dead_links`:
 

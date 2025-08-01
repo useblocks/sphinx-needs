@@ -7,7 +7,7 @@ import warnings
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeVar
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -20,7 +20,10 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsInfoType, NeedsPartType, SphinxNeedsData
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.exceptions import InvalidNeedException
-from sphinx_needs.filter_common import filter_single_need
+from sphinx_needs.filter_common import (
+    PredicateContextData,
+    apply_default_predicate,
+)
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
@@ -56,7 +59,7 @@ def generate_need(
     arch: dict[str, str] | None = None,
     signature: str = "",
     sections: list[str] | None = None,
-    jinja_content: None | bool = False,
+    jinja_content: bool = False,
     hide: None | bool = None,
     collapse: None | bool = None,
     style: None | str = None,
@@ -177,21 +180,123 @@ def generate_need(
         )
 
     # validate tags
-    tags = [v for v, _ in _split_list_with_dyn_funcs(tags, location)]
-    if needs_config.tags and (
-        unknown_tags := set(tags) - {t["name"] for t in needs_config.tags}
+    tags = (
+        [v for v, _ in _split_list_with_dyn_funcs(tags, location)]
+        if tags is not None
+        else None
+    )
+    if (
+        tags is not None
+        and needs_config.tags
+        and (unknown_tags := set(tags) - {t["name"] for t in needs_config.tags})
     ):
         raise InvalidNeedException(
             "invalid_tags", f"Tags {unknown_tags!r} not in 'needs_tags'."
         )
 
     # validate constraints
-    constraints = [v for v, _ in _split_list_with_dyn_funcs(constraints, location)]
-    if unknown_constraints := set(constraints) - set(needs_config.constraints):
+    constraints = (
+        [v for v, _ in _split_list_with_dyn_funcs(constraints, location)]
+        if constraints is not None
+        else None
+    )
+    if constraints is not None and (
+        unknown_constraints := set(constraints) - set(needs_config.constraints)
+    ):
         raise InvalidNeedException(
             "invalid_constraints",
             f"Constraints {unknown_constraints!r} not in 'needs_constraints'.",
         )
+
+    extras_no_defaults = {
+        # note, for backward-compatibility currently we convert all extra values to strings,
+        # and warn in the import/external need code if they are not of type str
+        key: str(kwargs[key]) if key in kwargs else None
+        for key in needs_config.extra_options
+    }
+    links_no_defaults = {
+        li["option"]: [
+            v for v, _ in _split_list_with_dyn_funcs(kwargs[li["option"]], location)
+        ]
+        if li["option"] in kwargs
+        else None
+        for li in needs_config.extra_links
+    }
+
+    defaults_ctx: PredicateContextData = {
+        "id": need_id,
+        "type": need_type,
+        "title": title,
+        "tags": tuple(tags or []),
+        "status": status,
+        "docname": docname,
+        "is_import": is_import,
+        "is_external": is_external,
+    }
+    defaults_extras = extras_no_defaults.copy()
+    defaults_links = {k: tuple(v or []) for k, v in links_no_defaults.items()}
+
+    status = _get_default_str_none(
+        "status", status, needs_config, defaults_ctx, defaults_extras, defaults_links
+    )
+    tags = _get_default_list(
+        "tags", tags, needs_config, defaults_ctx, defaults_extras, defaults_links
+    )
+    collapse = _get_default_bool(
+        "collapse",
+        collapse,
+        needs_config,
+        defaults_ctx,
+        defaults_extras,
+        defaults_links,
+    )
+    hide = _get_default_bool(
+        "hide", hide, needs_config, defaults_ctx, defaults_extras, defaults_links
+    )
+    layout = _get_default_str_none(
+        "layout", layout, needs_config, defaults_ctx, defaults_extras, defaults_links
+    )
+    style = _get_default_str_none(
+        "style", style, needs_config, defaults_ctx, defaults_extras, defaults_links
+    )
+    template = _get_default_str_none(
+        "template",
+        template,
+        needs_config,
+        defaults_ctx,
+        defaults_extras,
+        defaults_links,
+    )
+    pre_template = _get_default_str_none(
+        "pre_template",
+        pre_template,
+        needs_config,
+        defaults_ctx,
+        defaults_extras,
+        defaults_links,
+    )
+    post_template = _get_default_str_none(
+        "post_template",
+        post_template,
+        needs_config,
+        defaults_ctx,
+        defaults_extras,
+        defaults_links,
+    )
+    constraints = _get_default_list(
+        "constraints",
+        constraints,
+        needs_config,
+        defaults_ctx,
+        defaults_extras,
+        defaults_links,
+    )
+    extras = _get_default_extras(
+        extras_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
+    )
+    links = _get_default_links(
+        links_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
+    )
 
     # Add the need and all needed information
     needs_info: NeedsInfoType = {
@@ -212,22 +317,22 @@ def generate_need(
         "constraints_results": {},
         "id": need_id,
         "title": title,
-        "collapse": collapse or False,
+        "collapse": collapse,
         "arch": arch or {},
         "style": style,
         "layout": layout,
         "template": template,
         "pre_template": pre_template,
         "post_template": post_template,
-        "hide": hide or False,
+        "hide": hide,
         "jinja_content": jinja_content or False,
         "parts": parts or {},
         "is_part": False,
         "is_need": True,
         "id_parent": need_id,
         "id_complete": need_id,
-        "is_import": is_import or False,
-        "is_external": is_external or False,
+        "is_import": is_import,
+        "is_external": is_external,
         "external_url": external_url if is_external else None,
         "external_css": external_css or "external_link",
         "is_modified": False,
@@ -238,16 +343,11 @@ def generate_need(
         "section_name": sections[0] if sections else "",
         "signature": signature,
         "parent_need": "",
+        **extras,  # type: ignore[typeddict-item]
+        **links,
+        **{f"{li['option']}_back": [] for li in needs_config.extra_links},
     }
 
-    _add_extra_fields(needs_info, kwargs, needs_config)
-    _add_link_fields(needs_info, kwargs, needs_config, location)
-    user_set = {
-        key
-        for key, value in (("hide", hide), ("collapse", collapse))
-        if value is not None
-    }
-    _set_field_defaults(needs_info, needs_config, user_set)
     _copy_links(needs_info, needs_config)
 
     if parent_needs := needs_info.get("parent_needs"):
@@ -305,7 +405,7 @@ def add_need(
     arch: dict[str, str] | None = None,
     signature: str = "",
     sections: list[str] | None = None,
-    jinja_content: None | bool = False,
+    jinja_content: bool = False,
     hide: None | bool = None,
     collapse: None | bool = None,
     style: None | str = None,
@@ -772,35 +872,6 @@ def _split_list_with_dyn_funcs(
         yield _current_element, _has_dynamic_function
 
 
-def _add_extra_fields(
-    needs_info: NeedsInfoType, kwargs: dict[str, Any], config: NeedsSphinxConfig
-) -> None:
-    """Add extra option fields to the needs_info dictionary."""
-    # note we already warn if value not string in external/import code,
-    # but still allow it and convert it here, for backward-comptibility
-    extras = {key: str(kwargs.get(key, "")) for key in config.extra_options}
-    needs_info.update(extras)  # type: ignore[typeddict-item]
-
-
-def _add_link_fields(
-    needs_info: NeedsInfoType,
-    kwargs: dict[str, Any],
-    config: NeedsSphinxConfig,
-    location: tuple[str, int | None] | None,
-) -> None:
-    """Add extra link fields to the needs_info dictionary."""
-    for link_type in config.extra_links:
-        name = link_type["option"]
-        # ensure the link type is in the needs_info dictionary,
-        # and also ensure the back link is present
-        needs_info[name] = []
-        needs_info[f"{name}_back"] = []
-        if name in kwargs:
-            needs_info[name] = [
-                v for v, _ in _split_list_with_dyn_funcs(kwargs[name], location)
-            ]
-
-
 def _copy_links(needs_info: NeedsInfoType, config: NeedsSphinxConfig) -> None:
     """Implement 'copy' logic for links."""
     copy_links: list[str] = []
@@ -810,30 +881,116 @@ def _copy_links(needs_info: NeedsInfoType, config: NeedsSphinxConfig) -> None:
     needs_info["links"] += copy_links  # Set copied links to main-links
 
 
-def _set_field_defaults(
-    needs_info: NeedsInfoType, config: NeedsSphinxConfig, user_set: set[str]
-) -> None:
-    """Set default values.
+def _get_default_str_none(
+    key: str,
+    value: str | None,
+    config: NeedsSphinxConfig,
+    context: PredicateContextData,
+    extras: dict[str, str | None],
+    links: dict[str, tuple[str, ...]],
+) -> str | None:
+    if value is not None:
+        return value
+    return _get_default(key, config, context, extras, links)
 
-    This is used to set default values for fields that are not set in the need info.
 
-    :param needs_info: The need info dictionary.
-    :param config: The Sphinx configuration object.
-    :param user_set: The set of fields that were specifically set by the user.
-    """
-    # TODO should defaults be applied to external/import needs?
-    # currently any "falsy" value will be replaced by the default, even if it was explicitly set
-    for key, defaults in config.field_defaults.items():
-        if key in user_set or key not in needs_info or needs_info[key]:
-            continue
-        for predicate, v in defaults.get("predicates", []):
-            # use the first predicate that is satisfied
-            if filter_single_need(needs_info, config, predicate):
-                needs_info[key] = v
-                break
-        else:
-            if "default" in defaults:
-                needs_info[key] = defaults["default"]
+def _get_default_str(
+    key: str,
+    value: str | None,
+    config: NeedsSphinxConfig,
+    context: PredicateContextData,
+    extras: dict[str, str | None],
+    links: dict[str, tuple[str, ...]],
+) -> str:
+    if value is not None:
+        return value
+    if (_default_value := _get_default(key, config, context, extras, links)) is None:
+        return ""
+    else:
+        assert isinstance(_default_value, str)
+        return _default_value
+
+
+_T = TypeVar("_T")
+
+
+def _get_default_list(
+    key: str,
+    value: None | list[_T],
+    config: NeedsSphinxConfig,
+    context: PredicateContextData,
+    extras: dict[str, str | None],
+    links: dict[str, tuple[str, ...]],
+) -> list[_T]:
+    if value is not None:
+        return value
+    if (_default_value := _get_default(key, config, context, extras, links)) is None:
+        return []
+    else:
+        assert isinstance(_default_value, list)
+        return _default_value
+
+
+def _get_default_bool(
+    key: str,
+    value: None | bool,
+    config: NeedsSphinxConfig,
+    context: PredicateContextData,
+    extras: dict[str, str | None],
+    links: dict[str, tuple[str, ...]],
+    *,
+    default: bool = False,
+) -> bool:
+    if value is not None:
+        return value
+    if (_default_value := _get_default(key, config, context, extras, links)) is None:
+        return default
+    else:
+        assert isinstance(_default_value, bool)
+        return _default_value
+
+
+def _get_default_extras(
+    value: dict[str, str | None],
+    config: NeedsSphinxConfig,
+    context: PredicateContextData,
+    extras: dict[str, str | None],
+    links: dict[str, tuple[str, ...]],
+) -> dict[str, str]:
+    return {
+        key: _get_default_str(key, value[key], config, context, extras, links)
+        for key in value
+    }
+
+
+def _get_default_links(
+    value: dict[str, list[str] | None],
+    config: NeedsSphinxConfig,
+    context: PredicateContextData,
+    extras: dict[str, str | None],
+    links: dict[str, tuple[str, ...]],
+) -> dict[str, list[str]]:
+    return {
+        key: _get_default_list(key, value[key], config, context, extras, links)
+        for key in value
+    }
+
+
+def _get_default(
+    key: str,
+    config: NeedsSphinxConfig,
+    context: PredicateContextData,
+    extras: dict[str, str | None],
+    links: dict[str, tuple[str, ...]],
+) -> None | Any:
+    if (defaults := config.field_defaults.get(key)) is None:
+        return None
+    for predicate, v in defaults.get("predicates", []):
+        # use the first predicate that is satisfied
+        if apply_default_predicate(predicate, config, context, extras, links):
+            return v
+
+    return defaults.get("default", None)
 
 
 def get_needs_view(app: Sphinx) -> NeedsView:

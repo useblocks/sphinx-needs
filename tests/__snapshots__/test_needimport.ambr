@@ -77,7 +77,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'REQ_1',
-            'layout': '',
             'lineno': 47,
             'section_name': 'FILTERED',
             'sections': list([
@@ -192,7 +191,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'SPEC_1',
-            'layout': '',
             'lineno': 50,
             'section_name': 'FILTERED',
             'sections': list([
@@ -2193,7 +2191,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 9,
       'lineno_content': 12,
       'links': list([
@@ -2270,7 +2268,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 4,
       'lineno_content': 7,
       'links': list([

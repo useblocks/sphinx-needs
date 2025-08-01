@@ -33,7 +33,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 20,
             'links': list([
             ]),
@@ -108,7 +108,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 25,
             'links': list([
               'SECURITY_REQ',
@@ -258,7 +258,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 39,
             'links': list([
             ]),
@@ -327,7 +327,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 4,
             'links': list([
             ]),
@@ -403,7 +403,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 11,
             'links': list([
             ]),
@@ -479,7 +479,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 4,
             'links': list([
             ]),
@@ -552,7 +552,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 11,
             'links': list([
             ]),

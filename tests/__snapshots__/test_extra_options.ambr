@@ -12,7 +12,6 @@
             'id': 'R_12345',
             'impacts': 'component_a',
             'introduced': '1.0.0',
-            'layout': '',
             'lineno': 7,
             'section_name': 'Section 1',
             'sections': list([
@@ -35,7 +34,6 @@
             'id': 'R_12346',
             'impacts': 'component_b',
             'introduced': '1.1.1',
-            'layout': '',
             'lineno': 16,
             'section_name': 'Section 1',
             'sections': list([
