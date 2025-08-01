@@ -14,11 +14,6 @@ runs:
       run: |
         echo "MATURIN_PEP517_ARGS=--zig" >> $GITHUB_ENV
       shell: bash
-    # The cache dir cannot be created in MacOs in GitHub hosted runner because of lack of permission
-    # - name: Set UV_CACHE_DIR for MacOS
-    #   if: runner.os == 'macOS'
-    #   run: echo "UV_CACHE_DIR=/Users/gh-runner/Library/Caches/uv" >> $GITHUB_ENV
-    #   shell: bash
     - name: Set UV_CACHE_DIR for Windows
       if: runner.os == 'Windows'
       run: echo "UV_CACHE_DIR=C:\\Users\\useblocks\\AppData\\Local\\uv-${{ runner.name }}" >> $env:GITHUB_ENV
