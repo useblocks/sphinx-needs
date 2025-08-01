@@ -43,7 +43,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 19,
       'lineno_content': 22,
       'links': list([
@@ -120,7 +120,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 14,
       'lineno_content': 17,
       'links': list([
@@ -230,7 +230,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 70,
       'lineno_content': 73,
       'links': list([
@@ -339,7 +339,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 95,
       'lineno_content': 98,
       'links': list([
@@ -463,7 +463,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 117,
       'lineno_content': 120,
       'links': list([
@@ -546,7 +546,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 46,
       'lineno_content': 49,
       'links': list([
@@ -623,7 +623,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 4,
       'lineno_content': 7,
       'links': list([
@@ -700,7 +700,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 9,
       'lineno_content': 12,
       'links': list([
@@ -786,7 +786,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 33,
       'lineno_content': 36,
       'links': list([

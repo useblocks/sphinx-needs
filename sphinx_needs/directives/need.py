@@ -69,27 +69,17 @@ class NeedDirective(SphinxDirective):
         collapse = self.options.get("collapse")
         jinja_content = self.options.get("jinja_content")
         hide = self.options.get("hide")
-
         id = self.options.get("id")
         status = self.options.get("status")
-        tags = self.options.get("tags", "")
+        tags = self.options.get("tags")
         style = self.options.get("style")
-        layout = self.options.get("layout", "")
+        layout = self.options.get("layout")
         template = self.options.get("template")
         pre_template = self.options.get("pre_template")
         post_template = self.options.get("post_template")
-        constraints = self.options.get("constraints", [])
+        constraints = self.options.get("constraints")
 
         title, full_title = self._get_title(needs_config)
-
-        need_extra_options = {}
-        for extra_link in needs_config.extra_links:
-            need_extra_options[extra_link["option"]] = self.options.get(
-                extra_link["option"], ""
-            )
-
-        for extra_option in needs_config.extra_options:
-            need_extra_options[extra_option] = self.options.get(extra_option, "")
 
         try:
             need_nodes = add_need(
@@ -114,7 +104,16 @@ class NeedDirective(SphinxDirective):
                 layout=layout,
                 jinja_content=jinja_content,
                 constraints=constraints,
-                **need_extra_options,
+                **{
+                    n: self.options[n]
+                    for n in needs_config.extra_options
+                    if n in self.options
+                },
+                **{
+                    n["option"]: self.options[n["option"]]
+                    for n in needs_config.extra_links
+                    if n["option"] in self.options
+                },
             )
         except InvalidNeedException as err:
             log_warning(

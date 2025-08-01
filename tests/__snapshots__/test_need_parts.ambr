@@ -23,7 +23,6 @@
       'docname': 'index',
       'external_css': 'external_link',
       'id': 'SP_TOO_001',
-      'layout': '',
       'lineno': 4,
       'parent_needs_back': list([
         'TEST_2',
@@ -99,7 +98,6 @@
       'docname': 'index',
       'external_css': 'external_link',
       'id': 'TEST_2',
-      'layout': '',
       'lineno': 21,
       'parent_need': 'SP_TOO_001',
       'parent_needs': list([

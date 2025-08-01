@@ -23,7 +23,6 @@
             'external_css': 'external_link',
             'id': 'IMP_REQ_01',
             'is_import': True,
-            'layout': '',
             'lineno': 4,
             'section_name': 'Title',
             'sections': list([
@@ -528,7 +527,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'REQ_1',
-            'layout': '',
             'lineno': 9,
             'links_back': list([
               'EXT_TEST_02',
@@ -546,7 +544,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'SPEC_1',
-            'layout': '',
             'lineno': 12,
             'links': list([
               'REQ_1',
@@ -567,7 +564,6 @@
             'docname': 'subfolder_a/subfolder_b/subpage',
             'external_css': 'external_link',
             'id': 'SUB_002',
-            'layout': '',
             'lineno': 4,
             'section_name': 'Subpage',
             'sections': list([

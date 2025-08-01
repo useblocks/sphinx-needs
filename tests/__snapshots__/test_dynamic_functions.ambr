@@ -16,7 +16,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'SP_TOO_001',
-            'layout': '',
             'lineno': 4,
             'section_name': 'DYNAMIC FUNCTIONS',
             'sections': list([
@@ -35,7 +34,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TEST_2',
-            'layout': '',
             'lineno': 15,
             'section_name': 'DYNAMIC FUNCTIONS',
             'sections': list([
@@ -54,7 +52,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TEST_3',
-            'layout': '',
             'lineno': 19,
             'section_name': 'DYNAMIC FUNCTIONS',
             'sections': list([
@@ -70,7 +67,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TEST_4',
-            'layout': '',
             'lineno': 23,
             'section_name': 'DYNAMIC FUNCTIONS',
             'sections': list([
@@ -101,7 +97,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TEST_5',
-            'layout': '',
             'lineno': 29,
             'parent_needs_back': list([
               'TEST_6',
@@ -128,7 +123,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TEST_6',
-            'layout': '',
             'lineno': 35,
             'parent_need': 'TEST_5',
             'parent_needs': list([

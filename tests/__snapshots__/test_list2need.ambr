@@ -57,7 +57,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 26,
       'lineno_content': 32,
       'links': list([
@@ -144,7 +144,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 32,
       'lineno_content': 35,
       'links': list([
@@ -230,7 +230,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 20,
       'lineno_content': 24,
       'links': list([
@@ -316,7 +316,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 27,
       'lineno_content': 32,
       'links': list([
@@ -405,7 +405,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 35,
       'lineno_content': 39,
       'links': list([
@@ -494,7 +494,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 42,
       'lineno_content': 49,
       'links': list([
@@ -581,7 +581,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 19,
       'lineno_content': 23,
       'links': list([
@@ -667,7 +667,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 25,
       'lineno_content': 29,
       'links': list([
@@ -753,7 +753,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 31,
       'lineno_content': 34,
       'links': list([
@@ -839,7 +839,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 21,
       'lineno_content': 26,
       'links': list([
@@ -928,7 +928,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 29,
       'lineno_content': 34,
       'links': list([
@@ -1019,7 +1019,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 37,
       'lineno_content': 42,
       'links': list([
@@ -1110,7 +1110,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 45,
       'lineno_content': 53,
       'links': list([
@@ -1209,7 +1209,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 38,
       'lineno_content': 42,
       'links': list([
@@ -1299,7 +1299,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 45,
       'lineno_content': 49,
       'links': list([
@@ -1385,7 +1385,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 20,
       'lineno_content': 23,
       'links': list([

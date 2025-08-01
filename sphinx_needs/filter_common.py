@@ -550,6 +550,47 @@ def need_search(*args: Any, **kwargs: Any) -> bool:
     return re.search(*args, **kwargs) is not None
 
 
+class PredicateContextData(TypedDict):
+    """Data for the predicate context."""
+
+    id: str
+    type: str
+    title: str
+    tags: tuple[str, ...]
+    status: str | None
+    docname: str | None
+    is_external: bool
+    is_import: bool
+
+
+@measure_time("check_default_predicate")
+def apply_default_predicate(
+    predicate: str,
+    config: NeedsSphinxConfig,
+    context: PredicateContextData,
+    extras: dict[str, str | None],
+    links: dict[str, tuple[str, ...]],
+) -> bool:
+    """Checks if a single need passes a default predicate."""
+    predicate_context = {
+        **context,
+        **extras,
+        **links,
+        **config.filter_data,
+    }
+    try:
+        # Set filter_context as globals and not only locals in eval()!
+        # Otherwise, the vars not be accessed in list comprehensions.
+        result = eval(predicate, predicate_context)
+        if not isinstance(result, bool):
+            raise NeedsInvalidFilter(
+                f"Did not evaluate to a boolean, instead {type(result)}: {result}"
+            )
+    except Exception as e:
+        raise NeedsInvalidFilter(f"Predicate {predicate!r} not valid. Error: {e}.")
+    return result
+
+
 @measure_time("filtering")
 def filter_single_need(
     need: NeedsInfoType,
@@ -589,14 +630,10 @@ def filter_single_need(
 
     filter_context["c"] = NeedCheckContext(need, origin_docname)
 
-    result = False
     try:
         # Set filter_context as globals and not only locals in eval()!
         # Otherwise, the vars not be accessed in list comprehensions.
-        if filter_compiled:
-            result = eval(filter_compiled, filter_context)
-        else:
-            result = eval(filter_string, filter_context)
+        result = eval(filter_compiled or filter_string, filter_context)
         if not isinstance(result, bool):
             raise NeedsInvalidFilter(
                 f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
