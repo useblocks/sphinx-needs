@@ -2,26 +2,6 @@ name: Set up rye
 runs:
   using: 'composite'
   steps:
-    # rye uses uv under the hood, so we need to set the cache directory correctly, based on the OS
-    - name: Set UV_CACHE_DIR for Linux
-      if: runner.os == 'Linux'
-      run: |
-        echo "UV_CACHE_DIR=/home/runner/.cache/uv" >> $GITHUB_ENV
-      shell: bash
-    - name: Set MATURIN_PEP517_ARGS for Linux
-      if: runner.os == 'Linux'
-      # make sure we always use zig, to get manylinux2014 compatible rust binaries
-      run: |
-        echo "MATURIN_PEP517_ARGS=--zig" >> $GITHUB_ENV
-      shell: bash
-    - name: Set UV_CACHE_DIR for MacOS
-      if: runner.os == 'macOS'
-      run: echo "UV_CACHE_DIR=/Users/gh-runner/Library/Caches/uv" >> $GITHUB_ENV
-      shell: bash
-    - name: Set UV_CACHE_DIR for Windows
-      if: runner.os == 'Windows'
-      run: echo "UV_CACHE_DIR=C:\\Users\\useblocks\\AppData\\Local\\uv-${{ runner.name }}" >> $env:GITHUB_ENV
-      shell: pwsh
     # now install rye and sync the dependencies
     - uses: eifinger/setup-rye@v4
       with:
