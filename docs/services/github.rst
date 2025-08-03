@@ -14,7 +14,7 @@ for each information type:
 They all have common configuration options and are using the same way of querying their data.
 Therefore the below configuration is valid for all three services.
 
-Each services creates normally multiple need objects for each element found by querying the GitHub API.
+Each service normally creates multiple need objects for each element found by querying the GitHub API.
 
 **Example of an imported github issue**:
 
@@ -30,7 +30,7 @@ Each services creates normally multiple need objects for each element found by q
 
    Example of a github Issue collected with Sphinx-Needs.
 
-Directive options, which can also used for normal needs, can also be set for ``needservice`` directive.
+Directive options, which can also be used for normal needs, can also be set for ``needservice`` directive.
 Also the content part of ``needservice`` is added as extra data to the end of the finally created needs.
 
 **Example**:
@@ -69,7 +69,7 @@ Setting ``query`` or ``specific`` option is mandatory for services ``github-issu
    GitHub counts the performed API requests and may reject new requests, if the rate limit is exceeded.
    This seems to be **10 requests per minute for search-API** for unauthenticated users.
 
-   You can higher this limit to **30 requests**, if you provide a username and token in the service config.
+   You can increase this limit to **30 requests**, if you provide a username and token in the service config.
 
    **Sphinx-Needs** will support you with the current rate limit status, if a request got rejected.
 
@@ -202,7 +202,7 @@ GitHub by default.
 If a company internal ``GitHub Enterprise`` instance shall be addressed, you should configure an additional service to
 deal with both (cloud and company instance) and being able to set company specific configuration options.
 
-Please see the this example for a ``Github Enterprise`` configuration in your **conf.py** file:
+Please see this example for a ``Github Enterprise`` configuration in your **conf.py** file:
 
 .. code-block:: python
 
@@ -231,7 +231,7 @@ Please see the this example for a ``Github Enterprise`` configuration in your **
     }
 
 ``class`` needs to reference the service-class object and ``class_init`` contains service specific
-initialisation options. In this case you must tell the generic ``GitHubService`` class which kind of information
+initialization options. In this case you must tell the generic ``GitHubService`` class which kind of information
 it shall deal with. Allowed are ``issue``, ``pr`` and ``commit``.
 
 All other options are normal configuration options for the service, which are also available for the GitHub cloud

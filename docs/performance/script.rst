@@ -8,7 +8,7 @@ Performance & Profiling script
    The performance script got its own Sphinx extension:
    `Sphinx-Performance <https://sphinx-performance.readthedocs.io/en/latest/>`_.
 
-   This extension is based on the described script, but is more powerfull and better maintained.
+   This extension is based on the described script, but is more powerful and better maintained.
    It can also be used for general performance analysis of Sphinx and its extensions.
 
 The performance of **Sphinx-Needs** can be tested by a script called ``performance_test.py`` inside
@@ -66,7 +66,7 @@ are used.
 
 Used command: ``python performance_test.py series --needs 10 --pages 500 --dummies 10 --needtables 0 --parallel 1 --parallel 8``
 
-The parallel execution can used by any documentation build , just use `-j` option.
+The parallel execution can be used by any documentation build; just use the `-j` option.
 Example, which uses 4 processes in parallel: ``sphinx-build -j 4 -b html . _build/html``
 
 
@@ -100,14 +100,14 @@ If this option is used, a ``profile`` folder gets created in the current working
 
 ``--profile`` can be used several times.
 
-These profile can be also created outside the performance test with each documentation project.
-Simply set a environment variable called ``NEEDS_PROFILING`` and set the value to the needed profiles.
+These profiles can also be created outside the performance test with any documentation project.
+Simply set an environment variable called ``NEEDS_PROFILING`` and set the value to the needed profiles.
 
 Example for Linux: ``export NEEDS_PROFILING=NEEDTABLE,NEED_PRINT``.
 
 
 
-Analysing profile
+Analyzing profile
 ~~~~~~~~~~~~~~~~~
 Use ``snakeviz`` together with ``--profile <NAME>`` to open automatically a graphical analysis of the generated
 profile file.

@@ -17,7 +17,7 @@ needservice
        Extra content for each new need
 
 In most cases, the service fetches requested data from an external server and creates a need object for each
-found data-element in the returned data.
+found data element in the returned data.
 
 These need objects can then be used and referenced as all other need objects, e.g. by filtering them via
 :ref:`needtable`.
@@ -45,7 +45,7 @@ debug
 ~~~~~
 Set ``debug`` to get debug-output of the ``needservice`` only. No needs will be created.
 
-Useful to understand the return values of services or to figure out, why a connection can not be established, for example:
+Useful to understand the return values of services or to figure out why a connection cannot be established, for example:
 
 .. code-block:: rst
 
@@ -58,7 +58,7 @@ Content
 The content of ``needservice`` is used as content for all created need objects.
 
 A service may deviate from this behavior and define its own usage.
-For example, by awaiting a json-string with a more complex configuration or by just ignoring the content.
+For example, by expecting a JSON string with a more complex configuration or by just ignoring the content.
 
 Please take a look into the related service documentation for more information.
 
@@ -70,7 +70,7 @@ For details, please take a look into its specific documentation under :ref:`gith
 The service queries ``GitHub`` for issues in the **Sphinx-Needs** repository that have *node* and *latexpdf* in
 their content.
 
-.. tip:: Click the small arrow under the need id to see all meta data.
+.. tip:: Click the small arrow under the need id to see all metadata.
 
 .. need-example::
 

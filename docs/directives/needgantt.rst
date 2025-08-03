@@ -99,8 +99,8 @@ Options
 milestone_filter
 ~~~~~~~~~~~~~~~~
 
-We execute the ``milestone_filter`` on each need found by ``filter`` or any user related filter option.
-If it is a match, we represent the need as a milestone instead of a task in gantt chart.
+We execute the ``milestone_filter`` on each need found by ``filter`` or any user-related filter option.
+If it matches, we represent the need as a milestone instead of a task in the gantt chart.
 
 ``milestone_filter`` must be a valid :ref:`filter_string`.
 
@@ -222,7 +222,7 @@ Allowed values: ``daily``, ``weekly``, ``monthly``.
 
 Default: ``daily``
 
-Works only, if you set :ref:`needgantt_start_date` option.
+Works only if you set the :ref:`needgantt_start_date` option.
 
 .. need-example::
 
@@ -237,8 +237,8 @@ Works only, if you set :ref:`needgantt_start_date` option.
 no_color
 ~~~~~~~~
 
-We derive the tasks and milestone color from the need-type configuration,
-else we use the default PlantUML colors.
+We derive the task and milestone colors from the need-type configuration,
+otherwise we use the default PlantUML colors.
 
 .. needgantt:: Bug handling gantt
    :tags: gantt_example
@@ -251,7 +251,7 @@ duration_option
 ~~~~~~~~~~~~~~~
 
 Defines the option to use as the duration value.
-We interpret the value in days, no matter what the name of the option is.
+We interpret the value in days, regardless of the option name.
 
 You can set the duration option globally by using :ref:`needs_duration_option` in **conf.py**.
 
@@ -287,7 +287,7 @@ completion_option
 ~~~~~~~~~~~~~~~~~
 
 Defines the option to use as the completion value.
-We interpret the value in percentage.
+We interpret the value as a percentage.
 
 You can set the completion option globally by using :ref:`needs_completion_option` in **conf.py**.
 

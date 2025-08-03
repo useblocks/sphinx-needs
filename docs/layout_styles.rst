@@ -8,7 +8,7 @@ Layouts & Styles
 Layouts are defined by a preconfigured table grid and the data, which shall be shown inside specific grid cells.
 Styles define mostly the color of a need.
 
-Both features can be set directly during need-configuration or inside the sphinx **conf.py** file.
+Both features can be set directly during need-configuration or inside the Sphinx **conf.py** file.
 
 **Sphinx-Needs** provides some preconfigured, ready-to-use standard layouts:
 
@@ -20,13 +20,13 @@ Both features can be set directly during need-configuration or inside the sphinx
 
 Layouts
 -------
-Layouts are using a predefined :ref:`grid system <grids>` and define which data shall be shown in which grid-cells.
+Layouts use a predefined :ref:`grid system <grids>` and define which data shall be shown in which grid-cells.
 
-There can be multiple layouts using the same :ref:`grid system <grids>`, but maybe showing different data.
+There can be multiple layouts using the same :ref:`grid system <grids>`, but showing different data.
 E.g. a layout for bugs and one for specifications.
 
 **Sphinx-Needs** comes with some predefined layouts.
-But the user is free to create own layouts and use only them.
+But the user is free to create their own layouts and use only them.
 
 Most useful layouts are:
 
@@ -43,10 +43,10 @@ Most useful layouts are:
      * The standard **Sphinx-Needs** layout
    - * complete
      * :ref:`grid_complex`
-     * Divided head, meta, footer rows. Showing really all user-added data.
+     * Divided head, meta, footer rows. Shows all user-added data.
    - * focus
      * :ref:`grid_content`
-     * Content focused layout. Showing content only. Nothing more.
+     * Content-focused layout. Shows content only. Nothing more.
 
 **Examples**
 
@@ -111,8 +111,8 @@ There are also some *extensions* for the layouts above available:
      * :ref:`grid_content_side_right`
      * Adds a small footer to the right side of content, showing the need id.
 
-The layouts ``clean_l``, ``clean_r``, ``clean_lp`` and ``clean_rp`` are using the value from the field ``image`` as
-source for the image in the side element. This field must made available via :ref:`needs_extra_options`.
+The layouts ``clean_l``, ``clean_r``, ``clean_lp`` and ``clean_rp`` use the value from the field ``image`` as
+source for the image in the side element. This field must be made available via :ref:`needs_extra_options`.
 If you need another field as source, you must create your own layout.
 
 **Examples**
@@ -190,8 +190,8 @@ Special layouts:
      * Comment
    - * debug
      * :ref:`grid_content_footer`
-     * Shows **all** meta data (also internal ones).
-       Useful do see what data is available for a need and which can be used in :ref:`filter_string`.
+     * Shows **all** meta data (including internal ones).
+       Useful to see what data is available for a need and which can be used in :ref:`filter_string`.
 
 **Examples**
 
@@ -222,7 +222,7 @@ Or set it locally for each need by using :ref:`need_layout` option::
 
 Defining own layouts
 ~~~~~~~~~~~~~~~~~~~~
-Own layouts can be defined by using the the config parameter :ref:`needs_layouts` in your **conf.py** file.
+Own layouts can be defined by using the config parameter :ref:`needs_layouts` in your **conf.py** file.
 
 ``needs_layouts`` must be a dictionary and each key represents a layout. A layout must define the used grid-system and
 a layout-structure. Example::
@@ -245,7 +245,7 @@ E.g. grid ``simple`` is not supporting ``footer`` area.
 
 The values of a specific layout-structure area definition must be a list, where each entry must be a string and
 represents a single line in the later need representation.
-This line can contain :ref:`layout_functions`, which care about getting need-data or adding links.
+This line can contain :ref:`layout_functions`, which handle getting need-data or adding links.
 
 .. note::
 
@@ -254,7 +254,7 @@ This line can contain :ref:`layout_functions`, which care about getting need-dat
 
 .. note::
 
-   The ``content`` area of a grid can not be overwritten. It is always there and can't be changed or replaced.
+   The ``content`` area of a grid cannot be overwritten. It is always there and can't be changed or replaced.
 
 
 .. _layout_line:
@@ -267,7 +267,7 @@ A layout line may look like this::
 
 This line contains:
 
-   * a rst text, which supports common inline roles (bold, italic):
+   * rst text, which supports common inline roles (bold, italic):
      ``**style**: _my_``
    * a layout function, which gets executed and returns a string:
      ``<<meta('status')>>``
@@ -286,7 +286,7 @@ The head-line for the default Sphinx-Needs layout ``clean`` looks like this::
 
 You are free to surround a layout function with a rst role. Like ``**<<meta("title")>>**`` to get a bold printed title.
 
-Sometimes an argument for a layout function shall be based on a given need option. In this cases the option name
+Sometimes an argument for a layout function shall be based on a given need option. In these cases the option name
 can be surrounded by ``{{ .. }}``.
 As example, there may be an ``author`` option in a bug-need and you want to show a picture of the author in the grid
 ``simple_side_right_partial``.
@@ -347,7 +347,7 @@ Here is the complete used code
 Layout functions
 ++++++++++++++++
 
-To get custom data into your layout the usage of layout function is needed.
+To get custom data into your layout, the usage of layout functions is needed.
 A layout function may look like ``<<meta(arg1, arg2, kwarg=data)>>``
 
 Available layout functions are:
@@ -384,9 +384,9 @@ Available layout functions are:
 
 Styles
 ------
-Styles handle mostly colors for background, border and co. for a need.
-Their definition is done in css files, so that **Sphinx-Needs** only cares about setting the correct class in HTML
-output. This also means that styles do not have any impact to the need design in PDFs and other output formats.
+Styles handle mostly colors for background, border and so on for a need.
+Their definition is done in css files, so **Sphinx-Needs** only cares about setting the correct class in HTML
+output. This also means that styles do not have any impact on the need design in PDFs and other output formats.
 
 Default styles are:
 
@@ -401,7 +401,7 @@ Default styles are:
    - * **blue**
      * Blue background
    - * **discreet**
-     * Background color is only a little bit lighter/darker as the page background
+     * Background color is only a little bit lighter/darker than the page background
    - * **green_border**
      * Green border, but normal background
    - * **red_border**
@@ -421,7 +421,7 @@ Default styles are:
    - * **blue_bar**
      * 10 % of width blue on right side, rest with normal background
    - * **discreet_border**
-     * Border color is only a little bit lighter/darker as the page background
+     * Border color is only a little bit lighter/darker than the page background
    - * **clean**
      * Removes all style information. Looks like normal text. Mostly used with layout **focus**.
 
@@ -541,7 +541,7 @@ Own style configuration
 If you need to customize the css definitions, there are two ways of doing it:
 
 * Provide a css file by using :ref:`needs_css`
-* Set own css on sphinx level
+* Set your own css on Sphinx level
 
 .. _styles_css:
 
@@ -571,7 +571,7 @@ Own CSS file on sphinx level
 ++++++++++++++++++++++++++++
 
 If you want to use most of the sphinx-needs internal styles but only need some specific changes for single elements, you
-can provide your own CSS file by register it inside your conf.py::
+can provide your own CSS file by registering it inside your conf.py::
 
     html_css_files = ['css/my_custom.css']  
     
@@ -599,7 +599,7 @@ The above line contains the following css classes:
 
 Please note, that the classes added by **Sphinx-Needs** always contain a prefix:
 ``needs_grid_``, ``needs_layout_``, ``needs_style_``.
-So if a user defined layout has the name ``specification_layout``, the related css class is
+So if a user-defined layout has the name ``specification_layout``, the related css class is
 ``needs_layout_specification_layout``
 
 .. _grids:

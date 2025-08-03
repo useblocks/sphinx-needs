@@ -8,7 +8,7 @@ Dynamic functions provide a mechanism to specify need fields or content that are
 We do this by giving an author the possibility to set a function call to a predefined function, which calculates the final value **after all needs have been collected**.
 
 For instance, you can use the feature if the status of a requirement depends on linked test cases and their status.
-Or if you will request specific data from an external server like JIRA.
+Or if you want to request specific data from an external server like JIRA.
 
 To refer to a dynamic function, you can use the following syntax:
 
@@ -104,7 +104,7 @@ inside your **conf.py** file, to add a :py:class:`.DynamicFunction`:
 
 .. warning::
 
-   Assigning a function to a Sphinx option will deactivate the incremental build feature of Sphinx.
+   Assigning a function to a Sphinx option deactivates the incremental build feature of Sphinx.
    Please use the :ref:`Sphinx-Needs API <api_configuration>` and read :ref:`inc_build` for details.
 
    **Recommended:** You can use the following approach we used in our **conf.py** file to register dynamic functions:
@@ -125,8 +125,8 @@ Restrictions
 
 incoming_links
 ++++++++++++++
-Incoming links are not available when dynamic functions gets calculated.
+Incoming links are not available when dynamic functions are calculated.
 
 That's because a dynamic function can change outgoing links, so that the incoming links of the target need will
-be recalculated. This is automatically done but not until all dynamic functions are resolved.
+be recalculated. This is done automatically, but not until all dynamic functions are resolved.
 

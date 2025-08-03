@@ -25,7 +25,7 @@ filters for status, tags, types and filter.
 For **:status:**, **:tags:** and **:types:** values are separated by "**;**".
 **:filter:** gets evaluated.
 
-The logic, if a need belongs to the final result list, is as followed::
+The logic for determining if a need belongs to the final result list is as follows::
 
     status = (open OR in_progress) AND tags = (user OR login) AND types = (req OR spec) AND eval(filter) is True
 
@@ -218,7 +218,7 @@ The second parameter should be one of the above variables(status, id, content, .
 
 .. dropdown:: Show example
 
-   This example uses a regular expressions to find all needs with an e-mail address in title.
+   This example uses a regular expression to find all needs with an e-mail address in title.
 
    .. need-example::
 
@@ -235,7 +235,7 @@ Filter string performance
 .. versionadded:: 4.0.0
 
 The filter string is evaluated by default for each need and need part
-and, therefore, can be become a performance bottleneck for projects with large numbers of needs.
+and, therefore, can become a performance bottleneck for projects with large numbers of needs.
 
 To improve performance, certain common patterns are identified and optimized by the filter engine, and so using such patterns is recommended:
 
@@ -303,7 +303,7 @@ If ``filter code`` is used, all other filter related options (like ``status`` or
 .. warning::
 
    This feature executes every given Python code.
-   So be sure to trust the input/writers.
+   So be sure to trust the input and writers.
 
 
 .. _filter_func:
@@ -345,12 +345,12 @@ Arguments
 ~~~~~~~~~
 .. versionadded:: 0.7.6
 
-Filter function are supporting arguments: ``filter_file.own_filter_code(value_1,value_2)``.
+Filter functions support arguments: ``filter_file.own_filter_code(value_1,value_2)``.
 
 Please note, that the part between ``(...)`` is just a comma separated list and each element will be given as string
 to the function.
 
-The functions get the values as part of ``**kwargs`` with the name is ``arg<pos>``, starting from ``1``.
+The functions get the values as part of ``**kwargs`` with the name ``arg<pos>``, starting from ``1``.
 
 Example:
 
@@ -367,7 +367,7 @@ Example:
            if int(need["price"]) > int(kwargs["arg1"]) or need["status"] == kwargs["arg3"]:
                results.append(need)
 
-The function developer is responsible to perform any needed typecast.
+The function developer is responsible for performing any needed typecasts.
 
 Needpie
 ~~~~~~~
@@ -400,7 +400,7 @@ Example:
 Filter matches nothing
 ----------------------
 
-Depending on the directive used a filter that matches no needs may add text to inform that no needs are found.
+Depending on the directive used, a filter that matches no needs may add text to inform you that no needs are found.
 
 The default text "No needs passed the filter".
 
@@ -413,7 +413,7 @@ filter_warning
 
 Add specific text with this option or add no text to display nothing. The default text will not be shown.
 
-The specified output could be styled with the css class ``needs_filter_warning``
+The specified output can be styled with the CSS class ``needs_filter_warning``
 
 More Examples
 -------------

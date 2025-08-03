@@ -64,23 +64,23 @@ Introduction
    .. grid-item-card:: :octicon:`checkbox;1.5em;sd-mr-1 fill-primary` Adaptable to your needs
 
       An extension for the `Python <https://python.org>`_ based `Sphinx <https://www.sphinx-doc.org>`_ documentation framework,
-      enabling you to define, link, and analyse engineering objects within your documentation, specific to your project,
+      enabling you to define, link, and analyze engineering objects within your documentation, specific to your project,
       such as features, requirements, specifications, test cases, ...
 
    .. grid-item-card:: :octicon:`shield-check;1.5em;sd-mr-1 fill-primary` Developed for safety
 
-      Allows you to define the exact way of using and configuring need objects,
+      Allows you to define exactly how to use and configure need objects,
       to create documentation valid with `ISO 26262 <https://en.wikipedia.org/wiki/ISO_26262>`__,
       `DO-178B/C <https://en.wikipedia.org/wiki/DO-178C>`__ or any other safety standard.
 
    .. grid-item-card:: :octicon:`gear;1.5em;sd-mr-1 fill-primary` Highly customizable
 
       Extensive :ref:`configuration options <config>` allow you to adapt the extension to your specific needs,
-      and the :ref:`built-in API <api>` allows other extensions to extend sphinx-needs for specific solutions.
+      and the :ref:`built-in API <api>` enables other extensions to extend sphinx-needs for specific solutions.
 
    .. grid-item-card:: :octicon:`sync;1.5em;sd-mr-1 fill-primary` Integration with external sources
 
-      Import and export mechanisms facilitate external synchronization with other tools,
+      Import and export mechanisms enable external synchronization with other tools,
       such as `JIRA <https://en.wikipedia.org/wiki/Jira_(software)>`__, :ref:`GitHub <github_service>`, or spreadsheets,
       allowing for embedding tickets, requirements and other information into your documentation.
 
@@ -91,8 +91,8 @@ Introduction
 
    .. grid-item-card:: :octicon:`workflow;1.5em;sd-mr-1 fill-primary` PlantUML integration
 
-      Allows for the creation of specific objects for architecture elements, which can be reused and recombined
-      in different flow diagrams and higher architecture elements, using `PlantUML <https://plantuml.com>`__.
+      Allows you to create specific objects for architecture elements, which can be reused and recombined
+      in different flow diagrams and higher-level architecture elements, using `PlantUML <https://plantuml.com>`__.
 
 ----------------
 
@@ -147,7 +147,7 @@ See more from `useblocks <https://useblocks.com>`__ to enhance your sphinx-needs
 
         Extension to collect or generate files from different sources and include them in the Sphinx source folder.
 
-        It supports sources like Git repositories, Jinja based files or symlinks.
+        It supports sources such as Git repositories, Jinja-based files, or symlinks.
         +++
 
         .. button-link:: https://sphinx-collections.readthedocs.io/en/latest/

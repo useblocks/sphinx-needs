@@ -135,7 +135,7 @@ Install PlantUML
 
 1. Download the latest version of the plantuml.jar file:
    http://sourceforge.net/projects/plantuml/files/plantuml.jar/download
-2. Make a new folder called ``utils`` inside your docs folder. Copy the ``plantuml.jar`` file into the ``utils`` folder.
+2. Create a new folder called ``utils`` inside your docs folder. Copy the ``plantuml.jar`` file into the ``utils`` folder.
 3. Install the plantuml sphinx extension: ``pip install sphinxcontrib-plantuml``.
 4. Add ``sphinxcontrib.plantuml`` to the sphinx extension list in ``conf.py``
 
@@ -157,10 +157,10 @@ Install PlantUML
 
       plantuml_output_format = 'png'
 
-The final configuration contains already a setup for building and deploying the documentation on
+The final configuration already contains a setup for building and deploying the documentation on
 `ReadTheDocs <https://readthedocs.org/>`_.
 
-ReadTheDocs provides ``plantuml.jar`` already on their system, so do not store it inside your source version control system.
+ReadTheDocs already provides ``plantuml.jar`` on their system, so do not store it inside your source version control system.
 
 
 Using Docker
@@ -168,7 +168,7 @@ Using Docker
 
 Sphinx-Needs is also available as a Docker Image.
 
-See :ref:`docker` for the documentation and hints how to use it.
+See :ref:`docker` for documentation and hints on how to use it.
 
 .. _ide:
 .. _ide_vscode:
@@ -178,4 +178,4 @@ VS Code Extension
 
 The VS Code extension `ubCode <https://marketplace.visualstudio.com/items?itemName=useblocks.ubcode>`_ provides 
 support for Sphinx-Needs.
-See more details in the `Documentation <https://docs.useblocks.com/ubcode/>`_.
+See more details in the `documentation <https://docs.useblocks.com/ubcode/>`_.

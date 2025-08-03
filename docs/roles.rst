@@ -83,7 +83,7 @@ need_part / np
 .. versionadded:: 0.3.0
 
 You can use ``:need_part:`` or as shortcut ``:np:`` inside needs to set a sub-id for a specific sentence/part.
-This sub-ids can be linked and referenced in other need functions like links and co.
+These sub-ids can be linked and referenced in other need functions like links and other functions.
 
 The used need_part id can be freely chosen, but should not contain any whitespaces or dots.
 
@@ -94,7 +94,7 @@ The used need_part id can be freely chosen, but should not contain any whitespac
       :tags: car
       :status: open
 
-      My new car must be the fastest on the world. Therefor it shall have:
+      My new car must be the fastest in the world. Therefore it shall have:
 
       * :need_part:`(1)A top speed of 300 km/h`
       * :np:`(2) An acceleration of 200 m/s² or much much more`
@@ -109,7 +109,7 @@ The used need_part id can be freely chosen, but should not contain any whitespac
       Requirements :need:`my_car_1.1` and :need:`my_car_1.2` are no problem and can
       be realised by doing rocket science.
 
-      But no way to get :need:`my_car_1.awesome_3` realised.
+      But no way to get :need:`my_car_1.awesome_3` realized.
 
 
    Reference to a part of a need from outside need scope: :need:`my_car_1.2`.
@@ -160,7 +160,7 @@ See :ref:`filter_string` for more information.
 .. note::
 
    If backslashes ``\`` are used inside the regex function ``search``, please make sure to double them as in python
-   one ``\`` needs to be represented by ``\\``.
+   one ``\`` must be represented by ``\\``.
 
 .. note::
 

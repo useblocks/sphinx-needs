@@ -44,7 +44,7 @@ Format
 ++++++
 
 As well as the ``filters`` and ``needs`` data, the **needs.json** file also contains the ``needs_schema``.
-This is a JSON schema of for the data structure of a single need,
+This is a JSON schema for the data structure of a single need,
 and also includes a ``field_type`` for each field, to denote the source of the field,
 that can be one of: ``core``, ``links``, ``backlinks``, ``extra``, ``global``.
 
@@ -187,9 +187,9 @@ needs_id
 --------
 .. versionadded:: 2.0.0
 
-The **needs_id** builder exports all found needs and selected filter results to a set json files of each need with the name is ``id`` of need.
+The **needs_id** builder exports all found needs and selected filter results to a set of JSON files for each need, with the filename being the ``id`` of the need.
 
-The build creates a folder called :ref:``needs_build_json_per_id_path`` and all file json of each need inside the given build-folder.
+The build creates a folder called :ref:``needs_build_json_per_id_path`` and stores all JSON files for each need inside the given build-folder.
 
 Usage
 +++++

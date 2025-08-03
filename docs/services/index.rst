@@ -100,7 +100,7 @@ All you need to do is to set the Python service class, which must be mentioned u
 Some services may need special configuration options to be initialised, these configs must be provided inside
 ``class_init``.
 
-For a complex example please of the GitHub service please take a look into its chapter :ref:`service_github_custom`.
+For a complex example please see the GitHub service please take a look into its chapter :ref:`service_github_custom`.
 
 
 Own services
@@ -150,7 +150,7 @@ Example of a basic service:
 
         def debug(self, options):
             # Allows to send back data, which may be helpful for debugging.
-            # debug_data needs do be serializable via json.dump.()
+            # debug_data needs to be serializable via json.dump().
             debug_data = {'custom_debug': 'data'}
             return debug_data
 
