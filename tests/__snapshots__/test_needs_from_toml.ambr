@@ -10,7 +10,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'O_001',
-            'layout': '',
             'lineno': 4,
             'section_name': 'TEST DOCUMENT',
             'sections': list([

@@ -33,7 +33,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 4,
             'links': list([
             ]),
@@ -102,7 +102,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 8,
             'links': list([
             ]),

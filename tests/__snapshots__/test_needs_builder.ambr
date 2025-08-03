@@ -33,7 +33,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 8,
             'links': list([
             ]),
@@ -102,7 +102,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 12,
             'links': list([
             ]),
@@ -171,7 +171,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 4,
             'links': list([
             ]),
@@ -820,7 +820,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TC_001',
-            'layout': '',
             'lineno': 8,
             'section_name': 'TEST DOCUMENT NEEDS Builder',
             'sections': list([
@@ -835,7 +834,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'TC_NEG_001',
-            'layout': '',
             'lineno': 12,
             'section_name': 'TEST DOCUMENT NEEDS Builder',
             'sections': list([
@@ -850,7 +848,6 @@
             'docname': 'index',
             'external_css': 'external_link',
             'id': 'US_63252',
-            'layout': '',
             'lineno': 4,
             'section_name': 'TEST DOCUMENT NEEDS Builder',
             'sections': list([
@@ -1496,7 +1493,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 8,
             'links': list([
             ]),
@@ -1565,7 +1562,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 12,
             'links': list([
             ]),
@@ -1634,7 +1631,7 @@
             'is_need': True,
             'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 4,
             'links': list([
             ]),
