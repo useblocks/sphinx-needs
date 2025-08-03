@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1753981420877,
+  "lastUpdate": 1754210392139,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13356,6 +13356,42 @@ window.BENCHMARK_DATA = {
             "value": 62.099078165,
             "unit": "s",
             "extra": "Commit: 54d82a82b15ef818ced3180a1dc2507452f4045f\nBranch: master\nTime: 2025-07-31T19:01:45+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7640110222328658c715b09d473b19578588837f",
+          "message": "‼️ Improve needs default field application (via needs_global_options) (#1478)\n\nPreviously defaults would be applied to any fields of a need with a\n\"falsy\" value, e.g. `None`, `False`, `0` , `\"\"`, `[]`. ...\n\nThis is an issue, if the user wants to specifically set fields to these\nvalues, without them being overridden by defaults. Therefore, now\ndefaults are only applied to fields with a missing or `None` value.\n\nIn the need directive context, this means that defaults will only be set\nfor fields not specifically set in the directive options.\n\nIn the external/import need context, defaults will only be applied to\nmissing keys in the `needs.json`, or fields with the value set to\n`null`.\n\nFor predicate defaults, the context passed to the expression has been\nrestricted to a subset of fields, and these values are no longer mutated\nby previous defaults, i.e. each predicate gets the same immutable\ncontext data.\nThis makes these predicates more isolated / understandable, and allows\nfor them potentially later being co-located with the type information.\n\n----\n\n‼️ Breaking\n\nThis PR may be breaking:\n\n1. For users expecting defaults to be applied to external/import\n`needs.json`, although I would suggest this was never the intention for\nthese defaults and that `needs.json` should, at least by default, be\nseen as static ingest data which has already had defaults etc applied.\n\n2. For users with \"exotic\" predicate expressions, that potentially rely\non the application of previous defaults.",
+          "timestamp": "2025-08-03T10:37:55+02:00",
+          "tree_id": "893e18a074053de1d81ac7f51902964aa84fb98d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7640110222328658c715b09d473b19578588837f"
+        },
+        "date": 1754210375616,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16924795700000317,
+            "unit": "s",
+            "extra": "Commit: 7640110222328658c715b09d473b19578588837f\nBranch: master\nTime: 2025-08-03T10:37:55+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.898280326000005,
+            "unit": "s",
+            "extra": "Commit: 7640110222328658c715b09d473b19578588837f\nBranch: master\nTime: 2025-08-03T10:37:55+02:00"
           }
         ]
       }
