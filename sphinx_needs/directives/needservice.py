@@ -14,16 +14,11 @@ from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.utils import DummyOptionSpec, add_doc
+from sphinx_needs.utils import DummyOptionSpec, add_doc, coersce_to_boolean
 
 
 class Needservice(nodes.General, nodes.Element):
     pass
-
-
-OPTION_SPEC_DEFAULT = {
-    "debug": directives.flag,
-}
 
 
 class NeedserviceDirective(SphinxDirective):
@@ -34,8 +29,6 @@ class NeedserviceDirective(SphinxDirective):
     final_argument_whitespace = True
 
     option_spec: Final[DummyOptionSpec] = DummyOptionSpec()
-
-    options: dict[str, str | None]
 
     def __init__(
         self,
@@ -63,9 +56,12 @@ class NeedserviceDirective(SphinxDirective):
         self.log = get_logger(__name__)
 
     def run(self) -> Sequence[nodes.Node]:
-        docname = self.env.docname
-        app = self.env.app
-        needs_config = NeedsSphinxConfig(self.config)
+        needs_config = NeedsSphinxConfig(self.env.config)
+        try:
+            self._process_options(needs_config)
+        except (AssertionError, ValueError):
+            return []
+
         need_types = needs_config.types
         all_data = needs_config.service_all_data
         needs_services = SphinxNeedsData(self.env).get_or_create_services()
@@ -77,6 +73,23 @@ class NeedserviceDirective(SphinxDirective):
 
         if "debug" not in self.options:
             service_data = service.request_from_directive(self)
+            defined_options = {
+                "debug",
+                "id",
+                "collapse",
+                "hide",
+                "jinja_content",
+                "status",
+                "tags",
+                "style",
+                "layout",
+                "template",
+                "pre_template",
+                "post_template",
+                "constraints",
+                "content",
+                *needs_config.extra_options,
+            }
             for datum in service_data:
                 options = {}
 
@@ -104,13 +117,7 @@ class NeedserviceDirective(SphinxDirective):
                 # extra_option or extra_link
                 missing_options = {}
                 for element in datum:
-                    defined_options = list(self.__class__.option_spec.keys())
-                    defined_options.append(
-                        "content"
-                    )  # Add content, so that it gets not detected as missing
-                    if element not in defined_options and element not in getattr(
-                        app.config, "needs_extra_links", []
-                    ):
+                    if element not in defined_options:
                         missing_options[element] = datum[element]
 
                 # Finally delete not found options
@@ -131,7 +138,7 @@ class NeedserviceDirective(SphinxDirective):
                     section += add_need(
                         self.env.app,
                         self.state,
-                        docname,
+                        self.env.docname,
                         self.lineno,
                         need_type,
                         need_title,
@@ -159,3 +166,49 @@ class NeedserviceDirective(SphinxDirective):
         add_doc(self.env, self.env.docname)
 
         return section
+
+    def _process_options(self, needs_config: NeedsSphinxConfig) -> None:
+        """
+        Process the options of the directive and coerce them to the correct value.
+        """
+        link_keys = {li["option"] for li in needs_config.extra_links}
+        for key in list(self.options):
+            value: str | None = self.options[key]
+            try:
+                match key:
+                    case "debug":
+                        self.options[key] = directives.flag(self.options[key])
+                    case (
+                        "id"
+                        | "status"
+                        | "tags"
+                        | "style"
+                        | "layout"
+                        | "template"
+                        | "pre_template"
+                        | "post_template"
+                        | "constraints"
+                    ):
+                        assert value, f"'{key}' must not be empty"
+                    case "collapse" | "hide" | "jinja_content":
+                        self.options[key] = coersce_to_boolean(value)
+                    case key if key in needs_config.extra_options:
+                        self.options[key] = value or ""
+                    case key if key in link_keys:
+                        self.options[key] = value or ""
+                    case _:
+                        log_warning(
+                            self.log,
+                            f"Unknown option '{key}'",
+                            "directive",
+                            location=self.get_location(),
+                        )
+                        self.options.pop(key, None)
+            except (AssertionError, ValueError) as err:
+                log_warning(
+                    self.log,
+                    f"Invalid value for '{key}' option: {err}",
+                    "directive",
+                    location=self.get_location(),
+                )
+                raise
