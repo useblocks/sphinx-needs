@@ -37,7 +37,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'github',
-            'lineno': 19,
+            'lineno': 20,
             'links': list([
             ]),
             'links_back': list([
@@ -147,8 +147,8 @@
             ]),
             'template': None,
             'title': 'needreport usage should count needs in post-process',
-            'type': 'issue',
-            'type_name': 'Issue',
+            'type': 'req',
+            'type_name': 'Requirement',
             'updated_at': '2024-02-15T12:19:30Z',
             'url': 'https://github.com/useblocks/sphinx-needs/issues/1110',
             'url_postfix': '',
@@ -212,7 +212,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'github',
-            'lineno': 11,
+            'lineno': 12,
             'links': list([
             ]),
             'links_back': list([
@@ -295,7 +295,7 @@
             'is_part': False,
             'jinja_content': False,
             'layout': 'github',
-            'lineno': 15,
+            'lineno': 16,
             'links': list([
             ]),
             'links_back': list([

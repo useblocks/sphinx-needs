@@ -75,6 +75,7 @@ class NeedserviceDirective(SphinxDirective):
             service_data = service.request_from_directive(self)
             defined_options = {
                 "debug",
+                "type",
                 "id",
                 "collapse",
                 "hide",
@@ -188,6 +189,7 @@ class NeedserviceDirective(SphinxDirective):
                         | "pre_template"
                         | "post_template"
                         | "constraints"
+                        | "type"  # TODO this is only used by the github service
                     ):
                         assert value, f"'{key}' must not be empty"
                     case "collapse" | "hide" | "jinja_content":
