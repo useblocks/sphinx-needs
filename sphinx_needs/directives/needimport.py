@@ -21,7 +21,7 @@ from sphinx_needs.logging import log_warning
 from sphinx_needs.needsfile import SphinxNeedsFileException, check_needs_data
 from sphinx_needs.utils import (
     add_doc,
-    coersce_to_boolean,
+    coerce_to_boolean,
     import_prefix_link_edit,
     logger,
 )
@@ -40,7 +40,7 @@ class NeedimportDirective(SphinxDirective):
     option_spec = {
         "version": directives.unchanged_required,
         "hide": directives.flag,
-        "collapse": coersce_to_boolean,
+        "collapse": coerce_to_boolean,
         "ids": directives.unchanged_required,
         "filter": directives.unchanged_required,
         "id_prefix": directives.unchanged_required,

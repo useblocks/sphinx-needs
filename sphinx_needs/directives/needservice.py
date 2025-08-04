@@ -14,7 +14,7 @@ from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.utils import DummyOptionSpec, add_doc, coersce_to_boolean
+from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
 
 
 class Needservice(nodes.General, nodes.Element):
@@ -193,7 +193,7 @@ class NeedserviceDirective(SphinxDirective):
                     ):
                         assert value, f"'{key}' must not be empty"
                     case "collapse" | "hide" | "jinja_content":
-                        self.options[key] = coersce_to_boolean(value)
+                        self.options[key] = coerce_to_boolean(value)
                     case key if key in needs_config.extra_options:
                         self.options[key] = value or ""
                     case key if key in link_keys:

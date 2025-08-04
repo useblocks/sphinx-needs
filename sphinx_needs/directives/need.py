@@ -28,7 +28,7 @@ from sphinx_needs.nodes import Need
 from sphinx_needs.utils import (
     DummyOptionSpec,
     add_doc,
-    coersce_to_boolean,
+    coerce_to_boolean,
     profile,
     remove_node_from_tree,
     split_need_id,
@@ -69,7 +69,7 @@ class NeedDirective(SphinxDirective):
 
         try:
             delete = (
-                coersce_to_boolean(options.pop("delete"))
+                coerce_to_boolean(options.pop("delete"))
                 if "delete" in options
                 else False
             )
@@ -84,7 +84,7 @@ class NeedDirective(SphinxDirective):
         try:
             # override global title_from_content if user set it in the directive
             title_from_content = (
-                coersce_to_boolean(options.pop("title_from_content"))
+                coerce_to_boolean(options.pop("title_from_content"))
                 if "title_from_content" in options
                 else needs_config.title_from_content
             )
@@ -126,11 +126,11 @@ class NeedDirective(SphinxDirective):
                         assert value, "'id' must not be empty"
                         id = value
                     case "collapse":
-                        collapse = coersce_to_boolean(value)
+                        collapse = coerce_to_boolean(value)
                     case "hide":
-                        hide = coersce_to_boolean(value)
+                        hide = coerce_to_boolean(value)
                     case "jinja_content":
-                        jinja_content = coersce_to_boolean(value)
+                        jinja_content = coerce_to_boolean(value)
                     case "status":
                         assert value, f"'{key}' must not be empty"
                         status = value

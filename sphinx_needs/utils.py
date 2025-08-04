@@ -58,7 +58,7 @@ class DummyOptionSpec(dict[str, Callable[[str], str]]):
         return lambda x: x
 
 
-def coersce_to_boolean(argument: str | None) -> bool:
+def coerce_to_boolean(argument: str | None) -> bool:
     """Convert a string to a boolean.
 
     The value can be one of case-insensitive "true"/"false" or "yes"/"no",

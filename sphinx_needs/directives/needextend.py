@@ -12,7 +12,7 @@ from sphinx_needs.data import ExtendType, NeedsExtendType, NeedsMutable, SphinxN
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs_mutable
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
-from sphinx_needs.utils import DummyOptionSpec, add_doc, coersce_to_boolean
+from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
 
 logger = get_logger(__name__)
 
@@ -56,7 +56,7 @@ class NeedextendDirective(SphinxDirective):
         try:
             # override global needextend_strict if user set it in the directive
             strict = (
-                coersce_to_boolean(options.pop("strict"))
+                coerce_to_boolean(options.pop("strict"))
                 if "strict" in options
                 else needs_config.needextend_strict
             )
@@ -122,7 +122,7 @@ class NeedextendDirective(SphinxDirective):
                                 )
                             else:
                                 modifications.append(
-                                    (key, etype, coersce_to_boolean(value))
+                                    (key, etype, coerce_to_boolean(value))
                                 )
                         case "status" | "style" | "layout":
                             assert value, f"'{etype.value}{key}' must not be empty"
