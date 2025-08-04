@@ -716,7 +716,7 @@ def check_configuration(app: Sphinx, config: Config) -> None:
         k for k, v in NeedsCoreFields.items() if v.get("allow_variants")
     }
     for option in external_variant_options:
-        # Check variant option is added in either extra options or extra links or NEED_DEFAULT_OPTIONS
+        # Check variant option is added to an allowed field
         if (
             option not in extra_options
             and option not in link_types

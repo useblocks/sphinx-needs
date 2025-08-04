@@ -39,25 +39,6 @@ LOGGER = get_logger(__name__)
 NON_BREAKING_SPACE = re.compile("\xa0+")
 
 
-# NEED_DEFAULT_OPTIONS: dict[str, Any] = {
-#     "id": directives.unchanged_required,
-#     "status": directives.unchanged_required,
-#     "tags": directives.unchanged_required,
-#     "links": directives.unchanged_required,
-#     "collapse": string_to_boolean,
-#     "delete": string_to_boolean,
-#     "jinja_content": string_to_boolean,
-#     "hide": string_to_boolean,
-#     "title_from_content": directives.flag,
-#     "style": directives.unchanged_required,
-#     "layout": directives.unchanged_required,
-#     "template": directives.unchanged_required,
-#     "pre_template": directives.unchanged_required,
-#     "post_template": directives.unchanged_required,
-#     "constraints": directives.unchanged_required,
-# }
-
-
 class NeedDirective(SphinxDirective):
     """Collect the specification for a requirement, validate it and store it."""
 
