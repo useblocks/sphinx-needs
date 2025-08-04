@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, Final
 
 from docutils import nodes
 from sphinx.addnodes import desc_name, desc_signature
@@ -14,7 +14,6 @@ from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinx_needs.directives.needextend import Needextend, extend_needs_data
 from sphinx_needs.functions.functions import (
     check_and_get_content,
@@ -23,11 +22,13 @@ from sphinx_needs.functions.functions import (
     resolve_variants_options,
 )
 from sphinx_needs.layout import build_need_repr
-from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import (
+    DummyOptionSpec,
     add_doc,
+    coersce_to_boolean,
     profile,
     remove_node_from_tree,
     split_need_id,
@@ -38,48 +39,148 @@ LOGGER = get_logger(__name__)
 NON_BREAKING_SPACE = re.compile("\xa0+")
 
 
+# NEED_DEFAULT_OPTIONS: dict[str, Any] = {
+#     "id": directives.unchanged_required,
+#     "status": directives.unchanged_required,
+#     "tags": directives.unchanged_required,
+#     "links": directives.unchanged_required,
+#     "collapse": string_to_boolean,
+#     "delete": string_to_boolean,
+#     "jinja_content": string_to_boolean,
+#     "hide": string_to_boolean,
+#     "title_from_content": directives.flag,
+#     "style": directives.unchanged_required,
+#     "layout": directives.unchanged_required,
+#     "template": directives.unchanged_required,
+#     "pre_template": directives.unchanged_required,
+#     "post_template": directives.unchanged_required,
+#     "constraints": directives.unchanged_required,
+# }
+
+
 class NeedDirective(SphinxDirective):
-    """
-    Collects mainly all needed need-information and renders its rst-based content.
+    """Collect the specification for a requirement, validate it and store it."""
 
-    It only creates a basic node-structure to support later manipulation.
-    """
-
-    # this enables content in the directive
+    required_arguments = 0
+    optional_arguments = 1
+    final_argument_whitespace = True
+    option_spec: Final[DummyOptionSpec] = DummyOptionSpec()
     has_content = True
 
-    required_arguments = 1
-    optional_arguments = 0
-    option_spec: dict[str, Callable[[str], Any]] = NEED_DEFAULT_OPTIONS.copy()
+    options: dict[str, str | None]
 
-    final_argument_whitespace = True
-
-    @classmethod
-    def reset_options_spec(cls) -> None:
-        """Reset the directive to its initial state."""
-        cls.option_spec = NEED_DEFAULT_OPTIONS.copy()
+    def _log_warning(
+        self, message: str, code: WarningSubTypes = "directive", /
+    ) -> None:
+        """Log a warning with the given message and code."""
+        log_warning(
+            LOGGER,
+            message,
+            code,
+            location=self.get_location(),
+        )
 
     @measure_time("need")
     def run(self) -> Sequence[nodes.Node]:
-        if self.options.get("delete"):
+        # throughout this function, we gradually pop values from self.options
+        # so that we can warn about unknown options at the end
+        options: dict[str, str | None] = self.options
+
+        try:
+            delete = (
+                coersce_to_boolean(options.pop("delete"))
+                if "delete" in options
+                else False
+            )
+        except ValueError as err:
+            self._log_warning(f"Invalid value for 'delete' option: {err}")
+            return []
+        if delete:
             return []
 
         needs_config = NeedsSphinxConfig(self.env.config)
 
-        collapse = self.options.get("collapse")
-        jinja_content = self.options.get("jinja_content")
-        hide = self.options.get("hide")
-        id = self.options.get("id")
-        status = self.options.get("status")
-        tags = self.options.get("tags")
-        style = self.options.get("style")
-        layout = self.options.get("layout")
-        template = self.options.get("template")
-        pre_template = self.options.get("pre_template")
-        post_template = self.options.get("post_template")
-        constraints = self.options.get("constraints")
+        try:
+            # override global title_from_content if user set it in the directive
+            title_from_content = (
+                coersce_to_boolean(options.pop("title_from_content"))
+                if "title_from_content" in options
+                else needs_config.title_from_content
+            )
+        except ValueError as err:
+            self._log_warning(f"Invalid value for 'title_from_content' option: {err}")
+            return []
 
-        title, full_title = self._get_title(needs_config)
+        title, full_title = _get_title(
+            self.arguments,
+            self.content,
+            title_optional=needs_config.title_optional,
+            title_from_content=title_from_content,
+            max_title_length=needs_config.max_title_length,
+            warn=self._log_warning,
+        )
+
+        id: str | None = None
+        collapse: bool | None = None
+        hide: bool | None = None
+        jinja_content: bool | None = None
+        status: str | None = None
+        tags: str | None = None
+        style: str | None = None
+        layout: str | None = None
+        template: str | None = None
+        pre_template: str | None = None
+        post_template: str | None = None
+        constraints: str | None = None
+        extras: dict[str, str] = {}
+        links: dict[str, str] = {}
+
+        link_keys = {li["option"] for li in needs_config.extra_links}
+
+        while options:
+            key, value = options.popitem()
+            try:
+                match key:
+                    case "collapse":
+                        collapse = coersce_to_boolean(value)
+                    case "hide":
+                        hide = coersce_to_boolean(value)
+                    case "id":
+                        assert value, "'id' must not be empty"
+                        id = value
+                    case "status":
+                        assert value, "'status' must not be empty"
+                        status = value
+                    case "tags":
+                        assert value, "'tags' must not be empty"
+                        tags = value
+                    case "style":
+                        assert value, "'style' must not be empty"
+                        style = value
+                    case "layout":
+                        assert value, "'layout' must not be empty"
+                        layout = value
+                    case "template":
+                        assert value, "'template' must not be empty"
+                        template = value
+                    case "pre_template":
+                        assert value, "'pre_template' must not be empty"
+                        pre_template = value
+                    case "post_template":
+                        assert value, "'post_template' must not be empty"
+                        post_template = value
+                    case "constraints":
+                        assert value, "'constraints' must not be empty"
+                        constraints = value
+                    case key if key in needs_config.extra_options:
+                        extras[key] = value or ""
+                    case key if key in link_keys:
+                        links[key] = value or ""
+                    case _:
+                        self._log_warning(f"Unknown option '{key}'")
+            except (AssertionError, ValueError) as err:
+                self._log_warning(f"Invalid value for '{key}' option: {err}")
+                return []
 
         try:
             need_nodes = add_need(
@@ -104,64 +205,53 @@ class NeedDirective(SphinxDirective):
                 layout=layout,
                 jinja_content=jinja_content,
                 constraints=constraints,
-                **{
-                    n: self.options[n]
-                    for n in needs_config.extra_options
-                    if n in self.options
-                },
-                **{
-                    n["option"]: self.options[n["option"]]
-                    for n in needs_config.extra_links
-                    if n["option"] in self.options
-                },
+                **extras,  # type: ignore[arg-type]
+                **links,  # type: ignore[arg-type]
             )
         except InvalidNeedException as err:
-            log_warning(
-                LOGGER,
-                f"Need could not be created: {err.message}",
-                "create_need",
-                location=self.get_location(),
+            self._log_warning(
+                f"Need could not be created: {err.message}", "create_need"
             )
             return []
         add_doc(self.env, self.env.docname)
         return need_nodes
 
-    def _get_title(self, config: NeedsSphinxConfig) -> tuple[str, str | None]:
-        """Determines the title for the need in order of precedence:
-        directive argument, first sentence of requirement
-        (if `:title_from_content:` was set, and '' if no title is to be derived).
 
-        :return: The title and the full title (if title was trimmed)
-        """
-        if len(self.arguments) > 0:  # a title was passed
-            if "title_from_content" in self.options:
-                log_warning(
-                    LOGGER,
-                    "need directive has :title_from_content: set, but a title was provided.",
-                    "title",
-                    location=self.get_location(),
-                )
-            return self.arguments[0], None
-        elif "title_from_content" in self.options or config.title_from_content:
-            first_sentence = re.split(r"[.\n]", "\n".join(self.content))[0]
-            if not first_sentence:
-                log_warning(
-                    LOGGER,
-                    ":title_from_content: set, but no content provided.",
-                    "title",
-                    location=self.get_location(),
-                )
-            title = first_sentence or ""
-            # Trim title if it is too long
-            max_length = config.max_title_length
-            if max_length == -1 or len(title) <= max_length:
-                return title, None
-            elif max_length <= 3:
-                return title[:max_length], title
-            else:
-                return title[: max_length - 3] + "...", title
+def _get_title(
+    args: list[str],
+    content: str,
+    *,
+    title_optional: bool,
+    title_from_content: bool,
+    max_title_length: int,
+    warn: Callable[[str], None],
+) -> tuple[str, str | None]:
+    """Determines the title for the need in order of precedence:
+    directive argument, first sentence of requirement
+    (if `:title_from_content:` was set, and '' if no title is to be derived).
+
+    :return: The title and the full title (if title was trimmed)
+    """
+    if len(args) > 0:  # a title was passed
+        if title_from_content:
+            warn("title_from_content set to True, but a title was provided.")
+        return args[0], None
+    elif title_from_content:
+        first_sentence = re.split(r"[.\n]", "\n".join(content))[0]
+        if not first_sentence:
+            warn("title_from_content set to True, but no content provided.")
+        title = first_sentence or ""
+        # Trim title if it is too long
+        if max_title_length == -1 or len(title) <= max_title_length:
+            return title, None
+        elif max_title_length <= 3:
+            return title[:max_title_length], title
         else:
-            return "", None
+            return title[: max_title_length - 3] + "...", title
+    else:
+        if not title_optional:
+            warn("No title given, but title is required by configuration.")
+        return "", None
 
 
 def get_sections_and_signature_and_needs(

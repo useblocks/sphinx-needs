@@ -1,30 +1,24 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
-from typing import Any
+from collections.abc import Sequence
+from typing import Final
 
 from docutils import nodes
-from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.need import _split_list_with_dyn_funcs
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsExtendType, NeedsMutable, SphinxNeedsData
+from sphinx_needs.data import ExtendType, NeedsExtendType, NeedsMutable, SphinxNeedsData
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs_mutable
-from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.utils import add_doc
+from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
+from sphinx_needs.utils import DummyOptionSpec, add_doc, coersce_to_boolean
 
 logger = get_logger(__name__)
 
 
 class Needextend(nodes.General, nodes.Element):
     pass
-
-
-OPTION_SPEC_DEFAULT = {
-    "strict": directives.unchanged_required,
-}
 
 
 class NeedextendDirective(SphinxDirective):
@@ -37,26 +31,38 @@ class NeedextendDirective(SphinxDirective):
     optional_arguments = 0
     final_argument_whitespace = True
 
-    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
+    option_spec: Final[DummyOptionSpec] = DummyOptionSpec()
 
-    @classmethod
-    def reset_options_spec(cls) -> None:
-        """Reset the directive to its initial state."""
-        cls.option_spec = OPTION_SPEC_DEFAULT.copy()
+    options: dict[str, str | None]
+
+    def _log_warning(
+        self, message: str, code: WarningSubTypes = "needextend", /
+    ) -> None:
+        """Log a warning with the given message and code."""
+        log_warning(
+            logger,
+            message,
+            code,
+            location=self.get_location(),
+        )
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.env
+        # throughout this function, we gradually pop values from self.options
+        # so that we can warn about unknown options at the end
+        options: dict[str, str | None] = self.options
 
         needs_config = NeedsSphinxConfig(self.env.app.config)
-        strict = needs_config.needextend_strict
-        strict_option: str = self.options.get("strict", "").upper()
-        if strict_option == "TRUE":
-            strict = True
-        elif strict_option == "FALSE":
-            strict = False
 
-        modifications = self.options.copy()
-        modifications.pop("strict", None)
+        try:
+            # override global needextend_strict if user set it in the directive
+            strict = (
+                coersce_to_boolean(options.pop("strict"))
+                if "strict" in options
+                else needs_config.needextend_strict
+            )
+        except ValueError as err:
+            self._log_warning(f"Invalid value for 'strict' option: {err}")
+            return []
 
         extend_filter = (self.arguments[0] if self.arguments else "").strip()
         if extend_filter.startswith("<") and extend_filter.endswith(">"):
@@ -71,21 +77,53 @@ class NeedextendDirective(SphinxDirective):
             filter_is_id = False
 
         if not extend_filter:
-            log_warning(
-                logger,
-                "Empty ID/filter argument in needextend directive.",
-                "needextend",
-                location=self.get_location(),
-            )
+            self._log_warning("Empty ID/filter argument in needextend directive.")
             return []
 
-        id = env.new_serialno("needextend")
-        targetid = f"needextend-{env.docname}-{id}"
+        modifications: list[tuple[str, ExtendType, None | str | bool]] = []
+        link_keys = {li["option"] for li in needs_config.extra_links}
+
+        while options:
+            key, value = options.popitem()
+
+            if key.startswith("-"):
+                key = key[1:]
+                etype = ExtendType.DELETE
+                # TODO check key is ok and value was None
+                modifications.append((key, etype, None))
+                continue
+
+            if key.startswith("+"):
+                key = key[1:]
+                etype = ExtendType.APPEND
+            else:
+                etype = ExtendType.REPLACE
+            coersced_value: None | str | bool = None
+            try:
+                match key:
+                    case "collapse" | "hide":
+                        coersced_value = coersce_to_boolean(value)
+                    case "status" | "tags" | "style" | "layout" | "constraints":
+                        assert value, f"'{etype}{key}' must not be empty"
+                        coersced_value = value
+                    case key if key in needs_config.extra_options:
+                        coersced_value = value or ""
+                    case key if key in link_keys:
+                        coersced_value = value or ""
+                    case _:
+                        self._log_warning(f"Unknown option '{etype}{key}'")
+            except (AssertionError, ValueError) as err:
+                self._log_warning(f"Invalid value for '{etype}{key}' option: {err}")
+                return []
+            modifications.append((key, etype, coersced_value))
+
+        id = self.env.new_serialno("needextend")
+        targetid = f"needextend-{self.env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
 
-        data = SphinxNeedsData(env).get_or_create_extends()
+        data = SphinxNeedsData(self.env).get_or_create_extends()
         data[targetid] = {
-            "docname": env.docname,
+            "docname": self.env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
             "filter": extend_filter,
@@ -94,7 +132,7 @@ class NeedextendDirective(SphinxDirective):
             "strict": strict,
         }
 
-        add_doc(env, env.docname)
+        add_doc(self.env, self.env.docname)
 
         node = Needextend("")
         self.set_source_info(node)
@@ -109,7 +147,7 @@ def extend_needs_data(
 ) -> None:
     """Use data gathered from needextend directives to modify fields of existing needs."""
 
-    list_values = ["tags", "links"] + [x["option"] for x in needs_config.extra_links]
+    list_values = ["tags"] + [x["option"] for x in needs_config.extra_links]
     link_names = [x["option"] for x in needs_config.extra_links]
 
     for current_needextend in extends.values():
@@ -154,10 +192,10 @@ def extend_needs_data(
                 current_needextend["lineno"],
             )
 
-            for option, value in current_needextend["modifications"].items():
-                if option.startswith("+"):
-                    option_name = option[1:]
+            for option_name, etype, value in current_needextend["modifications"]:
+                if etype == ExtendType.APPEND:
                     if option_name in link_names:
+                        assert not isinstance(value, bool)
                         for item, has_function in _split_list_with_dyn_funcs(
                             value, location
                         ):
@@ -172,6 +210,7 @@ def extend_needs_data(
                             if item not in need[option_name]:
                                 need[option_name].append(item)
                     elif option_name in list_values:
+                        assert not isinstance(value, bool)
                         for item, _ in _split_list_with_dyn_funcs(value, location):
                             if item not in need[option_name]:
                                 need[option_name].append(item)
@@ -181,17 +220,17 @@ def extend_needs_data(
                             need[option_name] += " "
                         need[option_name] += value
 
-                elif option.startswith("-"):
-                    option_name = option[1:]
+                elif etype == ExtendType.DELETE:
                     if option_name in link_names:
                         need[option_name] = []
                     if option_name in list_values:
                         need[option_name] = []
                     else:
                         need[option_name] = ""
-                else:
-                    if option in link_names:
-                        need[option] = []
+                elif etype == ExtendType.REPLACE:
+                    if option_name in link_names:
+                        need[option_name] = []
+                        assert not isinstance(value, bool)
                         for item, has_function in _split_list_with_dyn_funcs(
                             value, location
                         ):
@@ -203,9 +242,12 @@ def extend_needs_data(
                                     location=location,
                                 )
                                 continue
-                            need[option].append(item)
-                    elif option in list_values:
+                            need[option_name].append(item)
+                    elif option_name in list_values:
+                        assert not isinstance(value, bool)
                         for item, _ in _split_list_with_dyn_funcs(value, location):
-                            need[option].append(item)
+                            need[option_name].append(item)
                     else:
-                        need[option] = value
+                        need[option_name] = value
+                else:
+                    raise ValueError(f"Unknown extend type {etype} for {option_name}")

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
-from typing import Any
+from collections.abc import Sequence
+from typing import Any, Final
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -13,9 +13,8 @@ from sphinx_data_viewer.api import get_data_viewer_node
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.directives.need import NeedDirective
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.utils import add_doc
+from sphinx_needs.utils import DummyOptionSpec, add_doc
 
 
 class Needservice(nodes.General, nodes.Element):
@@ -32,19 +31,11 @@ class NeedserviceDirective(SphinxDirective):
 
     required_arguments = 1
     optional_arguments = 0
-
-    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
-
-    # Support all options from a common need.
-    option_spec.update(NeedDirective.option_spec)
-
-    @classmethod
-    def reset_options_spec(cls) -> None:
-        """Reset the directive to its initial state."""
-        cls.option_spec = OPTION_SPEC_DEFAULT.copy()
-        cls.option_spec.update(NeedDirective.option_spec)
-
     final_argument_whitespace = True
+
+    option_spec: Final[DummyOptionSpec] = DummyOptionSpec()
+
+    options: dict[str, str | None]
 
     def __init__(
         self,

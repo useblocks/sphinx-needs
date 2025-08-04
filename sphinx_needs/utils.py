@@ -47,6 +47,34 @@ MONTH_NAMES = [
 ]
 
 
+class DummyOptionSpec(dict[str, Callable[[str], str]]):
+    """An option_spec allows any options."""
+
+    def __bool__(self) -> bool:
+        """Behaves like some options are defined."""
+        return True
+
+    def __getitem__(self, _key: str) -> Callable[[str], str]:
+        return lambda x: x
+
+
+def coersce_to_boolean(argument: str | None) -> bool:
+    """Convert a string to a boolean.
+
+    The value can be one of case-insensitive "true"/"false" or "yes"/"no",
+    or the empty string also evaluates to True.
+
+    :raises ValueError: If the value is not a valid flag or case-insensitive true/false/yes/no.
+    """
+    if argument is None:
+        return True
+    if argument.upper() in ["", "TRUE", "YES"]:
+        return True
+    if argument.upper() in ["FALSE", "NO"]:
+        return False
+    raise ValueError("not a flag or case-insensitive true/false/yes/no")
+
+
 def split_need_id(need_id_full: str) -> tuple[str, str | None]:
     """A need id can be a combination of a main id and a part id,
     split by a dot.

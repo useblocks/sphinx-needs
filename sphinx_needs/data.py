@@ -5,6 +5,7 @@ which is stored in the Sphinx environment.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -150,6 +151,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "allow_df": True,
         "allow_variants": True,
         "exclude_external": True,
+        "allow_extend": True,
     },
     "style": {
         "description": "Comma-separated list of CSS classes (all appended by `needs_style_`).",
@@ -580,6 +582,14 @@ class NeedsBarType(NeedsBaseDataType):
     text_color: str
 
 
+class ExtendType(str, Enum):
+    """Enum to represent the type of extend operation."""
+
+    REPLACE = ""
+    DELETE = "-"
+    APPEND = "+"
+
+
 class NeedsExtendType(NeedsBaseDataType):
     """Data to modify existing need(s)."""
 
@@ -587,11 +597,8 @@ class NeedsExtendType(NeedsBaseDataType):
     """Filter string to select needs to extend."""
     filter_is_id: bool
     """Whether the filter is a single need ID."""
-    modifications: dict[str, Any]
-    """Mapping of field name to new value.
-    If the field name starts with a ``+``, the new value is appended to the existing value.
-    If the field name starts with a ``-``, the existing value is cleared (new value is ignored).
-    """
+    modifications: list[tuple[str, ExtendType, None | str | bool]]
+    """List of field modifications (type, field, value)."""
     strict: bool
     """If ``filter`` conforms to ``needs_id_regex``,
     and is not an existing need ID,
