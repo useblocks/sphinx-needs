@@ -122,13 +122,15 @@ class NeedDirective(SphinxDirective):
             key, value = options.popitem()
             try:
                 match key:
+                    case "id":
+                        assert value, "'id' must not be empty"
+                        id = value
                     case "collapse":
                         collapse = coersce_to_boolean(value)
                     case "hide":
                         hide = coersce_to_boolean(value)
-                    case "id":
-                        assert value, "'id' must not be empty"
-                        id = value
+                    case "jinja_content":
+                        jinja_content = coersce_to_boolean(value)
                     case "status":
                         assert value, "'status' must not be empty"
                         status = value
