@@ -389,7 +389,9 @@ def check_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
             _value = need[link_type["option"]]  # type: ignore[literal-required]
             need_link_value = [_value] if isinstance(_value, str) else _value
             for need_id_full in need_link_value:
-                need_id_main, need_id_part = split_need_id(need_id_full)
+                need_id_main, need_id_part = split_need_id(
+                    need_id_full, config.part_separator
+                )
 
                 if need_id_main not in needs or (
                     need_id_main in needs
@@ -435,7 +437,9 @@ def create_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                 [need[option]] if isinstance(need[option], str) else need[option]  # type: ignore[literal-required]
             )
             for need_id_full in need_link_value:
-                need_id_main, need_id_part = split_need_id(need_id_full)
+                need_id_main, need_id_part = split_need_id(
+                    need_id_full, config.part_separator
+                )
 
                 if need_id_main in needs:
                     if key not in needs[need_id_main][option_back]:  # type: ignore[literal-required]
