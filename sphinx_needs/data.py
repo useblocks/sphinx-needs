@@ -597,8 +597,12 @@ class NeedsExtendType(NeedsBaseDataType):
     """Filter string to select needs to extend."""
     filter_is_id: bool
     """Whether the filter is a single need ID."""
-    modifications: list[tuple[str, ExtendType, None | str | bool]]
-    """List of field modifications (type, field, value)."""
+    modifications: list[tuple[str, ExtendType, str | bool | list[tuple[str, bool]]]]
+    """List of field modifications (type, field, value).
+
+    where value can be:
+    - str, bool, or a passed dynamic function list [(<value>, <is_df>), ...]
+    """
     strict: bool
     """If ``filter`` conforms to ``needs_id_regex``,
     and is not an existing need ID,
