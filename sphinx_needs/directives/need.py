@@ -132,28 +132,28 @@ class NeedDirective(SphinxDirective):
                     case "jinja_content":
                         jinja_content = coersce_to_boolean(value)
                     case "status":
-                        assert value, "'status' must not be empty"
+                        assert value, f"'{key}' must not be empty"
                         status = value
                     case "tags":
-                        assert value, "'tags' must not be empty"
+                        assert value, f"'{key}' must not be empty"
                         tags = value
                     case "style":
-                        assert value, "'style' must not be empty"
+                        assert value, f"'{key}' must not be empty"
                         style = value
                     case "layout":
-                        assert value, "'layout' must not be empty"
+                        assert value, f"'{key}' must not be empty"
                         layout = value
                     case "template":
-                        assert value, "'template' must not be empty"
+                        assert value, f"'{key}' must not be empty"
                         template = value
                     case "pre_template":
-                        assert value, "'pre_template' must not be empty"
+                        assert value, f"'{key}' must not be empty"
                         pre_template = value
                     case "post_template":
-                        assert value, "'post_template' must not be empty"
+                        assert value, f"'{key}' must not be empty"
                         post_template = value
                     case "constraints":
-                        assert value, "'constraints' must not be empty"
+                        assert value, f"'{key}' must not be empty"
                         constraints = value
                     case key if key in needs_config.extra_options:
                         extras[key] = value or ""

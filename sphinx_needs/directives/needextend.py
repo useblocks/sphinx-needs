@@ -93,7 +93,7 @@ class NeedextendDirective(SphinxDirective):
                 etype = ExtendType.DELETE
                 if value is not None:
                     self._log_warning(
-                        f"delete option '{etype}{key}' should not have a value."
+                        f"delete option '{etype.value}{key}' should not have a value."
                     )
                 match key:
                     case "collapse" | "hide":
@@ -105,7 +105,7 @@ class NeedextendDirective(SphinxDirective):
                     case key if key in link_keys or key in ("constraints", "tags"):
                         modifications.append((key, etype, []))
                     case _:
-                        self._log_warning(f"Unknown option '{etype}{key}'")
+                        self._log_warning(f"Unknown option '{etype.value}{key}'")
             else:
                 if key.startswith("+"):
                     key = key[1:]
@@ -118,14 +118,14 @@ class NeedextendDirective(SphinxDirective):
                         case "collapse" | "hide":
                             if etype == ExtendType.APPEND:
                                 self._log_warning(
-                                    f"Cannot append to a boolean with '{etype}{key}', use '{key}' instead."
+                                    f"Cannot append to a boolean with '{etype.value}{key}', use '{key}' instead."
                                 )
                             else:
                                 modifications.append(
                                     (key, etype, coersce_to_boolean(value))
                                 )
                         case "status" | "style" | "layout":
-                            assert value, f"'{etype}{key}' must not be empty"
+                            assert value, f"'{etype.value}{key}' must not be empty"
                             modifications.append((key, etype, value))
                         case key if key in needs_config.extra_options:
                             modifications.append((key, etype, value or ""))
@@ -142,9 +142,11 @@ class NeedextendDirective(SphinxDirective):
                                 )
                             )
                         case _:
-                            self._log_warning(f"Unknown option '{etype}{key}'")
+                            self._log_warning(f"Unknown option '{etype.value}{key}'")
                 except ValueError as err:
-                    self._log_warning(f"Invalid value for '{etype}{key}' option: {err}")
+                    self._log_warning(
+                        f"Invalid value for '{etype.value}{key}' option: {err}"
+                    )
 
         id = self.env.new_serialno("needextend")
         targetid = f"needextend-{self.env.docname}-{id}"
@@ -234,7 +236,7 @@ def extend_needs_data(
                                     if not has_df and item not in all_needs:
                                         log_warning(
                                             logger,
-                                            f"Provided link id '{item}' for needextend option '{etype}{option_name}' does not exist.",
+                                            f"Provided link id '{item}' for needextend option '{etype.value}{option_name}' does not exist.",
                                             "needextend",
                                             location=location,
                                         )
@@ -265,7 +267,7 @@ def extend_needs_data(
                                     if not has_df and item not in all_needs:
                                         log_warning(
                                             logger,
-                                            f"Provided link id '{item}' for needextend option '{etype}{option_name}' does not exist.",
+                                            f"Provided link id '{item}' for needextend option '{etype.value}{option_name}' does not exist.",
                                             "needextend",
                                             location=location,
                                         )
