@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754210392139,
+  "lastUpdate": 1754379521090,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13392,6 +13392,42 @@ window.BENCHMARK_DATA = {
             "value": 60.898280326000005,
             "unit": "s",
             "extra": "Commit: 7640110222328658c715b09d473b19578588837f\nBranch: master\nTime: 2025-08-03T10:37:55+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d09332d6624b73b9f34ee2466309a00cfc32fd60",
+          "message": "♻️ Lazily assess directive options (#1482)\n\ndocutils `Directive.option_spec` is designed to be a statically\nspecified map of directive options names to validation/type coercion\nfunctions.\nIn sphinx-needs, the `NeedDirective`, `NeedextendDirective`, and\n`NeedserviceDirective` directives have dynamic options, based on the\nschema of the need items.\n\nCurrently, the \"hack\" to get this to work is to dynamically set class\nvariables on these classes.\nThis is problematic because:\n\n1. It modifies global state, which can be problematic for re-building in\nthe same Python session.\n2. It leads to confusing logic, spread across the code base.\n3. It also means it is impossible in the future to have different need\ntypes with potentially different schemas.\n\nThis PR instead takes an approach from\n`sphinx/ext/autodoc/directive.py`,\nto allow all options to be collected, without specifying their names\nup-front,\nthen analysing them within the `Directive.run` method.\n\n---\n\n‼️ Breaking\n\nThis could be breaking, for any user that relied on particular\nexistence/use of `Directive.option_spec` or `Directive.options`,\nalthough this would be deemed quite an exotic use-case, and not one\nintended in the API.",
+          "timestamp": "2025-08-05T09:36:39+02:00",
+          "tree_id": "b17955026024a7a94c3c6b63f687a6e982a33ea7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d09332d6624b73b9f34ee2466309a00cfc32fd60"
+        },
+        "date": 1754379504098,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18569813300000249,
+            "unit": "s",
+            "extra": "Commit: d09332d6624b73b9f34ee2466309a00cfc32fd60\nBranch: master\nTime: 2025-08-05T09:36:39+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.352837242999996,
+            "unit": "s",
+            "extra": "Commit: d09332d6624b73b9f34ee2466309a00cfc32fd60\nBranch: master\nTime: 2025-08-05T09:36:39+02:00"
           }
         ]
       }
