@@ -4,6 +4,7 @@ import json
 import os
 import re
 from collections.abc import Sequence
+from typing import Any
 from urllib.parse import urlparse
 
 import requests
@@ -14,9 +15,9 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
+from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.debug import measure_time
-from sphinx_needs.filter_common import filter_single_need
+from sphinx_needs.filter_common import filter_import_item
 from sphinx_needs.logging import log_warning
 from sphinx_needs.needsfile import SphinxNeedsFileException, check_needs_data
 from sphinx_needs.utils import (
@@ -131,8 +132,8 @@ class NeedimportDirective(SphinxDirective):
                 key: data["needs"][key] for key in id_list if key in data["needs"]
             }
 
-        # TODO this is not exactly NeedsInfoType, because the export removes/adds some keys
-        needs_list: dict[str, NeedsInfoType] = data["needs"]
+        # note this is not exactly NeedsInfoType, because the export removes/adds some keys
+        needs_list: dict[str, dict[str, Any]] = data["needs"]
         if schema := data.get("needs_schema"):
             # Set defaults from schema
             defaults = {
@@ -154,9 +155,9 @@ class NeedimportDirective(SphinxDirective):
 
                 if "description" in need and not need.get("content"):
                     # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
-                    filter_context["content"] = need["description"]  # type: ignore[typeddict-item]
+                    filter_context["content"] = need["description"]
                 try:
-                    if filter_single_need(filter_context, needs_config, filter_string):
+                    if filter_import_item(filter_context, needs_config, filter_string):
                         needs_list_filtered[key] = need
                 except Exception as e:
                     log_warning(
@@ -212,30 +213,30 @@ class NeedimportDirective(SphinxDirective):
         for need_params in needs_list.values():
             if "description" in need_params and not need_params.get("content"):
                 # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
-                need_params["content"] = need_params["description"]  # type: ignore[typeddict-item]
-                del need_params["description"]  # type: ignore[typeddict-item]
+                need_params["content"] = need_params["description"]
+                del need_params["description"]
 
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
             for option in list(need_params):
                 if option not in known_keys:
                     unknown_keys.add(option)
-                    del need_params[option]  # type: ignore[misc]
+                    del need_params[option]
                 elif option in omitted_keys:
-                    del need_params[option]  # type: ignore[misc]
+                    del need_params[option]
                 if option in needs_config.extra_options and not isinstance(
-                    need_params[option],  # type: ignore[literal-required]
+                    need_params[option],
                     str,
                 ):
                     non_string_extra_keys.add(option)
 
             for override_option in override_options:
                 if override_option in self.options:
-                    need_params[override_option] = self.options[override_option]  # type: ignore[literal-required]
+                    need_params[override_option] = self.options[override_option]
             if "hide" in self.options:
                 need_params["hide"] = True
 
             # These keys need to be different for add_need() api call.
-            need_params["need_type"] = need_params.pop("type", "")  # type: ignore[misc,typeddict-unknown-key]
+            need_params["need_type"] = need_params.pop("type", "")
 
             # Replace id, to get unique ids
             need_id = need_params["id"] = id_prefix + need_params["id"]
@@ -247,7 +248,7 @@ class NeedimportDirective(SphinxDirective):
             need_params["is_import"] = True
 
             try:
-                nodes = add_need(self.env.app, self.state, **need_params)  # type: ignore[call-arg]
+                nodes = add_need(self.env.app, self.state, **need_params)
             except InvalidNeedException as err:
                 log_warning(
                     logger,

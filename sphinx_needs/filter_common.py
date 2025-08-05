@@ -591,6 +591,27 @@ def apply_default_predicate(
     return result
 
 
+def filter_import_item(
+    context: dict[str, Any], config: NeedsSphinxConfig, filter_string: str
+) -> bool:
+    """Filters a single item from an imported needs.json file."""
+    filter_context = context.copy()
+    # Get needs external filter data and merge to filter_context
+    filter_context.update(config.filter_data)
+    filter_context["search"] = need_search
+    try:
+        # Set filter_context as globals and not only locals in eval()!
+        # Otherwise, the vars not be accessed in list comprehensions.
+        result = eval(filter_string, filter_context)
+        if not isinstance(result, bool):
+            raise NeedsInvalidFilter(
+                f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
+            )
+    except Exception as e:
+        raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
+    return result
+
+
 @measure_time("filtering")
 def filter_single_need(
     need: NeedsInfoType,
