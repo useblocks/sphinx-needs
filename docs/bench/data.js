@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754379521090,
+  "lastUpdate": 1754414328863,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13428,6 +13428,42 @@ window.BENCHMARK_DATA = {
             "value": 63.352837242999996,
             "unit": "s",
             "extra": "Commit: d09332d6624b73b9f34ee2466309a00cfc32fd60\nBranch: master\nTime: 2025-08-05T09:36:39+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "be7791cdd28bf8abf9f3e84b84ed3ef043431c89",
+          "message": "🔧 Split import item filtering to separate function (#1484)",
+          "timestamp": "2025-08-05T19:16:53+02:00",
+          "tree_id": "1e80dec08fcad44aa78549f0f6ae5061e11f732c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/be7791cdd28bf8abf9f3e84b84ed3ef043431c89"
+        },
+        "date": 1754414311512,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15937832299999855,
+            "unit": "s",
+            "extra": "Commit: be7791cdd28bf8abf9f3e84b84ed3ef043431c89\nBranch: master\nTime: 2025-08-05T19:16:53+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.066008277,
+            "unit": "s",
+            "extra": "Commit: be7791cdd28bf8abf9f3e84b84ed3ef043431c89\nBranch: master\nTime: 2025-08-05T19:16:53+02:00"
           }
         ]
       }
