@@ -43,7 +43,6 @@ from sphinx_needs.data import (
 from sphinx_needs.defaults import (
     GRAPHVIZ_STYLE_DEFAULTS,
     LAYOUTS,
-    NEED_DEFAULT_OPTIONS,
     NEEDFLOW_CONFIG_DEFAULTS,
 )
 from sphinx_needs.directives.list2need import List2Need, List2NeedDirective
@@ -518,75 +517,6 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 validator=directives.unchanged_required,
             )
 
-    # Get extra links and create a dictionary of needed options.
-    extra_links_raw = needs_config.extra_links
-    extra_links = {}
-    for extra_link in extra_links_raw:
-        extra_links[extra_link["option"]] = directives.unchanged
-
-    title_optional = needs_config.title_optional
-    title_from_content = needs_config.title_from_content
-
-    # Reset directives to use default options, before we update them
-    NeedDirective.reset_options_spec()
-    NeedextendDirective.reset_options_spec()
-    NeedserviceDirective.reset_options_spec()
-
-    # Update NeedDirective to use customized options
-    NeedDirective.option_spec.update(
-        {k: v.validator for k, v in _NEEDS_CONFIG.extra_options.items()}
-    )
-    NeedserviceDirective.option_spec.update(
-        {k: v.validator for k, v in _NEEDS_CONFIG.extra_options.items()}
-    )
-
-    # Update NeedDirective to use customized links
-    NeedDirective.option_spec.update(extra_links)
-    NeedserviceDirective.option_spec.update(extra_links)
-
-    # Update NeedextendDirective with option modifiers.
-    for key, _options in NeedsCoreFields.items():
-        if _options.get("allow_extend"):
-            value = NEED_DEFAULT_OPTIONS[key]
-            NeedextendDirective.option_spec.update(
-                {
-                    key: value,
-                    f"+{key}": value,  # TODO this doesn't make sense for non- str/list[str] fields
-                    f"-{key}": directives.flag,
-                }
-            )
-
-    for key, value in extra_links.items():
-        NeedextendDirective.option_spec.update(
-            {
-                key: value,
-                f"+{key}": value,
-                f"-{key}": directives.flag,
-            }
-        )
-
-    # "links" is not part of the extra_links
-    NeedextendDirective.option_spec.update(
-        {
-            "links": NEED_DEFAULT_OPTIONS["links"],
-            "+links": NEED_DEFAULT_OPTIONS["links"],
-            "-links": directives.flag,
-        }
-    )
-
-    for key, value in _NEEDS_CONFIG.extra_options.items():
-        NeedextendDirective.option_spec.update(
-            {
-                key: value.validator,
-                f"+{key}": value.validator,
-                f"-{key}": directives.flag,
-            }
-        )
-
-    if title_optional or title_from_content:
-        NeedDirective.required_arguments = 0
-        NeedDirective.optional_arguments = 1
-
     for t in needs_config.types:
         # Register requested types of needs
         app.add_directive(t["directive"], NeedDirective)
@@ -786,7 +716,7 @@ def check_configuration(app: Sphinx, config: Config) -> None:
         k for k, v in NeedsCoreFields.items() if v.get("allow_variants")
     }
     for option in external_variant_options:
-        # Check variant option is added in either extra options or extra links or NEED_DEFAULT_OPTIONS
+        # Check variant option is added to an allowed field
         if (
             option not in extra_options
             and option not in link_types

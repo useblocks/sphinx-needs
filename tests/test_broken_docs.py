@@ -96,9 +96,9 @@ def test_broken_syntax(test_app: SphinxTestApp):
     test_app.build()
 
     assert [li for li in get_warnings(test_app) if li.startswith("<srcdir>")] == [
-        '<srcdir>/index.rst:4: ERROR: Error in "spec" directive:',
-        '<srcdir>/index.rst:11: ERROR: Error in "spec" directive:',
-        '<srcdir>/index.rst:19: ERROR: Error in "spec" directive:',
+        "<srcdir>/index.rst:4: WARNING: Invalid value for 'status' option: 'status' must not be empty [needs.directive]",
+        "<srcdir>/index.rst:11: WARNING: Invalid value for 'tags' option: 'tags' must not be empty [needs.directive]",
+        "<srcdir>/index.rst:19: WARNING: Invalid value for 'collapse' option: not a flag or case-insensitive true/false/yes/no [needs.directive]",
     ]
 
     html = Path(test_app.outdir, "index.html").read_text()

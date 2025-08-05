@@ -90,8 +90,8 @@ def test_build(test_app, snapshot):
     prefix = " [docutils]" if version_info >= (8, 0) else ""
     expected_warnings = [
         f'{Path(str(app.srcdir)) / "index.rst"}:4: WARNING: "query" or "specific" missing as option for github service. [needs.github]',
-        f"{Path(str(app.srcdir)) / 'index.rst'}:23: WARNING: Bullet list ends without a blank line; unexpected unindent.{prefix}",
-        f"{Path(str(app.srcdir)) / 'index.rst'}:22: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
+        f"{Path(str(app.srcdir)) / 'index.rst'}:24: WARNING: Bullet list ends without a blank line; unexpected unindent.{prefix}",
+        f"{Path(str(app.srcdir)) / 'index.rst'}:23: WARNING: GitHub: API rate limit exceeded (twice). Stop here. [needs.github]",
     ]
 
     assert warnings.splitlines() == expected_warnings

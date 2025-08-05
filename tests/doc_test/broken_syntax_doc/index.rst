@@ -3,8 +3,8 @@ BROKEN DOCUMENT
 
 .. spec:: Command line interface
     :id: SP_TOO_001
-    :status: implemented
-    :links:
+    :tags: other
+    :status:
 
     The Tool awesome shall have a command line interface.
 
@@ -19,6 +19,6 @@ BROKEN DOCUMENT
 .. spec:: Command line interface
     :id: SP_TOO_003
     :status: implemented
-    :tags:
+    :collapse: other
 
      One whitespace to much at beginning

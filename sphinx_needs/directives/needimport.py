@@ -16,11 +16,15 @@ from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
 from sphinx_needs.debug import measure_time
-from sphinx_needs.defaults import string_to_boolean
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import log_warning
 from sphinx_needs.needsfile import SphinxNeedsFileException, check_needs_data
-from sphinx_needs.utils import add_doc, import_prefix_link_edit, logger
+from sphinx_needs.utils import (
+    add_doc,
+    coerce_to_boolean,
+    import_prefix_link_edit,
+    logger,
+)
 
 
 class Needimport(nodes.General, nodes.Element):
@@ -36,7 +40,7 @@ class NeedimportDirective(SphinxDirective):
     option_spec = {
         "version": directives.unchanged_required,
         "hide": directives.flag,
-        "collapse": string_to_boolean,
+        "collapse": coerce_to_boolean,
         "ids": directives.unchanged_required,
         "filter": directives.unchanged_required,
         "id_prefix": directives.unchanged_required,

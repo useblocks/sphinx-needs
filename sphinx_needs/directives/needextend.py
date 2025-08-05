@@ -1,30 +1,24 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
-from typing import Any
+from collections.abc import Sequence
+from typing import Final
 
 from docutils import nodes
-from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api.need import _split_list_with_dyn_funcs
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsExtendType, NeedsMutable, SphinxNeedsData
+from sphinx_needs.data import ExtendType, NeedsExtendType, NeedsMutable, SphinxNeedsData
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs_mutable
-from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.utils import add_doc
+from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
+from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
 
 logger = get_logger(__name__)
 
 
 class Needextend(nodes.General, nodes.Element):
     pass
-
-
-OPTION_SPEC_DEFAULT = {
-    "strict": directives.unchanged_required,
-}
 
 
 class NeedextendDirective(SphinxDirective):
@@ -37,26 +31,38 @@ class NeedextendDirective(SphinxDirective):
     optional_arguments = 0
     final_argument_whitespace = True
 
-    option_spec: dict[str, Callable[[str], Any]] = OPTION_SPEC_DEFAULT.copy()
+    option_spec: Final[DummyOptionSpec] = DummyOptionSpec()
 
-    @classmethod
-    def reset_options_spec(cls) -> None:
-        """Reset the directive to its initial state."""
-        cls.option_spec = OPTION_SPEC_DEFAULT.copy()
+    options: dict[str, str | None]
+
+    def _log_warning(
+        self, message: str, code: WarningSubTypes = "needextend", /
+    ) -> None:
+        """Log a warning with the given message and code."""
+        log_warning(
+            logger,
+            message,
+            code,
+            location=self.get_location(),
+        )
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.env
+        # throughout this function, we gradually pop values from self.options
+        # so that we can warn about unknown options at the end
+        options: dict[str, str | None] = self.options
 
         needs_config = NeedsSphinxConfig(self.env.app.config)
-        strict = needs_config.needextend_strict
-        strict_option: str = self.options.get("strict", "").upper()
-        if strict_option == "TRUE":
-            strict = True
-        elif strict_option == "FALSE":
-            strict = False
 
-        modifications = self.options.copy()
-        modifications.pop("strict", None)
+        try:
+            # override global needextend_strict if user set it in the directive
+            strict = (
+                coerce_to_boolean(options.pop("strict"))
+                if "strict" in options
+                else needs_config.needextend_strict
+            )
+        except ValueError as err:
+            self._log_warning(f"Invalid value for 'strict' option: {err}")
+            return []
 
         extend_filter = (self.arguments[0] if self.arguments else "").strip()
         if extend_filter.startswith("<") and extend_filter.endswith(">"):
@@ -71,21 +77,84 @@ class NeedextendDirective(SphinxDirective):
             filter_is_id = False
 
         if not extend_filter:
-            log_warning(
-                logger,
-                "Empty ID/filter argument in needextend directive.",
-                "needextend",
-                location=self.get_location(),
-            )
+            self._log_warning("Empty ID/filter argument in needextend directive.")
             return []
 
-        id = env.new_serialno("needextend")
-        targetid = f"needextend-{env.docname}-{id}"
+        modifications: list[
+            tuple[str, ExtendType, str | bool | list[tuple[str, bool]]]
+        ] = []
+        link_keys = {li["option"] for li in needs_config.extra_links}
+
+        while options:
+            key, value = options.popitem()
+
+            if key.startswith("-"):
+                key = key[1:]
+                etype = ExtendType.DELETE
+                if value is not None:
+                    self._log_warning(
+                        f"delete option '{etype.value}{key}' should not have a value."
+                    )
+                match key:
+                    case "collapse" | "hide":
+                        modifications.append((key, etype, False))
+                    case "status" | "style" | "layout":
+                        modifications.append((key, etype, ""))
+                    case key if key in needs_config.extra_options:
+                        modifications.append((key, etype, ""))
+                    case key if key in link_keys or key in ("constraints", "tags"):
+                        modifications.append((key, etype, []))
+                    case _:
+                        self._log_warning(f"Unknown option '{etype.value}{key}'")
+            else:
+                if key.startswith("+"):
+                    key = key[1:]
+                    etype = ExtendType.APPEND
+                else:
+                    etype = ExtendType.REPLACE
+
+                try:
+                    match key:
+                        case "collapse" | "hide":
+                            if etype == ExtendType.APPEND:
+                                self._log_warning(
+                                    f"Cannot append to a boolean with '{etype.value}{key}', use '{key}' instead."
+                                )
+                            else:
+                                modifications.append(
+                                    (key, etype, coerce_to_boolean(value))
+                                )
+                        case "status" | "style" | "layout":
+                            assert value, f"'{etype.value}{key}' must not be empty"
+                            modifications.append((key, etype, value))
+                        case key if key in needs_config.extra_options:
+                            modifications.append((key, etype, value or ""))
+                        case key if key in link_keys or key in ("constraints", "tags"):
+                            modifications.append(
+                                (
+                                    key,
+                                    etype,
+                                    list(
+                                        _split_list_with_dyn_funcs(
+                                            value, self.get_source_info()
+                                        )
+                                    ),
+                                )
+                            )
+                        case _:
+                            self._log_warning(f"Unknown option '{etype.value}{key}'")
+                except ValueError as err:
+                    self._log_warning(
+                        f"Invalid value for '{etype.value}{key}' option: {err}"
+                    )
+
+        id = self.env.new_serialno("needextend")
+        targetid = f"needextend-{self.env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
 
-        data = SphinxNeedsData(env).get_or_create_extends()
+        data = SphinxNeedsData(self.env).get_or_create_extends()
         data[targetid] = {
-            "docname": env.docname,
+            "docname": self.env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
             "filter": extend_filter,
@@ -94,7 +163,7 @@ class NeedextendDirective(SphinxDirective):
             "strict": strict,
         }
 
-        add_doc(env, env.docname)
+        add_doc(self.env, self.env.docname)
 
         node = Needextend("")
         self.set_source_info(node)
@@ -109,8 +178,7 @@ def extend_needs_data(
 ) -> None:
     """Use data gathered from needextend directives to modify fields of existing needs."""
 
-    list_values = ["tags", "links"] + [x["option"] for x in needs_config.extra_links]
-    link_names = [x["option"] for x in needs_config.extra_links]
+    link_names = {x["option"] for x in needs_config.extra_links}
 
     for current_needextend in extends.values():
         need_filter = current_needextend["filter"]
@@ -154,58 +222,65 @@ def extend_needs_data(
                 current_needextend["lineno"],
             )
 
-            for option, value in current_needextend["modifications"].items():
-                if option.startswith("+"):
-                    option_name = option[1:]
-                    if option_name in link_names:
-                        for item, has_function in _split_list_with_dyn_funcs(
-                            value, location
-                        ):
-                            if (not has_function) and (item not in all_needs):
-                                log_warning(
-                                    logger,
-                                    f"Provided link id {item} for needextend does not exist.",
-                                    "needextend",
-                                    location=location,
+            for option_name, etype, value in current_needextend["modifications"]:
+                match etype:
+                    case ExtendType.APPEND:
+                        match value:
+                            case str():
+                                if need[option_name]:
+                                    # If content is already stored, we add a space between the existing content and the new one
+                                    need[option_name] += " "
+                                need[option_name] += value
+                            case list() if option_name in link_names:
+                                for item, has_df in value:
+                                    if not has_df and item not in all_needs:
+                                        log_warning(
+                                            logger,
+                                            f"Provided link id '{item}' for needextend option '{etype.value}{option_name}' does not exist.",
+                                            "needextend",
+                                            location=location,
+                                        )
+                                need[option_name].extend(
+                                    (
+                                        item
+                                        for item, has_df in value
+                                        if item not in need[option_name]
+                                        and (has_df or item in all_needs)
+                                    )
                                 )
-                                continue
-                            if item not in need[option_name]:
-                                need[option_name].append(item)
-                    elif option_name in list_values:
-                        for item, _ in _split_list_with_dyn_funcs(value, location):
-                            if item not in need[option_name]:
-                                need[option_name].append(item)
-                    else:
-                        if need[option_name]:
-                            # If content is already stored, we need to add some whitespace
-                            need[option_name] += " "
-                        need[option_name] += value
-
-                elif option.startswith("-"):
-                    option_name = option[1:]
-                    if option_name in link_names:
-                        need[option_name] = []
-                    if option_name in list_values:
-                        need[option_name] = []
-                    else:
-                        need[option_name] = ""
-                else:
-                    if option in link_names:
-                        need[option] = []
-                        for item, has_function in _split_list_with_dyn_funcs(
-                            value, location
-                        ):
-                            if (not has_function) and (item not in all_needs):
-                                log_warning(
-                                    logger,
-                                    f"Provided link id {item} for needextend does not exist.",
-                                    "needextend",
-                                    location=location,
+                            case list():
+                                need[option_name].extend(
+                                    [
+                                        item
+                                        for item, _ in value
+                                        if item not in need[option_name]
+                                    ]
                                 )
-                                continue
-                            need[option].append(item)
-                    elif option in list_values:
-                        for item, _ in _split_list_with_dyn_funcs(value, location):
-                            need[option].append(item)
-                    else:
-                        need[option] = value
+                            case other:
+                                raise ValueError(
+                                    f"Cannot append to {type(other)} value for {option_name}"
+                                )
+                    case ExtendType.REPLACE | ExtendType.DELETE:
+                        match value:
+                            case list() if option_name in link_names:
+                                for item, has_df in value:
+                                    if not has_df and item not in all_needs:
+                                        log_warning(
+                                            logger,
+                                            f"Provided link id '{item}' for needextend option '{etype.value}{option_name}' does not exist.",
+                                            "needextend",
+                                            location=location,
+                                        )
+                                need[option_name] = [
+                                    item
+                                    for item, has_df in value
+                                    if (has_df or item in all_needs)
+                                ]
+                            case list():
+                                need[option_name] = [item for item, _ in value]
+                            case _:
+                                need[option_name] = value
+                    case other:
+                        raise ValueError(
+                            f"Unknown extend type {other} for {option_name}"
+                        )

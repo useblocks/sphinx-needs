@@ -24,3 +24,12 @@ needextend warnings
 .. needextend::  bad == filter
 .. needextend:: <>
 .. needextend:: ""
+
+.. needextend:: <extend_test_004>
+   :unknown:
+   :+unknown:
+   :-unknown:
+   :hide: bad
+   :+hide:
+   :links: unknown1
+   :+links: unknown2
