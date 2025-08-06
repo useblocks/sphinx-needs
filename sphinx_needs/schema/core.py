@@ -7,7 +7,7 @@ from typing import Any, cast
 from jsonschema import Draft202012Validator, FormatChecker, ValidationError
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.schema.config import (
     MAP_RULE_DEFAULT_SEVERITY,
     MAX_NESTED_NETWORK_VALIDATION_LEVELS,
@@ -89,7 +89,7 @@ def merge_static_schemas(config: NeedsSphinxConfig) -> bool:
 
 def validate_need(
     config: NeedsSphinxConfig,
-    need: NeedsInfoType,
+    need: NeedItem,
     needs: NeedsView,
     type_schemas: list[SchemasRootType],
 ) -> list[OntologyWarning]:
@@ -174,7 +174,7 @@ def validate_need(
 
 def recurse_validate_type_schmemas(
     config: NeedsSphinxConfig,
-    need: NeedsInfoType,
+    need: NeedItem,
     needs: NeedsView,
     user_message: str | None,
     schema: ValidateSchemaType,
@@ -250,7 +250,7 @@ def recurse_validate_type_schmemas(
             """List of target need ids for contains validation that failed."""
             contains_warnings_per_target: dict[str, list[OntologyWarning]] = {}
             """Map of target need id to warnings for failed contains validation."""
-            for target_need_id in need[link_type]:  # type: ignore[literal-required]
+            for target_need_id in need[link_type]:
                 # collect all downstream warnings for broken links, items and contains
                 # evaluation happens later
                 try:
@@ -442,7 +442,7 @@ def recurse_validate_type_schmemas(
 
 def validate_local_need(
     config: NeedsSphinxConfig,
-    need: NeedsInfoType,
+    need: NeedItem,
     schema: NeedFieldsSchemaType,
 ) -> ValidateNeedType:
     """
@@ -486,7 +486,7 @@ def validate_local_need(
 
 def reduce_need(
     config: NeedsSphinxConfig,
-    need: NeedsInfoType,
+    need: NeedItem,
     json_schema: NeedFieldsSchemaWithVersionType,
 ) -> dict[str, Any]:
     """
@@ -624,7 +624,7 @@ def any_not_of_rule(warnings: list[OntologyWarning], rule: MessageRuleEnum) -> b
 
 def get_ontology_warnings(
     config: NeedsSphinxConfig,
-    need: NeedsInfoType,
+    need: NeedItem,
     schema: NeedFieldsSchemaType,
     fail_rule: MessageRuleEnum,
     success_rule: MessageRuleEnum,

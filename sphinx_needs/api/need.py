@@ -25,6 +25,7 @@ from sphinx_needs.filter_common import (
     apply_default_predicate,
 )
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import jinja_parse
@@ -74,7 +75,7 @@ def generate_need(
     external_css: str = "external_link",
     full_title: str | None = None,
     **kwargs: str,
-) -> NeedsInfoType:
+) -> NeedItem:
     """Creates a validated need data entry, without adding it to the project.
 
     .. important:: This function does not parse or analyse the content,
@@ -299,7 +300,7 @@ def generate_need(
     )
 
     # Add the need and all needed information
-    needs_info: NeedsInfoType = {
+    needs_data: NeedsInfoType = {
         "docname": docname,
         "lineno": lineno,
         "lineno_content": lineno_content,
@@ -347,6 +348,7 @@ def generate_need(
         **links,
         **{f"{li['option']}_back": [] for li in needs_config.extra_links},
     }
+    needs_info = NeedItem(needs_data)
 
     _copy_links(needs_info, needs_config)
 
@@ -355,7 +357,7 @@ def generate_need(
         needs_info["parent_need"] = parent_needs[0]
 
     if jinja_content:
-        need_content_context = {**needs_info}
+        need_content_context: dict[str, Any] = {**needs_info}
         need_content_context.update(**needs_config.filter_data)
         need_content_context.update(**needs_config.render_context)
         try:
@@ -559,7 +561,7 @@ def _reset_rst_titles(state: RSTState) -> Iterator[None]:
 
 
 def _create_need_node(
-    data: NeedsInfoType,
+    data: NeedItem,
     env: BuildEnvironment,
     state: RSTState,
     content: str | StringList,
@@ -757,7 +759,7 @@ def add_external_need(
 
 def _prepare_template(
     needs_config: NeedsSphinxConfig,
-    needs_info: NeedsInfoType,
+    needs_info: NeedItem,
     template_key: str,
     template_root: None | Path,
 ) -> str:
@@ -872,7 +874,7 @@ def _split_list_with_dyn_funcs(
         yield _current_element, _has_dynamic_function
 
 
-def _copy_links(needs_info: NeedsInfoType, config: NeedsSphinxConfig) -> None:
+def _copy_links(needs_info: NeedItem, config: NeedsSphinxConfig) -> None:
     """Implement 'copy' logic for links."""
     copy_links: list[str] = []
     for link_type in config.extra_links:

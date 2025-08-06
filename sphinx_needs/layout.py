@@ -27,9 +27,10 @@ from sphinx.application import Sphinx
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
+from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.debug import measure_time
 from sphinx_needs.logging import log_warning
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import match_string_link
 
@@ -39,7 +40,7 @@ LOGGER = getLogger(__name__)
 @measure_time("build_need_repr")
 def build_need_repr(
     node: Need,
-    data: NeedsInfoType,
+    data: NeedItem,
     app: Sphinx,
     *,
     layout: str | None = None,
@@ -94,7 +95,7 @@ class LayoutHandler:
     def __init__(
         self,
         app: Sphinx,
-        need: NeedsInfoType,
+        need: NeedItem,
         node: Need,
         *,
         layout: str | None = None,
@@ -462,7 +463,7 @@ class LayoutHandler:
             # To escape { we need to use 2 of them.
             # So {{ becomes {{{{
             replace_string = f"{{{{{item}}}}}"
-            data = data.replace(replace_string, self.need[item])  # type: ignore[literal-required]
+            data = data.replace(replace_string, self.need[item])
         return data
 
     def meta(
@@ -490,7 +491,7 @@ class LayoutHandler:
             label_node += prefix_node
             data_container.append(label_node)
         try:
-            data = self.need[name]  # type: ignore[literal-required]
+            data = self.need[name]
         except KeyError:
             data = ""
 
@@ -702,7 +703,7 @@ class LayoutHandler:
         data_container = []
         for link_type in self.needs_config.extra_links:
             type_key = link_type["option"]
-            if self.need[type_key] and type_key not in exclude:  # type: ignore[literal-required]
+            if self.need[type_key] and type_key not in exclude:
                 outgoing_line = nodes.line()
                 outgoing_label = (
                     prefix + "{}:".format(link_type["outgoing"]) + postfix + " "
@@ -712,7 +713,7 @@ class LayoutHandler:
                 data_container.append(outgoing_line)
 
             type_key = link_type["option"] + "_back"
-            if self.need[type_key] and type_key not in exclude:  # type: ignore[literal-required]
+            if self.need[type_key] and type_key not in exclude:
                 incoming_line = nodes.line()
                 incoming_label = (
                     prefix + "{}:".format(link_type["incoming"]) + postfix + " "
@@ -821,7 +822,7 @@ class LayoutHandler:
         elif url.startswith("field:"):
             field = url.split(":")[1]
             try:
-                value = self.need[field]  # type: ignore[literal-required]
+                value = self.need[field]
             except KeyError:
                 value = ""
 
@@ -910,7 +911,7 @@ class LayoutHandler:
 
         if is_dynamic:
             try:
-                url = self.need[url]  # type: ignore[literal-required]
+                url = self.need[url]
             except KeyError:
                 url = ""
 

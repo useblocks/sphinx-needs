@@ -20,7 +20,7 @@ def test_doc_build_html(test_app, snapshot):
 
     data = SphinxNeedsData(app.env)
 
-    all_needs = dict(data.get_needs_view())
+    all_needs = {k: {**v} for k, v in data.get_needs_view().items()}
     assert all_needs == snapshot()
 
     all_needumls = data.get_or_create_umls()

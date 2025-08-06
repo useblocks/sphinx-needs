@@ -10,7 +10,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsSequenceType, SphinxNeedsData
+from sphinx_needs.data import NeedsSequenceType, SphinxNeedsData
 from sphinx_needs.diagrams_common import (
     DiagramBase,
     add_config,
@@ -22,6 +22,7 @@ from sphinx_needs.diagrams_common import (
 from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.utils import add_doc, remove_node_from_tree
 from sphinx_needs.views import NeedsView
 
@@ -248,7 +249,7 @@ def process_needsequence(
 
 def get_message_needs(
     app: Sphinx,
-    sender: NeedsInfoType,
+    sender: NeedItem,
     link_types: list[str],
     all_needs_dict: NeedsView,
     tracked_receivers: list[str] | None = None,

@@ -16,7 +16,7 @@ def test_doc_list2need_html(test_app, snapshot):
     assert app._warning.getvalue() == ""
 
     view = get_needs_view(app)
-    assert dict(view) == snapshot
+    assert {k: {**v} for k, v in view.items()} == snapshot
 
     index_html = Path(app.outdir, "index.html").read_text()
     assert "NEED-002" in index_html

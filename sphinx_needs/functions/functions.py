@@ -19,14 +19,10 @@ from sphinx.errors import SphinxError
 from sphinx.util.tags import Tags
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import (
-    NeedsCoreFields,
-    NeedsInfoType,
-    NeedsMutable,
-    SphinxNeedsData,
-)
+from sphinx_needs.data import NeedsCoreFields, NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_func import NeedFunc
 from sphinx_needs.utils import match_variants
@@ -45,7 +41,7 @@ class DynamicFunction(Protocol):
     def __call__(
         self,
         app: Sphinx,
-        need: NeedsInfoType | None,
+        need: NeedItem | NeedPartItem | None,
         needs: NeedsView | NeedsMutable,
         *args: Any,
         **kwargs: Any,
@@ -54,7 +50,7 @@ class DynamicFunction(Protocol):
 
 def execute_func(
     app: Sphinx,
-    need: NeedsInfoType | None,
+    need: NeedItem | NeedPartItem | None,
     needs: NeedsView | NeedsMutable,
     func_string: str,
     location: str | tuple[str | None, int | None] | nodes.Node | None,
@@ -139,7 +135,7 @@ FUNC_RE = re.compile(r"\[\[(.*?)\]\]")  # RegEx to detect function strings
 
 
 def find_and_replace_node_content(
-    node: nodes.Node, env: BuildEnvironment, need: NeedsInfoType
+    node: nodes.Node, env: BuildEnvironment, need: NeedItem
 ) -> nodes.Node:
     """
     Search inside a given node and its children for nodes of type Text,
@@ -281,7 +277,7 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
                             f"Usage of dynamic functions is deprecated in field {need_option!r}, found in need {need['id']!r}",
                             "deprecated",
                             location=(need["docname"], need["lineno"])
-                            if need.get("docname")
+                            if need["docname"]
                             else None,
                         )
 
@@ -329,7 +325,7 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
                             f"Dynamic function in list field {need_option!r} is surrounded by text that will be omitted: {element!r}",
                             "dynamic_function",
                             location=(need["docname"], need["lineno"])
-                            if need.get("docname")
+                            if need["docname"]
                             else None,
                         )
 
@@ -367,7 +363,7 @@ def resolve_variants_options(
         need_context.update(
             **{tag: True for tag in tags}
         )  # Add sphinx tags to filter context
-        location = (need["docname"], need["lineno"]) if need.get("docname") else None
+        location = (need["docname"], need["lineno"]) if need["docname"] else None
 
         for var_option in variants_options:
             if (
@@ -388,7 +384,7 @@ def resolve_variants_options(
 
 def check_and_get_content(
     content: str,
-    need: NeedsInfoType | None,
+    need: NeedItem | NeedPartItem | None,
     env: BuildEnvironment,
     location: nodes.Node,
 ) -> str:
@@ -423,7 +419,7 @@ def check_and_get_content(
 
 
 def _detect_and_execute_field(
-    content: Any, need: NeedsInfoType, needs: NeedsMutable, app: Sphinx
+    content: Any, need: NeedItem, needs: NeedsMutable, app: Sphinx
 ) -> tuple[str | None, str | int | float | list[str] | list[int] | list[float] | None]:
     """Detects if given need field value is a function call and executes it."""
     content = str(content)
@@ -445,7 +441,7 @@ def _detect_and_execute_field(
 
 
 def _analyze_func_string(
-    func_string: str, need: NeedsInfoType | None
+    func_string: str, need: NeedItem | NeedPartItem | None
 ) -> tuple[str, list[Any], dict[str, Any]]:
     """
     Analyze given function string and extract:

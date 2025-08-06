@@ -9,7 +9,7 @@ from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsTableType, SphinxNeedsData
+from sphinx_needs.data import NeedsTableType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import (
     get_option_list,
@@ -20,7 +20,7 @@ from sphinx_needs.directives.utils import (
 from sphinx_needs.exceptions import NeedsInvalidException
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
-from sphinx_needs.roles.need_part import iter_need_parts
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, row_col_maker
 
 
@@ -219,20 +219,20 @@ def process_needtables(
             location=node,
         )
 
-        def get_sorter(key: str) -> Callable[[NeedsInfoType], Any]:
+        def get_sorter(key: str) -> Callable[[NeedItem | NeedPartItem], Any]:
             """
             Returns a sort-function for a given need-key.
             :param key: key of need object as string
             :return:  function to use in sort(key=x)
             """
 
-            def sort(need: NeedsInfoType) -> Any:
+            def sort(need: NeedItem | NeedPartItem) -> Any:
                 """
                 Returns a given value of need, which is used for list sorting.
                 :param need: need-element, which gets sort
                 :return: value of need
                 """
-                value = need[key]  # type: ignore[literal-required]
+                value = need[key]
                 if isinstance(value, str):
                     # if we filter for string (e.g. id) everything should be lowercase.
                     # Otherwise, "Z" will be above "a"
@@ -251,15 +251,14 @@ def process_needtables(
                 " ", "_"
             )  # Replace whitespaces with _ to get valid css name
 
-            temp_need = need_info.copy()
-            if temp_need["is_need"]:
+            if need_info["is_need"] or isinstance(need_info, NeedItem):
                 row = nodes.row(classes=["need", style_row])
                 prefix = ""
+                temp_need = need_info.copy()
             else:
                 row = nodes.row(classes=["need_part", style_row])
-                temp_need["id"] = temp_need["id_complete"]
                 prefix = needs_config.part_prefix
-                temp_need["title"] = temp_need["content"]
+                temp_need = need_info.copy_for_needtable()
 
             for option, _title in current_needtable["columns"]:
                 if option == "ID":
@@ -307,8 +306,12 @@ def process_needtables(
             tbody += row
 
             # Need part rows
-            if current_needtable["show_parts"] and need_info["is_need"]:
-                for temp_part in iter_need_parts(need_info):
+            if (
+                current_needtable["show_parts"]
+                and need_info["is_need"]
+                and isinstance(need_info, NeedItem)
+            ):
+                for temp_part in need_info.iter_parts():
                     row = nodes.row(classes=["need_part"])
 
                     for option, _title in current_needtable["columns"]:

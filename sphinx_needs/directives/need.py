@@ -24,6 +24,7 @@ from sphinx_needs.functions.functions import (
 from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import (
     DummyOptionSpec,
@@ -390,6 +391,15 @@ def post_process_needs_data(app: Sphinx) -> None:
         create_back_links(needs, needs_config)
         process_constraints(needs, needs_config)
         app.emit("needs-before-sealing", needs)
+        # run a last check to ensure all needs are of the correct type
+        # this is done as a back-compatibility check,
+        # in case users are using sphinx-needs in an unexpected way that may previously work.
+        for need in needs.values():
+            if not isinstance(need, NeedItem):
+                raise AssertionError(
+                    f"Found at least one need item that is not a NeedItem instance: {type(need)}\n"
+                    "If you are adding needs manually, consider using the add_need API."
+                )
         needs_data.needs_is_post_processed = True
 
 
@@ -459,7 +469,7 @@ def check_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
     report_dead_links = config.report_dead_links
     for need in needs.values():
         for link_type in extra_links:
-            _value = need[link_type["option"]]  # type: ignore[literal-required]
+            _value = need[link_type["option"]]
             need_link_value = [_value] if isinstance(_value, str) else _value
             for need_id_full in need_link_value:
                 need_id_main, need_id_part = split_need_id(need_id_full)
@@ -477,7 +487,7 @@ def check_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                             # if the need has been imported from an external URL,
                             # we want to provide that URL as the location of the warning,
                             # otherwise we use the location of the need in the source file
-                            if need.get("is_external", False):
+                            if need["is_external"]:
                                 log_warning(
                                     LOGGER,
                                     f"{need['external_url']}: {message}",
@@ -505,14 +515,14 @@ def create_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
 
         for key, need in needs.items():
             need_link_value: list[str] = (
-                [need[option]] if isinstance(need[option], str) else need[option]  # type: ignore[literal-required]
+                [need[option]] if isinstance(need[option], str) else need[option]
             )
             for need_id_full in need_link_value:
                 need_id_main, need_id_part = split_need_id(need_id_full)
 
                 if need_id_main in needs:
-                    if key not in needs[need_id_main][option_back]:  # type: ignore[literal-required]
-                        needs[need_id_main][option_back].append(key)  # type: ignore[literal-required]
+                    if key not in needs[need_id_main][option_back]:
+                        needs[need_id_main][option_back].append(key)
 
                     # Handling of links to need_parts inside a need
                     if need_id_part and need_id_part in needs[need_id_main]["parts"]:

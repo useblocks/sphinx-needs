@@ -5,7 +5,7 @@ from itertools import chain
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from sphinx_needs.data import NeedsInfoType
+    from sphinx_needs.need_item import NeedItem, NeedPartItem
 
 
 _IdSet = list[tuple[str, str | None]]
@@ -53,12 +53,12 @@ class _LazyIndexes:
 
     __slots__ = ("_indexes", "_needs")
 
-    def __init__(self, needs: Mapping[str, NeedsInfoType]) -> None:
+    def __init__(self, needs: Mapping[str, NeedItem]) -> None:
         self._needs = needs
         self._indexes: _Indexes | None = None
 
     @property
-    def needs(self) -> Mapping[str, NeedsInfoType]:
+    def needs(self) -> Mapping[str, NeedItem]:
         """Get the needs."""
         return self._needs
 
@@ -119,7 +119,7 @@ class _LazyIndexes:
         )
 
 
-class NeedsView(Mapping[str, "NeedsInfoType"]):
+class NeedsView(Mapping[str, "NeedItem"]):
     """A read-only view of needs, mapping need ids to need data,
     with "fast" filtering methods.
 
@@ -130,7 +130,7 @@ class NeedsView(Mapping[str, "NeedsInfoType"]):
     __slots__ = ("_indexes", "_maybe_len", "_selected_ids")
 
     @classmethod
-    def _from_needs(cls, needs: Mapping[str, NeedsInfoType], /) -> NeedsView:
+    def _from_needs(cls, needs: Mapping[str, NeedItem], /) -> NeedsView:
         """Create a new view of needs from a mapping of needs."""
         return cls(_indexes=_LazyIndexes(needs), _selected_ids=None)
 
@@ -155,10 +155,10 @@ class NeedsView(Mapping[str, "NeedsInfoType"]):
         self._maybe_len: int | None = None
 
     @property
-    def _all_needs(self) -> Mapping[str, NeedsInfoType]:
+    def _all_needs(self) -> Mapping[str, NeedItem]:
         return self._indexes.needs
 
-    def __getitem__(self, key: str) -> NeedsInfoType:
+    def __getitem__(self, key: str) -> NeedItem:
         if self._selected_ids is not None and key not in self._selected_ids:
             raise KeyError(key)
         return self._all_needs[key]
@@ -280,18 +280,15 @@ class NeedsAndPartsListView:
         self._maybe_len: int | None = None
 
     @property
-    def _all_needs(self) -> Mapping[str, NeedsInfoType]:
+    def _all_needs(self) -> Mapping[str, NeedItem]:
         return self._indexes.needs
 
-    def __iter__(self) -> Iterator[NeedsInfoType]:
+    def __iter__(self) -> Iterator[NeedItem | NeedPartItem]:
         """Iterate over the needs and parts in the view."""
-        from sphinx_needs.roles.need_part import create_need_from_part
-
         if self._selected_ids is None:
             for need in self._all_needs.values():
                 yield need
-                for part in need["parts"].values():
-                    yield create_need_from_part(need, part)
+                yield from need.iter_parts()
         else:
             for id, part_id in self._selected_ids:
                 if id not in self._all_needs:
@@ -300,8 +297,8 @@ class NeedsAndPartsListView:
                     yield self._all_needs[id]
                 else:
                     need = self._all_needs[id]
-                    if part_id in need["parts"]:
-                        yield create_need_from_part(need, need["parts"][part_id])
+                    if (part := need.get_part(part_id)) is not None:
+                        yield part
 
     def __bool__(self) -> bool:
         try:
@@ -315,23 +312,23 @@ class NeedsAndPartsListView:
             self._maybe_len = sum(1 for _ in self)
         return self._maybe_len
 
-    def get_need(self, id: str, part_id: str | None = None) -> NeedsInfoType | None:
+    def get_need(
+        self, id: str, part_id: str | None = None
+    ) -> NeedItem | NeedPartItem | None:
         """Get a need by id, or return None if it does not exist.
 
         If ``part_id`` is provided, return the part of the need with that id, or None if it does not exist.
         """
-        from sphinx_needs.roles.need_part import create_need_from_part
-
         if part_id is None:
             if self._selected_ids is None or (id, None) in self._selected_ids:
                 return self._all_needs.get(id)
         else:
             if (
                 (self._selected_ids is None or (id, part_id) in self._selected_ids)
-                and (need := self._all_needs.get(id))
-                and (part := need["parts"].get(part_id))
+                and (need := self._all_needs.get(id)) is not None
+                and (part := need.get_part(part_id)) is not None
             ):
-                return create_need_from_part(need, part)
+                return part
 
         return None
 

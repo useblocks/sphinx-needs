@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.schema.config import (
     MAP_RULE_DEFAULT_SEVERITY,
     MessageRuleEnum,
@@ -29,7 +29,7 @@ class OntologyWarning(TypedDict):
     severity: SeverityEnum
     user_message: NotRequired[str]
     validation_message: NotRequired[str]
-    need: NeedsInfoType
+    need: NeedItem
     reduced_need: NotRequired[dict[str, Any]]
     final_schema: NotRequired[NeedFieldsSchemaWithVersionType]
     schema_path: NotRequired[list[str]]

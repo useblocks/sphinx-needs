@@ -26,13 +26,14 @@ if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
     from typing_extensions import NotRequired, Required
 
+    from sphinx_needs.need_item import NeedItem
     from sphinx_needs.nodes import Need
     from sphinx_needs.services.manager import ServiceManager
 
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 2
+ENV_DATA_VERSION: Final = 3
 """Version of the data stored in the environment.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
@@ -767,7 +768,7 @@ class NeedsUmlType(NeedsBaseDataType):
     """Time taken to process the diagram."""
 
 
-NeedsMutable = NewType("NeedsMutable", dict[str, NeedsInfoType])
+NeedsMutable = NewType("NeedsMutable", dict[str, "NeedItem"])
 """A mutable view of the needs, before resolution
 """
 
@@ -779,7 +780,7 @@ class SphinxNeedsData:
         self.env = env
 
     @property
-    def _env_needs(self) -> dict[str, NeedsInfoType]:
+    def _env_needs(self) -> dict[str, NeedItem]:
         try:
             return self.env._needs_all_needs
         except AttributeError:
@@ -790,7 +791,7 @@ class SphinxNeedsData:
         """Check if a need with the given ID exists."""
         return need_id in self._env_needs
 
-    def add_need(self, need: NeedsInfoType) -> None:
+    def add_need(self, need: NeedItem) -> None:
         """Add an unprocessed need to the cache.
 
         This will overwrite any existing need with the same ID.

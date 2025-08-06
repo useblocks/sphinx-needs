@@ -5,8 +5,9 @@ from typing import Literal
 from docutils import nodes
 
 from sphinx_needs.config import LinkOptionsType
-from sphinx_needs.data import NeedsFlowType, NeedsInfoType
+from sphinx_needs.data import NeedsFlowType
 from sphinx_needs.logging import get_logger
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
@@ -47,7 +48,7 @@ def filter_by_tree(
             roots.update(
                 {
                     i: (root_depth + 1, needs_view[i])
-                    for i in root.get(link_type_name, [])  # type: ignore[attr-defined]
+                    for i in root.get(link_type_name, [])
                     if i in needs_view
                 }
             )
@@ -55,10 +56,10 @@ def filter_by_tree(
     return needs_view.filter_ids(need_ids)
 
 
-def get_root_needs(found_needs: list[NeedsInfoType]) -> list[NeedsInfoType]:
+def get_root_needs(found_needs: list[NeedItem | NeedPartItem]) -> list[NeedItem]:
     return_list = []
     for current_need in found_needs:
-        if current_need["is_need"]:
+        if current_need["is_need"] and isinstance(current_need, NeedItem):
             if "parent_need" not in current_need or current_need["parent_need"] == "":
                 # need has no parent, we have to add the need to the root needs
                 return_list.append(current_need)
