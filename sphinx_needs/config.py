@@ -27,8 +27,8 @@ if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
     from typing_extensions import NotRequired, Required
 
-    from sphinx_needs.data import NeedsInfoType
     from sphinx_needs.functions.functions import DynamicFunction
+    from sphinx_needs.need_item import NeedItem
 
 
 LOGGER = get_logger(__name__)
@@ -85,7 +85,7 @@ class _Config:
         self._field_defaults: dict[str, FieldDefault] = {}
         self._functions: dict[str, NeedFunctionsType] = {}
         self._warnings: dict[
-            str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]
+            str, str | Callable[[NeedItem, SphinxLoggerAdapter], bool]
         ] = {}
 
     def clear(self) -> None:
@@ -180,7 +180,7 @@ class _Config:
     @property
     def warnings(
         self,
-    ) -> Mapping[str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]]:
+    ) -> Mapping[str, str | Callable[[NeedItem, SphinxLoggerAdapter], bool]]:
         """Warning handlers that are added by the user,
         then called at the end of the build.
         """
@@ -189,7 +189,7 @@ class _Config:
     def add_warning(
         self,
         name: str,
-        filter: str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool],
+        filter: str | Callable[[NeedItem, SphinxLoggerAdapter], bool],
     ) -> None:
         """Adds a warning handler to the configuration."""
         self._warnings[name] = filter
@@ -690,7 +690,7 @@ class NeedsSphinxConfig:
     @property
     def warnings(
         self,
-    ) -> Mapping[str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]]:
+    ) -> Mapping[str, str | Callable[[NeedItem, SphinxLoggerAdapter], bool]]:
         """Defines warnings to be checked at the end of the build (name -> string filter / filter function).
 
         These handlers can be added via sphinx configuration,

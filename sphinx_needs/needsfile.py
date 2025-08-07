@@ -19,8 +19,9 @@ from jsonschema import Draft7Validator
 from sphinx.config import Config
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
+from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem
 
 log = get_logger(__name__)
 
@@ -149,7 +150,7 @@ class NeedsList:
         if not self.needs_config.reproducible_json:
             self.needs_list["versions"][version]["created"] = datetime.now().isoformat()
 
-    def add_need(self, version: str, need_info: NeedsInfoType) -> None:
+    def add_need(self, version: str, need_info: NeedItem) -> None:
         self.update_or_add_version(version)
         writable_needs = {
             key: value

@@ -9,13 +9,14 @@ from jinja2 import Template
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsFlowType, NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
 from sphinx_needs.directives.needflow._directive import NeedflowPlantuml
 from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import filter_single_need, process_filters
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import (
     match_variants,
     remove_node_from_tree,
@@ -40,7 +41,7 @@ def get_need_node_rep_for_plantuml(
     fromdocname: str,
     current_needflow: NeedsFlowType,
     needs_view: NeedsView,
-    need_info: NeedsInfoType,
+    need_info: NeedItem | NeedPartItem,
 ) -> str:
     """Calculate need node representation for plantuml."""
     needs_config = NeedsSphinxConfig(app.config)
@@ -89,8 +90,8 @@ def walk_curr_need_tree(
     fromdocname: str,
     current_needflow: NeedsFlowType,
     needs_view: NeedsView,
-    found_needs: list[NeedsInfoType],
-    need: NeedsInfoType,
+    found_needs: list[NeedItem | NeedPartItem],
+    need: NeedItem | NeedPartItem,
 ) -> str:
     """
     Walk through each need to find all its child needs and need parts recursively and wrap them together in nested structure.
@@ -157,7 +158,7 @@ def cal_needs_node(
     fromdocname: str,
     current_needflow: NeedsFlowType,
     needs_view: NeedsView,
-    found_needs: list[NeedsInfoType],
+    found_needs: list[NeedItem | NeedPartItem],
 ) -> str:
     """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
     top_needs = get_root_needs(found_needs)
@@ -386,7 +387,7 @@ def process_needflow_plantuml(
 
 
 def render_connections(
-    found_needs: list[NeedsInfoType],
+    found_needs: list[NeedItem | NeedPartItem],
     allowed_link_types: list[LinkOptionsType],
     show_links: bool,
 ) -> str:
@@ -396,7 +397,7 @@ def render_connections(
     puml_connections = ""
     for need_info in found_needs:
         for link_type in allowed_link_types:
-            for link in need_info[link_type["option"]]:  # type: ignore[literal-required]
+            for link in need_info[link_type["option"]]:
                 # Do not create an links, if the link target is not part of the search result.
                 if link not in [
                     x["id"] for x in found_needs if x["is_need"]

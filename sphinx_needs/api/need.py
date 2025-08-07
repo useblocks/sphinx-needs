@@ -25,6 +25,7 @@ from sphinx_needs.filter_common import (
     apply_default_predicate,
 )
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import jinja_parse
@@ -74,7 +75,7 @@ def generate_need(
     external_css: str = "external_link",
     full_title: str | None = None,
     **kwargs: str,
-) -> NeedsInfoType:
+) -> NeedItem:
     """Creates a validated need data entry, without adding it to the project.
 
     .. important:: This function does not parse or analyse the content,
@@ -297,9 +298,12 @@ def generate_need(
     links = _get_default_links(
         links_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
     )
+    _copy_links(links, needs_config)
+    # ensure parent_need is consistent with parent_needs
+    parent_need = parent_needs[0] if (parent_needs := links.get("parent_needs")) else ""
 
     # Add the need and all needed information
-    needs_info: NeedsInfoType = {
+    needs_data: NeedsInfoType = {
         "docname": docname,
         "lineno": lineno,
         "lineno_content": lineno_content,
@@ -342,20 +346,16 @@ def generate_need(
         "sections": sections or [],
         "section_name": sections[0] if sections else "",
         "signature": signature,
-        "parent_need": "",
+        "parent_need": parent_need,
         **extras,  # type: ignore[typeddict-item]
         **links,
         **{f"{li['option']}_back": [] for li in needs_config.extra_links},
     }
 
-    _copy_links(needs_info, needs_config)
-
-    if parent_needs := needs_info.get("parent_needs"):
-        # ensure parent_need is consistent with parent_needs
-        needs_info["parent_need"] = parent_needs[0]
+    needs_info = NeedItem(needs_data)
 
     if jinja_content:
-        need_content_context = {**needs_info}
+        need_content_context: dict[str, Any] = {**needs_info}
         need_content_context.update(**needs_config.filter_data)
         need_content_context.update(**needs_config.render_context)
         try:
@@ -559,7 +559,7 @@ def _reset_rst_titles(state: RSTState) -> Iterator[None]:
 
 
 def _create_need_node(
-    data: NeedsInfoType,
+    data: NeedItem,
     env: BuildEnvironment,
     state: RSTState,
     content: str | StringList,
@@ -757,7 +757,7 @@ def add_external_need(
 
 def _prepare_template(
     needs_config: NeedsSphinxConfig,
-    needs_info: NeedsInfoType,
+    needs_info: NeedItem,
     template_key: str,
     template_root: None | Path,
 ) -> str:
@@ -872,13 +872,13 @@ def _split_list_with_dyn_funcs(
         yield _current_element, _has_dynamic_function
 
 
-def _copy_links(needs_info: NeedsInfoType, config: NeedsSphinxConfig) -> None:
+def _copy_links(links: dict[str, list[str]], config: NeedsSphinxConfig) -> None:
     """Implement 'copy' logic for links."""
     copy_links: list[str] = []
     for link_type in config.extra_links:
         if link_type.get("copy", False) and (name := link_type["option"]) != "links":
-            copy_links += needs_info[name]  # Save extra links for main-links
-    needs_info["links"] += copy_links  # Set copied links to main-links
+            copy_links += links[name]  # Save extra links for main-links
+    links["links"] += copy_links  # Set copied links to main-links
 
 
 def _get_default_str_none(

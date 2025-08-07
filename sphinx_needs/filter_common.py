@@ -20,14 +20,11 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import (
-    NeedsFilteredBaseType,
-    NeedsInfoType,
-    NeedsMutable,
-)
+from sphinx_needs.data import NeedsFilteredBaseType, NeedsMutable
 from sphinx_needs.debug import measure_time, measure_time_func
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import log_warning
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
@@ -111,7 +108,7 @@ def process_filters(
     origin: str,
     location: nodes.Element,
     include_external: bool = True,
-) -> list[NeedsInfoType]:
+) -> list[NeedItem | NeedPartItem]:
     """
     Filters all needs with given configuration.
     Used by needlist, needtable and needflow.
@@ -151,7 +148,7 @@ def process_filters(
         "\n".join(filter_data["filter_code"]) if filter_data["filter_code"] else None
     )
 
-    found_needs: list[NeedsInfoType] = []
+    found_needs: list[NeedItem | NeedPartItem] = []
 
     if (not filter_code or filter_code.isspace()) and not ff_result:
         # TODO these may not be correct for parts
@@ -184,7 +181,7 @@ def process_filters(
         )
     else:
         # The filter results may be dirty, as it may continue manipulated needs.
-        found_dirty_needs: list[NeedsInfoType] = []
+        found_dirty_needs: list[NeedItem | NeedPartItem] = []
 
         if filter_code:  # code from content
             full_filter.append(filter_code)
@@ -231,7 +228,7 @@ def process_filters(
         try:
             found_needs = sorted(
                 found_needs,
-                key=lambda node: node[sort_key] or "",  # type: ignore[literal-required]
+                key=lambda node: node[sort_key] or "",
             )
         except KeyError as e:
             log_warning(
@@ -280,12 +277,12 @@ def filter_needs_mutable(
     needs: NeedsMutable,
     config: NeedsSphinxConfig,
     filter_string: None | str = "",
-    current_need: NeedsInfoType | None = None,
+    current_need: NeedItem | None = None,
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
     origin_docname: str | None = None,
-) -> list[NeedsInfoType]:
+) -> list[NeedItem]:
     return filter_needs(
         needs.values(),
         config,
@@ -409,13 +406,13 @@ def filter_needs_view(
     needs: NeedsView,
     config: NeedsSphinxConfig,
     filter_string: None | str = "",
-    current_need: NeedsInfoType | None = None,
+    current_need: NeedItem | None = None,
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
     strict_eval: bool = False,
     origin_docname: str | None = None,
-) -> list[NeedsInfoType]:
+) -> list[NeedItem]:
     if not filter_string:
         return list(needs.values())
 
@@ -450,13 +447,13 @@ def filter_needs_parts(
     needs: NeedsAndPartsListView,
     config: NeedsSphinxConfig,
     filter_string: None | str = "",
-    current_need: NeedsInfoType | None = None,
+    current_need: NeedItem | None = None,
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
     strict_eval: bool = False,
     origin_docname: str | None = None,
-) -> list[NeedsInfoType]:
+) -> list[NeedItem | NeedPartItem]:
     if not filter_string:
         return list(needs)
 
@@ -476,7 +473,7 @@ def filter_needs_parts(
             f"Strict eval mode, but no simple filter found: {filter_string!r}"
         )
 
-    return filter_needs(
+    return filter_needs_and_parts(
         needs,
         config,
         filter_string,
@@ -489,15 +486,37 @@ def filter_needs_parts(
 
 @measure_time("filtering")
 def filter_needs(
-    needs: Iterable[NeedsInfoType],
+    needs: Iterable[NeedItem],
     config: NeedsSphinxConfig,
     filter_string: None | str = "",
-    current_need: NeedsInfoType | None = None,
+    current_need: NeedItem | None = None,
     *,
     location: tuple[str, int | None] | nodes.Node | None = None,
     append_warning: str = "",
     origin_docname: str | None = None,
-) -> list[NeedsInfoType]:
+) -> list[NeedItem]:
+    return filter_needs_and_parts(  # type: ignore[return-value]
+        needs,
+        config,
+        filter_string=filter_string,
+        current_need=current_need,
+        location=location,
+        append_warning=append_warning,
+        origin_docname=origin_docname,
+    )
+
+
+@measure_time("filtering")
+def filter_needs_and_parts(
+    needs: Iterable[NeedItem | NeedPartItem],
+    config: NeedsSphinxConfig,
+    filter_string: None | str = "",
+    current_need: NeedItem | NeedPartItem | None = None,
+    *,
+    location: tuple[str, int | None] | nodes.Node | None = None,
+    append_warning: str = "",
+    origin_docname: str | None = None,
+) -> list[NeedItem | NeedPartItem]:
     """
     Filters given needs based on a given filter string.
     Returns all needs, which pass the given filter.
@@ -614,11 +633,11 @@ def filter_import_item(
 
 @measure_time("filtering")
 def filter_single_need(
-    need: NeedsInfoType,
+    need: NeedItem | NeedPartItem,
     config: NeedsSphinxConfig,
     filter_string: str = "",
-    needs: Iterable[NeedsInfoType] | None = None,
-    current_need: NeedsInfoType | None = None,
+    needs: Iterable[NeedItem | NeedPartItem] | None = None,
+    current_need: NeedItem | NeedPartItem | None = None,
     filter_compiled: CodeType | None = None,
     *,
     origin_docname: str | None = None,
@@ -636,7 +655,7 @@ def filter_single_need(
 
     :return: True, if need passes the filter_string, else False
     """
-    filter_context: dict[str, Any] = need.copy()  # type: ignore
+    filter_context: dict[str, Any] = {**need}
     if needs:
         filter_context["needs"] = needs
     if current_need:
@@ -669,7 +688,9 @@ class NeedCheckContext:
 
     __slots__ = ("_need", "_origin_docname")
 
-    def __init__(self, need: NeedsInfoType, origin_docname: str | None) -> None:
+    def __init__(
+        self, need: NeedItem | NeedPartItem, origin_docname: str | None
+    ) -> None:
         self._need = need
         self._origin_docname = origin_docname
 

@@ -17,9 +17,10 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
-from sphinx_needs.data import NeedsFilteredBaseType, NeedsInfoType
+from sphinx_needs.data import NeedsFilteredBaseType
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import get_scale, split_link_types
 
 logger = get_logger(__name__)
@@ -170,7 +171,7 @@ def get_debug_container(puml_node: nodes.Element) -> nodes.container:
 
 def calculate_link(
     app: Sphinx,
-    need_info: NeedsInfoType,
+    need_info: NeedItem | NeedPartItem,
     _fromdocname: None | str,
     relative: str = "..",
 ) -> str:

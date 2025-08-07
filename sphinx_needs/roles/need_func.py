@@ -9,8 +9,9 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxRole
 
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.utils import add_doc
 
 LOGGER = get_logger(__name__)
@@ -55,7 +56,7 @@ class NeedFunc(nodes.Inline, nodes.Element):
         """Return the function with brackets."""
         return self.get("with_brackets", False)  # type: ignore[no-any-return]
 
-    def get_text(self, env: BuildEnvironment, need: NeedsInfoType | None) -> nodes.Text:
+    def get_text(self, env: BuildEnvironment, need: NeedItem | None) -> nodes.Text:
         """Execute function and return result."""
         from sphinx_needs.functions.functions import check_and_get_content, execute_func
 

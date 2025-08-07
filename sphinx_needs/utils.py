@@ -17,10 +17,11 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
 if TYPE_CHECKING:
@@ -95,7 +96,7 @@ def row_col_maker(
     app: Sphinx,
     fromdocname: str,
     all_needs: NeedsView,
-    need_info: NeedsInfoType,
+    need_info: NeedItem | NeedPartItem,
     need_key: str,
     make_ref: bool = False,
     ref_lookup: bool = False,
@@ -125,8 +126,8 @@ def row_col_maker(
     for v in needs_config.string_links.values():
         needs_string_links_option.extend(v["options"])
 
-    if need_key in need_info and need_info[need_key] is not None:  # type: ignore[literal-required]
-        value = need_info[need_key]  # type: ignore[literal-required]
+    if need_key in need_info and need_info[need_key] is not None:
+        value = need_info[need_key]
         if isinstance(value, list | set):
             data = value
         elif isinstance(value, str) and need_key in needs_string_links_option:

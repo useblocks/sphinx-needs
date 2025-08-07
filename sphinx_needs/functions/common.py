@@ -13,20 +13,21 @@ from typing import Any
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsMutable
+from sphinx_needs.data import NeedsMutable
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import (
-    filter_needs,
+    filter_needs_and_parts,
     filter_single_need,
 )
 from sphinx_needs.logging import log_warning
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import logger
 from sphinx_needs.views import NeedsView
 
 
 def test(
     app: Sphinx,
-    need: NeedsInfoType | None,
+    need: NeedItem | NeedPartItem | None,
     needs: NeedsMutable | NeedsView,
     *args: Any,
     **kwargs: Any,
@@ -50,7 +51,7 @@ def test(
 
 def echo(
     app: Sphinx,
-    need: NeedsInfoType | None,
+    need: NeedItem | NeedPartItem | None,
     needs: NeedsMutable | NeedsView,
     text: str,
     *args: Any,
@@ -72,7 +73,7 @@ def echo(
 
 def copy(
     app: Sphinx,
-    need: NeedsInfoType | None,
+    need: NeedItem | NeedPartItem | None,
     needs: NeedsMutable | NeedsView,
     option: str,
     need_id: str | None = None,
@@ -142,7 +143,7 @@ def copy(
         location = (
             (need["docname"], need["lineno"]) if need and need["docname"] else None
         )
-        result = filter_needs(
+        result = filter_needs_and_parts(
             needs.values(),
             NeedsSphinxConfig(app.config),
             filter,
@@ -158,7 +159,7 @@ def copy(
     if option not in need:
         raise ValueError(f"Option {option} not found in need {need['id']}")
 
-    value = need[option]  # type: ignore[literal-required]
+    value = need[option]
 
     if lower:
         return str(value).lower()
@@ -170,7 +171,7 @@ def copy(
 
 def check_linked_values(
     app: Sphinx,
-    need: NeedsInfoType | None,
+    need: NeedItem | NeedPartItem | None,
     needs: NeedsMutable | NeedsView,
     result: Any,
     search_option: str,
@@ -288,7 +289,7 @@ def check_linked_values(
                     None,
                 )
 
-        need_value = need[search_option]  # type: ignore[literal-required]
+        need_value = need[search_option]
         if not one_hit and need_value not in search_value:
             return None
         elif one_hit and need_value in search_value:
@@ -299,7 +300,7 @@ def check_linked_values(
 
 def calc_sum(
     app: Sphinx,
-    need: NeedsInfoType | None,
+    need: NeedItem | NeedPartItem | None,
     needs: NeedsMutable | NeedsView,
     option: str,
     filter: str | None = None,
@@ -396,14 +397,14 @@ def calc_sum(
                 )
 
         with contextlib.suppress(ValueError):
-            calculated_sum += float(check_need[option])  # type: ignore[literal-required]
+            calculated_sum += float(check_need[option])
 
     return calculated_sum
 
 
 def links_from_content(
     app: Sphinx,
-    need: NeedsInfoType | None,
+    need: NeedItem | NeedPartItem | None,
     needs: NeedsMutable | NeedsView,
     need_id: str | None = None,
     filter: str | None = None,

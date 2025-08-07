@@ -243,9 +243,9 @@ def process_needgantt(
                 )
             else:  # Normal gantt element handling
                 duration_option = current_needgantt["duration_option"]
-                duration = need[duration_option]  # type: ignore[literal-required]
+                duration = need[duration_option]
                 complete_option = current_needgantt["completion_option"]
-                complete = need[complete_option]  # type: ignore[literal-required]
+                complete = need[complete_option]
                 if not (duration and duration.isdigit()):
                     need_location = (
                         f" (located: {need['docname']}:{need['lineno']})"
@@ -318,7 +318,7 @@ def process_needgantt(
                     start_end_sync = "start"
 
                 for link_type in current_needgantt[con_type]:
-                    start_with_links = need[link_type]  # type: ignore[literal-required]
+                    start_with_links = need[link_type]
                     for start_with_link in start_with_links:
                         start_need = all_needs_dict[start_with_link]
                         gantt_constraint = "[{}] {} at [{}]'s {}\n".format(

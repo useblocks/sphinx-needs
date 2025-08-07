@@ -6,6 +6,7 @@ import pytest
 from sphinx.util.console import strip_colors
 
 from sphinx_needs.filter_common import filter_needs_parts, filter_needs_view
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.views import NeedsView
 
 
@@ -172,7 +173,9 @@ def create_needs_view():
         },
     ]
 
-    return NeedsView._from_needs({n["id"]: n for n in needs})
+    need_items = [NeedItem(n) for n in needs]
+
+    return NeedsView._from_needs({n["id"]: n for n in need_items})
 
 
 std_test_params = (

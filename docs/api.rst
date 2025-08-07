@@ -37,6 +37,9 @@ Exceptions
 Data
 ----
 
+.. automodule:: sphinx_needs.need_item
+   :members: NeedItem, NeedPartItem
+
 .. automodule:: sphinx_needs.data
    :members: NeedsInfoType, NeedsMutable, NeedsPartType
 

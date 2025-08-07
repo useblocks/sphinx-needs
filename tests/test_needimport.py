@@ -353,7 +353,9 @@ def test_needimport_needs_json_download(test_app, snapshot):
         m.get("http://my_company.com/docs/v1/remote-needs.json", json=remote_json)
         app.build()
 
-    needs_all_needs = dict(SphinxNeedsData(app.env).get_needs_view())
+    needs_all_needs = {
+        k: {**v} for k, v in SphinxNeedsData(app.env).get_needs_view().items()
+    }
     assert needs_all_needs == snapshot()
 
 

@@ -17,7 +17,7 @@ from sphinx.ext.graphviz import (
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
 from sphinx_needs.directives.utils import no_needs_found_paragraph
@@ -27,6 +27,7 @@ from sphinx_needs.filter_common import (
     process_filters,
 )
 from sphinx_needs.logging import log_warning
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import (
     match_variants,
     remove_node_from_tree,
@@ -170,7 +171,7 @@ def process_needflow_graphviz(
         content += "\n// edge definitions\n"
         for need in filtered_needs:
             for link_type in allowed_link_types:
-                for link in need[link_type["option"]]:  # type: ignore[literal-required]
+                for link in need[link_type["option"]]:
                     content += _render_edge(
                         need, link, link_type, node, needs_config, rendered_nodes
                     )
@@ -194,7 +195,7 @@ def process_needflow_graphviz(
 
 
 def _get_link_to_need(
-    app: Sphinx, docname: str, need_info: NeedsInfoType
+    app: Sphinx, docname: str, need_info: NeedItem | NeedPartItem
 ) -> str | None:
     """Compute the link to a need, relative to a document.
 
@@ -220,7 +221,7 @@ def _get_link_to_need(
 
 class _RenderedNode(TypedDict):
     cluster_id: str | None
-    need: NeedsInfoType
+    need: NeedItem | NeedPartItem
 
 
 def _quote(text: str) -> str:
@@ -229,12 +230,12 @@ def _quote(text: str) -> str:
 
 
 def _render_node(
-    need: NeedsInfoType,
+    need: NeedItem | NeedPartItem,
     node: NeedflowGraphiz,
     needs_view: NeedsView,
     config: NeedsSphinxConfig,
-    calc_link: Callable[[NeedsInfoType], str | None],
-    id_comp_to_need: dict[str, NeedsInfoType],
+    calc_link: Callable[[NeedItem | NeedPartItem], str | None],
+    id_comp_to_need: dict[str, NeedItem | NeedPartItem],
     rendered_nodes: dict[str, _RenderedNode],
     subgraph: bool = True,
 ) -> str:
@@ -308,12 +309,12 @@ def _render_node(
 
 
 def _render_subgraph(
-    need: NeedsInfoType,
+    need: NeedItem | NeedPartItem,
     node: NeedflowGraphiz,
     needs_view: NeedsView,
     config: NeedsSphinxConfig,
-    calc_link: Callable[[NeedsInfoType], str | None],
-    id_comp_to_need: dict[str, NeedsInfoType],
+    calc_link: Callable[[NeedItem | NeedPartItem], str | None],
+    id_comp_to_need: dict[str, NeedItem | NeedPartItem],
     rendered_nodes: dict[str, _RenderedNode],
 ) -> str:
     """Render a subgraph in the graphviz format."""
@@ -402,7 +403,9 @@ def _render_subgraph(
     return f"subgraph {cluster_id} {{\n{param_str}\n\n  {ghost_node}\n{children}\n}};\n"
 
 
-def _label(need: NeedsInfoType, align: Literal["left", "right", "center"]) -> str:
+def _label(
+    need: NeedItem | NeedPartItem, align: Literal["left", "right", "center"]
+) -> str:
     """Create the graphviz label for a need."""
     # note this is based on the plantuml template DEFAULT_DIAGRAM_TEMPLATE
 
@@ -433,7 +436,7 @@ def _label(need: NeedsInfoType, align: Literal["left", "right", "center"]) -> st
 
 
 def _render_edge(
-    need: NeedsInfoType,
+    need: NeedItem | NeedPartItem,
     link: str,
     link_type: LinkOptionsType,
     node: NeedflowGraphiz,
@@ -588,7 +591,9 @@ _plantuml_arrow_style = {
 }
 
 
-def _create_legend(needs: list[NeedsInfoType], config: NeedsSphinxConfig) -> str:
+def _create_legend(
+    needs: list[NeedItem | NeedPartItem], config: NeedsSphinxConfig
+) -> str:
     """Create a legend for the graph."""
 
     # TODO also show links in legend

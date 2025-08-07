@@ -12,9 +12,9 @@ from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter
 
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.functions.functions import DynamicFunction
+from sphinx_needs.need_item import NeedItem
 
 
 def get_need_types(app: Sphinx) -> list[str]:
@@ -134,7 +134,7 @@ def add_dynamic_function(
 
 
 # 'Need' is untyped, so we temporarily use 'Any' here
-WarningCheck = Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]
+WarningCheck = Callable[[NeedItem, SphinxLoggerAdapter], bool]
 
 
 def add_warning(

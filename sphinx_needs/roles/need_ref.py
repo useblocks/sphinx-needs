@@ -9,9 +9,10 @@ from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.utils import check_and_calc_base_url_rel_path, split_need_id
 
 log = get_logger(__name__)
@@ -21,7 +22,7 @@ class NeedRef(nodes.Inline, nodes.Element):
     pass
 
 
-def transform_need_to_dict(need: NeedsInfoType) -> dict[str, str]:
+def transform_need_to_dict(need: NeedItem) -> dict[str, str]:
     """
     The function will transform a need in a dictionary of strings. Used to
     be given e.g. to a python format string.
@@ -158,7 +159,7 @@ def process_need_ref(
             node_need_ref[0].children[0] = nodes.Text(link_text)  # type: ignore[index]
 
             with contextlib.suppress(NoUri):
-                if not target_need.get("is_external", False) and (
+                if not target_need["is_external"] and (
                     _docname := target_need["docname"]
                 ):
                     new_node_ref = make_refnode(
