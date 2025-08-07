@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754414328863,
+  "lastUpdate": 1754582750668,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13464,6 +13464,42 @@ window.BENCHMARK_DATA = {
             "value": 59.066008277,
             "unit": "s",
             "extra": "Commit: be7791cdd28bf8abf9f3e84b84ed3ef043431c89\nBranch: master\nTime: 2025-08-05T19:16:53+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d2bd68f6c60a314612ef6f4dd7ac32ab8e0e92c7",
+          "message": "♻️ Store needs as `NeedItem` / `NeedPartItem`, rather than standard `dict` (#1485)\n\nCurrently, need data items are stored as standard Python dicts, which is\nalso exposed to the user in various APIs and as the `needs.json`.\nThis is problematic as it does not allow for\n\n1. any internal checks to ensure data is stored/updated consistently\n(e.g. fields like `id` should never be changed),\n2. any data to be \"hid\" from the user, or presented in a different way\nto its internal structure.\n- because the dict is a flat key/val store, it does not allow for\ndistinction between internal / user set extra/link fields\n- we would like to improve how values that are dynamic/variant functions\nare stored (prior to evaluation)\n- we would also like to store source mapping data from distinct sources\n(directives, external, imports) in a more coherent way.\n4. deprecations of any fields in a non-breaking manner\n\nIn this PR, we instead add a specific `NeedItem` class, which closely\nmimics a`dict`, but also allows for additional constraints and\nfunctionality.\n\nWe also introduce a `NeedPartItem` which is distinctly different from a\n`NeedItem`, e.g. it should not be mutated.\n\nTo ensure that no existing user code is accidentally breaking this, e.g.\nby directly add dictionaries to the list of needs,\nwe perform a check, at the end of the post-processing stage, to make\nsure all need items are instances of `NeedItem`\n(and point them towards the \"correct\" `add_need` API)\n\n---\n\n‼️ Breaking\n\nThis would be breaking for any users doing \"non-API\" modifications /\nadditions to the needs data, i.e. directly adding dict items.\nIt should not change interactions with standard APIs like `add_need` or\nfilter strings, etc",
+          "timestamp": "2025-08-07T18:03:29+02:00",
+          "tree_id": "5f603006a395a259a4926ded707206fb80b0e309",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d2bd68f6c60a314612ef6f4dd7ac32ab8e0e92c7"
+        },
+        "date": 1754582733740,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.24067863299998749,
+            "unit": "s",
+            "extra": "Commit: d2bd68f6c60a314612ef6f4dd7ac32ab8e0e92c7\nBranch: master\nTime: 2025-08-07T18:03:29+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 75.014943888,
+            "unit": "s",
+            "extra": "Commit: d2bd68f6c60a314612ef6f4dd7ac32ab8e0e92c7\nBranch: master\nTime: 2025-08-07T18:03:29+02:00"
           }
         ]
       }
