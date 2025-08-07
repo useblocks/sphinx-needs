@@ -298,6 +298,9 @@ def generate_need(
     links = _get_default_links(
         links_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
     )
+    _copy_links(links, needs_config)
+    # ensure parent_need is consistent with parent_needs
+    parent_need = parent_needs[0] if (parent_needs := links.get("parent_needs")) else ""
 
     # Add the need and all needed information
     needs_data: NeedsInfoType = {
@@ -343,18 +346,13 @@ def generate_need(
         "sections": sections or [],
         "section_name": sections[0] if sections else "",
         "signature": signature,
-        "parent_need": "",
+        "parent_need": parent_need,
         **extras,  # type: ignore[typeddict-item]
         **links,
         **{f"{li['option']}_back": [] for li in needs_config.extra_links},
     }
+
     needs_info = NeedItem(needs_data)
-
-    _copy_links(needs_info, needs_config)
-
-    if parent_needs := needs_info.get("parent_needs"):
-        # ensure parent_need is consistent with parent_needs
-        needs_info["parent_need"] = parent_needs[0]
 
     if jinja_content:
         need_content_context: dict[str, Any] = {**needs_info}
@@ -874,13 +872,13 @@ def _split_list_with_dyn_funcs(
         yield _current_element, _has_dynamic_function
 
 
-def _copy_links(needs_info: NeedItem, config: NeedsSphinxConfig) -> None:
+def _copy_links(links: dict[str, list[str]], config: NeedsSphinxConfig) -> None:
     """Implement 'copy' logic for links."""
     copy_links: list[str] = []
     for link_type in config.extra_links:
         if link_type.get("copy", False) and (name := link_type["option"]) != "links":
-            copy_links += needs_info[name]  # Save extra links for main-links
-    needs_info["links"] += copy_links  # Set copied links to main-links
+            copy_links += links[name]  # Save extra links for main-links
+    links["links"] += copy_links  # Set copied links to main-links
 
 
 def _get_default_str_none(
