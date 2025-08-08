@@ -20,7 +20,6 @@ class NeedItem:
 
     __slots__ = ("_data",)
 
-    _not_required = {"pre_content", "post_content", "constraints_error"}
     _immutable = {
         "id",
         "type",
@@ -33,6 +32,9 @@ class NeedItem:
         "is_part",
         "is_external",
         "is_import",
+        "template",
+        "pre_template",
+        "post_template",
     }
 
     def __init__(self, data: NeedsInfoType) -> None:
@@ -105,9 +107,6 @@ class NeedItem:
             "doctype",
             "external_url",
             "external_css",
-            "constraints_error",
-            "section_name",
-            "parent_need",
         ],
     ) -> str: ...
 
@@ -123,6 +122,9 @@ class NeedItem:
             "template",
             "post_template",
             "pre_template",
+            "constraints_error",
+            "section_name",
+            "parent_need",
         ],
     ) -> str | None: ...
 
@@ -166,7 +168,7 @@ class NeedItem:
 
     def __setitem__(self, key: str, value: Any) -> None:
         """Set an item by key."""
-        if key not in self._data and key not in self._not_required:
+        if key not in self._data:
             raise KeyError(
                 f"Cannot add new key {key!r} to NeedItem, only existing keys can be modified."
             )
@@ -179,7 +181,8 @@ class NeedItem:
         if part_id not in self._data.get("parts", {}):
             return None
         part_data = self._data["parts"][part_id]
-        full_part: NeedsInfoType = {**self._data, **part_data}
+        # TODO when creating a part, links/links_back are set to empty, but what about other link fields?
+        full_part: NeedsInfoType = {**self._data, **part_data}  # type: ignore[typeddict-unknown-key]
         full_part["id_complete"] = f"{self._data['id']}.{part_data['id']}"
         full_part["id_parent"] = self._data["id"]
         full_part["is_need"] = False
@@ -272,13 +275,8 @@ class NeedPartItem:
             "type_color",
             "type_style",
             "content",
-            "pre_content",
-            "post_content",
             "doctype",
             "external_css",
-            "constraints_error",
-            "section_name",
-            "parent_need",
         ],
     ) -> str: ...
 
@@ -294,6 +292,11 @@ class NeedPartItem:
             "template",
             "post_template",
             "pre_template",
+            "constraints_error",
+            "parent_need",
+            "pre_content",
+            "post_content",
+            "section_name",
         ],
     ) -> str | None: ...
 

@@ -77,10 +77,13 @@
               'type': 'array',
             }),
             'constraints_error': dict({
-              'default': '',
+              'default': None,
               'description': 'An error message set if any constraint failed, and `error_message` field is set in config.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'constraints_passed': dict({
               'default': True,
@@ -268,10 +271,13 @@
               'type': 'string',
             }),
             'parent_need': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first parent id.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'parent_needs': dict({
               'default': list([
@@ -304,10 +310,13 @@
               'type': 'object',
             }),
             'post_content': dict({
-              'default': '',
+              'default': None,
               'description': 'Post-content of the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'post_template': dict({
               'default': None,
@@ -319,10 +328,13 @@
               ]),
             }),
             'pre_content': dict({
-              'default': '',
+              'default': None,
               'description': 'Pre-content of the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'pre_template': dict({
               'default': None,
@@ -346,10 +358,13 @@
               'type': 'string',
             }),
             'section_name': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first section.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'sections': dict({
               'default': list([
@@ -368,10 +383,13 @@
               'type': 'string',
             }),
             'signature': dict({
-              'default': '',
+              'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'specific': dict({
               'default': '',
@@ -489,6 +507,7 @@
             'parent_needs_back': list([
               'EXT_TEST_02',
             ]),
+            'signature': '',
             'title': 'TEST_01 DESCRIPTION',
             'type': 'impl',
             'type_name': 'Implementation',
@@ -618,10 +637,13 @@
               'type': 'array',
             }),
             'constraints_error': dict({
-              'default': '',
+              'default': None,
               'description': 'An error message set if any constraint failed, and `error_message` field is set in config.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'constraints_passed': dict({
               'default': True,
@@ -821,10 +843,13 @@
               'type': 'string',
             }),
             'parent_need': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first parent id.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'parent_needs': dict({
               'default': list([
@@ -857,10 +882,13 @@
               'type': 'object',
             }),
             'post_content': dict({
-              'default': '',
+              'default': None,
               'description': 'Post-content of the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'post_template': dict({
               'default': None,
@@ -872,10 +900,13 @@
               ]),
             }),
             'pre_content': dict({
-              'default': '',
+              'default': None,
               'description': 'Pre-content of the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'pre_template': dict({
               'default': None,
@@ -899,10 +930,13 @@
               'type': 'string',
             }),
             'section_name': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first section.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'sections': dict({
               'default': list([
@@ -921,10 +955,13 @@
               'type': 'string',
             }),
             'signature': dict({
-              'default': '',
+              'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'specific': dict({
               'default': '',
