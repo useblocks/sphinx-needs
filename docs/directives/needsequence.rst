@@ -65,17 +65,17 @@ needsequence
       :triggers: USER_D
       :style: yellow_border
 
-Sequence diagrams supports special needs-combinations, in which one type represents some kind of a ``participant``
+Sequence diagrams support special needs-combinations, in which one type represents some kind of a ``participant``
 and another, linked need is representing the ``message``. |br|
-Examples for this relationship are: Sender-Receiver communication , Role-Activity processes or Tool-Artifact relations.
+Examples for this relationship are: Sender-Receiver communication, Role-Activity processes or Tool-Artifact relations.
 
 ``needsequence`` needs at least one start-need, defined by its ``id`` in the ``:start:`` option.
 
 The first need represents the ``participant``. The next, linked need(s) is representing the ``message``.
 Needs linked from a ``message`` are interpreted as ``participant`` again and so on. |br|
-So the linking must be really clean to get nice, meaningful sequence diagrams out of it.
+So the linking must be very clean to get nice, meaningful sequence diagrams.
 
-The used need-type is unimportant.
+The need type used is unimportant.
 
 .. uml::
    :caption: Participant-Message flow
@@ -141,12 +141,12 @@ filter
 ~~~~~~
 
 You can use the ``:filter:`` option to filter participants.
-We ignore all participants that does not fulfill the filter_string.
+We ignore all participants that do not fulfill the filter_string.
 See :ref:`filter_string` for more information.
 
 Default: None (no active filtering)
 
-You can use this function to filter out a specific participant.
+You can use this option to filter out a specific participant.
 As an example, we use the same ``needsequence`` from the beginning, but without ``USER_C / Expert``:
 
 .. need-example::

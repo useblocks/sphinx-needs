@@ -108,13 +108,13 @@ Running JS Testcases with PyTest
 **Setup Cypress Locally**
 
 * Install Node JS on your computer and ensure it can be accessed through the CMD.
-* Install Cypress using the npm package manager by running ``npm install cypress``. Visit this link for more information on `how to install Cypress <https://docs.cypress.io/guides/getting-started/installing-cypress>`_.
-* Verify if Cypress is installed correctly and is executable by running: ``npx cypress verify``. Get out this page for more information about `Cypress commandline <https://docs.cypress.io/guides/guides/command-line>`_.
-* If everything is successful then we can use Cypress.
+* Install Cypress using the npm package manager by running ``npm install cypress``. See this link for more information on `how to install Cypress <https://docs.cypress.io/guides/getting-started/installing-cypress>`_.
+* Verify if Cypress is installed correctly and is executable by running: ``npx cypress verify``. See this page for more information about `Cypress commandline <https://docs.cypress.io/guides/guides/command-line>`_.
+* If everything is successful, you can use Cypress.
 
 **Enable Cypress Test in Python Test Files**
 
-Under the ``js_test`` folder, you can save your Cypress JS test files (files should end with: ``*.cy.js``). For each Cypress JS test file, you will need to write the Cypress JS test cases in the file. You can read more from the `Cypress Docs <https://docs.cypress.io/>`_. You can also check the ``tests/js_test/sn-collapse-button.cy.js`` file as reference.
+Under the ``js_test`` folder, you can save your Cypress JS test files (files should end with ``*.cy.js``). For each Cypress JS test file, you will need to write the Cypress JS test cases in the file. You can read more from the `Cypress Docs <https://docs.cypress.io/>`_. You can also check the ``tests/js_test/sn-collapse-button.cy.js`` file as reference.
 
 In your Python test files, you must mark every JS related test case with the marker - ``jstest`` and you must include the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter.
 Also, you need to pass the ``test_server`` fixture to your test function for it to use the automated HTTP test server. For example, your test case could look like this:
@@ -169,7 +169,7 @@ After you set the ``spec_pattern`` key-value pair as part of the ``test_app`` fi
         indirect=True,
     )
     def test_collapse_button_in_docs(test_app, test_server):
-        """Check if the Sphinx-Needs collapse button works in the provided documentation source."""
+        """Check whether the Sphinx-Needs collapse button works in the provided documentation source."""
         app = test_app
         app.build()
 
@@ -189,7 +189,7 @@ After you set the ``spec_pattern`` key-value pair as part of the ``test_app`` fi
         return {
             "returncode": 0,
             "stdout": "Test passed string",
-            "stderr": "Errors encountered,
+            "stderr": "Errors encountered",
         }
 
 You can run the ``make test-js`` command to check all JS testcases.
@@ -197,7 +197,7 @@ You can run the ``make test-js`` command to check all JS testcases.
 .. note::
 
     The ``http_server`` process invoked by the ``make test-js`` command may not terminate properly in some instances.
-    Kindly check your system's monitoring app to end the process if not terminated automatically.
+    Please check your system's monitoring app to end the process if it is not terminated automatically.
 
 Benchmarks
 ----------
@@ -205,20 +205,19 @@ Benchmarks
 **Sphinx-Needs** own documentation is used for creating a benchmark for each PR.
 If the runtime takes 10% longer as the previous ones, the benchmark test will fail.
 
-Benchmark test cases are available under ``tests/benchmarks``.
+Benchmark test cases are available in ``tests/benchmarks``.
 
 The results for each PR/commit get added to a chart, which is available under
 http://useblocks.com/sphinx-needs/bench/index.html.
 
-The benchmark data is stored on the `benchmarks` branch, which is also used by github-pages as
-source.
+The benchmark data is stored on the `benchmarks` branch, which is also used by GitHub Pages as its source.
 
 Publishing a new release
 ------------------------
 There is a release pipeline installed for the CI.
 
-This gets triggered automatically, if a tag is created and pushed.
-The tag must follow the format: ``[0-9].[0-9]+.[0-9]``. Otherwise the release jobs won't trigger.
+This is triggered automatically if a tag is created and pushed.
+The tag must follow the format ``[0-9].[0-9]+.[0-9]``. Otherwise, the release jobs will not trigger.
 
 The release jobs will build the source and wheel distribution and try to upload them.
 
@@ -250,7 +249,7 @@ The following is an outline of the build events which this extension adds to the
 
 #. For changed documents (``doctree-read`` event, priority 880 of transforms)
 
-   - Determine and add data on parent sections and needs(``analyse_need_locations``)
+   - Determine and add data on parent sections and needs (``analyse_need_locations``)
    - Remove ``Need`` nodes marked as ``hidden`` (``analyse_need_locations``)
 
 #. When building in parallel mode (``env-merge-info`` event), merge ``BuildEnvironment`` data (``merge_data``)
@@ -266,23 +265,23 @@ The following is an outline of the build events which this extension adds to the
 #. For all changed documents, or their dependants (``doctree-resolved``)
 
    - Replace all ``Needextract`` nodes with a list of the collected ``Need`` (``process_creator``)
-   - Remove all ``Need`` nodes, if ``needs_include_needs`` is ``True`` (``process_need_nodes``)
-   - Call dynamic functions, set as values on the need data items and replace them with their return values (``process_need_nodes -> resolve_dynamic_values``)
-   - Replace needs data variant values (``process_need_nodes -> resolve_variants_options``)
+   - Remove all ``Need`` nodes if ``needs_include_needs`` is ``True`` (``process_need_nodes``)
+   - Call dynamic functions set as values on the need data items and replace them with their return values (``process_need_nodes -> resolve_dynamic_values``)
+   - Replace need data variant values (``process_need_nodes -> resolve_variants_options``)
    - Check for dead links (``process_need_nodes -> check_links``)
    - Generate back links (``process_need_nodes -> create_back_links``)
-   - Process constraints, for each ``Need`` node (``process_need_nodes -> process_constraints``)
-   - Perform all modifications on need data items, due to ``Needextend`` nodes (``process_need_nodes -> extend_needs_data``)
-   - Format each ``Need`` node to give the desired visual output (``process_need_nodes -> print_need_nodes``)
-   - Process all other need specific nodes, replacing them with the desired visual output (``process_creator``)
+   - Process constraints for each ``Need`` node (``process_need_nodes -> process_constraints``)
+   - Perform all modifications on need data items due to ``Needextend`` nodes (``process_need_nodes -> extend_needs_data``)
+   - Format each ``Need`` node to produce the desired visual output (``process_need_nodes -> print_need_nodes``)
+   - Process all other need-specific nodes, replacing them with the desired visual output (``process_creator``)
 
 #. At the end of the build (``build-finished`` event)
 
-   - Call all user defined need data checks, a.k.a `needs_warnings` (``process_warnings``)
-   - Write the ``needs.json`` to the output folder, if `needs_build_json = True` (``build_needs_json``)
-   - Write the ``needs.json`` per ID to the output folder, if `needs_build_json_per_id = True` (``build_needs_id_json``)
-   - Write all UML files to the output folder, if `needs_build_needumls = True` (``build_needumls_pumls``)
-   - Print process timing, if `needs_debug_measurement = True`  (``process_timing``)
+   - Call all user-defined need data checks, a.k.a. `needs_warnings` (``process_warnings``)
+   - Write the ``needs.json`` to the output folder if `needs_build_json = True` (``build_needs_json``)
+   - Write the ``needs.json`` per ID to the output folder if `needs_build_json_per_id = True` (``build_needs_id_json``)
+   - Write all UML files to the output folder if `needs_build_needumls = True` (``build_needumls_pumls``)
+   - Print process timing if `needs_debug_measurement = True`  (``process_timing``)
 
 .. Include our contributors and maintainers.
 .. include:: ../AUTHORS

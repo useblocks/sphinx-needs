@@ -10,7 +10,7 @@ The `Open-Needs <https://open-needs.org/>`__ service retrieves Need objects from
 creates Sphinx-Needs objects during build time.
 The service creates need objects for each element found by querying the Open-Needs REST-API based server.
 
-The service name for Open-Needs service must be ``open-needs``.
+The service name for the Open-Needs service must be ``open-needs``.
 
 Example of an imported open-needs:
 
@@ -60,7 +60,7 @@ The final address of the endpoint. E.g.: ``/api/needs/``
 
 max_content_lines
 #################
-Maximum amount of lines from open-needs objects description/content to be used in need content.
+Maximum number of lines from the open-needs object's description/content to be used in the need content.
 
 Config
 ------
@@ -88,7 +88,7 @@ Prefix string for the final need id.
 
 mapping
 #######
-The field names of a service object do not often map to option names of Sphinx-Needs.
+The field names of a service object often do not map to option names of Sphinx-Needs.
 So **mapping** defines where a Sphinx-Needs option shall get its value inside the service data.
 
 **mapping** must be a dictionary, where the key is the needs object name and the value is either a Jinja string such as ``is_{{status}}``
@@ -133,7 +133,7 @@ Goal: The need option ``author`` shall be set to the last and first names.
 The last and first names information are stored in the retrieved :ref:`Open-Needs <open_need_data>` data
 under ``lastname`` and ``firstname``.
 
-The **mapping** entry for ``author`` would like this:
+The **mapping** entry for ``author`` would look like this:
 
 
 .. code-block:: python
@@ -167,7 +167,7 @@ Jinja support is also available, so that service data is available and can be ac
 
 mappings_replaces
 #################
-There are use cases, where a value inside service data is not valid for a Sphinx-Needs options.
+There are use cases where a value inside the service data is not valid for a Sphinx-Needs option.
 For instance: In the data retrieved from the Open-Needs server, ``type`` is named ``Requirement``, but Sphinx-Needs supports only ``req`` as value for type option.
 
 **mappings_replaces** can replace strings defined by a regular expression with a new value. This replacement is performed for all mappings.
@@ -177,7 +177,7 @@ extra_data
 There may be information stored inside the :ref:`Open-Needs <open_need_data>` service data fields
 which cannot be mapped to the Sphinx-Needs options, but is available inside the Need object.
 
-This can be done by using ``extra_data``, which adds this kind of information to the end of the content of a need object.
+This can be done by using ``extra_data``, which adds this kind of information to the end of a need object's content.
 
 The logic and syntax is the same as used by `mapping <#mapping>`_.
 
@@ -218,7 +218,7 @@ Examples
 
 .. hint::
 
-   The below examples are just images, as no Open-Needs Server instance was available during documentation build.
+   The examples below are just images, as no Open-Needs Server instance was available during documentation build.
 
 .. image:: /_images/ons_example.png
    :align: center
