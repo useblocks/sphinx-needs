@@ -2219,14 +2219,14 @@ needs_variant_options
 
 .. versionadded:: 1.0.2
 
-``needs_variant_options`` must be a list which consists of the options to apply variants handling.
+``needs_variant_options`` must be a list which consists of the options to apply :ref:`variants handling <needs_variant_support>`.
 You can specify the names of the options you want to check for variants.
 
 for example, in ``conf.py``:
 
 .. code-block:: python
 
-   needs_variant_options = ["author", "status", "tags"]
+   needs_variant_options = ["author", "status"]
 
 From the example above, we apply variants handling to only the options specified.
 
@@ -2234,15 +2234,12 @@ Default: ``[]``
 
 .. note::
 
-   1. You must ensure the options in ``needs_variant_options`` are specified in:
-      - ``status``
-      - ``tags``
-      - ``layout``
-      - ``style``
-      - ``constraints``
-      - :ref:`extra options <needs_extra_options>`
-      - :ref:`extra links <needs_extra_links>`.
-   2. By default, if ``needs_variant_options`` is empty, we deactivate variants handling for need options.
+   You must ensure the options ``needs_variant_options`` are one of:
+
+   - ``status``
+   - ``layout``
+   - ``style``
+   - :ref:`extra options <needs_extra_options>`
 
 .. _`needs_render_context`:
 

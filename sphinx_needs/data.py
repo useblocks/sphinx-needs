@@ -124,7 +124,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "show_in_layout": True,
         "allow_default": "str_list",
         "allow_df": True,
-        "allow_variants": True,
         "allow_extend": True,
     },
     "collapse": {
@@ -332,7 +331,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
         "allow_default": "str_list",
         "allow_df": True,
-        "allow_variants": True,
         "allow_extend": True,
     },
     "constraints_results": {

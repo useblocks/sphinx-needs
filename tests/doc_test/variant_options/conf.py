@@ -53,3 +53,6 @@ needs_extra_options = [
     "value",
     "unit",
 ]
+
+needs_build_json = True
+needs_json_remove_defaults = True
