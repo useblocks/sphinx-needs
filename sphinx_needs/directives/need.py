@@ -318,7 +318,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
             need_info["sections"] = []
 
         if "section_name" not in need_info:
-            need_info["section_name"] = ""
+            need_info["section_name"] = None
 
         if "signature" not in need_info:
             need_info["signature"] = ""
@@ -327,7 +327,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
             need_info["parent_needs"] = []
 
         if "parent_need" not in need_info:
-            need_info["parent_need"] = ""
+            need_info["parent_need"] = None
 
         # Fetch values from need
         # Start from the target node, which is a sibling of the current need node
@@ -341,7 +341,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
             need_info["section_name"] = sections[0]
 
         if signature:
-            need_info["signature"] = signature
+            need_info["signature"] = str(signature)
 
         if parent_needs:
             need_info["parent_needs"] = parent_needs
