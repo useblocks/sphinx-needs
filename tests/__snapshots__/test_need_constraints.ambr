@@ -13,6 +13,7 @@
             'completion': '',
             'constraints': list([
             ]),
+            'constraints_error': None,
             'constraints_passed': True,
             'constraints_results': dict({
             }),
@@ -45,14 +46,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
@@ -61,7 +64,7 @@
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
             'service': '',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': None,
             'style': None,
@@ -85,6 +88,7 @@
             'constraints': list([
               'critical',
             ]),
+            'constraints_error': None,
             'constraints_passed': True,
             'constraints_results': dict({
               'critical': dict({
@@ -119,14 +123,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
@@ -135,7 +141,7 @@
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
             'service': '',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': None,
             'style': None,
@@ -195,14 +201,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
@@ -211,7 +219,7 @@
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
             'service': '',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': None,
             'style': 'red_bar',
@@ -235,6 +243,7 @@
             'constraints': list([
               'team',
             ]),
+            'constraints_error': None,
             'constraints_passed': False,
             'constraints_results': dict({
               'team': dict({
@@ -268,14 +277,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
@@ -284,7 +295,7 @@
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
             'service': '',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': None,
             'style': 'yellow_bar,',
@@ -307,6 +318,7 @@
             'completion': '',
             'constraints': list([
             ]),
+            'constraints_error': None,
             'constraints_passed': True,
             'constraints_results': dict({
             }),
@@ -337,14 +349,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
@@ -353,7 +367,7 @@
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
             'service': '',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': 'implemented',
             'style': None,
@@ -413,14 +427,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
@@ -429,7 +445,7 @@
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
             'service': '',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': 'dev',
             'style': 'red_bar',
@@ -489,14 +505,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
@@ -505,7 +523,7 @@
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
             'service': '',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': None,
             'style': 'red_bar',
@@ -529,6 +547,7 @@
             'constraints': list([
               'team',
             ]),
+            'constraints_error': None,
             'constraints_passed': False,
             'constraints_results': dict({
               'team': dict({
@@ -562,14 +581,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
@@ -578,7 +599,7 @@
               'TEST DOCUMENT NEEDS CONSTRAINTS',
             ]),
             'service': '',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': None,
             'style': 'blue_border, yellow_bar',
@@ -637,10 +658,13 @@
               'type': 'array',
             }),
             'constraints_error': dict({
-              'default': '',
+              'default': None,
               'description': 'An error message set if any constraint failed, and `error_message` field is set in config.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'constraints_passed': dict({
               'default': True,
@@ -828,10 +852,13 @@
               'type': 'string',
             }),
             'parent_need': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first parent id.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'parent_needs': dict({
               'default': list([
@@ -864,10 +891,13 @@
               'type': 'object',
             }),
             'post_content': dict({
-              'default': '',
+              'default': None,
               'description': 'Post-content of the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'post_template': dict({
               'default': None,
@@ -879,10 +909,13 @@
               ]),
             }),
             'pre_content': dict({
-              'default': '',
+              'default': None,
               'description': 'Pre-content of the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'pre_template': dict({
               'default': None,
@@ -906,10 +939,13 @@
               'type': 'string',
             }),
             'section_name': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first section.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'sections': dict({
               'default': list([
@@ -928,10 +964,13 @@
               'type': 'string',
             }),
             'signature': dict({
-              'default': '',
+              'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'specific': dict({
               'default': '',

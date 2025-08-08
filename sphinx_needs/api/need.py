@@ -58,7 +58,7 @@ def generate_need(
     constraints: None | str | list[str] = None,
     parts: dict[str, NeedsPartType] | None = None,
     arch: dict[str, str] | None = None,
-    signature: str = "",
+    signature: None | str = None,
     sections: list[str] | None = None,
     jinja_content: bool | None = None,
     hide: None | bool = None,
@@ -300,7 +300,9 @@ def generate_need(
     )
     _copy_links(links, needs_config)
     # ensure parent_need is consistent with parent_needs
-    parent_need = parent_needs[0] if (parent_needs := links.get("parent_needs")) else ""
+    parent_need = (
+        parent_needs[0] if (parent_needs := links.get("parent_needs")) else None
+    )
 
     # Add the need and all needed information
     needs_data: NeedsInfoType = {
@@ -309,6 +311,8 @@ def generate_need(
         "lineno_content": lineno_content,
         "doctype": doctype,
         "content": content,
+        "pre_content": None,
+        "post_content": None,
         "type": need_type,
         "type_name": need_type_data["title"],
         "type_prefix": need_type_data["prefix"],
@@ -319,6 +323,7 @@ def generate_need(
         "constraints": constraints,
         "constraints_passed": True,
         "constraints_results": {},
+        "constraints_error": None,
         "id": need_id,
         "title": title,
         "collapse": collapse,
@@ -344,7 +349,7 @@ def generate_need(
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
         "sections": sections or [],
-        "section_name": sections[0] if sections else "",
+        "section_name": sections[0] if sections else None,
         "signature": signature,
         "parent_need": parent_need,
         **extras,  # type: ignore[typeddict-item]
@@ -403,7 +408,7 @@ def add_need(
     constraints: None | str | list[str] = None,
     parts: dict[str, NeedsPartType] | None = None,
     arch: dict[str, str] | None = None,
-    signature: str = "",
+    signature: None | str = None,
     sections: list[str] | None = None,
     jinja_content: bool | None = None,
     hide: None | bool = None,
