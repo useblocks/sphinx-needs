@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754582750668,
+  "lastUpdate": 1754661604963,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13500,6 +13500,42 @@ window.BENCHMARK_DATA = {
             "value": 75.014943888,
             "unit": "s",
             "extra": "Commit: d2bd68f6c60a314612ef6f4dd7ac32ab8e0e92c7\nBranch: master\nTime: 2025-08-07T18:03:29+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3d5e45939f8960e28f5dfb2283bf4b6f6fcfcfa5",
+          "message": "♻️ Set some core need fields to nullable (#1488)\n\nThese fields were previously set as empty strings, but this makes it\nclearer that they are not set:\npre_content, post_content, constraints_error, section_name,\nsection_name, signature, parent_need",
+          "timestamp": "2025-08-08T15:58:07+02:00",
+          "tree_id": "8692a1f16c2bbf3f8976b3e8296671afd7fd890d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3d5e45939f8960e28f5dfb2283bf4b6f6fcfcfa5"
+        },
+        "date": 1754661585015,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1523949139999985,
+            "unit": "s",
+            "extra": "Commit: 3d5e45939f8960e28f5dfb2283bf4b6f6fcfcfa5\nBranch: master\nTime: 2025-08-08T15:58:07+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.309449124,
+            "unit": "s",
+            "extra": "Commit: 3d5e45939f8960e28f5dfb2283bf4b6f6fcfcfa5\nBranch: master\nTime: 2025-08-08T15:58:07+02:00"
           }
         ]
       }
