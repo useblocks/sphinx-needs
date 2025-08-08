@@ -366,19 +366,22 @@ def resolve_variants_options(
         location = (need["docname"], need["lineno"]) if need["docname"] else None
 
         for var_option in variants_options:
-            if (
-                var_option in need
-                and isinstance(need[var_option], str | list | tuple | set)
-                and (
-                    result := match_variants(
-                        need[var_option],
-                        need_context,
-                        needs_config.variants,
-                        location=location,
-                    )
+            if var_option not in need:
+                raise ValueError(
+                    f"Variant option {var_option!r} not found in need {need['id']!r}"
                 )
-                is not None
-            ):
+            if not (need[var_option] is None or isinstance(need[var_option], str)):
+                raise ValueError(
+                    f"Variant option {var_option!r} in need {need['id']!r} must be a string or None, got {need[var_option]!r}"
+                )
+            if (
+                result := match_variants(
+                    need[var_option],
+                    need_context,
+                    needs_config.variants,
+                    location=location,
+                )
+            ) is not None:
                 need[var_option] = result
 
 
