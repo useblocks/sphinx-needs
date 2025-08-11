@@ -14,6 +14,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -68,7 +69,7 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
@@ -77,7 +78,9 @@
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -86,7 +89,7 @@
         'TEST DOCUMENT LIST2NEED',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -121,6 +124,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -163,7 +167,9 @@
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -172,7 +178,7 @@
         'TEST DOCUMENT LIST2NEED',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -207,6 +213,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -242,14 +249,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -258,7 +267,7 @@
         'LIST2NEED OPTIONS',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'open',
       'style': None,
@@ -293,6 +302,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -328,14 +338,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -344,7 +356,7 @@
         'LIST2NEED OPTIONS',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'done',
       'style': None,
@@ -382,6 +394,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -420,14 +433,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -436,7 +451,7 @@
         'LIST2NEED OPTIONS',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -471,6 +486,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -506,14 +522,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -522,7 +540,7 @@
         'LIST2NEED OPTIONS',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'in progress',
       'style': None,
@@ -558,6 +576,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -592,14 +611,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -608,7 +629,7 @@
         'LIST2NEED LINKS_DOWN',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -644,6 +665,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -678,14 +700,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -694,7 +718,7 @@
         'LIST2NEED LINKS_DOWN',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -730,6 +754,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -764,14 +789,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -780,7 +807,7 @@
         'LIST2NEED LINKS_DOWN',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -816,6 +843,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -851,14 +879,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -867,7 +897,7 @@
         'LIST2NEED GLOBAL TAGS',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'open',
       'style': None,
@@ -905,6 +935,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -939,14 +970,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -955,7 +988,7 @@
         'LIST2NEED GLOBAL TAGS',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'done',
       'style': None,
@@ -996,6 +1029,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -1033,14 +1067,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -1049,7 +1085,7 @@
         'LIST2NEED GLOBAL TAGS',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -1087,6 +1123,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -1122,14 +1159,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -1138,7 +1177,7 @@
         'LIST2NEED GLOBAL TAGS',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'in progress',
       'style': None,
@@ -1176,6 +1215,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -1229,7 +1269,9 @@
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -1238,7 +1280,7 @@
         'TEST DOCUMENT LIST2NEED',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -1273,6 +1315,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -1318,7 +1361,9 @@
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -1327,7 +1372,7 @@
         'TEST DOCUMENT LIST2NEED',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -1362,6 +1407,7 @@
       'completion': '',
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -1396,14 +1442,16 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
@@ -1412,7 +1460,7 @@
         'TEST DOCUMENT LIST2NEED',
       ]),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
