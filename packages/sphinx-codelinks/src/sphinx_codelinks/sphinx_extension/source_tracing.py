@@ -15,13 +15,15 @@ from sphinx_needs.api import (  # type: ignore[import-untyped]
     add_need_type,
 )
 
+from sphinx_codelinks.analyse.analyse import SourceAnalyse
+from sphinx_codelinks.analyse.config import OneLineCommentStyle, OneLineCommentStyleType
 from sphinx_codelinks.sphinx_extension import debug
 from sphinx_codelinks.sphinx_extension.config import (
     SRC_TRACE_CACHE,
     SrcTraceConfigType,
     SrcTraceProjectConfigType,
     SrcTraceSphinxConfig,
-    adpat_src_discovery_config,
+    adpat_src_discover_config,
     check_configuration,
     file_lineno_href,
 )
@@ -30,11 +32,6 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     SourceTracingDirective,
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
-from sphinx_codelinks.virtual_docs.config import (
-    OneLineCommentStyle,
-    OneLineCommentStyleType,
-)
-from sphinx_codelinks.virtual_docs.virtual_docs import VirtualDocs
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +154,7 @@ def set_config_to_sphinx(
                 dict[str, SrcTraceProjectConfigType], value
             ).values():
                 # address SourceDiscovery related config
-                adpat_src_discovery_config(project_config)
+                adpat_src_discover_config(project_config)
 
                 # address OneLoneCommenyStyle config and its default
                 oneline_comment_style: OneLineCommentStyleType | None = cast(
@@ -218,7 +215,7 @@ def emit_warnings(
     app: Sphinx,
     _env: BuildEnvironment,
 ) -> None:
-    warnings = VirtualDocs.load_warnings(Path(app.outdir) / SRC_TRACE_CACHE)
+    warnings = SourceAnalyse.load_warnings(Path(app.outdir) / SRC_TRACE_CACHE)
     if not warnings:
         return
     for warning in warnings:

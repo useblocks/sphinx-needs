@@ -5,13 +5,13 @@ import shutil
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
+from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.sphinx_extension.config import (
     SRC_TRACE_CACHE,
     SrcTraceSphinxConfig,
     check_configuration,
 )
 from sphinx_codelinks.sphinx_extension.source_tracing import set_config_to_sphinx
-from sphinx_codelinks.virtual_docs.virtual_docs import VirtualDocs
 
 
 @pytest.mark.parametrize(
@@ -53,7 +53,7 @@ from sphinx_codelinks.virtual_docs.virtual_docs import VirtualDocs
             [
                 "Project 'dcdc' has the following errors:",
                 "Schema validation error in field 'exclude': 123 is not of type 'string'",
-                "Schema validation error in field 'file_types': 'java' is not one of ['c', 'h', 'cpp', 'hpp']",
+                "Schema validation error in field 'file_types': 'java' is not one of ['c', 'cpp', 'h', 'hpp', 'py']",
                 "Schema validation error in field 'gitignore': '_true' is not of type 'boolean'",
                 "Schema validation error in field 'include': 345 is not of type 'string'",
                 "Schema validation error in field 'src_dir': ['../dcdc'] is not of type 'string'",
@@ -207,7 +207,7 @@ def test_build_html(
     html = Path(app.outdir, "index.html").read_text()
     assert html
 
-    warnings = VirtualDocs.load_warnings(Path(app.outdir) / SRC_TRACE_CACHE)
+    warnings = SourceAnalyse.load_warnings(Path(app.outdir) / SRC_TRACE_CACHE)
     assert not warnings
 
     assert app.env.get_doctree("index") == snapshot_doctree

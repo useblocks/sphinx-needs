@@ -1,0 +1,170 @@
+[
+  {
+    "filepath": "marked_rst/dummy_1.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 8
+      },
+      "end": {
+        "row": 3,
+        "column": 61
+      }
+    },
+    "tagged_scope": "void dummy_func1(){\n     //...\n }",
+    "rst": ".. impl:: implement dummy function 1\n   :id: IMPL_71\n",
+    "type": "rst"
+  },
+  {
+    "filepath": "marked_rst/dummy_1.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 13,
+        "column": 7
+      },
+      "end": {
+        "row": 13,
+        "column": 40
+      }
+    },
+    "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
+    "rst": "..impl:: implement main function ",
+    "type": "rst"
+  },
+  {
+    "filepath": "need_id_refs/dummy_1.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 13
+      },
+      "end": {
+        "row": 2,
+        "column": 51
+      }
+    },
+    "tagged_scope": "void dummy_func1(){\n     //...\n }",
+    "need_ids": [
+      "need_001",
+      "need_002",
+      "need_003",
+      "need_004"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs"
+  },
+  {
+    "filepath": "need_id_refs/dummy_1.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 13
+      },
+      "end": {
+        "row": 7,
+        "column": 21
+      }
+    },
+    "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
+    "need_ids": [
+      "need_003"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs"
+  },
+  {
+    "filepath": "oneline_comment_default/default_oneliners.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 24
+      }
+    },
+    "tagged_scope": "void foo() {}",
+    "need": {
+      "title": "Function Foo",
+      "id": "IMPL_1",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need"
+  },
+  {
+    "filepath": "oneline_comment_default/default_oneliners.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 24
+      }
+    },
+    "tagged_scope": "void bar() {}",
+    "need": {
+      "title": "Function Bar",
+      "id": "IMPL_2",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need"
+  },
+  {
+    "filepath": "oneline_comment_default/default_oneliners.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 4
+      },
+      "end": {
+        "row": 6,
+        "column": 39
+      }
+    },
+    "tagged_scope": "void baz() {}",
+    "need": {
+      "title": "Function Baz, as I want it",
+      "id": "IMPL_3",
+      "type": "impl",
+      "links": []
+    },
+    "type": "need"
+  },
+  {
+    "filepath": "oneline_comment_default/default_oneliners.c",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 9,
+        "column": 4
+      },
+      "end": {
+        "row": 9,
+        "column": 51
+      }
+    },
+    "tagged_scope": "void bar() {}",
+    "need": {
+      "title": "Function Bar,",
+      "id": "IMPL_4",
+      "type": "impl",
+      "links": [
+        "SPEC_1",
+        "SPEC_2"
+      ]
+    },
+    "type": "need"
+  }
+]

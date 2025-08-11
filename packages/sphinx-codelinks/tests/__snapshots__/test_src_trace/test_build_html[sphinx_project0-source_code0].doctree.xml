@@ -13,10 +13,10 @@
     <Need classes="need need-srctrace" ids="ST_FB728" refid="ST_FB728">
     <target anonymous="" ids="IMPL_processAssemble" refid="IMPL_processAssemble">
     <Need classes="need need-impl" ids="IMPL_processAssemble" refid="IMPL_processAssemble">
-    <target anonymous="" ids="IMPL_main_demo1" refid="IMPL_main_demo1">
-    <Need classes="need need-impl" ids="IMPL_main_demo1" refid="IMPL_main_demo1">
     <target anonymous="" ids="IMPL_filterData" refid="IMPL_filterData">
     <Need classes="need need-impl" ids="IMPL_filterData" refid="IMPL_filterData">
+    <target anonymous="" ids="IMPL_main_demo1" refid="IMPL_main_demo1">
+    <Need classes="need need-impl" ids="IMPL_main_demo1" refid="IMPL_main_demo1">
     <target anonymous="" ids="IMPL_processAggregate" refid="IMPL_processAggregate">
     <Need classes="need need-impl" ids="IMPL_processAggregate" refid="IMPL_processAggregate">
     <target anonymous="" ids="IMPL_main_demo2" refid="IMPL_main_demo2">

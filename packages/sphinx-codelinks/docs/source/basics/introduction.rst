@@ -1,18 +1,14 @@
 Introduction
 ============
 
-``CodeLinks`` is a sphinx extension that provides a directive ``src-trace``
-to trace the :external+needs:doc:`Sphinx-Needs <index>` need items defined in source files.
+``CodeLinks`` is a Sphinx extension that provides the ``src-trace`` directive to establish traceability between source code and :external+needs:doc:`Sphinx-Needs <index>` items.
 
-Instead of putting RST syntax in the comment, the need definition in source code is simplified to one-liner only,
-so that users can just write their :ref:`customized one-line comment <oneline>` to have the traceability
-from the link between source code and documentation.
+At its core, ``CodeLinks`` uses a powerful ``Analyse`` to parse source code comments and extract valuable information. The ``Analyse`` can identify and extract three distinct types of content:
 
-The provided directive leverages the other two modules ``SourceDiscovery`` and ``VirtualDocs``,
-which are also packed in the extension,
-to discover source files and create the virtual documents for ``src-trace`` to consume.
+- **One-line need definitions**: Create new Sphinx-Needs directly from a single, :ref:`customized comment line <oneline>` in your source code.
+- **Need ID references**: Link code to existing need items without creating new ones, perfect for tracing implementations to requirements.
+- **Marked RST text**: Extract blocks of reStructuredText embedded within comments, allowing you to include rich documentation with associated metadata right next to your code.
 
-Both ``SourceDiscovery`` and ``VirtualDocs`` provide the followings for the developers :
+``src-trace`` directive then consumes ``One-line need definitions`` to generate traceability between source code and your documentation.
 
-- **Python API** to extend other further use cases.
-- **CLI** to have atomic steps in CI/CD pipelines.
+The ``Analyse``, along with the ``SourceDiscovery`` module, also provides both a **Python API** for extensibility and a **CLI** for integration into CI/CD pipelines.

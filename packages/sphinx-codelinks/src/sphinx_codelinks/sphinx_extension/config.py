@@ -1,19 +1,22 @@
 from dataclasses import MISSING, dataclass, field, fields
 from pathlib import Path
-from typing import Any, Literal, TypedDict, cast
+from typing import Any, TypedDict, cast
 
 from jsonschema import ValidationError, validate
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
-from sphinx_codelinks.source_discovery.config import (
-    SourceDiscoveryConfig,
-    SourceDiscoveryConfigType,
-)
-from sphinx_codelinks.virtual_docs.config import (
+from sphinx_codelinks.analyse.config import (
     SUPPORTED_COMMENT_TYPES,
+    CommentType,
+    MarkedRstConfigType,
+    NeedIdRefsConfigType,
     OneLineCommentStyle,
     OneLineCommentStyleType,
+)
+from sphinx_codelinks.source_discover.config import (
+    SourceDiscoverConfig,
+    SourceDiscoverConfigType,
 )
 
 SRC_TRACE_CACHE: str = "src_trace_cache"
@@ -29,20 +32,22 @@ class SourceTracingLineHref:
 file_lineno_href = SourceTracingLineHref()
 
 
-class SrcTraceProjectConfigFileType(TypedDict):
+class SrcTraceProjectConfigFileType(TypedDict, total=False):
     # only support C/C++ for now
-    comment_type: Literal["cpp", "hpp", "c", "h"]
+    comment_type: CommentType
     src_dir: str
     remote_url_pattern: str
     exclude: list[str]
     include: list[str]
     gitignore: bool
     oneline_comment_style: OneLineCommentStyleType
+    need_id_refs: NeedIdRefsConfigType
+    marked_rst: MarkedRstConfigType
 
 
 class SrcTraceProjectConfigType(TypedDict):
     # only support C/C++ for now
-    comment_type: Literal["cpp", "hpp", "c", "h"]
+    comment_type: CommentType
     src_dir: Path
     remote_url_pattern: str
     exclude: list[str]
@@ -241,11 +246,11 @@ def check_project_configuration(config: SrcTraceSphinxConfig) -> list[str]:
     for project_name, project_config in config.projects.items():
         project_errors: list[str] = []
         oneline_errors = validate_oneline_comment_style(project_config)
-        src_discovery_dict = build_src_discovery_dict(project_config)
-        src_discovery_errors = []
-        if src_discovery_dict is not None:
-            src_discovery_config = SourceDiscoveryConfig(**src_discovery_dict)
-            src_discovery_errors.extend(src_discovery_config.check_schema())
+        src_discover_dict = build_src_discover_dict(project_config)
+        src_discover_errors = []
+        if src_discover_dict is not None:
+            src_discover_config = SourceDiscoverConfig(**src_discover_dict)
+            src_discover_errors.extend(src_discover_config.check_schema())
 
         if config.set_remote_url and "remote_url_pattern" not in project_config:
             project_errors.append(
@@ -257,10 +262,10 @@ def check_project_configuration(config: SrcTraceSphinxConfig) -> list[str]:
         ):
             project_errors.append("remote_url_pattern must be a string")
 
-        if oneline_errors or src_discovery_errors or project_errors:
+        if oneline_errors or src_discover_errors or project_errors:
             errors.append(f"Project '{project_name}' has the following errors:")
             errors.extend(oneline_errors)
-            errors.extend(src_discovery_errors)
+            errors.extend(src_discover_errors)
             errors.extend(project_errors)
 
     return errors
@@ -283,42 +288,42 @@ def validate_oneline_comment_style(
     return []
 
 
-def build_src_discovery_dict(
+def build_src_discover_dict(
     project_config: SrcTraceProjectConfigType,
-) -> SourceDiscoveryConfigType | None:
-    src_discovery_dict = cast(SourceDiscoveryConfigType, {})
+) -> SourceDiscoverConfigType | None:
+    src_discover_dict = cast(SourceDiscoverConfigType, {})
     # adapt the configs between source tracing and source discovery
     if "comment_type" in project_config:
         # comment type error will be taken care by SourceDiscovery class later
-        src_discovery_dict["file_types"] = (
+        src_discover_dict["file_types"] = (
             list(SUPPORTED_COMMENT_TYPES)
             if project_config["comment_type"] in SUPPORTED_COMMENT_TYPES
             else [project_config["comment_type"]]
         )
     for key in ("exclude", "include", "gitignore", "src_dir"):
         if key in project_config:
-            src_discovery_dict[key] = project_config[key]
+            src_discover_dict[key] = project_config[key]
 
-    return src_discovery_dict
+    return src_discover_dict
 
 
-def adpat_src_discovery_config(project_config: SrcTraceProjectConfigType) -> None:
-    src_discovery_dict = build_src_discovery_dict(project_config)
-    if src_discovery_dict:
-        src_discovery_config = SourceDiscoveryConfig(**src_discovery_dict)
+def adpat_src_discover_config(project_config: SrcTraceProjectConfigType) -> None:
+    src_discover_dict = build_src_discover_dict(project_config)
+    if src_discover_dict:
+        src_discover_config = SourceDiscoverConfig(**src_discover_dict)
     else:
-        src_discovery_config = SourceDiscoveryConfig()
+        src_discover_config = SourceDiscoverConfig()
 
-    for _field in fields(src_discovery_config):
+    for _field in fields(src_discover_config):
         key = "comment_type" if _field.name == "file_types" else _field.name
 
         if key == "comment_type":
-            file_types = getattr(src_discovery_config, _field.name)
+            file_types = getattr(src_discover_config, _field.name)
             if set(file_types) == SUPPORTED_COMMENT_TYPES:
-                comment_type = "cpp"
+                comment_type = CommentType.cpp
             else:
                 comment_type = file_types[0]
             project_config[key] = comment_type  # type: ignore[literal-required]  # dynamically assign
             continue
 
-        project_config[key] = getattr(src_discovery_config, _field.name)  # type: ignore[literal-required]  # dynamically assign
+        project_config[key] = getattr(src_discover_config, _field.name)  # type: ignore[literal-required]  # dynamically assign
