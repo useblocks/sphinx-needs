@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1754661604963,
+  "lastUpdate": 1754902200290,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13536,6 +13536,42 @@ window.BENCHMARK_DATA = {
             "value": 58.309449124,
             "unit": "s",
             "extra": "Commit: 3d5e45939f8960e28f5dfb2283bf4b6f6fcfcfa5\nBranch: master\nTime: 2025-08-08T15:58:07+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "425043317f292f05ac71b030e17d6aae3c2ce003",
+          "message": "🐛 Fix: disallow need variants for list type fields (#1489)\n\nThe variant processing was turning these into strings, rather than list\nof strings, which does not make sense and breaks the need item schema.\n\nSince this is the case, and has not been noticed before, it is doubtful\nthat variants are ever used in this context.",
+          "timestamp": "2025-08-11T10:48:09+02:00",
+          "tree_id": "e1edc29d4f014bf3f46cf4531ef1457a49b86580",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/425043317f292f05ac71b030e17d6aae3c2ce003"
+        },
+        "date": 1754902182255,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2509176229999923,
+            "unit": "s",
+            "extra": "Commit: 425043317f292f05ac71b030e17d6aae3c2ce003\nBranch: master\nTime: 2025-08-11T10:48:09+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.729752225,
+            "unit": "s",
+            "extra": "Commit: 425043317f292f05ac71b030e17d6aae3c2ce003\nBranch: master\nTime: 2025-08-11T10:48:09+02:00"
           }
         ]
       }
