@@ -717,11 +717,7 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     }
     for option in external_variant_options:
         # Check variant option is added to an allowed field
-        if (
-            option not in extra_options
-            and option not in link_types
-            and option not in allowed_internal_variants
-        ):
+        if option not in extra_options and option not in allowed_internal_variants:
             raise NeedsConfigException(
                 f"Variant option `{option}` is not added in either extra options or extra links. "
                 "This is not allowed."
