@@ -112,7 +112,7 @@ def test_filter_build_html(test_app):
 
 
 def create_needs_view():
-    needs = [
+    needs_core = [
         {
             "id": "req_a_1",
             "type": "requirement",
@@ -173,7 +173,10 @@ def create_needs_view():
         },
     ]
 
-    need_items = [NeedItem(n) for n in needs]
+    need_items = [
+        NeedItem(core=core | {"is_need": True, "is_part": False}, extras={}, links={})
+        for core in needs_core
+    ]
 
     return NeedsView._from_needs({n["id"]: n for n in need_items})
 
