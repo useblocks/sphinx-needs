@@ -242,9 +242,7 @@ class NeedimportDirective(SphinxDirective):
             # Replace id, to get unique ids
             need_id = need_params["id"] = id_prefix + need_params["id"]
 
-            # override location
-            need_params["docname"] = None
-            need_params["lineno"] = None
+            # set location
             need_source = NeedItemSourceImport(
                 docname=self.env.docname,
                 lineno=self.lineno,
@@ -253,7 +251,10 @@ class NeedimportDirective(SphinxDirective):
 
             try:
                 nodes = add_need(
-                    self.env.app, self.state, need_source=need_source, **need_params
+                    app=self.env.app,
+                    state=self.state,
+                    need_source=need_source,
+                    **need_params,
                 )
             except InvalidNeedException as err:
                 log_warning(

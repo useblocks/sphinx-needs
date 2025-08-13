@@ -174,10 +174,8 @@ class NeedDirective(SphinxDirective):
 
         try:
             need_nodes = add_need(
-                self.env.app,
-                self.state,
-                docname=None,
-                lineno=None,
+                app=self.env.app,
+                state=self.state,
                 need_source=source,
                 need_type=self.name,
                 title=title,

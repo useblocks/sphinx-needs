@@ -408,11 +408,11 @@ def generate_need(
 
 def add_need(
     app: Sphinx,
-    state: None | RSTState,
-    docname: None | str,
-    lineno: None | int,
-    need_type: str,
-    title: str,
+    state: None | RSTState = None,
+    docname: None | str = None,
+    lineno: None | int = None,
+    need_type: str = "",
+    title: str = "",
     *,
     need_source: NeedItemSourceProtocol | None = None,
     id: str | None = None,
@@ -763,9 +763,6 @@ def add_external_need(
 
     return add_need(
         app=app,
-        state=None,
-        docname=None,
-        lineno=None,
         need_source=need_source,
         need_type=need_type,
         id=id,
