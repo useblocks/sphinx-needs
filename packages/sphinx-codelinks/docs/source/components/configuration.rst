@@ -13,33 +13,39 @@ All configuration options start with the prefix ``src_trace_`` for **Sphinx-Code
 Global Options
 --------------
 
-The options starts with the prefix ``src_trace_`` are globally applied in the scope of Sphinx documentation.
+Global options use the ``src_trace_`` prefix and are applied across the entire Sphinx documentation project.
 
 src_trace_config_from_toml
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This configuration takes the (relative) path to a `toml file <https://toml.io>`__
-which contains some or all of the ``CodeLinks`` configuration
-(configuration in the toml will override that in the :file:`conf.py`).
+Specifies the path to a `TOML file <https://toml.io>`__ containing **Sphinx-CodeLinks** configuration options. This allows you to maintain configuration in a separate file for better organization.
+
+**Type:** ``str`` (relative path to the directory where conf.py locates)
+**Default:** Not set
 
 .. code-block:: python
 
-   # Specify the config path for source tracing in conf.py
+   # In conf.py
    src_trace_config_from_toml = "src_trace.toml"
 
-Configuration in the toml can contain any of the following options, under a ``[src_trace]`` section,
-but with the ``src_trace_`` prefix removed.
+When using a TOML configuration file:
 
-.. caution:: Any configuration specifying relative paths in the toml file will be resolved relatively to the directory containing the ``toml`` file.
+- Configuration options are placed under a ``[src_trace]`` section
+- The ``src_trace_`` prefix is omitted in the TOML file
+- TOML configuration overrides settings in :file:`conf.py`
 
-.. _`src_trace_set_local_url`:
+.. caution::
+   Relative paths specified in the TOML file are resolved relative to the directory containing the TOML file, not the Sphinx project root.
+
+.. _src_trace_set_local_url:
 
 src_trace_set_local_url
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Set this option to ``True``, if the local link between a need to the local source code where it is defined is required.
+Enables the generation of local file system links to source code locations. When enabled, **Sphinx-CodeLinks** will add a custom field, which contains the local path to the source file, to generated needs.
 
-Default: **False**
+**Type:** ``bool``
+**Default:** ``False``
 
 .. tabs::
 
@@ -52,14 +58,14 @@ Default: **False**
       [src_trace]
       set_local_url = true
 
-src_trace_set_local_field
+src_trace_local_url_field
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. note:: This option is only required if :ref:`src_trace_set_local_url` is set to **True**.
+Specifies the custom field name used for local source code links.
 
-Set the desired custom field name for the local link to the source code.
-
-Default: **local-url**
+**Type:** ``str``
+**Default:** ``"local-url"``
+**Required when:** :ref:`src_trace_set_local_url` is ``True``
 
 .. tabs::
 
@@ -72,17 +78,15 @@ Default: **local-url**
       [src_trace]
       local_url_field = "local-url"
 
-.. _`src_trace_set_remote_url`:
+.. _src_trace_set_remote_url:
 
 src_trace_set_remote_url
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Set this option to ``True``, if the remote link between a need to the remote source code
-where it is defined is required.
+Enables the generation of remote repository links to source code locations. When enabled, **Sphinx-CodeLinks** will add a custom field, which contains the URL to the remote repository (e.g., GitHub, GitLab) where the source file is hosted, to needs.
 
-The remote means where the source code is hosted such as GitHub.
-
-Default: **False**
+**Type:** ``bool``
+**Default:** ``False``
 
 .. tabs::
 
@@ -95,14 +99,14 @@ Default: **False**
       [src_trace]
       set_remote_url = true
 
-src_trace_set_remote_field
+src_trace_remote_url_field
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. note:: This option is only required if :ref:`src_trace_set_remote_url` is set to **True**.
+Specifies the custom field name used for remote source code links.
 
-Set the desired custom field name for the remote link to the source code.
-
-Default: **remote-url**
+**Type:** ``str``
+**Default:** ``"remote-url"``
+**Required when:** :ref:`src_trace_set_remote_url` is ``True``
 
 .. tabs::
 
@@ -115,106 +119,131 @@ Default: **remote-url**
       [src_trace]
       remote_url_field = "remote-url"
 
-Project Specific Options
-------------------------
+Project-Specific Options
+-------------------------
 
-Options defined in **src_trace_projects** are project-specific.
+Project-specific options are configured within the ``src_trace_projects`` dictionary, allowing different settings for each source code project being analyzed.
 
 src_trace_projects
 ~~~~~~~~~~~~~~~~~~
 
-This option contains multiple sets of project-specific options. The project name is defined as the key in a dictionary
-and its corresponding value is a dictionary containing the options specific to that project.
+Defines configuration for individual source code projects. Each project is identified by a unique name (key) and contains its own set of configuration options (value).
+
+**Type:** ``dict[str, dict]``
+**Default:** ``{}``
 
 .. tabs::
 
    .. code-tab:: python
 
-      project_options = dict()
       src_trace_projects = {
-         "project_name": project_options
+          "my_project": {
+              # Project-specific options go here
+          },
+          "another_project": {
+              # Different options for another project
+          }
       }
 
    .. code-tab:: toml
 
-      [src_trace.projects.project_name]
-      # Project configuration for "project_name" shall be written here
+      [src_trace.projects.my_project]
+      # Configuration for "my_project"
+
+      [src_trace.projects.another_project]
+      # Configuration for "another_project"
 
 remote_url_pattern
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
-This option only works with :ref:`src_trace_set_remote_url` set to **True**.
-The pattern to access the source code to the remote repositories such as GitHub.
+Defines the URL pattern for generating links to remote source code repositories (e.g., GitHub, GitLab). This pattern uses placeholders that are dynamically replaced with actual values.
 
-Default: **Not set**
+**Type:** ``str``
+**Default:** Not set
+**Required when:** :ref:`src_trace_set_remote_url` is ``True``
+
+**Available placeholders:**
+
+- ``{commit}`` - Git commit hash
+- ``{path}`` - Relative path to the source file
+- ``{line}`` - Line number in the source file
 
 .. tabs::
 
    .. code-tab:: python
 
       src_trace_projects = {
-         "project_name": {
-            "remote_url_pattern": "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
-         }
+          "my_project": {
+              "remote_url_pattern": "https://github.com/user/repo/blob/{commit}/{path}#L{line}"
+          }
       }
 
    .. code-tab:: toml
 
-      [src_trace.projects.project_name]
-      remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+      [src_trace.projects.my_project]
+      remote_url_pattern = "https://github.com/user/repo/blob/{commit}/{path}#L{line}"
 
-This option leverages the configuration of :external+needs:ref:`need_string_links<needs_string_links>`
-with the following setup:
+**Common patterns:**
 
-.. code-block:: python
+- **GitHub:** ``https://github.com/user/repo/blob/{commit}/{path}#L{line}``
+- **GitLab:** ``https://gitlab.com/user/repo/-/blob/{commit}/{path}#L{line}``
+- **Bitbucket:** ``https://bitbucket.org/user/repo/src/{commit}/{path}#lines-{line}``
 
-   remote_url_pattern = remote_url_pattern.format(
-      commit=commit_id,
-      path=f"{remote_src_dir}/" + "{{value}}",
-      line="{{lineno}}",
-   )
-
-   {
-      "regex": r"^(?P<value>.+)#L(?P<lineno>.*)?",
-      "link_url": remote_url_pattern,
-      "link_name": "{{value}}#L{{lineno}}",
-      "options": [remote_url_field],
-   }
+.. note::
+   This option integrates with :external+needs:ref:`need_string_links<needs_string_links>` to automatically generate clickable links in the documentation.
 
 source_discover
 ~~~~~~~~~~~~~~~
 
-This option enables users to discover the source files of the project, which will be processed by ``CodeLinks``.
+Configures how **Sphinx-CodeLinks** discovers and processes source files within a project. This option controls which files are analyzed for extracting documentation needs.
 
-Default:
+**Type:** ``dict``
+**Default:** See below
 
 .. tabs::
 
    .. code-tab:: python
 
       src_trace_projects = {
-         "project_name":{
-            "source_discover":
-            {
-               "src_dir": "./",
-               "exclude": [],
-               "include": [],
-               "gitignore": True,
-               "comment_type": "cpp"
-            }
-         }
+          "my_project": {
+              "source_discover": {
+                  "src_dir": "./",
+                  "exclude": [],
+                  "include": [],
+                  "gitignore": True,
+                  "comment_type": "cpp"
+              }
+          }
+      }
 
-The details of each options are explained in :ref:`source discover <discover>`
+   .. code-tab:: toml
 
-.. _`oneline_comment_style`:
+      [src_trace.projects.my_project.source_discover]
+      src_dir = "./"
+      exclude = []
+      include = []
+      gitignore = true
+      comment_type = "cpp"
+
+**Configuration fields:**
+
+- ``src_dir`` - Root directory for source file discovery (relative to Sphinx project root or the directory where TOML config file locates if given)
+- ``exclude`` - List of glob patterns to exclude from processing
+- ``include`` - List of glob patterns to include (if empty, includes all files)
+- ``gitignore`` - Whether to respect ``.gitignore`` rules when discovering files (Nested .gitignore is NOT supported yet)
+- ``comment_type`` - Comment style for the programming language ("cpp" and "python" are currently supported)
+
+For detailed information about each field, see :ref:`source discover <discover>`.
+
+.. _oneline_comment_style:
 
 oneline_comment_style
 ~~~~~~~~~~~~~~~~~~~~~
 
-This option enables users to simply define a customized one-line-pattern comment to represent
-``Sphinx-Needs`` need items instead of using RST.
+Enables the use of simplified one-line comment patterns to represent **Sphinx-Needs** items directly in source code, eliminating the need for embedded RST syntax.
 
-Default:
+**Type:** ``dict``
+**Location:** ``src_trace_projects[project_name]["analyse"]["oneline_comment_style"]``
 
 .. tabs::
 
@@ -222,49 +251,62 @@ Default:
 
       import os
       src_trace_projects = {
-         "project_name": {
-            "oneline_comment_style": {
-               "start_sequence": "@",
-               "end_sequence": os.linesep,
-               "field_split_char": ",",
-               needs_fields = [
-                  {"name": "title"},
-                  {"name": "id"},
-                  {"name": "type", "default": "impl"},
-                  {"name": "links", "type": "list[str]", "default": []},
-               ]
-            }
-         }
+          "my_project": {
+              "analyse": {
+                  "oneline_comment_style": {
+                      "start_sequence": "@",
+                      "end_sequence": os.linesep,
+                      "field_split_char": ",",
+                      "needs_fields": [
+                          {"name": "title"},
+                          {"name": "id"},
+                          {"name": "type", "default": "impl"},
+                          {"name": "links", "type": "list[str]", "default": []},
+                      ]
+                  }
+              }
+          }
       }
 
    .. code-tab:: toml
 
-      [src_trace.projects.project_name.oneline_comment_style]
+      [src_trace.projects.my_project.analyse.oneline_comment_style]
       start_sequence = "@"
-      # end_sequence for the online comments; default is an os-dependant newline character
+      end_sequence = "\n"  # Platform-specific line ending
       field_split_char = ","
       needs_fields = [
-         { "name" = "title", "type" = "str" },
-         { "name" = "id", "type" = "str" },
-         { "name" = "type", "type" = "str", "default" = "impl" },
-         { "name" = "links", "type" = "list[str]", "default" = [] },
+          { name = "title", type = "str" },
+          { name = "id", type = "str" },
+          { name = "type", type = "str", default = "impl" },
+          { name = "links", type = "list[str]", default = [] },
       ]
 
-With the default, the following one-line comment will be extracted by ``CodeLinks`` and
-it is equivalent to the following RST
+**Configuration fields:**
 
-.. tabs::
+- ``start_sequence`` - Character(s) that begin a one-line comment pattern
+- ``end_sequence`` - Character(s) that end a one-line comment pattern (typically line ending)
+- ``field_split_char`` - Character used to separate fields within the comment
+- ``needs_fields`` - List of field definitions for extracting need information
 
-   .. code-tab:: c
+**Example usage:**
 
-      // @Function Bar, IMPL_4, impl, [SPEC_1, SPEC_2]
+The following one-line comment in source code:
 
-   .. code-tab:: RST
+.. code-block:: cpp
 
-      .. impl:: Function Bar
-         :id: IMPL_4
-         :links: [SPEC_1, SPEC_2]
+   // @Function Bar, IMPL_4, impl, [SPEC_1, SPEC_2]
 
-.. caution:: **type** and **title** must be configured in **needs_fields** as they are mandatory for Sphinx-Needs
+Is equivalent to this RST directive:
 
-More uses cases can be found in `tests <https://github.com/useblocks/sphinx-codelinks/tree/main/tests>`__
+.. code-block:: rst
+
+   .. impl:: Function Bar
+      :id: IMPL_4
+      :links: SPEC_1, SPEC_2
+
+.. important::
+   The ``type`` and ``title`` fields must be configured in ``needs_fields`` as they are mandatory for **Sphinx-Needs**.
+
+**Additional examples and use cases:**
+
+For more comprehensive examples and advanced configurations, see the `test cases <https://github.com/useblocks/sphinx-codelinks/tree/main/tests>`__.

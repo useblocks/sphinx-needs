@@ -6,127 +6,181 @@ Source Discover
 SourceDiscover is one of the modules provided in ``Codelinks``. It discovers the source files from the given directory.
 It provides users CLI and API to discover the source files.
 
+
+.. _`default_discover`:
+
 Configuration
 ~~~~~~~~~~~~~
 
 When used as CLI, a TOML config file can be provided to configure the source discover module.
-The config file contains the following fields:
+The default configuration is as follows:
 
-comment_type
-------------
+.. code-block:: toml
 
-This option defines the comment type used in the source code of the project.
+      [source_discover]
+      src_dir = "./",
+      exclude = [],
+      include = [],
+      gitignore = true,
+      comment_type = "cpp"
 
-Default: **cpp**
-
-.. note:: Currently, only C/C++ is supported
-
-.. tabs::
-
-   .. code-tab:: python
-
-      src_trace_projects = {
-         "project_name": {
-            "comment_type": "c"
-         }
-      }
-
-   .. code-tab:: toml
-
-      [src_trace.projects.project_name]
-      comment_type = "c"
-
-.. _source_dir:
+The details of each field are the followings
 
 src_dir
--------
+~~~~~~~
 
-The relative path from the ``conf.py`` or ``.toml`` file to the source code's root directory
+Specifies the root directory for source file discovery. This path is resolved relative to the location of the TOML configuration file.
 
-Default: **./**
+**Type:** ``str``
+**Default:** ``"./"``
 
-.. tabs::
+.. code-block:: toml
 
-   .. code-tab:: python
+   [source_discover]
+   src_dir = "../src"
 
-      src_trace_projects = {
-         "project_name": {
-            "src_dir": "./../src"
-         }
-      }
+**Examples:**
 
-   .. code-tab:: toml
-
-      [src_trace.projects.project_name]
-      src_dir = "./../src"
+- ``"./"`` - Current directory (relative to config file)
+- ``"../src"`` - Parent directory's src folder
+- ``"./my_project/source"`` - Subdirectory within current directory
 
 exclude
--------
+~~~~~~~
 
-The option is a list of glob patterns to exclude the files which are not required to be addressed
+Defines a list of glob patterns for files and directories to exclude from discovery. This is useful for ignoring build artifacts, temporary files, or specific source files that shouldn't be processed.
 
-Default: **[]**
+**Type:** ``list[str]``
+**Default:** ``[]``
 
-.. tabs::
+.. code-block:: toml
 
-   .. code-tab:: python
+   [source_discover]
+   exclude = [
+       "build/**",
+       "*.tmp",
+       "tests/fixtures/**",
+       "vendor/third_party/**"
+   ]
 
-      src_trace_projects = {
-         "project_name": {
-            "exclude": ["dcdc/src/ubt/ubt.cpp"]
-         }
-      }
+**Common exclusion patterns:**
 
-   .. code-tab:: toml
-
-      [src_trace.projects.project_name]
-      exclude = ["dcdc/src/ubt/ubt.cpp"]
-
+- ``"build/**"`` - Exclude entire build directory
+- ``"*.o"`` - Exclude object files
+- ``"**/__pycache__/**"`` - Exclude Python cache directories
+- ``"node_modules/**"`` - Exclude Node.js dependencies
 
 include
--------
+~~~~~~~
 
-The option is a list of glob patterns to include the files which are required to be addressed
+Defines a list of glob patterns for files to explicitly include in discovery. When specified, only files matching these patterns will be processed, regardless of other filtering rules.
 
-Default: **[]**
+**Type:** ``list[str]``
+**Default:** ``[]`` (include all files)
 
-.. tabs::
+.. code-block:: toml
 
-   .. code-tab:: python
+   [source_discover]
+   include = [
+       "src/**/*.cpp",
+       "src/**/*.h",
+       "include/**/*.hpp"
+   ]
 
-      src_trace_projects =
-      {
-         "project_name": {
-            "include": ["dcdc/src/ubt/ubt.cpp"]
-         }
-      }
+**Priority:** The ``include`` option has the highest priority and overrides both ``exclude`` and ``gitignore`` settings.
 
-   .. code-tab:: toml
+**Common inclusion patterns:**
 
-      [src_trace.projects.project_name]
-      include = ["dcdc/src/ubt/ubt.cpp"]
+- ``"**/*.cpp"`` - Include all C++ source files
+- ``"**/*.py"`` - Include all Python files
+- ``"src/**"`` - Include everything in src directory
+- ``"*.{c,h}"`` - Include C source and header files
 
-.. note:: **include** option has the highest priority over **exclude** and **gitignore** options.
+comment_type
+~~~~~~~~~~~~
+
+Specifies the comment syntax style used in the source code files. This determines what file types are discovered and how **Sphinx-CodeLinks** parses comments for documentation extraction.
+
+**Type:** ``str``
+**Default:** ``"cpp"``
+**Supported values:** ``"cpp"``, ``"python"``
+
+.. code-block:: toml
+
+   [source_discover]
+   comment_type = "python"
+
+**Supported comment styles:**
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 30 50
+
+   * - Language
+     - comment_type
+     - Comment Syntax
+     - discovered file types
+   * - C/C++
+     - ``"cpp"``
+     - ``//`` (single-line), ``/* */`` (multi-line)
+     - ``c``, ``h``, ``.cpp``, and ``.hpp``
+   * - Python
+     - ``"python"``
+     - ``#`` (single-line), ``""" """`` (docstrings)
+     - ``.py``
+
+.. note::
+   Future versions may support additional programming languages. Currently, only C/C++ and Python comment styles are supported.
 
 gitignore
----------
+~~~~~~~~~
 
-The option to respect the .gitignore file.
+Controls whether to respect ``.gitignore`` files when discovering source files. When enabled, files and directories listed in ``.gitignore`` will be automatically excluded from processing.
 
-Default: **True**
+**Type:** ``bool``
+**Default:** ``true``
 
-.. tabs::
+.. code-block:: toml
 
-   .. code-tab:: python
+   [source_discover]
+   gitignore = false
 
-      src_trace_projects = {
-         "project_name": {
-            "gitignore": False
-         }
+**Behavior:**
 
-   .. code-tab:: toml
+- ``true`` - Respect ``.gitignore`` rules (recommended)
+- ``false`` - Ignore ``.gitignore`` files and process all matching files
 
-      [src_trace.projects.project_name]
-      gitignore = false
+.. important::
+   **Current Limitation:** This option only supports the root-level ``.gitignore`` file. Nested ``.gitignore`` files in subdirectories or parent directories are not currently processed.
 
-.. attention:: This option currently does NOT support nested .gitignore files
+Usage Examples
+--------------
+
+**Basic Configuration:**
+
+.. code-block:: toml
+
+   [source_discover]
+   src_dir = "./src"
+   comment_type = "cpp"
+
+**Advanced Filtering:**
+
+.. code-block:: toml
+
+   [source_discover]
+   src_dir = "./"
+   include = []
+   exclude = ["src/legacy/**", "**/*_test.cpp"]
+   gitignore = true
+   comment_type = "cpp"
+
+**Python Project:**
+
+.. code-block:: toml
+
+   [source_discover]
+   src_dir = "./my_package"
+   include = []
+   exclude = ["tests/**", "setup.py"]
+   comment_type = "python"
