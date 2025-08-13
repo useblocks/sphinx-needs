@@ -5,10 +5,12 @@ local_url_field = "local-url"   # Need's field name for local URL
 set_remote_url = true           # Set to true to enable remote url to be generated
 remote_url_field = "remote-url" # Need's field name for remote URL
 
-[src_trace.projects.dcdc]
 # Configuration for source tracing project "dcdc"
-src_dir = "../tests/data/dcdc"                                                                    # Relative path from conf.py to the source directory
+[src_trace.projects.dcdc]
 remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}" # URL pattern for remote source code
+
+[src_trace.projects.dcdc.source_discover]
+src_dir = "../tests/data/dcdc" # Relative path from this TOML config to the source directory
 
 [src_trace.projects.dcdc.oneline_comment_style]
 # Configuration for oneline comment style

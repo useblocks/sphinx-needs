@@ -140,54 +140,6 @@ and its corresponding value is a dictionary containing the options specific to t
       [src_trace.projects.project_name]
       # Project configuration for "project_name" shall be written here
 
-comment_type
-~~~~~~~~~~~~
-
-This option defines the comment type used in the source code of the project.
-
-Default: **cpp**
-
-.. note:: Currently, only C/C++ is supported
-
-.. tabs::
-
-   .. code-tab:: python
-
-      src_trace_projects = {
-         "project_name": {
-            "comment_type": "c"
-         }
-      }
-
-   .. code-tab:: toml
-
-      [src_trace.projects.project_name]
-      comment_type = "c"
-
-.. _source_dir:
-
-src_dir
-~~~~~~~
-
-The relative path from the ``conf.py`` or ``.toml`` file to the source code's root directory
-
-Default: **./**
-
-.. tabs::
-
-   .. code-tab:: python
-
-      src_trace_projects = {
-         "project_name": {
-            "src_dir": "./../src"
-         }
-      }
-
-   .. code-tab:: toml
-
-      [src_trace.projects.project_name]
-      src_dir = "./../src"
-
 remote_url_pattern
 ~~~~~~~~~~~~~~~~~~
 
@@ -229,75 +181,30 @@ with the following setup:
       "options": [remote_url_field],
    }
 
-exclude
-~~~~~~~
+source_discover
+~~~~~~~~~~~~~~~
 
-The option is a list of glob patterns to exclude the files which are not required to be addressed
+This option enables users to discover the source files of the project, which will be processed by ``CodeLinks``.
 
-Default: **[]**
-
-.. tabs::
-
-   .. code-tab:: python
-
-      src_trace_projects = {
-         "project_name": {
-            "exclude": ["dcdc/src/ubt/ubt.cpp"]
-         }
-      }
-
-   .. code-tab:: toml
-
-      [src_trace.projects.project_name]
-      exclude = ["dcdc/src/ubt/ubt.cpp"]
-
-include
-~~~~~~~
-
-The option is a list of glob patterns to include the files which are required to be addressed
-
-Default: **[]**
-
-.. tabs::
-
-   .. code-tab:: python
-
-      src_trace_projects =
-      {
-         "project_name": {
-            "include": ["dcdc/src/ubt/ubt.cpp"]
-         }
-      }
-
-   .. code-tab:: toml
-
-      [src_trace.projects.project_name]
-      include = ["dcdc/src/ubt/ubt.cpp"]
-
-.. note:: **include** option has the highest priority over **exclude** and **gitignore** options.
-
-gitignore
-~~~~~~~~~
-
-The option to respect the .gitignore file.
-
-Default: **True**
+Default:
 
 .. tabs::
 
    .. code-tab:: python
 
       src_trace_projects = {
-         "project_name": {
-            "gitignore": False
+         "project_name":{
+            "source_discover":
+            {
+               "src_dir": "./",
+               "exclude": [],
+               "include": [],
+               "gitignore": True,
+               "comment_type": "cpp"
+            }
          }
 
-   .. code-tab:: toml
-
-      [src_trace.projects.project_name]
-      gitignore = false
-
-.. attention:: This option currently does NOT support nested .gitignore files
+The details of each options are explained in :ref:`source discover <discover>`
 
 .. _`oneline_comment_style`:
 
