@@ -1,7 +1,9 @@
 Quick Start
 ===========
 
-.. image:: local_link.gif
+.. video:: local_link.mp4
+   :alt: local link
+   :align: center
 
 Three steps to quickly run ``CodeLinks`` to generate links to your source code:
 
@@ -33,15 +35,12 @@ One-line comment
    :caption: dummy_src.cpp
    :language: cpp
 
-
 Directive
 ---------
 
 .. literalinclude:: ./../../../tests/doc_test/minimum_config/index.rst
    :caption: index.rst
    :language: rst
-
-
 
 Example
 -------

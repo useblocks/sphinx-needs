@@ -60,6 +60,7 @@ dev-dependencies = [
   "toml>=0.10.2",
   "sphinx-code-tabs>=0.5.5",
   "sphinxcontrib-typer>=0.5.1",
+  "sphinxcontrib-video>=0.4.1",
 ]
 
 [project.scripts]
