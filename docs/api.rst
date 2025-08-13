@@ -38,10 +38,10 @@ Data
 ----
 
 .. automodule:: sphinx_needs.need_item
-   :members: NeedItem, NeedPartItem
+   :members: NeedItem, NeedPartItem, NeedItemSourceProtocol
 
 .. automodule:: sphinx_needs.data
-   :members: NeedsInfoType, NeedsMutable, NeedsPartType
+   :members: NeedsInfoType, NeedsSourceInfoType, NeedsMutable, NeedsPartType
 
 Views
 -----
