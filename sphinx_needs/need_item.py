@@ -9,7 +9,6 @@
 # For NeedItem, we allow mutability, but only for values, i.e. it should not allow adding or removing keys.
 from __future__ import annotations
 
-import warnings
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from itertools import chain
 from typing import Any, Literal, overload
@@ -20,7 +19,7 @@ from sphinx_needs.data import NeedsInfoType, NeedsPartType
 class NeedItem:
     """A class representing a single need item."""
 
-    __slots__ = ("_backlinks", "_core", "_extras", "_links")
+    __slots__ = ("_backlinks", "_backlinks_keymap", "_core", "_extras", "_links")
 
     _immutable = {
         "id",
@@ -46,6 +45,7 @@ class NeedItem:
         extras: dict[str, str],
         links: dict[str, list[str]],
         backlinks: dict[str, list[str]] | None = None,
+        _validate: bool = True,
     ) -> None:
         """Initialize the NeedItem instance.
 
@@ -60,39 +60,69 @@ class NeedItem:
            If set, this must contain all keys that are in links, with the suffix '_back',
            and should not contain any keys that are in core or extras.
         """
+        if _validate:
+            if not isinstance(core, dict):
+                raise TypeError("NeedItem core must be a dictionary.")
+            if not isinstance(extras, dict):
+                raise TypeError("NeedItem extras must be a dictionary.")
+            if not isinstance(links, dict):
+                raise TypeError("NeedItem links must be a dictionary.")
+            if not all(
+                isinstance(v, list) and all(isinstance(i, str) for i in v)
+                for v in links.values()
+            ):
+                raise TypeError(
+                    "NeedItem links must be a dictionary of lists of strings."
+                )
+            if backlinks is not None:
+                if not isinstance(backlinks, dict):
+                    raise TypeError("NeedItem backlinks must be a dictionary.")
+                if not all(
+                    isinstance(v, list) and all(isinstance(i, str) for i in v)
+                    for v in backlinks.values()
+                ):
+                    raise TypeError(
+                        "NeedItem backlinks must be a dictionary of lists of strings."
+                    )
+                if set(backlinks) != set(links):
+                    raise ValueError(
+                        f"Backlink keys must be the same as link keys, difference found: {sorted(set(backlinks) ^ set(links))}"
+                    )
         self._core = core
         self._extras = extras
         self._links = links
         if backlinks is None:
-            self._backlinks: dict[str, list[str]] = {
-                f"{li}_back": [] for li in self._links
-            }
+            self._backlinks: dict[str, list[str]] = {li: [] for li in self._links}
         else:
-            if set(backlinks) != {f"{li}_back" for li in self._links}:
-                raise ValueError(
-                    "Backlinks must contain all keys from links with '_back' suffix."
-                )
             self._backlinks = backlinks
-        # consistency checks for data
-        all_keys = [
-            *self._core.keys(),
-            *self._extras.keys(),
-            *self._links.keys(),
-            *self._backlinks.keys(),
-        ]
-        if len(all_keys) != len(set(all_keys)):
-            duplicates = [key for key in set(all_keys) if all_keys.count(key) > 1]
-            raise ValueError(
-                f"NeedItem keys must be unique across core, extras, links, and backlinks. Duplicate keys: {duplicates}"
-            )
-        if not self._core["is_need"]:
-            raise ValueError(
-                "NeedItem core must have 'is_need' set to True for a need item."
-            )
-        if self._core["is_part"]:
-            raise ValueError(
-                "NeedItem core must have 'is_part' set to False for a need item."
-            )
+        self._backlinks_keymap = {f"{key}_back": key for key in self._links}
+        """mapping of exposed backlink keys to actual link keys, e.g. {'link_type_back': 'link_type'}
+        
+        This is required for distinct access to backlinks in the NeedItem API.
+
+        """
+        if _validate:
+            # consistency checks for data
+            all_keys = [
+                *self._core,
+                *self._extras,
+                *self._links,
+                *self._backlinks_keymap,
+            ]
+            if len(all_keys) != len(set(all_keys)):
+                duplicates = sorted(
+                    key for key in set(all_keys) if all_keys.count(key) > 1
+                )
+                raise ValueError(
+                    f"NeedItem keys must be unique across core, extras, links, and backlinks. Duplicate keys: {duplicates}"
+                )
+            for key in ("id",):
+                if key not in self._core:
+                    raise ValueError(f"NeedItem core must contain key {key!r}.")
+            if "is_need" in self._core and not self._core["is_need"]:
+                raise ValueError("NeedItem core must have 'is_need' set to True.")
+            if "is_part" in self._core and self._core["is_part"]:  # noqa: RUF019
+                raise ValueError("NeedItem core must have 'is_part' set to False.")
 
     def __repr__(self) -> str:
         """Return a string representation of the NeedItem."""
@@ -109,6 +139,7 @@ class NeedItem:
             extras=self._extras.copy(),
             links=self._links.copy(),
             backlinks=self._backlinks.copy(),
+            _validate=False,
         )
 
     def __eq__(self, other: object) -> bool:
@@ -132,12 +163,12 @@ class NeedItem:
             key in self._core
             or key in self._extras
             or key in self._links
-            or key in self._backlinks
+            or key in self._backlinks_keymap
         )
 
     def __iter__(self) -> Iterator[str]:
         """Return an iterator over the keys of the need item."""
-        return chain(self._core, self._extras, self._links, self._backlinks)
+        return chain(self._core, self._extras, self._links, self._backlinks_keymap)
 
     @overload
     def __getitem__(
@@ -219,26 +250,11 @@ class NeedItem:
         if key in self._core:
             return self._core[key]  # type: ignore[literal-required]
         elif key in self._extras:
-            warnings.warn(
-                "Direct access to extras via __getitem__ is deprecated. Use get_extra() method instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
             return self._extras[key]
         elif key in self._links:
-            warnings.warn(
-                "Direct access to links via __getitem__ is deprecated. Use get_links() method instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
             return self._links[key]
-        elif key in self._backlinks:
-            warnings.warn(
-                "Direct access to backlinks via __getitem__ is deprecated. Use get_backlinks() method instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            return self._backlinks[key]
+        elif key in self._backlinks_keymap:
+            return self._backlinks[self._backlinks_keymap[key]]
         raise KeyError(key)
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -247,34 +263,13 @@ class NeedItem:
             return self[key]
         return default
 
-    def get_extra(self, key: str) -> str:
-        """Get an extra by key.
-
-        :raises KeyError: If the key is not an extra.
-        """
-        return self._extras[key]
-
-    def get_links(self, link_type: str) -> list[str]:
-        """Get links by key.
-
-        :raises KeyError: If the link_type is not a link type.
-        """
-        return self._links[link_type]
-
-    def get_backlinks(self, link_type: str) -> list[str]:
-        """Get backlinks by key.
-
-        :raises KeyError: If the link_type is not a backlink type.
-        """
-        return self._backlinks[link_type + "_back"]
-
     def keys(self) -> Iterable[str]:
         """Return the keys of the need item."""
         return chain(
             self._core.keys(),
             self._extras.keys(),
             self._links.keys(),
-            self._backlinks.keys(),
+            self._backlinks_keymap.keys(),
         )
 
     def values(self) -> Iterable[Any]:
@@ -292,7 +287,7 @@ class NeedItem:
             self._core.items(),
             self._extras.items(),
             self._links.items(),
-            self._backlinks.items(),
+            ((k1, self._backlinks[k2]) for k1, k2 in self._backlinks_keymap.items()),
         )
 
     def __setitem__(self, key: str, value: Any) -> None:
@@ -307,14 +302,18 @@ class NeedItem:
             if not isinstance(value, list) or not all(
                 isinstance(v, str) for v in value
             ):
-                raise TypeError(f"Value for key {key!r} must be a list of strings.")
+                raise TypeError(
+                    f"Value for link key {key!r} must be a list of strings."
+                )
             self._links[key] = value
-        elif key in self._backlinks:
+        elif key in self._backlinks_keymap:
             if not isinstance(value, list) or not all(
                 isinstance(v, str) for v in value
             ):
-                raise TypeError(f"Value for key {key!r} must be a list of strings.")
-            self._backlinks[key]
+                raise TypeError(
+                    f"Value for backlink key {key!r} must be a list of strings."
+                )
+            self._backlinks[self._backlinks_keymap[key]] = value
         else:
             raise KeyError(f"Only existing keys can be set, not: {key!r}")
 
@@ -331,6 +330,48 @@ class NeedItem:
             if (part := self.get_part(part_id)) is not None:
                 yield part
 
+    def get_extra(self, key: str) -> str:
+        """Get an extra by key.
+
+        :raises KeyError: If the key is not an extra.
+        """
+        return self._extras[key]
+
+    def iter_extra_keys(self) -> Iterable[str]:
+        """Yield all extra keys."""
+        yield from self._extras.keys()
+
+    def iter_extra_items(self) -> Iterable[tuple[str, str]]:
+        """Yield all extras as key-value pairs."""
+        yield from self._extras.items()
+
+    def get_links(self, link_type: str) -> list[str]:
+        """Get link references by link_type key.
+
+        :raises KeyError: If the link_type is not a link type.
+        """
+        return self._links[link_type]
+
+    def iter_links_keys(self) -> Iterable[str]:
+        """Yield all link_type keys."""
+        yield from self._links.keys()
+
+    def iter_links_items(self) -> Iterable[tuple[str, list[str]]]:
+        """Yield all links as (link_type, references) pairs."""
+        yield from self._links.items()
+
+    def get_backlinks(self, link_type: str) -> list[str]:
+        """Get backlink references by link_type key.
+
+        :raises KeyError: If the link_type is not a backlink type.
+        """
+        return self._backlinks[link_type]
+
+    def iter_backlinks_items(self) -> Iterable[tuple[str, list[str]]]:
+        """Yield all backlinks as (link_type, references) pairs."""
+        for key in self._backlinks:
+            yield (key, self._backlinks[key])
+
 
 class NeedPartItem:
     """A class representing a part of a need, which is a sub-need.
@@ -341,25 +382,35 @@ class NeedPartItem:
     It does not allow modification of the underlying data.
     """
 
-    __slots__ = ("_need", "_part_data", "_part_id")
+    __slots__ = ("_need", "_overrides", "_part_id")
 
     def __init__(self, need: NeedItem, part_id: str) -> None:
         """Initialize the NeedPartItem instance."""
         if not isinstance(need, NeedItem):
             raise TypeError("NeedPartItem requires a NeedItem instance.")
-        self._need = need
-        self._part_id = part_id
-        try:
-            self._part_data: dict[str, Any] = need._core["parts"][part_id].copy()  # type: ignore[assignment]
-        except KeyError:
+        if part_id not in need._core.get("parts", {}):
             raise KeyError(f"Part ID {part_id!r} does not exist in NeedItem.")
+        self._need = need.copy()
+        self._part_id = part_id
 
-        self._part_data["id_complete"] = f"{self._need['id']}.{self._part_data['id']}"
-        self._part_data["id_parent"] = self._need["id"]
-        self._part_data["is_need"] = False
-        self._part_data["is_part"] = True
+        self._overrides = {
+            "id_complete": f"{need._core['id']}.{part_id}",
+            "id_parent": need._core["id"],
+            "is_need": False,
+            "is_part": True,
+        }
 
         # TODO part data gets created with links / links_back set to empty, so these will be overriden, but what about other link types
+
+    @property
+    def part_id(self) -> str:
+        """Return the part ID."""
+        return self._part_id
+
+    @property
+    def _part_data(self) -> NeedsPartType:
+        """Return the part data from the need."""
+        return self._need._core["parts"][self._part_id]
 
     def __repr__(self) -> str:
         """Return a string representation of the NeedPartItem."""
@@ -378,15 +429,19 @@ class NeedPartItem:
         # TODO this is a hack for current logic in the needtable processing
         # but we don't want to start exposing mutability on the part just for this
         new_part = self.copy()
-        new_part._part_data["id"] = new_part._part_data["id_complete"]
-        new_part._part_data["title"] = new_part._part_data["content"]
+        new_part._overrides["id"] = new_part["id_complete"]
+        new_part._overrides["title"] = new_part["content"]
         return new_part
 
     def __eq__(self, other: object) -> bool:
         """Check if two NeedItems are equal."""
         if not isinstance(other, NeedPartItem):
             return False
-        return self._need == other._need and self._part_id == other._part_id
+        return (
+            self._need == other._need
+            and self._part_id == other._part_id
+            and self._overrides == other._overrides
+        )
 
     def __ne__(self, other: object) -> bool:
         """Check if two NeedItems are not equal."""
@@ -394,11 +449,11 @@ class NeedPartItem:
 
     def __contains__(self, key: str) -> bool:
         """Check if the need item contains a key."""
-        return key in self._need
+        return key in self._need or key in self._overrides or key in self._part_data
 
     def __iter__(self) -> Iterator[str]:
         """Return an iterator over the keys of the need item."""
-        return iter(self._need)
+        yield from set(chain(self._need, self._overrides, self._part_data))
 
     @overload
     def __getitem__(
@@ -473,8 +528,10 @@ class NeedPartItem:
 
     def __getitem__(self, key: str) -> Any:
         """Get an item by key."""
-        if key in self._part_data:
-            return self._part_data[key]
+        if key in self._overrides:
+            return self._overrides[key]
+        elif key in self._part_data:
+            return self._part_data[key]  # type: ignore[literal-required]
         elif key in self._need:
             return self._need[key]
         raise KeyError(key)
@@ -487,20 +544,74 @@ class NeedPartItem:
 
     def keys(self) -> Iterable[str]:
         """Return the keys of the need item."""
-        return self._need.keys()
+        yield from self
 
     def values(self) -> Iterable[Any]:
         """Return the values of the need item."""
-        for key in self._need:
-            if key in self._part_data:
-                yield self._part_data[key]
+        for key in self:
+            if key in self._overrides:
+                yield self._overrides[key]
+            elif key in self._part_data:
+                yield self._part_data[key]  # type: ignore[literal-required]
             else:
                 yield self._need[key]
 
     def items(self) -> Iterable[tuple[str, Any]]:
         """Return the items of the need item."""
-        for key in self._need:
-            if key in self._part_data:
-                yield (key, self._part_data[key])
+        for key in self:
+            if key in self._overrides:
+                yield (key, self._overrides[key])
+            elif key in self._part_data:
+                yield (key, self._part_data[key])  # type: ignore[literal-required]
             else:
                 yield (key, self._need[key])
+
+    def get_extra(self, key: str) -> str:
+        """Get an extra by key.
+
+        :raises KeyError: If the key is not an extra.
+        """
+        if key not in self._need._extras:
+            raise KeyError(key)
+        return self[key]  # type: ignore[no-any-return]
+
+    def iter_extra_keys(self) -> Iterable[str]:
+        """Yield all extra keys."""
+        yield from self._need._extras.keys()
+
+    def iter_extra_items(self) -> Iterable[tuple[str, str]]:
+        """Yield all extras as key-value pairs."""
+        for key in self._need._extras:
+            yield (key, self[key])
+
+    def get_links(self, link_type: str) -> list[str]:
+        """Get link references by link_type key.
+
+        :raises KeyError: If the link_type is not a link type.
+        """
+        if link_type not in self._need._links:
+            raise KeyError(link_type)
+        return self[link_type]  # type: ignore[no-any-return]
+
+    def iter_links_keys(self) -> Iterable[str]:
+        """Yield all link_type keys."""
+        yield from self._need._links.keys()
+
+    def iter_links_items(self) -> Iterable[tuple[str, list[str]]]:
+        """Yield all links as (link_type, references) pairs."""
+        for key in self._need._links:
+            yield (key, self[key])
+
+    def get_backlinks(self, link_type: str) -> list[str]:
+        """Get backlink references by link_type key.
+
+        :raises KeyError: If the link_type is not a backlink type.
+        """
+        if link_type not in self._need._backlinks:
+            raise KeyError(link_type)
+        return self[f"{link_type}_back"]  # type: ignore[no-any-return]
+
+    def iter_backlinks_items(self) -> Iterable[tuple[str, list[str]]]:
+        """Yield all backlinks as (link_type, references) pairs."""
+        for key in self._need._backlinks:
+            yield (key, self.get_backlinks(key))

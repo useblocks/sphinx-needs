@@ -354,7 +354,7 @@ def generate_need(
         "parent_need": parent_need,
     }
 
-    needs_info = NeedItem(core=needs_data, extras=extras, links=links)
+    needs_info = NeedItem(core=needs_data, extras=extras, links=links, _validate=False)
 
     if jinja_content:
         need_content_context: dict[str, Any] = {**needs_info}

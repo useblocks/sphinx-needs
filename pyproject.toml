@@ -74,6 +74,7 @@ dev = ["pre-commit~=3.0", "tox~=4.23", "tox-uv~=1.15"]
 
 [tool.pytest.ini_options]
 markers = [
+  "fixture_file: marks tests that use a fixture file (deselect with '-m \"not fixture_file\"')",
   "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
   "benchmark: marks tests as expensive benchmark test (deselect with '-m \"not benchmark\"')",
 ]
