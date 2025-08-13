@@ -385,11 +385,8 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
 }
 
 
-class NeedsInfoType(TypedDict):
-    """Data for a single need."""
-
-    id: str
-    """ID of the data."""
+class NeedsSourceInfoType(TypedDict):
+    """Data for the source of a single need."""
 
     docname: str | None
     """Name of the document where the need is defined (None if external)."""
@@ -397,6 +394,19 @@ class NeedsInfoType(TypedDict):
     """Line number where the need is defined (None if external)."""
     lineno_content: int | None
     """Line number on which the need content starts (None if external)."""
+    external_url: None | str
+    """URL of the need, if it is an external need."""
+    is_import: bool
+    """If true, the need was derived from an import."""
+    is_external: bool
+    """If true, no node is created and need is referencing external url."""
+
+
+class NeedsInfoType(TypedDict):
+    """Data for a single need."""
+
+    id: str
+    """ID of the data."""
 
     # meta information
     title: str
@@ -418,14 +428,6 @@ class NeedsInfoType(TypedDict):
     arch: dict[str, str]
     """Mapping of uml key to uml content."""
 
-    is_import: bool
-    """If true, the need was derived from an import."""
-
-    # external reference information
-    is_external: bool
-    """If true, no node is created and need is referencing external url."""
-    external_url: None | str
-    """URL of the need, if it is an external need."""
     external_css: str
     """CSS class name, added to the external reference."""
 

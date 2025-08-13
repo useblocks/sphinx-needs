@@ -24,7 +24,7 @@ from sphinx_needs.functions.functions import (
 from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.need_item import NeedItem, NeedItemSourceDirective
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import (
     DummyOptionSpec,
@@ -166,18 +166,22 @@ class NeedDirective(SphinxDirective):
                 self._log_warning(f"Invalid value for '{key}' option: {err}")
                 return []
 
+        source = NeedItemSourceDirective(
+            docname=self.env.docname,
+            lineno=self.lineno,
+            lineno_content=self.content_offset + 1,
+        )
+
         try:
             need_nodes = add_need(
-                self.env.app,
-                self.state,
-                self.env.docname,
-                self.lineno,
+                app=self.env.app,
+                state=self.state,
+                need_source=source,
                 need_type=self.name,
                 title=title,
                 full_title=full_title,
                 id=id,
                 content=self.content,
-                lineno_content=self.content_offset + 1,
                 status=status,
                 tags=tags,
                 template=template,

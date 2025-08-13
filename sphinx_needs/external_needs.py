@@ -14,6 +14,7 @@ from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItemSourceExternal
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
 log = get_logger(__name__)
@@ -170,11 +171,9 @@ def load_external_needs(
                 # render jinja content
                 mem_template = get_target_template(target_url)
                 cal_target_url = mem_template.render(**{"need": need})
-                need_params["external_url"] = f"{source['base_url']}/{cal_target_url}"
+                external_url = f"{source['base_url']}/{cal_target_url}"
             else:
-                need_params["external_url"] = (
-                    f"{source['base_url']}/{need.get('docname', '__error__')}.html#{need['id']}"
-                )
+                external_url = f"{source['base_url']}/{need.get('docname', '__error__')}.html#{need['id']}"
 
             # check if external needs already exist
             ext_need_id = need_params["id"]
@@ -190,7 +189,11 @@ def load_external_needs(
                 del_need(app, ext_need_id)
 
             try:
-                add_external_need(app, **need_params)
+                add_external_need(
+                    app,
+                    need_source=NeedItemSourceExternal(url=external_url),
+                    **need_params,
+                )
             except InvalidNeedException as err:
                 location = source.get("json_url", "") or source.get("json_path", "")
                 log_warning(
