@@ -14,6 +14,7 @@ from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItemSourceService
 from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
 
 
@@ -135,14 +136,18 @@ class NeedserviceDirective(SphinxDirective):
                 datum.update(options)
 
                 # ToDo: Tags and Status are not set (but exist in data)
+                source = NeedItemSourceService(
+                    docname=self.env.docname, lineno=self.lineno
+                )
                 try:
                     section += add_need(
                         self.env.app,
                         self.state,
-                        self.env.docname,
-                        self.lineno,
-                        need_type,
-                        need_title,
+                        docname=None,
+                        lineno=None,
+                        need_source=source,
+                        need_type=need_type,
+                        title=need_title,
                         **datum,
                     )
                 except InvalidNeedException as err:

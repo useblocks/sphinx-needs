@@ -25,7 +25,11 @@ from sphinx_needs.filter_common import (
     apply_default_predicate,
 )
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.need_item import (
+    NeedItem,
+    NeedItemSourceProtocol,
+    NeedItemSourceUnknown,
+)
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import jinja_parse
@@ -47,6 +51,7 @@ def generate_need(
     need_type: str,
     title: str,
     *,
+    need_source: NeedItemSourceProtocol | None = None,
     docname: None | str = None,
     lineno: None | int = None,
     id: str | None = None,
@@ -128,8 +133,25 @@ def generate_need(
     :param pre_template: Template name to use for content added before need
     :param post_template: Template name to use for the content added after need
     """
+    source = (
+        NeedItemSourceUnknown(
+            docname=docname,
+            lineno=lineno,
+            lineno_content=lineno_content,
+            is_import=is_import,
+            is_external=is_external,
+            external_url=external_url if is_external else None,
+        )
+        if need_source is None
+        else need_source
+    )
+
     # location is used to provide source mapped warnings
-    location = (docname, lineno) if docname else None
+    location = (
+        (source.dict_repr["docname"], source.dict_repr["lineno"])
+        if source.dict_repr["docname"]
+        else None
+    )
 
     # validate kwargs
     allowed_kwargs = {x["option"] for x in needs_config.extra_links} | set(
@@ -230,9 +252,9 @@ def generate_need(
         "title": title,
         "tags": tuple(tags or []),
         "status": status,
-        "docname": docname,
-        "is_import": is_import,
-        "is_external": is_external,
+        "docname": source.dict_repr["docname"],
+        "is_import": source.dict_repr["is_import"],
+        "is_external": source.dict_repr["is_external"],
     }
     defaults_extras = extras_no_defaults.copy()
     defaults_links = {k: tuple(v or []) for k, v in links_no_defaults.items()}
@@ -306,9 +328,6 @@ def generate_need(
 
     # Add the need and all needed information
     needs_data: NeedsInfoType = {
-        "docname": docname,
-        "lineno": lineno,
-        "lineno_content": lineno_content,
         "doctype": doctype,
         "content": content,
         "pre_content": None,
@@ -340,9 +359,6 @@ def generate_need(
         "is_need": True,
         "id_parent": need_id,
         "id_complete": need_id,
-        "is_import": is_import,
-        "is_external": is_external,
-        "external_url": external_url if is_external else None,
         "external_css": external_css or "external_link",
         "is_modified": False,
         "modifications": 0,
@@ -354,7 +370,9 @@ def generate_need(
         "parent_need": parent_need,
     }
 
-    needs_info = NeedItem(core=needs_data, extras=extras, links=links, _validate=False)
+    needs_info = NeedItem(
+        core=needs_data, extras=extras, links=links, source=source, _validate=False
+    )
 
     if jinja_content:
         need_content_context: dict[str, Any] = {**needs_info}
@@ -396,6 +414,7 @@ def add_need(
     need_type: str,
     title: str,
     *,
+    need_source: NeedItemSourceProtocol | None = None,
     id: str | None = None,
     content: str | StringList = "",
     lineno_content: None | int = None,
@@ -485,11 +504,16 @@ def add_need(
         )
         kwargs = {k: v for k, v in kwargs.items() if k not in _deprecated_kwargs}
 
-    if doctype is None and not is_external and docname:
-        doctype = os.path.splitext(app.env.doc2path(docname))[1]
+    if (
+        doctype is None
+        and not (need_source.dict_repr["is_external"] if need_source else is_external)
+        and (_docname := need_source.dict_repr["docname"] if need_source else docname)
+    ):
+        doctype = os.path.splitext(app.env.doc2path(_docname))[1]
 
     needs_info = generate_need(
         needs_config=NeedsSphinxConfig(app.config),
+        need_source=need_source,
         need_type=need_type,
         title=title,
         full_title=full_title,
@@ -697,6 +721,7 @@ def add_external_need(
     need_type: str,
     title: str | None = None,
     id: str | None = None,
+    need_source: NeedItemSourceProtocol | None = None,
     external_url: str | None = None,
     external_css: str = "external_link",
     content: str = "",
@@ -741,6 +766,7 @@ def add_external_need(
         state=None,
         docname=None,
         lineno=None,
+        need_source=need_source,
         need_type=need_type,
         id=id,
         content=content,

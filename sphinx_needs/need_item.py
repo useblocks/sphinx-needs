@@ -10,29 +10,148 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Mapping, Sequence
+from dataclasses import dataclass, field
 from itertools import chain
-from typing import Any, Literal, overload
+from typing import Any, Literal, Protocol, overload, runtime_checkable
 
-from sphinx_needs.data import NeedsInfoType, NeedsPartType
+from sphinx_needs.data import NeedsInfoType, NeedsPartType, NeedsSourceInfoType
+
+
+@runtime_checkable
+class NeedItemSourceProtocol(Protocol):
+    """Protocol for need item source types."""
+
+    @property
+    def dict_repr(self) -> NeedsSourceInfoType:
+        """Return a dictionary representation of the source."""
+        ...
+
+
+@dataclass(slots=True, frozen=True, kw_only=True)
+class NeedItemSourceUnknown:
+    """A class representing the source of a need item, from an unknown source."""
+
+    docname: str | None = None
+    lineno: int | None = None
+    lineno_content: int | None = None
+    external_url: str | None = None
+    is_import: bool = False
+    is_external: bool = False
+    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)  # type: ignore[assignment]
+
+    def __post_init__(self) -> None:
+        d: NeedsSourceInfoType = {
+            "docname": self.docname,
+            "lineno": self.lineno,
+            "lineno_content": self.lineno_content,
+            "external_url": self.external_url,
+            "is_import": self.is_import,
+            "is_external": self.is_external,
+        }
+        self.dict_repr.update(d)
+
+
+@dataclass(slots=True, frozen=True, kw_only=True)
+class NeedItemSourceDirective:
+    """A class representing the source of a need item, from a need directive."""
+
+    docname: str
+    lineno: int
+    lineno_content: int
+    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)  # type: ignore[assignment]
+
+    def __post_init__(self) -> None:
+        d: NeedsSourceInfoType = {
+            "docname": self.docname,
+            "lineno": self.lineno,
+            "lineno_content": self.lineno_content,
+            "external_url": None,
+            "is_import": False,
+            "is_external": False,
+        }
+        self.dict_repr.update(d)
+
+
+@dataclass(slots=True, frozen=True, kw_only=True)
+class NeedItemSourceService:
+    """A class representing the source of a need item, from a service directive."""
+
+    docname: str
+    lineno: int
+    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)  # type: ignore[assignment]
+
+    def __post_init__(self) -> None:
+        d: NeedsSourceInfoType = {
+            "docname": self.docname,
+            "lineno": self.lineno,
+            "lineno_content": None,
+            "external_url": None,
+            "is_import": False,
+            "is_external": False,
+        }
+        self.dict_repr.update(d)
+
+
+@dataclass(slots=True, frozen=True, kw_only=True)
+class NeedItemSourceExternal:
+    """A class representing the source of a need item, from an external source."""
+
+    url: str
+    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)  # type: ignore[assignment]
+
+    def __post_init__(self) -> None:
+        d: NeedsSourceInfoType = {
+            "docname": None,
+            "lineno": None,
+            "lineno_content": None,
+            "external_url": self.url,
+            "is_import": False,
+            "is_external": True,
+        }
+        self.dict_repr.update(d)
+
+
+@dataclass(slots=True, frozen=True, kw_only=True)
+class NeedItemSourceImport:
+    """A class representing the source of a need item, from an import directive."""
+
+    docname: str
+    lineno: int
+    path: str
+    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)  # type: ignore[assignment]
+
+    def __post_init__(self) -> None:
+        d: NeedsSourceInfoType = {
+            "docname": self.docname,
+            "lineno": self.lineno,
+            "lineno_content": None,
+            "external_url": None,
+            "is_import": True,
+            "is_external": False,
+        }
+
+        self.dict_repr.update(d)
 
 
 class NeedItem:
     """A class representing a single need item."""
 
-    __slots__ = ("_backlinks", "_backlinks_keymap", "_core", "_extras", "_links")
+    __slots__ = (
+        "_backlinks",
+        "_backlinks_keymap",
+        "_core",
+        "_extras",
+        "_links",
+        "_source",
+    )
 
     _immutable = {
         "id",
-        "type",
-        "docname",
-        "lineno",
-        "lineno_content",
         "id_complete",
         "id_parent",
+        "type",
         "is_need",
         "is_part",
-        "is_external",
-        "is_import",
         "template",
         "pre_template",
         "post_template",
@@ -41,6 +160,7 @@ class NeedItem:
     def __init__(
         self,
         *,
+        source: NeedItemSourceProtocol | None,
         core: NeedsInfoType,
         extras: dict[str, str],
         links: dict[str, list[str]],
@@ -49,6 +169,7 @@ class NeedItem:
     ) -> None:
         """Initialize the NeedItem instance.
 
+        :param source: The source of the need item.
         :param core: The core data of the need item.
         :param extras: Additional data for the need item.
             This should contain all extra keys that are defined in the configuration,
@@ -88,6 +209,8 @@ class NeedItem:
                     raise ValueError(
                         f"Backlink keys must be the same as link keys, difference found: {sorted(set(backlinks) ^ set(links))}"
                     )
+        if source is not None and not isinstance(source, NeedItemSourceProtocol):
+            raise TypeError("NeedItem source must obey the NeeItemSourceProtocol.")
         self._core = core
         self._extras = extras
         self._links = links
@@ -101,6 +224,7 @@ class NeedItem:
         This is required for distinct access to backlinks in the NeedItem API.
 
         """
+        self._source = source if source is not None else NeedItemSourceUnknown()
         if _validate:
             # consistency checks for data
             all_keys = [
@@ -108,6 +232,7 @@ class NeedItem:
                 *self._extras,
                 *self._links,
                 *self._backlinks_keymap,
+                *self._source.dict_repr,
             ]
             if len(all_keys) != len(set(all_keys)):
                 duplicates = sorted(
@@ -124,13 +249,18 @@ class NeedItem:
             if "is_part" in self._core and self._core["is_part"]:  # noqa: RUF019
                 raise ValueError("NeedItem core must have 'is_part' set to False.")
 
+    @property
+    def source(self) -> NeedItemSourceProtocol:
+        """Return the source of the need item."""
+        return self._source
+
     def __repr__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r})"
+        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r}, source={self._source!r})"
 
     def __str__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s})"
+        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s}, source={self._source!s})"
 
     def copy(self) -> NeedItem:
         """Return a copy of the NeedItem."""
@@ -139,6 +269,7 @@ class NeedItem:
             extras=self._extras.copy(),
             links=self._links.copy(),
             backlinks=self._backlinks.copy(),
+            source=self._source,
             _validate=False,
         )
 
@@ -151,6 +282,7 @@ class NeedItem:
             and self._extras == other._extras
             and self._links == other._links
             and self._backlinks == other._backlinks
+            and self._source == other._source
         )
 
     def __ne__(self, other: object) -> bool:
@@ -164,11 +296,18 @@ class NeedItem:
             or key in self._extras
             or key in self._links
             or key in self._backlinks_keymap
+            or key in self._source.dict_repr
         )
 
     def __iter__(self) -> Iterator[str]:
         """Return an iterator over the keys of the need item."""
-        return chain(self._core, self._extras, self._links, self._backlinks_keymap)
+        return chain(
+            self._core,
+            self._extras,
+            self._links,
+            self._backlinks_keymap,
+            self._source.dict_repr,
+        )
 
     @overload
     def __getitem__(
@@ -255,6 +394,8 @@ class NeedItem:
             return self._links[key]
         elif key in self._backlinks_keymap:
             return self._backlinks[self._backlinks_keymap[key]]
+        elif key in self._source.dict_repr:
+            return self._source.dict_repr[key]  # type: ignore[literal-required]
         raise KeyError(key)
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -270,6 +411,7 @@ class NeedItem:
             self._extras.keys(),
             self._links.keys(),
             self._backlinks_keymap.keys(),
+            self._source.dict_repr.keys(),
         )
 
     def values(self) -> Iterable[Any]:
@@ -279,6 +421,7 @@ class NeedItem:
             self._extras.values(),
             self._links.values(),
             self._backlinks.values(),
+            self._source.dict_repr.values(),
         )
 
     def items(self) -> Iterable[tuple[str, Any]]:
@@ -288,12 +431,15 @@ class NeedItem:
             self._extras.items(),
             self._links.items(),
             ((k1, self._backlinks[k2]) for k1, k2 in self._backlinks_keymap.items()),
+            self._source.dict_repr.items(),
         )
 
     def __setitem__(self, key: str, value: Any) -> None:
         """Set an item by key."""
         if key in self._immutable:
             raise KeyError(f"Cannot modify immutable key {key!r} in NeedItem.")
+        if key in self._source.dict_repr:
+            raise KeyError(f"Cannot modify source key {key!r} in NeedItem.")
         if key in self._core:
             self._core[key] = value  # type: ignore[literal-required]
         elif key in self._extras:

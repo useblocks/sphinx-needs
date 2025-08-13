@@ -2,7 +2,7 @@ import ast
 import inspect
 from typing import ForwardRef
 
-from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
+from sphinx_needs.data import NeedsCoreFields, NeedsInfoType, NeedsSourceInfoType
 
 
 def test_consistent():
@@ -11,14 +11,25 @@ def test_consistent():
     but I'm not sure this is possible (to encode both the static and dynamic data required).
     So at least here, we check that they are consistent with each other.
     """
+    intersection = set(NeedsInfoType.__annotations__).intersection(
+        set(NeedsSourceInfoType.__annotations__)
+    )
+    assert not intersection, (
+        "NeedsInfoType and NeedsSourceInfoType should not have common fields"
+    )
     # check fields are consistent
-    assert set(NeedsCoreFields).issubset(set(NeedsInfoType.__annotations__))
+    assert set(NeedsCoreFields).issuperset(set(NeedsInfoType.__annotations__))
+    assert set(NeedsCoreFields).issuperset(set(NeedsSourceInfoType.__annotations__))
 
     # check field types are consistent with schema
     for field, data in NeedsCoreFields.items():
         if not (schema := data.get("schema")):
             continue
-        type_ = NeedsInfoType.__annotations__[field]
+        type_ = (
+            NeedsInfoType.__annotations__[field]
+            if field in NeedsInfoType.__annotations__
+            else NeedsSourceInfoType.__annotations__[field]
+        )
         assert isinstance(type_, ForwardRef)
         type_str = type_.__forward_arg__
         if type_str.startswith("Required"):

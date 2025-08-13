@@ -19,6 +19,7 @@ from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import filter_import_item
 from sphinx_needs.logging import log_warning
+from sphinx_needs.need_item import NeedItemSourceImport
 from sphinx_needs.needsfile import SphinxNeedsFileException, check_needs_data
 from sphinx_needs.utils import (
     add_doc,
@@ -242,13 +243,18 @@ class NeedimportDirective(SphinxDirective):
             need_id = need_params["id"] = id_prefix + need_params["id"]
 
             # override location
-            need_params["docname"] = self.docname
-            need_params["lineno"] = self.lineno
-
-            need_params["is_import"] = True
+            need_params["docname"] = None
+            need_params["lineno"] = None
+            need_source = NeedItemSourceImport(
+                docname=self.env.docname,
+                lineno=self.lineno,
+                path=need_import_path,
+            )
 
             try:
-                nodes = add_need(self.env.app, self.state, **need_params)
+                nodes = add_need(
+                    self.env.app, self.state, need_source=need_source, **need_params
+                )
             except InvalidNeedException as err:
                 log_warning(
                     logger,
