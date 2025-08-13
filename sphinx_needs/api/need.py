@@ -352,12 +352,9 @@ def generate_need(
         "section_name": sections[0] if sections else None,
         "signature": signature,
         "parent_need": parent_need,
-        **extras,  # type: ignore[typeddict-item]
-        **links,
-        **{f"{li['option']}_back": [] for li in needs_config.extra_links},
     }
 
-    needs_info = NeedItem(needs_data)
+    needs_info = NeedItem(core=needs_data, extras=extras, links=links, _validate=False)
 
     if jinja_content:
         need_content_context: dict[str, Any] = {**needs_info}
