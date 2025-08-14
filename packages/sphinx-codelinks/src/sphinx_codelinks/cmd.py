@@ -11,6 +11,7 @@ import typer
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.config import (
     COMMENT_FILETYPE,
+    CommentType,
     MarkedRstConfig,
     MarkedRstConfigType,
     NeedIdRefsConfig,
@@ -163,42 +164,45 @@ def discover(
         ),
     ],
     exclude: Annotated[
-        list[str] | None,
+        list[str],
         typer.Option(
             "--excludes",
             "-e",
             help="Glob patterns to be excluded.",
         ),
-    ] = None,
+    ] = [],  # noqa: B006   # to show the default value on CLI
     include: Annotated[
-        list[str] | None,
+        list[str],
         typer.Option(
             "--includes",
             "-i",
             help="Glob patterns to be included.",
         ),
-    ] = None,
-    gitignore: Annotated[bool, typer.Option(help="Respect .gitignore(s)")] = True,
-    file_types: Annotated[
-        list[str] | None,
+    ] = [],  # noqa: B006   # to show the default value on CLI
+    gitignore: Annotated[
+        bool,
         typer.Option(
-            "--file-type",
-            "-f",
-            help="The file extension to be discovered. If not specified, all files are discovered.",
+            help="Respect .gitignore in the given directory. Nested .gitignore Not supported"
         ),
-    ] = None,
+    ] = True,
+    comment_type: Annotated[
+        CommentType,
+        typer.Option(
+            "--comment-type",
+            "-c",
+            help="The relevant file extensions which use the specified the comment type will be discovered.",
+        ),
+    ] = CommentType.cpp,
 ) -> None:
     """Discover the filepaths from the given root directory."""
 
     src_discover_dict: SourceDiscoverConfigType = {
         "src_dir": src_dir,
-        "exclude": exclude or [],
-        "include": include or [],
+        "exclude": exclude,
+        "include": include,
         "gitignore": gitignore,
+        "comment_type": comment_type,
     }
-
-    if file_types is not None:
-        src_discover_dict["file_types"] = file_types
 
     src_discover_config = SourceDiscoverConfig(**src_discover_dict)
 

@@ -18,7 +18,7 @@ from sphinx_codelinks.source_discover.source_discover import SourceDiscover
                 "exclude": ["exclude1", "exclude2"],
                 "include": ["include1", "include2"],
                 "gitignore": True,
-                "file_types": ["cpp", "hpp"],
+                "comment_type": "cpp",
             },
             ["Schema validation error in field 'src_dir': 123 is not of type 'string'"],
         ),
@@ -28,7 +28,7 @@ from sphinx_codelinks.source_discover.source_discover import SourceDiscover
                 "exclude": ["exclude1", "exclude2"],
                 "include": ["include1", "include2"],
                 "gitignore": "TrueAsString",
-                "file_types": ["cpp", "hpp"],
+                "comment_type": "cpp",
             },
             [
                 "Schema validation error in field 'gitignore': 'TrueAsString' is not of type 'boolean'"
@@ -40,10 +40,22 @@ from sphinx_codelinks.source_discover.source_discover import SourceDiscover
                 "exclude": ["exclude1", "exclude2"],
                 "include": ["include1", "include2"],
                 "gitignore": True,
-                "file_types": "py",
+                "comment_type": "java",
             },
             [
-                "Schema validation error in field 'file_types': 'py' is not of type 'array'"
+                "Schema validation error in field 'comment_type': 'java' is not one of ['cpp', 'python']"
+            ],
+        ),
+        (
+            {
+                "src_dir": "/path/to/root",
+                "exclude": ["exclude1", "exclude2"],
+                "include": ["include1", "include2"],
+                "gitignore": True,
+                "comment_type": ["cpp", "hpp"],
+            },
+            [
+                "Schema validation error in field 'comment_type': ['cpp', 'hpp'] is not of type 'string'"
             ],
         ),
     ],
@@ -63,7 +75,14 @@ def test_schema_negative(config, msgs):
             "exclude": ["exclude1", "exclude2"],
             "include": ["include1", "include2"],
             "gitignore": True,
-            "file_types": ["cpp", "hpp"],
+            "comment_type": "cpp",
+        },
+        {
+            "src_dir": "/path/to/root",
+            "exclude": ["exclude1", "exclude2"],
+            "include": ["include1", "include2"],
+            "gitignore": True,
+            "comment_type": "python",
         },
     ],
 )
@@ -108,7 +127,7 @@ def test_schema_positive(config):
             "",
         ),
         (
-            {"gitignore": False, "file_types": ["cpp"]},
+            {"gitignore": False, "comment_type": "cpp"},
             4,
             "cpp",
         ),

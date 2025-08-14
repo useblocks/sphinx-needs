@@ -7,6 +7,7 @@ from gitignore_parser import (  # type: ignore[import-untyped]  # library has no
     parse_gitignore,
 )
 
+from sphinx_codelinks.analyse.config import COMMENT_FILETYPE
 from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
 
 
@@ -22,16 +23,9 @@ class SourceDiscover:
             else None
         )
         # normalize the file types to lower case with leading dot
-        self.file_types = (
-            {
-                file_type.lower()
-                if file_type.startswith(".")
-                else f".{file_type}".lower()
-                for file_type in src_discover_config.file_types
-            }
-            if src_discover_config.file_types
-            else None
-        )
+        self.file_types = {
+            f".{ext}" for ext in COMMENT_FILETYPE[src_discover_config.comment_type]
+        }
 
         self.source_paths = self._discover()
 

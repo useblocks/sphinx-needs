@@ -4,7 +4,7 @@ from typing import Any, Required, TypedDict, cast
 
 from jsonschema import ValidationError, validate
 
-from sphinx_codelinks.analyse.config import SUPPORTED_COMMENT_TYPES
+from sphinx_codelinks.analyse.config import COMMENT_FILETYPE, CommentType
 
 
 class SourceDiscoverConfigType(TypedDict, total=False):
@@ -12,7 +12,7 @@ class SourceDiscoverConfigType(TypedDict, total=False):
     exclude: list[str]
     include: list[str]
     gitignore: bool
-    file_types: list[str]
+    comment_type: CommentType
 
 
 @dataclass
@@ -41,12 +41,12 @@ class SourceDiscoverConfig:
     gitignore: bool = field(default=True, metadata={"schema": {"type": "boolean"}})
     """Whether to respect .gitignore to exclude files."""
 
-    file_types: list[str] = field(
-        default_factory=lambda: list(SUPPORTED_COMMENT_TYPES),
+    comment_type: str = field(
+        default="cpp",
         metadata={
             "schema": {
-                "type": "array",
-                "items": {"type": "string", "enum": sorted(SUPPORTED_COMMENT_TYPES)},
+                "type": "string",
+                "enum": sorted(COMMENT_FILETYPE),
             }
         },
     )
