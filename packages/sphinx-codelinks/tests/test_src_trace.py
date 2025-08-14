@@ -25,27 +25,31 @@ from sphinx_codelinks.sphinx_extension.source_tracing import set_config_to_sphin
                 "set_remote_url": "TrueString",
                 "projects": {
                     "dcdc": {
-                        "comment_type": "java",
-                        "src_dir": ["../dcdc"],
                         "remote_url_pattern": 44332,
-                        "exclude": [123],
-                        "include": [345],
-                        "gitignore": "_true",
-                        "oneline_comment_style": {
-                            "start_sequence": "[[",
-                            "end_sequence": "]]",
-                            "field_split_char": ",",
-                            "needs_fields": [
-                                {
-                                    "name": "title",
-                                    "type": "list[]",
-                                },
-                                {
-                                    "name": "type",
-                                    "default": "impl",
-                                    "type": "str",
-                                },
-                            ],
+                        "source_discover": {
+                            "comment_type": "java",
+                            "src_dir": ["../dcdc"],
+                            "exclude": [123],
+                            "include": [345],
+                            "gitignore": "_true",
+                        },
+                        "analyse": {
+                            "oneline_comment_style": {
+                                "start_sequence": "[[",
+                                "end_sequence": "]]",
+                                "field_split_char": ",",
+                                "needs_fields": [
+                                    {
+                                        "name": "title",
+                                        "type": "list[]",
+                                    },
+                                    {
+                                        "name": "type",
+                                        "default": "impl",
+                                        "type": "str",
+                                    },
+                                ],
+                            },
                         },
                     }
                 },
@@ -53,7 +57,7 @@ from sphinx_codelinks.sphinx_extension.source_tracing import set_config_to_sphin
             [
                 "Project 'dcdc' has the following errors:",
                 "Schema validation error in field 'exclude': 123 is not of type 'string'",
-                "Schema validation error in field 'file_types': 'java' is not one of ['c', 'cpp', 'h', 'hpp', 'py']",
+                "Schema validation error in field 'comment_type': 'java' is not one of ['cpp', 'python']",
                 "Schema validation error in field 'gitignore': '_true' is not of type 'boolean'",
                 "Schema validation error in field 'include': 345 is not of type 'string'",
                 "Schema validation error in field 'src_dir': ['../dcdc'] is not of type 'string'",
@@ -61,6 +65,7 @@ from sphinx_codelinks.sphinx_extension.source_tracing import set_config_to_sphin
                 "Schema validation error in filed 'remote_url_field': 555 is not of type 'string'",
                 "Schema validation error in filed 'set_local_url': 'fdd' is not of type 'boolean'",
                 "Schema validation error in filed 'set_remote_url': 'TrueString' is not of type 'boolean'",
+                "OneLineCommentStyle configuration errors:",
                 "Schema validation error in need_fields 'title': 'list[]' is not one of ['str', 'list[str]']",
                 "remote_url_pattern must be a string",
             ],
@@ -73,27 +78,31 @@ from sphinx_codelinks.sphinx_extension.source_tracing import set_config_to_sphin
                 "set_remote_url": True,
                 "projects": {
                     "dcdc": {
-                        "comment_type": "cpp",
-                        "src_dir": "../dcdc",
                         # intentionally not given "remote_url_pattern": "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}",
-                        "exclude": [],
-                        "include": [],
-                        "gitignore": True,
-                        "oneline_comment_style": {
-                            "start_sequence": "[[",
-                            "end_sequence": "]]",
-                            "field_split_char": ",",
-                            "needs_fields": [
-                                {
-                                    "name": "title",
-                                    "type": "str",
-                                },
-                                {
-                                    "name": "type",
-                                    "default": "impl",
-                                    "type": "str",
-                                },
-                            ],
+                        "source_discover": {
+                            "comment_type": "cpp",
+                            "src_dir": "../dcdc",
+                            "exclude": [],
+                            "include": [],
+                            "gitignore": True,
+                        },
+                        "analyse": {
+                            "oneline_comment_style": {
+                                "start_sequence": "[[",
+                                "end_sequence": "]]",
+                                "field_split_char": ",",
+                                "needs_fields": [
+                                    {
+                                        "name": "title",
+                                        "type": "str",
+                                    },
+                                    {
+                                        "name": "type",
+                                        "default": "impl",
+                                        "type": "str",
+                                    },
+                                ],
+                            },
                         },
                     }
                 },

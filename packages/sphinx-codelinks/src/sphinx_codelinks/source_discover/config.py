@@ -1,13 +1,31 @@
 from dataclasses import MISSING, dataclass, field, fields
+from enum import Enum
 from pathlib import Path
 from typing import Any, Required, TypedDict, cast
 
 from jsonschema import ValidationError, validate
 
-from sphinx_codelinks.analyse.config import COMMENT_FILETYPE, CommentType
+COMMENT_FILETYPE = {"cpp": ["c", "cpp", "h", "hpp"], "python": ["py"]}
+
+
+class CommentType(str, Enum):
+    python = "python"
+    cpp = "cpp"
+
+
+class SourceDiscoverSectionConfigType(TypedDict, total=False):
+    """Define typing for loading configuration from TOML files"""
+
+    src_dir: Required[str]
+    exclude: list[str]
+    include: list[str]
+    gitignore: bool
+    comment_type: CommentType
 
 
 class SourceDiscoverConfigType(TypedDict, total=False):
+    """Define typing for its API configuration"""
+
     src_dir: Required[Path]
     exclude: list[str]
     include: list[str]

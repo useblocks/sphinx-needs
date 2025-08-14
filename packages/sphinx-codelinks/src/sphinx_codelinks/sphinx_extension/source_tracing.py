@@ -16,16 +16,15 @@ from sphinx_needs.api import (  # type: ignore[import-untyped]
 )
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
-from sphinx_codelinks.analyse.config import OneLineCommentStyle, OneLineCommentStyleType
 from sphinx_codelinks.sphinx_extension import debug
 from sphinx_codelinks.sphinx_extension.config import (
     SRC_TRACE_CACHE,
     SrcTraceConfigType,
     SrcTraceProjectConfigType,
     SrcTraceSphinxConfig,
-    adpat_src_discover_config,
     check_configuration,
     file_lineno_href,
+    generate_project_configs,
 )
 from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     SourceTracing,
@@ -150,26 +149,10 @@ def set_config_to_sphinx(
         if key not in allowed_keys:
             continue
         if key == "projects":
-            for project_config in cast(
+            src_trace_projects: dict[str, SrcTraceProjectConfigType] = cast(
                 dict[str, SrcTraceProjectConfigType], value
-            ).values():
-                # address SourceDiscovery related config
-                adpat_src_discover_config(project_config)
-
-                # address OneLoneCommenyStyle config and its default
-                oneline_comment_style: OneLineCommentStyleType | None = cast(
-                    OneLineCommentStyleType, project_config.get("oneline_comment_style")
-                )
-                if oneline_comment_style:
-                    project_config["oneline_comment_style"] = OneLineCommentStyle(
-                        **cast(
-                            OneLineCommentStyleType,
-                            project_config["oneline_comment_style"],
-                        )
-                    )
-                else:
-                    project_config["oneline_comment_style"] = OneLineCommentStyle()
-
+            )
+            generate_project_configs(src_trace_projects)
         config[f"src_trace_{key}"] = value
 
 

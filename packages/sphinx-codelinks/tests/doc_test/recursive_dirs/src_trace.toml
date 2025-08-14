@@ -6,9 +6,11 @@ remote_url_field = "remote-url"
 debug_measurement = true
 
 [src_trace.projects.dummy_src]
+remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+
+[src_trace.projects.dummy_src.source_discover]
 comment_type = "cpp"
 src_dir = "./dummy_src_lv1"
-remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
 exclude = ["dcdc/src/ubt/ubt.cpp"]
 include = ["**/*.cpp", "**/*.hpp"]
 gitignore = true

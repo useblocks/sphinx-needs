@@ -1,3 +1,0 @@
-[source_discover]
-src_dir = "../../data"
-gitignore = false

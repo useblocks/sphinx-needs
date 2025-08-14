@@ -7,8 +7,10 @@ from gitignore_parser import (  # type: ignore[import-untyped]  # library has no
     parse_gitignore,
 )
 
-from sphinx_codelinks.analyse.config import COMMENT_FILETYPE
-from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
+from sphinx_codelinks.source_discover.config import (
+    COMMENT_FILETYPE,
+    SourceDiscoverConfig,
+)
 
 
 class SourceDiscover:

@@ -6,15 +6,14 @@ from typing import Any, Literal, TypedDict, cast
 
 from jsonschema import ValidationError, validate
 
+from sphinx_codelinks.source_discover.config import (
+    CommentType,
+    SourceDiscoverSectionConfigType,
+)
+
 UNIX_NEWLINE = "\n"
 
 
-class CommentType(str, Enum):
-    python = "python"
-    cpp = "cpp"
-
-
-COMMENT_FILETYPE = {"cpp": ["c", "cpp", "h", "hpp"], "python": ["py"]}
 COMMENT_MARKERS = {CommentType.cpp: ["//", "/*"], CommentType.python: ["#"]}
 ESCAPE = "\\"
 SUPPORTED_COMMENT_TYPES = {"c", "h", "cpp", "hpp", "py"}
@@ -23,14 +22,6 @@ SUPPORTED_COMMENT_TYPES = {"c", "h", "cpp", "hpp", "py"}
 class CommentCategory(str, Enum):
     comment = "comment"
     docstring = "expression_statement"
-
-
-class SrcDiscoverConfigType4Analyse(TypedDict, total=False):
-    src_dir: str
-    exclude: list[str]
-    include: list[str]
-    gitignore: bool
-    comment_type: list[CommentType]
 
 
 class NeedIdRefsConfigType(TypedDict):
@@ -298,8 +289,9 @@ class OneLineCommentStyle:
         return pos_list_str
 
 
-class SourceAnalyseConfigFileType(TypedDict, total=False):
-    src_discover: SrcDiscoverConfigType4Analyse
+class AnalyseSectionConfigType(TypedDict, total=False):
+    """Define typing for loading `analyse` section from the file."""
+
     get_need_id_refs: bool
     get_oneline_needs: bool
     get_rst: bool
@@ -309,7 +301,16 @@ class SourceAnalyseConfigFileType(TypedDict, total=False):
     oneline_comment_style: OneLineCommentStyleType
 
 
+class SourceAnalyseConfigFileType(TypedDict, total=False):
+    """Define types to load TOML config file."""
+
+    src_discover: SourceDiscoverSectionConfigType
+    analyse: AnalyseSectionConfigType
+
+
 class SourceAnalyseConfigType(TypedDict, total=False):
+    """Define typing for its API configuration."""
+
     src_files: list[Path]
     src_dir: Path
     outdir: Path
@@ -329,6 +330,7 @@ class SourceAnalyseConfig:
         return {item.name for item in fields(cls)}
 
     src_files: list[Path] = field(
+        default_factory=list,
         metadata={"schema": {"type": "array", "items": {"type": "string"}}},
     )
     """A list of source files to be  processed."""

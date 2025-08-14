@@ -7,17 +7,21 @@ from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
 from sphinx_codelinks.analyse.config import (
-    SUPPORTED_COMMENT_TYPES,
-    CommentType,
+    AnalyseSectionConfigType,
+    MarkedRstConfig,
     MarkedRstConfigType,
+    NeedIdRefsConfig,
     NeedIdRefsConfigType,
     OneLineCommentStyle,
     OneLineCommentStyleType,
+    SourceAnalyseConfig,
+    SourceAnalyseConfigType,
 )
 from sphinx_codelinks.source_discover.config import (
     SourceDiscoverConfig,
-    SourceDiscoverConfigType,
+    SourceDiscoverSectionConfigType,
 )
+from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 
 SRC_TRACE_CACHE: str = "src_trace_cache"
 
@@ -32,28 +36,23 @@ class SourceTracingLineHref:
 file_lineno_href = SourceTracingLineHref()
 
 
-class SrcTraceProjectConfigFileType(TypedDict, total=False):
-    # only support C/C++ for now
-    comment_type: CommentType
-    src_dir: str
-    remote_url_pattern: str
-    exclude: list[str]
-    include: list[str]
-    gitignore: bool
-    oneline_comment_style: OneLineCommentStyleType
-    need_id_refs: NeedIdRefsConfigType
-    marked_rst: MarkedRstConfigType
+class SrcTraceProjectConfigType(TypedDict, total=False):
+    """TypedDict defining the configuration structure for individual SrcTrace projects.
 
+    Contains both user-provided configuration:
+    - source_discover
+    - remote_url_pattern
+    - analyse
+    and runtime-generated configuration objects
+    - source_discover_config
+    - analyse_config
+    """
 
-class SrcTraceProjectConfigType(TypedDict):
-    # only support C/C++ for now
-    comment_type: CommentType
-    src_dir: Path
+    source_discover: SourceDiscoverSectionConfigType
     remote_url_pattern: str
-    exclude: list[str]
-    include: list[str]
-    gitignore: bool
-    oneline_comment_style: OneLineCommentStyle
+    analyse: AnalyseSectionConfigType
+    source_discover_config: SourceDiscoverConfig
+    analyse_config: SourceAnalyseConfig
 
 
 class SrcTraceConfigType(TypedDict):
@@ -82,18 +81,8 @@ class SrcTraceSphinxConfig:
             src_trace_projects: dict[str, SrcTraceProjectConfigType] = value[
                 "src_trace_projects"
             ]
-            for _config in src_trace_projects.values():
-                # overwrite the config into different types on purpose
-                # covert dict to OneLineCommentStyle class
-                oneline_comment_style: OneLineCommentStyleType | None = cast(
-                    OneLineCommentStyleType, _config.get("oneline_comment_style")
-                )
-                if not oneline_comment_style:
-                    raise Exception("OneLineCommentStyle is not given")
+            generate_project_configs(src_trace_projects)
 
-                _config["oneline_comment_style"] = OneLineCommentStyle(
-                    **oneline_comment_style
-                )
         if name.startswith("__") or name == "_config":
             return super().__setattr__(name, value)
 
@@ -199,13 +188,11 @@ class SrcTraceSphinxConfig:
                 "additionalProperties": {
                     "type": "object",
                     "properties": {
-                        "comment_type": {},
-                        "src_dir": {},
+                        "source_discover": {},
+                        "analyse": {},
                         "remote_url_pattern": {},
-                        "exclude": {},
-                        "include": {},
-                        "gitignore": {},
-                        "oneline_comment_style": {},
+                        "source_discover_config": {},
+                        "analyse_config": {},
                     },
                     "additionalProperties": False,
                 },
@@ -225,6 +212,7 @@ class SrcTraceSphinxConfig:
 
 
 def check_schema(config: SrcTraceSphinxConfig) -> list[str]:
+    """Check only first layer's of schema, so that the nested dict is not validated here."""
     errors = []
     for _field_name in SrcTraceSphinxConfig.field_names():
         schema = SrcTraceSphinxConfig.get_schema(_field_name)
@@ -241,17 +229,29 @@ def check_schema(config: SrcTraceSphinxConfig) -> list[str]:
 
 
 def check_project_configuration(config: SrcTraceSphinxConfig) -> list[str]:
+    """Check nested project configurations"""
     errors = []
 
     for project_name, project_config in config.projects.items():
         project_errors: list[str] = []
-        oneline_errors = validate_oneline_comment_style(project_config)
-        src_discover_dict = build_src_discover_dict(project_config)
+
+        # validate source_discover config
+        src_discover_config: SourceDiscoverConfig | None = project_config.get(
+            "source_discover_config"
+        )
         src_discover_errors = []
-        if src_discover_dict is not None:
-            src_discover_config = SourceDiscoverConfig(**src_discover_dict)
+        if src_discover_config:
             src_discover_errors.extend(src_discover_config.check_schema())
 
+        # validate analyse config
+        analyse_config: SourceAnalyseConfig | None = project_config.get(
+            "analyse_config"
+        )
+        analyse_errors = []
+        if analyse_config:
+            analyse_errors = analyse_config.check_fields_configuration()
+
+        # validate src-trace config
         if config.set_remote_url and "remote_url_pattern" not in project_config:
             project_errors.append(
                 "remote_url_pattern must be given, as set_remote_url is enabled"
@@ -262,9 +262,9 @@ def check_project_configuration(config: SrcTraceSphinxConfig) -> list[str]:
         ):
             project_errors.append("remote_url_pattern must be a string")
 
-        if oneline_errors or src_discover_errors or project_errors:
+        if analyse_errors or src_discover_errors or project_errors:
             errors.append(f"Project '{project_name}' has the following errors:")
-            errors.extend(oneline_errors)
+            errors.extend(analyse_errors)
             errors.extend(src_discover_errors)
             errors.extend(project_errors)
 
@@ -278,52 +278,120 @@ def check_configuration(config: SrcTraceSphinxConfig) -> list[str]:
     return errors
 
 
-def validate_oneline_comment_style(
-    project_config: SrcTraceProjectConfigType,
-) -> list[str]:
-    if "oneline_comment_style" in project_config:
-        style = project_config["oneline_comment_style"]
-        if isinstance(style, OneLineCommentStyle):
-            return style.check_fields_configuration()
-    return []
-
-
-def build_src_discover_dict(
-    project_config: SrcTraceProjectConfigType,
-) -> SourceDiscoverConfigType | None:
-    src_discover_dict = cast(SourceDiscoverConfigType, {})
-    # adapt the configs between source tracing and source discovery
-    if "comment_type" in project_config:
-        # comment type error will be taken care by SourceDiscovery class later
-        src_discover_dict["file_types"] = (
-            list(SUPPORTED_COMMENT_TYPES)
-            if project_config["comment_type"] in SUPPORTED_COMMENT_TYPES
-            else [project_config["comment_type"]]
-        )
-    for key in ("exclude", "include", "gitignore", "src_dir"):
-        if key in project_config:
-            src_discover_dict[key] = project_config[key]
-
-    return src_discover_dict
-
-
-def adpat_src_discover_config(project_config: SrcTraceProjectConfigType) -> None:
-    src_discover_dict = build_src_discover_dict(project_config)
-    if src_discover_dict:
-        src_discover_config = SourceDiscoverConfig(**src_discover_dict)
+def convert_src_discovery_config(
+    config_dict: SourceDiscoverSectionConfigType | None,
+) -> SourceDiscoverConfig:
+    if config_dict:
+        src_discover_dict = {
+            key: (Path(value) if key == "src_dir" and isinstance(value, str) else value)
+            for key, value in config_dict.items()
+        }
+        src_discover_config = SourceDiscoverConfig(**src_discover_dict)  # type: ignore[arg-type] # mypy is confused by dynamic assignment
     else:
         src_discover_config = SourceDiscoverConfig()
 
-    for _field in fields(src_discover_config):
-        key = "comment_type" if _field.name == "file_types" else _field.name
+    return src_discover_config
 
-        if key == "comment_type":
-            file_types = getattr(src_discover_config, _field.name)
-            if set(file_types) == SUPPORTED_COMMENT_TYPES:
-                comment_type = CommentType.cpp
-            else:
-                comment_type = file_types[0]
-            project_config[key] = comment_type  # type: ignore[literal-required]  # dynamically assign
-            continue
 
-        project_config[key] = getattr(src_discover_config, _field.name)  # type: ignore[literal-required]  # dynamically assign
+def convert_analyse_config(
+    config_dict: AnalyseSectionConfigType | None,
+    src_discover: SourceDiscover | None = None,
+) -> SourceAnalyseConfig:
+    if config_dict:
+        analyse_config_dict: SourceAnalyseConfigType = cast(
+            SourceAnalyseConfigType,
+            {k: Path(str(v)) if k == "src_dir" else v for k, v in config_dict.items()},
+        )
+
+        # Get oneline_comment_style configuration
+        oneline_comment_style_dict: OneLineCommentStyleType | None = config_dict.get(
+            "oneline_comment_style"
+        )
+        oneline_comment_style: OneLineCommentStyle = (
+            convert_oneline_comment_style_config(oneline_comment_style_dict)
+        )
+
+        # Get need_id_refs configuration
+        need_id_refs_config_dict: NeedIdRefsConfigType | None = config_dict.get(
+            "need_id_refs"
+        )
+        need_id_refs_config = convert_need_id_refs_config(need_id_refs_config_dict)
+
+        # Get marked_rst configuration
+        marked_rst_config_dict: MarkedRstConfigType | None = config_dict.get(
+            "marked_rst"
+        )
+        marked_rst_config = convert_marked_rst_config(marked_rst_config_dict)
+
+        analyse_config_dict["need_id_refs_config"] = need_id_refs_config
+        analyse_config_dict["marked_rst_config"] = marked_rst_config
+        analyse_config_dict["oneline_comment_style"] = oneline_comment_style
+    else:
+        analyse_config_dict: SourceAnalyseConfigType = {}
+
+    if src_discover:
+        analyse_config_dict["src_files"] = src_discover.source_paths
+        analyse_config_dict["src_dir"] = src_discover.src_discover_config.src_dir
+
+    return SourceAnalyseConfig(**analyse_config_dict)
+
+
+def convert_oneline_comment_style_config(
+    config_dict: OneLineCommentStyleType | None,
+) -> OneLineCommentStyle:
+    if config_dict is None:
+        oneline_comment_style = OneLineCommentStyle()
+    else:
+        try:
+            oneline_comment_style = OneLineCommentStyle(**config_dict)
+        except TypeError as e:
+            raise TypeError(f"Invalid oneline comment style configuration: {e}") from e
+    return oneline_comment_style
+
+
+def convert_need_id_refs_config(
+    config_dict: NeedIdRefsConfigType | None,
+) -> NeedIdRefsConfig:
+    if not config_dict:
+        need_id_refs_config = NeedIdRefsConfig()
+    else:
+        try:
+            need_id_refs_config = NeedIdRefsConfig(**config_dict)
+        except TypeError as e:
+            raise TypeError(f"Invalid oneline comment style configuration: {e}") from e
+    return need_id_refs_config
+
+
+def convert_marked_rst_config(
+    config_dict: MarkedRstConfigType | None,
+) -> MarkedRstConfig:
+    if not config_dict:
+        marked_rst_config = MarkedRstConfig()
+    else:
+        try:
+            marked_rst_config = MarkedRstConfig(**config_dict)
+        except TypeError as e:
+            raise TypeError(f"Invalid oneline comment style configuration: {e}") from e
+    return marked_rst_config
+
+
+def generate_project_configs(
+    project_configs: dict[str, SrcTraceProjectConfigType],
+) -> None:
+    """Generate configs of source discover and analyse from their classes dynamically."""
+    for project_config in project_configs.values():
+        # overwrite the config into different types on purpose
+        # covert dicts to their own classes
+        src_discover_section: SourceDiscoverSectionConfigType | None = cast(
+            SourceDiscoverSectionConfigType,
+            project_config.get("source_discover"),
+        )
+        source_discover_config = convert_src_discovery_config(src_discover_section)
+        project_config["source_discover_config"] = source_discover_config
+
+        analyse_section_config: AnalyseSectionConfigType | None = cast(
+            AnalyseSectionConfigType, project_config.get("analyse")
+        )
+        analyse_config = convert_analyse_config(analyse_section_config)
+        analyse_config.get_oneline_needs = True  # force to get oneline_need
+        project_config["analyse_config"] = analyse_config

@@ -5,8 +5,8 @@ import pytest
 import toml
 from typer.testing import CliRunner
 
-from sphinx_codelinks.analyse.config import CommentType
 from sphinx_codelinks.cmd import app
+from sphinx_codelinks.source_discover.config import CommentType
 
 from .conftest import DATA_DIR, TEST_DIR
 
@@ -25,11 +25,14 @@ SRC_DISCOVER_TEMPLATE = {
     "exclude": ["**/charge/demo_1.cpp", "**/discharge/demo_3.cpp"],
     "include": ["**/charge/demo_2.cpp", "**/supercharge.cpp"],
     "gitignore": True,
-    "comment_type": [CommentType.cpp.value],
+    "comment_type": CommentType.cpp.value,
 }
-ANALYSER_CONFIG_TEMPLATE = {
-    "source_discover": SRC_DISCOVER_TEMPLATE,
+ANALYSE_SECTION_CONFIG_TEMPLATE = {
     "oneline_comment_style": ONELINE_COMMENT_TEMPLATE,
+}
+ANALYSE_CONFIG_TEMPLATE = {
+    "source_discover": SRC_DISCOVER_TEMPLATE,
+    "analyse": ANALYSE_SECTION_CONFIG_TEMPLATE,
 }
 
 
@@ -37,7 +40,7 @@ runner = CliRunner()
 
 
 @pytest.mark.parametrize(
-    ("config_path"), [(DATA_DIR / "analyse" / "default_config.toml")]
+    ("config_path"), [(DATA_DIR / "analyse" / "minimum_config.toml")]
 )
 def test_analyse(config_path: Path, tmp_path: Path) -> None:
     options: list[str] = ["analyse", str(config_path), "--outdir", str(tmp_path)]
@@ -84,7 +87,7 @@ def test_discover(options, stdout):
                 }
                 if isinstance(value, dict) and key == "source_discover"
                 else value
-                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
+                for key, value in ANALYSE_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid source discovery configuration:",
@@ -99,7 +102,7 @@ def test_discover(options, stdout):
                 }
                 if isinstance(value, dict) and key == "source_discover"
                 else value
-                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
+                for key, value in ANALYSE_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid source discovery configuration:",
@@ -118,7 +121,7 @@ def test_discover(options, stdout):
                 }
                 if isinstance(value, dict) and key == "source_discover"
                 else value
-                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
+                for key, value in ANALYSE_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid source discovery configuration:",
@@ -129,10 +132,17 @@ def test_discover(options, stdout):
         ),
         (
             {
-                key: (
-                    {"not_expected": 123} if key == "oneline_comment_style" else value
-                )
-                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
+                key: {
+                    oneline_key: (
+                        {"not_expected": 123}
+                        if oneline_key == "oneline_comment_style"
+                        else oneline_value
+                    )
+                    for oneline_key, oneline_value in value.items()
+                }
+                if isinstance(value, dict) and key == "analyse"
+                else value
+                for key, value in ANALYSE_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid oneline comment style configuration:",
@@ -142,12 +152,17 @@ def test_discover(options, stdout):
         ),
         (
             {
-                key: (
-                    {"needs_fields": [{"name": "id"}, {"name": "id"}]}
-                    if key == "oneline_comment_style"
-                    else value
-                )
-                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
+                key: {
+                    oneline_key: (
+                        {"needs_fields": [{"name": "id"}, {"name": "id"}]}
+                        if oneline_key == "oneline_comment_style"
+                        else oneline_value
+                    )
+                    for oneline_key, oneline_value in value.items()
+                }
+                if isinstance(value, dict) and key == "analyse"
+                else value
+                for key, value in ANALYSE_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid oneline comment style configuration:",

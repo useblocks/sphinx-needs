@@ -9,7 +9,8 @@ from giturlparse import parse  # type: ignore[import-untyped]
 from tree_sitter import Language, Parser, Point, Query, QueryCursor
 from tree_sitter import Node as TreeSitterNode
 
-from sphinx_codelinks.analyse.config import UNIX_NEWLINE, CommentCategory, CommentType
+from sphinx_codelinks.analyse.config import UNIX_NEWLINE, CommentCategory
+from sphinx_codelinks.source_discover.config import CommentType
 
 # initialize logger
 logger = logging.getLogger(__name__)

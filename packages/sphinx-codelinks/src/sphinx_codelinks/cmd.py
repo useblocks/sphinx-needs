@@ -10,8 +10,7 @@ import typer
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.config import (
-    COMMENT_FILETYPE,
-    CommentType,
+    AnalyseSectionConfigType,
     MarkedRstConfig,
     MarkedRstConfigType,
     NeedIdRefsConfig,
@@ -21,14 +20,15 @@ from sphinx_codelinks.analyse.config import (
     SourceAnalyseConfig,
     SourceAnalyseConfigFileType,
     SourceAnalyseConfigType,
-    SrcDiscoverConfigType4Analyse,
 )
 from sphinx_codelinks.source_discover.config import (
+    CommentType,
     SourceDiscoverConfig,
     SourceDiscoverConfigType,
+    SourceDiscoverSectionConfigType,
 )
 from sphinx_codelinks.source_discover.source_discover import SourceDiscover
-from sphinx_codelinks.sphinx_extension.config import SrcTraceProjectConfigFileType
+from sphinx_codelinks.sphinx_extension.config import SrcTraceProjectConfigType
 
 app = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
@@ -66,12 +66,13 @@ def analyse(
     errors: deque[str] = deque()
 
     # Get source_discover configuration
-    src_discover_4_analyse_dict = cast(
-        SrcDiscoverConfigType4Analyse | None, data.get("source_discover")
+    src_discover_section_config: SourceDiscoverSectionConfigType | None = cast(
+        SourceDiscoverSectionConfigType | None, data.get("source_discover")
     )
+
     src_discover_config = cast(
         SourceDiscoverConfig,
-        convert_dict_2_config(src_discover_4_analyse_dict, ConfigType.SourceDiscover),
+        convert_dict_2_config(src_discover_section_config, ConfigType.SourceDiscover),
     )
 
     src_discover_errors = src_discover_config.check_schema()
@@ -88,57 +89,19 @@ def analyse(
     ).resolve()
 
     src_discover = SourceDiscover(src_discover_config)
-    # Get oneline_comment_style configuration
-    oneline_comment_style_dict: OneLineCommentStyleType | None = data.get(
-        "oneline_comment_style"
-    )
-    oneline_comment_style: OneLineCommentStyle = cast(
-        OneLineCommentStyle,
-        convert_dict_2_config(
-            oneline_comment_style_dict, ConfigType.OneLineCommentStyle
-        ),
-    )
 
-    oneline_errors = oneline_comment_style.check_fields_configuration()
-    if oneline_errors:
-        errors.appendleft("Invalid oneline comment style configuration:")
-        errors.extend(oneline_errors)
+    # Init source analyse config
+    analyse_config_dict: SourceAnalyseConfigType = {}
+    analyse_config_dict["src_files"] = src_discover.source_paths
+    analyse_config_dict["src_dir"] = Path(src_discover.src_discover_config.src_dir)
 
-    # Get need_id_refs configuration
-    need_id_refs_config_dict: NeedIdRefsConfigType | None = data.get("need_id_refs")
-    need_id_refs_config = cast(
-        NeedIdRefsConfig,
-        convert_dict_2_config(need_id_refs_config_dict, ConfigType.NeedIdRefsConfig),
-    )
+    # Get config for `analyse` section
+    analyse_section_config: AnalyseSectionConfigType | None = data.get("analyse")
 
-    # Get marked_rst configuration
-    marked_rst_config_dict: MarkedRstConfigType | None = data.get("marked_rst")
-    marked_rst_config = cast(
-        MarkedRstConfig,
-        convert_dict_2_config(marked_rst_config_dict, ConfigType.MarkedRstCofig),
-    )
+    src_analyse_config = convert_analyse_config(analyse_section_config, src_discover)
 
-    non_root_configs = {
-        "source_discover",
-        "oneline_comment_style",
-        "need_id_refs",
-        "marked_rst",
-    }
-
-    # Get root config
-    src_analyse_dict: SourceAnalyseConfigType = cast(
-        SourceAnalyseConfigType,
-        {key: value for key, value in data.items() if key not in non_root_configs},
-    )
-    src_analyse_dict["src_files"] = src_discover.source_paths
-    src_analyse_dict["src_dir"] = Path(src_discover.src_discover_config.src_dir)
-    src_analyse_dict["need_id_refs_config"] = need_id_refs_config
-    src_analyse_dict["marked_rst_config"] = marked_rst_config
-    src_analyse_dict["oneline_comment_style"] = oneline_comment_style
     if outdir:
-        src_analyse_dict["outdir"] = outdir
-
-    src_analyse_config = SourceAnalyseConfig(**src_analyse_dict)
+        src_analyse_config.outdir = outdir
 
     analyse_errors = src_analyse_config.check_fields_configuration()
     errors.extend(analyse_errors)
@@ -218,7 +181,7 @@ def discover(
 
 def load_config_from_toml(
     toml_file: Path, project: str | None = None
-) -> SrcTraceProjectConfigFileType:
+) -> SrcTraceProjectConfigType:
     try:
         with toml_file.open("rb") as f:
             toml_data = tomllib.load(f)
@@ -231,7 +194,7 @@ def load_config_from_toml(
             f"Failed to load source tracing configuration from {toml_file}"
         ) from e
 
-    return cast(SrcTraceProjectConfigFileType, toml_data)
+    return cast(SrcTraceProjectConfigType, toml_data)
 
 
 def load_src_analyse_config_from_toml(toml_file: Path) -> SourceAnalyseConfigFileType:
@@ -252,11 +215,11 @@ class ConfigType(str, Enum):
     OneLineCommentStyle = "oneline_comment_style"
     NeedIdRefsConfig = "need_id_refs"
     MarkedRstCofig = "marked_rst"
-    AnalzerConfig = "source_analyse"
+    Analyse = "source_analyse"
 
 
 def convert_dict_2_config(
-    config_dict: SrcDiscoverConfigType4Analyse
+    config_dict: SourceDiscoverSectionConfigType
     | OneLineCommentStyleType
     | NeedIdRefsConfigType
     | MarkedRstConfigType
@@ -267,7 +230,7 @@ def convert_dict_2_config(
         ConfigType,
         Callable[
             [
-                SrcDiscoverConfigType4Analyse
+                SourceDiscoverSectionConfigType
                 | OneLineCommentStyleType
                 | NeedIdRefsConfigType
                 | MarkedRstConfigType
@@ -291,28 +254,72 @@ def convert_dict_2_config(
 
 
 def convert_src_discovery_config(
-    config_dict: SrcDiscoverConfigType4Analyse | None,
+    config_dict: SourceDiscoverSectionConfigType | None,
 ) -> SourceDiscoverConfig:
     if config_dict:
-        src_dicover_dict = {}
-        for key, value in config_dict.items():
-            if key == "comment_type" and isinstance(value, list):
-                file_types = []
-                for comment_type in value:
-                    file_types.extend(COMMENT_FILETYPE[comment_type])
-                src_dicover_dict["file_types"] = file_types
-            else:
-                src_dicover_dict[key] = value  # type: ignore[assignment]  # dynamic assignment
-        src_dicover_dict["src_dir"] = (
-            Path(src_dicover_dict["src_dir"])
-            if isinstance(src_dicover_dict["src_dir"], str)
-            else src_dicover_dict["src_dir"]
-        )
-        src_discover_config = SourceDiscoverConfig(**src_dicover_dict)  # type: ignore[arg-type] # mypy is confused by dynamic assignment
+        src_discover_dict = {
+            key: (Path(str(value)) if key == "src_dir" else value)
+            for key, value in config_dict.items()
+        }
+        src_discover_config = SourceDiscoverConfig(**src_discover_dict)  # type: ignore[arg-type] # mypy is confused by dynamic assignment
     else:
         src_discover_config = SourceDiscoverConfig()
 
     return src_discover_config
+
+
+def convert_analyse_config(
+    config_dict: AnalyseSectionConfigType | None,
+    src_discover: SourceDiscover | None = None,
+) -> SourceAnalyseConfig:
+    if config_dict:
+        analyse_config_dict: SourceAnalyseConfigType = cast(
+            SourceAnalyseConfigType,
+            {k: Path(str(v)) if k == "src_dir" else v for k, v in config_dict.items()},
+        )
+
+        # Get oneline_comment_style configuration
+        oneline_comment_style_dict: OneLineCommentStyleType | None = config_dict.get(
+            "oneline_comment_style"
+        )
+        oneline_comment_style: OneLineCommentStyle = cast(
+            OneLineCommentStyle,
+            convert_dict_2_config(
+                oneline_comment_style_dict, ConfigType.OneLineCommentStyle
+            ),
+        )
+
+        # Get need_id_refs configuration
+        need_id_refs_config_dict: NeedIdRefsConfigType | None = config_dict.get(
+            "need_id_refs"
+        )
+        need_id_refs_config = cast(
+            NeedIdRefsConfig,
+            convert_dict_2_config(
+                need_id_refs_config_dict, ConfigType.NeedIdRefsConfig
+            ),
+        )
+
+        # Get marked_rst configuration
+        marked_rst_config_dict: MarkedRstConfigType | None = config_dict.get(
+            "marked_rst"
+        )
+        marked_rst_config = cast(
+            MarkedRstConfig,
+            convert_dict_2_config(marked_rst_config_dict, ConfigType.MarkedRstCofig),
+        )
+
+        analyse_config_dict["need_id_refs_config"] = need_id_refs_config
+        analyse_config_dict["marked_rst_config"] = marked_rst_config
+        analyse_config_dict["oneline_comment_style"] = oneline_comment_style
+    else:
+        analyse_config_dict: SourceAnalyseConfigType = {}
+
+    if src_discover:
+        analyse_config_dict["src_files"] = src_discover.source_paths
+        analyse_config_dict["src_dir"] = src_discover.src_discover_config.src_dir
+
+    return SourceAnalyseConfig(**analyse_config_dict)
 
 
 def convert_oneline_comment_style_config(
