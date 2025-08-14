@@ -297,11 +297,13 @@ def convert_analyse_config(
     config_dict: AnalyseSectionConfigType | None,
     src_discover: SourceDiscover | None = None,
 ) -> SourceAnalyseConfig:
+    analyse_config_dict: SourceAnalyseConfigType = {}
     if config_dict:
-        analyse_config_dict: SourceAnalyseConfigType = cast(
-            SourceAnalyseConfigType,
-            {k: Path(str(v)) if k == "src_dir" else v for k, v in config_dict.items()},
-        )
+        for k, v in config_dict.items():
+            if k not in {"online_comment_style", "need_id_refs", "marked_rst"}:
+                analyse_config_dict[k] = (  # type: ignore[literal-required]  # dynamical assignment
+                    Path(v) if k == "src_dic" and isinstance(v, str) else v
+                )
 
         # Get oneline_comment_style configuration
         oneline_comment_style_dict: OneLineCommentStyleType | None = config_dict.get(

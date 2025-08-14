@@ -28,6 +28,7 @@ SRC_DISCOVER_TEMPLATE = {
     "comment_type": CommentType.cpp.value,
 }
 ANALYSE_SECTION_CONFIG_TEMPLATE = {
+    "get_oneline_needs": True,
     "oneline_comment_style": ONELINE_COMMENT_TEMPLATE,
 }
 ANALYSE_CONFIG_TEMPLATE = {
@@ -165,7 +166,7 @@ def test_discover(options, stdout):
                 for key, value in ANALYSE_CONFIG_TEMPLATE.items()
             },
             [
-                "Invalid value: Invalid oneline comment style configuration:",
+                "Invalid value: OneLineCommentStyle configuration errors:",
                 "Missing required fields: ['title', 'type']",
                 "Field 'id' is defined multiple times.",
             ],
