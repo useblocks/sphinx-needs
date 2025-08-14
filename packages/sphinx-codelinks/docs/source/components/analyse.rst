@@ -134,7 +134,7 @@ Configuration for one-line needs extraction. See :ref:`oneline_comment_style` fo
 
 The following configuration demonstrates the minimum settings required for basic analysis:
 
-.. literalinclude:: ./../../../tests/data/analyse/default_config.toml
+.. literalinclude:: ./../../../tests/data/analyse/minimum_config.toml
    :caption: minimum_config.toml
    :language: toml
 
@@ -215,25 +215,25 @@ This example demonstrates how the analyse extracts RST blocks from comments.
 
     .. code-tab:: cpp
 
-    #include <iostream>
+        #include <iostream>
 
-    /*
-    @rst
-    .. impl:: implement dummy function 1
-       :id: IMPL_71
-    @endrst
-    */
-    void dummy_func1(){
-        //...
-    }
+        /*
+        @rst
+        .. impl:: implement dummy function 1
+        :id: IMPL_71
+        @endrst
+        */
+        void dummy_func1(){
+            //...
+        }
 
-    // @rst..impl:: implement main function @endrst
-    int main() {
-        std::cout << "Starting demo_1..." << std::endl;
-        dummy_func1();
-        std::cout << "Demo_1 finished." << std::endl;
-        return 0;
-    }
+        // @rst..impl:: implement main function @endrst
+        int main() {
+            std::cout << "Starting demo_1..." << std::endl;
+            dummy_func1();
+            std::cout << "Demo_1 finished." << std::endl;
+            return 0;
+        }
 
 
    .. code-tab:: json

@@ -12,11 +12,11 @@ remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit
 [src_trace.projects.dcdc.source_discover]
 src_dir = "../tests/data/dcdc" # Relative path from this TOML config to the source directory
 
-[src_trace.projects.dcdc.analysis]
+[src_trace.projects.dcdc.analyse]
 get_need_id_refs = false
 get_oneline_needs = true
 
-[src_trace.projects.dcdc.analysis.oneline_comment_style]
+[src_trace.projects.dcdc.analyse.oneline_comment_style]
 # Configuration for oneline comment style
 start_sequence = "[["  # Start sequence for oneline comments
 end_sequence = "]]"    # End sequence for the online comments; default is newline character
@@ -29,3 +29,9 @@ needs_fields = [
   { "name" = "links", "type" = "list[str]", "default" = [
   ] },
 ]
+
+[src_trace.projects.src]
+remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+
+[src_trace.projects.src.source_discover]
+src_dir = "../tests/doc_test/minimum_config"
