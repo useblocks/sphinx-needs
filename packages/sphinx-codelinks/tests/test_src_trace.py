@@ -138,27 +138,31 @@ def test_src_tracing_config_positive(
         "set_remote_url": True,
         "projects": {
             "dcdc": {
-                "comment_type": "cpp",
-                "src_dir": "../dcdc",
+                "source_discover": {
+                    "comment_type": "cpp",
+                    "src_dir": "../dcdc",
+                    "exclude": ["**/*.hpp"],
+                    "include": ["**/*.cpp"],
+                    "gitignore": True,
+                },
                 "remote_url_pattern": "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}",
-                "exclude": ["**/*.hpp"],
-                "include": ["**/*.cpp"],
-                "gitignore": True,
-                "oneline_comment_style": {
-                    "start_sequence": "[[",
-                    "end_sequence": "]]",
-                    "field_split_char": ",",
-                    "needs_fields": [
-                        {
-                            "name": "title",
-                            "type": "str",
-                        },
-                        {
-                            "name": "type",
-                            "default": "impl",
-                            "type": "str",
-                        },
-                    ],
+                "analyse": {
+                    "oneline_comment_style": {
+                        "start_sequence": "[[",
+                        "end_sequence": "]]",
+                        "field_split_char": ",",
+                        "needs_fields": [
+                            {
+                                "name": "title",
+                                "type": "str",
+                            },
+                            {
+                                "name": "type",
+                                "default": "impl",
+                                "type": "str",
+                            },
+                        ],
+                    },
                 },
             }
         },
