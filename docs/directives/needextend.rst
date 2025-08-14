@@ -78,7 +78,8 @@ If you set the ``:strict:`` option value to ``true``,
 ``needextend`` raises an exception because the given ID does not exist, and the build stops.
 
 If you set  the ``:strict:`` option value to ``false``,
-``needextend`` logs an warning-level message in the console, and the build continues.
+
+``needextend`` logs a warning-level message in the console, and the build continues.
 
 Allowed values:
 
@@ -136,20 +137,20 @@ Options containing links get handled in two steps:
       :id: extend_test_004
 
       Had no links.
-      Got an incoming links ``extend_test_003`` and ``extend_test_006``.
+      Got incoming links ``extend_test_003`` and ``extend_test_006``.
 
    .. req:: needextend Example 5
       :id: extend_test_005
       :links: extend_test_003, extend_test_004
 
       Had the two links: ``extend_test_003`` and ``extend_test_004``.
-      Both got deleted.
+      Both were deleted.
 
    .. req:: needextend Example 6
       :id: extend_test_006
       :links: extend_test_003
 
-      Had the link ``extend_test_003``, got another one ``extend_test_004``.
+      Had the link ``extend_test_003``, and got another one ``extend_test_004``.
 
    .. needextend:: extend_test_003
       :links: extend_test_004
@@ -169,7 +170,7 @@ Options containing links get handled in two steps:
 
 Monitoring modifications
 ------------------------
-All needs have this two internal parameters:
+All needs have these two internal parameters:
 
 * ``is_modified``: A boolean value. Defaults to ``False``
 * ``modifications``: A number. Defaults to ``0``.
@@ -180,7 +181,7 @@ Also, the ``modifications`` number is increased by one.
 
 To see these values, use ``:layout: debug`` on the need or by :ref:`own_layouts`.
 
-Also filtering for these values is supported:
+Filtering for these values is also supported:
 
 .. need-example::
 

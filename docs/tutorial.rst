@@ -45,7 +45,7 @@ Each item must have at least:
 - a title, and
 - a description.
 
-A need item is a generic object which can become anything you you require for your project: a requirement, a test case, a user story, a bug, an employee, a product...
+A need item is a generic object which can become anything you require for your project: a requirement, a test case, a user story, a bug, an employee, a product...
 
 sphinx-needs comes with some default types: ``req``, ``spec``, ``impl``, and ``test``, which can be used as directives:
 
@@ -173,7 +173,7 @@ Lets also add some more need items to our plan:
 
          The RADAR sensor software for the car must accurately detect and track surrounding objects 
          within a specified range. It should employ signal processing algorithms to filter out noise 
-         nd interference, ensuring reliable object detection in various weather and road conditions. 
+         and interference, ensuring reliable object detection in various weather and road conditions. 
          The software should integrate seamlessly with the car's control system, providing real-time 
          data on detected objects to enable collision avoidance and adaptive cruise control functionalities. 
          Additionally, it should adhere to industry standards for safety and reliability, with robust 
@@ -235,7 +235,7 @@ Here we filter by the tag we set on the imported items above:
 .. note:: 
 
     The ``needextend`` does not have any visible output,
-    but it you look at the items, they will now have the additional link and status fields.
+    but if you look at the items, they will now have the additional link and status fields.
 
 .. seealso:: 
     
@@ -301,7 +301,7 @@ Finally, we can display a :ref:`flow diagram <needflow>` of the need items, to a
             [status == 'in progress']:0000FF, 
             [status == 'closed']:00FF00
 
-.. dropdown:: Aternative use of Graphviz engine
+.. dropdown:: Alternative use of Graphviz engine
 
     You can also use the Graphviz engine to render the flow diagram, by setting the ``engine`` option to ``graphviz``:
 

@@ -18,7 +18,7 @@ needpie
 If you provide an argument for the ``needpie``, we use it as the title.
 
 Each content line gets interpreted either as static float/int value or as a :ref:`filter_string`.
-The amount of found needs by the filter string is then used as value.
+The number of found needs by the filter string is then used as value.
 
 You can use :ref:`filter_func` with Python codes to define custom filters for ``needpie``.
 
@@ -53,7 +53,7 @@ labels
 
 Use ``:labels:`` to set labels for each value.
 
-``:labels:`` must get a comma separated string and the amount of labels must match the amount of
+``:labels:`` must get a comma separated string and the number of labels must match the number of
 values/lines from content.
 
 .. need-example::
@@ -71,7 +71,7 @@ legend
 
 You can place a legend on the right side of the pie chart by setting the ``:legend:`` flag.
 
-The ``:legend:`` flag does not support any values.
+The ``:legend:`` flag does not support any additional values.
 
 .. need-example::
 
@@ -88,11 +88,11 @@ explode
 ~~~~~~~
 
 ``:explode:`` takes a comma-separated list of floats and defines how much space a specific pie-part
-moves of from center.
+moves off from center.
 
-The amount of values for ``:explode:`` must match the amount of values / content lines.
+The number of values for ``:explode:`` must match the number of values / content lines.
 
-Useful values for ``:explode:`` are between ``0`` and ``0.3``
+Useful values for ``:explode:`` are between ``0`` and ``0.3``.
 
 .. need-example::
 
@@ -187,7 +187,7 @@ In the past we had overlapping labels. See following diagram.
 .. image:: /_images/need_pie_overlapping_labels.png
   :alt: Example of a needpie with overlapping labels
 
-Now overlapping labels are removed, and we automatically add a legend with removed information.
+Now overlapping labels are removed, and a legend with the removed information is automatically added.
 
 .. need-example::
 
