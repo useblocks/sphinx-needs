@@ -328,8 +328,6 @@ def convert_analyse_config(
         analyse_config_dict["need_id_refs_config"] = need_id_refs_config
         analyse_config_dict["marked_rst_config"] = marked_rst_config
         analyse_config_dict["oneline_comment_style"] = oneline_comment_style
-    else:
-        analyse_config_dict: SourceAnalyseConfigType = {}
 
     if src_discover:
         analyse_config_dict["src_files"] = src_discover.source_paths
