@@ -292,6 +292,8 @@ Enables the use of simplified one-line comment patterns to represent **Sphinx-Ne
 
 The following one-line comment in source code:
 
+
+
 .. code-block:: cpp
 
    // @Function Bar, IMPL_4, impl, [SPEC_1, SPEC_2]

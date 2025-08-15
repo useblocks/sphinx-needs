@@ -18,13 +18,15 @@ The default configuration is as follows:
 .. code-block:: toml
 
       [source_discover]
-      src_dir = "./",
-      exclude = [],
-      include = [],
-      gitignore = true,
+      src_dir = "./"
+      exclude = []
+      include = []
+      gitignore = true
       comment_type = "cpp"
 
 The details of each field are the followings
+
+.. _source_dir:
 
 src_dir
 ~~~~~~~
@@ -57,9 +59,9 @@ Defines a list of glob patterns for files and directories to exclude from discov
 
    [source_discover]
    exclude = [
-       "build/**",
-       "*.tmp",
-       "tests/fixtures/**",
+       "build/**"
+       "*.tmp"
+       "tests/fixtures/**"
        "vendor/third_party/**"
    ]
 
@@ -112,9 +114,9 @@ Specifies the comment syntax style used in the source code files. This determine
 
 **Supported comment styles:**
 
-.. list-table::
+.. list-table:: Title
    :header-rows: 1
-   :widths: 40 40 50
+   :widths: 25, 25, 30, 50
 
    * - Language
      - comment_type
@@ -122,11 +124,13 @@ Specifies the comment syntax style used in the source code files. This determine
      - discovered file types
    * - C/C++
      - ``"cpp"``
-     - ``//`` (single-line), ``/* */`` (multi-line)
+     - ``//`` (single-line),
+       ``/* */`` (multi-line)
      - ``c``, ``h``, ``.cpp``, and ``.hpp``
    * - Python
      - ``"python"``
-     - ``#`` (single-line), ``""" """`` (docstrings)
+     - ``#`` (single-line),
+       ``""" """`` (docstrings)
      - ``.py``
 
 .. note::

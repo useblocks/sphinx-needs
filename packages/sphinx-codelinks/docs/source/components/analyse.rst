@@ -235,8 +235,7 @@ This example demonstrates how the analyse extracts RST blocks from comments.
             return 0;
         }
 
-
-   .. code-tab:: json
+    .. code-tab:: json
 
         [
             {
