@@ -114,7 +114,7 @@ Specifies the comment syntax style used in the source code files. This determine
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 30 50
+   :widths: 40 40 50
 
    * - Language
      - comment_type

@@ -152,49 +152,49 @@ Below is an example of a C++ source file containing need ID references and the c
 
    .. code-tab:: cpp
 
-    #include <iostream>
+        #include <iostream>
 
-    // @need-ids: need_001, need_002, need_003, need_004
-    void dummy_func1(){
-        //...
-    }
+        // @need-ids: need_001, need_002, need_003, need_004
+        void dummy_func1(){
+            //...
+        }
 
-    // @need-ids: need_003
-    int main() {
-        std::cout << "Starting demo_1..." << std::endl;
-        dummy_func1();
-        std::cout << "Demo_1 finished." << std::endl;
-        return 0;
-    }
+        // @need-ids: need_003
+        int main() {
+            std::cout << "Starting demo_1..." << std::endl;
+            dummy_func1();
+            std::cout << "Demo_1 finished." << std::endl;
+            return 0;
+        }
 
    .. code-tab:: json
 
-    [
-        {
-            "filepath": "tests/data/need_id_refs/dummy_1.cpp",
-            "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/fa5a9129d60203355ae9fe4a725246a88522c60c/tests/data/need_id_refs/dummy_1.cpp#L3",
-            "source_map": {
-                "start": { "row": 2, "column": 13 },
-                "end": { "row": 2, "column": 51 }
+        [
+            {
+                "filepath": "tests/data/need_id_refs/dummy_1.cpp",
+                "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/fa5a9129d60203355ae9fe4a725246a88522c60c/tests/data/need_id_refs/dummy_1.cpp#L3",
+                "source_map": {
+                    "start": { "row": 2, "column": 13 },
+                    "end": { "row": 2, "column": 51 }
+                },
+                "tagged_scope": "void dummy_func1(){\n     //...\n }",
+                "need_ids": ["need_001", "need_002", "need_003", "need_004"],
+                "marker": "@need-ids:",
+                "type": "need-id-refs"
             },
-            "tagged_scope": "void dummy_func1(){\n     //...\n }",
-            "need_ids": ["need_001", "need_002", "need_003", "need_004"],
-            "marker": "@need-ids:",
-            "type": "need-id-refs"
-        },
-        {
-            "filepath": "tests/data/need_id_refs/dummy_1.cpp",
-            "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/fa5a9129d60203355ae9fe4a725246a88522c60c/tests/data/need_id_refs/dummy_1.cpp#L8",
-            "source_map": {
-                "start": { "row": 7, "column": 13 },
-                "end": { "row": 7, "column": 21 }
-            },
-            "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
-            "need_ids": ["need_003"],
-            "marker": "@need-ids:",
-            "type": "need-id-refs"
-        }
-    ]
+            {
+                "filepath": "tests/data/need_id_refs/dummy_1.cpp",
+                "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/fa5a9129d60203355ae9fe4a725246a88522c60c/tests/data/need_id_refs/dummy_1.cpp#L8",
+                "source_map": {
+                    "start": { "row": 7, "column": 13 },
+                    "end": { "row": 7, "column": 21 }
+                },
+                "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
+                "need_ids": ["need_003"],
+                "marker": "@need-ids:",
+                "type": "need-id-refs"
+            }
+        ]
 
 **Output Structure:**
 
@@ -238,30 +238,30 @@ This example demonstrates how the analyse extracts RST blocks from comments.
 
    .. code-tab:: json
 
-    [
-        {
-            "filepath": "marked_rst/dummy_1.cpp",
-            "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/26b301138eef25c5130518d96eaa7a29a9c6c9fe/marked_rst/dummy_1.cpp#L4",
-            "source_map": {
-                "start": { "row": 3, "column": 8 },
-                "end": { "row": 3, "column": 61 }
+        [
+            {
+                "filepath": "marked_rst/dummy_1.cpp",
+                "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/26b301138eef25c5130518d96eaa7a29a9c6c9fe/marked_rst/dummy_1.cpp#L4",
+                "source_map": {
+                    "start": { "row": 3, "column": 8 },
+                    "end": { "row": 3, "column": 61 }
+                },
+                "tagged_scope": "void dummy_func1(){\n     //...\n }",
+                "rst": ".. impl:: implement dummy function 1\n   :id: IMPL_71\n",
+                "type": "rst"
             },
-            "tagged_scope": "void dummy_func1(){\n     //...\n }",
-            "rst": ".. impl:: implement dummy function 1\n   :id: IMPL_71\n",
-            "type": "rst"
-        },
-        {
-            "filepath": "marked_rst/dummy_1.cpp",
-            "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/26b301138eef25c5130518d96eaa7a29a9c6c9fe/marked_rst/dummy_1.cpp#L14",
-            "source_map": {
-                "start": { "row": 13, "column": 7 },
-                "end": { "row": 13, "column": 40 }
-            },
-            "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
-            "rst": "..impl:: implement main function ",
-            "type": "rst"
-        }
-    ]
+            {
+                "filepath": "marked_rst/dummy_1.cpp",
+                "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/26b301138eef25c5130518d96eaa7a29a9c6c9fe/marked_rst/dummy_1.cpp#L14",
+                "source_map": {
+                    "start": { "row": 13, "column": 7 },
+                    "end": { "row": 13, "column": 40 }
+                },
+                "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
+                "rst": "..impl:: implement main function ",
+                "type": "rst"
+            }
+        ]
 
 **Output Structure:**
 
@@ -288,16 +288,14 @@ For comprehensive information about one-line needs configuration and usage, see 
 
 **Basic Example:**
 
-.. tabs:
+.. code-block:: c
 
-.. code-tab:: c
-
-   // @Function Implementation, IMPL_001, impl, [REQ_001, REQ_002]
+    // @Function Implementation, IMPL_001, impl, [REQ_001, REQ_002]
 
 This single comment line creates a complete **Sphinx-Needs** item equivalent to:
 
-.. code-tab:: rst
+.. code-block:: rst
 
-   .. impl:: Function Implementation
-      :id: IMPL_001
-      :links: REQ_001, REQ_002
+    .. impl:: Function Implementation
+        :id: IMPL_001
+        :links: REQ_001, REQ_002

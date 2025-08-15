@@ -101,7 +101,7 @@ the one-line comment shall be defined as the following
 
    .. code-tab:: c
 
-       // @ title, id_123, implementation, [link1, link2]
+      // @ title, id_123, implementation, [link1, link2]
 
    .. code-tab:: rst
 
@@ -156,7 +156,7 @@ the first field in the one-line comment
 
    .. code-tab:: c
 
-       // @ this is title, this is id, this_type, [link1, link2]
+      // @ this is title, this is id, this_type, [link1, link2]
 
    .. code-tab:: rst
 
