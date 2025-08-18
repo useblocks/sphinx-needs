@@ -30,7 +30,7 @@ use case.
 ~~~~~~~~~~~~~~~~~~~~~
 .. _latest_version:
 
-This is the defacto docker image (size ~ 350MB). If you are not sure about what
+This is the de facto docker image (size ~ 350MB). If you are not sure about what
 your requirements are, you probably want to use this one.
 You can use it as a throw away container (mount your documentation and start
 the container), as well as the base to build your own docker images.
@@ -140,7 +140,7 @@ To build the image locally, execute the following commands.
    cd docker && ./build_docker.sh
 
 .. note::
-   The script allows to choose between html and pdf version and
+   The script allows you to choose between the html and pdf variant and
    the Sphinx-Needs version to be installed.
 
 Usage

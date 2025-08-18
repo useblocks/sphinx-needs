@@ -14,7 +14,7 @@ You can define the type using the correct directive, like ``.. req::`` or ``.. t
        :tags: user;login
        :collapse: false
 
-       Our users needs to get logged in via our login forms on **/login.php**.
+       Our users need to get logged in via our login forms on **/login.php**.
 
 The code example above creates a new requirement, with a title, content, given id, a status and several tags.
 
@@ -33,7 +33,7 @@ Variants for options support
 .. versionadded:: 1.0.2
 
 Needs variants add support for variants handling on need options. |br|
-The support for variants options introduce new ideologies on how to set values for *need options*.
+The support for variants options introduces new ideologies on how to set values for *need options*.
 
 To implement variants options, you can set a *need option* to a variant definition or multiple variant definitions.
 A variant definition can look like ``var_a:open`` or ``['name' in tags]:assigned``.
@@ -46,7 +46,7 @@ and ``assigned`` is the value.
 Rules for specifying variant definitions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Variants gets checked from left to right.
+* Variants get checked from left to right.
 * When evaluating a variant definition, we use data from the current need object,
   `Sphinx-Tags <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-t>`_,
   and :ref:`needs_filter_data` as the context for filtering.
@@ -161,7 +161,7 @@ Below is an implementation of variants for need options:
 
 Diagram support
 ---------------
-A need objects can also define it's own PlantUML representation.
+A need object can also define its own PlantUML representation.
 Therefore Sphinx-Needs looks for the :ref:`needuml` directive inside the content
 and stores its PlantUML code under given key from :ref:`needuml` directive under the option name ``arch``.
 
@@ -173,7 +173,7 @@ This diagram data can then be used in other :ref:`needuml` calls to combine and 
       :id: SP_INT
       :status: open
 
-      This are the provided interfaces:
+      These are the provided interfaces:
 
       .. needuml::
 
@@ -198,8 +198,7 @@ For more examples and details, please read :ref:`needuml`.
 
 Filter for diagrams
 ~~~~~~~~~~~~~~~~~~~
-The option ``arch`` can be easily used for filtering. For instance to show all need objects, which
-are representing some kind of a diagram.
+The option ``arch`` can be easily used for filtering. For instance, to show all need objects which represent some kind of diagram.
 
 .. need-example::
 
@@ -220,7 +219,7 @@ The given ID must match the regular expression (regex) value for the :ref:`needs
 The Sphinx build stops if the ID does not match the regex value.
 
 If you do not specify the id option, we calculate a short hash value based on the title. The calculated value can 
-also include title if :ref:`needs_id_from_title` is set to **True**.
+also include the title if :ref:`needs_id_from_title` is set to **True**.
 If you don’t change the title, the id will work for all upcoming documentation generations.
 
 .. _need_status:
@@ -303,7 +302,7 @@ delete
 There is a **:delete:** option. If the value of the option is set to **True**, the need will be deleted completely
 from any NeedLists or NeedDicts including the ``needs.json`` file.
 
-This option allows a user to have multiple need-objects with the same id, but only one is shown in the documentation.
+This option allows a user to have multiple need objects with the same id, but only one is shown in the documentation.
 
 Allowed values (case-insensitive):
 
@@ -524,7 +523,7 @@ style
 
 ``style`` can be used to set a specific class-attribute for the need representation.
 
-The class-attribute can then be selected with **CSS** to specify the layout of the need.
+The class attribute can then be selected with **CSS** to specify the layout of the need.
 
 .. need-example::
 
@@ -586,7 +585,7 @@ For example, if the filename is ``my_template.need``, you can reference it like 
 You can specify the location of all template files by configuring the :ref:`needs_template_folder`, which is by
 default ``needs_templates/``, in the **conf.py** file.
 
-You can have several templates, but can set only one for a need.
+You can have several templates, but can set only one for each need.
 
 .. dropdown:: Template ``spec_template.need``
 
@@ -664,7 +663,7 @@ duration
 
 Track the duration of a need.
 
-The need allows any value but the :ref:`needgantt` directive uses and interprets it as days by default.
+The need allows any value, but the :ref:`needgantt` directive uses and interprets it as days by default.
 
 
 .. _need_completion:
@@ -676,7 +675,7 @@ completion
 
 Track the completion of a need.
 
-The need allows any value but the :ref:`needgantt` directive uses and interprets it as percentage by default.
+The need allows any value, but the :ref:`needgantt` directive uses and interprets it as a percentage by default.
 
 
 Customized Options

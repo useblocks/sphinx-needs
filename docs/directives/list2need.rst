@@ -5,7 +5,7 @@ list2need
 .. versionadded:: 1.2.0
 
 
-``list2need`` allows to create need objects out ouf a given list, where each list entry is used to create
+``list2need`` allows to create need objects out of a given list, where each list entry is used to create
 a single need.
 
 It allows to speed up the need-creation process for simple needs, which in most cases just have a title
@@ -64,7 +64,7 @@ The used list structure was defined to be as small as possible.
 
 Each line starting with a ``*`` will create a new need object.
 
-To define a child-need, add **2 additional whitespaces** infront of ``*``.
+To define a child-need, add **2 additional whitespaces** in front of ``*``.
 This is called the indentation level and each level must have a need-type defined in the ``types`` option.
 
 A line starting **without** a ``*`` will be added to the prior one.
@@ -288,7 +288,7 @@ Lists with need-part support
         Second: :np:`(ANOTHER)ANOTHER need-part`
 
         * And a spec need.
-          Lets reference a need-part frm above: :need:`LIST2NEED-REQ-1.1`
+          Let's reference a need-part from above: :need:`LIST2NEED-REQ-1.1`
 
 .. list2need::
    :types: req, spec
@@ -301,7 +301,7 @@ Lists with need-part support
      Second: :np:`(ANOTHER)ANOTHER need-part`
 
      * And a spec need.
-       Lets reference a need-part frm above: :need:`LIST2NEED-REQ-1.1`
+       Let's reference a need-part from above: :need:`LIST2NEED-REQ-1.1`
 
 .. _list2need_meta_data:
 

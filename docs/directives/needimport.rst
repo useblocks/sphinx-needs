@@ -97,22 +97,22 @@ This is useful if you want to import only a subset of the needs from the JSON fi
 filter
 ~~~~~~
 
-You can use the ``:filter:`` option to imports only the needs which pass the filter criteria.
-This is a string that is evaluated as a Python expression,
-it is less performant than the ``:ids:`` option, but more flexible.
+You can use the ``:filter:`` option to import only the needs which pass the filter criteria.
+This is a string that is evaluated as a Python expression. It is less performant than the ``:ids:`` option,
+but more flexible.
 
 Please read :ref:`filter` for more information.
 
 hide
 ~~~~
 
-You can use the ``:hide:`` option to set the **hide** tag for all imported needs.
-So they are not rendered on the page.
+You can use the ``:hide:`` option to set the **hide** tag for all imported needs,
+so they are not rendered on the page.
 
 collapse
 ~~~~~~~~
 
-The ``:collapse:`` will hide the meta-data information by default, if set to ``True``.
+The ``:collapse:`` option will hide the metadata information by default, if set to ``True``.
 See also :ref:`need_collapse` description of :ref:`need`.
 
 .. warning::
@@ -124,8 +124,8 @@ See also :ref:`need_collapse` description of :ref:`need`.
 Customization
 -------------
 
-The following options can be set, which overwrite the related options in the imported need itself.
-So you can decide what kind of layout or style to use during import.
+The following options can be set, which overwrite the related options in the imported need itself,
+allowing you to decide what kind of layout or style to use during import.
 
 * layout
 * style

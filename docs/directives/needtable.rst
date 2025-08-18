@@ -188,9 +188,9 @@ style_row
 
 .. versionadded:: 0.4.1
 
-You can use the ``style_row`` option to set a specific class-attribute for the table-row representation and use **CSS** to select the class-attribute
+You can use the ``style_row`` option to set a specific class-attribute for the table-row representation and use **CSS** to select the class-attribute.
 
-Also, you can set specific layout for the row.
+Also, you can set a specific layout for the row.
 
 .. need-example::
 
@@ -295,7 +295,7 @@ By default, we use ``id_complete`` if we don't set a sort option.
       :tags: ex_row_color
       :style: table
 
-In this case, we set the sort option to ``status``. So *EX_ROW_3* is above of *EX_ROW_2*.
+In this case, we set the sort option to ``status``. So *EX_ROW_3* is above *EX_ROW_2*.
 
 .. need-example::
 
@@ -320,7 +320,7 @@ In this case, we set the sort option to ``status``. So *EX_ROW_3* is above of *E
 .. note::
 
    Sorting only works if you use the standard sphinx-table for output: ``:style: table``.
-   By default, tables generated with DatabTables uses Javascript to sort results.
+   By default, tables generated with DataTables use Javascript to sort results.
 
 
 .. _needtable_class:
