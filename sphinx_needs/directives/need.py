@@ -342,14 +342,12 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
         # append / set values from need
         if sections:
             need_info["sections"] = sections
-            need_info["section_name"] = sections[0]
 
         if signature:
             need_info["signature"] = str(signature)
 
         if parent_needs:
             need_info["parent_needs"] = parent_needs
-            need_info["parent_need"] = parent_needs[0]
 
         if need_node.get("hidden"):
             hidden_needs.append(need_node)

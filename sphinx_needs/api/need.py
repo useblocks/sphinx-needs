@@ -321,10 +321,6 @@ def generate_need(
         links_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
     )
     _copy_links(links, needs_config)
-    # ensure parent_need is consistent with parent_needs
-    parent_need = (
-        parent_needs[0] if (parent_needs := links.get("parent_needs")) else None
-    )
 
     # Add the need and all needed information
     needs_data: NeedsInfoType = {
@@ -339,9 +335,7 @@ def generate_need(
         "type_style": need_type_data.get("style") or "node",
         "status": status,
         "tags": tags,
-        "constraints": constraints,
-        "constraints_passed": True,
-        "constraints_results": {},
+        "constraints_results": {k: {} for k in constraints},
         "constraints_error": None,
         "id": need_id,
         "title": title,
@@ -355,19 +349,12 @@ def generate_need(
         "hide": hide,
         "jinja_content": jinja_content or False,
         "parts": parts or {},
-        "is_part": False,
-        "is_need": True,
-        "id_parent": need_id,
-        "id_complete": need_id,
         "external_css": external_css or "external_link",
-        "is_modified": False,
         "modifications": 0,
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
         "sections": sections or [],
-        "section_name": sections[0] if sections else None,
         "signature": signature,
-        "parent_need": parent_need,
     }
 
     needs_info = NeedItem(

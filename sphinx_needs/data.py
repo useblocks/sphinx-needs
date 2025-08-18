@@ -424,10 +424,6 @@ class NeedsInfoType(TypedDict):
     style: None | str
     """Comma-separated list of CSS classes (all appended by `needs_style_`)."""
 
-    # TODO why is it called arch?
-    arch: dict[str, str]
-    """Mapping of uml key to uml content."""
-
     external_css: str
     """CSS class name, added to the external reference."""
 
@@ -439,21 +435,11 @@ class NeedsInfoType(TypedDict):
     """Hexadecimal color code of the type."""
     type_style: str
 
-    is_modified: bool
-    """Whether the need was modified by needextend."""
     modifications: int
     """Number of modifications by needextend."""
 
-    # used to distinguish a part from a need
-    is_need: bool
-    is_part: bool
     # Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data
     parts: dict[str, NeedsPartType]
-    # additional information required for compatibility with parts
-    id_parent: str
-    """<parent ID>, or <self ID> if not a part."""
-    id_complete: str
-    """<parent ID>.<self ID>, or <self ID> if not a part."""
 
     # content creation information
     jinja_content: bool
@@ -463,6 +449,8 @@ class NeedsInfoType(TypedDict):
     content: str
     pre_content: None | str
     post_content: None | str
+    doctype: str
+    """Type of the document where the need is defined, e.g. '.rst'."""
 
     # these default to False and are updated in check_links post-process
     has_dead_links: bool
@@ -473,27 +461,45 @@ class NeedsInfoType(TypedDict):
     """
 
     # constraints information
-    constraints: list[str]
-    """List of constraint names, which are defined for this need."""
     # set in process_need_nodes (-> process_constraints) transform
     constraints_results: dict[str, dict[str, bool]]
     """Mapping of constraint name, to check name, to result."""
-    constraints_passed: bool
-    """True if all constraints passed, False if any failed, None if not yet checked."""
     constraints_error: None | str
     """An error message set if any constraint failed, and `error_message` field is set in config."""
 
     # additional source information
-    doctype: str
-    """Type of the document where the need is defined, e.g. '.rst'."""
     # set in analyse_need_locations transform
     sections: list[str]
-    section_name: None | str
-    """Simply the first section."""
     signature: None | str
     """Derived from a docutils desc_name node."""
+
+    arch: dict[str, str]  #  short for architecture.
+    """Mapping of uml key to uml content."""
+
+
+class NeedsInfoComputedType(TypedDict):
+    """Data for a single need, that can be computed from existing data.
+
+    These fields are used for convenience in filters.
+    """
+
+    is_need: bool
+    is_part: bool
+    is_modified: bool
+    """Whether the need was modified by needextend."""
+    # additional information required for compatibility with parts
+    id_parent: str
+    """<parent ID>, or <self ID> if not a part."""
+    id_complete: str
+    """<parent ID>.<self ID>, or <self ID> if not a part."""
+    section_name: None | str
+    """Simply the first section."""
     parent_need: None | str
     """Simply the first parent id."""
+    constraints: list[str]
+    """List of constraint names, which are defined for this need."""
+    constraints_passed: bool
+    """True if all constraints passed, False if any failed, None if not yet checked."""
 
 
 class NeedsBaseDataType(TypedDict):

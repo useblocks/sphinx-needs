@@ -41,7 +41,7 @@ Data
    :members: NeedItem, NeedPartItem, NeedItemSourceProtocol
 
 .. automodule:: sphinx_needs.data
-   :members: NeedsInfoType, NeedsSourceInfoType, NeedsMutable, NeedsPartType
+   :members: NeedsInfoType, NeedsInfoComputedType, NeedsSourceInfoType, NeedsMutable, NeedsPartType
 
 Views
 -----

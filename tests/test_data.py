@@ -2,7 +2,12 @@ import ast
 import inspect
 from typing import ForwardRef
 
-from sphinx_needs.data import NeedsCoreFields, NeedsInfoType, NeedsSourceInfoType
+from sphinx_needs.data import (
+    NeedsCoreFields,
+    NeedsInfoComputedType,
+    NeedsInfoType,
+    NeedsSourceInfoType,
+)
 
 
 def test_consistent():
@@ -11,15 +16,23 @@ def test_consistent():
     but I'm not sure this is possible (to encode both the static and dynamic data required).
     So at least here, we check that they are consistent with each other.
     """
-    intersection = set(NeedsInfoType.__annotations__).intersection(
-        set(NeedsSourceInfoType.__annotations__)
-    )
-    assert not intersection, (
-        "NeedsInfoType and NeedsSourceInfoType should not have common fields"
-    )
+    all_keys = [
+        *NeedsInfoType.__annotations__,
+        *NeedsSourceInfoType.__annotations__,
+        *NeedsInfoComputedType.__annotations__,
+    ]
+    if len(all_keys) != len(set(all_keys)):
+        duplicates = sorted(key for key in set(all_keys) if all_keys.count(key) > 1)
+        raise ValueError(
+            f"NeedsInfoType, NeedsSourceInfoType, NeedsInfoComputedType keys must be unique: {duplicates}"
+        )
     # check fields are consistent
-    assert set(NeedsCoreFields).issuperset(set(NeedsInfoType.__annotations__))
-    assert set(NeedsCoreFields).issuperset(set(NeedsSourceInfoType.__annotations__))
+    core_fields = set(NeedsCoreFields)
+    diff = core_fields.symmetric_difference(all_keys)
+    assert not diff, (
+        "NeedsCoreFields and NeedsInfoType/NeedsSourceInfoType/NeedsInfoComputedType should have the same fields"
+        f" (difference: {diff})"
+    )
 
     # check field types are consistent with schema
     for field, data in NeedsCoreFields.items():
@@ -29,6 +42,8 @@ def test_consistent():
             NeedsInfoType.__annotations__[field]
             if field in NeedsInfoType.__annotations__
             else NeedsSourceInfoType.__annotations__[field]
+            if field in NeedsSourceInfoType.__annotations__
+            else NeedsInfoComputedType.__annotations__[field]
         )
         assert isinstance(type_, ForwardRef)
         type_str = type_.__forward_arg__
@@ -46,7 +61,7 @@ def test_consistent():
             assert schema["type"] == ["integer", "null"], field
         elif type_str in ("bool | None", "None | bool"):
             assert schema["type"] == ["boolean", "null"], field
-        elif type_str == "list[str]":
+        elif type_str == "list[str]" or type_str == "tuple[str, ...]":
             assert schema["type"] == "array", field
             assert schema["items"]["type"] == "string", field
         elif type_str == "dict[str, str]":
