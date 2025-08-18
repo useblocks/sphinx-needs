@@ -14,7 +14,12 @@ from dataclasses import dataclass, field
 from itertools import chain
 from typing import Any, Literal, Protocol, overload, runtime_checkable
 
-from sphinx_needs.data import NeedsInfoType, NeedsPartType, NeedsSourceInfoType
+from sphinx_needs.data import (
+    NeedsInfoComputedType,
+    NeedsInfoType,
+    NeedsPartType,
+    NeedsSourceInfoType,
+)
 
 
 @runtime_checkable
@@ -139,19 +144,16 @@ class NeedItem:
     __slots__ = (
         "_backlinks",
         "_backlinks_keymap",
+        "_computed",
         "_core",
         "_extras",
         "_links",
         "_source",
     )
 
-    _immutable = {
+    _immutable_core = {
         "id",
-        "id_complete",
-        "id_parent",
         "type",
-        "is_need",
-        "is_part",
         "template",
         "pre_template",
         "post_template",
@@ -180,44 +182,37 @@ class NeedItem:
         :param backlinks: Backlinks associated with the need item.
            If set, this must contain all keys that are in links, with the suffix '_back',
            and should not contain any keys that are in core or extras.
+        :param _validate: Perform runtime type validation of initialisation inputs
         """
         if _validate:
+            # run pre-checks
             if not isinstance(core, dict):
                 raise TypeError("NeedItem core must be a dictionary.")
+            if missing_core := set(NeedsInfoType.__annotations__).difference(core):
+                raise ValueError(
+                    f"NeedItem core missing required keys: {sorted(missing_core)}"
+                )
+            if extra_core := set(core).difference(NeedsInfoType.__annotations__):
+                raise ValueError(
+                    f"NeedItem core contains extra keys: {sorted(extra_core)}"
+                )
             if not isinstance(extras, dict):
                 raise TypeError("NeedItem extras must be a dictionary.")
             if not isinstance(links, dict):
                 raise TypeError("NeedItem links must be a dictionary.")
-            if not all(
-                isinstance(v, list) and all(isinstance(i, str) for i in v)
-                for v in links.values()
-            ):
-                raise TypeError(
-                    "NeedItem links must be a dictionary of lists of strings."
-                )
-            if backlinks is not None:
-                if not isinstance(backlinks, dict):
-                    raise TypeError("NeedItem backlinks must be a dictionary.")
-                if not all(
-                    isinstance(v, list) and all(isinstance(i, str) for i in v)
-                    for v in backlinks.values()
-                ):
-                    raise TypeError(
-                        "NeedItem backlinks must be a dictionary of lists of strings."
-                    )
-                if set(backlinks) != set(links):
-                    raise ValueError(
-                        f"Backlink keys must be the same as link keys, difference found: {sorted(set(backlinks) ^ set(links))}"
-                    )
-        if source is not None and not isinstance(source, NeedItemSourceProtocol):
-            raise TypeError("NeedItem source must obey the NeeItemSourceProtocol.")
-        self._core = core
-        self._extras = extras
-        self._links = links
+            if backlinks is not None and not isinstance(backlinks, dict):
+                raise TypeError("NeedItem backlinks must be a dictionary.")
+            if source is not None and not isinstance(source, NeedItemSourceProtocol):
+                raise TypeError("NeedItem source must obey the NeeItemSourceProtocol.")
+
+        # set internal fields
+        self._core = core.copy()
+        self._extras = extras.copy()
+        self._links = links.copy()
         if backlinks is None:
             self._backlinks: dict[str, list[str]] = {li: [] for li in self._links}
         else:
-            self._backlinks = backlinks
+            self._backlinks = backlinks.copy()
         self._backlinks_keymap = {f"{key}_back": key for key in self._links}
         """mapping of exposed backlink keys to actual link keys, e.g. {'link_type_back': 'link_type'}
         
@@ -225,29 +220,64 @@ class NeedItem:
 
         """
         self._source = source if source is not None else NeedItemSourceUnknown()
+        self._recompute()
+
+        # consistency checks for data, this is optional so that we don't have to re-run when copying an instance.
         if _validate:
-            # consistency checks for data
+            if not all(
+                isinstance(v, list) and all(isinstance(i, str) for i in v)
+                for v in self._links.values()
+            ):
+                raise TypeError(
+                    "NeedItem links must be a dictionary of lists of strings."
+                )
+            if not all(
+                isinstance(v, list) and all(isinstance(i, str) for i in v)
+                for v in self._backlinks.values()
+            ):
+                raise TypeError(
+                    "NeedItem backlinks must be a dictionary of lists of strings."
+                )
+            if set(self._backlinks) != set(self._links):
+                raise ValueError(
+                    f"Backlink keys must be the same as link keys, difference found: {sorted(set(self._backlinks) ^ set(self._links))}"
+                )
             all_keys = [
                 *self._core,
                 *self._extras,
                 *self._links,
                 *self._backlinks_keymap,
                 *self._source.dict_repr,
+                *self._computed,
             ]
             if len(all_keys) != len(set(all_keys)):
                 duplicates = sorted(
                     key for key in set(all_keys) if all_keys.count(key) > 1
                 )
                 raise ValueError(
-                    f"NeedItem keys must be unique across core, extras, links, and backlinks. Duplicate keys: {duplicates}"
+                    f"NeedItem keys must be unique across core, computed, extras, links, and backlinks. Duplicate keys: {duplicates}"
                 )
-            for key in ("id",):
-                if key not in self._core:
-                    raise ValueError(f"NeedItem core must contain key {key!r}.")
-            if "is_need" in self._core and not self._core["is_need"]:
-                raise ValueError("NeedItem core must have 'is_need' set to True.")
-            if "is_part" in self._core and self._core["is_part"]:  # noqa: RUF019
-                raise ValueError("NeedItem core must have 'is_part' set to False.")
+
+    def _recompute(self) -> None:
+        self._computed: NeedsInfoComputedType = {
+            "is_need": True,
+            "is_part": False,
+            "is_modified": self._core["modifications"] > 0,
+            "id_parent": self._core["id"],
+            "id_complete": self._core["id"],
+            "constraints": tuple(self._core["constraints_results"]),
+            "constraints_passed": all(
+                result
+                for check in self._core["constraints_results"].values()
+                for result in check.values()
+            ),
+            "section_name": sections[0]
+            if (sections := self._core["sections"])
+            else None,
+            "parent_need": parent_needs[0]
+            if (parent_needs := self._links.get("parent_needs"))
+            else None,
+        }
 
     @property
     def source(self) -> NeedItemSourceProtocol:
@@ -265,10 +295,10 @@ class NeedItem:
     def copy(self) -> NeedItem:
         """Return a copy of the NeedItem."""
         return NeedItem(
-            core=self._core.copy(),
-            extras=self._extras.copy(),
-            links=self._links.copy(),
-            backlinks=self._backlinks.copy(),
+            core=self._core,
+            extras=self._extras,
+            links=self._links,
+            backlinks=self._backlinks,
             source=self._source,
             _validate=False,
         )
@@ -297,6 +327,7 @@ class NeedItem:
             or key in self._links
             or key in self._backlinks_keymap
             or key in self._source.dict_repr
+            or key in self._computed
         )
 
     def __iter__(self) -> Iterator[str]:
@@ -307,6 +338,7 @@ class NeedItem:
             self._links,
             self._backlinks_keymap,
             self._source.dict_repr,
+            self._computed,
         )
 
     @overload
@@ -373,19 +405,26 @@ class NeedItem:
     def __getitem__(self, key: Literal["lineno", "lineno_content"]) -> int | None: ...
 
     @overload
-    def __getitem__(self, key: Literal["tags"]) -> Sequence[str]: ...
+    def __getitem__(self, key: Literal["tags", "constraints"]) -> Sequence[str]: ...
 
     @overload
-    def __getitem__(self, key: Literal["arch"]) -> dict[str, str]: ...
+    def __getitem__(self, key: Literal["arch"]) -> Mapping[str, str]: ...
 
     @overload
-    def __getitem__(self, key: Literal["parts"]) -> dict[str, NeedsPartType]: ...
+    def __getitem__(self, key: Literal["parts"]) -> Mapping[str, NeedsPartType]: ...
+
+    @overload
+    def __getitem__(
+        self, key: Literal["constraints_results"]
+    ) -> Mapping[str, dict[str, bool]]: ...
 
     @overload
     def __getitem__(self, key: str) -> Any: ...
 
     def __getitem__(self, key: str) -> Any:
         """Get an item by key."""
+        if key in self._computed:
+            return self._computed[key]  # type: ignore[literal-required]
         if key in self._core:
             return self._core[key]  # type: ignore[literal-required]
         elif key in self._extras:
@@ -412,6 +451,7 @@ class NeedItem:
             self._links.keys(),
             self._backlinks_keymap.keys(),
             self._source.dict_repr.keys(),
+            self._computed.keys(),
         )
 
     def values(self) -> Iterable[Any]:
@@ -422,6 +462,7 @@ class NeedItem:
             self._links.values(),
             self._backlinks.values(),
             self._source.dict_repr.values(),
+            self._computed.keys(),
         )
 
     def items(self) -> Iterable[tuple[str, Any]]:
@@ -432,15 +473,26 @@ class NeedItem:
             self._links.items(),
             ((k1, self._backlinks[k2]) for k1, k2 in self._backlinks_keymap.items()),
             self._source.dict_repr.items(),
+            self._computed.items(),
         )
 
     def __setitem__(self, key: str, value: Any) -> None:
         """Set an item by key."""
-        if key in self._immutable:
+        if key in self._immutable_core:
             raise KeyError(f"Cannot modify immutable key {key!r} in NeedItem.")
-        if key in self._source.dict_repr:
+        elif key == "constraints":
+            # TODO this is currently a special case, since `constraints` can be a dynamic function,
+            # which is set later but before constraints are actually processed.
+            if any(self._core.get("constraints_results", {}).values()):
+                raise KeyError(
+                    "Cannot modify 'constraints' key after constraints have been processed."
+                )
+            self._core["constraints_results"] = {c: {} for c in value}
+        elif key in self._computed:
+            raise KeyError(f"Cannot modify computed key {key!r} in NeedItem.")
+        elif key in self._source.dict_repr:
             raise KeyError(f"Cannot modify source key {key!r} in NeedItem.")
-        if key in self._core:
+        elif key in self._core:
             self._core[key] = value  # type: ignore[literal-required]
         elif key in self._extras:
             self._extras[key] = value
@@ -462,6 +514,7 @@ class NeedItem:
             self._backlinks[self._backlinks_keymap[key]] = value
         else:
             raise KeyError(f"Only existing keys can be set, not: {key!r}")
+        self._recompute()
 
     def get_part(self, part_id: str) -> NeedPartItem | None:
         """Get a part by its ID."""
@@ -664,10 +717,18 @@ class NeedPartItem:
     def __getitem__(self, key: Literal["lineno", "lineno_content"]) -> int | None: ...
 
     @overload
-    def __getitem__(self, key: Literal["tags"]) -> Sequence[str]: ...
+    def __getitem__(self, key: Literal["tags", "constraints"]) -> Sequence[str]: ...
+
+    @overload
+    def __getitem__(self, key: Literal["parts"]) -> Mapping[str, NeedsPartType]: ...
 
     @overload
     def __getitem__(self, key: Literal["arch"]) -> Mapping[str, str]: ...
+
+    @overload
+    def __getitem__(
+        self, key: Literal["constraints_results"]
+    ) -> Mapping[str, dict[str, bool]]: ...
 
     @overload
     def __getitem__(self, key: str) -> Any: ...

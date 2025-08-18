@@ -12,8 +12,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -85,9 +85,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT LIST2NEED',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -122,8 +122,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -174,9 +174,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT LIST2NEED',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -211,8 +211,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -263,9 +263,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED OPTIONS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED OPTIONS',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -300,8 +300,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -352,9 +352,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED OPTIONS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED OPTIONS',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -392,8 +392,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -447,9 +447,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED OPTIONS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED OPTIONS',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -484,8 +484,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -536,9 +536,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED OPTIONS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED OPTIONS',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -574,8 +574,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -625,9 +625,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED LINKS_DOWN',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED LINKS_DOWN',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -663,8 +663,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -714,9 +714,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED LINKS_DOWN',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED LINKS_DOWN',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -752,8 +752,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -803,9 +803,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED LINKS_DOWN',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED LINKS_DOWN',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -841,8 +841,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -893,9 +893,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED GLOBAL TAGS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -933,8 +933,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -984,9 +984,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED GLOBAL TAGS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -1027,8 +1027,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -1081,9 +1081,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED GLOBAL TAGS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -1121,8 +1121,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -1173,9 +1173,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED GLOBAL TAGS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -1213,8 +1213,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -1276,9 +1276,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT LIST2NEED',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -1313,8 +1313,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -1368,9 +1368,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT LIST2NEED',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -1405,8 +1405,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -1456,9 +1456,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT LIST2NEED',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',

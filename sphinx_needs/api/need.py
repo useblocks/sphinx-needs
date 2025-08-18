@@ -4,7 +4,7 @@ import hashlib
 import os
 import re
 import warnings
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, TypeVar
@@ -64,7 +64,7 @@ def generate_need(
     parts: dict[str, NeedsPartType] | None = None,
     arch: dict[str, str] | None = None,
     signature: None | str = None,
-    sections: list[str] | None = None,
+    sections: Sequence[str] | None = None,
     jinja_content: bool | None = None,
     hide: None | bool = None,
     collapse: None | bool = None,
@@ -321,10 +321,6 @@ def generate_need(
         links_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
     )
     _copy_links(links, needs_config)
-    # ensure parent_need is consistent with parent_needs
-    parent_need = (
-        parent_needs[0] if (parent_needs := links.get("parent_needs")) else None
-    )
 
     # Add the need and all needed information
     needs_data: NeedsInfoType = {
@@ -339,9 +335,7 @@ def generate_need(
         "type_style": need_type_data.get("style") or "node",
         "status": status,
         "tags": tags,
-        "constraints": constraints,
-        "constraints_passed": True,
-        "constraints_results": {},
+        "constraints_results": {k: {} for k in constraints},
         "constraints_error": None,
         "id": need_id,
         "title": title,
@@ -355,19 +349,12 @@ def generate_need(
         "hide": hide,
         "jinja_content": jinja_content or False,
         "parts": parts or {},
-        "is_part": False,
-        "is_need": True,
-        "id_parent": need_id,
-        "id_complete": need_id,
         "external_css": external_css or "external_link",
-        "is_modified": False,
         "modifications": 0,
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
-        "sections": sections or [],
-        "section_name": sections[0] if sections else None,
+        "sections": tuple(sections or ()),
         "signature": signature,
-        "parent_need": parent_need,
     }
 
     needs_info = NeedItem(
@@ -653,7 +640,7 @@ def _create_need_node(
         )
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
-    data["arch"] = {}
+    arch = {}
     node_need_needumls_without_key = []
     node_need_needumls_key_names = []
     for child in node_need.children:
@@ -669,7 +656,7 @@ def _create_need_node(
                                 f"Inside need: {data['id']}, found duplicate Needuml option key name: {key_name}"
                             )
                         else:
-                            data["arch"][key_name] = needuml["content"]
+                            arch[key_name] = needuml["content"]
                             node_need_needumls_key_names.append(key_name)
                     else:
                         node_need_needumls_without_key.append(needuml)
@@ -678,9 +665,10 @@ def _create_need_node(
 
     # only store the first needuml-node which has no key option under diagram
     if node_need_needumls_without_key:
-        data["arch"]["diagram"] = node_need_needumls_without_key[0]["content"]
+        arch["diagram"] = node_need_needumls_without_key[0]["content"]
 
-    data["parts"] = {}
+    data["arch"] = arch
+
     need_parts = find_parts(node_need)
     update_need_with_parts(env, data, need_parts)
 

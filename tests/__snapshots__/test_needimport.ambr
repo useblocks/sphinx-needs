@@ -2106,8 +2106,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -2157,9 +2157,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -2187,8 +2187,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -2238,9 +2238,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',
@@ -2267,8 +2267,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': '',
-      'constraints': list([
-      ]),
+      'constraints': tuple(
+      ),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -2318,9 +2318,9 @@
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDIMPORT DOWNLOAD NEEDS JSON',
-      ]),
+      ),
       'service': '',
       'signature': None,
       'specific': '',

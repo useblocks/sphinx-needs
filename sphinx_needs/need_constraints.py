@@ -25,12 +25,8 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
 
     for need in needs.values():
         need_id = need["id"]
-        constraints = need["constraints"]
 
-        # flag that is set to False if any check fails
-        need["constraints_passed"] = True
-
-        for constraint in constraints:
+        for constraint in need["constraints_results"]:
             try:
                 executable_constraints = config_constraints[constraint]
             except KeyError:
@@ -46,12 +42,8 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                 # compile constraint and check if need fulfils it
                 constraint_passed = filter_single_need(need, config, cmd)
 
-                if constraint_passed:
-                    need["constraints_results"].setdefault(constraint, {})[name] = True
-                else:
-                    need["constraints_results"].setdefault(constraint, {})[name] = False
-                    need["constraints_passed"] = False
-
+                need["constraints_results"][constraint][name] = constraint_passed
+                if not constraint_passed:
                     if "error_message" in executable_constraints:
                         msg = str(executable_constraints["error_message"])
                         template = error_templates_cache.setdefault(

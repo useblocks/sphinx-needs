@@ -214,7 +214,6 @@ def extend_needs_data(
         for found_need in found_needs:
             # Work in the stored needs, not on the search result
             need = all_needs[found_need["id"]]
-            need["is_modified"] = True
             need["modifications"] += 1
 
             location = (
