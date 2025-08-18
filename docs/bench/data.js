@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755116663865,
+  "lastUpdate": 1755523360913,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13644,6 +13644,42 @@ window.BENCHMARK_DATA = {
             "value": 62.041824021,
             "unit": "s",
             "extra": "Commit: f3a293c9c9f9a220360aa4f0821dd3a49b595d49\nBranch: master\nTime: 2025-08-13T22:22:18+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6f90e9908d3b6602f1b64034700cfbc3e24bb0e3",
+          "message": "♻️ Auto-compute certain need fields (#1496)\n\nA number of need fields are actually data that is based on other data:\n\n- `is_need` / `is_part` are based on whether the item is a `NeedItem` or\n`NeedPartItem` instance\n- `is_modified` is based on if `modifications > 0`\n- `id_parent` / `id_complete` are based on the `id` (and part `id` if\n`NeedPartItem`)\n- `section_name` is the first item in `sections`\n- `parent_need` is the first item in the `parent_needs` links\n- `constraints` is the keys of `constraints_results`\n- `constraints_passed` is derived from `constraints_results`\n\nThese are mainly there for user convenience when writing filters, but\nare not necessary to specify independently, and could lead to\ninconcistencies in the data.\n\nTherefore, these fields are now auto-computed when\ninitialiasing/modifying the need, rather than being allowed to be\nspecified / modified independantly.",
+          "timestamp": "2025-08-18T15:20:42+02:00",
+          "tree_id": "8ef23d0ca642957a196720efa87effd51b1ed6a7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6f90e9908d3b6602f1b64034700cfbc3e24bb0e3"
+        },
+        "date": 1755523343151,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16047950799999455,
+            "unit": "s",
+            "extra": "Commit: 6f90e9908d3b6602f1b64034700cfbc3e24bb0e3\nBranch: master\nTime: 2025-08-18T15:20:42+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.410246607999994,
+            "unit": "s",
+            "extra": "Commit: 6f90e9908d3b6602f1b64034700cfbc3e24bb0e3\nBranch: master\nTime: 2025-08-18T15:20:42+02:00"
           }
         ]
       }
