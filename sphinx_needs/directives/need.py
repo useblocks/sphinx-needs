@@ -319,7 +319,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
 
         # first we initialize to default values
         if "sections" not in need_info:
-            need_info["sections"] = []
+            need_info["sections"] = ()
 
         if "section_name" not in need_info:
             need_info["section_name"] = None
@@ -341,7 +341,7 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
 
         # append / set values from need
         if sections:
-            need_info["sections"] = sections
+            need_info["sections"] = tuple(sections)
 
         if signature:
             need_info["signature"] = str(signature)

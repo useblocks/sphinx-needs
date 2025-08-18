@@ -265,7 +265,7 @@ class NeedItem:
             "is_modified": self._core["modifications"] > 0,
             "id_parent": self._core["id"],
             "id_complete": self._core["id"],
-            "constraints": list(self._core["constraints_results"]),
+            "constraints": tuple(self._core["constraints_results"]),
             "constraints_passed": all(
                 result
                 for check in self._core["constraints_results"].values()

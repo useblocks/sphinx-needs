@@ -37,7 +37,7 @@ def core() -> NeedsInfoType:
         "modifications": 0,
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
-        "sections": [],
+        "sections": (),
         "signature": None,
     }
 

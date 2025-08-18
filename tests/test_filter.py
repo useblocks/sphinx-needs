@@ -215,7 +215,7 @@ def create_needs_view():
         "modifications": 0,
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
-        "sections": [],
+        "sections": (),
         "signature": None,
     }
 

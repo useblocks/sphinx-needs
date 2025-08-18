@@ -328,7 +328,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "constraints": {
         "description": "List of constraint names, which are defined for this need.",
-        "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "schema": {"type": "array", "items": {"type": "string"}, "default": ()},
         "allow_default": "str_list",
         "allow_df": True,
         "allow_extend": True,
@@ -361,7 +361,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "sections": {
         "description": "Sections of the need.",
-        "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "schema": {"type": "array", "items": {"type": "string"}, "default": ()},
         "exclude_import": True,
     },
     "section_name": {
@@ -469,7 +469,7 @@ class NeedsInfoType(TypedDict):
 
     # additional source information
     # set in analyse_need_locations transform
-    sections: list[str]
+    sections: tuple[str, ...]
     signature: None | str
     """Derived from a docutils desc_name node."""
 
@@ -496,7 +496,7 @@ class NeedsInfoComputedType(TypedDict):
     """Simply the first section."""
     parent_need: None | str
     """Simply the first parent id."""
-    constraints: list[str]
+    constraints: tuple[str, ...]
     """List of constraint names, which are defined for this need."""
     constraints_passed: bool
     """True if all constraints passed, False if any failed, None if not yet checked."""

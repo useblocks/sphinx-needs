@@ -4,7 +4,7 @@ import hashlib
 import os
 import re
 import warnings
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, TypeVar
@@ -64,7 +64,7 @@ def generate_need(
     parts: dict[str, NeedsPartType] | None = None,
     arch: dict[str, str] | None = None,
     signature: None | str = None,
-    sections: list[str] | None = None,
+    sections: Sequence[str] | None = None,
     jinja_content: bool | None = None,
     hide: None | bool = None,
     collapse: None | bool = None,
@@ -353,7 +353,7 @@ def generate_need(
         "modifications": 0,
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
-        "sections": sections or [],
+        "sections": tuple(sections or ()),
         "signature": signature,
     }
 

@@ -116,9 +116,9 @@
     'arch': dict({
     }),
     'collapse': False,
-    'constraints': list([
+    'constraints': tuple(
       'const1',
-    ]),
+    ),
     'constraints_error': None,
     'constraints_passed': True,
     'constraints_results': dict({
@@ -167,8 +167,8 @@
     'pre_content': None,
     'pre_template': None,
     'section_name': None,
-    'sections': list([
-    ]),
+    'sections': tuple(
+    ),
     'signature': None,
     'status': None,
     'style': None,
@@ -189,9 +189,9 @@
     'arch': dict({
     }),
     'collapse': False,
-    'constraints': list([
+    'constraints': tuple(
       'const1',
-    ]),
+    ),
     'constraints_error': None,
     'constraints_passed': True,
     'constraints_results': dict({
@@ -247,8 +247,8 @@
     'pre_content': None,
     'pre_template': None,
     'section_name': None,
-    'sections': list([
-    ]),
+    'sections': tuple(
+    ),
     'signature': None,
     'status': None,
     'style': None,
@@ -277,9 +277,9 @@
     ),
     tuple(
       'constraints',
-      list([
+      tuple(
         'const1',
-      ]),
+      ),
     ),
     tuple(
       'constraints_error',
@@ -446,8 +446,8 @@
     ),
     tuple(
       'sections',
-      list([
-      ]),
+      tuple(
+      ),
     ),
     tuple(
       'signature',
