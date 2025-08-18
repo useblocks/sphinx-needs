@@ -1,9 +1,9 @@
 .. _analyse:
 
-Source Analysis
+Source Analyse
 ===============
 
-The **Source Analysis** module is a powerful component of **Sphinx-CodeLinks** that extracts documentation-related content from source code comments. It provides both CLI and API interfaces for flexible integration into documentation workflows.
+The **Source Analyse** module is a powerful component of **Sphinx-CodeLinks** that extracts documentation-related content from source code comments. It provides both CLI and API interfaces for flexible integration into documentation workflows.
 
 **Key Capabilities:**
 
@@ -16,7 +16,7 @@ The **Source Analysis** module is a powerful component of **Sphinx-CodeLinks** t
 Overview
 --------
 
-Source Analysis works by parsing source code files and identifying specially marked comments that contain documentation information. This enables developers to embed documentation directly in their source code while maintaining clean separation between code and documentation.
+Source Analyse works by parsing source code files and identifying specially marked comments that contain documentation information. This enables developers to embed documentation directly in their source code while maintaining clean separation between code and documentation.
 
 The module supports three primary extraction modes:
 
@@ -53,7 +53,7 @@ Limitations
 Configuration
 -------------
 
-The **Source Analysis** module is configured using TOML files and leverages the :ref:`Source Discovery <discover>` module to locate source files for processing.
+The **Source Analyse** module is configured using TOML files and leverages the :ref:`Source Discovery <discover>` module to locate source files for processing.
 
 **Complete Configuration Example:**
 
@@ -97,7 +97,7 @@ Configuration Sections
 analyse
 ~~~~~~~
 
-Main configuration section for the analysis module.
+Main configuration section for the ``analyse`` module.
 
 **Options:**
 
