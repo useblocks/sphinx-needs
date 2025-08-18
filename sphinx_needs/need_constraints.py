@@ -25,9 +25,8 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
 
     for need in needs.values():
         need_id = need["id"]
-        constraints = need["constraints"]
 
-        for constraint in constraints:
+        for constraint in need["constraints_results"]:
             try:
                 executable_constraints = config_constraints[constraint]
             except KeyError:
@@ -43,9 +42,7 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                 # compile constraint and check if need fulfils it
                 constraint_passed = filter_single_need(need, config, cmd)
 
-                need["constraints_results"].setdefault(constraint, {})[name] = (
-                    constraint_passed
-                )
+                need["constraints_results"][constraint][name] = constraint_passed
                 if not constraint_passed:
                     if "error_message" in executable_constraints:
                         msg = str(executable_constraints["error_message"])

@@ -462,7 +462,7 @@ class NeedsInfoType(TypedDict):
 
     # constraints information
     # set in process_need_nodes (-> process_constraints) transform
-    constraints_results: dict[str, dict[str, bool]]
+    constraints_results: Mapping[str, dict[str, bool]]
     """Mapping of constraint name, to check name, to result."""
     constraints_error: None | str
     """An error message set if any constraint failed, and `error_message` field is set in config."""
