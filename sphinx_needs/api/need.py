@@ -640,7 +640,7 @@ def _create_need_node(
         )
 
     # Extract plantuml diagrams and store needumls with keys in arch, e.g. need_info['arch']['diagram']
-    data["arch"] = {}
+    arch = {}
     node_need_needumls_without_key = []
     node_need_needumls_key_names = []
     for child in node_need.children:
@@ -656,7 +656,7 @@ def _create_need_node(
                                 f"Inside need: {data['id']}, found duplicate Needuml option key name: {key_name}"
                             )
                         else:
-                            data["arch"][key_name] = needuml["content"]
+                            arch[key_name] = needuml["content"]
                             node_need_needumls_key_names.append(key_name)
                     else:
                         node_need_needumls_without_key.append(needuml)
@@ -665,9 +665,10 @@ def _create_need_node(
 
     # only store the first needuml-node which has no key option under diagram
     if node_need_needumls_without_key:
-        data["arch"]["diagram"] = node_need_needumls_without_key[0]["content"]
+        arch["diagram"] = node_need_needumls_without_key[0]["content"]
 
-    data["parts"] = {}
+    data["arch"] = arch
+
     need_parts = find_parts(node_need)
     update_need_with_parts(env, data, need_parts)
 

@@ -439,7 +439,7 @@ class NeedsInfoType(TypedDict):
     """Number of modifications by needextend."""
 
     # Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data
-    parts: dict[str, NeedsPartType]
+    parts: Mapping[str, NeedsPartType]
 
     # content creation information
     jinja_content: bool
@@ -473,7 +473,7 @@ class NeedsInfoType(TypedDict):
     signature: None | str
     """Derived from a docutils desc_name node."""
 
-    arch: dict[str, str]  #  short for architecture.
+    arch: Mapping[str, str]  #  short for architecture.
     """Mapping of uml key to uml content."""
 
 

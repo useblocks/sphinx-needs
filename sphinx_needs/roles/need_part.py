@@ -92,13 +92,11 @@ def update_need_with_parts(
     env: BuildEnvironment, need: NeedItem, part_nodes: list[NeedPart]
 ) -> None:
     app = env.app
+    parts = {}
     for part_node in part_nodes:
         part_id = part_node.part_id
 
-        if "parts" not in need:
-            need["parts"] = {}
-
-        if part_id in need["parts"]:
+        if part_id in parts:
             log_warning(
                 LOGGER,
                 "part_need id {} in need {} is already taken. need_part may get overridden.".format(
@@ -108,7 +106,7 @@ def update_need_with_parts(
                 part_node,
             )
 
-        need["parts"][part_id] = {
+        parts[part_id] = {
             "id": part_id,
             "content": part_node.title,
             "links": [],
@@ -131,6 +129,8 @@ def update_need_with_parts(
 
         part_node.children = []
         part_node.append(node_need_part_line)
+
+    need["parts"] = parts
 
 
 def find_parts(node: nodes.Node) -> list[NeedPart]:
