@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import Any, Protocol
+from dataclasses import dataclass
+from typing import Any, Protocol, TypeAlias
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -134,6 +135,76 @@ def execute_func(
 FUNC_RE = re.compile(r"\[\[(.*?)\]\]")  # RegEx to detect function strings
 
 
+class _PeekableChars:
+    """A simple iterator that allows peeking at the next character."""
+
+    def __init__(self, chars: str):
+        self._chars = chars
+        self._index = -1
+
+    def next(self) -> str | None:
+        """Return the next character and advance the iterator."""
+        self._index += 1
+        try:
+            return self._chars[self._index]
+        except IndexError:
+            return None
+
+    def peek(self) -> str | None:
+        """Return the next character without consuming it."""
+        try:
+            return self._chars[self._index + 1]
+        except IndexError:
+            return None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DfString:
+    expr: str
+
+
+DfStringList: TypeAlias = list[str | DfString]
+
+
+def split_string_with_dfs(value: str) -> None | DfStringList:
+    """A dynamic function in strings is enclosed by `[[` and `]]`.
+    This function splits the string into parts that are either dynamic functions or static strings.
+
+    Returns None if there are no dynamic functions, i.e. the string is a single static string.
+    """
+    parts: DfStringList = []
+    curr_chars: str = ""
+    in_df: bool = False
+    chars = _PeekableChars(value)
+    while (c := chars.next()) is not None:
+        if not in_df and c == "[" and chars.peek() == "[":
+            # start of dynamic function
+            chars.next()  # consume second '['
+            in_df = True
+            if curr_chars:
+                parts.append(curr_chars)
+                curr_chars = ""
+        elif in_df and c == "]" and chars.peek() == "]":
+            # end of dynamic function
+            in_df = False
+            chars.next()  # consume second ']'
+            if curr_chars:
+                parts.append(DfString(expr=curr_chars))
+                curr_chars = ""
+        else:
+            # normal character
+            curr_chars += c
+
+    if not parts:
+        return None
+
+    if curr_chars:
+        # TODO warn if unclosed df?
+        parts.append(curr_chars)
+
+    return parts
+
+
 def find_and_replace_node_content(
     node: nodes.Node, env: BuildEnvironment, need: NeedItem
 ) -> nodes.Node:
@@ -235,16 +306,9 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
     config = NeedsSphinxConfig(app.config)
 
     allowed_fields: set[str] = {
-        *(
-            k
-            for k, v in NeedsCoreFields.items()
-            if v.get("allow_df", False) or v.get("deprecate_df", False)
-        ),
+        *(k for k, v in NeedsCoreFields.items() if v.get("allow_df", False)),
         *config.extra_options,
         *(link["option"] for link in config.extra_links),
-    }
-    deprecated_fields: set[str] = {
-        *(k for k, v in NeedsCoreFields.items() if v.get("deprecate_df", False)),
     }
 
     for need in needs.values():
@@ -271,15 +335,6 @@ def resolve_dynamic_values(needs: NeedsMutable, app: Sphinx) -> None:
 
                     if func_call is None:
                         continue
-                    if need_option in deprecated_fields:
-                        log_warning(
-                            logger,
-                            f"Usage of dynamic functions is deprecated in field {need_option!r}, found in need {need['id']!r}",
-                            "deprecated",
-                            location=(need["docname"], need["lineno"])
-                            if need["docname"]
-                            else None,
-                        )
 
                     # Replace original function string with return value of function call
                     if func_return is None:

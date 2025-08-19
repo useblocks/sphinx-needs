@@ -12,14 +12,24 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import chain
-from typing import Any, Literal, Protocol, overload, runtime_checkable
-
-from sphinx_needs.data import (
-    NeedsInfoComputedType,
-    NeedsInfoType,
-    NeedsPartType,
-    NeedsSourceInfoType,
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Protocol,
+    TypedDict,
+    overload,
+    runtime_checkable,
 )
+
+if TYPE_CHECKING:
+    from sphinx_needs.data import (
+        NeedsInfoComputedType,
+        NeedsInfoType,
+        NeedsPartType,
+        NeedsSourceInfoType,
+    )
+    from sphinx_needs.functions.functions import DfString, DfStringList
 
 
 @runtime_checkable
@@ -138,6 +148,17 @@ class NeedItemSourceImport:
         self.dict_repr.update(d)
 
 
+class DynamicFunctionsDict(TypedDict, total=False):
+    title: DfStringList
+    status: DfStringList
+    layout: DfStringList
+    style: DfStringList
+    tags: list[DfString]
+    constraints: list[DfString]
+    extras: dict[str, DfStringList]
+    links: dict[str, list[DfString]]
+
+
 class NeedItem:
     """A class representing a single need item."""
 
@@ -167,6 +188,7 @@ class NeedItem:
         extras: dict[str, str],
         links: dict[str, list[str]],
         backlinks: dict[str, list[str]] | None = None,
+        dfs: DynamicFunctionsDict | None = None,
         _validate: bool = True,
     ) -> None:
         """Initialize the NeedItem instance.

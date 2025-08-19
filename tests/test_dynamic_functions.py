@@ -7,6 +7,28 @@ from sphinx import version_info
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
+from sphinx_needs.functions.functions import split_string_with_dfs
+
+
+@pytest.mark.parametrize(
+    "input",
+    [
+        "a",
+        "a,b",
+        "[[func()]]",
+        " [[func()]] ",
+        "a[[func()]]",
+        "a[[func()]]b",
+        "a[[func1()]]b[[func2()]]",
+        "[[func()]",
+        "[[func()",
+        "[[bad]]",
+    ],
+)
+def test_split_string_with_dfs(input: str, snapshot) -> None:
+    result = split_string_with_dfs(input)
+    assert result == snapshot
+
 
 @pytest.mark.parametrize(
     "test_app",

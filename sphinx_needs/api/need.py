@@ -24,8 +24,14 @@ from sphinx_needs.filter_common import (
     PredicateContextData,
     apply_default_predicate,
 )
+from sphinx_needs.functions.functions import (
+    DfString,
+    DfStringList,
+    split_string_with_dfs,
+)
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import (
+    DynamicFunctionsDict,
     NeedItem,
     NeedItemSourceProtocol,
     NeedItemSourceUnknown,
@@ -314,13 +320,46 @@ def generate_need(
         defaults_extras,
         defaults_links,
     )
-    extras = _get_default_extras(
-        extras_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
-    )
-    links = _get_default_links(
-        links_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
-    )
+    extras = {
+        key: _get_default_str(
+            key, value, needs_config, defaults_ctx, defaults_extras, defaults_links
+        )
+        for key, value in extras_no_defaults.items()
+    }
+    links = {
+        key: _get_default_list(
+            key, value, needs_config, defaults_ctx, defaults_extras, defaults_links
+        )
+        for key, value in links_no_defaults.items()
+    }
+
     _copy_links(links, needs_config)
+
+    dfs: DynamicFunctionsDict = {}
+    title, title_df = _get_string_df(title)
+    if title_df:
+        dfs["title"] = title_df
+    status, status_df = _get_string_none_df(status)
+    if status_df:
+        dfs["status"] = status_df
+    layout, layout_df = _get_string_none_df(layout)
+    if layout_df:
+        dfs["layout"] = layout_df
+    style, style_df = _get_string_none_df(style)
+    if style_df:
+        dfs["style"] = style_df
+    tags, tags_df = _get_list_df("tags", tags, location)
+    if tags_df:
+        dfs["tags"] = tags_df
+    constraints, constraints_df = _get_list_df("constraints", constraints, location)
+    if constraints_df:
+        dfs["constraints"] = constraints_df
+    extras, extras_df = _get_extras_df(extras)
+    if extras_df:
+        dfs["extras"] = extras_df
+    links, links_df = _get_links_df(links, location)
+    if links_df:
+        dfs["links"] = links_df
 
     # Add the need and all needed information
     needs_data: NeedsInfoType = {
@@ -358,7 +397,12 @@ def generate_need(
     }
 
     needs_info = NeedItem(
-        core=needs_data, extras=extras, links=links, source=source, _validate=False
+        _validate=False,
+        core=needs_data,
+        extras=extras,
+        links=links,
+        source=source,
+        dfs=dfs,
     )
 
     if jinja_content:
@@ -963,32 +1007,6 @@ def _get_default_bool(
         return _default_value
 
 
-def _get_default_extras(
-    value: dict[str, str | None],
-    config: NeedsSphinxConfig,
-    context: PredicateContextData,
-    extras: dict[str, str | None],
-    links: dict[str, tuple[str, ...]],
-) -> dict[str, str]:
-    return {
-        key: _get_default_str(key, value[key], config, context, extras, links)
-        for key in value
-    }
-
-
-def _get_default_links(
-    value: dict[str, list[str] | None],
-    config: NeedsSphinxConfig,
-    context: PredicateContextData,
-    extras: dict[str, str | None],
-    links: dict[str, tuple[str, ...]],
-) -> dict[str, list[str]]:
-    return {
-        key: _get_default_list(key, value[key], config, context, extras, links)
-        for key in value
-    }
-
-
 def _get_default(
     key: str,
     config: NeedsSphinxConfig,
@@ -1004,6 +1022,74 @@ def _get_default(
             return v
 
     return defaults.get("default", None)
+
+
+def _get_string_df(value: str) -> tuple[str, None | DfStringList]:
+    """Split the string into parts that are either dynamic functions or static strings."""
+    if (lst := split_string_with_dfs(value)) is None:
+        return value, None
+    return "", lst
+
+
+def _get_string_none_df(value: None | str) -> tuple[str | None, None | DfStringList]:
+    """Split the string into parts that are either dynamic functions or static strings."""
+    if value is None:
+        return None, None
+    if (lst := split_string_with_dfs(value)) is None:
+        return value, None
+    return None, lst
+
+
+def _get_list_df(
+    key: str, items: list[str], location: tuple[str, int | None] | None
+) -> tuple[list[str], list[DfString]]:
+    """Split the list into parts that are either static strings or contain dynamic functions."""
+    static: list[str] = []
+    dynamic: list[DfString] = []
+    for item in items:
+        if (lst := split_string_with_dfs(item)) is None:
+            static.append(item)
+        else:
+            if len(lst) > 1:
+                log_warning(
+                    logger,
+                    f"Dynamic function in list field '{key}' is surrounded by text that will be omitted: {item!r}",
+                    "dynamic_function",
+                    location=location,
+                )
+            dynamic.extend(li for li in lst if isinstance(li, DfString))
+    return static, dynamic
+
+
+def _get_extras_df(
+    extras: dict[str, str],
+) -> tuple[dict[str, str], dict[str, DfStringList]]:
+    """Split the extras into parts that are either static strings or contain dynamic functions."""
+    static: dict[str, str] = {
+        k: "" for k in extras
+    }  # ensure all keys are present in static
+    dynamic: dict[str, DfStringList] = {}
+    for key, value in extras.items():
+        if (lst := split_string_with_dfs(value)) is None:
+            static[key] = value
+        else:
+            dynamic[key] = lst
+    return static, dynamic
+
+
+def _get_links_df(
+    links: dict[str, list[str]], location: tuple[str, int | None] | None
+) -> tuple[dict[str, list[str]], dict[str, list[DfString]]]:
+    """Split the links into parts that are either static strings or contain dynamic functions."""
+    static: dict[str, list[str]] = {
+        k: [] for k in links
+    }  # ensure all keys are present in static
+    dynamic: dict[str, list[DfString]] = {}
+    for key, items in links.items():
+        static_items, dynamic_items = _get_list_df(key, items, location)
+        static[key] = static_items
+        dynamic[key] = dynamic_items
+    return static, dynamic
 
 
 def get_needs_view(app: Sphinx) -> NeedsView:

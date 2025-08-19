@@ -592,3 +592,53 @@
     }),
   })
 # ---
+# name: test_split_string_with_dfs[ [[func()]] ]
+  list([
+    ' ',
+    DfString(expr='func()'),
+    ' ',
+  ])
+# ---
+# name: test_split_string_with_dfs[[[bad]]]
+  list([
+    DfString(expr='bad'),
+  ])
+# ---
+# name: test_split_string_with_dfs[[[func()]
+  None
+# ---
+# name: test_split_string_with_dfs[[[func()]]
+  None
+# ---
+# name: test_split_string_with_dfs[[[func()]]]
+  list([
+    DfString(expr='func()'),
+  ])
+# ---
+# name: test_split_string_with_dfs[a,b]
+  None
+# ---
+# name: test_split_string_with_dfs[a[[func()]]]
+  list([
+    'a',
+    DfString(expr='func()'),
+  ])
+# ---
+# name: test_split_string_with_dfs[a[[func()]]b]
+  list([
+    'a',
+    DfString(expr='func()'),
+    'b',
+  ])
+# ---
+# name: test_split_string_with_dfs[a[[func1()]]b[[func2()]]]
+  list([
+    'a',
+    DfString(expr='func1()'),
+    'b',
+    DfString(expr='func2()'),
+  ])
+# ---
+# name: test_split_string_with_dfs[a]
+  None
+# ---

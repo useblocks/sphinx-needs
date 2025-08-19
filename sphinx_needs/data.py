@@ -71,8 +71,6 @@ class CoreFieldParameters(TypedDict):
     """Whether dynamic functions are allowed for this field (False if not present)."""
     allow_variants: NotRequired[bool]
     """Whether variant options are allowed for this field (False if not present)."""
-    deprecate_df: NotRequired[bool]
-    """Whether dynamic functions are deprecated for this field (False if not present)."""
     show_in_layout: NotRequired[bool]
     """Whether to show the field in the rendered layout of the need by default (False if not present)."""
     exclude_external: NotRequired[bool]
@@ -196,14 +194,12 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "type": {
         "description": "Type of the need.",
         "schema": {"type": "string", "default": ""},
-        "deprecate_df": True,
     },
     "type_name": {
         "description": "Name of the type.",
         "schema": {"type": "string", "default": ""},
         "exclude_external": True,
         "exclude_import": True,
-        "deprecate_df": True,
     },
     "type_prefix": {
         "description": "Prefix of the type.",
@@ -211,7 +207,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_json": True,
         "exclude_external": True,
         "exclude_import": True,
-        "deprecate_df": True,
     },
     "type_color": {
         "description": "Hexadecimal color code of the type.",
@@ -219,7 +214,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_json": True,
         "exclude_external": True,
         "exclude_import": True,
-        "deprecate_df": True,
     },
     "type_style": {
         "description": "Style of the type.",
@@ -227,7 +221,6 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_json": True,
         "exclude_external": True,
         "exclude_import": True,
-        "deprecate_df": True,
     },
     "is_modified": {
         "description": "Whether the need was modified by needextend.",
