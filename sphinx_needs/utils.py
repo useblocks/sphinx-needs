@@ -487,25 +487,22 @@ def match_string_link(
     try:
         link_name = None
         link_url = None
-        link_conf = matching_link_confs[
-            0
-        ]  # We only handle the first matching string_link
-        match = link_conf["regex_compiled"].search(data)
-        if match:
-            render_content = match.groupdict()
-            link_url = link_conf["url_template"].render(
-                **render_content, **render_context
-            )
-            link_name = link_conf["name_template"].render(
-                **render_content, **render_context
-            )
+        link_conf = matching_link_confs
+        for lc in link_conf:
+            match = lc["regex_compiled"].search(data)
+            if match:
+                render_content = match.groupdict()
+                link_url = lc["url_template"].render(**render_content, **render_context)
+                link_name = lc["name_template"].render(
+                    **render_content, **render_context
+                )
 
-        # if no string_link match was made, we handle it as normal string value
-        ref_item = (
-            nodes.reference(link_name, link_name, refuri=link_url)
-            if link_name
-            else nodes.Text(text_item)
-        )
+            # if no string_link match was made, we handle it as normal string value
+            ref_item = (
+                nodes.reference(link_name, link_name, refuri=link_url)
+                if link_name
+                else nodes.Text(text_item)
+            )
 
     except Exception as e:
         log_warning(
