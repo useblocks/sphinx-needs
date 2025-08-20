@@ -9,6 +9,11 @@ to simplify the effort required to create a need in source code.
 
 :ref:`Here <oneline_comment_style>` is the default one-line comment style.
 
+**Additional examples and use cases:**
+
+For more comprehensive examples and advanced configurations, see the `test cases <https://github.com/useblocks/sphinx-codelinks/tree/main/tests>`__.
+
+
 Start and End sequences
 -----------------------
 

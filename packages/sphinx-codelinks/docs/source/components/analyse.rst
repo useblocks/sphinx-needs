@@ -1,7 +1,7 @@
 .. _analyse:
 
 Source Analyse
-===============
+==============
 
 The **Source Analyse** module is a powerful component of **Sphinx-CodeLinks** that extracts documentation-related content from source code comments. It provides both CLI and API interfaces for flexible integration into documentation workflows.
 
@@ -28,17 +28,17 @@ Supported Content Types
 -----------------------
 
 Sphinx-Needs ID References
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Extract references to **Sphinx-Needs** items directly from source code comments, enabling traceability between code implementations and requirements.
 
 One-line Needs
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 Use simplified comment patterns to define **Sphinx-Needs** items without complex RST syntax. See :ref:`OneLineCommentStyle <oneline>` for detailed information.
 
 Marked RST Blocks
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 Embed complete reStructuredText content within source code comments for rich documentation that can be extracted and processed.
 
@@ -50,98 +50,10 @@ Limitations
 - **Language Support**: Only C/C++ (``//``, ``/* */``) and Python (``#``) comment styles are supported
 - **Single Comment Style**: Each analysis run processes only one comment style at a time
 
-Configuration
--------------
-
-The **Source Analyse** module is configured using TOML files and leverages the :ref:`Source Discovery <discover>` module to locate source files for processing.
-
-**Complete Configuration Example:**
-
-.. code-block:: toml
-
-    [source_discover]
-    src_dir = "./"
-    exclude = []
-    include = []
-    gitignore = true
-    comment_type = "cpp"
-
-    [analyse]
-    get_need_id_refs = true
-    get_oneline_needs = false
-    get_rst = false
-    outdir = "./output"
-
-    [analyse.oneline_comment_style]
-    start_sequence = "@"
-    # End sequences is newline by default. Whether it is "\n" or "\r\n" depending on the platform
-    end_sequence = "\n"
-    field_split_char = ","
-    needs_fields = [
-        { name = "title", type = "str" },
-        { name = "id", type = "str" },
-        { name = "type", type = "str", default = "impl" },
-        { name = "links", type = "list[str]", default = [] },
-    ]
-
-    [analyse.need_id_refs]
-    markers = ["@need-ids:"]
-
-    [analyse.marked_rst]
-    start_sequence = "@rst"
-    end_sequence = "@endrst"
-
-Configuration Sections
------------------------
-
-analyse
-~~~~~~~
-
-Main configuration section for the ``analyse`` module.
-
-**Options:**
-
-- ``get_need_id_refs`` (``bool``) - Enable extraction of Sphinx-Needs ID references
-- ``get_oneline_needs`` (``bool``) - Enable extraction of one-line needs
-- ``get_rst`` (``bool``) - Enable extraction of marked RST blocks
-- ``outdir`` (``str``) - Output directory for generated files
-
-analyse.need_id_refs
-~~~~~~~~~~~~~~~~~~~~
-
-Configuration for Sphinx-Needs ID reference extraction.
-
-**Options:**
-
-- ``markers`` (``list[str]``) - List of marker strings that identify need ID references
-
-analyse.marked_rst
-~~~~~~~~~~~~~~~~~~
-
-Configuration for marked RST block extraction.
-
-**Options:**
-
-- ``start_sequence`` (``str``) - Marker that begins an RST block
-- ``end_sequence`` (``str``) - Marker that ends an RST block
-
-analyse.oneline_comment_style
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Configuration for one-line needs extraction. See :ref:`oneline_comment_style` for detailed information.
-
-**Minimal Configuration Example:**
-
-The following configuration demonstrates the minimum settings required for basic analysis:
-
-.. literalinclude:: ./../../../tests/data/analyse/minimum_config.toml
-   :caption: minimum_config.toml
-   :language: toml
-
-This configuration enables extraction of **Sphinx-Needs ID References** and **Marked RST blocks** using the specified markers.
-
 Extraction Examples
 -------------------
+
+The following examples are configured with :ref:`the analyse configuration <analyse_config>`,
 
 Sphinx-Needs ID References
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -213,54 +125,54 @@ This example demonstrates how the analyse extracts RST blocks from comments.
 
 .. tabs::
 
-    .. code-tab:: cpp
+   .. code-tab:: cpp
 
-        #include <iostream>
+       #include <iostream>
 
-        /*
-        @rst
-        .. impl:: implement dummy function 1
-        :id: IMPL_71
-        @endrst
-        */
-        void dummy_func1(){
-            //...
-        }
+       /*
+       @rst
+       .. impl:: implement dummy function 1
+       :id: IMPL_71
+       @endrst
+       */
+       void dummy_func1(){
+           //...
+       }
 
-        // @rst..impl:: implement main function @endrst
-        int main() {
-            std::cout << "Starting demo_1..." << std::endl;
-            dummy_func1();
-            std::cout << "Demo_1 finished." << std::endl;
-            return 0;
-        }
+       // @rst..impl:: implement main function @endrst
+       int main() {
+           std::cout << "Starting demo_1..." << std::endl;
+           dummy_func1();
+           std::cout << "Demo_1 finished." << std::endl;
+           return 0;
+       }
 
-    .. code-tab:: json
+   .. code-tab:: json
 
-        [
-            {
-                "filepath": "marked_rst/dummy_1.cpp",
-                "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/26b301138eef25c5130518d96eaa7a29a9c6c9fe/marked_rst/dummy_1.cpp#L4",
-                "source_map": {
-                    "start": { "row": 3, "column": 8 },
-                    "end": { "row": 3, "column": 61 }
-                },
-                "tagged_scope": "void dummy_func1(){\n     //...\n }",
-                "rst": ".. impl:: implement dummy function 1\n   :id: IMPL_71\n",
-                "type": "rst"
-            },
-            {
-                "filepath": "marked_rst/dummy_1.cpp",
-                "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/26b301138eef25c5130518d96eaa7a29a9c6c9fe/marked_rst/dummy_1.cpp#L14",
-                "source_map": {
-                    "start": { "row": 13, "column": 7 },
-                    "end": { "row": 13, "column": 40 }
-                },
-                "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
-                "rst": "..impl:: implement main function ",
-                "type": "rst"
-            }
-        ]
+       [
+           {
+               "filepath": "marked_rst/dummy_1.cpp",
+               "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/26b301138eef25c5130518d96eaa7a29a9c6c9fe/marked_rst/dummy_1.cpp#L4",
+               "source_map": {
+                   "start": { "row": 3, "column": 8 },
+                   "end": { "row": 3, "column": 61 }
+               },
+               "tagged_scope": "void dummy_func1(){\n     //...\n }",
+               "rst": ".. impl:: implement dummy function 1\n   :id: IMPL_71\n",
+               "type": "rst"
+           },
+           {
+               "filepath": "marked_rst/dummy_1.cpp",
+               "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/26b301138eef25c5130518d96eaa7a29a9c6c9fe/marked_rst/dummy_1.cpp#L14",
+               "source_map": {
+                   "start": { "row": 13, "column": 7 },
+                   "end": { "row": 13, "column": 40 }
+               },
+               "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
+               "rst": "..impl:: implement main function ",
+               "type": "rst"
+           }
+       ]
 
 **Output Structure:**
 
@@ -289,12 +201,12 @@ For comprehensive information about one-line needs configuration and usage, see 
 
 .. code-block:: c
 
-    // @Function Implementation, IMPL_001, impl, [REQ_001, REQ_002]
+   // @Function Implementation, IMPL_001, impl, [REQ_001, REQ_002]
 
 This single comment line creates a complete **Sphinx-Needs** item equivalent to:
 
 .. code-block:: rst
 
-    .. impl:: Function Implementation
-        :id: IMPL_001
-        :links: REQ_001, REQ_002
+   .. impl:: Function Implementation
+       :id: IMPL_001
+       :links: REQ_001, REQ_002
