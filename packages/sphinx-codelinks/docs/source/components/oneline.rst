@@ -17,7 +17,7 @@ For more comprehensive examples and advanced configurations, see the `test cases
 Start and End sequences
 -----------------------
 
-To have a better understanding of the syntax of a one-line comment, we will break it down into the following:
+To have a better understanding of the syntax of a one-line comment, we will break it down as follows:
 
 **start_sequence** defines the characters where the one-line comment starts.
 **end_sequence** defines the characters where the one-line comment ends.
@@ -100,7 +100,7 @@ For example, with the following **needs_fields** configuration:
        {"name": "links", "type": "list[str]", "default": []},
    ],
 
-the one-line comment shall be defined as the following
+the one-line comment shall be defined as follows:
 
 .. tabs::
 
@@ -154,8 +154,8 @@ This means the ``order of needs_fields`` determines ``the position of the field`
 
 For example, with the mentioned :ref:`needs_fields definition <fields_config>`
 
-field ``title`` is the first element is the list, so the string of the title must be
-the first field in the one-line comment
+field ``title`` is the first element in the list, so the string of the title must be
+the first field in the one-line comment.
 
 .. tabs::
 

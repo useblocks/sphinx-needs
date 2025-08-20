@@ -6,11 +6,11 @@ This page provides a guide for developers wishing to contribute to ``Sphinx-Code
 Bugs, Features and PRs
 ----------------------
 
-For **bug reports** and well-described **technical feature request**, please use our issue tracker:
+For **bug reports** and well-described **technical feature requests**, please use our issue tracker:
 https://github.com/useblocks/sphinx-codelinks/issues
 
-If you have already created a PR, you can send it in. Our CI workflow will check (test and code styles)
-and a maintainer will perform a review, before we can merge it.
+If you have already created a PR, you can send it in. Our CI workflow will check (tests and code styles)
+and a maintainer will perform a review before we can merge it.
 Your PR should conform with the following rules:
 
 - A meaningful description or link, which describes the change
@@ -24,7 +24,7 @@ Install Dependencies
 
 ``CodeLinks`` uses `rye <https://rye.astral.sh/>`_ to manage the repository.
 
-For the development, use the following command to install python dependencies into the virtual environment.
+For development, use the following command to install Python dependencies into the virtual environment.
 
 .. code-block:: bash
 
@@ -40,7 +40,7 @@ To run the formatting and linting, pre-commit is used:
    pre-commit install # to auto-run on every commit
    pre-commit run --all-files # to run manually
 
-The CI also checks typing, use the following command locally to see if your code is well-typed
+The CI also checks typing. Use the following command locally to see if your code is well-typed:
 
 .. code-block:: bash
 

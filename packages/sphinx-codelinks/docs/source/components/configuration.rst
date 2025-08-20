@@ -6,23 +6,23 @@ Configuration
 The configuration for ``CodeLinks`` takes place in the project's :external+sphinx:ref:`conf.py file <build-config>`.
 
 Each source code project may have different configurations because of its programming language or its locations.
-Therefore, based on such consideration, there are **global options** and **project-specific options** for ``CodeLinks``
+Therefore, based on such considerations, there are **global options** and **project-specific options** for ``CodeLinks``.
 
-.. attention:: The configuration options are highly recommended to set in a TOML file, which can be used for both the Sphinx extension and the CLI application.
+.. attention:: It is highly recommended to set the configuration options in a TOML file, which can be used for both the Sphinx extension and the CLI application.
 
 If the configurations are set in ``conf.py``,  the options start with the prefix ``src_trace_``.
 
 Sphinx Configuration
 --------------------
 
-In ``conf.py``, TOML file can be specified as the source of the configuration for Sphinx Directive ``src-trace``.
+In ``conf.py``, a TOML file can be specified as the source of the configuration for Sphinx Directive ``src-trace``.
 
 src_trace_config_from_toml
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Specifies the path to a `TOML file <https://toml.io>`__ containing **Sphinx-CodeLinks** configuration options. This allows you to maintain configuration in a separate file for better organization.
 
-**Type:** ``str`` (relative path to the directory where conf.py locates)
+**Type:** ``str`` (relative path to the directory where conf.py is located)
 **Default:** Not set
 
 .. code-block:: python
@@ -182,7 +182,7 @@ Configures how **Sphinx-CodeLinks** discovers and processes source files within 
 
 **Configuration fields:**
 
-- ``src_dir`` - Root directory for source file discovery (relative to Sphinx project root or the directory where TOML config file locates if given)
+- ``src_dir`` - Root directory for source file discovery (relative to Sphinx project root or the directory where the TOML config file is located if given)
 - ``exclude`` - List of glob patterns to exclude from processing
 - ``include`` - List of glob patterns to include (if empty, includes all files)
 - ``gitignore`` - Whether to respect ``.gitignore`` rules when discovering files (Nested .gitignore is NOT supported yet)
