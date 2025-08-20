@@ -115,7 +115,7 @@ Specifies the output directory for generated artifacts such as extracted markers
 Project-Specific Options
 ------------------------
 
-Project-specific options are configured within the ``projects`` section, allowing different settings for :ref:`SourceDiscver <discover>` and :ref:`SourceAnalyse <analyse>`.
+Project-specific options are configured within the ``projects`` section, allowing different settings for :ref:`SourceDiscover <discover>` and :ref:`SourceAnalyse <analyse>`.
 
 projects
 ~~~~~~~~
