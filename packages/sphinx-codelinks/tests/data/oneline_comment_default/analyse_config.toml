@@ -1,6 +1,6 @@
 [codelinks.projects.default.source_discover]
 src_dir = "./"
-comment_type = "c"
+comment_type = "cpp"
 exclude = []
 include = ["**/*.c", "**/*.h"]
 gitignore = false

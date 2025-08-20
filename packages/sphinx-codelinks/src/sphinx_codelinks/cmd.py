@@ -63,8 +63,8 @@ def analyse(
 
     data: CodeLinksConfigType = load_config_from_toml(config)
 
-    codelinks_config = CodeLinksConfig(**data)
     try:
+        codelinks_config = CodeLinksConfig(**data)
         generate_project_configs(codelinks_config.projects)
     except TypeError as e:
         raise typer.BadParameter(str(e)) from e
@@ -186,14 +186,14 @@ def load_config_from_toml(toml_file: Path) -> CodeLinksConfigType:
             toml_data = tomllib.load(f)
 
     except Exception as e:
-        raise Exception(
+        raise typer.BadParameter(
             f"Failed to load CodeLinks configuration from {toml_file}"
         ) from e
 
     codelink_dict = toml_data.get("codelinks")
 
     if not codelink_dict:
-        raise Exception(f"No 'codelinks' section found in {toml_file}")
+        raise typer.BadParameter(f"No 'codelinks' section found in {toml_file}")
 
     return cast(CodeLinksConfigType, codelink_dict)
 

@@ -46,7 +46,11 @@ runner = CliRunner()
 
 
 @pytest.mark.parametrize(
-    ("config_path"), [(DATA_DIR / "analyse" / "minimum_config.toml")]
+    ("config_path"),
+    [
+        (DATA_DIR / "configs" / "minimum_config.toml"),
+        (DATA_DIR / "configs" / "full_config.toml"),
+    ],
 )
 def test_analyse(config_path: Path, tmp_path: Path) -> None:
     options: list[str] = ["analyse", str(config_path), "--outdir", str(tmp_path)]

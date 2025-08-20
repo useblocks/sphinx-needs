@@ -534,6 +534,9 @@ class CodeLinksConfig:
                 super().__getattribute__("_sphinx_config"), f"src_trace_{name}", value
             )
 
+        if name == "outdir" and isinstance(value, str):
+            # Ensure outdir is a Path object
+            value = Path(value)
         return object.__setattr__(self, name, value)
 
     @classmethod
