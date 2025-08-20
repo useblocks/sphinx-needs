@@ -1,6 +1,7 @@
 import json
 import logging
 from pathlib import Path
+from typing import cast
 
 from sphinx_codelinks.analyse.analyse import (
     AnalyseWarning,
@@ -67,13 +68,13 @@ class AnalyseProjects:
 
     def update_warnings(self) -> None:
         current_warnings: list[AnalyseWarningType] = [
-            _warning.__dict__
+            cast(AnalyseWarningType, _warning.__dict__)
             for analyse in self.projects_analyse.values()
             for _warning in analyse.oneline_warnings
         ]
         self.dump_warnings(current_warnings)
 
-    def dump_warnings(self, warnings: dict[str, list[AnalyseWarningType]]) -> None:
+    def dump_warnings(self, warnings: list[AnalyseWarningType]) -> None:
         if not self.warnings_path.parent.exists():
             self.warnings_path.parent.mkdir(parents=True)
         with self.warnings_path.open("w") as f:
