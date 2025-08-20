@@ -51,16 +51,10 @@ Enables the generation of local file system links to source code locations. When
 **Type:** ``bool``
 **Default:** ``False``
 
-.. tabs::
+.. code-block:: toml
 
-   .. code-tab:: python
-
-      src_trace_set_local_url = True
-
-   .. code-tab:: toml
-
-      [codelinks]
-      set_local_url = true
+   [codelinks]
+   set_local_url = true
 
 local_url_field
 ~~~~~~~~~~~~~~~
@@ -71,16 +65,10 @@ Specifies the custom field name used for local source code links.
 **Default:** ``"local-url"``
 **Required when:** :ref:`set_local_url` is ``True``
 
-.. tabs::
+.. code-block:: toml
 
-   .. code-tab:: toml
-
-      [codelinks]
-      local_url_field = "local-url"
-
-   .. code-tab:: python
-
-      src_trace_local_url_field = "local-url"
+   [codelinks]
+   local_url_field = "local-url"
 
 .. _`set_remote_url`:
 
@@ -92,16 +80,10 @@ Enables the generation of remote repository links to source code locations. When
 **Type:** ``bool``
 **Default:** ``False``
 
-.. tabs::
+.. code-block:: toml
 
-   .. code-tab:: toml
-
-      [codelinks]
-      set_remote_url = true
-
-   .. code-tab:: python
-
-      src_trace_set_remote_url = True
+   [codelinks]
+   set_remote_url = true
 
 remote_url_field
 ~~~~~~~~~~~~~~~~
@@ -112,16 +94,10 @@ Specifies the custom field name used for remote source code links.
 **Default:** ``"remote-url"``
 **Required when:** :ref:`set_remote_url` is ``True``
 
-.. tabs::
+.. code-block:: toml
 
-   .. code-tab:: toml
-
-      [codelinks]
-      remote_url_field = "remote-url"
-
-   .. code-tab:: python
-
-      src_trace_remote_url_field = "remote-url"
+   [codelinks]
+   remote_url_field = "remote-url"
 
 outdir
 ~~~~~~
@@ -215,7 +191,7 @@ Configures how **Sphinx-CodeLinks** discovers and processes source files within 
 .. _`source_dir`:
 
 src_dir
-~~~~~~~
+^^^^^^^
 
 Specifies the root directory for source file discovery. This path is resolved relative to the location of the TOML configuration file.
 
@@ -234,7 +210,7 @@ Specifies the root directory for source file discovery. This path is resolved re
 - ``"./my_project/source"`` - Subdirectory within current directory
 
 exclude
-~~~~~~~
+^^^^^^^
 
 Defines a list of glob patterns for files and directories to exclude from discovery. This is useful for ignoring build artifacts, temporary files, or specific source files that shouldn't be processed.
 
@@ -259,7 +235,7 @@ Defines a list of glob patterns for files and directories to exclude from discov
 - ``"node_modules/**"`` - Exclude Node.js dependencies
 
 include
-~~~~~~~
+^^^^^^^
 
 Defines a list of glob patterns for files to explicitly include in discovery. When specified, only files matching these patterns will be processed, regardless of other filtering rules.
 
@@ -285,7 +261,7 @@ Defines a list of glob patterns for files to explicitly include in discovery. Wh
 - ``"*.{c,h}"`` - Include C source and header files
 
 comment_type
-~~~~~~~~~~~~
+^^^^^^^^^^^^
 
 Specifies the comment syntax style used in the source code files. This determines what file types are discovered and how **Sphinx-CodeLinks** parses comments for documentation extraction.
 
@@ -322,7 +298,7 @@ Specifies the comment syntax style used in the source code files. This determine
 .. note:: Future versions may support additional programming languages. Currently, only C/C++ and Python comment styles are supported.
 
 gitignore
-~~~~~~~~~
+^^^^^^^^^
 
 Controls whether to respect ``.gitignore`` files when discovering source files. When enabled, files and directories listed in ``.gitignore`` will be automatically excluded from processing.
 
@@ -389,7 +365,7 @@ Configures how **Sphinx-CodeLinks** analyse source files to extract markers from
    end_sequence = "@endrst"
 
 get_need_id_refs
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 Enables the extraction of need IDs from source code comments. When enabled, **SourceAnalyse** will parse comments for specific markers that indicate need IDs, allowing them to be extracted for further usages.
 
@@ -402,7 +378,7 @@ Enables the extraction of need IDs from source code comments. When enabled, **So
    get_need_id_refs = true
 
 get_oneline_needs
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 
 Enables the extraction of one-line needs directly from source code comments. When enabled, **SourceAnalyse** will parse comments for simplified :ref:`one-line patterns <oneline>` that represent needs, allowing them to be processed without requiring full RST syntax.
 
@@ -415,7 +391,7 @@ Enables the extraction of one-line needs directly from source code comments. Whe
    get_oneline_needs = false
 
 get_rst
-~~~~~~~
+^^^^^^^
 
 Enables the extraction of marked RST text from source code comments. When enabled, **SourceAnalyse** will parse comments for specific markers that indicate RST blocks, allowing them to be extracted.
 
@@ -430,7 +406,7 @@ Enables the extraction of marked RST text from source code comments. When enable
 .. _`oneline_comment_style`:
 
 analyse.oneline_comment_style
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Enables the use of simplified :ref:`one-line comment patterns <oneline>` to represent **Sphinx-Needs** items directly in source code, eliminating the need for embedded RST syntax.
 
@@ -476,7 +452,7 @@ Is equivalent to this RST directive:
 .. important:: The ``type`` and ``title`` fields must be configured in ``needs_fields`` as they are mandatory for **Sphinx-Needs**.
 
 analyse.need_id_refs
-~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^
 
 Configuration for Sphinx-Needs ID reference extraction.
 
@@ -493,7 +469,7 @@ Configuration for Sphinx-Needs ID reference extraction.
 - ``markers`` (``list[str]``) - List of marker strings that identify need ID references
 
 analyse.marked_rst
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 Configuration for marked RST block extraction.
 
