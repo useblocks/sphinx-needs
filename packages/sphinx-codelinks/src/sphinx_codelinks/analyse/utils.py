@@ -134,6 +134,7 @@ def locate_git_root(src_dir: Path) -> Path | None:
     for parent in parents:
         if (parent / ".git").exists() and (parent / ".git").is_dir():
             return parent
+    logger.warning(f"git root is not found in the parent of {src_dir}")
     return None
 
 
