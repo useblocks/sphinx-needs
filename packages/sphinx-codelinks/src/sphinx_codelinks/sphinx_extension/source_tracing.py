@@ -15,17 +15,17 @@ from sphinx_needs.api import (  # type: ignore[import-untyped]
     add_need_type,
 )
 
-from sphinx_codelinks.analyse.analyse import SourceAnalyse
-from sphinx_codelinks.sphinx_extension import debug
-from sphinx_codelinks.sphinx_extension.config import (
+from sphinx_codelinks.analyse.projects import AnalyseProjects
+from sphinx_codelinks.config import (
     SRC_TRACE_CACHE,
-    SrcTraceConfigType,
-    SrcTraceProjectConfigType,
-    SrcTraceSphinxConfig,
+    CodeLinksConfig,
+    CodeLinksConfigType,
+    CodeLinksProjectConfigType,
     check_configuration,
     file_lineno_href,
     generate_project_configs,
 )
+from sphinx_codelinks.sphinx_extension import debug
 from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     SourceTracing,
     SourceTracingDirective,
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 def setup(app: Sphinx) -> dict[str, Any]:  # type: ignore[explicit-any]
     app.add_node(SourceTracing)
     app.add_directive("src-trace", SourceTracingDirective)
-    SrcTraceSphinxConfig.add_config_values(app)
+    CodeLinksConfig.add_config_values(app)
 
     app.connect("config-inited", load_config_from_toml, priority=10)
     app.connect(
@@ -110,7 +110,7 @@ def generate_code_page(
 
 def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
     """Load the configuration from a TOML file, if defined in conf.py."""
-    src_trc_sphinx_config = SrcTraceSphinxConfig(config)
+    src_trc_sphinx_config = CodeLinksConfig.from_sphinx(config)
     if src_trc_sphinx_config.config_from_toml is None:
         return
 
@@ -126,7 +126,7 @@ def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
     try:
         with toml_file.open("rb") as f:
             toml_data = tomllib.load(f)
-        toml_data = toml_data["src_trace"]
+        toml_data = toml_data["codelinks"]
         if not isinstance(toml_data, dict):
             raise Exception(f"data must be a dict in {toml_file}")
 
@@ -137,27 +137,27 @@ def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
         return
 
     set_config_to_sphinx(
-        src_trace_config=cast(SrcTraceConfigType, toml_data), config=config
+        src_trace_config=cast(CodeLinksConfigType, toml_data), config=config
     )
 
 
 def set_config_to_sphinx(
-    src_trace_config: SrcTraceConfigType, config: _SphinxConfig
+    src_trace_config: CodeLinksConfigType, config: _SphinxConfig
 ) -> None:
-    allowed_keys = SrcTraceSphinxConfig.field_names()
+    allowed_keys = CodeLinksConfig.field_names()
     for key, value in src_trace_config.items():
         if key not in allowed_keys:
             continue
         if key == "projects":
-            src_trace_projects: dict[str, SrcTraceProjectConfigType] = cast(
-                dict[str, SrcTraceProjectConfigType], value
+            src_trace_projects: dict[str, CodeLinksProjectConfigType] = cast(
+                dict[str, CodeLinksProjectConfigType], value
             )
             generate_project_configs(src_trace_projects)
         config[f"src_trace_{key}"] = value
 
 
 def update_sn_extra_options(app: Sphinx, config: _SphinxConfig) -> None:
-    src_trace_sphinx_config = SrcTraceSphinxConfig(config)
+    src_trace_sphinx_config = CodeLinksConfig.from_sphinx(config)
     add_extra_option(app, "project")
     add_extra_option(app, "file")
     add_extra_option(app, "directory")
@@ -175,7 +175,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
     """
     Prepares the sphinx environment to store stc-trace internal data.
     """
-    src_trace_sphinx_config = SrcTraceSphinxConfig(app.config)
+    src_trace_sphinx_config = CodeLinksConfig.from_sphinx(app.config)
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:
@@ -188,7 +188,7 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
 
 
 def check_sphinx_configuration(app: Sphinx, _config: _SphinxConfig) -> None:
-    config = SrcTraceSphinxConfig(app.config)
+    config = CodeLinksConfig.from_sphinx(app.config)
     errors = check_configuration(config)
     if errors:
         raise Exception("\n".join(errors))
@@ -198,7 +198,7 @@ def emit_warnings(
     app: Sphinx,
     _env: BuildEnvironment,
 ) -> None:
-    warnings = SourceAnalyse.load_warnings(Path(app.outdir) / SRC_TRACE_CACHE)
+    warnings = AnalyseProjects.load_warnings(Path(app.outdir) / SRC_TRACE_CACHE)
     if not warnings:
         return
     for warning in warnings:

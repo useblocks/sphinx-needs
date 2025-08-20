@@ -5,17 +5,17 @@ import shutil
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
-from sphinx_codelinks.analyse.analyse import SourceAnalyse
-from sphinx_codelinks.sphinx_extension.config import (
+from sphinx_codelinks.analyse.projects import AnalyseProjects
+from sphinx_codelinks.config import (
     SRC_TRACE_CACHE,
-    SrcTraceSphinxConfig,
+    CodeLinksConfig,
     check_configuration,
 )
 from sphinx_codelinks.sphinx_extension.source_tracing import set_config_to_sphinx
 
 
 @pytest.mark.parametrize(
-    ("src_trace_config", "result"),
+    ("codelinks_config", "result"),
     [
         (
             {
@@ -116,26 +116,25 @@ from sphinx_codelinks.sphinx_extension.source_tracing import set_config_to_sphin
 )
 def test_src_tracing_config_negative(
     make_app: Callable[..., SphinxTestApp],
-    src_trace_config,
+    codelinks_config,
     result,
 ):
     this_file_dir = Path(__file__).parent
     sphinx_project = Path("data") / "sphinx"
     app = make_app(srcdir=(this_file_dir / sphinx_project))
-    set_config_to_sphinx(src_trace_config, app.env.config)
-    src_trace_sphinx_config = SrcTraceSphinxConfig(app.env.config)
-    errors = check_configuration(src_trace_sphinx_config)
+    set_config_to_sphinx(codelinks_config, app.env.config)
+    codelinks_sphinx_config = CodeLinksConfig.from_sphinx(app.env.config)
+    errors = check_configuration(codelinks_sphinx_config)
     assert sorted(errors) == sorted(result)
 
 
-def test_src_tracing_config_positive(
-    make_app: Callable[..., SphinxTestApp],
-):
-    src_trace_config = {
+def test_src_tracing_config_positive(make_app: Callable[..., SphinxTestApp], tmp_path):
+    codelinks_config = {
         "remote_url_field": "remote-url",
         "local_url_field": "local-url",
         "set_local_url": True,
         "set_remote_url": True,
+        "outdir": tmp_path,
         "projects": {
             "dcdc": {
                 "source_discover": {
@@ -170,9 +169,9 @@ def test_src_tracing_config_positive(
     this_file_dir = Path(__file__).parent
     sphinx_project = Path("data") / "sphinx"
     app = make_app(srcdir=(this_file_dir / sphinx_project))
-    set_config_to_sphinx(src_trace_config, app.env.config)
-    src_trace_sphinx_config = SrcTraceSphinxConfig(app.env.config)
-    errors = check_configuration(src_trace_sphinx_config)
+    set_config_to_sphinx(codelinks_config, app.env.config)
+    codelinks_sphinx_config = CodeLinksConfig.from_sphinx(app.env.config)
+    errors = check_configuration(codelinks_sphinx_config)
     assert not errors
 
 
@@ -220,7 +219,7 @@ def test_build_html(
     html = Path(app.outdir, "index.html").read_text()
     assert html
 
-    warnings = SourceAnalyse.load_warnings(Path(app.outdir) / SRC_TRACE_CACHE)
+    warnings = AnalyseProjects.load_warnings(Path(app.outdir) / SRC_TRACE_CACHE)
     assert not warnings
 
     assert app.env.get_doctree("index") == snapshot_doctree

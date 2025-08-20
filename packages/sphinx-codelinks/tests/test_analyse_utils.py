@@ -9,7 +9,7 @@ import tree_sitter_cpp
 import tree_sitter_python
 
 from sphinx_codelinks.analyse import utils
-from sphinx_codelinks.analyse.config import UNIX_NEWLINE
+from sphinx_codelinks.config import UNIX_NEWLINE
 
 
 @pytest.fixture(scope="session")

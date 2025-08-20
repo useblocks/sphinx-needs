@@ -30,7 +30,7 @@ Specifies the path to a `TOML file <https://toml.io>`__ containing **Sphinx-Code
 
 When using a TOML configuration file:
 
-- Configuration options are placed under a ``[src_trace]`` section
+- Configuration options are placed under a ``[codelinks]`` section
 - The ``src_trace_`` prefix is omitted in the TOML file
 - TOML configuration overrides settings in :file:`conf.py`
 
@@ -55,7 +55,7 @@ Enables the generation of local file system links to source code locations. When
 
    .. code-tab:: toml
 
-      [src_trace]
+      [codelinks]
       set_local_url = true
 
 src_trace_local_url_field
@@ -75,7 +75,7 @@ Specifies the custom field name used for local source code links.
 
    .. code-tab:: toml
 
-      [src_trace]
+      [codelinks]
       local_url_field = "local-url"
 
 .. _src_trace_set_remote_url:
@@ -96,7 +96,7 @@ Enables the generation of remote repository links to source code locations. When
 
    .. code-tab:: toml
 
-      [src_trace]
+      [codelinks]
       set_remote_url = true
 
 src_trace_remote_url_field
@@ -116,7 +116,7 @@ Specifies the custom field name used for remote source code links.
 
    .. code-tab:: toml
 
-      [src_trace]
+      [codelinks]
       remote_url_field = "remote-url"
 
 Project-Specific Options
@@ -147,10 +147,10 @@ Defines configuration for individual source code projects. Each project is ident
 
    .. code-tab:: toml
 
-      [src_trace.projects.my_project]
+      [codelinks.projects.my_project]
       # Configuration for "my_project"
 
-      [src_trace.projects.another_project]
+      [codelinks.projects.another_project]
       # Configuration for "another_project"
 
 remote_url_pattern
@@ -180,7 +180,7 @@ Defines the URL pattern for generating links to remote source code repositories 
 
    .. code-tab:: toml
 
-      [src_trace.projects.my_project]
+      [codelinks.projects.my_project]
       remote_url_pattern = "https://github.com/user/repo/blob/{commit}/{path}#L{line}"
 
 **Common patterns:**
@@ -218,7 +218,7 @@ Configures how **Sphinx-CodeLinks** discovers and processes source files within 
 
    .. code-tab:: toml
 
-      [src_trace.projects.my_project.source_discover]
+      [codelinks.projects.my_project.source_discover]
       src_dir = "./"
       exclude = []
       include = []
@@ -270,7 +270,7 @@ Enables the use of simplified one-line comment patterns to represent **Sphinx-Ne
 
    .. code-tab:: toml
 
-      [src_trace.projects.my_project.analyse.oneline_comment_style]
+      [codelinks.projects.my_project.analyse.oneline_comment_style]
       start_sequence = "@"
       end_sequence = "\n"  # Platform-specific line ending
       field_split_char = ","

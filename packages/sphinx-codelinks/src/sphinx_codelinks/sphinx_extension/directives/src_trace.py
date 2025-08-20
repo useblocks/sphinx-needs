@@ -13,13 +13,13 @@ from sphinx_needs.utils import add_doc  # type: ignore[import-untyped]
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.models import OneLineNeed
-from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
-from sphinx_codelinks.source_discover.source_discover import SourceDiscover
-from sphinx_codelinks.sphinx_extension.config import (
-    SrcTraceProjectConfigType,
-    SrcTraceSphinxConfig,
+from sphinx_codelinks.config import (
+    CodeLinksConfig,
+    CodeLinksProjectConfigType,
     file_lineno_href,
 )
+from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
+from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 from sphinx_codelinks.sphinx_extension.debug import measure_time
 
 sphinx_version = sphinx.__version__
@@ -86,10 +86,10 @@ class SourceTracingDirective(SphinxDirective):
         project = self.options["project"]
         title = self.arguments[0]
         # get source tracing config
-        src_trace_sphinx_config = SrcTraceSphinxConfig(self.env.config)
+        src_trace_sphinx_config = CodeLinksConfig.from_sphinx(self.env.config)
 
         # load config
-        src_trace_conf: SrcTraceProjectConfigType = src_trace_sphinx_config.projects[
+        src_trace_conf: CodeLinksProjectConfigType = src_trace_sphinx_config.projects[
             project
         ]
         src_discover_config = src_trace_conf["source_discover_config"]
@@ -225,7 +225,7 @@ class SourceTracingDirective(SphinxDirective):
 
     def locate_src_dir(
         self,
-        src_trace_sphinx_config: SrcTraceSphinxConfig,
+        src_trace_sphinx_config: CodeLinksConfig,
         src_discover_config: SourceDiscoverConfig,
     ) -> Path:
         """Locate the source directory based on the configuration."""

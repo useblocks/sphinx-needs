@@ -27,13 +27,18 @@ SRC_DISCOVER_TEMPLATE = {
     "gitignore": True,
     "comment_type": CommentType.cpp.value,
 }
-ANALYSE_SECTION_CONFIG_TEMPLATE = {
+ANALYSE_CONFIG_TEMPLATE = {
     "get_oneline_needs": True,
     "oneline_comment_style": ONELINE_COMMENT_TEMPLATE,
 }
-ANALYSE_CONFIG_TEMPLATE = {
-    "source_discover": SRC_DISCOVER_TEMPLATE,
-    "analyse": ANALYSE_SECTION_CONFIG_TEMPLATE,
+CODELINKS_CONFIG_TEMPLATE = {
+    "outdir": "set/it/to/somewhere",
+    "projects": {
+        "project_1": {
+            "source_discover": SRC_DISCOVER_TEMPLATE,
+            "analyse": ANALYSE_CONFIG_TEMPLATE,
+        }
+    },
 }
 
 
@@ -77,19 +82,14 @@ def test_discover(options, stdout):
 
 
 @pytest.mark.parametrize(
-    ("config_dict", "output_lines"),
+    ("src_discover_dict", "analyse_dict", "output_lines"),
     [
         (
             {
-                key: {
-                    src_key: (123 if src_key == "exclude" else src_value)
-                    for src_key, src_value in value.items()
-                    if isinstance(value, dict)
-                }
-                if isinstance(value, dict) and key == "source_discover"
-                else value
-                for key, value in ANALYSE_CONFIG_TEMPLATE.items()
+                src_key: (123 if src_key == "exclude" else src_value)
+                for src_key, src_value in SRC_DISCOVER_TEMPLATE.items()
             },
+            ANALYSE_CONFIG_TEMPLATE,
             [
                 "Invalid value: Invalid source discovery configuration:",
                 "Schema validation error in field 'exclude': 123 is not of type 'array'",
@@ -97,14 +97,10 @@ def test_discover(options, stdout):
         ),
         (
             {
-                key: {
-                    src_key: (123 if src_key == "include" else src_value)
-                    for src_key, src_value in value.items()
-                }
-                if isinstance(value, dict) and key == "source_discover"
-                else value
-                for key, value in ANALYSE_CONFIG_TEMPLATE.items()
+                src_key: (123 if src_key == "include" else src_value)
+                for src_key, src_value in SRC_DISCOVER_TEMPLATE.items()
             },
+            ANALYSE_CONFIG_TEMPLATE,
             [
                 "Invalid value: Invalid source discovery configuration:",
                 "Schema validation error in field 'include': 123 is not of type 'array'",
@@ -112,18 +108,12 @@ def test_discover(options, stdout):
         ),
         (
             {
-                key: {
-                    src_key: (
-                        123
-                        if src_key in ("exclude", "include", "src_dir")
-                        else src_value
-                    )
-                    for src_key, src_value in value.items()
-                }
-                if isinstance(value, dict) and key == "source_discover"
-                else value
-                for key, value in ANALYSE_CONFIG_TEMPLATE.items()
+                src_key: (
+                    123 if src_key in ("exclude", "include", "src_dir") else src_value
+                )
+                for src_key, src_value in SRC_DISCOVER_TEMPLATE.items()
             },
+            ANALYSE_CONFIG_TEMPLATE,
             [
                 "Invalid value: Invalid source discovery configuration:",
                 "Schema validation error in field 'src_dir': 123 is not of type 'string'",
@@ -132,18 +122,14 @@ def test_discover(options, stdout):
             ],
         ),
         (
+            SRC_DISCOVER_TEMPLATE,
             {
-                key: {
-                    oneline_key: (
-                        {"not_expected": 123}
-                        if oneline_key == "oneline_comment_style"
-                        else oneline_value
-                    )
-                    for oneline_key, oneline_value in value.items()
-                }
-                if isinstance(value, dict) and key == "analyse"
-                else value
-                for key, value in ANALYSE_CONFIG_TEMPLATE.items()
+                analyse_key: (
+                    {"not_expected": 123}
+                    if analyse_key == "oneline_comment_style"
+                    else analyse_value
+                )
+                for analyse_key, analyse_value in ANALYSE_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid oneline comment style configuration:",
@@ -152,18 +138,14 @@ def test_discover(options, stdout):
             ],
         ),
         (
+            SRC_DISCOVER_TEMPLATE,
             {
-                key: {
-                    oneline_key: (
-                        {"needs_fields": [{"name": "id"}, {"name": "id"}]}
-                        if oneline_key == "oneline_comment_style"
-                        else oneline_value
-                    )
-                    for oneline_key, oneline_value in value.items()
-                }
-                if isinstance(value, dict) and key == "analyse"
-                else value
-                for key, value in ANALYSE_CONFIG_TEMPLATE.items()
+                analyse_key: (
+                    {"needs_fields": [{"name": "id"}, {"name": "id"}]}
+                    if analyse_key == "oneline_comment_style"
+                    else analyse_value
+                )
+                for analyse_key, analyse_value in ANALYSE_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: OneLineCommentStyle configuration errors:",
@@ -173,11 +155,17 @@ def test_discover(options, stdout):
         ),
     ],
 )
-def test_analyse_config_negative(config_dict, output_lines, tmp_path: Path) -> None:
-    # Force disable Rich styling
-    config_file = tmp_path / "analyse_config.toml"
+def test_analyse_config_negative(
+    src_discover_dict, analyse_dict, output_lines, tmp_path: Path
+) -> None:
+    config_file = tmp_path / "codelinks_config.toml"
+    codelink_dict = {"codelinks": CODELINKS_CONFIG_TEMPLATE}
+    codelink_dict["codelinks"]["projects"]["project_1"]["source_discover"] = (
+        src_discover_dict
+    )
+    codelink_dict["codelinks"]["projects"]["project_1"]["analyse"] = analyse_dict
     with config_file.open("w", encoding="utf-8") as f:
-        toml.dump(config_dict, f)
+        toml.dump(codelink_dict, f)
 
     options = [
         "analyse",

@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
-from sphinx_codelinks.analyse.config import SourceAnalyseConfig
+from sphinx_codelinks.config import SourceAnalyseConfig
 from tests.conftest import (
     ONELINE_COMMENT_STYLE,
     ONELINE_COMMENT_STYLE_DEFAULT,
@@ -31,16 +31,16 @@ def test_analyse(src_dir, src_paths, tmp_path, snapshot_marks):
     src_analyse_config = SourceAnalyseConfig(
         src_files=src_paths,
         src_dir=src_dir,
-        outdir=tmp_path,
         get_need_id_refs=True,
         get_oneline_needs=True,
         get_rst=True,
     )
 
-    analyser = SourceAnalyse(src_analyse_config)
-    analyser.git_remote_url = None
-    analyser.git_commit_rev = None
-    analyser.run()
+    analyse = SourceAnalyse(src_analyse_config)
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+    analyse.dump_marked_content(tmp_path)
 
     dumped_content = tmp_path / "marked_content.json"
     with dumped_content.open("r") as f:
@@ -111,7 +111,6 @@ def test_analyse_oneline_needs(
     src_analyse_config = SourceAnalyseConfig(
         src_files=src_paths,
         src_dir=src_dir,
-        outdir=tmp_path,
         get_need_id_refs=False,
         get_oneline_needs=True,
         get_rst=False,
@@ -122,14 +121,8 @@ def test_analyse_oneline_needs(
 
     assert len(src_analyse.src_files) == result["num_src_files"]
     assert len(src_analyse.oneline_warnings) == result["num_oneline_warnings"]
-    assert src_analyse.warnings_path.exists()
-
-    loaded_warnings = SourceAnalyse.load_warnings(tmp_path)
 
     cnt_comments = 0
     for src_file in src_analyse.src_files:
         cnt_comments += len(src_file.src_comments)
     assert cnt_comments == result["num_comments"]
-
-    # use cache
-    assert SourceAnalyse.load_warnings(tmp_path) == loaded_warnings

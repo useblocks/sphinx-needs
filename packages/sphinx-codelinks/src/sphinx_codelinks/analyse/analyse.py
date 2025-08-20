@@ -3,16 +3,11 @@ from dataclasses import dataclass
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 
 from tree_sitter import Node as TreeSitterNode
 
 from sphinx_codelinks.analyse import utils
-from sphinx_codelinks.analyse.config import (
-    UNIX_NEWLINE,
-    OneLineCommentStyle,
-    SourceAnalyseConfig,
-)
 from sphinx_codelinks.analyse.models import (
     MarkedContentType,
     MarkedRst,
@@ -26,6 +21,11 @@ from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
     oneline_parser,
 )
+from sphinx_codelinks.config import (
+    UNIX_NEWLINE,
+    OneLineCommentStyle,
+    SourceAnalyseConfig,
+)
 
 # initialize logger
 logger = logging.getLogger(__name__)
@@ -34,6 +34,14 @@ logger.setLevel(logging.INFO)
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
 logger.addHandler(console)
+
+
+class AnalyseWarningType(TypedDict):
+    file_path: str
+    lineno: int
+    msg: str
+    type: str
+    sub_type: str
 
 
 @dataclass
@@ -46,8 +54,6 @@ class AnalyseWarning:
 
 
 class SourceAnalyse:
-    warning_filepath: Path = Path("cached_warnings") / "codelinks_warnings.json"
-
     def __init__(
         self,
         analyse_config: SourceAnalyseConfig,
@@ -70,7 +76,6 @@ class SourceAnalyse:
             self.git_root if self.git_root else self.analyse_config.src_dir
         )
         self.oneline_warnings: list[AnalyseWarning] = []
-        self.warnings_path = analyse_config.outdir / SourceAnalyse.warning_filepath
 
     def get_src_strings(self) -> Generator[tuple[Path, bytes], Any, None]:  # type: ignore[explicit-any]
         """Load source files and extract their content."""
@@ -357,8 +362,8 @@ class SourceAnalyse:
             key=lambda x: (x.filepath, x.source_map["start"]["row"])
         )
 
-    def dump_marked_content(self) -> None:
-        output_path = self.analyse_config.outdir / "marked_content.json"
+    def dump_marked_content(self, outdir: Path) -> None:
+        output_path = outdir / "marked_content.json"
         if not output_path.parent.exists():
             output_path.parent.mkdir(parents=True)
         to_dump = [
@@ -372,51 +377,3 @@ class SourceAnalyse:
         self.create_src_objects()
         self.extract_marked_content()
         self.merge_marked_content()
-        self.dump_marked_content()
-        self.update_warnings()
-
-    @classmethod
-    def load_warnings(cls, warnings_dir: Path) -> list[AnalyseWarning] | None:
-        """Load warnings from the given path.
-
-        It mainly used for other apps or users to load warnings files directly.
-        """
-        warnings_path = warnings_dir / cls.warning_filepath
-        if not warnings_path.exists():
-            return None
-        with warnings_path.open("r") as f:
-            # load the json file and convert to AnalyseWarning]
-            warnings = json.load(f)
-            loaded_warnings = [AnalyseWarning(**warning) for warning in warnings]
-        return loaded_warnings
-
-    def _load_warnings(self) -> list[AnalyseWarning] | None:
-        if not self.warnings_path.exists():
-            return None
-        with self.warnings_path.open("r") as f:
-            # load the json file and convert to AnalyseWarning]
-            warnings = json.load(f)
-            loaded_warnings = [AnalyseWarning(**warning) for warning in warnings]
-        return loaded_warnings
-
-    def update_warnings(self) -> None:
-        loaded_warnings = self._load_warnings()
-        current_warnings = [_warning.__dict__ for _warning in self.oneline_warnings]
-        if loaded_warnings:
-            _warnings = [_warning.__dict__ for _warning in loaded_warnings]
-            cached_warnings = [
-                _warning
-                for _warning in _warnings
-                if _warning["file_path"]
-                not in [str(src_file) for src_file in self.src_files]
-            ]
-            total_warning = cached_warnings + current_warnings
-        else:
-            total_warning = current_warnings
-        if not self.warnings_path.parent.exists():
-            self.warnings_path.parent.mkdir(parents=True)
-        with self.warnings_path.open("w") as f:
-            json.dump(
-                total_warning,
-                f,
-            )

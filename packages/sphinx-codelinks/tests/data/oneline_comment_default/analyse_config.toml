@@ -1,4 +1,4 @@
-[source_discover]
+[codelinks.projects.default.source_discover]
 src_dir = "./"
 comment_type = "c"
 exclude = []

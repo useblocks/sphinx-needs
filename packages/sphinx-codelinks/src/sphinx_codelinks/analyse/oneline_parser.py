@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 
-from sphinx_codelinks.analyse.config import (
+from sphinx_codelinks.config import (
     ESCAPE,
     SUPPORTED_COMMENT_TYPES,
     UNIX_NEWLINE,

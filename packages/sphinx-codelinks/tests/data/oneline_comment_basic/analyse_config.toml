@@ -1,11 +1,11 @@
-[source_discover]
+[codelinks.projects.basic.source_discover]
 src_dir = "./"
 comment_type = "c"
 exclude = []
 include = ["**/*.c", "**/*.h"]
 gitignore = false
 
-[oneline_comment_style]
+[codelinks.projects.basic.analyse.oneline_comment_style]
 start_sequence = "[["
 end_sequence = "]]" # default is newline character
 field_split_char = ","

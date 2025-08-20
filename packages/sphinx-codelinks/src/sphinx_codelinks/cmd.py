@@ -6,24 +6,19 @@ from typing import Annotated, cast
 
 import typer
 
-from sphinx_codelinks.analyse.analyse import SourceAnalyse
-from sphinx_codelinks.analyse.config import (
-    AnalyseSectionConfigType,
-    SourceAnalyseConfigFileType,
-    SourceAnalyseConfigType,
+from sphinx_codelinks.analyse.projects import AnalyseProjects
+from sphinx_codelinks.config import (
+    CodeLinksConfig,
+    CodeLinksConfigType,
+    CodeLinksProjectConfigType,
+    generate_project_configs,
 )
 from sphinx_codelinks.source_discover.config import (
     CommentType,
     SourceDiscoverConfig,
     SourceDiscoverConfigType,
-    SourceDiscoverSectionConfigType,
 )
 from sphinx_codelinks.source_discover.source_discover import SourceDiscover
-from sphinx_codelinks.sphinx_extension.config import (
-    SrcTraceProjectConfigType,
-    convert_analyse_config,
-    convert_src_discovery_config,
-)
 
 app = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
@@ -42,12 +37,12 @@ def analyse(
             exists=True,
         ),
     ],
-    project: Annotated[
-        str | None,
+    projects: Annotated[
+        list[str] | None,
         typer.Option(
             "--project",
             "-p",
-            help="Specify the project name of the config when using src-trace config.",
+            help="Specify the project name of the config. If not specified, take all",
             show_default=True,
         ),
     ] = None,
@@ -65,57 +60,57 @@ def analyse(
     ] = None,
 ) -> None:
     """Analyse marked content in source code."""
-    data = load_config_from_toml(config, project)
 
-    errors: deque[str] = deque()
+    data: CodeLinksConfigType = load_config_from_toml(config)
 
-    # Get source_discover configuration
-    src_discover_section_config: SourceDiscoverSectionConfigType | None = cast(
-        SourceDiscoverSectionConfigType | None, data.get("source_discover")
-    )
-
-    src_discover_config = convert_src_discovery_config(src_discover_section_config)
-
-    src_discover_errors = src_discover_config.check_schema()
-
-    if src_discover_errors:
-        errors.appendleft("Invalid source discovery configuration:")
-        errors.extend(src_discover_errors)
-    if errors:
-        raise typer.BadParameter(f"{linesep.join(errors)}")
-
-    # src dir shall be relevant to the config file's location
-    src_discover_config.src_dir = (
-        config.parent / src_discover_config.src_dir
-    ).resolve()
-
-    src_discover = SourceDiscover(src_discover_config)
-
-    # Init source analyse config
-    analyse_config_dict: SourceAnalyseConfigType = {}
-    analyse_config_dict["src_files"] = src_discover.source_paths
-    analyse_config_dict["src_dir"] = Path(src_discover.src_discover_config.src_dir)
-
-    # Get config for `analyse` section
-    analyse_section_config: AnalyseSectionConfigType | None = data.get("analyse")
-
+    codelinks_config = CodeLinksConfig(**data)
     try:
-        src_analyse_config = convert_analyse_config(
-            analyse_section_config, src_discover
-        )
+        generate_project_configs(codelinks_config.projects)
     except TypeError as e:
         raise typer.BadParameter(str(e)) from e
 
+    errors: deque[str] = deque()
     if outdir:
-        src_analyse_config.outdir = outdir
+        codelinks_config.outdir = outdir
 
-    analyse_errors = src_analyse_config.check_fields_configuration()
-    errors.extend(analyse_errors)
-    if errors:
-        raise typer.BadParameter(f"{linesep.join(errors)}")
+    specifed_project_configs: dict[str, CodeLinksProjectConfigType] = {}
+    for project, _config in codelinks_config.projects.items():
+        if projects and project not in projects:
+            continue
+        # Get source_discover configuration
+        src_discover_config = _config["source_discover_config"]
 
-    src_analyse = SourceAnalyse(src_analyse_config)
-    src_analyse.run()
+        src_discover_errors = src_discover_config.check_schema()
+
+        if src_discover_errors:
+            errors.appendleft("Invalid source discovery configuration:")
+            errors.extend(src_discover_errors)
+        if errors:
+            raise typer.BadParameter(f"{linesep.join(errors)}")
+
+        # src dir shall be relevant to the config file's location
+        src_discover_config.src_dir = (
+            config.parent / src_discover_config.src_dir
+        ).resolve()
+
+        src_discover = SourceDiscover(src_discover_config)
+
+        # Init source analyse config
+        analyse_config = _config["analyse_config"]
+        analyse_config.src_files = src_discover.source_paths
+        analyse_config.src_dir = Path(src_discover.src_discover_config.src_dir)
+
+        analyse_errors = analyse_config.check_fields_configuration()
+        errors.extend(analyse_errors)
+        if errors:
+            raise typer.BadParameter(f"{linesep.join(errors)}")
+
+        specifed_project_configs[project] = {"analyse_config": analyse_config}
+
+    codelinks_config.projects = specifed_project_configs
+    analyse_projects = AnalyseProjects(codelinks_config)
+    analyse_projects.run()
+    analyse_projects.dump_markers()
 
 
 @app.command(no_args_is_help=True)
@@ -185,23 +180,22 @@ def discover(
         typer.echo(file_path)
 
 
-def load_config_from_toml(
-    toml_file: Path, project: str | None = None
-) -> SrcTraceProjectConfigType | SourceAnalyseConfigFileType:
+def load_config_from_toml(toml_file: Path) -> CodeLinksConfigType:
     try:
         with toml_file.open("rb") as f:
             toml_data = tomllib.load(f)
 
     except Exception as e:
         raise Exception(
-            f"Failed to load source tracing configuration from {toml_file}"
+            f"Failed to load CodeLinks configuration from {toml_file}"
         ) from e
 
-    if project:
-        toml_data = toml_data["src_trace"]["projects"][project]
-        return cast(SrcTraceProjectConfigType, toml_data)
+    codelink_dict = toml_data.get("codelinks")
 
-    return cast(SourceAnalyseConfigFileType, toml_data)
+    if not codelink_dict:
+        raise Exception(f"No 'codelinks' section found in {toml_file}")
+
+    return cast(CodeLinksConfigType, codelink_dict)
 
 
 if __name__ == "__main__":

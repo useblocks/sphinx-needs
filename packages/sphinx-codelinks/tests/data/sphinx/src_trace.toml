@@ -1,15 +1,15 @@
-[src_trace]
+[codelinks]
 set_local_url = true
 local_url_field = "local-url"
 set_remote_url = true
 remote_url_field = "remote-url"
 debug_measurement = true
 
-[src_trace.projects.dcdc]
+[codelinks.projects.dcdc]
 
 remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
 
-[src_trace.projects.dcdc.source_discover]
+[codelinks.projects.dcdc.source_discover]
 comment_type = "cpp"
 src_dir = "../dcdc"
 exclude = ["dcdc/src/ubt/ubt.cpp"]
@@ -17,7 +17,7 @@ include = ["**/*.cpp", "**/*.hpp"]
 gitignore = true
 
 
-[src_trace.projects.dcdc.analyse.oneline_comment_style]
+[codelinks.projects.dcdc.analyse.oneline_comment_style]
 start_sequence = "[["
 end_sequence = "]]" # default is newline character
 field_split_char = ","

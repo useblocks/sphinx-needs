@@ -1,14 +1,14 @@
-[src_trace]
+[codelinks]
 set_local_url = true
 local_url_field = "local-url"
 set_remote_url = true
 remote_url_field = "remote-url"
 debug_measurement = true
 
-[src_trace.projects.dummy_src]
+[codelinks.projects.dummy_src]
 remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
 
-[src_trace.projects.dummy_src.source_discover]
+[codelinks.projects.dummy_src.source_discover]
 comment_type = "cpp"
 src_dir = "./dummy_src_lv1"
 exclude = ["dcdc/src/ubt/ubt.cpp"]
