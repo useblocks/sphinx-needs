@@ -62,6 +62,7 @@ Contents
    components/directive
    components/oneline
    components/analyse
+   components/discover
 
 .. toctree::
    :maxdepth: 1

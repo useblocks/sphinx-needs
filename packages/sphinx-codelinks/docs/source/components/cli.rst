@@ -3,10 +3,10 @@
 Command Line Interface (CLI)
 ============================
 
-``Sphinx-CodeLinks`` provides CLI for users to integrate documentation build into CI/CD pipeline
+``Sphinx-CodeLinks`` provides a CLI for users to integrate documentation builds into CI/CD pipelines
 and for local development.
 
-It features help pages. add ``-h`` or ``--help`` to any command to see the available options.
+It features help pages. Add ``-h`` or ``--help`` to any command to see the available options.
 
 .. typer:: sphinx_codelinks.cmd.app
    :prog: codelinks

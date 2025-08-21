@@ -9,7 +9,8 @@ from giturlparse import parse  # type: ignore[import-untyped]
 from tree_sitter import Language, Parser, Point, Query, QueryCursor
 from tree_sitter import Node as TreeSitterNode
 
-from sphinx_codelinks.analyse.config import UNIX_NEWLINE, CommentCategory, CommentType
+from sphinx_codelinks.config import UNIX_NEWLINE, CommentCategory
+from sphinx_codelinks.source_discover.config import CommentType
 
 # initialize logger
 logger = logging.getLogger(__name__)
@@ -133,6 +134,7 @@ def locate_git_root(src_dir: Path) -> Path | None:
     for parent in parents:
         if (parent / ".git").exists() and (parent / ".git").is_dir():
             return parent
+    logger.warning(f"git root is not found in the parent of {src_dir}")
     return None
 
 

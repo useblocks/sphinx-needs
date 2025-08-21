@@ -5,8 +5,8 @@ import pytest
 import toml
 from typer.testing import CliRunner
 
-from sphinx_codelinks.analyse.config import CommentType
 from sphinx_codelinks.cmd import app
+from sphinx_codelinks.source_discover.config import CommentType
 
 from .conftest import DATA_DIR, TEST_DIR
 
@@ -25,11 +25,20 @@ SRC_DISCOVER_TEMPLATE = {
     "exclude": ["**/charge/demo_1.cpp", "**/discharge/demo_3.cpp"],
     "include": ["**/charge/demo_2.cpp", "**/supercharge.cpp"],
     "gitignore": True,
-    "comment_type": [CommentType.cpp.value],
+    "comment_type": CommentType.cpp.value,
 }
-ANALYSER_CONFIG_TEMPLATE = {
-    "source_discover": SRC_DISCOVER_TEMPLATE,
+ANALYSE_CONFIG_TEMPLATE = {
+    "get_oneline_needs": True,
     "oneline_comment_style": ONELINE_COMMENT_TEMPLATE,
+}
+CODELINKS_CONFIG_TEMPLATE = {
+    "outdir": "set/it/to/somewhere",
+    "projects": {
+        "project_1": {
+            "source_discover": SRC_DISCOVER_TEMPLATE,
+            "analyse": ANALYSE_CONFIG_TEMPLATE,
+        }
+    },
 }
 
 
@@ -37,7 +46,11 @@ runner = CliRunner()
 
 
 @pytest.mark.parametrize(
-    ("config_path"), [(DATA_DIR / "analyse" / "default_config.toml")]
+    ("config_path"),
+    [
+        (DATA_DIR / "configs" / "minimum_config.toml"),
+        (DATA_DIR / "configs" / "full_config.toml"),
+    ],
 )
 def test_analyse(config_path: Path, tmp_path: Path) -> None:
     options: list[str] = ["analyse", str(config_path), "--outdir", str(tmp_path)]
@@ -73,19 +86,14 @@ def test_discover(options, stdout):
 
 
 @pytest.mark.parametrize(
-    ("config_dict", "output_lines"),
+    ("src_discover_dict", "analyse_dict", "output_lines"),
     [
         (
             {
-                key: {
-                    src_key: (123 if src_key == "exclude" else src_value)
-                    for src_key, src_value in value.items()
-                    if isinstance(value, dict)
-                }
-                if isinstance(value, dict) and key == "source_discover"
-                else value
-                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
+                src_key: (123 if src_key == "exclude" else src_value)
+                for src_key, src_value in SRC_DISCOVER_TEMPLATE.items()
             },
+            ANALYSE_CONFIG_TEMPLATE,
             [
                 "Invalid value: Invalid source discovery configuration:",
                 "Schema validation error in field 'exclude': 123 is not of type 'array'",
@@ -93,14 +101,10 @@ def test_discover(options, stdout):
         ),
         (
             {
-                key: {
-                    src_key: (123 if src_key == "include" else src_value)
-                    for src_key, src_value in value.items()
-                }
-                if isinstance(value, dict) and key == "source_discover"
-                else value
-                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
+                src_key: (123 if src_key == "include" else src_value)
+                for src_key, src_value in SRC_DISCOVER_TEMPLATE.items()
             },
+            ANALYSE_CONFIG_TEMPLATE,
             [
                 "Invalid value: Invalid source discovery configuration:",
                 "Schema validation error in field 'include': 123 is not of type 'array'",
@@ -108,18 +112,12 @@ def test_discover(options, stdout):
         ),
         (
             {
-                key: {
-                    src_key: (
-                        123
-                        if src_key in ("exclude", "include", "src_dir")
-                        else src_value
-                    )
-                    for src_key, src_value in value.items()
-                }
-                if isinstance(value, dict) and key == "source_discover"
-                else value
-                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
+                src_key: (
+                    123 if src_key in ("exclude", "include", "src_dir") else src_value
+                )
+                for src_key, src_value in SRC_DISCOVER_TEMPLATE.items()
             },
+            ANALYSE_CONFIG_TEMPLATE,
             [
                 "Invalid value: Invalid source discovery configuration:",
                 "Schema validation error in field 'src_dir': 123 is not of type 'string'",
@@ -128,11 +126,14 @@ def test_discover(options, stdout):
             ],
         ),
         (
+            SRC_DISCOVER_TEMPLATE,
             {
-                key: (
-                    {"not_expected": 123} if key == "oneline_comment_style" else value
+                analyse_key: (
+                    {"not_expected": 123}
+                    if analyse_key == "oneline_comment_style"
+                    else analyse_value
                 )
-                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
+                for analyse_key, analyse_value in ANALYSE_CONFIG_TEMPLATE.items()
             },
             [
                 "Invalid value: Invalid oneline comment style configuration:",
@@ -141,32 +142,72 @@ def test_discover(options, stdout):
             ],
         ),
         (
+            SRC_DISCOVER_TEMPLATE,
             {
-                key: (
+                analyse_key: (
                     {"needs_fields": [{"name": "id"}, {"name": "id"}]}
-                    if key == "oneline_comment_style"
-                    else value
+                    if analyse_key == "oneline_comment_style"
+                    else analyse_value
                 )
-                for key, value in ANALYSER_CONFIG_TEMPLATE.items()
+                for analyse_key, analyse_value in ANALYSE_CONFIG_TEMPLATE.items()
             },
             [
-                "Invalid value: Invalid oneline comment style configuration:",
+                "Invalid value: OneLineCommentStyle configuration errors:",
                 "Missing required fields: ['title', 'type']",
                 "Field 'id' is defined multiple times.",
             ],
         ),
     ],
 )
-def test_analyse_config_negative(config_dict, output_lines, tmp_path: Path) -> None:
-    # Force disable Rich styling
-    config_file = tmp_path / "analyse_config.toml"
+def test_analyse_config_negative(
+    src_discover_dict, analyse_dict, output_lines, tmp_path: Path
+) -> None:
+    config_file = tmp_path / "codelinks_config.toml"
+    codelink_dict = {"codelinks": CODELINKS_CONFIG_TEMPLATE}
+    codelink_dict["codelinks"]["projects"]["project_1"]["source_discover"] = (
+        src_discover_dict
+    )
+    codelink_dict["codelinks"]["projects"]["project_1"]["analyse"] = analyse_dict
     with config_file.open("w", encoding="utf-8") as f:
-        toml.dump(config_dict, f)
+        toml.dump(codelink_dict, f)
 
     options = [
         "analyse",
         str(config_file),
     ]
+    result = runner.invoke(app, options)
+    assert result.exit_code != 0
+    for line in output_lines:
+        assert line in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("projects", "output_lines"),
+    [
+        (
+            ["project_1", "project_2"],
+            [
+                "The following projects are not found:",
+                "project_2",
+            ],
+        ),
+    ],
+)
+def test_analyse_project_negative(projects, output_lines, tmp_path: Path) -> None:
+    config_file = tmp_path / "codelinks_config.toml"
+    codelink_dict = {"codelinks": CODELINKS_CONFIG_TEMPLATE}
+    with config_file.open("w", encoding="utf-8") as f:
+        toml.dump(codelink_dict, f)
+    projects_config = []
+    for project in projects:
+        projects_config.append("--project")
+        projects_config.append(project)
+
+    options = [
+        "analyse",
+        str(config_file),
+    ]
+    options.extend(projects_config)
     result = runner.invoke(app, options)
     assert result.exit_code != 0
     for line in output_lines:

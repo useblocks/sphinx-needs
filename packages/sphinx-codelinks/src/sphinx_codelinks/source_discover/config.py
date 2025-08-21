@@ -1,18 +1,36 @@
 from dataclasses import MISSING, dataclass, field, fields
+from enum import Enum
 from pathlib import Path
 from typing import Any, Required, TypedDict, cast
 
 from jsonschema import ValidationError, validate
 
-from sphinx_codelinks.analyse.config import SUPPORTED_COMMENT_TYPES
+COMMENT_FILETYPE = {"cpp": ["c", "cpp", "h", "hpp"], "python": ["py"]}
+
+
+class CommentType(str, Enum):
+    python = "python"
+    cpp = "cpp"
+
+
+class SourceDiscoverSectionConfigType(TypedDict, total=False):
+    """Define typing for loading configuration from TOML files"""
+
+    src_dir: Required[str]
+    exclude: list[str]
+    include: list[str]
+    gitignore: bool
+    comment_type: CommentType
 
 
 class SourceDiscoverConfigType(TypedDict, total=False):
+    """Define typing for its API configuration"""
+
     src_dir: Required[Path]
     exclude: list[str]
     include: list[str]
     gitignore: bool
-    file_types: list[str]
+    comment_type: CommentType
 
 
 @dataclass
@@ -41,12 +59,12 @@ class SourceDiscoverConfig:
     gitignore: bool = field(default=True, metadata={"schema": {"type": "boolean"}})
     """Whether to respect .gitignore to exclude files."""
 
-    file_types: list[str] = field(
-        default_factory=lambda: list(SUPPORTED_COMMENT_TYPES),
+    comment_type: str = field(
+        default="cpp",
         metadata={
             "schema": {
-                "type": "array",
-                "items": {"type": "string", "enum": sorted(SUPPORTED_COMMENT_TYPES)},
+                "type": "string",
+                "enum": sorted(COMMENT_FILETYPE),
             }
         },
     )

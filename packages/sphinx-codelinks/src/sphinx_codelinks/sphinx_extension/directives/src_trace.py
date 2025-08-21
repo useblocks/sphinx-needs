@@ -12,15 +12,14 @@ from sphinx_needs.api import add_need  # type: ignore[import-untyped]
 from sphinx_needs.utils import add_doc  # type: ignore[import-untyped]
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
-from sphinx_codelinks.analyse.config import COMMENT_FILETYPE, SourceAnalyseConfig
 from sphinx_codelinks.analyse.models import OneLineNeed
-from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
-from sphinx_codelinks.source_discover.source_discover import SourceDiscover
-from sphinx_codelinks.sphinx_extension.config import (
-    SrcTraceProjectConfigType,
-    SrcTraceSphinxConfig,
+from sphinx_codelinks.config import (
+    CodeLinksConfig,
+    CodeLinksProjectConfigType,
     file_lineno_href,
 )
+from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
+from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 from sphinx_codelinks.sphinx_extension.debug import measure_time
 
 sphinx_version = sphinx.__version__
@@ -87,40 +86,30 @@ class SourceTracingDirective(SphinxDirective):
         project = self.options["project"]
         title = self.arguments[0]
         # get source tracing config
-        src_trace_sphinx_config = SrcTraceSphinxConfig(self.env.config)
+        src_trace_sphinx_config = CodeLinksConfig.from_sphinx(self.env.config)
 
         # load config
-        src_trace_conf: SrcTraceProjectConfigType = src_trace_sphinx_config.projects[
+        src_trace_conf: CodeLinksProjectConfigType = src_trace_sphinx_config.projects[
             project
         ]
-        comment_type = src_trace_conf["comment_type"]
-        oneline_comment_style = src_trace_conf["oneline_comment_style"]
-
-        src_dir = self.locate_src_dir(src_trace_sphinx_config, src_trace_conf)
+        src_discover_config = src_trace_conf["source_discover_config"]
+        src_dir = self.locate_src_dir(src_trace_sphinx_config, src_discover_config)
 
         out_dir = Path(self.env.app.outdir)
         # the directory where the source files are copied to
         target_dir = out_dir / src_dir.name
 
         extra_options = {"project": project}
-        source_files = self.get_src_files(self.options, src_dir, src_trace_conf)
+        source_files = self.get_src_files(self.options, src_dir, src_discover_config)
 
         # add source files into the dependency
         # https://www.sphinx-doc.org/en/master/extdev/envapi.html#sphinx.environment.BuildEnvironment.note_dependency
         for source_file in source_files:
             self.env.note_dependency(str(source_file.resolve()))
 
-        analyse_config = SourceAnalyseConfig(
-            source_files,
-            src_dir,
-            out_dir,
-            comment_type,
-            get_need_id_refs=False,
-            get_oneline_needs=True,
-            get_rst=False,
-            oneline_comment_style=oneline_comment_style,
-        )
-
+        analyse_config = src_trace_conf["analyse_config"]
+        analyse_config.src_dir = src_dir
+        analyse_config.src_files = source_files
         src_analyse = SourceAnalyse(analyse_config)
         src_analyse.run()
 
@@ -204,8 +193,9 @@ class SourceTracingDirective(SphinxDirective):
         self,
         extra_options: dict[str, str],
         src_dir: Path,
-        src_trace_conf: SrcTraceProjectConfigType,
+        src_discover_config: SourceDiscoverConfig,
     ) -> list[Path]:
+        """Leverage SourceDiscover to find sources files from the given directory."""
         source_files = []
         if "file" in self.options:
             file: str = self.options["file"]
@@ -220,13 +210,13 @@ class SourceTracingDirective(SphinxDirective):
             else:
                 extra_options["directory"] = directory
             dir_path = src_dir / directory
-            file_types = COMMENT_FILETYPE[src_trace_conf["comment_type"]]
+            # create a new config for the specified directory
             src_discover = SourceDiscoverConfig(
                 dir_path,
-                gitignore=src_trace_conf["gitignore"],
-                include=src_trace_conf["include"],
-                exclude=src_trace_conf["exclude"],
-                file_types=file_types,
+                gitignore=src_discover_config.gitignore,
+                include=src_discover_config.include,
+                exclude=src_discover_config.exclude,
+                comment_type=src_discover_config.comment_type,
             )
             source_discover = SourceDiscover(src_discover)
             source_files.extend(source_discover.source_paths)
@@ -235,8 +225,8 @@ class SourceTracingDirective(SphinxDirective):
 
     def locate_src_dir(
         self,
-        src_trace_sphinx_config: SrcTraceSphinxConfig,
-        src_trace_conf: SrcTraceProjectConfigType,
+        src_trace_sphinx_config: CodeLinksConfig,
+        src_discover_config: SourceDiscoverConfig,
     ) -> Path:
         """Locate the source directory based on the configuration."""
         #  src dir in src_trace_conf is relative to conf_dir by default
@@ -246,7 +236,7 @@ class SourceTracingDirective(SphinxDirective):
             src_trace_toml_path = Path(src_trace_sphinx_config.config_from_toml)
             conf_dir = conf_dir / src_trace_toml_path.parent
 
-        src_dir = (conf_dir / src_trace_conf["src_dir"]).resolve()
+        src_dir = (conf_dir / src_discover_config.src_dir).resolve()
         return src_dir
 
     def render_needs(

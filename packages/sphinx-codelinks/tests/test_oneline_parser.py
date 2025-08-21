@@ -1,11 +1,11 @@
 import pytest
 
-from sphinx_codelinks.analyse.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
 from sphinx_codelinks.analyse.oneline_parser import (
     OnelineParserInvalidWarning,
     WarningSubTypeEnum,
     oneline_parser,
 )
+from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
 
 from .conftest import ONELINE_COMMENT_STYLE, ONELINE_COMMENT_STYLE_DEFAULT
 

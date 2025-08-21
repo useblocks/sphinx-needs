@@ -1,12 +1,12 @@
 import pytest
 
-from sphinx_codelinks.analyse.config import OneLineCommentStyle, SourceAnalyseConfig
+from sphinx_codelinks.config import OneLineCommentStyle, SourceAnalyseConfig
 
 from .conftest import TEST_DIR
 
 
 @pytest.mark.parametrize(
-    ("vdocs_config", "result"),
+    ("analyse_config", "result"),
     [
         (
             SourceAnalyseConfig(
@@ -14,7 +14,6 @@ from .conftest import TEST_DIR
                     TEST_DIR / "data" / "dcdc" / "charge" / "demo_1.cpp",
                 ],
                 src_dir=TEST_DIR / "data" / "dcdc",
-                outdir=TEST_DIR / "output",
                 comment_type=123,
             ),
             [
@@ -25,7 +24,6 @@ from .conftest import TEST_DIR
             SourceAnalyseConfig(
                 src_files=None,
                 src_dir=TEST_DIR / "data" / "dcdc",
-                outdir=TEST_DIR / "output",
                 comment_type=123,
             ),
             [
@@ -35,8 +33,8 @@ from .conftest import TEST_DIR
         ),
     ],
 )
-def test_config_schema_validator_negative(vdocs_config, result):
-    errors = vdocs_config.check_schema()
+def test_config_schema_validator_negative(analyse_config, result):
+    errors = analyse_config.check_schema()
     assert sorted(errors) == sorted(result)
 
 

@@ -5,17 +5,13 @@ from docutils.nodes import document
 import pytest
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 
-from sphinx_codelinks.analyse.config import OneLineCommentStyle
+from sphinx_codelinks.config import OneLineCommentStyle
 
 pytest_plugins = "sphinx.testing.fixtures"
 
 TEST_DIR = Path(__file__).parent
 DATA_DIR = TEST_DIR / "data"
 SRC_TRACE_TOML = TEST_DIR / "data" / "sphinx" / "src_trace.toml"
-BASIC_analyse_TOML = TEST_DIR / "data" / "oneline_comment_basic" / "analyse_config.toml"
-DEFAULT_analyse_TOML = (
-    TEST_DIR / "data" / "oneline_comment_default" / "analyse_config.toml"
-)
 RECURSIVE_DIR_analyse_TOML = TEST_DIR / "doc_test" / "recursive_dirs" / "src_trace.toml"
 ONELINE_COMMENT_STYLE = OneLineCommentStyle(
     start_sequence="[[",

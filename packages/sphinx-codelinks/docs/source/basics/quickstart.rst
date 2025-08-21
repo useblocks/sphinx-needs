@@ -26,7 +26,7 @@ Sphinx Config
 .. literalinclude:: ./../../src_trace.toml
    :caption: src_trace.toml
    :language: toml
-   :lines: 27-29
+
 
 One-line comment
 ----------------
