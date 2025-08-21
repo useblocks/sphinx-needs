@@ -179,3 +179,36 @@ def test_analyse_config_negative(
     assert result.exit_code != 0
     for line in output_lines:
         assert line in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("projects", "output_lines"),
+    [
+        (
+            ["project_1", "project_2"],
+            [
+                "The following projects are not found:",
+                "project_2",
+            ],
+        ),
+    ],
+)
+def test_analyse_project_negative(projects, output_lines, tmp_path: Path) -> None:
+    config_file = tmp_path / "codelinks_config.toml"
+    codelink_dict = {"codelinks": CODELINKS_CONFIG_TEMPLATE}
+    with config_file.open("w", encoding="utf-8") as f:
+        toml.dump(codelink_dict, f)
+    projects_config = []
+    for project in projects:
+        projects_config.append("--project")
+        projects_config.append(project)
+
+    options = [
+        "analyse",
+        str(config_file),
+    ]
+    options.extend(projects_config)
+    result = runner.invoke(app, options)
+    assert result.exit_code != 0
+    for line in output_lines:
+        assert line in result.stdout

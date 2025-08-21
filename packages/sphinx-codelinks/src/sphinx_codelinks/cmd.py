@@ -73,6 +73,16 @@ def analyse(
     if outdir:
         codelinks_config.outdir = outdir
 
+    project_errors: list[str] = []
+    if projects:
+        for project in projects:
+            if project not in codelinks_config.projects:
+                if not project_errors:
+                    project_errors.append("The following projects are not found:")
+                project_errors.append(project)
+    if project_errors:
+        raise typer.BadParameter(f"{linesep.join(project_errors)}")
+
     specifed_project_configs: dict[str, CodeLinksProjectConfigType] = {}
     for project, _config in codelinks_config.projects.items():
         if projects and project not in projects:
