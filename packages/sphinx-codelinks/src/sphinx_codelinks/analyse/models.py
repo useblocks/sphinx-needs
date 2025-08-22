@@ -7,8 +7,8 @@ from tree_sitter import Node as TreeSitterNode
 
 
 class MarkedContentType(str, Enum):
-    need = ("need",)
-    need_id_refs = ("need-id-refs",)
+    need = "need"
+    need_id_refs = "need-id-refs"
     rst = "rst"
 
 

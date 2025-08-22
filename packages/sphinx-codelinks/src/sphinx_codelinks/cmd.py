@@ -1,8 +1,9 @@
 from collections import deque
+import json
 from os import linesep
 from pathlib import Path
 import tomllib
-from typing import Annotated, cast
+from typing import Annotated, TypeAlias, cast
 
 import typer
 
@@ -13,6 +14,8 @@ from sphinx_codelinks.config import (
     CodeLinksProjectConfigType,
     generate_project_configs,
 )
+from sphinx_codelinks.logger import logger
+from sphinx_codelinks.needextend_write import MarkedObjType, convert_marked_content
 from sphinx_codelinks.source_discover.config import (
     CommentType,
     SourceDiscoverConfig,
@@ -23,6 +26,33 @@ from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 app = typer.Typer(
     no_args_is_help=True, context_settings={"help_option_names": ["-h", "--help"]}
 )
+write_app = typer.Typer(
+    help="Export marked content to other formats", no_args_is_help=True
+)
+app.add_typer(write_app, name="write", rich_help_panel="Sub-menus")
+
+OptVerbose: TypeAlias = Annotated[  # noqa: UP040   # has to be TypeAlias
+    bool,
+    typer.Option(
+        ...,
+        "-v",
+        "--verbose",
+        is_flag=True,
+        help="Show debug information",
+        rich_help_panel="Logging",
+    ),
+]
+OptQuiet: TypeAlias = Annotated[  # noqa: UP040 # has to be TypeAlias
+    bool,
+    typer.Option(
+        ...,
+        "-q",
+        "--quiet",
+        is_flag=True,
+        help="Only show errors and warnings",
+        rich_help_panel="Logging",
+    ),
+]
 
 
 @app.command(no_args_is_help=True)
@@ -188,6 +218,79 @@ def discover(
     typer.echo(f"{len(source_discover.source_paths)} files discovered")
     for file_path in source_discover.source_paths:
         typer.echo(file_path)
+
+
+@write_app.command("rst", no_args_is_help=True)
+def write_rst(  # noqa: PLR0913  # for CLI, so it takes as many as it requires
+    jsonpath: Annotated[
+        Path,
+        typer.Argument(
+            ...,
+            help="Path of the JSON file which contains the extracted markers",
+            show_default=False,
+            dir_okay=False,
+            file_okay=True,
+            exists=True,
+            resolve_path=True,
+        ),
+    ],
+    outpath: Annotated[
+        Path,
+        typer.Option(
+            "--outpath",
+            "-o",
+            help="The output path for generated rst file",
+            show_default=True,
+            dir_okay=False,
+            file_okay=True,
+            exists=False,
+        ),
+    ] = Path("needextend.rst"),
+    remote_url_field: Annotated[
+        str,
+        typer.Option(
+            "--remote-url-field",
+            "-r",
+            help="The field name for the remote url",
+            show_default=True,
+        ),
+    ] = "remote_url",  # to show default value in this CLI
+    title: Annotated[
+        str | None,
+        typer.Option(
+            "--title",
+            "-t",
+            help="Give the title to the generated RST file",
+            show_default=True,
+        ),
+    ] = None,  # to show default value in this CLI
+    verbose: OptVerbose = False,
+    quiet: OptQuiet = False,
+) -> None:
+    """Generate needextend.rst from the extracted obj in JSON."""
+    logger.configure(verbose, quiet)
+    try:
+        with jsonpath.open("r") as f:
+            marked_content = json.load(f)
+    except Exception as e:
+        raise typer.BadParameter(
+            f"Failed to load marked content from {jsonpath}: {e}"
+        ) from e
+
+    marked_objs: list[MarkedObjType] = [
+        obj for objs in marked_content.values() for obj in objs
+    ]
+
+    needextend_texts, errors = convert_marked_content(
+        marked_objs, remote_url_field, title
+    )
+    if errors:
+        raise typer.BadParameter(
+            f"Errors occurred during conversion: {linesep.join(errors)}"
+        )
+    with outpath.open("w") as f:
+        f.writelines(needextend_texts)
+    typer.echo(f"Generated {outpath}")
 
 
 def load_config_from_toml(toml_file: Path) -> CodeLinksConfigType:

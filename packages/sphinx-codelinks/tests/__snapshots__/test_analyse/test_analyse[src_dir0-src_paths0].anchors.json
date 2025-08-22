@@ -48,10 +48,10 @@
     },
     "tagged_scope": "void dummy_func1(){\n     //...\n }",
     "need_ids": [
-      "need_001",
-      "need_002",
-      "need_003",
-      "need_004"
+      "NEED_001",
+      "NEED_002",
+      "NEED_003",
+      "NEED_004"
     ],
     "marker": "@need-ids:",
     "type": "need-id-refs"
@@ -71,7 +71,7 @@
     },
     "tagged_scope": "int main() {\n   std::cout << \"Starting demo_1...\" << std::endl;\n   dummy_func1();\n   std::cout << \"Demo_1 finished.\" << std::endl;\n   return 0;\n }",
     "need_ids": [
-      "need_003"
+      "NEED_003"
     ],
     "marker": "@need-ids:",
     "type": "need-id-refs"

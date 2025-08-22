@@ -212,3 +212,73 @@ def test_analyse_project_negative(projects, output_lines, tmp_path: Path) -> Non
     assert result.exit_code != 0
     for line in output_lines:
         assert line in result.stdout
+
+
+def test_write_rst_invalid_json(tmp_path: Path) -> None:
+    json_obj = {
+        "whatever": "json",
+        "not": "expected",
+    }
+    json_text = json.dumps(json_obj)
+    json_text = json_text.replace(",", "")
+    jsonpath = tmp_path / "invalid_json.json"
+    with jsonpath.open("w") as f:
+        f.write(json_text)
+
+    options = [
+        "write",
+        "rst",
+        str(jsonpath),
+        "--outpath",
+        str(tmp_path / "out.rst"),
+    ]
+    result = runner.invoke(app, options)
+
+    assert result.exit_code != 0
+    assert "Expecting" in result.stdout
+
+
+@pytest.mark.parametrize(
+    ("json_objs", "output_lines"),
+    [
+        (
+            [
+                {
+                    "filepath": 123,
+                    "remote_url": "https://github.com/useblocks/sphinx-codelinks/blob/951e40e7845f06d5cfc4ca20ebb984308fdaf985/tests/data/marked_rst/dummy_1.cpp#L4",
+                    "source_map": {
+                        "start": {"row": 3, "column": 8},
+                        "end": {"row": 3, "column": 61},
+                    },
+                    "tagged_scope": "void dummy_func1(){\n     //...\n }",
+                    "rst": ".. impl:: implement dummy function 1\n   :id: IMPL_71\n",
+                    "type": "need-id-refs",
+                }
+            ],
+            [
+                "Invalid value: Errors occurred",
+                "Schema validation error in field 'filepath': 123 is not of type 'string'",
+                "Marker is required for marked content of type 'need_id_refs'",
+                "Need id refs are required for marked content of type 'need_id_refs'",
+            ],
+        ),
+    ],
+)
+def test_write_rst_negative(json_objs: list[dict], output_lines, tmp_path) -> None:
+    to_dump = {"project_1": json_objs}
+    jsonpath = Path("invalid_objs.json")
+    with jsonpath.open("w") as f:
+        json.dump(to_dump, f)
+    outpath = tmp_path / "needextend.rst"
+    options = [
+        "write",
+        "rst",
+        str(jsonpath),
+        "--outpath",
+        str(outpath),
+    ]
+    result = runner.invoke(app, options)
+
+    assert result.exit_code != 0
+    for line in output_lines:
+        assert line in result.stdout
