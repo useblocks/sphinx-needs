@@ -28,7 +28,7 @@ Specifies the path to a `TOML file <https://toml.io>`__ containing **Sphinx-Code
 .. code-block:: python
 
    # In conf.py
-   src_trace_config_from_toml = "src_trace.toml"
+   src_trace_config_from_toml = "codelinks.toml"
 
 When using a TOML configuration file:
 

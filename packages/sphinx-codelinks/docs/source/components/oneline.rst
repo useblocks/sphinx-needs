@@ -91,14 +91,25 @@ For example, with the following **needs_fields** configuration:
 
 .. _`fields_config`:
 
-.. code-block:: python
+.. tabs::
 
-   needs_fields=[
-       {"name": "title"},
-       {"name": "id"},
-       {"name": "type", "default": "impl"},
-       {"name": "links", "type": "list[str]", "default": []},
-   ],
+   .. code-tab:: python
+
+      needs_fields = [
+         {"name": "title"},
+         {"name": "id"},
+         {"name": "type", "default": "impl"},
+         {"name": "links", "type": "list[str]", "default": []},
+      ],
+
+   .. code-tab:: toml
+
+      needs_fields = [
+         { name = "title" },
+         { name = "id" },
+         { name = "type", default = "impl" },
+         { name = "links", type = "list[str]", default = [] },
+      ]
 
 the one-line comment shall be defined as follows:
 
@@ -122,17 +133,26 @@ when it is not given in the need definition.
 
 For example, with the following needs_fields definition,
 
-.. code-block:: python
+.. tabs::
 
-   needs_fields = [
-       {
-           "name": "title"
-       },
-       {
-           "name": "type",
-           "default": "implementation"
-       },
-   ]
+   .. code-tab:: python
+
+      needs_fields = [
+         {
+            "name": "title"
+         },
+         {
+            "name": "type",
+            "default": "implementation"
+         },
+      ]
+
+   .. code-tab:: toml
+
+      needs_fields = [
+         { name = "title" },
+         { name = "type", default = "implementation" }
+      ]
 
 the following need definition in source code is equivalent to RST shown below:
 

@@ -12,9 +12,11 @@
 
       .. div:: sd-fs-5 sd-font-italic
 
-         ``Sphinx-CodeLinks`` is designed for Engineering-as-Code workflows to facilitate Application Lifecycle Management (ALM).
-         It enables users to define ``Sphinx-Needs`` need items within source code using a single line and automatically extract them
-         into the documentation during the Sphinx build process.
+         ``Sphinx-CodeLinks`` is a lightweight solution for enabling traceability between source code and documentation.
+         With a single line in your code, you can:
+
+         1. Defining new ``Sphinx-Needs`` - extracted and integrated into the Sphinx build
+         2. Embedding existing need IDs - extracted for cross-referencing with need items in the documentation
 
       .. grid:: 1 1 2 2
          :gutter: 2 2 3 3
@@ -63,6 +65,7 @@ Contents
    components/oneline
    components/analyse
    components/discover
+   components/write
 
 .. toctree::
    :maxdepth: 1
