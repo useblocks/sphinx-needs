@@ -26,7 +26,7 @@ dependencies = [
   "tree-sitter-python>=0.23.6",
   # Compiling issue on manylinux aarch64 image, so install from git instead of Pypi
   # https://github.com/tree-sitter/py-tree-sitter/issues/386#issuecomment-3101430799
-  "tree-sitter @ git+https://github.com/tree-sitter/py-tree-sitter@v0.25.1",
+  "tree-sitter~=0.25.1",
 
 ]
 
