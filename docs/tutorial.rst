@@ -129,11 +129,11 @@ Linking need items
 Now that we know how to create individual need items,
 the next thing we may want to do is to link them together.
 
-We can define custom link types in the ``conf.py`` file, using the :ref:`need_extra_links` configuration option:
+We can define custom link types in the ``conf.py`` file, using the :ref:`needs_extra_links` configuration option:
 
 .. code-block:: python
 
-    need_extra_links = [
+    needs_extra_links = [
       {
         "option": "tutorial_required_by",
         "incoming": "requires",  # text to describe incoming links
