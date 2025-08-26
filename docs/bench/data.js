@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755523360913,
+  "lastUpdate": 1756226743284,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13680,6 +13680,42 @@ window.BENCHMARK_DATA = {
             "value": 60.410246607999994,
             "unit": "s",
             "extra": "Commit: 6f90e9908d3b6602f1b64034700cfbc3e24bb0e3\nBranch: master\nTime: 2025-08-18T15:20:42+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "email@holger-peters.de",
+            "name": "Holger Peters",
+            "username": "HolgerPeters"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a7b4b62b9e817d9ccc03995b061f26e2ef346117",
+          "message": "📚 Fix needs_extra_links name (#1501)",
+          "timestamp": "2025-08-26T18:43:49+02:00",
+          "tree_id": "fb8be9e2a32ea61538945cde3015dbc12d74348f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a7b4b62b9e817d9ccc03995b061f26e2ef346117"
+        },
+        "date": 1756226725042,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16177358300001288,
+            "unit": "s",
+            "extra": "Commit: a7b4b62b9e817d9ccc03995b061f26e2ef346117\nBranch: master\nTime: 2025-08-26T18:43:49+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.696850934999986,
+            "unit": "s",
+            "extra": "Commit: a7b4b62b9e817d9ccc03995b061f26e2ef346117\nBranch: master\nTime: 2025-08-26T18:43:49+02:00"
           }
         ]
       }
