@@ -75,6 +75,4 @@ The needs defined in source code are extracted and rendered to:
    :project: dcdc
    :directory: ./discharge
 
-.. note:: **local-url** is not working on the website as it only supports local browsing.
-
 To have a more customized configuration of ``CodeLinks``, please refer to :ref:`configuration <configuration>`.

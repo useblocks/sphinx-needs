@@ -33,6 +33,15 @@ else:
 logger = logging.getLogger(__name__)
 
 
+def get_rel_path(doc_path: Path, code_path: Path, base_dir: Path) -> tuple[Path, Path]:
+    """Get the relative path from the document to the source code file and vice versa."""
+    doc_depth = len(doc_path.parents) - 1
+    src_rel_path = Path(*[".."] * doc_depth) / code_path.relative_to(base_dir)
+    code_depth = len(code_path.relative_to(base_dir).parents) - 1
+    doc_rel_path = Path(*[".."] * code_depth) / doc_path
+    return src_rel_path, doc_rel_path.with_suffix(".html")
+
+
 def generate_str_link_name(
     oneline_need: OneLineNeed,
     target_filepath: Path,
@@ -145,7 +154,7 @@ class SourceTracingDirective(SphinxDirective):
                 to_remove_str = to_remove_str.replace("\\", "\\\\")
             self.env.config.needs_string_links[local_url_field] = {
                 "regex": r"^(?P<value>.+?)\.[^\.]+#L(?P<lineno>\d+)",
-                "link_url": ("file://{{value}}.html#L-{{lineno}}"),
+                "link_url": ("{{value}}.html#L-{{lineno}}"),
                 "link_name": f"{{{{value | replace('{to_remove_str}', '')}}}}#L{{{{lineno}}}}",
                 "options": [local_url_field],
             }
@@ -259,7 +268,7 @@ class SourceTracingDirective(SphinxDirective):
             # mapping between lineno and need link in docs for local url
 
             # The link to the documentation page for the source file
-            docs_href = f"{dirs['out_dir'] / self.env.docname}.html"
+
             if local_url_field:
                 # copy files to _build/html
                 target_filepath.parent.mkdir(parents=True, exist_ok=True)
@@ -268,8 +277,15 @@ class SourceTracingDirective(SphinxDirective):
             remote_link_name = None
             if local_url_field:
                 # generate link name
+                # calculate the relative path from the current doc to the target file
+                local_rel_path, docs_href = get_rel_path(
+                    Path(self.env.docname), target_filepath, dirs["out_dir"]
+                )
                 local_link_name = generate_str_link_name(
-                    oneline_need, target_filepath, dirs, local=True
+                    oneline_need,
+                    local_rel_path,
+                    dirs,
+                    local=True,
                 )
             if remote_url_field:
                 remote_link_name = generate_str_link_name(
