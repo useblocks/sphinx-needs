@@ -309,11 +309,11 @@ class NeedItem:
 
     def __repr__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r}, source={self._source!r})"
+        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r}, source={self._source!r}, modifications={self._modifications!r})"
 
     def __str__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s}, source={self._source!s})"
+        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s}, source={self._source!s}, modifications={self._modifications!s})"
 
     def copy(self) -> NeedItem:
         """Return a copy of the NeedItem."""
