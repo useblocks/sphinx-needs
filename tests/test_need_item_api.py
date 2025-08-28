@@ -220,6 +220,16 @@ def test_need_mutations():
     ):
         item.add_modification("not a modification")
 
+    copied = item.copy()
+    assert copied.modifications == (
+        NeedModification(docname="doc1", lineno=1),
+        NeedModification(docname="doc2", lineno=2),
+    )
+    assert copied["modifications"] == 2
+    assert copied["is_modified"] is True
+
+    assert copied.modifications == item.modifications
+
 
 def test_need_part_item(snapshot):
     item = NeedItem(
