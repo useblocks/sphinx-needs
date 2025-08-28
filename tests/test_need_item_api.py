@@ -3,7 +3,7 @@
 import pytest
 
 from sphinx_needs.data import NeedsInfoType
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.need_item import NeedItem, NeedModification
 
 
 def core() -> NeedsInfoType:
@@ -34,7 +34,6 @@ def core() -> NeedsInfoType:
         "jinja_content": False,
         "parts": {},
         "external_css": "external_link",
-        "modifications": 0,
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
         "sections": (),
@@ -186,6 +185,40 @@ def test_need_item_set():
 
     item["link1_back"] = ["ref5"]
     assert item["link1_back"] == ["ref5"]
+
+
+def test_need_mutations():
+    item = NeedItem(
+        core=core(),
+        extras={},
+        links={},
+        backlinks={},
+        source=None,
+    )
+    assert item.modifications == ()
+
+    assert item["modifications"] == 0
+    assert item["is_modified"] is False
+
+    item.add_modification(NeedModification(docname="doc1", lineno=1))
+    assert item.modifications == (NeedModification(docname="doc1", lineno=1),)
+
+    assert item["modifications"] == 1
+    assert item["is_modified"] is True
+
+    item.add_modification(NeedModification(docname="doc2", lineno=2))
+    assert item.modifications == (
+        NeedModification(docname="doc1", lineno=1),
+        NeedModification(docname="doc2", lineno=2),
+    )
+
+    assert item["modifications"] == 2
+    assert item["is_modified"] is True
+
+    with pytest.raises(
+        TypeError, match="modification must be a NeedModification instance."
+    ):
+        item.add_modification("not a modification")
 
 
 def test_need_part_item(snapshot):

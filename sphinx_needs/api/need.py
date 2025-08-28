@@ -350,7 +350,6 @@ def generate_need(
         "jinja_content": jinja_content or False,
         "parts": parts or {},
         "external_css": external_css or "external_link",
-        "modifications": 0,
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
         "sections": tuple(sections or ()),
