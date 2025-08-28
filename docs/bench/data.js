@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756226743284,
+  "lastUpdate": 1756397661411,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13716,6 +13716,42 @@ window.BENCHMARK_DATA = {
             "value": 59.696850934999986,
             "unit": "s",
             "extra": "Commit: a7b4b62b9e817d9ccc03995b061f26e2ef346117\nBranch: master\nTime: 2025-08-26T18:43:49+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9d2fc0b1e66fc4974e5359876b9547c897625259",
+          "message": "👌 Capture more information about modifications on `NeedItem` (#1502)\n\nWe can now record more information about the `needextend` location",
+          "timestamp": "2025-08-28T18:12:29+02:00",
+          "tree_id": "018d4f94c6b75e9aa05708e194c680c6c17c39a5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9d2fc0b1e66fc4974e5359876b9547c897625259"
+        },
+        "date": 1756397643671,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17293184599999734,
+            "unit": "s",
+            "extra": "Commit: 9d2fc0b1e66fc4974e5359876b9547c897625259\nBranch: master\nTime: 2025-08-28T18:12:29+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.40063733800001,
+            "unit": "s",
+            "extra": "Commit: 9d2fc0b1e66fc4974e5359876b9547c897625259\nBranch: master\nTime: 2025-08-28T18:12:29+02:00"
           }
         ]
       }
