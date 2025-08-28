@@ -323,6 +323,7 @@ class NeedItem:
             links=self._links,
             backlinks=self._backlinks,
             source=self._source,
+            modifications=self._modifications,
             _validate=False,
         )
 
@@ -336,6 +337,7 @@ class NeedItem:
             and self._links == other._links
             and self._backlinks == other._backlinks
             and self._source == other._source
+            and self._modifications == other._modifications
         )
 
     def __ne__(self, other: object) -> bool:
