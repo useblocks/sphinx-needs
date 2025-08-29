@@ -248,12 +248,14 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": "boolean", "default": True},
         "exclude_external": True,
         "exclude_import": True,
+        "exclude_json": True,
     },
     "is_part": {
         "description": "Whether the need is a part.",
         "schema": {"type": "boolean", "default": False},
         "exclude_external": True,
         "exclude_import": True,
+        "exclude_json": True,
     },
     "parts": {
         "description": "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",

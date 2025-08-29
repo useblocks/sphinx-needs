@@ -1781,18 +1781,6 @@
               'field_type': 'core',
               'type': 'boolean',
             }),
-            'is_need': dict({
-              'default': True,
-              'description': 'Whether the need is a need.',
-              'field_type': 'core',
-              'type': 'boolean',
-            }),
-            'is_part': dict({
-              'default': False,
-              'description': 'Whether the need is a part.',
-              'field_type': 'core',
-              'type': 'boolean',
-            }),
             'jinja_content': dict({
               'default': False,
               'description': 'Whether the content should be pre-processed by jinja.',
