@@ -212,7 +212,6 @@ def create_needs_view():
         "jinja_content": False,
         "parts": {},
         "external_css": "external_link",
-        "modifications": 0,
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
         "sections": (),

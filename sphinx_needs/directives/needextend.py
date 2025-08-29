@@ -12,6 +12,7 @@ from sphinx_needs.data import ExtendType, NeedsExtendType, NeedsMutable, SphinxN
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs_mutable
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
+from sphinx_needs.need_item import NeedModification
 from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
 
 logger = get_logger(__name__)
@@ -214,7 +215,12 @@ def extend_needs_data(
         for found_need in found_needs:
             # Work in the stored needs, not on the search result
             need = all_needs[found_need["id"]]
-            need["modifications"] += 1
+            need.add_modification(
+                NeedModification(
+                    docname=current_needextend["docname"],
+                    lineno=current_needextend["lineno"],
+                )
+            )
 
             location = (
                 current_needextend["docname"],

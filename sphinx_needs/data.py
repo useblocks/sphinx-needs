@@ -435,9 +435,6 @@ class NeedsInfoType(TypedDict):
     """Hexadecimal color code of the type."""
     type_style: str
 
-    modifications: int
-    """Number of modifications by needextend."""
-
     # Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data
     parts: Mapping[str, NeedsPartType]
 
@@ -487,6 +484,8 @@ class NeedsInfoComputedType(TypedDict):
     is_part: bool
     is_modified: bool
     """Whether the need was modified by needextend."""
+    modifications: int
+    """Number of modifications by needextend."""
     # additional information required for compatibility with parts
     id_parent: str
     """<parent ID>, or <self ID> if not a part."""

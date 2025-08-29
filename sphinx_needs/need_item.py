@@ -138,6 +138,14 @@ class NeedItemSourceImport:
         self.dict_repr.update(d)
 
 
+@dataclass(slots=True, frozen=True, kw_only=True)
+class NeedModification:
+    """A class representing a modification to a need item, by a needextend directive."""
+
+    docname: str | None = None
+    lineno: int | None = None
+
+
 class NeedItem:
     """A class representing a single need item."""
 
@@ -148,6 +156,7 @@ class NeedItem:
         "_core",
         "_extras",
         "_links",
+        "_modifications",
         "_source",
     )
 
@@ -167,6 +176,7 @@ class NeedItem:
         extras: dict[str, str],
         links: dict[str, list[str]],
         backlinks: dict[str, list[str]] | None = None,
+        modifications: Sequence[NeedModification] = (),
         _validate: bool = True,
     ) -> None:
         """Initialize the NeedItem instance.
@@ -204,6 +214,12 @@ class NeedItem:
                 raise TypeError("NeedItem backlinks must be a dictionary.")
             if source is not None and not isinstance(source, NeedItemSourceProtocol):
                 raise TypeError("NeedItem source must obey the NeeItemSourceProtocol.")
+            if not isinstance(modifications, Sequence) or any(
+                not isinstance(m, NeedModification) for m in modifications
+            ):
+                raise TypeError(
+                    "NeedItem modifications must be a sequence of NeedModification instances."
+                )
 
         # set internal fields
         self._core = core.copy()
@@ -220,6 +236,7 @@ class NeedItem:
 
         """
         self._source = source if source is not None else NeedItemSourceUnknown()
+        self._modifications = tuple(modifications)
         self._recompute()
 
         # consistency checks for data, this is optional so that we don't have to re-run when copying an instance.
@@ -262,7 +279,8 @@ class NeedItem:
         self._computed: NeedsInfoComputedType = {
             "is_need": True,
             "is_part": False,
-            "is_modified": self._core["modifications"] > 0,
+            "modifications": len(self._modifications),
+            "is_modified": bool(self._modifications),
             "id_parent": self._core["id"],
             "id_complete": self._core["id"],
             "constraints": tuple(self._core["constraints_results"]),
@@ -284,13 +302,18 @@ class NeedItem:
         """Return the source of the need item."""
         return self._source
 
+    @property
+    def modifications(self) -> tuple[NeedModification, ...]:
+        """Return the modifications of the need item."""
+        return self._modifications
+
     def __repr__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r}, source={self._source!r})"
+        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r}, source={self._source!r}, modifications={self._modifications!r})"
 
     def __str__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s}, source={self._source!s})"
+        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s}, source={self._source!s}, modifications={self._modifications!s})"
 
     def copy(self) -> NeedItem:
         """Return a copy of the NeedItem."""
@@ -300,6 +323,7 @@ class NeedItem:
             links=self._links,
             backlinks=self._backlinks,
             source=self._source,
+            modifications=self._modifications,
             _validate=False,
         )
 
@@ -313,6 +337,7 @@ class NeedItem:
             and self._links == other._links
             and self._backlinks == other._backlinks
             and self._source == other._source
+            and self._modifications == other._modifications
         )
 
     def __ne__(self, other: object) -> bool:
@@ -570,6 +595,16 @@ class NeedItem:
         """Yield all backlinks as (link_type, references) pairs."""
         for key in self._backlinks:
             yield (key, self._backlinks[key])
+
+    def add_modification(self, modification: NeedModification) -> None:
+        """Add a modification to the need item.
+
+        :param modification: The modification to add.
+        """
+        if not isinstance(modification, NeedModification):
+            raise TypeError("modification must be a NeedModification instance.")
+        self._modifications += (modification,)
+        self._recompute()
 
 
 class NeedPartItem:
