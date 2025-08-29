@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756467269044,
+  "lastUpdate": 1756469036843,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13788,6 +13788,42 @@ window.BENCHMARK_DATA = {
             "value": 62.21943980399999,
             "unit": "s",
             "extra": "Commit: 562e0ba0b4276e9b3d073c3a89ed8f9370db104a\nBranch: master\nTime: 2025-08-29T13:32:27+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "30f34258321a014cb0fdd7e9b3c6c0aace04d23d",
+          "message": "♻️ Exclude `is_need` / `is_part` from `needs.json` output (#1505)\n\nIt doesn't make sense to have these, since only needs are written, not\nparts, and also these fields are \"thrown away\" when passing in\nexternal/import `needs.json`.\nThese fields are only really used during processing, within filter\ncontexts, when filtering across both needs and parts.",
+          "timestamp": "2025-08-29T14:01:51+02:00",
+          "tree_id": "4ff14978cce14668127f741f3a4865daed271e41",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/30f34258321a014cb0fdd7e9b3c6c0aace04d23d"
+        },
+        "date": 1756469018306,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1560950260000027,
+            "unit": "s",
+            "extra": "Commit: 30f34258321a014cb0fdd7e9b3c6c0aace04d23d\nBranch: master\nTime: 2025-08-29T14:01:51+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.15029362699988,
+            "unit": "s",
+            "extra": "Commit: 30f34258321a014cb0fdd7e9b3c6c0aace04d23d\nBranch: master\nTime: 2025-08-29T14:01:51+02:00"
           }
         ]
       }
