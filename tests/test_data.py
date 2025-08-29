@@ -69,6 +69,10 @@ def test_consistent():
             assert schema["additionalProperties"]["type"] == "string", field
         elif type_str.startswith("dict[") or type_str.startswith("Mapping["):
             assert schema["type"] == "object", field
+        elif type_str.startswith("None | dict[") or type_str.startswith(
+            "None | Mapping["
+        ):
+            assert schema["type"] == ["object", "null"], field
         else:
             raise ValueError(f"Unknown type: {type_str!r} for {field!r}")
 

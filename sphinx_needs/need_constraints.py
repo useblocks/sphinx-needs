@@ -7,6 +7,7 @@ from sphinx_needs.data import NeedsMutable
 from sphinx_needs.exceptions import NeedsConstraintFailed
 from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedConstraintResults
 
 logger = get_logger(__name__)
 
@@ -26,7 +27,11 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
     for need in needs.values():
         need_id = need["id"]
 
-        for constraint in need["constraints_results"]:
+        results: dict[str, tuple[tuple[str, bool, str | None], ...]] = {}
+
+        for constraint in need["constraints"]:
+            results[constraint] = ()
+
             try:
                 executable_constraints = config_constraints[constraint]
             except KeyError:
@@ -42,14 +47,14 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                 # compile constraint and check if need fulfils it
                 constraint_passed = filter_single_need(need, config, cmd)
 
-                need["constraints_results"][constraint][name] = constraint_passed
+                error_msg: str | None = None
                 if not constraint_passed:
                     if "error_message" in executable_constraints:
                         msg = str(executable_constraints["error_message"])
                         template = error_templates_cache.setdefault(
                             msg, jinja2.Template(msg)
                         )
-                        need["constraints_error"] = template.render(**need)
+                        error_msg = template.render(**need)
 
                     if "severity" not in executable_constraints:
                         raise NeedsConstraintFailed(
@@ -94,3 +99,7 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                     else:
                         constraint_failed_style = old_style + new_styles
                         need["style"] = constraint_failed_style
+
+                results[constraint] += ((name, constraint_passed, error_msg),)
+
+        need.set_constraint_results(NeedConstraintResults(results))

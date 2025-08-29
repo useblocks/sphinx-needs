@@ -1674,7 +1674,10 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': 'boolean',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -1684,7 +1687,10 @@
               }),
               'description': 'Mapping of constraint name, to check name, to result.',
               'field_type': 'core',
-              'type': 'object',
+              'type': list([
+                'object',
+                'null',
+              ]),
             }),
             'content': dict({
               'default': '',
