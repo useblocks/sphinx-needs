@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class OntologyReportJSON(TypedDict):
     validation_summary: str
-    validated_rate: int | float
+    validated_needs_per_second: int | float
     validated_needs_count: int
     validation_warnings: dict[str, list[JSONFormattedWarning]]
 
@@ -106,7 +106,7 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
             f"Schema validation completed with {len(json_formatted_warnings)} warning(s) in {duration:.3f} seconds. "
             f"Validated {validated_rate} needs/s."
         ),
-        "validated_rate": validated_rate,
+        "validated_needs_per_second": validated_rate,
         "validated_needs_count": validated_needs_count,
         "validation_warnings": json_formatted_warnings,
     }

@@ -544,7 +544,7 @@ class NeedsSphinxConfig:
     file: None | str = field(default=None, metadata={"rebuild": "html", "types": ()})
     """Path to the needs builder input file."""
     needs_ontology: str = field(
-        default="onto.json", metadata={"rebuild": "html", "types": (str,)}
+        default="ontology.json", metadata={"rebuild": "html", "types": (str,)}
     )
     """Name of the ontology file."""
     table_columns: str = field(
