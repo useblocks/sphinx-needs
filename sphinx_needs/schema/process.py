@@ -1,5 +1,7 @@
+import json
 import time
 from pathlib import Path
+from typing import TypedDict
 
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
@@ -15,12 +17,21 @@ from sphinx_needs.schema.core import (
     validate_need,
 )
 from sphinx_needs.schema.reporting import (
+    JSONFormattedWarning,
     OntologyWarning,
     clear_debug_dir,
     get_formatted_warnings,
+    get_json_formatted_warnings,
 )
 
 logger = logging.getLogger(__name__)
+
+
+class OntologyReportJSON(TypedDict):
+    validation_summary: str
+    validated_rate: int | float
+    validated_needs_count: int
+    validation_warnings: dict[str, list[JSONFormattedWarning]]
 
 
 def process_schemas(app: Sphinx, builder: Builder) -> None:
@@ -89,6 +100,25 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     validated_rate = (
         round(validated_needs_count / duration) if duration > 0 else float("inf")
     )
+    json_formatted_warnings = get_json_formatted_warnings(need_2_warnings)
+    ontology_report: OntologyReportJSON = {
+        "validation_summary": (
+            f"Schema validation completed with {len(json_formatted_warnings)} warning(s) in {duration:.3f} seconds. "
+            f"Validated {validated_rate} needs/s."
+        ),
+        "validated_rate": validated_rate,
+        "validated_needs_count": validated_needs_count,
+        "validation_warnings": json_formatted_warnings,
+    }
+    ontology_filename = config.needs_ontology
+    ontology_filename = (
+        f"{ontology_filename}.json"
+        if not ontology_filename.endswith(".json")
+        else ontology_filename
+    )
+    # Store ontology report in JSON file
+    with (app.outdir.joinpath(ontology_filename)).open("w") as fp:
+        json.dump(ontology_report, fp, indent=2)
     logger.info(
         f"Schema validation completed with {len(formatted_warnings)} warning(s) in {duration:.3f} seconds. Validated {validated_rate} needs/s."
     )

@@ -543,6 +543,10 @@ class NeedsSphinxConfig:
     """Show the link ID in the need incoming/outgoing roles."""
     file: None | str = field(default=None, metadata={"rebuild": "html", "types": ()})
     """Path to the needs builder input file."""
+    needs_ontology: str = field(
+        default="onto.json", metadata={"rebuild": "html", "types": (str,)}
+    )
+    """Name of the ontology file."""
     table_columns: str = field(
         default="ID;TITLE;STATUS;TYPE;OUTGOING;TAGS",
         metadata={"rebuild": "html", "types": (str,)},

@@ -167,6 +167,31 @@ class FormattedWarning(TypedDict):
     message: str
 
 
+class WarningDetails(TypedDict):
+    severity: str
+    field: str
+    need_path: str
+    schema_path: str
+    validation_msg: str
+    user_msg: str
+
+
+class ChildWarning(TypedDict):
+    need_id: str
+    warning: JSONFormattedWarning
+
+
+class JSONFormattedWarning(TypedDict):
+    """JSON Formatted warning info for the ontology validation."""
+
+    log_lvl: Literal["warning", "error"]
+    type: str
+    subtype: str
+    title: str
+    details: WarningDetails
+    children: list[ChildWarning]
+
+
 def get_formatted_warnings_recurse(
     warning: OntologyWarning, level: int
 ) -> list[FormattedWarning]:
@@ -235,6 +260,82 @@ def get_formatted_warnings(
     return formatted_warnings
 
 
+def get_json_formatted_warnings_recurse(
+    warning: OntologyWarning, level: int
+) -> list[JSONFormattedWarning]:
+    """
+    Recursively format warning details.
+
+    :param warning: The OntologyWarning to format.
+    :param level: The OntologyWarning level.
+    :return: A list of JSONFormattedWarning objects.
+    """
+    formatted_warnings: list[JSONFormattedWarning] = []
+    warning_details = get_json_warning_details(level, warning)
+    has_title = level == 0
+    if warning["severity"] == SeverityEnum.config_error:
+        title = (
+            f"Need '{warning['need']['id']}' has configuration errors:"
+            if has_title
+            else ""
+        )
+        formatted_warning = JSONFormattedWarning(
+            log_lvl="error",
+            type="sn_schema",
+            subtype=warning["rule"].value,
+            title=title,
+            details=warning_details,
+            children=[],
+        )
+    else:
+        title = (
+            f"Need '{warning['need']['id']}' has validation errors:"
+            if has_title
+            else ""
+        )
+        formatted_warning = JSONFormattedWarning(
+            log_lvl="warning",
+            type="sn_schema",
+            subtype=warning["rule"].value,
+            title=title,
+            details=warning_details,
+            children=[],
+        )
+    formatted_warnings.append(formatted_warning)
+    if "children" in warning:
+        for child_warning in warning["children"]:
+            formatted_child_warnings = get_json_formatted_warnings_recurse(
+                warning=child_warning, level=level + 1
+            )
+            for formatted_child_warning in formatted_child_warnings:
+                formatted_warning["children"].append(
+                    {
+                        "need_id": child_warning["need"]["id"],
+                        "warning": formatted_child_warning,
+                    }
+                )
+    return formatted_warnings
+
+
+def get_json_formatted_warnings(
+    need_2_warnings: dict[str, list[OntologyWarning]],
+) -> dict[str, list[JSONFormattedWarning]]:
+    """
+    JSON formatted warnings from the ontology validation for each need.
+
+    :return: A dictionary with list of JSONFormattedWarning objects.
+    """
+    need_formatted_warnings: dict[str, list[JSONFormattedWarning]] = {}
+    for need_id, warnings in need_2_warnings.items():
+        formatted_warnings: list[JSONFormattedWarning] = []
+        for warning in warnings:
+            new_warnings = get_json_formatted_warnings_recurse(warning=warning, level=0)
+            formatted_warnings.extend(new_warnings)
+
+        need_formatted_warnings[need_id] = formatted_warnings
+    return need_formatted_warnings
+
+
 def get_warning_msg(base_lvl: int, warning: OntologyWarning) -> str:
     """Craft a properly indented warning message."""
     warning_msg = ""
@@ -273,6 +374,37 @@ def get_warning_msg(base_lvl: int, warning: OntologyWarning) -> str:
         )
 
     return warning_msg
+
+
+def get_json_warning_details(base_lvl: int, warning: OntologyWarning) -> WarningDetails:
+    """Get JSON formatted warning details."""
+    warning_details: WarningDetails = {
+        "severity": "",
+        "field": "",
+        "need_path": "",
+        "schema_path": "",
+        "validation_msg": "",
+        "user_msg": "",
+    }
+
+    if base_lvl == 0:
+        # top level warning already reports the severity
+        warning_details["severity"] = warning["severity"].name
+
+    if "field" in warning:
+        warning_details["field"] = warning["field"]
+    if warning["need_path"]:
+        need_path_str = " > ".join(warning["need_path"])
+        warning_details["need_path"] = need_path_str
+    if "schema_path" in warning:
+        schema_path_str = " > ".join(warning["schema_path"])
+        warning_details["schema_path"] = schema_path_str
+    if "user_message" in warning:
+        warning_details["user_msg"] = warning["user_message"]
+    if "validation_message" in warning:
+        warning_details["validation_msg"] = warning["validation_message"]
+
+    return warning_details
 
 
 def clear_debug_dir(config: NeedsSphinxConfig) -> None:
