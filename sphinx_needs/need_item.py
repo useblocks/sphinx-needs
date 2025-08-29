@@ -208,7 +208,6 @@ class NeedItem:
     _immutable_core = {
         "id",
         "type",
-        "jinja_content",
         "template",
         "pre_template",
         "post_template",
