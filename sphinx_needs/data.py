@@ -186,11 +186,13 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "URL of the need, if it is an external need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_external": True,
         "exclude_import": True,
     },
     "external_css": {
         "description": "CSS class name, added to the external reference.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
         "exclude_import": True,
     },
     "type": {
@@ -336,7 +338,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "constraints_results": {
         "description": "Mapping of constraint name, to check name, to result.",
         "schema": {
-            "type": "object",
+            "type": ["object", "null"],
             "additionalProperties": {"type": "object"},
             "default": {},
         },
@@ -345,7 +347,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "constraints_passed": {
         "description": "True if all constraints passed, False if any failed, None if not yet checked.",
-        "schema": {"type": "boolean", "default": True},
+        "schema": {"type": ["boolean", "null"], "default": True},
         "exclude_external": True,
         "exclude_import": True,
     },
@@ -457,12 +459,8 @@ class NeedsInfoType(TypedDict):
     and the link type does not allow dead links.
     """
 
-    # constraints information
-    # set in process_need_nodes (-> process_constraints) transform
-    constraints_results: Mapping[str, dict[str, bool]]
-    """Mapping of constraint name, to check name, to result."""
-    constraints_error: None | str
-    """An error message set if any constraint failed, and `error_message` field is set in config."""
+    constraints: tuple[str, ...]
+    """List of constraint names, which are defined for this need."""
 
     # additional source information
     # set in analyse_need_locations transform
@@ -495,9 +493,13 @@ class NeedsInfoComputedType(TypedDict):
     """Simply the first section."""
     parent_need: None | str
     """Simply the first parent id."""
-    constraints: tuple[str, ...]
-    """List of constraint names, which are defined for this need."""
-    constraints_passed: bool
+    # constraints information
+    # set in process_need_nodes (-> process_constraints) transform
+    constraints_results: None | Mapping[str, Mapping[str, bool]]
+    """Mapping of constraint name, to check name, to result, None if not yet checked."""
+    constraints_error: None | str
+    """An error message set if any constraint failed, and `error_message` field is set in config."""
+    constraints_passed: None | bool
     """True if all constraints passed, False if any failed, None if not yet checked."""
 
 

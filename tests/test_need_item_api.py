@@ -3,7 +3,7 @@
 import pytest
 
 from sphinx_needs.data import NeedsInfoType
-from sphinx_needs.need_item import NeedItem, NeedModification
+from sphinx_needs.need_item import NeedConstraintResults, NeedItem, NeedModification
 
 
 def core() -> NeedsInfoType:
@@ -20,8 +20,7 @@ def core() -> NeedsInfoType:
         "type_style": "node",
         "status": None,
         "tags": ["tag1"],
-        "constraints_results": {"const1": {}},
-        "constraints_error": None,
+        "constraints": ("const1",),
         "title": "title",
         "collapse": False,
         "arch": {},
@@ -229,6 +228,71 @@ def test_need_mutations():
     assert copied["is_modified"] is True
 
     assert copied.modifications == item.modifications
+
+
+def test_need_constraints_results():
+    item = NeedItem(
+        core=core(),
+        extras={},
+        links={},
+        backlinks={},
+        source=None,
+    )
+    assert item["constraints_results"] is None
+    assert item["constraints_error"] is None
+    assert item["constraints_passed"] is None
+
+    with pytest.raises(
+        TypeError,
+        match="constraint_results must be a NeedConstraintResults instance or None.",
+    ):
+        item.set_constraint_results("not a NeedConstraintResults")
+
+    with pytest.raises(
+        ValueError,
+        match="constraint_results keys must match the constraints defined in the need.",
+    ):
+        item.set_constraint_results(NeedConstraintResults({}))
+
+    item.set_constraint_results(
+        NeedConstraintResults(
+            {
+                "const1": (
+                    ("check_0", True, None),
+                    ("check_1", False, "error message"),
+                ),
+            }
+        )
+    )
+    assert item["constraints_results"] == {
+        "const1": {"check_0": True, "check_1": False},
+    }
+    assert item["constraints_error"] == "error message"
+    assert item["constraints_passed"] is False
+
+    copied = item.copy()
+    assert copied["constraints_results"] == {
+        "const1": {"check_0": True, "check_1": False},
+    }
+    assert copied["constraints_error"] == "error message"
+    assert copied["constraints_passed"] is False
+
+    assert item == copied
+
+    copied.set_constraint_results(None)
+    assert item != copied
+
+    copied.set_constraint_results(
+        NeedConstraintResults(
+            {
+                "const1": (
+                    ("check_0", True, None),
+                    ("check_1", False, "error message"),
+                ),
+            }
+        )
+    )
+    assert item == copied
 
 
 def test_need_part_item(snapshot):

@@ -38,7 +38,7 @@ Data
 ----
 
 .. automodule:: sphinx_needs.need_item
-   :members: NeedItem, NeedPartItem, NeedItemSourceProtocol, NeedModification
+   :members: NeedItem, NeedPartItem, NeedItemSourceProtocol, NeedModification, NeedConstraintResults
 
 .. automodule:: sphinx_needs.data
    :members: NeedsInfoType, NeedsInfoComputedType, NeedsSourceInfoType, NeedsMutable, NeedsPartType

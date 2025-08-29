@@ -120,11 +120,8 @@
       'const1',
     ),
     'constraints_error': None,
-    'constraints_passed': True,
-    'constraints_results': dict({
-      'const1': dict({
-      }),
-    }),
+    'constraints_passed': None,
+    'constraints_results': None,
     'content': 'content',
     'docname': None,
     'doctype': '.rst',
@@ -193,11 +190,8 @@
       'const1',
     ),
     'constraints_error': None,
-    'constraints_passed': True,
-    'constraints_results': dict({
-      'const1': dict({
-      }),
-    }),
+    'constraints_passed': None,
+    'constraints_results': None,
     'content': 'Part 1',
     'docname': None,
     'doctype': '.rst',
@@ -287,14 +281,11 @@
     ),
     tuple(
       'constraints_passed',
-      True,
+      None,
     ),
     tuple(
       'constraints_results',
-      dict({
-        'const1': dict({
-        }),
-      }),
+      None,
     ),
     tuple(
       'content',
