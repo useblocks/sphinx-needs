@@ -184,14 +184,14 @@ flow(id)
 Loads a Sphinx-Need object as PlantUML object.
 We use the same layout used for :ref:`needflow`.
 
-This functions represents each Need the same way.
+This function represents each need the same way.
 
 .. versionchanged:: 1.0.3
-   In the past the returned plantuml representation string ends with a
+   In the past, the returned PlantUML representation string ended with a
    newline. Now it is up to the author of the Jinja template to write
-   the newline, which is normally anyway the case. E.g. see the following
-   example, where the two `flow()` are separated by a newlone. With this
-   approach it is possible to write plantuml code following `flow()`.
+   the newline, which is normally the case anyway. E.g. see the following
+   example, where the two `flow()` are separated by a newline. With this
+   approach, it is possible to write PlantUML code following `flow()`.
    E.g. see even the following example, with text following 
    `{{flow("COMP_001")}}`.
 
