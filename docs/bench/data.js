@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756469036843,
+  "lastUpdate": 1756553699561,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13824,6 +13824,42 @@ window.BENCHMARK_DATA = {
             "value": 61.15029362699988,
             "unit": "s",
             "extra": "Commit: 30f34258321a014cb0fdd7e9b3c6c0aace04d23d\nBranch: master\nTime: 2025-08-29T14:01:51+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cf7ede2e4e3df523839438bbd74face8787fba6a",
+          "message": "🔧 Improve storage of content generation on `NeedItem` (#1506)\n\nAdd `NeedsContent` construct, to store all data to do with content\ngeneration: `doctype`, `content`, `pre_content`, `post_content`,\n`jinja_content`, `template`, `pre_template`, `post_template`\n\nThese are all immutable, after the content has been initially set\n\nnote, this is part of the rationalisation of internal need fields.",
+          "timestamp": "2025-08-30T13:32:59+02:00",
+          "tree_id": "f5e3c01d0b48d91431dd903e24a236001031f2f9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/cf7ede2e4e3df523839438bbd74face8787fba6a"
+        },
+        "date": 1756553680613,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1707766150000012,
+            "unit": "s",
+            "extra": "Commit: cf7ede2e4e3df523839438bbd74face8787fba6a\nBranch: master\nTime: 2025-08-30T13:32:59+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.710283217000004,
+            "unit": "s",
+            "extra": "Commit: cf7ede2e4e3df523839438bbd74face8787fba6a\nBranch: master\nTime: 2025-08-30T13:32:59+02:00"
           }
         ]
       }
