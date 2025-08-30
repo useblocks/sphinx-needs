@@ -3,6 +3,7 @@ import inspect
 from typing import ForwardRef
 
 from sphinx_needs.data import (
+    NeedsContentInfoType,
     NeedsCoreFields,
     NeedsInfoComputedType,
     NeedsInfoType,
@@ -19,18 +20,19 @@ def test_consistent():
     all_keys = [
         *NeedsInfoType.__annotations__,
         *NeedsSourceInfoType.__annotations__,
+        *NeedsContentInfoType.__annotations__,
         *NeedsInfoComputedType.__annotations__,
     ]
     if len(all_keys) != len(set(all_keys)):
         duplicates = sorted(key for key in set(all_keys) if all_keys.count(key) > 1)
         raise ValueError(
-            f"NeedsInfoType, NeedsSourceInfoType, NeedsInfoComputedType keys must be unique: {duplicates}"
+            f"NeedsInfoType, NeedsSourceInfoType, NeedsContentInfoType, NeedsInfoComputedType keys must be unique: {duplicates}"
         )
     # check fields are consistent
     core_fields = set(NeedsCoreFields)
     diff = core_fields.symmetric_difference(all_keys)
     assert not diff, (
-        "NeedsCoreFields and NeedsInfoType/NeedsSourceInfoType/NeedsInfoComputedType should have the same fields"
+        "NeedsCoreFields and NeedsInfoType/NeedsSourceInfoType/NeedsContentInfoType/NeedsInfoComputedType should have the same fields"
         f" (difference: {diff})"
     )
 
@@ -43,6 +45,8 @@ def test_consistent():
             if field in NeedsInfoType.__annotations__
             else NeedsSourceInfoType.__annotations__[field]
             if field in NeedsSourceInfoType.__annotations__
+            else NeedsContentInfoType.__annotations__[field]
+            if field in NeedsContentInfoType.__annotations__
             else NeedsInfoComputedType.__annotations__[field]
         )
         assert isinstance(type_, ForwardRef)
@@ -77,19 +81,25 @@ def test_consistent():
             raise ValueError(f"Unknown type: {type_str!r} for {field!r}")
 
     # check descriptions are consistent
-    source = inspect.getsource(NeedsInfoType)
-    klass = ast.parse(source).body[0]
-    descriptions = {}
-    for i, node in enumerate(klass.body):
-        if (
-            isinstance(node, ast.AnnAssign)
-            and len(klass.body) > i + 1
-            and isinstance(klass.body[i + 1], ast.Expr)
-        ):
-            desc = " ".join(
-                [li.strip() for li in klass.body[i + 1].value.value.splitlines()]
-            )
-            descriptions[node.target.id] = desc.strip()
-    for field, desc in descriptions.items():
-        if field in NeedsCoreFields:
-            assert NeedsCoreFields[field]["description"] == desc, field
+    for class_ in (
+        NeedsInfoType,
+        NeedsSourceInfoType,
+        NeedsContentInfoType,
+        NeedsInfoComputedType,
+    ):
+        source = inspect.getsource(class_)
+        klass = ast.parse(source).body[0]
+        descriptions = {}
+        for i, node in enumerate(klass.body):
+            if (
+                isinstance(node, ast.AnnAssign)
+                and len(klass.body) > i + 1
+                and isinstance(klass.body[i + 1], ast.Expr)
+            ):
+                desc = " ".join(
+                    [li.strip() for li in klass.body[i + 1].value.value.splitlines()]
+                )
+                descriptions[node.target.id] = desc.strip()
+        for field, desc in descriptions.items():
+            if field in NeedsCoreFields:
+                assert NeedsCoreFields[field]["description"] == desc, field

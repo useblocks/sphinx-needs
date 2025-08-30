@@ -280,40 +280,40 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_import": True,
     },
     "jinja_content": {
-        "description": "Whether the content should be pre-processed by jinja.",
+        "description": "Whether the content was pre-processed by jinja.",
         "schema": {"type": "boolean", "default": False},
         "exclude_external": True,
     },
     "template": {
-        "description": "Template of the need.",
+        "description": "The template key, if the content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "allow_default": "str",
     },
     "pre_template": {
-        "description": "Pre-template of the need.",
+        "description": "The template key, if the pre_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "allow_default": "str",
     },
     "post_template": {
-        "description": "Post-template of the need.",
+        "description": "The template key, if the post_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "allow_default": "str",
     },
     "content": {
-        "description": "Content of the need.",
+        "description": "The main content of the need.",
         "schema": {"type": "string", "default": ""},
     },
     "pre_content": {
-        "description": "Pre-content of the need.",
+        "description": "Additional content before the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "exclude_import": True,
     },
     "post_content": {
-        "description": "Post-content of the need.",
+        "description": "Additional content after the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "exclude_import": True,
@@ -338,7 +338,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "allow_extend": True,
     },
     "constraints_results": {
-        "description": "Mapping of constraint name, to check name, to result.",
+        "description": "Mapping of constraint name, to check name, to result, None if not yet checked.",
         "schema": {
             "type": ["object", "null"],
             "additionalProperties": {"type": "object"},
@@ -360,7 +360,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_import": True,
     },
     "doctype": {
-        "description": "Type of the document where the need is defined, e.g. '.rst'.",
+        "description": "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
         "schema": {"type": "string", "default": ".rst"},
     },
     "sections": {
@@ -406,6 +406,27 @@ class NeedsSourceInfoType(TypedDict):
     """If true, no node is created and need is referencing external url."""
 
 
+class NeedsContentInfoType(TypedDict):
+    """Data for the content of a single need."""
+
+    jinja_content: bool
+    """Whether the content was pre-processed by jinja."""
+    template: None | str
+    """The template key, if the content was created from a jinja template."""
+    pre_template: None | str
+    """The template key, if the pre_content was created from a jinja template."""
+    post_template: None | str
+    """The template key, if the post_content was created from a jinja template."""
+    doctype: str
+    """The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'."""
+    content: str
+    """The main content of the need."""
+    pre_content: None | str
+    """Additional content before the need."""
+    post_content: None | str
+    """Additional content after the need."""
+
+
 class NeedsInfoType(TypedDict):
     """Data for a single need."""
 
@@ -441,17 +462,6 @@ class NeedsInfoType(TypedDict):
 
     # Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data
     parts: Mapping[str, NeedsPartType]
-
-    # content creation information
-    jinja_content: bool
-    template: None | str
-    pre_template: None | str
-    post_template: None | str
-    content: str
-    pre_content: None | str
-    post_content: None | str
-    doctype: str
-    """Type of the document where the need is defined, e.g. '.rst'."""
 
     # these default to False and are updated in check_links post-process
     has_dead_links: bool

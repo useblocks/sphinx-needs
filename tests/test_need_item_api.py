@@ -3,16 +3,17 @@
 import pytest
 
 from sphinx_needs.data import NeedsInfoType
-from sphinx_needs.need_item import NeedConstraintResults, NeedItem, NeedModification
+from sphinx_needs.need_item import (
+    NeedConstraintResults,
+    NeedItem,
+    NeedModification,
+    NeedsContent,
+)
 
 
 def core() -> NeedsInfoType:
     return {
         "id": "abc",
-        "doctype": ".rst",
-        "content": "content",
-        "pre_content": None,
-        "post_content": None,
         "type": "type",
         "type_name": "type title",
         "type_prefix": "type prefix",
@@ -26,11 +27,7 @@ def core() -> NeedsInfoType:
         "arch": {},
         "style": None,
         "layout": None,
-        "template": None,
-        "pre_template": None,
-        "post_template": None,
         "hide": False,
-        "jinja_content": False,
         "parts": {},
         "external_css": "external_link",
         "has_dead_links": False,
@@ -40,40 +37,76 @@ def core() -> NeedsInfoType:
     }
 
 
+def content(content: str = "content") -> NeedsContent:
+    return NeedsContent(doctype=".rst", content=content)
+
+
 def test_need_item_validate():
     with pytest.raises(TypeError, match="NeedItem core must be a dictionary."):
-        NeedItem(core=1, extras={}, links={}, source=None)
+        NeedItem(core=1, content=content(), extras={}, links={}, source=None)
+
+    with pytest.raises(
+        TypeError, match="NeedItem content must be a NeedsContent instance."
+    ):
+        NeedItem(core=core(), content=1, extras={}, links={}, source=None)
+
+    with pytest.raises(
+        TypeError, match="NeedItem source must obey the NeeItemSourceProtocol."
+    ):
+        NeedItem(core=core(), content=content(), extras={}, links={}, source=1)
 
     with pytest.raises(TypeError, match="NeedItem extras must be a dictionary."):
-        NeedItem(core=core(), extras=1, links={}, source=None)
+        NeedItem(core=core(), content=content(), extras=1, links={}, source=None)
 
     with pytest.raises(TypeError, match="NeedItem links must be a dictionary."):
-        NeedItem(core=core(), extras={}, links=1, source=None)
+        NeedItem(core=core(), content=content(), extras={}, links=1, source=None)
 
     with pytest.raises(
         TypeError, match="NeedItem links must be a dictionary of lists of strings."
     ):
-        NeedItem(core=core(), extras={}, links={"a": [1]}, source=None)
+        NeedItem(
+            core=core(), content=content(), extras={}, links={"a": [1]}, source=None
+        )
 
     with pytest.raises(TypeError, match="NeedItem backlinks must be a dictionary."):
-        NeedItem(core=core(), extras={}, links={}, backlinks=1, source=None)
+        NeedItem(
+            core=core(),
+            content=content(),
+            extras={},
+            links={},
+            backlinks=1,
+            source=None,
+        )
 
     with pytest.raises(
         TypeError, match="NeedItem backlinks must be a dictionary of lists of strings."
     ):
-        NeedItem(core=core(), extras={}, links={}, backlinks={"a": [1]}, source=None)
+        NeedItem(
+            core=core(),
+            content=content(),
+            extras={},
+            links={},
+            backlinks={"a": [1]},
+            source=None,
+        )
 
     core_copy = core()
     del core_copy["id"]
     with pytest.raises(
         ValueError, match="NeedItem core missing required keys: \\['id'\\]"
     ):
-        NeedItem(core=core_copy, extras={}, links={}, source=None)
+        NeedItem(core=core_copy, content=content(), extras={}, links={}, source=None)
 
     with pytest.raises(
         ValueError, match="NeedItem core contains extra keys: \\['other'\\]"
     ):
-        NeedItem(core=core() | {"other": "a"}, extras={}, links={}, source=None)
+        NeedItem(
+            core=core() | {"other": "a"},
+            content=content(),
+            extras={},
+            links={},
+            source=None,
+        )
 
     with pytest.raises(
         ValueError,
@@ -81,6 +114,7 @@ def test_need_item_validate():
     ):
         NeedItem(
             core=core(),
+            content=content(),
             extras={"id": "value1", "is_need": "value2", "other": "x"},
             links={"other": ["y"]},
             source=None,
@@ -92,6 +126,7 @@ def test_need_item_validate():
     ):
         NeedItem(
             core=core(),
+            content=content(),
             extras={},
             links={"b": ["value1"]},
             backlinks={"a": ["value1"]},
@@ -102,6 +137,7 @@ def test_need_item_validate():
 def test_need_item_get(snapshot):
     item = NeedItem(
         core=core(),
+        content=content(),
         extras={"extra1": "value1", "extra2": "value2"},
         links={"link1": ["ref1"], "link2": ["ref2"]},
         backlinks={"link1": ["ref3"], "link2": []},
@@ -153,6 +189,7 @@ def test_need_item_get(snapshot):
 def test_need_item_set():
     item = NeedItem(
         core=core(),
+        content=content(),
         extras={"extra1": "value1", "extra2": "value2"},
         links={"link1": ["ref1"], "link2": ["ref2"]},
         backlinks={"link1": ["ref3"], "link2": []},
@@ -189,6 +226,7 @@ def test_need_item_set():
 def test_need_mutations():
     item = NeedItem(
         core=core(),
+        content=content(),
         extras={},
         links={},
         backlinks={},
@@ -233,6 +271,7 @@ def test_need_mutations():
 def test_need_constraints_results():
     item = NeedItem(
         core=core(),
+        content=content(),
         extras={},
         links={},
         backlinks={},
@@ -299,7 +338,6 @@ def test_need_part_item(snapshot):
     item = NeedItem(
         core=core()
         | {
-            "content": "Need 1",
             "parts": {
                 "part1": {
                     "id": "part1",
@@ -309,6 +347,7 @@ def test_need_part_item(snapshot):
                 }
             },
         },
+        content=content("Need 1"),
         extras={
             "extra1": "value1",
         },
