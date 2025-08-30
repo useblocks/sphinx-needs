@@ -204,7 +204,7 @@
               }),
               'default': dict({
               }),
-              'description': 'Mapping of constraint name, to check name, to result.',
+              'description': 'Mapping of constraint name, to check name, to result, None if not yet checked.',
               'field_type': 'core',
               'type': list([
                 'object',
@@ -213,7 +213,7 @@
             }),
             'content': dict({
               'default': '',
-              'description': 'Content of the need.',
+              'description': 'The main content of the need.',
               'field_type': 'core',
               'type': 'string',
             }),
@@ -234,7 +234,7 @@
             }),
             'doctype': dict({
               'default': '.rst',
-              'description': "Type of the document where the need is defined, e.g. '.rst'.",
+              'description': "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
               'field_type': 'core',
               'type': 'string',
             }),
@@ -302,7 +302,7 @@
             }),
             'jinja_content': dict({
               'default': False,
-              'description': 'Whether the content should be pre-processed by jinja.',
+              'description': 'Whether the content was pre-processed by jinja.',
               'field_type': 'core',
               'type': 'boolean',
             }),
@@ -409,7 +409,7 @@
             }),
             'post_content': dict({
               'default': None,
-              'description': 'Post-content of the need.',
+              'description': 'Additional content after the need.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -418,7 +418,7 @@
             }),
             'post_template': dict({
               'default': None,
-              'description': 'Post-template of the need.',
+              'description': 'Whether the post_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -427,7 +427,7 @@
             }),
             'pre_content': dict({
               'default': None,
-              'description': 'Pre-content of the need.',
+              'description': 'Additional content before the need.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -436,7 +436,7 @@
             }),
             'pre_template': dict({
               'default': None,
-              'description': 'Pre-template of the need.',
+              'description': 'Whether the pre_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -525,7 +525,7 @@
             }),
             'template': dict({
               'default': None,
-              'description': 'Template of the need.',
+              'description': 'Whether the content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',

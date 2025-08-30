@@ -6,6 +6,7 @@ import re
 import warnings
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -29,6 +30,7 @@ from sphinx_needs.need_item import (
     NeedItem,
     NeedItemSourceProtocol,
     NeedItemSourceUnknown,
+    NeedsContent,
 )
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
@@ -323,11 +325,7 @@ def generate_need(
     _copy_links(links, needs_config)
 
     # Add the need and all needed information
-    needs_data: NeedsInfoType = {
-        "doctype": doctype,
-        "content": content,
-        "pre_content": None,
-        "post_content": None,
+    core_data: NeedsInfoType = {
         "type": need_type,
         "type_name": need_type_data["title"],
         "type_prefix": need_type_data["prefix"],
@@ -342,11 +340,7 @@ def generate_need(
         "arch": arch or {},
         "style": style,
         "layout": layout,
-        "template": template,
-        "pre_template": pre_template,
-        "post_template": post_template,
         "hide": hide,
-        "jinja_content": jinja_content or False,
         "parts": parts or {},
         "external_css": external_css or "external_link",
         "has_dead_links": False,
@@ -355,38 +349,69 @@ def generate_need(
         "signature": signature,
     }
 
-    needs_info = NeedItem(
-        core=needs_data, extras=extras, links=links, source=source, _validate=False
+    content_info = NeedsContent(
+        doctype=doctype,
+        content=content,
+        pre_content=None,
+        post_content=None,
+        template=template,
+        pre_template=pre_template,
+        post_template=post_template,
+        jinja_content=jinja_content or False,
     )
 
-    if jinja_content:
-        need_content_context: dict[str, Any] = {**needs_info}
-        need_content_context.update(**needs_config.filter_data)
-        need_content_context.update(**needs_config.render_context)
-        try:
-            needs_info["content"] = jinja_parse(
-                need_content_context, needs_info["content"]
+    needs_info = NeedItem(
+        core=core_data,
+        extras=extras,
+        links=links,
+        source=source,
+        content=content_info,
+        _validate=False,
+    )
+
+    if jinja_content or template or pre_template or post_template:
+        # TODO ideally perform all these content alterations before creating the need item
+        if jinja_content:
+            need_content_context: dict[str, Any] = {**needs_info}
+            need_content_context.update(**needs_config.filter_data)
+            need_content_context.update(**needs_config.render_context)
+            try:
+                content_info = replace(
+                    content_info,
+                    content=jinja_parse(need_content_context, needs_info["content"]),
+                )
+            except Exception as e:
+                raise InvalidNeedException(
+                    "invalid_jinja_content",
+                    f"Error while rendering content: {e}",
+                )
+
+        if template:
+            # TODO should warn if content is not empty?
+            content_info = replace(
+                content_info,
+                content=_prepare_template(
+                    needs_config, needs_info, template, template_root
+                ),
             )
-        except Exception as e:
-            raise InvalidNeedException(
-                "invalid_jinja_content",
-                f"Error while rendering content: {e}",
+
+        if pre_template:
+            content_info = replace(
+                content_info,
+                pre_content=_prepare_template(
+                    needs_config, needs_info, pre_template, template_root
+                ),
             )
 
-    if needs_info["template"]:
-        needs_info["content"] = _prepare_template(
-            needs_config, needs_info, "template", template_root
-        )
+        if post_template:
+            content_info = replace(
+                content_info,
+                post_content=_prepare_template(
+                    needs_config, needs_info, post_template, template_root
+                ),
+            )
 
-    if needs_info["pre_template"]:
-        needs_info["pre_content"] = _prepare_template(
-            needs_config, needs_info, "pre_template", template_root
-        )
-
-    if needs_info["post_template"]:
-        needs_info["post_content"] = _prepare_template(
-            needs_config, needs_info, "post_template", template_root
-        )
+        needs_info.replace_content(content_info)
 
     return needs_info
 
@@ -452,7 +477,7 @@ def add_need(
     Otherwise, the following parameters are used:
 
     :param is_external: Is true, no node is created and need is referencing external url
-    :param external_url: URL as string, which is used as target if ``is_external`` is ``True``
+    :param external_uneeds_inforl: URL as string, which is used as target if ``is_external`` is ``True``
     :param external_css: CSS class name as string, which is set for the <a> tag.
 
     Additional parameters:
@@ -769,7 +794,7 @@ def add_external_need(
 def _prepare_template(
     needs_config: NeedsSphinxConfig,
     needs_info: NeedItem,
-    template_key: str,
+    template_name: str,
     template_root: None | Path,
 ) -> str:
     template_folder = Path(needs_config.template_folder)
@@ -786,7 +811,7 @@ def _prepare_template(
             "invalid_template", f"Template folder does not exist: {template_folder}"
         )
 
-    template_file_name = str(needs_info[template_key]) + ".need"
+    template_file_name = f"{template_name}.need"
     template_path = template_folder / template_file_name
     if not template_path.is_file():
         raise InvalidNeedException(

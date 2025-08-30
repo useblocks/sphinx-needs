@@ -6,7 +6,7 @@ import pytest
 from sphinx.util.console import strip_colors
 
 from sphinx_needs.filter_common import filter_needs_parts, filter_needs_view
-from sphinx_needs.need_item import NeedItem, NeedItemSourceExternal
+from sphinx_needs.need_item import NeedItem, NeedItemSourceExternal, NeedsContent
 from sphinx_needs.views import NeedsView
 
 
@@ -187,10 +187,6 @@ def create_needs_view():
 
     core_base = {
         "id": "abc",
-        "doctype": ".rst",
-        "content": "content",
-        "pre_content": None,
-        "post_content": None,
         "type": "type",
         "type_name": "type title",
         "type_prefix": "type prefix",
@@ -204,11 +200,7 @@ def create_needs_view():
         "arch": {},
         "style": None,
         "layout": None,
-        "template": None,
-        "pre_template": None,
-        "post_template": None,
         "hide": False,
-        "jinja_content": False,
         "parts": {},
         "external_css": "external_link",
         "has_dead_links": False,
@@ -217,12 +209,18 @@ def create_needs_view():
         "signature": None,
     }
 
+    content = NeedsContent(
+        content="content",
+        doctype=".rst",
+    )
+
     need_items = [
         NeedItem(
             core=core_base | core,
             extras={},
             links={},
             source=source,
+            content=content,
         )
         for core, source in needs_core
     ]
