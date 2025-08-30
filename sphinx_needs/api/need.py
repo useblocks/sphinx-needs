@@ -477,7 +477,7 @@ def add_need(
     Otherwise, the following parameters are used:
 
     :param is_external: Is true, no node is created and need is referencing external url
-    :param external_uneeds_inforl: URL as string, which is used as target if ``is_external`` is ``True``
+    :param external_url: URL as string, which is used as target if ``is_external`` is ``True``
     :param external_css: CSS class name as string, which is set for the <a> tag.
 
     Additional parameters:
