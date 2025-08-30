@@ -497,7 +497,7 @@
             }),
             'post_template': dict({
               'default': None,
-              'description': 'Whether the post_content was created from a jinja template.',
+              'description': 'The template key, if the post_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -515,7 +515,7 @@
             }),
             'pre_template': dict({
               'default': None,
-              'description': 'Whether the pre_content was created from a jinja template.',
+              'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -604,7 +604,7 @@
             }),
             'template': dict({
               'default': None,
-              'description': 'Whether the content was created from a jinja template.',
+              'description': 'The template key, if the content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -1158,7 +1158,7 @@
             }),
             'post_template': dict({
               'default': None,
-              'description': 'Whether the post_content was created from a jinja template.',
+              'description': 'The template key, if the post_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -1176,7 +1176,7 @@
             }),
             'pre_template': dict({
               'default': None,
-              'description': 'Whether the pre_content was created from a jinja template.',
+              'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -1265,7 +1265,7 @@
             }),
             'template': dict({
               'default': None,
-              'description': 'Whether the content was created from a jinja template.',
+              'description': 'The template key, if the content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -1984,7 +1984,7 @@
             }),
             'post_template': dict({
               'default': None,
-              'description': 'Whether the post_content was created from a jinja template.',
+              'description': 'The template key, if the post_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -2002,7 +2002,7 @@
             }),
             'pre_template': dict({
               'default': None,
-              'description': 'Whether the pre_content was created from a jinja template.',
+              'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -2091,7 +2091,7 @@
             }),
             'template': dict({
               'default': None,
-              'description': 'Whether the content was created from a jinja template.',
+              'description': 'The template key, if the content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',

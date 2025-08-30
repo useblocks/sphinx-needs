@@ -285,19 +285,19 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_external": True,
     },
     "template": {
-        "description": "Whether the content was created from a jinja template.",
+        "description": "The template key, if the content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "allow_default": "str",
     },
     "pre_template": {
-        "description": "Whether the pre_content was created from a jinja template.",
+        "description": "The template key, if the pre_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "allow_default": "str",
     },
     "post_template": {
-        "description": "Whether the post_content was created from a jinja template.",
+        "description": "The template key, if the post_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "allow_default": "str",
@@ -412,11 +412,11 @@ class NeedsContentInfoType(TypedDict):
     jinja_content: bool
     """Whether the content was pre-processed by jinja."""
     template: None | str
-    """Whether the content was created from a jinja template."""
+    """The template key, if the content was created from a jinja template."""
     pre_template: None | str
-    """Whether the pre_content was created from a jinja template."""
+    """The template key, if the pre_content was created from a jinja template."""
     post_template: None | str
-    """Whether the post_content was created from a jinja template."""
+    """The template key, if the post_content was created from a jinja template."""
     doctype: str
     """The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'."""
     content: str
