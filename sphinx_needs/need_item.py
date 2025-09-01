@@ -171,6 +171,15 @@ class NeedsContent:
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
+class NeedPartData:
+    """A class representing a part of a need, which is generally derived from ``:np:`` role within the parent need."""
+
+    id: str
+    content: str
+    backlinks: dict[str, list[str]] = field(default_factory=dict)
+
+
+@dataclass(slots=True, frozen=True, kw_only=True)
 class NeedModification:
     """A class representing a modification to a need item, by a needextend directive."""
 
@@ -235,6 +244,7 @@ class NeedItem:
         "_extras",
         "_links",
         "_modifications",
+        "_parts",
         "_source",
     )
 
@@ -249,6 +259,7 @@ class NeedItem:
         extras: dict[str, str],
         links: dict[str, list[str]],
         backlinks: dict[str, list[str]] | None = None,
+        parts: Sequence[NeedPartData] = (),
         modifications: Sequence[NeedModification] = (),
         constraint_results: None | NeedConstraintResults = None,
         _validate: bool = True,
@@ -264,7 +275,7 @@ class NeedItem:
             This should contain all link keys that are defined in the configuration,
             and should not contain any keys that are in core or extras.
         :param backlinks: Backlinks associated with the need item.
-           If set, this must contain all keys that are in links, with the suffix '_back',
+           If set, this must contain all keys that are in links,
            and should not contain any keys that are in core or extras.
         :param _validate: Perform runtime type validation of initialisation inputs
         """
@@ -296,12 +307,6 @@ class NeedItem:
                 raise TypeError(
                     "NeedItem modifications must be a sequence of NeedModification instances."
                 )
-            if constraint_results is not None and not isinstance(
-                constraint_results, NeedConstraintResults
-            ):
-                raise TypeError(
-                    "NeedItem constraint_results must be a NeedConstraintResults instance or None."
-                )
 
         # set internal fields
         self._core = core.copy()
@@ -319,8 +324,9 @@ class NeedItem:
         """
         self._content = content
         self._source = source if source is not None else NeedItemSourceUnknown()
+        self.set_parts(parts, _recompute=False)
         self._modifications = tuple(modifications)
-        self._constraint_results = constraint_results
+        self.set_constraint_results(constraint_results, _recompute=False)
         self._recompute()
 
         # consistency checks for data, this is optional so that we don't have to re-run when copying an instance.
@@ -367,6 +373,18 @@ class NeedItem:
                 )
 
     def _recompute(self) -> None:
+        parts: Mapping[str, NeedsPartType] = {
+            p.id: {
+                "id": p.id,
+                "content": p.content,
+                **(
+                    {f"{k}_back": v for k, v in p.backlinks.items() if v}  # type: ignore[typeddict-item]
+                    if p.backlinks is not None
+                    else {}
+                ),
+            }
+            for p in self._parts.values()
+        }
         self._computed: NeedsInfoComputedType = {
             "is_need": True,
             "is_part": False,
@@ -374,6 +392,7 @@ class NeedItem:
             "is_modified": bool(self._modifications),
             "id_parent": self._core["id"],
             "id_complete": self._core["id"],
+            "parts": parts,
             "constraints_results": self._constraint_results.to_dict()
             if self._constraint_results is not None
             else None,
@@ -392,6 +411,11 @@ class NeedItem:
         }
 
     @property
+    def id(self) -> str:
+        """Return the ID of the need item."""
+        return self._core["id"]
+
+    @property
     def source(self) -> NeedItemSourceProtocol:
         """Return the source of the need item."""
         return self._source
@@ -400,6 +424,11 @@ class NeedItem:
     def content(self) -> NeedsContent:
         """Return the content of the need item."""
         return self._content
+
+    @property
+    def parts(self) -> Iterable[NeedPartData]:
+        """Return the parts of the need item."""
+        yield from self._parts.values()
 
     @property
     def modifications(self) -> tuple[NeedModification, ...]:
@@ -413,11 +442,11 @@ class NeedItem:
 
     def __repr__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r}, source={self._source!r}, content={self._content!r}, modifications={self._modifications!r})"
+        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r}, source={self._source!r}, content={self._content!r}, parts={self._parts!r}, modifications={self._modifications!r})"
 
     def __str__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s}, source={self._source!s}, content={self._content!s}, modifications={self._modifications!s})"
+        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s}, source={self._source!s}, content={self._content!s}, parts={self._parts!s}, modifications={self._modifications!s})"
 
     def copy(self) -> NeedItem:
         """Return a copy of the NeedItem."""
@@ -428,6 +457,7 @@ class NeedItem:
             backlinks=self._backlinks,
             source=self._source,
             content=self._content,
+            parts=list(self._parts.values()),
             modifications=self._modifications,
             constraint_results=self._constraint_results,
             _validate=False,
@@ -444,6 +474,7 @@ class NeedItem:
             and self._backlinks == other._backlinks
             and self._source == other._source
             and self._content == other._content
+            and self._parts == other._parts
             and self._modifications == other._modifications
             and self._constraint_results == other._constraint_results
         )
@@ -655,18 +686,33 @@ class NeedItem:
             raise KeyError(f"Only existing keys can be set, not: {key!r}")
         self._recompute()
 
-    def get_part(self, part_id: str) -> NeedPartItem | None:
-        """Get a part by its ID."""
+    def reset_backlinks(self) -> None:
+        """Reset all backlinks to empty lists (including parts)."""
+        for key in self._backlinks:
+            self._backlinks[key] = []
+        for part in self._parts.values():
+            for k in part.backlinks:
+                part.backlinks[k] = []
+
+    def add_backlink(self, link_type: str, backlink: str) -> None:
+        """Add a backlink to the need."""
+        if link_type not in self._backlinks:
+            raise KeyError(f"Link type {link_type!r} does not exist in backlinks.")
+        if backlink not in self._backlinks[link_type]:
+            self._backlinks[link_type].append(backlink)
+
+    def get_part_item(self, part_id: str) -> NeedPartItem | None:
+        """Get a part, merged with its parent need, by its ID."""
         try:
             return NeedPartItem(self, part_id)
         except KeyError:
             return None
 
-    def iter_parts(self) -> Iterable[NeedPartItem]:
-        """Yield all parts, a.k.a sub-needs, from a need."""
-        for part_id in self._core.get("parts", {}):
-            if (part := self.get_part(part_id)) is not None:
-                yield part
+    def iter_part_items(self) -> Iterable[NeedPartItem]:
+        """Yield all parts, merged with the parent part, from a need."""
+        for part in self.parts:
+            if (part_item := self.get_part_item(part.id)) is not None:
+                yield part_item
 
     def get_extra(self, key: str) -> str:
         """Get an extra by key.
@@ -710,14 +756,57 @@ class NeedItem:
         for key in self._backlinks:
             yield (key, self._backlinks[key])
 
-    def replace_content(self, new_content: NeedsContent) -> None:
+    def set_content(self, content: NeedsContent) -> None:
         """Replace the content of the need item.
 
         :param new_content: The new content to set.
         """
-        if not isinstance(new_content, NeedsContent):
+        if not isinstance(content, NeedsContent):
             raise TypeError("new_content must be a NeedsContent instance.")
-        self._content = new_content
+        self._content = content
+
+    def _validate_part(self, part: NeedPartData) -> None:
+        """Add a part to the need item."""
+        if not isinstance(part, NeedPartData):
+            raise TypeError("part must be a NeedPartData instance.")
+        if not isinstance(part.id, str) or not part.id:
+            raise ValueError(f"Part must have a non-empty string ID: {part.id!r}")
+        if not isinstance(part.content, str):
+            raise ValueError(f"Part {part.id!r} must have content of string type")
+        if not isinstance(part.backlinks, dict) or any(
+            not isinstance(k, str)
+            or not isinstance(v, list)
+            or any(not isinstance(i, str) for i in v)
+            for k, v in part.backlinks.items()
+        ):
+            raise ValueError(
+                f"Part {part.id!r} backlinks must be a dictionary of lists of strings."
+            )
+        if unknown_part_links := (set(part.backlinks) - set(self._links)):
+            raise ValueError(
+                f"Part {part.id!r} backlinks keys must be a subset of the need's link types, got unknown keys: {sorted(unknown_part_links)}"
+            )
+
+    def set_parts(
+        self, parts: Sequence[NeedPartData], *, _recompute: bool = True
+    ) -> None:
+        """Set the parts of the need item.
+
+        :param parts: The parts to set.
+        """
+        if not isinstance(parts, Sequence):
+            raise TypeError("parts must be a sequence of NeedPartData instances.")
+        for part in parts:
+            self._validate_part(part)
+        if len({p.id for p in parts}) != len(parts):
+            raise ValueError("NeedItem parts must have unique IDs.")
+        self._parts = {part.id: part for part in parts}
+        if _recompute:
+            self._recompute()
+
+    def get_part(self, part_id: str) -> NeedPartData | None:
+        """Get a part by its ID."""
+        return self._parts.get(part_id)
 
     def add_modification(self, modification: NeedModification) -> None:
         """Add a modification to the need item.
@@ -730,7 +819,10 @@ class NeedItem:
         self._recompute()
 
     def set_constraint_results(
-        self, constraint_results: None | NeedConstraintResults
+        self,
+        constraint_results: None | NeedConstraintResults,
+        *,
+        _recompute: bool = True,
     ) -> None:
         """Set the constraint results for the need item.
 
@@ -749,7 +841,8 @@ class NeedItem:
                 "constraint_results keys must match the constraints defined in the need."
             )
         self._constraint_results = constraint_results
-        self._recompute()
+        if _recompute:
+            self._recompute()
 
 
 class NeedPartItem:
@@ -761,47 +854,53 @@ class NeedPartItem:
     It does not allow modification of the underlying data.
     """
 
-    __slots__ = ("_need", "_overrides", "_part_id")
+    __slots__ = ("_need", "_overrides", "_part")
 
     def __init__(self, need: NeedItem, part_id: str) -> None:
         """Initialize the NeedPartItem instance."""
         if not isinstance(need, NeedItem):
             raise TypeError("NeedPartItem requires a NeedItem instance.")
-        if part_id not in need._core.get("parts", {}):
-            raise KeyError(f"Part ID {part_id!r} does not exist in NeedItem.")
+        if (part := need.get_part(part_id)) is None:
+            raise KeyError(f"Part ID {part_id!r} does not exist in NeedItem parts.")
         self._need = need.copy()
-        self._part_id = part_id
+        self._part = part
 
         self._overrides = {
-            "id_complete": f"{need._core['id']}.{part_id}",
-            "id_parent": need._core["id"],
+            "id": part.id,
+            "id_complete": f"{need.id}.{part.id}",
+            "id_parent": need.id,
             "is_need": False,
             "is_part": True,
+            "parent_need": None,
+            "parts": {},  # parts cannot have parts
+            "content": part.content,
+            # parts cannot link to anything
+            **{name: [] for name in need.iter_links_keys()},
+            # backlinks should be what links to the part and not what links to the parent need
+            **{
+                f"{name}_back": []
+                if part.backlinks is None or not (blinks := part.backlinks.get(name))
+                else blinks
+                for name in need.iter_links_keys()
+            },
         }
-
-        # TODO part data gets created with links / links_back set to empty, so these will be overriden, but what about other link types
 
     @property
     def part_id(self) -> str:
         """Return the part ID."""
-        return self._part_id
-
-    @property
-    def _part_data(self) -> NeedsPartType:
-        """Return the part data from the need."""
-        return self._need._core["parts"][self._part_id]
+        return self._part.id
 
     def __repr__(self) -> str:
         """Return a string representation of the NeedPartItem."""
-        return f"NeedPartItem(part={self._part_id!r}, need={self._need!r})"
+        return f"NeedPartItem(part={self.part_id!r}, need={self._need!r})"
 
     def __str__(self) -> str:
         """Return a string representation of the NeedPartItem."""
-        return f"NeedPartItem(part={self._part_id!s}, need={self._need!s})"
+        return f"NeedPartItem(part={self.part_id!s}, need={self._need!s})"
 
     def copy(self) -> NeedPartItem:
         """Return a copy of the NeedPartItem."""
-        return NeedPartItem(self._need, self._part_id)
+        return NeedPartItem(self._need, self.part_id)
 
     def copy_for_needtable(self) -> NeedPartItem:
         """Return a copy of the NeedPartItem with specific fields for needtable."""
@@ -816,11 +915,7 @@ class NeedPartItem:
         """Check if two NeedItems are equal."""
         if not isinstance(other, NeedPartItem):
             return False
-        return (
-            self._need == other._need
-            and self._part_id == other._part_id
-            and self._overrides == other._overrides
-        )
+        return self._need == other._need and self.part_id == other.part_id
 
     def __ne__(self, other: object) -> bool:
         """Check if two NeedItems are not equal."""
@@ -828,11 +923,11 @@ class NeedPartItem:
 
     def __contains__(self, key: str) -> bool:
         """Check if the need item contains a key."""
-        return key in self._need or key in self._overrides or key in self._part_data
+        return key in self._need or key in self._overrides
 
     def __iter__(self) -> Iterator[str]:
         """Return an iterator over the keys of the need item."""
-        yield from set(chain(self._need, self._overrides, self._part_data))
+        yield from set(chain(self._need, self._overrides))
 
     @overload
     def __getitem__(
@@ -917,8 +1012,6 @@ class NeedPartItem:
         """Get an item by key."""
         if key in self._overrides:
             return self._overrides[key]
-        elif key in self._part_data:
-            return self._part_data[key]  # type: ignore[literal-required]
         elif key in self._need:
             return self._need[key]
         raise KeyError(key)
@@ -938,8 +1031,6 @@ class NeedPartItem:
         for key in self:
             if key in self._overrides:
                 yield self._overrides[key]
-            elif key in self._part_data:
-                yield self._part_data[key]  # type: ignore[literal-required]
             else:
                 yield self._need[key]
 
@@ -948,8 +1039,6 @@ class NeedPartItem:
         for key in self:
             if key in self._overrides:
                 yield (key, self._overrides[key])
-            elif key in self._part_data:
-                yield (key, self._part_data[key])  # type: ignore[literal-required]
             else:
                 yield (key, self._need[key])
 

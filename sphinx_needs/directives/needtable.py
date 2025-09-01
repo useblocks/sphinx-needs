@@ -311,7 +311,7 @@ def process_needtables(
                 and need_info["is_need"]
                 and isinstance(need_info, NeedItem)
             ):
-                for temp_part in need_info.iter_parts():
+                for temp_part in need_info.iter_part_items():
                     row = nodes.row(classes=["need_part"])
 
                     for option, _title in current_needtable["columns"]:

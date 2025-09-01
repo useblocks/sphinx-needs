@@ -317,22 +317,6 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
         need_id = need_node["refid"]
         need_info = needs[need_id]
 
-        # first we initialize to default values
-        if "sections" not in need_info:
-            need_info["sections"] = ()
-
-        if "section_name" not in need_info:
-            need_info["section_name"] = None
-
-        if "signature" not in need_info:
-            need_info["signature"] = ""
-
-        if "parent_needs" not in need_info:
-            need_info["parent_needs"] = []
-
-        if "parent_need" not in need_info:
-            need_info["parent_need"] = None
-
         # Fetch values from need
         # Start from the target node, which is a sibling of the current need node
         sections, signature, parent_needs = get_sections_and_signature_and_needs(
@@ -340,14 +324,9 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
         )
 
         # append / set values from need
-        if sections:
-            need_info["sections"] = tuple(sections)
-
-        if signature:
-            need_info["signature"] = str(signature)
-
-        if parent_needs:
-            need_info["parent_needs"] = parent_needs
+        need_info["sections"] = tuple(sections)
+        need_info["signature"] = str(signature) if signature is not None else None
+        need_info["parent_needs"] = parent_needs
 
         if need_node.get("hidden"):
             hidden_needs.append(need_node)
@@ -389,8 +368,7 @@ def post_process_needs_data(app: Sphinx) -> None:
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_dynamic_values(needs, app)
         resolve_variants_options(needs, needs_config, app.builder.tags)
-        check_links(needs, needs_config)
-        create_back_links(needs, needs_config)
+        update_back_links(needs, needs_config)
         process_constraints(needs, needs_config)
         app.emit("needs-before-sealing", needs)
         # run a last check to ensure all needs are of the correct type
@@ -460,82 +438,56 @@ def format_need_nodes(
         node_need.parent.replace(node_need, rendered_node)
 
 
-def check_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
-    """Checks if set links are valid or are dead (referenced need does not exist.)
-
-    For needs with dead links, an extra ``has_dead_links`` field is added and,
-    if the link is not allowed to be dead,
-    the ``has_forbidden_dead_links`` field is also added.
-    """
-    extra_links = config.extra_links
-    report_dead_links = config.report_dead_links
+def update_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
+    """Update needs with back-links, i.e. for each need A that links to need B,"""
     for need in needs.values():
-        for link_type in extra_links:
-            _value = need[link_type["option"]]
-            need_link_value = [_value] if isinstance(_value, str) else _value
-            for need_id_full in need_link_value:
+        need.reset_backlinks()
+
+    for key, need in needs.items():
+        dead_links = []
+
+        for link_type, references in need.iter_links_items():
+            for need_id_full in references:
                 need_id_main, need_id_part = split_need_id(need_id_full)
+                if linked_need := needs.get(need_id_main):
+                    linked_need.add_backlink(link_type, key)
+                    if need_id_part is not None:
+                        if linked_part := linked_need.get_part(need_id_part):
+                            if link_type not in linked_part.backlinks:
+                                linked_part.backlinks[link_type] = []
+                            linked_part.backlinks[link_type].append(key)
+                        else:
+                            dead_links.append((link_type, need_id_full))
+                else:
+                    dead_links.append((link_type, need_id_full))
 
-                if need_id_main not in needs or (
-                    need_id_main in needs
-                    and need_id_part
-                    and need_id_part not in needs[need_id_main]["parts"]
-                ):
-                    need["has_dead_links"] = True
-                    if not link_type.get("allow_dead_links", False):
-                        need["has_forbidden_dead_links"] = True
-                        if report_dead_links:
-                            message = f"Need '{need['id']}' has unknown outgoing link '{need_id_full}' in field '{link_type['option']}'"
-                            # if the need has been imported from an external URL,
-                            # we want to provide that URL as the location of the warning,
-                            # otherwise we use the location of the need in the source file
-                            if need["is_external"]:
-                                log_warning(
-                                    LOGGER,
-                                    f"{need['external_url']}: {message}",
-                                    "external_link_outgoing",
-                                    None,
-                                )
-                            else:
-                                log_warning(
-                                    LOGGER,
-                                    message,
-                                    "link_outgoing",
-                                    location=(need["docname"], need["lineno"]),
-                                )
-
-
-def create_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
-    """Create back-links in all found needs.
-
-    These are fields for each link type, ``<link_name>_back``,
-    which contain a list of all IDs of needs that link to the current need.
-    """
-    for links in config.extra_links:
-        option = links["option"]
-        option_back = f"{option}_back"
-
-        for key, need in needs.items():
-            need_link_value: list[str] = (
-                [need[option]] if isinstance(need[option], str) else need[option]
-            )
-            for need_id_full in need_link_value:
-                need_id_main, need_id_part = split_need_id(need_id_full)
-
-                if need_id_main in needs:
-                    if key not in needs[need_id_main][option_back]:
-                        needs[need_id_main][option_back].append(key)
-
-                    # Handling of links to need_parts inside a need
-                    if need_id_part and need_id_part in needs[need_id_main]["parts"]:
-                        if (
-                            option_back
-                            not in needs[need_id_main]["parts"][need_id_part]
-                        ):
-                            needs[need_id_main]["parts"][need_id_part][option_back] = []  # type: ignore[literal-required]
-                        needs[need_id_main]["parts"][need_id_part][option_back].append(  # type: ignore[literal-required]
-                            key
-                        )
+        need["has_dead_links"] = bool(dead_links)
+        allow_dead_links = {
+            li["option"]: li.get("allow_dead_links", False) for li in config.extra_links
+        }
+        need["has_forbidden_dead_links"] = bool(
+            any(not allow_dead_links.get(lt, False) for lt, _ in dead_links)
+        )
+        if need["has_forbidden_dead_links"] and config.report_dead_links:
+            for link_type, need_id_full in dead_links:
+                message = f"Need '{need.id}' has unknown outgoing link '{need_id_full}' in field '{link_type}'"
+                # if the need has been imported from an external URL,
+                # we want to provide that URL as the location of the warning,
+                # otherwise we use the location of the need in the source file
+                if need["is_external"]:
+                    log_warning(
+                        LOGGER,
+                        f"{need['external_url']}: {message}",
+                        "external_link_outgoing",
+                        None,
+                    )
+                else:
+                    log_warning(
+                        LOGGER,
+                        message,
+                        "link_outgoing",
+                        location=(need["docname"], need["lineno"]),
+                    )
 
 
 #####################

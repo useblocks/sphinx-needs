@@ -7,6 +7,7 @@ from sphinx_needs.need_item import (
     NeedConstraintResults,
     NeedItem,
     NeedModification,
+    NeedPartData,
     NeedsContent,
 )
 
@@ -28,7 +29,6 @@ def core() -> NeedsInfoType:
         "style": None,
         "layout": None,
         "hide": False,
-        "parts": {},
         "external_css": "external_link",
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
@@ -336,17 +336,10 @@ def test_need_constraints_results():
 
 def test_need_part_item(snapshot):
     item = NeedItem(
-        core=core()
-        | {
-            "parts": {
-                "part1": {
-                    "id": "part1",
-                    "content": "Part 1",
-                    "links": [],
-                    "links_back": ["ref3"],
-                }
-            },
-        },
+        core=core(),
+        parts=(
+            NeedPartData(id="part1", content="Part 1", backlinks={"links": ["ref3"]}),
+        ),
         content=content("Need 1"),
         extras={
             "extra1": "value1",
@@ -356,8 +349,8 @@ def test_need_part_item(snapshot):
         source=None,
     )
     assert item["content"] == "Need 1"
-    assert item.get_part("unknown") is None
-    part = item.get_part("part1")
+    assert item.get_part_item("unknown") is None
+    part = item.get_part_item("part1")
     assert part is not None
     assert part["is_need"] is False
     assert part["is_part"] is True
@@ -381,8 +374,8 @@ def test_need_part_item(snapshot):
     with pytest.raises(KeyError, match="'unknown_extra'"):
         part.get_extra("unknown_extra")
     assert sorted(part.iter_links_keys()) == ["links", "other"]
-    assert sorted(part.iter_links_items()) == [("links", []), ("other", ["ref2"])]
-    assert part.get_links("other") == ["ref2"]
+    assert sorted(part.iter_links_items()) == [("links", []), ("other", [])]
+    assert part.get_links("other") == []
     with pytest.raises(KeyError, match="'unknown_link'"):
         part.get_links("unknown_link")
     assert sorted(part.iter_backlinks_items()) == [("links", ["ref3"]), ("other", [])]
