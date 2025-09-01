@@ -92,8 +92,11 @@ class NeedimportDirective(SphinxDirective):
             )[1]
 
             if not os.path.exists(correct_need_import_path):
-                raise ReferenceError(
-                    f"Could not load needs import file {correct_need_import_path}"
+                log_warning(
+                    logger,
+                    f"Could not load needs import file {correct_need_import_path}",
+                    "needimport",
+                    location=(self.env.docname, self.lineno),
                 )
 
             try:
