@@ -753,7 +753,7 @@ class NeedItem:
 
 
 class NeedPartItem:
-    """A class representing a part of a need, which is a sub-need.
+    """A class representing a part of a need, which is a sub-need, merged with the parent need.
 
     Any data coming from the part will override the data from the parent need.
 
