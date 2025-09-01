@@ -318,6 +318,7 @@ def get_json_formatted_warnings(
     """
     JSON formatted warnings from the ontology validation for each need.
 
+    :param need_2_warnings: A dictionary mapping need IDs to their warnings.
     :return: A dictionary with list of JSONFormattedWarning objects.
     """
     need_formatted_warnings: dict[str, list[JSONFormattedWarning]] = {}
@@ -412,6 +413,16 @@ def generate_json_schema_validation_report(
     validated_needs_count: int,
     validated_rate: int | float,
 ) -> None:
+    """
+    Generate a JSON schema validation report.
+
+    :param duration: The duration of the validation process.
+    :param need_2_warnings: A mapping of needs to their validation warnings.
+    :param report_filename: The filename for the report.
+    :param sphinx_outdir: The output directory for Sphinx.
+    :param validated_needs_count: The number of validated needs.
+    :param validated_rate: The rate of validated needs per second.
+    """
     json_formatted_warnings = get_json_formatted_warnings(need_2_warnings)
     ontology_report: OntologyReportJSON = {
         "validation_summary": (

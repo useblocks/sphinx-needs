@@ -677,6 +677,19 @@ need and the specific link that caused the issue::
         Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum
         Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
 
+Schema Violation Report JSON File
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Schema violations are also stored in a JSON file under the Sphinx app's output directory.
+You can change the name of the JSON file using the ``schema_report_json_filename`` configuration option:
+
+.. code-block:: python
+
+   # conf.py
+   schema_report_json_filename = "schema_violations_report.json"
+
+Default value is ``schema_violations.json``.
+
 Supported Data Types
 --------------------
 
