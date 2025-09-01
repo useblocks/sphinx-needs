@@ -34,3 +34,12 @@ NEED PARTS
 :need:`My custom link name <SP_TOO_001.awesome_id>`
 
 :need:`SP_TOO_001.unknown_part`
+
+.. test:: Other
+    :id: OTHER_1
+    :other_links: SP_TOO_001,SP_TOO_001.1,
+    :links: SP_TOO_001.unknown_part
+
+.. test:: Other 2
+    :id: OTHER_2
+    :more_links: SP_TOO_001
