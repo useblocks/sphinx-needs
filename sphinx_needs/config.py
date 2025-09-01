@@ -423,12 +423,17 @@ class NeedsSphinxConfig:
         default_factory=lambda: cast(SchemasFileRootType, {}),
         metadata={"rebuild": "env", "types": (dict,)},
     )
-    """Schema definitions to write complex valdations based on selectors."""
+    """Schema definitions to write complex validations based on selectors."""
 
     schema_definitions_from_json: str | None = field(
         default=None, metadata={"rebuild": "env", "types": (str, type(None))}
     )
     """Path to a JSON file to load the schemas from."""
+
+    schema_report_json_filename: str = field(
+        default="schema_violations.json", metadata={"rebuild": "html", "types": (str,)}
+    )
+    """Name of the schema violation report file."""
 
     schema_severity: str = field(
         default=SeverityEnum.info.name,
@@ -543,10 +548,6 @@ class NeedsSphinxConfig:
     """Show the link ID in the need incoming/outgoing roles."""
     file: None | str = field(default=None, metadata={"rebuild": "html", "types": ()})
     """Path to the needs builder input file."""
-    needs_ontology: str = field(
-        default="ontology.json", metadata={"rebuild": "html", "types": (str,)}
-    )
-    """Name of the ontology file."""
     table_columns: str = field(
         default="ID;TITLE;STATUS;TYPE;OUTGOING;TAGS",
         metadata={"rebuild": "html", "types": (str,)},

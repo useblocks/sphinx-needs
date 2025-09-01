@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
+from sphinx.util._pathlib import _StrPath
+
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.schema.config import (
@@ -168,12 +170,12 @@ class FormattedWarning(TypedDict):
 
 
 class WarningDetails(TypedDict):
-    severity: str
-    field: str
-    need_path: str
-    schema_path: str
-    validation_msg: str
-    user_msg: str
+    severity: NotRequired[str]
+    field: NotRequired[str]
+    need_path: NotRequired[str]
+    schema_path: NotRequired[str]
+    validation_msg: NotRequired[str]
+    user_msg: NotRequired[str]
 
 
 class ChildWarning(TypedDict):
@@ -187,9 +189,15 @@ class JSONFormattedWarning(TypedDict):
     log_lvl: Literal["warning", "error"]
     type: str
     subtype: str
-    title: str
     details: WarningDetails
     children: list[ChildWarning]
+
+
+class OntologyReportJSON(TypedDict):
+    validation_summary: str
+    validated_needs_per_second: int | float
+    validated_needs_count: int
+    validation_warnings: dict[str, list[JSONFormattedWarning]]
 
 
 def get_formatted_warnings_recurse(
@@ -272,32 +280,19 @@ def get_json_formatted_warnings_recurse(
     """
     formatted_warnings: list[JSONFormattedWarning] = []
     warning_details = get_json_warning_details(level, warning)
-    has_title = level == 0
     if warning["severity"] == SeverityEnum.config_error:
-        title = (
-            f"Need '{warning['need']['id']}' has configuration errors:"
-            if has_title
-            else ""
-        )
         formatted_warning = JSONFormattedWarning(
             log_lvl="error",
             type="sn_schema",
             subtype=warning["rule"].value,
-            title=title,
             details=warning_details,
             children=[],
         )
     else:
-        title = (
-            f"Need '{warning['need']['id']}' has validation errors:"
-            if has_title
-            else ""
-        )
         formatted_warning = JSONFormattedWarning(
             log_lvl="warning",
             type="sn_schema",
             subtype=warning["rule"].value,
-            title=title,
             details=warning_details,
             children=[],
         )
@@ -378,14 +373,7 @@ def get_warning_msg(base_lvl: int, warning: OntologyWarning) -> str:
 
 def get_json_warning_details(base_lvl: int, warning: OntologyWarning) -> WarningDetails:
     """Get JSON formatted warning details."""
-    warning_details: WarningDetails = {
-        "severity": "",
-        "field": "",
-        "need_path": "",
-        "schema_path": "",
-        "validation_msg": "",
-        "user_msg": "",
-    }
+    warning_details: WarningDetails = {}
 
     if base_lvl == 0:
         # top level warning already reports the severity
@@ -414,3 +402,31 @@ def clear_debug_dir(config: NeedsSphinxConfig) -> None:
             file.unlink()
     else:
         debug_path.mkdir()
+
+
+def generate_json_schema_validation_report(
+    duration: float,
+    need_2_warnings: dict[str, list[OntologyWarning]],
+    report_filename: str,
+    sphinx_outdir: _StrPath,
+    validated_needs_count: int,
+    validated_rate: int | float,
+) -> None:
+    json_formatted_warnings = get_json_formatted_warnings(need_2_warnings)
+    ontology_report: OntologyReportJSON = {
+        "validation_summary": (
+            f"Schema validation completed with {len(json_formatted_warnings)} warning(s) in {duration:.3f} seconds. "
+            f"Validated {validated_rate} needs/s."
+        ),
+        "validated_needs_per_second": validated_rate,
+        "validated_needs_count": validated_needs_count,
+        "validation_warnings": json_formatted_warnings,
+    }
+    ontology_filename = (
+        f"{report_filename}.json"
+        if not report_filename.endswith(".json")
+        else report_filename
+    )
+    # Store ontology report in JSON file
+    with (sphinx_outdir.joinpath(ontology_filename)).open("w") as fp:
+        json.dump(ontology_report, fp, indent=2)
