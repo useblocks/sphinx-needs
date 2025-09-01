@@ -160,7 +160,7 @@ def transform_uml_to_plantuml_node(
     config: str,
 ) -> plantuml:
     try:
-        if "sphinxcontrib.plantuml" not in app.config.extensions:
+        if "sphinxcontrib.plantuml" not in app.extensions:
             raise ImportError
         from sphinxcontrib.plantuml import plantuml
     except ImportError:
