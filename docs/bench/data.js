@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756553699561,
+  "lastUpdate": 1756712855525,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13860,6 +13860,42 @@ window.BENCHMARK_DATA = {
             "value": 61.710283217000004,
             "unit": "s",
             "extra": "Commit: cf7ede2e4e3df523839438bbd74face8787fba6a\nBranch: master\nTime: 2025-08-30T13:32:59+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "31e63bd203fc3c53c9accb942dfdeb1cabe675dc",
+          "message": "🧪 Improve test for need parts (#1507)\n\nThis adds more to the need part test, in order to improve testing of how\nlinks/backlinks are recorded.\nI believe it exposes a bug, whereby backlinks for the parent need are\ncopied to the part need, for links that are not of type \"links\".\nThis will be fixed in subsequent PR.",
+          "timestamp": "2025-09-01T09:45:25+02:00",
+          "tree_id": "7c83f346d45850145817e8ae36737c5de11bc463",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/31e63bd203fc3c53c9accb942dfdeb1cabe675dc"
+        },
+        "date": 1756712836902,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18756786299999817,
+            "unit": "s",
+            "extra": "Commit: 31e63bd203fc3c53c9accb942dfdeb1cabe675dc\nBranch: master\nTime: 2025-09-01T09:45:25+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.740260501,
+            "unit": "s",
+            "extra": "Commit: 31e63bd203fc3c53c9accb942dfdeb1cabe675dc\nBranch: master\nTime: 2025-09-01T09:45:25+02:00"
           }
         ]
       }
