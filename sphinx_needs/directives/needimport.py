@@ -261,7 +261,7 @@ class NeedimportDirective(SphinxDirective):
             )
 
             try:
-                nodes = add_need(
+                need_node = add_need(
                     app=self.env.app,
                     state=self.state,
                     need_source=need_source,
@@ -275,7 +275,7 @@ class NeedimportDirective(SphinxDirective):
                     location=self.get_location(),
                 )
             else:
-                need_nodes.extend(nodes)
+                need_nodes.extend(need_node)
 
         if unknown_keys:
             log_warning(
