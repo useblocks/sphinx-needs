@@ -20,7 +20,7 @@ def test_schema_config(
     content: dict[str, Any],
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
-):
+) -> None:
     # Check if test should be skipped based on min_python version
     if "mark" in content and "min_python" in content["mark"]:
         min_version = tuple(content["mark"]["min_python"])
@@ -52,7 +52,7 @@ def test_schemas(
     check_ontology_warnings: Callable[
         [SphinxTestApp, list[list[str | dict[Literal["sphinx8"], list[str]]]]], None
     ],
-):
+) -> None:
     write_fixture_files(tmpdir, content)
 
     app: SphinxTestApp = make_app(srcdir=Path(tmpdir), freshenv=True)
@@ -128,3 +128,8 @@ def test_schema_e2e(
 
     html = Path(test_app.outdir, "index.html").read_text()
     assert html
+    # check schema validation report JSON exist
+    report_json = Path(test_app.outdir, "schema_violations.json")
+    assert report_json.exists(), (
+        f"Expected schema validation report JSON file not found: {report_json}"
+    )
