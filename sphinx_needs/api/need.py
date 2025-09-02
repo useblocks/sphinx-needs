@@ -30,6 +30,7 @@ from sphinx_needs.need_item import (
     NeedItem,
     NeedItemSourceProtocol,
     NeedItemSourceUnknown,
+    NeedPartData,
     NeedsContent,
 )
 from sphinx_needs.nodes import Need
@@ -341,7 +342,6 @@ def generate_need(
         "style": style,
         "layout": layout,
         "hide": hide,
-        "parts": parts or {},
         "external_css": external_css or "external_link",
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
@@ -360,14 +360,33 @@ def generate_need(
         jinja_content=jinja_content or False,
     )
 
-    needs_info = NeedItem(
-        core=core_data,
-        extras=extras,
-        links=links,
-        source=source,
-        content=content_info,
-        _validate=False,
-    )
+    parts_objects = []
+    for part_id, part_data in (parts or {}).items():
+        if unknown_part_keys := set(part_data) - (
+            {"id", "content"} | {k + "_back" for k in links}
+        ):
+            log_warning(
+                logger,
+                f"Unused keys {sorted(unknown_part_keys)} in part {part_id!r} of need {need_id!r}.",
+                "part",
+                location,
+            )
+        parts_objects.append(
+            NeedPartData(id=part_id, content=str(part_data.get("content", "")))
+        )
+
+    try:
+        needs_info = NeedItem(
+            core=core_data,
+            extras=extras,
+            links=links,
+            source=source,
+            content=content_info,
+            parts=parts_objects,
+            _validate=False,
+        )
+    except ValueError as err:
+        raise InvalidNeedException("failed_init", str(err)) from err
 
     if jinja_content or template or pre_template or post_template:
         # TODO ideally perform all these content alterations before creating the need item
@@ -411,7 +430,7 @@ def generate_need(
                 ),
             )
 
-        needs_info.replace_content(content_info)
+        needs_info.set_content(content_info)
 
     return needs_info
 

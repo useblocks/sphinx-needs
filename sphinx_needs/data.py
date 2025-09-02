@@ -39,19 +39,15 @@ See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
 
 
-class NeedsPartType(TypedDict):
+class NeedsPartType(TypedDict, total=False):
     """Data for a single need part."""
 
     id: str
     """ID of the part"""
     content: str
     """Content of the part."""
-    links: list[str]
-    """List of need IDs, which are referenced by this part."""
-    links_back: list[str]
-    """List of need IDs, which are referencing this part."""
 
-    # note back links for each type are also set dynamically in post_process_needs_data (-> create_back_links)
+    # note back links for each type are also set dynamically in post_process_needs_data (-> update_back_links)
 
 
 class CoreFieldParameters(TypedDict):
@@ -460,10 +456,7 @@ class NeedsInfoType(TypedDict):
     """Hexadecimal color code of the type."""
     type_style: str
 
-    # Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data
-    parts: Mapping[str, NeedsPartType]
-
-    # these default to False and are updated in check_links post-process
+    # these default to False and are updated in update_back_links post-process
     has_dead_links: bool
     """True if any links reference need ids that are not found in the need list."""
     has_forbidden_dead_links: bool
@@ -492,6 +485,8 @@ class NeedsInfoComputedType(TypedDict):
 
     is_need: bool
     is_part: bool
+    parts: Mapping[str, NeedsPartType]
+    """Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data"""
     is_modified: bool
     """Whether the need was modified by needextend."""
     modifications: int

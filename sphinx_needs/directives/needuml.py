@@ -421,7 +421,7 @@ class JinjaFunctions:
         need_or_part: NeedItem | NeedPartItem
 
         if need_id_part:
-            if (part := need.get_part(need_id_part)) is None:
+            if (part := need.get_part_item(need_id_part)) is None:
                 raise NeedumlException(
                     f"Jinja function ref is called with undefined need_id part: '{need_id}'."
                 )

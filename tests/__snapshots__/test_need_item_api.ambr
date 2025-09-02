@@ -220,21 +220,11 @@
     ]),
     'modifications': 0,
     'other': list([
-      'ref2',
     ]),
     'other_back': list([
     ]),
     'parent_need': None,
     'parts': dict({
-      'part1': dict({
-        'content': 'Part 1',
-        'id': 'part1',
-        'links': list([
-        ]),
-        'links_back': list([
-          'ref3',
-        ]),
-      }),
     }),
     'post_content': None,
     'post_template': None,
@@ -389,7 +379,6 @@
     tuple(
       'other',
       list([
-        'ref2',
       ]),
     ),
     tuple(
@@ -404,15 +393,6 @@
     tuple(
       'parts',
       dict({
-        'part1': dict({
-          'content': 'Part 1',
-          'id': 'part1',
-          'links': list([
-          ]),
-          'links_back': list([
-            'ref3',
-          ]),
-        }),
       }),
     ),
     tuple(
