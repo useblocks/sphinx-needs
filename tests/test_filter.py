@@ -6,7 +6,12 @@ import pytest
 from sphinx.util.console import strip_colors
 
 from sphinx_needs.filter_common import filter_needs_parts, filter_needs_view
-from sphinx_needs.need_item import NeedItem, NeedItemSourceExternal, NeedsContent
+from sphinx_needs.need_item import (
+    NeedItem,
+    NeedItemSourceExternal,
+    NeedPartData,
+    NeedsContent,
+)
 from sphinx_needs.views import NeedsView
 
 
@@ -120,9 +125,9 @@ def create_needs_view():
                 "type_name": "Req",
                 "tags": ["a", "b"],
                 "status": "",
-                "parts": {},
             },
             None,
+            (),
         ),
         (
             {
@@ -131,9 +136,9 @@ def create_needs_view():
                 "type_name": "Req",
                 "tags": ["b", "c"],
                 "status": "",
-                "parts": {},
             },
             None,
+            (),
         ),
         (
             {
@@ -142,9 +147,9 @@ def create_needs_view():
                 "type_name": "Req",
                 "tags": ["c", "d"],
                 "status": "",
-                "parts": {},
             },
             None,
+            (),
         ),
         (
             {
@@ -153,9 +158,9 @@ def create_needs_view():
                 "type_name": "Story",
                 "tags": ["a", "b"],
                 "status": "",
-                "parts": {},
             },
             NeedItemSourceExternal(url="https://example.com"),
+            (),
         ),
         (
             {
@@ -164,9 +169,9 @@ def create_needs_view():
                 "type_name": "Story",
                 "tags": ["b", "c"],
                 "status": "ongoing",
-                "parts": {},
             },
             None,
+            (),
         ),
         (
             {
@@ -175,13 +180,14 @@ def create_needs_view():
                 "type_name": "Story",
                 "tags": ["a", "b", "c"],
                 "status": "done",
-                "parts": {
-                    "part_a": {
-                        "id": "part_a",
-                    },
-                },
             },
             None,
+            (
+                NeedPartData(
+                    id="part_a",
+                    content="Part A",
+                ),
+            ),
         ),
     ]
 
@@ -201,7 +207,6 @@ def create_needs_view():
         "style": None,
         "layout": None,
         "hide": False,
-        "parts": {},
         "external_css": "external_link",
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
@@ -221,8 +226,9 @@ def create_needs_view():
             links={},
             source=source,
             content=content,
+            parts=parts,
         )
-        for core, source in needs_core
+        for core, source, parts in needs_core
     ]
 
     return NeedsView._from_needs({n["id"]: n for n in need_items})

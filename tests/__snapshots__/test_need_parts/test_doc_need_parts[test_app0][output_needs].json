@@ -59,41 +59,29 @@
       "1": {
         "content": "exit()",
         "id": "1",
-        "links": [],
-        "links_back": [],
         "other_links_back": [
           "OTHER_1"
         ]
       },
       "2": {
         "content": "start()",
-        "id": "2",
-        "links": [],
-        "links_back": []
+        "id": "2"
       },
       "5DA": {
         "content": "unknown_id_1",
-        "id": "5DA",
-        "links": [],
-        "links_back": []
+        "id": "5DA"
       },
       "7FF": {
         "content": "unknown_id_2",
-        "id": "7FF",
-        "links": [],
-        "links_back": []
+        "id": "7FF"
       },
       "awesome_id": {
         "content": "blub()",
-        "id": "awesome_id",
-        "links": [],
-        "links_back": []
+        "id": "awesome_id"
       },
       "multiline_id": {
         "content": "\nhas multi-lines",
-        "id": "multiline_id",
-        "links": [],
-        "links_back": []
+        "id": "multiline_id"
       }
     },
     "section_name": "NEED PARTS",
@@ -122,9 +110,7 @@
     "parts": {
       "nested_id": {
         "content": "something",
-        "id": "nested_id",
-        "links": [],
-        "links_back": []
+        "id": "nested_id"
       }
     },
     "section_name": "NEED PARTS",

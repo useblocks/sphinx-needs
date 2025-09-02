@@ -288,7 +288,7 @@ class NeedsAndPartsListView:
         if self._selected_ids is None:
             for need in self._all_needs.values():
                 yield need
-                yield from need.iter_parts()
+                yield from need.iter_part_items()
         else:
             for id, part_id in self._selected_ids:
                 if id not in self._all_needs:
@@ -297,7 +297,7 @@ class NeedsAndPartsListView:
                     yield self._all_needs[id]
                 else:
                     need = self._all_needs[id]
-                    if (part := need.get_part(part_id)) is not None:
+                    if (part := need.get_part_item(part_id)) is not None:
                         yield part
 
     def __bool__(self) -> bool:
@@ -326,7 +326,7 @@ class NeedsAndPartsListView:
             if (
                 (self._selected_ids is None or (id, part_id) in self._selected_ids)
                 and (need := self._all_needs.get(id)) is not None
-                and (part := need.get_part(part_id)) is not None
+                and (part := need.get_part_item(part_id)) is not None
             ):
                 return part
 

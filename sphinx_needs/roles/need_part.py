@@ -17,7 +17,7 @@ from sphinx.util.docutils import SphinxRole
 from sphinx.util.nodes import make_refnode
 
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.need_item import NeedItem, NeedPartData
 from sphinx_needs.nodes import Need
 
 LOGGER = get_logger(__name__)
@@ -105,13 +105,13 @@ def update_need_with_parts(
                 "duplicate_part_id",
                 part_node,
             )
+            continue
 
-        parts[part_id] = {
-            "id": part_id,
-            "content": part_node.title,
-            "links": [],
-            "links_back": [],
-        }
+        parts[part_id] = NeedPartData(
+            id=part_id,
+            content=part_node.title,
+            backlinks={name: [] for name in need.iter_links_keys()},
+        )
 
         part_node.need_id = need["id"]
         part_id_ref = "{}.{}".format(need["id"], part_id)
@@ -130,7 +130,7 @@ def update_need_with_parts(
         part_node.children = []
         part_node.append(node_need_part_line)
 
-    need["parts"] = parts
+    need.set_parts(list(parts.values()))
 
 
 def find_parts(node: nodes.Node) -> list[NeedPart]:

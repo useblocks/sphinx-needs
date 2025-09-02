@@ -30,6 +30,7 @@ class InvalidNeedException(Exception):
             "invalid_jinja_content",
             "invalid_template",
             "global_option",
+            "failed_init",
         ],
         message: str,
     ) -> None:
@@ -52,6 +53,7 @@ class InvalidNeedException(Exception):
         "invalid_jinja_content",
         "invalid_template",
         "global_option",
+        "failed_init",
     ]:
         return self._type
 
