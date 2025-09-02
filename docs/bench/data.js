@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756807692402,
+  "lastUpdate": 1756829137637,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13968,6 +13968,42 @@ window.BENCHMARK_DATA = {
             "value": 61.900535774999994,
             "unit": "s",
             "extra": "Commit: 5f3a36d783abd1158fc76931ccdab7bb4523fc7b\nBranch: master\nTime: 2025-09-02T12:06:15+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7b1972185d75502d3089efdb9245f4ff2876480b",
+          "message": "Always generate schema violations.json report file (#1511)",
+          "timestamp": "2025-09-02T18:03:39+02:00",
+          "tree_id": "9f757bd3d149f138df4423e22fadc98099beffc2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7b1972185d75502d3089efdb9245f4ff2876480b"
+        },
+        "date": 1756829117721,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15741107899998497,
+            "unit": "s",
+            "extra": "Commit: 7b1972185d75502d3089efdb9245f4ff2876480b\nBranch: master\nTime: 2025-09-02T18:03:39+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.983829394,
+            "unit": "s",
+            "extra": "Commit: 7b1972185d75502d3089efdb9245f4ff2876480b\nBranch: master\nTime: 2025-09-02T18:03:39+02:00"
           }
         ]
       }
