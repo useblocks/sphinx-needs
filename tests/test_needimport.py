@@ -271,8 +271,7 @@ def test_import_non_exists_json(test_app):
     assert app.statuscode == 0
 
     assert warnings == [
-        "<srcdir>/index.rst:25: WARNING: Empty ID/filter argument in needextend directive. [needs.needextend]",
-        "<srcdir>/index.rst:26: WARNING: Empty ID/filter argument in needextend directive. [needs.needextend]",
+        "<srcdir>/index.rst:4: WARNING: Could not load needs import file <srcdir>/non_exists_file.json [needs.needimport]",
     ]
 
 
