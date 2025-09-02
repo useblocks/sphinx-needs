@@ -17,6 +17,7 @@ from sphinx_needs.schema.core import (
 from sphinx_needs.schema.reporting import (
     OntologyWarning,
     clear_debug_dir,
+    generate_json_schema_validation_report,
     get_formatted_warnings,
 )
 
@@ -88,6 +89,13 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     validated_needs_count = len(needs)
     validated_rate = (
         round(validated_needs_count / duration) if duration > 0 else float("inf")
+    )
+    generate_json_schema_validation_report(
+        duration=duration,
+        need_2_warnings=need_2_warnings,
+        report_file_path=app.outdir / "schema_violations.json",
+        validated_needs_count=validated_needs_count,
+        validated_rate=validated_rate,
     )
     logger.info(
         f"Schema validation completed with {len(formatted_warnings)} warning(s) in {duration:.3f} seconds. Validated {validated_rate} needs/s."

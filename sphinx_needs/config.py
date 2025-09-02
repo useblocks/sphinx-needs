@@ -423,7 +423,7 @@ class NeedsSphinxConfig:
         default_factory=lambda: cast(SchemasFileRootType, {}),
         metadata={"rebuild": "env", "types": (dict,)},
     )
-    """Schema definitions to write complex valdations based on selectors."""
+    """Schema definitions to write complex validations based on selectors."""
 
     schema_definitions_from_json: str | None = field(
         default=None, metadata={"rebuild": "env", "types": (str, type(None))}

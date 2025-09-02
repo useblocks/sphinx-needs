@@ -167,6 +167,37 @@ class FormattedWarning(TypedDict):
     message: str
 
 
+class WarningDetails(TypedDict):
+    severity: NotRequired[str]
+    field: NotRequired[str]
+    need_path: NotRequired[str]
+    schema_path: NotRequired[str]
+    validation_msg: NotRequired[str]
+    user_msg: NotRequired[str]
+
+
+class ChildWarning(TypedDict):
+    need_id: str
+    warning: JSONFormattedWarning
+
+
+class JSONFormattedWarning(TypedDict):
+    """JSON Formatted warning info for the ontology validation."""
+
+    log_lvl: Literal["warning", "error"]
+    type: str
+    subtype: str
+    details: WarningDetails
+    children: list[ChildWarning]
+
+
+class OntologyReportJSON(TypedDict):
+    validation_summary: str
+    validated_needs_per_second: int | float
+    validated_needs_count: int
+    validation_warnings: dict[str, list[JSONFormattedWarning]]
+
+
 def get_formatted_warnings_recurse(
     warning: OntologyWarning, level: int
 ) -> list[FormattedWarning]:
@@ -235,6 +266,70 @@ def get_formatted_warnings(
     return formatted_warnings
 
 
+def get_json_formatted_warnings_recurse(
+    warning: OntologyWarning, level: int
+) -> list[JSONFormattedWarning]:
+    """
+    Recursively format warning details.
+
+    :param warning: The OntologyWarning to format.
+    :param level: The OntologyWarning level.
+    :return: A list of JSONFormattedWarning objects.
+    """
+    formatted_warnings: list[JSONFormattedWarning] = []
+    warning_details = get_json_warning_details(level, warning)
+    if warning["severity"] == SeverityEnum.config_error:
+        formatted_warning = JSONFormattedWarning(
+            log_lvl="error",
+            type="sn_schema",
+            subtype=warning["rule"].value,
+            details=warning_details,
+            children=[],
+        )
+    else:
+        formatted_warning = JSONFormattedWarning(
+            log_lvl="warning",
+            type="sn_schema",
+            subtype=warning["rule"].value,
+            details=warning_details,
+            children=[],
+        )
+    formatted_warnings.append(formatted_warning)
+    if "children" in warning:
+        for child_warning in warning["children"]:
+            formatted_child_warnings = get_json_formatted_warnings_recurse(
+                warning=child_warning, level=level + 1
+            )
+            for formatted_child_warning in formatted_child_warnings:
+                formatted_warning["children"].append(
+                    {
+                        "need_id": child_warning["need"]["id"],
+                        "warning": formatted_child_warning,
+                    }
+                )
+    return formatted_warnings
+
+
+def get_json_formatted_warnings(
+    need_2_warnings: dict[str, list[OntologyWarning]],
+) -> dict[str, list[JSONFormattedWarning]]:
+    """
+    JSON formatted warnings from the ontology validation for each need.
+
+    :param need_2_warnings: A dictionary mapping need IDs to their warnings.
+    :return: A dictionary with list of JSONFormattedWarning objects.
+    """
+    need_formatted_warnings: dict[str, list[JSONFormattedWarning]] = {}
+    for need_id, warnings in need_2_warnings.items():
+        formatted_warnings: list[JSONFormattedWarning] = []
+        for warning in warnings:
+            new_warnings = get_json_formatted_warnings_recurse(warning=warning, level=0)
+            formatted_warnings.extend(new_warnings)
+
+        need_formatted_warnings[need_id] = formatted_warnings
+    return need_formatted_warnings
+
+
 def get_warning_msg(base_lvl: int, warning: OntologyWarning) -> str:
     """Craft a properly indented warning message."""
     warning_msg = ""
@@ -275,6 +370,30 @@ def get_warning_msg(base_lvl: int, warning: OntologyWarning) -> str:
     return warning_msg
 
 
+def get_json_warning_details(base_lvl: int, warning: OntologyWarning) -> WarningDetails:
+    """Get JSON formatted warning details."""
+    warning_details: WarningDetails = {}
+
+    if base_lvl == 0:
+        # top level warning already reports the severity
+        warning_details["severity"] = warning["severity"].name
+
+    if "field" in warning:
+        warning_details["field"] = warning["field"]
+    if warning["need_path"]:
+        need_path_str = " > ".join(warning["need_path"])
+        warning_details["need_path"] = need_path_str
+    if "schema_path" in warning:
+        schema_path_str = " > ".join(warning["schema_path"])
+        warning_details["schema_path"] = schema_path_str
+    if "user_message" in warning:
+        warning_details["user_msg"] = warning["user_message"]
+    if "validation_message" in warning:
+        warning_details["validation_msg"] = warning["validation_message"]
+
+    return warning_details
+
+
 def clear_debug_dir(config: NeedsSphinxConfig) -> None:
     debug_path = Path(config.schema_debug_path)
     if debug_path.exists():
@@ -282,3 +401,34 @@ def clear_debug_dir(config: NeedsSphinxConfig) -> None:
             file.unlink()
     else:
         debug_path.mkdir()
+
+
+def generate_json_schema_validation_report(
+    duration: float,
+    need_2_warnings: dict[str, list[OntologyWarning]],
+    report_file_path: Path,
+    validated_needs_count: int,
+    validated_rate: int | float,
+) -> None:
+    """
+    Generate a JSON schema validation report.
+
+    :param duration: The duration of the validation process.
+    :param need_2_warnings: A mapping of needs to their validation warnings.
+    :param report_file_path: The path to the report file.
+    :param validated_needs_count: The number of validated needs.
+    :param validated_rate: The rate of validated needs per second.
+    """
+    json_formatted_warnings = get_json_formatted_warnings(need_2_warnings)
+    ontology_report: OntologyReportJSON = {
+        "validation_summary": (
+            f"Schema validation completed with {len(json_formatted_warnings)} warning(s) in {duration:.3f} seconds. "
+            f"Validated {validated_rate} needs/s."
+        ),
+        "validated_needs_per_second": validated_rate,
+        "validated_needs_count": validated_needs_count,
+        "validation_warnings": json_formatted_warnings,
+    }
+    # Store ontology report in JSON file
+    with report_file_path.open("w") as fp:
+        json.dump(ontology_report, fp, indent=2)

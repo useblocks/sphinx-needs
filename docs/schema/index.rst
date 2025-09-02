@@ -677,6 +677,69 @@ need and the specific link that caused the issue::
         Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum
         Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
 
+Schema Violation Report JSON File
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Schema violations are also stored in a ``schema_violations.json`` file under the Sphinx app's output directory.
+
+.. dropdown:: Example
+
+   .. code-block:: json
+
+    {
+      "validation_summary": "Schema validation completed with 6 warning(s) in 0.007 seconds. Validated 1533 needs/s.",
+      "validated_needs_per_second": 1533,
+      "validated_needs_count": 11,
+      "validation_warnings": {
+        "FEAt": [
+          {
+            "log_lvl": "warning",
+            "type": "sn_schema",
+            "subtype": "local_fail",
+            "details": {
+              "severity": "violation",
+              "field": "id",
+              "need_path": "FEAt",
+              "schema_path": "[0] > local > properties > id > pattern",
+              "user_msg": "id must be uppercase with numbers and underscores",
+              "validation_msg": "'FEAt' does not match '^[A-Z0-9_]+$'"
+            },
+            "children": []
+          }
+        ],
+        "SPEC_MISSING_APPROVAL": [
+          {
+            "log_lvl": "warning",
+            "type": "sn_schema",
+            "subtype": "local_fail",
+            "details": {
+              "severity": "violation",
+              "field": "",
+              "need_path": "SPEC_MISSING_APPROVAL",
+              "schema_path": "spec[1] > local > unevaluatedProperties",
+              "validation_msg": "Unevaluated properties are not allowed ('asil', 'priority' were unexpected)"
+            },
+            "children": []
+          },
+          {
+            "log_lvl": "warning",
+            "type": "sn_schema",
+            "subtype": "local_fail",
+            "details": {
+              "severity": "violation",
+              "field": "",
+              "need_path": "SPEC_MISSING_APPROVAL",
+              "schema_path": "spec-approved-required[2] > local > required",
+              "user_msg": "Approval required due to high efforts",
+              "validation_msg": "'approved' is a required property"
+            },
+            "children": []
+          }
+        ]
+      }
+    }
+
+
 Supported Data Types
 --------------------
 
