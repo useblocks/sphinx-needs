@@ -27,7 +27,7 @@ Imagine the following modeling of need items:
 
 There are a few things to note about this setup:
 
-- the extra options ``efforts``, ``approval`` and
+- the extra options ``efforts``, ``approved`` and
   ``asil`` (for **A**\ utomotive **S**\ ecurity **I**\ ntegrity **L**\ evel) are typed
 - the assigned extra options differ between need types
 - the fields may be optional for a need type, required or even not allowed
@@ -149,7 +149,7 @@ Local validation checks individual need properties without requiring information
   - has a minimum value of 0
   - has a maximum value of 20
 
-- the ``approval`` field
+- the ``approved`` field
 
   - is of type boolean
   - is optional for ``spec`` and ``feat`` and disallowed for ``impl``
@@ -463,8 +463,8 @@ Network validation can be nested to validate multi-hop link chains:
 This validates that:
 
 1. A safe implementation links to safe specifications
-#. Those specifications in turn link to safe features
-#. Both link levels have minimum/maximum count requirements
+2. Those specifications in turn link to safe features
+3. Both link levels have minimum/maximum count requirements
 
 Schema Components
 -----------------
