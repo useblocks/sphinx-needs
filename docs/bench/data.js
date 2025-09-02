@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756803475931,
+  "lastUpdate": 1756807692402,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13932,6 +13932,42 @@ window.BENCHMARK_DATA = {
             "value": 66.28469974900003,
             "unit": "s",
             "extra": "Commit: 67a4953851848feebc1b0da77954b0c00c9f945b\nBranch: master\nTime: 2025-09-02T10:55:41+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "duodurandy19@gmail.com",
+            "name": "Randy Duodu",
+            "username": "iSOLveIT"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5f3a36d783abd1158fc76931ccdab7bb4523fc7b",
+          "message": "👌 Write schema violations into a JSON file (#1503)\n\nWrite schema violations into a new JSON file `schema_violations.json`\ninto the build output directory. This makes it possible to technically\nconsume the information in downstream tools.",
+          "timestamp": "2025-09-02T12:06:15+02:00",
+          "tree_id": "16ef9da196f2cbe86e4377788dc5d12b1089e1ff",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5f3a36d783abd1158fc76931ccdab7bb4523fc7b"
+        },
+        "date": 1756807672564,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1590407159999998,
+            "unit": "s",
+            "extra": "Commit: 5f3a36d783abd1158fc76931ccdab7bb4523fc7b\nBranch: master\nTime: 2025-09-02T12:06:15+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.900535774999994,
+            "unit": "s",
+            "extra": "Commit: 5f3a36d783abd1158fc76931ccdab7bb4523fc7b\nBranch: master\nTime: 2025-09-02T12:06:15+02:00"
           }
         ]
       }
