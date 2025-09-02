@@ -186,11 +186,13 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "URL of the need, if it is an external need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_external": True,
         "exclude_import": True,
     },
     "external_css": {
         "description": "CSS class name, added to the external reference.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
         "exclude_import": True,
     },
     "type": {
@@ -246,12 +248,14 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": "boolean", "default": True},
         "exclude_external": True,
         "exclude_import": True,
+        "exclude_json": True,
     },
     "is_part": {
         "description": "Whether the need is a part.",
         "schema": {"type": "boolean", "default": False},
         "exclude_external": True,
         "exclude_import": True,
+        "exclude_json": True,
     },
     "parts": {
         "description": "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
@@ -276,40 +280,40 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_import": True,
     },
     "jinja_content": {
-        "description": "Whether the content should be pre-processed by jinja.",
+        "description": "Whether the content was pre-processed by jinja.",
         "schema": {"type": "boolean", "default": False},
         "exclude_external": True,
     },
     "template": {
-        "description": "Template of the need.",
+        "description": "The template key, if the content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "allow_default": "str",
     },
     "pre_template": {
-        "description": "Pre-template of the need.",
+        "description": "The template key, if the pre_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "allow_default": "str",
     },
     "post_template": {
-        "description": "Post-template of the need.",
+        "description": "The template key, if the post_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "allow_default": "str",
     },
     "content": {
-        "description": "Content of the need.",
+        "description": "The main content of the need.",
         "schema": {"type": "string", "default": ""},
     },
     "pre_content": {
-        "description": "Pre-content of the need.",
+        "description": "Additional content before the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "exclude_import": True,
     },
     "post_content": {
-        "description": "Post-content of the need.",
+        "description": "Additional content after the need.",
         "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "exclude_import": True,
@@ -334,9 +338,9 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "allow_extend": True,
     },
     "constraints_results": {
-        "description": "Mapping of constraint name, to check name, to result.",
+        "description": "Mapping of constraint name, to check name, to result, None if not yet checked.",
         "schema": {
-            "type": "object",
+            "type": ["object", "null"],
             "additionalProperties": {"type": "object"},
             "default": {},
         },
@@ -345,7 +349,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "constraints_passed": {
         "description": "True if all constraints passed, False if any failed, None if not yet checked.",
-        "schema": {"type": "boolean", "default": True},
+        "schema": {"type": ["boolean", "null"], "default": True},
         "exclude_external": True,
         "exclude_import": True,
     },
@@ -356,7 +360,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_import": True,
     },
     "doctype": {
-        "description": "Type of the document where the need is defined, e.g. '.rst'.",
+        "description": "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
         "schema": {"type": "string", "default": ".rst"},
     },
     "sections": {
@@ -402,6 +406,27 @@ class NeedsSourceInfoType(TypedDict):
     """If true, no node is created and need is referencing external url."""
 
 
+class NeedsContentInfoType(TypedDict):
+    """Data for the content of a single need."""
+
+    jinja_content: bool
+    """Whether the content was pre-processed by jinja."""
+    template: None | str
+    """The template key, if the content was created from a jinja template."""
+    pre_template: None | str
+    """The template key, if the pre_content was created from a jinja template."""
+    post_template: None | str
+    """The template key, if the post_content was created from a jinja template."""
+    doctype: str
+    """The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'."""
+    content: str
+    """The main content of the need."""
+    pre_content: None | str
+    """Additional content before the need."""
+    post_content: None | str
+    """Additional content after the need."""
+
+
 class NeedsInfoType(TypedDict):
     """Data for a single need."""
 
@@ -438,17 +463,6 @@ class NeedsInfoType(TypedDict):
     # Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data
     parts: Mapping[str, NeedsPartType]
 
-    # content creation information
-    jinja_content: bool
-    template: None | str
-    pre_template: None | str
-    post_template: None | str
-    content: str
-    pre_content: None | str
-    post_content: None | str
-    doctype: str
-    """Type of the document where the need is defined, e.g. '.rst'."""
-
     # these default to False and are updated in check_links post-process
     has_dead_links: bool
     """True if any links reference need ids that are not found in the need list."""
@@ -457,12 +471,8 @@ class NeedsInfoType(TypedDict):
     and the link type does not allow dead links.
     """
 
-    # constraints information
-    # set in process_need_nodes (-> process_constraints) transform
-    constraints_results: Mapping[str, dict[str, bool]]
-    """Mapping of constraint name, to check name, to result."""
-    constraints_error: None | str
-    """An error message set if any constraint failed, and `error_message` field is set in config."""
+    constraints: tuple[str, ...]
+    """List of constraint names, which are defined for this need."""
 
     # additional source information
     # set in analyse_need_locations transform
@@ -495,9 +505,13 @@ class NeedsInfoComputedType(TypedDict):
     """Simply the first section."""
     parent_need: None | str
     """Simply the first parent id."""
-    constraints: tuple[str, ...]
-    """List of constraint names, which are defined for this need."""
-    constraints_passed: bool
+    # constraints information
+    # set in process_need_nodes (-> process_constraints) transform
+    constraints_results: None | Mapping[str, Mapping[str, bool]]
+    """Mapping of constraint name, to check name, to result, None if not yet checked."""
+    constraints_error: None | str
+    """An error message set if any constraint failed, and `error_message` field is set in config."""
+    constraints_passed: None | bool
     """True if all constraints passed, False if any failed, None if not yet checked."""
 
 

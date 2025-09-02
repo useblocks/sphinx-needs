@@ -31,8 +31,6 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': None,
             'lineno': 20,
@@ -109,8 +107,6 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': None,
             'lineno': 25,
@@ -187,8 +183,6 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': 'debug',
             'lineno': 32,
@@ -264,8 +258,6 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': None,
             'lineno': 39,
@@ -336,8 +328,6 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': None,
             'lineno': 4,
@@ -414,8 +404,6 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': None,
             'lineno': 11,
@@ -492,8 +480,6 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': None,
             'lineno': 4,
@@ -568,8 +554,6 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': None,
             'lineno': 11,
@@ -670,7 +654,10 @@
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': 'boolean',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -678,13 +665,16 @@
               }),
               'default': dict({
               }),
-              'description': 'Mapping of constraint name, to check name, to result.',
+              'description': 'Mapping of constraint name, to check name, to result, None if not yet checked.',
               'field_type': 'core',
-              'type': 'object',
+              'type': list([
+                'object',
+                'null',
+              ]),
             }),
             'content': dict({
               'default': '',
-              'description': 'Content of the need.',
+              'description': 'The main content of the need.',
               'field_type': 'core',
               'type': 'string',
             }),
@@ -705,7 +695,7 @@
             }),
             'doctype': dict({
               'default': '.rst',
-              'description': "Type of the document where the need is defined, e.g. '.rst'.",
+              'description': "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
               'field_type': 'core',
               'type': 'string',
             }),
@@ -771,21 +761,9 @@
               'field_type': 'core',
               'type': 'boolean',
             }),
-            'is_need': dict({
-              'default': True,
-              'description': 'Whether the need is a need.',
-              'field_type': 'core',
-              'type': 'boolean',
-            }),
-            'is_part': dict({
-              'default': False,
-              'description': 'Whether the need is a part.',
-              'field_type': 'core',
-              'type': 'boolean',
-            }),
             'jinja_content': dict({
               'default': False,
-              'description': 'Whether the content should be pre-processed by jinja.',
+              'description': 'Whether the content was pre-processed by jinja.',
               'field_type': 'core',
               'type': 'boolean',
             }),
@@ -892,7 +870,7 @@
             }),
             'post_content': dict({
               'default': None,
-              'description': 'Post-content of the need.',
+              'description': 'Additional content after the need.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -901,7 +879,7 @@
             }),
             'post_template': dict({
               'default': None,
-              'description': 'Post-template of the need.',
+              'description': 'The template key, if the post_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -910,7 +888,7 @@
             }),
             'pre_content': dict({
               'default': None,
-              'description': 'Pre-content of the need.',
+              'description': 'Additional content before the need.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -919,7 +897,7 @@
             }),
             'pre_template': dict({
               'default': None,
-              'description': 'Pre-template of the need.',
+              'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -1008,7 +986,7 @@
             }),
             'template': dict({
               'default': None,
-              'description': 'Template of the need.',
+              'description': 'The template key, if the content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',

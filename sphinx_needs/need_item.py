@@ -15,6 +15,7 @@ from itertools import chain
 from typing import Any, Literal, Protocol, overload, runtime_checkable
 
 from sphinx_needs.data import (
+    NeedsContentInfoType,
     NeedsInfoComputedType,
     NeedsInfoType,
     NeedsPartType,
@@ -139,11 +140,86 @@ class NeedItemSourceImport:
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
+class NeedsContent:
+    """A class representing the content of a need item."""
+
+    doctype: str
+    content: str
+    pre_content: str | None = None
+    post_content: str | None = None
+    jinja_content: bool = False
+    template: str | None = None
+    pre_template: str | None = None
+    post_template: str | None = None
+
+    dict_repr: NeedsContentInfoType = field(
+        init=False, default_factory=dict, repr=False
+    )  # type: ignore[assignment]
+
+    def __post_init__(self) -> None:
+        d: NeedsContentInfoType = {
+            "doctype": self.doctype,
+            "content": self.content,
+            "pre_content": self.pre_content,
+            "post_content": self.post_content,
+            "jinja_content": self.jinja_content,
+            "template": self.template,
+            "pre_template": self.pre_template,
+            "post_template": self.post_template,
+        }
+        self.dict_repr.update(d)
+
+
+@dataclass(slots=True, frozen=True, kw_only=True)
 class NeedModification:
     """A class representing a modification to a need item, by a needextend directive."""
 
     docname: str | None = None
     lineno: int | None = None
+
+
+class NeedConstraintResults(Mapping[str, tuple[tuple[str, bool, str | None], ...]]):
+    """A class representing the results of constraints on a need item."""
+
+    __slots__ = ("_data",)
+
+    def __init__(
+        self, constraints: Mapping[str, tuple[tuple[str, bool, str | None], ...]]
+    ) -> None:
+        self._data = constraints
+
+    def __getitem__(self, key: str) -> tuple[tuple[str, bool, str | None], ...]:
+        return self._data[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._data)
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+    def __repr__(self) -> str:
+        return f"NeedConstraintResults({self._data!r})"
+
+    def to_dict(self) -> dict[str, dict[str, bool]]:
+        """Convert the constraint results to a dictionary."""
+        return {
+            constraint: {check: result for check, result, _ in results}
+            for constraint, results in self._data.items()
+        }
+
+    def first_error(self) -> str | None:
+        """Return the first error message found in the constraint results, or None if none found."""
+        for results in self._data.values():
+            for _, passed, error in results:
+                if not passed and error is not None:
+                    return error
+        return None
+
+    def all_passed(self) -> bool:
+        """Return True if all constraints passed, False otherwise."""
+        return all(
+            passed for results in self._data.values() for _, passed, _ in results
+        )
 
 
 class NeedItem:
@@ -153,6 +229,8 @@ class NeedItem:
         "_backlinks",
         "_backlinks_keymap",
         "_computed",
+        "_constraint_results",
+        "_content",
         "_core",
         "_extras",
         "_links",
@@ -160,23 +238,19 @@ class NeedItem:
         "_source",
     )
 
-    _immutable_core = {
-        "id",
-        "type",
-        "template",
-        "pre_template",
-        "post_template",
-    }
+    _immutable_core = {"id", "type"}
 
     def __init__(
         self,
         *,
         source: NeedItemSourceProtocol | None,
+        content: NeedsContent,
         core: NeedsInfoType,
         extras: dict[str, str],
         links: dict[str, list[str]],
         backlinks: dict[str, list[str]] | None = None,
         modifications: Sequence[NeedModification] = (),
+        constraint_results: None | NeedConstraintResults = None,
         _validate: bool = True,
     ) -> None:
         """Initialize the NeedItem instance.
@@ -214,11 +288,19 @@ class NeedItem:
                 raise TypeError("NeedItem backlinks must be a dictionary.")
             if source is not None and not isinstance(source, NeedItemSourceProtocol):
                 raise TypeError("NeedItem source must obey the NeeItemSourceProtocol.")
+            if not isinstance(content, NeedsContent):
+                raise TypeError("NeedItem content must be a NeedsContent instance.")
             if not isinstance(modifications, Sequence) or any(
                 not isinstance(m, NeedModification) for m in modifications
             ):
                 raise TypeError(
                     "NeedItem modifications must be a sequence of NeedModification instances."
+                )
+            if constraint_results is not None and not isinstance(
+                constraint_results, NeedConstraintResults
+            ):
+                raise TypeError(
+                    "NeedItem constraint_results must be a NeedConstraintResults instance or None."
                 )
 
         # set internal fields
@@ -235,8 +317,10 @@ class NeedItem:
         This is required for distinct access to backlinks in the NeedItem API.
 
         """
+        self._content = content
         self._source = source if source is not None else NeedItemSourceUnknown()
         self._modifications = tuple(modifications)
+        self._constraint_results = constraint_results
         self._recompute()
 
         # consistency checks for data, this is optional so that we don't have to re-run when copying an instance.
@@ -265,6 +349,7 @@ class NeedItem:
                 *self._links,
                 *self._backlinks_keymap,
                 *self._source.dict_repr,
+                *self._content.dict_repr,
                 *self._computed,
             ]
             if len(all_keys) != len(set(all_keys)):
@@ -273,6 +358,12 @@ class NeedItem:
                 )
                 raise ValueError(
                     f"NeedItem keys must be unique across core, computed, extras, links, and backlinks. Duplicate keys: {duplicates}"
+                )
+            if constraint_results is not None and set(constraint_results) != set(
+                self._core.get("constraints", [])
+            ):
+                raise ValueError(
+                    "constraint_results keys must match the constraints defined in the need."
                 )
 
     def _recompute(self) -> None:
@@ -283,12 +374,15 @@ class NeedItem:
             "is_modified": bool(self._modifications),
             "id_parent": self._core["id"],
             "id_complete": self._core["id"],
-            "constraints": tuple(self._core["constraints_results"]),
-            "constraints_passed": all(
-                result
-                for check in self._core["constraints_results"].values()
-                for result in check.values()
-            ),
+            "constraints_results": self._constraint_results.to_dict()
+            if self._constraint_results is not None
+            else None,
+            "constraints_error": self._constraint_results.first_error()
+            if self._constraint_results is not None
+            else None,
+            "constraints_passed": self._constraint_results.all_passed()
+            if self._constraint_results is not None
+            else None,
             "section_name": sections[0]
             if (sections := self._core["sections"])
             else None,
@@ -303,17 +397,27 @@ class NeedItem:
         return self._source
 
     @property
+    def content(self) -> NeedsContent:
+        """Return the content of the need item."""
+        return self._content
+
+    @property
     def modifications(self) -> tuple[NeedModification, ...]:
         """Return the modifications of the need item."""
         return self._modifications
 
+    @property
+    def constraint_results(self) -> None | NeedConstraintResults:
+        """Return the constraint results of the need item."""
+        return self._constraint_results
+
     def __repr__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r}, source={self._source!r}, modifications={self._modifications!r})"
+        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r}, source={self._source!r}, content={self._content!r}, modifications={self._modifications!r})"
 
     def __str__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s}, source={self._source!s}, modifications={self._modifications!s})"
+        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s}, source={self._source!s}, content={self._content!s}, modifications={self._modifications!s})"
 
     def copy(self) -> NeedItem:
         """Return a copy of the NeedItem."""
@@ -323,7 +427,9 @@ class NeedItem:
             links=self._links,
             backlinks=self._backlinks,
             source=self._source,
+            content=self._content,
             modifications=self._modifications,
+            constraint_results=self._constraint_results,
             _validate=False,
         )
 
@@ -337,7 +443,9 @@ class NeedItem:
             and self._links == other._links
             and self._backlinks == other._backlinks
             and self._source == other._source
+            and self._content == other._content
             and self._modifications == other._modifications
+            and self._constraint_results == other._constraint_results
         )
 
     def __ne__(self, other: object) -> bool:
@@ -352,6 +460,7 @@ class NeedItem:
             or key in self._links
             or key in self._backlinks_keymap
             or key in self._source.dict_repr
+            or key in self._content.dict_repr
             or key in self._computed
         )
 
@@ -363,6 +472,7 @@ class NeedItem:
             self._links,
             self._backlinks_keymap,
             self._source.dict_repr,
+            self._content.dict_repr,
             self._computed,
         )
 
@@ -441,7 +551,7 @@ class NeedItem:
     @overload
     def __getitem__(
         self, key: Literal["constraints_results"]
-    ) -> Mapping[str, dict[str, bool]]: ...
+    ) -> Mapping[str, Mapping[str, bool]]: ...
 
     @overload
     def __getitem__(self, key: str) -> Any: ...
@@ -460,6 +570,8 @@ class NeedItem:
             return self._backlinks[self._backlinks_keymap[key]]
         elif key in self._source.dict_repr:
             return self._source.dict_repr[key]  # type: ignore[literal-required]
+        elif key in self._content.dict_repr:
+            return self._content.dict_repr[key]  # type: ignore[literal-required]
         raise KeyError(key)
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -476,6 +588,7 @@ class NeedItem:
             self._links.keys(),
             self._backlinks_keymap.keys(),
             self._source.dict_repr.keys(),
+            self._content.dict_repr.keys(),
             self._computed.keys(),
         )
 
@@ -487,7 +600,8 @@ class NeedItem:
             self._links.values(),
             self._backlinks.values(),
             self._source.dict_repr.values(),
-            self._computed.keys(),
+            self._content.dict_repr.values(),
+            self._computed.values(),
         )
 
     def items(self) -> Iterable[tuple[str, Any]]:
@@ -498,6 +612,7 @@ class NeedItem:
             self._links.items(),
             ((k1, self._backlinks[k2]) for k1, k2 in self._backlinks_keymap.items()),
             self._source.dict_repr.items(),
+            self._content.dict_repr.items(),
             self._computed.items(),
         )
 
@@ -506,17 +621,16 @@ class NeedItem:
         if key in self._immutable_core:
             raise KeyError(f"Cannot modify immutable key {key!r} in NeedItem.")
         elif key == "constraints":
-            # TODO this is currently a special case, since `constraints` can be a dynamic function,
-            # which is set later but before constraints are actually processed.
-            if any(self._core.get("constraints_results", {}).values()):
+            if self._constraint_results is not None:
                 raise KeyError(
-                    "Cannot modify 'constraints' key after constraints have been processed."
+                    "Cannot modify 'constraints' if 'constraints_results' has already been computed."
                 )
-            self._core["constraints_results"] = {c: {} for c in value}
         elif key in self._computed:
             raise KeyError(f"Cannot modify computed key {key!r} in NeedItem.")
         elif key in self._source.dict_repr:
             raise KeyError(f"Cannot modify source key {key!r} in NeedItem.")
+        elif key in self._content.dict_repr:
+            raise KeyError(f"Cannot modify content key {key!r} in NeedItem.")
         elif key in self._core:
             self._core[key] = value  # type: ignore[literal-required]
         elif key in self._extras:
@@ -596,6 +710,15 @@ class NeedItem:
         for key in self._backlinks:
             yield (key, self._backlinks[key])
 
+    def replace_content(self, new_content: NeedsContent) -> None:
+        """Replace the content of the need item.
+
+        :param new_content: The new content to set.
+        """
+        if not isinstance(new_content, NeedsContent):
+            raise TypeError("new_content must be a NeedsContent instance.")
+        self._content = new_content
+
     def add_modification(self, modification: NeedModification) -> None:
         """Add a modification to the need item.
 
@@ -606,9 +729,31 @@ class NeedItem:
         self._modifications += (modification,)
         self._recompute()
 
+    def set_constraint_results(
+        self, constraint_results: None | NeedConstraintResults
+    ) -> None:
+        """Set the constraint results for the need item.
+
+        :param constraint_results: The constraint results to set.
+        """
+        if constraint_results is not None and not isinstance(
+            constraint_results, NeedConstraintResults
+        ):
+            raise TypeError(
+                "constraint_results must be a NeedConstraintResults instance or None."
+            )
+        if constraint_results is not None and set(constraint_results) != set(
+            self._core.get("constraints", [])
+        ):
+            raise ValueError(
+                "constraint_results keys must match the constraints defined in the need."
+            )
+        self._constraint_results = constraint_results
+        self._recompute()
+
 
 class NeedPartItem:
-    """A class representing a part of a need, which is a sub-need.
+    """A class representing a part of a need, which is a sub-need, merged with the parent need.
 
     Any data coming from the part will override the data from the parent need.
 
@@ -763,7 +908,7 @@ class NeedPartItem:
     @overload
     def __getitem__(
         self, key: Literal["constraints_results"]
-    ) -> Mapping[str, dict[str, bool]]: ...
+    ) -> Mapping[str, Mapping[str, bool]]: ...
 
     @overload
     def __getitem__(self, key: str) -> Any: ...
