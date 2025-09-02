@@ -430,11 +430,6 @@ class NeedsSphinxConfig:
     )
     """Path to a JSON file to load the schemas from."""
 
-    schema_report_json_filename: str = field(
-        default="schema_violations.json", metadata={"rebuild": "html", "types": (str,)}
-    )
-    """Name of the schema violation report file."""
-
     schema_severity: str = field(
         default=SeverityEnum.info.name,
         metadata={"rebuild": "env", "types": (str,)},

@@ -4,8 +4,6 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
-from sphinx.util._pathlib import _StrPath
-
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.schema.config import (
@@ -408,8 +406,7 @@ def clear_debug_dir(config: NeedsSphinxConfig) -> None:
 def generate_json_schema_validation_report(
     duration: float,
     need_2_warnings: dict[str, list[OntologyWarning]],
-    report_filename: str,
-    sphinx_outdir: _StrPath,
+    report_file_path: Path,
     validated_needs_count: int,
     validated_rate: int | float,
 ) -> None:
@@ -418,8 +415,7 @@ def generate_json_schema_validation_report(
 
     :param duration: The duration of the validation process.
     :param need_2_warnings: A mapping of needs to their validation warnings.
-    :param report_filename: The filename for the report.
-    :param sphinx_outdir: The output directory for Sphinx.
+    :param report_file_path: The path to the report file.
     :param validated_needs_count: The number of validated needs.
     :param validated_rate: The rate of validated needs per second.
     """
@@ -433,11 +429,6 @@ def generate_json_schema_validation_report(
         "validated_needs_count": validated_needs_count,
         "validation_warnings": json_formatted_warnings,
     }
-    ontology_filename = (
-        f"{report_filename}.json"
-        if not report_filename.endswith(".json")
-        else report_filename
-    )
     # Store ontology report in JSON file
-    with (sphinx_outdir.joinpath(ontology_filename)).open("w") as fp:
+    with report_file_path.open("w") as fp:
         json.dump(ontology_report, fp, indent=2)

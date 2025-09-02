@@ -93,8 +93,7 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     generate_json_schema_validation_report(
         duration=duration,
         need_2_warnings=need_2_warnings,
-        sphinx_outdir=app.outdir,
-        report_filename=config.schema_report_json_filename,
+        report_file_path=app.outdir / "schema_violations.json",
         validated_needs_count=validated_needs_count,
         validated_rate=validated_rate,
     )
