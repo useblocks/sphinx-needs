@@ -37,7 +37,14 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     any_static_found = merge_static_schemas(config)
 
     if not (any_static_found or (config.schema_definitions.get("schemas"))):
-        # nothing to validate
+        # nothing to validate but always generate report file
+        generate_json_schema_validation_report(
+            duration=0.00,
+            need_2_warnings={},
+            report_file_path=app.outdir / "schema_violations.json",
+            validated_needs_count=0,
+            validated_rate=0,
+        )
         return
 
     # store the SN generated schema in a global variable
