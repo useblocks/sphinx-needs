@@ -419,7 +419,9 @@ def generate_json_schema_validation_report(
     :param validated_needs_count: The number of validated needs.
     :param validated_rate: The rate of validated needs per second.
     """
-    json_formatted_warnings = get_json_formatted_warnings(need_2_warnings)
+    json_formatted_warnings: dict[str, list[JSONFormattedWarning]] = {}
+    if need_2_warnings:
+        json_formatted_warnings = get_json_formatted_warnings(need_2_warnings)
     ontology_report: OntologyReportJSON = {
         "validation_summary": (
             f"Schema validation completed with {len(json_formatted_warnings)} warning(s) in {duration:.3f} seconds. "
