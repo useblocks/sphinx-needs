@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756712855525,
+  "lastUpdate": 1756803475931,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -13896,6 +13896,42 @@ window.BENCHMARK_DATA = {
             "value": 70.740260501,
             "unit": "s",
             "extra": "Commit: 31e63bd203fc3c53c9accb942dfdeb1cabe675dc\nBranch: master\nTime: 2025-09-01T09:45:25+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "67a4953851848feebc1b0da77954b0c00c9f945b",
+          "message": "♻️ Improve storage of part data on NeedItem (#1509)\n\nParts can now only have an `id` and `content` key, plus backlink fields.\n\nWhen merging a part with a need, to create a `NeedPartItem` (used in\nanalysis directives):\n\n- The `id` and `content `are overridden\n- All link types are set to empty (parts cannot link to anything)\n- All backlinks are overridden with only direct links to that part (not\nto the parent need)\n- All parts are removed (parts cannot contain parts)\n\nAlso, functions `check_links` and `create_back_links` have been merged\ninto `update_back_links`",
+          "timestamp": "2025-09-02T10:55:41+02:00",
+          "tree_id": "9c348273148895c79ce74d2f9ada4ef371e964ad",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/67a4953851848feebc1b0da77954b0c00c9f945b"
+        },
+        "date": 1756803456548,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20304037100001437,
+            "unit": "s",
+            "extra": "Commit: 67a4953851848feebc1b0da77954b0c00c9f945b\nBranch: master\nTime: 2025-09-02T10:55:41+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.28469974900003,
+            "unit": "s",
+            "extra": "Commit: 67a4953851848feebc1b0da77954b0c00c9f945b\nBranch: master\nTime: 2025-09-02T10:55:41+02:00"
           }
         ]
       }
