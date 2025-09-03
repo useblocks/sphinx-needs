@@ -198,7 +198,9 @@ def load_external_needs(
                 location = source.get("json_url", "") or source.get("json_path", "")
                 log_warning(
                     log,
-                    f"External need {ext_need_id!r} in {location!r} could not be added: {err.message}",
+                    clean_log(
+                        f"External need {ext_need_id!r} in {location!r} could not be added: {err.message}"
+                    ),
                     "load_external_need",
                     location=None,
                 )
@@ -207,14 +209,18 @@ def load_external_needs(
         if unknown_keys:
             log_warning(
                 log,
-                f"Unknown keys in external need source {source_str!r}: {sorted(unknown_keys)!r}",
+                clean_log(
+                    f"Unknown keys in external need source {source_str!r}: {sorted(unknown_keys)!r}"
+                ),
                 "unknown_external_keys",
                 location=None,
             )
         if non_string_extra_keys:
             log_warning(
                 log,
-                f"Non-string values in extra options of external need source {source_str!r}: {sorted(non_string_extra_keys)!r}",
+                clean_log(
+                    f"Non-string values in extra options of external need source {source_str!r}: {sorted(non_string_extra_keys)!r}"
+                ),
                 "mistyped_external_values",
                 location=None,
             )
