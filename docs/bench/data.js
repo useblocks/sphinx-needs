@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756829137637,
+  "lastUpdate": 1757067315550,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14004,6 +14004,42 @@ window.BENCHMARK_DATA = {
             "value": 63.983829394,
             "unit": "s",
             "extra": "Commit: 7b1972185d75502d3089efdb9245f4ff2876480b\nBranch: master\nTime: 2025-09-02T18:03:39+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "cedric.dossantos.91@gmail.com",
+            "name": "cedossan",
+            "username": "cedossan"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "da55fc4c3a0a125c0f602dce67723d856ce04dfe",
+          "message": "🐛 Avoid leaking auth credentials for ext. need warnings (#1512)\n\nChanges for [issue\n#1476](https://github.com/useblocks/sphinx-needs/issues/1476):\n\nWhen a warning is triggered due to unknown keys in external sources, it\nincludes the URL of the source. If the URL contains basic authentication\ndetails, those credentials will be exposed in the warning message.\n\nFIX is simply to use the existing \"clean_log\" method to obfuscate the\nurl\n\nCo-authored-by: cedric.dos-santos.e <cedric.dos-santos.e@thalesdigital.io>",
+          "timestamp": "2025-09-05T12:13:16+02:00",
+          "tree_id": "32db8eafc7730766e421cfda959425948b302e73",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/da55fc4c3a0a125c0f602dce67723d856ce04dfe"
+        },
+        "date": 1757067295689,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16232231300000421,
+            "unit": "s",
+            "extra": "Commit: da55fc4c3a0a125c0f602dce67723d856ce04dfe\nBranch: master\nTime: 2025-09-05T12:13:16+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.25418592199998,
+            "unit": "s",
+            "extra": "Commit: da55fc4c3a0a125c0f602dce67723d856ce04dfe\nBranch: master\nTime: 2025-09-05T12:13:16+02:00"
           }
         ]
       }
