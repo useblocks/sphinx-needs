@@ -262,11 +262,17 @@ def test_empty_file_check(test_app):
 def test_import_non_exists_json(test_app):
     # Check non exists file import
     app = test_app
-    with pytest.raises(ReferenceError) as err:
-        app.build()
+    app.build()
 
-    assert err.value.args[0].startswith("Could not load needs import file")
-    assert "non_exists_file_import" in err.value.args[0]
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
+    ).splitlines()
+
+    assert app.statuscode == 0
+
+    assert warnings == [
+        "<srcdir>/index.rst:4: WARNING: Could not load needs import file <srcdir>/non_exists_file.json [needs.needimport]",
+    ]
 
 
 @pytest.mark.parametrize(
