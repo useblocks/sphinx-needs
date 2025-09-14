@@ -42,3 +42,13 @@ DYNAMIC FUNCTIONS
         nested id best :ndf:`copy("id")`
 
 These should warn since they have no associated need: :need_func:`[[copy("id")]]`, :ndf:`copy("id")`
+
+.. spec:: TEST_7
+   :id: TEST_7
+   :status: draft
+   :test_func: [[test(need.id, status=need.status)]]
+
+
+.. spec:: TEST_8
+   :id: TEST_8
+   :test_func: [[test(need.unknown)]]

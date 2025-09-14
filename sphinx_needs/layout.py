@@ -396,24 +396,27 @@ class LayoutHandler:
                     # Check if function_definition was detected
                     elif len(text) == 0 and len(func_def) > 1:
                         from sphinx_needs.functions.functions import (
-                            _analyze_func_string,
+                            DynamicFunctionParsed,
                         )
 
                         func_def_clean = func_def.replace("<<", "").replace(">>", "")
-                        func_name, func_args, func_kargs = _analyze_func_string(
-                            func_def_clean, None
+                        df = DynamicFunctionParsed.from_string(
+                            func_def_clean, allow_need=False
                         )
 
                         # Replace place holders
                         # Looks for {{name}}, where name must be an option of need, and replaces it with the
                         # related need content
-                        for index, arg in enumerate(func_args):
+                        args = []
+                        for arg in df.args:
                             # If argument is not a string, nothing to replace
                             # (replacement in string-lists is not supported)
-                            if not isinstance(arg, str):
-                                continue
                             try:
-                                func_args[index] = self._replace_place_holder(arg)
+                                args.append(
+                                    self._replace_place_holder(arg)
+                                    if isinstance(arg, str)
+                                    else arg
+                                )
                             except SphinxNeedLayoutException as e:
                                 raise SphinxNeedLayoutException(
                                     'Referenced item "{}" in {} not available in need {}'.format(
@@ -421,13 +424,16 @@ class LayoutHandler:
                                     )
                                 )
 
-                        for key, karg in func_kargs.items():
+                        kwargs = {}
+                        for key, karg in df.kwargs:
                             # If argument is not a string, nothing to replace
                             # (replacement in string-lists is not supported)
-                            if not isinstance(karg, str):
-                                continue
                             try:
-                                func_kargs[key] = self._replace_place_holder(karg)
+                                kwargs[key] = (
+                                    self._replace_place_holder(karg)
+                                    if isinstance(karg, str)
+                                    else karg
+                                )
                             except SphinxNeedLayoutException as e:
                                 raise SphinxNeedLayoutException(
                                     'Referenced item "{}" in {} not available in need {}'.format(
@@ -436,14 +442,14 @@ class LayoutHandler:
                                 )
 
                         try:
-                            func = self.functions[func_name]
+                            func = self.functions[df.name]
                         except KeyError:
                             raise SphinxNeedLayoutException(
                                 "Used function {} unknown. Please use {}".format(
-                                    func_name, ", ".join(self.functions.keys())
+                                    df.name, ", ".join(self.functions.keys())
                                 )
                             )
-                        result = func(*func_args, **func_kargs)
+                        result = func(*args, **kwargs)
 
                         if result:
                             node_line += result
