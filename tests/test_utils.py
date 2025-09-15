@@ -28,8 +28,9 @@ from sphinx_needs.api.need import _split_list_with_dyn_funcs
         ("a,[[x,y]],b", [("a", False), ("[[x,y]]", True), ("b", False)]),
         ("a,[[x,y", [("a", False), ("[[x,y]]", True)]),
         ("a,[[x,y]", [("a", False), ("[[x,y]]", True)]),
-        # previously in from _split_value in needextend.py
         ("[[a]]b", [("[[a]]b", True)]),
+        ("b[[a]]", [("b[[a]]", True)]),
+        ("[[a]]b[[c]]d", [("[[a]]b[[c]]d", True)]),
         ("[[a;]],", [("[[a;]]", True)]),
         ("a,b;c", [("a", False), ("b", False), ("c", False)]),
         ("[[a]],[[b]];[[c]]", [("[[a]]", True), ("[[b]]", True), ("[[c]]", True)]),

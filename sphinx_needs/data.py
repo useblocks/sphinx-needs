@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
     from sphinx_needs.need_item import NeedItem
+    from sphinx_needs.needs_schema import FieldsSchema
     from sphinx_needs.nodes import Need
     from sphinx_needs.services.manager import ServiceManager
 
@@ -426,8 +427,11 @@ class NeedsContentInfoType(TypedDict):
 class NeedsInfoType(TypedDict):
     """Data for a single need."""
 
+    # core information
     id: str
     """ID of the data."""
+    type: str
+    """Type of the need."""
 
     # meta information
     title: str
@@ -448,13 +452,25 @@ class NeedsInfoType(TypedDict):
     external_css: str
     """CSS class name, added to the external reference."""
 
-    # type information (based on needs_types config)
-    type: str
+    # type information (initially based on needs_types config)
     type_name: str
     type_prefix: str
     type_color: str
     """Hexadecimal color code of the type."""
     type_style: str
+
+    constraints: tuple[str, ...]
+    """List of constraint names, which are defined for this need."""
+
+    # computed from need content (short for architecture)
+    arch: Mapping[str, str]
+    """Mapping of uml key to uml content."""
+
+    # additional source information
+    # set in analyse_need_locations transform
+    sections: tuple[str, ...]
+    signature: None | str
+    """Derived from a docutils desc_name node."""
 
     # these default to False and are updated in update_back_links post-process
     has_dead_links: bool
@@ -463,18 +479,6 @@ class NeedsInfoType(TypedDict):
     """True if any links reference need ids that are not found in the need list,
     and the link type does not allow dead links.
     """
-
-    constraints: tuple[str, ...]
-    """List of constraint names, which are defined for this need."""
-
-    # additional source information
-    # set in analyse_need_locations transform
-    sections: tuple[str, ...]
-    signature: None | str
-    """Derived from a docutils desc_name node."""
-
-    arch: Mapping[str, str]  #  short for architecture.
-    """Mapping of uml key to uml content."""
 
 
 class NeedsInfoComputedType(TypedDict):
@@ -741,6 +745,23 @@ class SphinxNeedsData:
 
     def __init__(self, env: BuildEnvironment) -> None:
         self.env = env
+
+    def get_schema(self) -> FieldsSchema:
+        """Get the schema for all fields.
+
+        This is lazily created and cached in the environment.
+        """
+        try:
+            return self.env._needs_schema
+        except AttributeError:
+            raise RuntimeError("Needs schema has not been initialized yet.")
+
+    def _set_schema(self, schema: FieldsSchema) -> None:
+        """Set the schema for all fields.
+
+        This should only be called once, during initialization.
+        """
+        self.env._needs_schema = schema
 
     @property
     def _env_needs(self) -> dict[str, NeedItem]:

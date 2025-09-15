@@ -8,7 +8,6 @@ from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, Literal, cast
 
 from docutils import nodes
-from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
 from sphinx.config import Config
@@ -110,6 +109,7 @@ from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
@@ -297,6 +297,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", load_config)
     app.connect("config-inited", merge_default_configs)
     app.connect("config-inited", check_configuration, priority=600)  # runs late
+
+    app.connect("builder-inited", create_schema)
 
     app.connect("env-before-read-docs", prepare_env)
     app.connect("env-before-read-docs", load_external_needs)
@@ -511,11 +513,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     # ensure options for ``needgantt`` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
         if option not in _NEEDS_CONFIG.extra_options:
-            _NEEDS_CONFIG.add_extra_option(
-                option,
-                "Added for needgantt functionality",
-                validator=directives.unchanged_required,
-            )
+            _NEEDS_CONFIG.add_extra_option(option, "Added for needgantt functionality")
 
     for t in needs_config.types:
         # Register requested types of needs
@@ -726,6 +724,31 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     _gather_field_defaults(needs_config, set(link_types))
 
     validate_schemas_config(needs_config)
+
+
+def create_schema(app: Sphinx) -> None:
+    needs_config = NeedsSphinxConfig(app.config)
+    schema = FieldsSchema()
+    # TODO add core fields
+    for name, extra in needs_config.extra_options.items():
+        schema.add_extra_field(
+            FieldSchema(
+                name=name,
+                description=extra.description,
+                type="string",
+                item_type=None,
+                nullable=False,
+                allow_dynamic_functions=True,
+                allow_extend=True,
+                allow_variant=name in needs_config.variant_options,
+                default="",  # TODO get/validate from needs_global_options
+                # TODO also predicate defaults
+                directive_option=True,
+            )
+        )
+    # TODO add link fields
+    print(schema)
+    SphinxNeedsData(app.env)._set_schema(schema)
 
 
 def _gather_field_defaults(

@@ -4,7 +4,6 @@ from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
 
-from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
@@ -34,14 +33,12 @@ if TYPE_CHECKING:
 LOGGER = get_logger(__name__)
 
 
-@dataclass
+@dataclass(kw_only=True, slots=True)
 class ExtraOptionParams:
     """Defines a single extra option for needs"""
 
     description: str
     """A description of the option."""
-    validator: Callable[[str | None], str]
-    """A function to validate the directive option value."""
     schema: (
         ExtraOptionStringSchemaType
         | ExtraOptionBooleanSchemaType
@@ -117,7 +114,6 @@ class _Config:
         | ExtraOptionNumberSchemaType
         | ExtraOptionMultiValueSchemaType
         | None = None,
-        validator: Callable[[str | None], str] | None = None,
         override: bool = False,
     ) -> None:
         """Adds an extra option to the configuration."""
@@ -146,9 +142,8 @@ class _Config:
 
                 raise NeedsApiConfigWarning(f"Option {name} already registered.")
         self._extra_options[name] = ExtraOptionParams(
-            description,
-            directives.unchanged if validator is None else validator,
-            schema,
+            description=description,
+            schema=schema,
         )
 
     @property
