@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757067315550,
+  "lastUpdate": 1757918788764,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14040,6 +14040,42 @@ window.BENCHMARK_DATA = {
             "value": 60.25418592199998,
             "unit": "s",
             "extra": "Commit: da55fc4c3a0a125c0f602dce67723d856ce04dfe\nBranch: master\nTime: 2025-09-05T12:13:16+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1218674b999ce2a00282d41d91a324465c5a1837",
+          "message": "🔧 Add `DynamicFunctionParsed` dataclass (#1514)\n\nThis will allow dynamic functions to be pre-parsed and stored, in future\nchanges.\nThe parsing is also updated, to replace deprecated classes in the `ast`\nmodule,\nand parametrized tests are added for successful/failing parsing.\n\nNote, it would be good to just call this class `DynamicFunction`, but that is\nalready in use for now.",
+          "timestamp": "2025-09-15T08:44:21+02:00",
+          "tree_id": "930e1ae213bba88cec027b4f59b0d0c55e77d65f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1218674b999ce2a00282d41d91a324465c5a1837"
+        },
+        "date": 1757918768964,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1851407839999979,
+            "unit": "s",
+            "extra": "Commit: 1218674b999ce2a00282d41d91a324465c5a1837\nBranch: master\nTime: 2025-09-15T08:44:21+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.970530293,
+            "unit": "s",
+            "extra": "Commit: 1218674b999ce2a00282d41d91a324465c5a1837\nBranch: master\nTime: 2025-09-15T08:44:21+02:00"
           }
         ]
       }
