@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import ast
 import re
-from typing import Any, Protocol
+from collections.abc import Mapping
+from dataclasses import dataclass
+from typing import Any, Protocol, TypeAlias
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -64,7 +66,9 @@ def execute_func(
     :return: return value of executed function
     """
     try:
-        func_name, func_args, func_kwargs = _analyze_func_string(func_string, need)
+        df = DynamicFunctionParsed.from_string(func_string, allow_need=need is not None)
+        if need is not None:
+            df = df.apply_need(need)
     except FunctionParsingException as err:
         log_warning(
             logger,
@@ -76,17 +80,17 @@ def execute_func(
 
     needs_config = NeedsSphinxConfig(app.config)
 
-    if func_name not in needs_config.functions:
+    if df.name not in needs_config.functions:
         log_warning(
             logger,
-            f"Unknown function {func_name!r}",
+            f"Unknown function {df.name!r}",
             "dynamic_function",
             location=location,
         )
         return "??"
 
     func = measure_time_func(
-        needs_config.functions[func_name]["function"],
+        needs_config.functions[df.name]["function"],
         category="dyn_func",
         source="user",
     )
@@ -96,13 +100,13 @@ def execute_func(
             app,
             need,
             needs,
-            *func_args,
-            **func_kwargs,
+            *df.args,
+            **df.kwargs_dict(),
         )
     except Exception as e:
         log_warning(
             logger,
-            f"Error while executing function {func_name!r}: {e}",
+            f"Error while executing function {df.name!r}: {e}",
             "dynamic_function",
             location=location,
         )
@@ -113,7 +117,7 @@ def execute_func(
     ):
         log_warning(
             logger,
-            f"Return value of function {func_name!r} is of type {type(func_return)}. Allowed are str, int, float, list",
+            f"Return value of function {df.name!r} is of type {type(func_return)}. Allowed are str, int, float, list",
             "dynamic_function",
             location=location,
         )
@@ -123,7 +127,7 @@ def execute_func(
             if not isinstance(element, str | int | float):
                 log_warning(
                     logger,
-                    f"Return value item {i} of function {func_name!r} is of type {type(element)}. Allowed are str, int, float",
+                    f"Return value item {i} of function {df.name!r} is of type {type(element)}. Allowed are str, int, float",
                     "dynamic_function",
                     location=location,
                 )
@@ -442,89 +446,138 @@ def _detect_and_execute_field(
     return func_call, func_return
 
 
-def _analyze_func_string(
-    func_string: str, need: NeedItem | NeedPartItem | None
-) -> tuple[str, list[Any], dict[str, Any]]:
-    """
-    Analyze given function string and extract:
+@dataclass(frozen=True, slots=True)
+class NeedAttribute:
+    """A reference to a need field."""
 
-    * function name
-    * function arguments
-    * function keyword arguments
+    name: str
 
-    All given arguments must by of type string, int/float or list.
 
-    :param func_string: string of the function
-    :return: function name, arguments, keyword arguments
-    """
-    try:
-        func = ast.parse(func_string)
-    except SyntaxError as e:
-        need_id = need["id"] if need else "UNKNOWN"
-        raise FunctionParsingException(
-            f"Parsing function string failed for need {need_id}: {func_string}. {e}"
-        )
-    try:
-        func_call = func.body[0].value  # type: ignore
-        func_name = func_call.func.id
-    except AttributeError:
-        raise FunctionParsingException(
-            f"Given dynamic function string is not a valid python call. Got: {func_string}"
-        )
+DFuncArg: TypeAlias = (
+    str | int | float | bool | list[str | int | float | bool] | NeedAttribute
+)
 
-    func_args: list[Any] = []
-    for arg in func_call.args:
-        if isinstance(arg, ast.Num):
-            func_args.append(arg.n)
-        elif isinstance(arg, ast.Str | ast.BoolOp):
-            func_args.append(arg.s)  # type: ignore
-        elif isinstance(arg, ast.List):
-            arg_list: list[Any] = []
-            for element in arg.elts:
-                if isinstance(element, ast.Num):
-                    arg_list.append(element.n)
-                elif isinstance(element, ast.Str):
-                    arg_list.append(element.s)
-            func_args.append(arg_list)
-        elif isinstance(arg, ast.Attribute):
-            if arg.value.id == "need" and need:  # type: ignore
-                func_args.append(need[arg.attr])
+
+@dataclass(frozen=True, slots=True)
+class DynamicFunctionParsed:
+    """A dynamic function call."""
+
+    name: str
+    args: tuple[DFuncArg, ...]
+    kwargs: tuple[tuple[str, DFuncArg], ...]
+
+    def kwargs_dict(self) -> Mapping[str, DFuncArg]:
+        """Return kwargs as dictionary."""
+        return dict(self.kwargs)
+
+    def apply_need(self, need: NeedItem | NeedPartItem) -> DynamicFunctionParsed:
+        """Replace NeedAttribute args and kwargs with actual values from given need.
+
+        :raises FunctionParsingException: if need does not have the required attribute
+        """
+        new_args: list[DFuncArg] = []
+        for arg in self.args:
+            if isinstance(arg, NeedAttribute):
+                if arg.name not in need:
+                    raise FunctionParsingException(
+                        f"need has no attribute {arg.name!r}"
+                    )
+                new_args.append(need[arg.name])
             else:
-                raise FunctionParsingException("usage of need attribute not supported.")
-        elif isinstance(arg, ast.NameConstant):
-            if isinstance(arg.value, bool):
+                new_args.append(arg)
+        new_kwargs: list[tuple[str, DFuncArg]] = []
+        for key, value in self.kwargs:
+            if isinstance(value, NeedAttribute):
+                if value.name not in need:
+                    raise FunctionParsingException(
+                        f"need has no attribute {value.name!r}"
+                    )
+                new_kwargs.append((key, need[value.name]))
+            else:
+                new_kwargs.append((key, value))
+        return DynamicFunctionParsed(self.name, tuple(new_args), tuple(new_kwargs))
+
+    @classmethod
+    def from_string(
+        cls, func_string: str, *, allow_need: bool = False
+    ) -> DynamicFunctionParsed:
+        """Create a DynamicFunction from a string.
+
+        :param func_string: The function string.
+        :param allow_need: Whether to allow `need.<field>` as argument.
+        :raises FunctionParsingException: if the function string is not valid.
+        """
+        try:
+            func = ast.parse(func_string)
+            func_call = func.body[0].value  # type: ignore[attr-defined]
+            assert isinstance(func_call, ast.Call)
+            func_name = func_call.func.id  # type: ignore[attr-defined]
+            assert isinstance(func_name, str)
+        except Exception as e:
+            raise FunctionParsingException("Not a function call") from e
+
+        func_args: list[DFuncArg] = []
+        for i, arg in enumerate(func_call.args):
+            if isinstance(arg, ast.Constant) and isinstance(
+                arg.value, str | int | float | bool
+            ):
                 func_args.append(arg.value)
+            elif isinstance(arg, ast.List):
+                el_list: list[str | int | float | bool] = []
+                for j, element in enumerate(arg.elts):
+                    if isinstance(element, ast.Constant) and isinstance(
+                        element.value, str | int | float | bool
+                    ):
+                        el_list.append(element.value)
+                    else:
+                        raise FunctionParsingException(
+                            f"Unsupported arg {i} item {j} value type"
+                        )
+                func_args.append(el_list)
+            elif (
+                allow_need
+                and isinstance(arg, ast.Attribute)
+                and isinstance(arg.value, ast.Name)
+                and arg.value.id == "need"
+            ):
+                func_args.append(NeedAttribute(arg.attr))
             else:
+                raise FunctionParsingException(f"Unsupported arg {i} value type")
+        func_kwargs: list[tuple[str, DFuncArg]] = []
+        for keyword in func_call.keywords:
+            kvalue = keyword.value
+            kkey = keyword.arg
+            if not isinstance(kkey, str):
                 raise FunctionParsingException(
-                    "Unsupported type found in function definition. Supported are numbers, strings, bool and list"
+                    "Keyword argument must have a string key"
                 )
-        else:
-            raise FunctionParsingException(
-                f"Unsupported type found in function definition: {func_string}. "
-                "Supported are numbers, strings, bool and list"
-            )
-    func_kargs: dict[str, Any] = {}
-    for keyword in func_call.keywords:
-        kvalue = keyword.value
-        kkey = keyword.arg
-        if isinstance(kvalue, ast.Num):
-            func_kargs[kkey] = kvalue.n
-        elif isinstance(kvalue, ast.Str):
-            func_kargs[kkey] = kvalue.s
-        elif isinstance(kvalue, ast_boolean):  # Check if Boolean
-            func_kargs[kkey] = kvalue.value
-        elif isinstance(kvalue, ast.List):
-            arg_list = []
-            for element in kvalue.elts:
-                if isinstance(element, ast.Num):
-                    arg_list.append(element.n)
-                elif isinstance(element, ast.Str):
-                    arg_list.append(element.s)
-            func_kargs[kkey] = arg_list
-        else:
-            raise FunctionParsingException()
+            if isinstance(kvalue, ast.Constant) and isinstance(
+                kvalue.value, str | int | float | bool
+            ):
+                func_kwargs.append((kkey, kvalue.value))
+            elif isinstance(kvalue, ast.List):
+                el_list = []
+                for j, element in enumerate(kvalue.elts):
+                    if isinstance(element, ast.Constant) and isinstance(
+                        element.value, str | int | float | bool
+                    ):
+                        el_list.append(element.value)
+                    else:
+                        raise FunctionParsingException(
+                            f"Unsupported kwarg {kkey!r} item {j} value type"
+                        )
+                func_kwargs.append((kkey, el_list))
+            elif (
+                allow_need
+                and isinstance(kvalue, ast.Attribute)
+                and isinstance(kvalue.value, ast.Name)
+                and kvalue.value.id == "need"
+            ):
+                func_kwargs.append((kkey, NeedAttribute(kvalue.attr)))
+            else:
+                raise FunctionParsingException(f"Unsupported kwarg {kkey!r} value type")
 
-    return func_name, func_args, func_kargs
+        return cls(func_name, tuple(func_args), tuple(func_kwargs))
 
 
 class FunctionParsingException(BaseException):
