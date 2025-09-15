@@ -5,19 +5,46 @@ import pytest
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
-from sphinx_needs.utils import match_variants
+from sphinx_needs.variants import VariantFunctionParsed, match_variants
+
+
+@pytest.mark.parametrize(
+    "text,expected_exprs,expected_final_value",
+    [
+        ("", (), None),
+        ("a", (), "a"),
+        ("a,b", (), "a,b"),
+        ("a;b", (), "a;b"),
+        ("a:yes", (("a", False, "yes"),), None),
+        ("a:yes, b:no", (("a", False, "yes"), ("b", False, "no")), None),
+        ("a:yes; b:no", (("a", False, "yes"), ("b", False, "no")), None),
+        ("a:yes, [b]:no", (("a", False, "yes"), ("b", True, "no")), None),
+        ("a:yes; [b]:no", (("a", False, "yes"), ("b", True, "no")), None),
+        ("a:yes, no", (("a", False, "yes"),), "no"),
+        ("a:yes; no", (("a", False, "yes"),), "no"),
+        ("a:yes,\nno", (("a", False, "yes"),), "no"),
+        ("[a and b]:yes, no", (("a and b", True, "yes"),), "no"),
+        ("a:yes, [b]:no; other", (("a", False, "yes"), ("b", True, "no")), "other"),
+    ],
+)
+def test_parse_variants(text, expected_exprs, expected_final_value):
+    variant = VariantFunctionParsed.from_string(text)
+    assert variant.expressions == expected_exprs
+    assert variant.final_value == expected_final_value
 
 
 @pytest.mark.parametrize(
     "option,context,variants,expected",
     [
         ("", {}, {}, None),
-        ("a", {}, {}, None),
+        ("a", {}, {}, "a"),
         ("a:yes", {}, {}, None),
         ("a:yes", {"a": False}, {}, None),
         ("a:yes", {"a": True}, {}, "yes"),
+        ("[a]:yes", {"a": True}, {}, "yes"),
         ("a:yes, no", {"a": False}, {}, "no"),
         ("a:yes; no", {"a": False}, {}, "no"),
+        ("a:yes,\nno", {"a": False}, {}, "no"),
         ("[a and b]:yes, no", {"a": True, "b": True}, {}, "yes"),
         ("a:yes, no", {}, {"a": "True"}, "yes"),
         ("a:yes, no", {"b": 1}, {"a": "b == 1"}, "yes"),
@@ -38,8 +65,9 @@ def test_variant_options_html(test_app, snapshot):
     app.build()
 
     warnings = strip_colors(app._warning.getvalue()).splitlines()
+    print(warnings)
     assert warnings == [
-        f"{Path(str(app.srcdir)) / 'index.rst'}:29: WARNING: Error in filter 'tag_c': name 'tag_c' is not defined [needs.variant]"
+        f"{Path(str(app.srcdir)) / 'index.rst'}:29: WARNING: Error in variant expression 'tag_c': name 'tag_c' is not defined [needs.variant]"
     ]
 
     needs = json.loads(Path(app.outdir, "needs.json").read_text())

@@ -27,7 +27,7 @@ from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_func import NeedFunc
-from sphinx_needs.utils import match_variants
+from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
