@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757918788764,
+  "lastUpdate": 1757950330598,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14076,6 +14076,42 @@ window.BENCHMARK_DATA = {
             "value": 64.970530293,
             "unit": "s",
             "extra": "Commit: 1218674b999ce2a00282d41d91a324465c5a1837\nBranch: master\nTime: 2025-09-15T08:44:21+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "66b3672e8dffa0af797a7a79f58a91c83d1be0aa",
+          "message": "🔧 Add `VariantFunctionParsed` dataclass (#1515)\n\nThis PR rewrites variant parsing to a much simpler \"left-to-right\"\nalgorithm, adds more tests, and also adds a dataclass that will allow\nvariant functions to be pre-parsed and stored, in future changes.",
+          "timestamp": "2025-09-15T17:30:10+02:00",
+          "tree_id": "ddf6e84e50465f8f1e719fc6d7faf8dd18f2ae18",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/66b3672e8dffa0af797a7a79f58a91c83d1be0aa"
+        },
+        "date": 1757950310554,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19324087199999695,
+            "unit": "s",
+            "extra": "Commit: 66b3672e8dffa0af797a7a79f58a91c83d1be0aa\nBranch: master\nTime: 2025-09-15T17:30:10+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.344964902,
+            "unit": "s",
+            "extra": "Commit: 66b3672e8dffa0af797a7a79f58a91c83d1be0aa\nBranch: master\nTime: 2025-09-15T17:30:10+02:00"
           }
         ]
       }
