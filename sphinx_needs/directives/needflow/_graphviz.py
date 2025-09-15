@@ -28,10 +28,8 @@ from sphinx_needs.filter_common import (
 )
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
-from sphinx_needs.utils import (
-    match_variants,
-    remove_node_from_tree,
-)
+from sphinx_needs.utils import remove_node_from_tree
+from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
 
 from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
