@@ -357,20 +357,20 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
         (
             "boolean",
             None,
-            "<<test>>",
-            VariantFunctionParsed((), "test"),
+            "<<a:true,false>>",
+            VariantFunctionParsed((("a", False, True),), False),
         ),
         (
             "integer",
             None,
-            "<<test>>",
-            VariantFunctionParsed((), "test"),
+            "<<a:2,4>>",
+            VariantFunctionParsed((("a", False, 2),), 4),
         ),
         (
             "number",
             None,
-            "<< test >>",
-            VariantFunctionParsed((), "test"),
+            "<< a:2.5,4.5 >>",
+            VariantFunctionParsed((("a", False, 2.5),), 4.5),
         ),
         (
             "array",
@@ -393,11 +393,11 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
         (
             "array",
             "boolean",
-            "true, <<test>>, false",
+            "true, <<a:yes,no>>, false",
             FunctionArray(
                 (
                     True,
-                    VariantFunctionParsed((), "test"),
+                    VariantFunctionParsed((("a", False, True),), False),
                     False,
                 )
             ),
@@ -405,11 +405,11 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
         (
             "array",
             "integer",
-            "1, <<test>>, 3",
+            "1, <<a:2,4>>, 3",
             FunctionArray(
                 (
                     1,
-                    VariantFunctionParsed((), "test"),
+                    VariantFunctionParsed((("a", False, 2),), 4),
                     3,
                 )
             ),
@@ -417,11 +417,11 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
         (
             "array",
             "number",
-            "1.5, << test >>, 3.5",
+            "1.5, << a:2.5,4.5 >>, 3.5",
             FunctionArray(
                 (
                     1.5,
-                    VariantFunctionParsed((), "test"),
+                    VariantFunctionParsed((("a", False, 2.5),), 4.5),
                     3.5,
                 )
             ),
@@ -439,31 +439,40 @@ def test_convert_directive_option_vf(type_, item_type, input, expected):
 
 
 @pytest.mark.parametrize(
-    "type_,item_type,allow_df,input",
+    "type_,item_type,allow_df,allow_vf,input",
     [
-        ("boolean", None, False, "a"),
-        ("boolean", None, False, "[[test()]]"),
-        ("integer", None, False, "a"),
-        ("integer", None, False, "1.5"),
-        ("integer", None, False, "[[test()]]"),
-        ("number", None, False, "a"),
-        ("number", None, False, "[[test()]]"),
-        ("array", "boolean", False, "a, false"),
-        ("array", "boolean", False, "true, [[test()]], false"),
-        ("array", "integer", False, "a, 1"),
-        ("array", "integer", False, "1, [[test()]], 3"),
-        ("array", "number", False, "a, 1"),
-        ("array", "number", False, "1.5, [[ test() ]], 3.5"),
-        ("array", "number", False, "1.5, a[[ test() ]], 3.5"),
-        ("array", "number", False, "1.5, [[ test() ]]b, 3.5"),
+        ("boolean", None, False, False, "a"),
+        ("boolean", None, False, False, "[[test()]]"),
+        ("boolean", None, False, True, "<<a:b>>"),
+        ("integer", None, False, False, "a"),
+        ("integer", None, False, False, "1.5"),
+        ("integer", None, False, False, "[[test()]]"),
+        ("integer", None, False, True, "<<a:b>>"),
+        ("number", None, False, False, "a"),
+        ("number", None, False, False, "[[test()]]"),
+        ("number", None, False, True, "<<a:b>>"),
+        ("array", "boolean", False, False, "a, false"),
+        ("array", "boolean", False, False, "true, [[test()]], false"),
+        ("array", "boolean", False, True, "<<a:b>>"),
+        ("array", "integer", False, False, "a, 1"),
+        ("array", "integer", False, False, "1, [[test()]], 3"),
+        ("array", "integer", False, True, "<<a:b>>"),
+        ("array", "number", False, False, "a, 1"),
+        ("array", "number", False, False, "1.5, [[ test() ]], 3.5"),
+        ("array", "number", False, False, "1.5, a[[ test() ]], 3.5"),
+        ("array", "number", False, False, "1.5, [[ test() ]]b, 3.5"),
+        ("array", "number", False, True, "<<a:b>>"),
     ],
 )
-def test_convert_directive_option_value_errors(type_, item_type, allow_df, input):
+def test_convert_directive_option_value_errors(
+    type_, item_type, allow_df, allow_vf, input
+):
     field = FieldSchema(
         name="test_field",
         type=type_,
         item_type=item_type,
         allow_dynamic_functions=allow_df,
+        allow_variant_functions=allow_vf,
     )
     with pytest.raises(ValueError):
         field.convert_directive_option(input)

@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 from collections.abc import Iterator
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import lru_cache, partial
 from typing import Any, Literal
 
 from sphinx_needs.functions.functions import DynamicFunctionParsed
@@ -155,7 +155,10 @@ class FieldSchema:
                     and value.lstrip().startswith("<<")
                     and value.rstrip().endswith(">>")
                 ):
-                    return VariantFunctionParsed.from_string(value.strip()[2:-2])
+                    return VariantFunctionParsed.from_string(
+                        value.strip()[2:-2],
+                        partial(_from_string_item, item_type=self.type),
+                    )
                 else:
                     return FieldValue(_from_string_item(value, self.type))
             case "string":
@@ -207,7 +210,14 @@ class FieldSchema:
                         case ListItemType.VF | ListItemType.VF_U:
                             # TODO warn on unclosed variant function
                             has_df_or_vf = True
-                            array.append(VariantFunctionParsed.from_string(item))
+                            array.append(
+                                VariantFunctionParsed.from_string(
+                                    item,
+                                    partial(
+                                        _from_string_item, item_type=self.item_type
+                                    ),
+                                )
+                            )
 
                 if has_df_or_vf:
                     return FunctionArray(tuple(array))  # type: ignore[arg-type]

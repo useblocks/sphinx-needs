@@ -28,7 +28,7 @@ from sphinx_needs.variants import VariantFunctionParsed, match_variants
     ],
 )
 def test_parse_variants(text, expected_exprs, expected_final_value):
-    variant = VariantFunctionParsed.from_string(text)
+    variant = VariantFunctionParsed.from_string(text, allow_semicolon=True)
     assert variant.expressions == expected_exprs
     assert variant.final_value == expected_final_value
 
