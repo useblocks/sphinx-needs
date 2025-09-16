@@ -109,7 +109,7 @@ from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.needs_schema import FieldSchema, FieldsSchema
+from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, FieldValue
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
@@ -731,6 +731,7 @@ def create_schema(app: Sphinx) -> None:
     schema = FieldsSchema()
     # TODO add core fields
     for name, extra in needs_config.extra_options.items():
+        default = FieldValue("")
         schema.add_extra_field(
             FieldSchema(
                 name=name,
@@ -740,8 +741,8 @@ def create_schema(app: Sphinx) -> None:
                 nullable=False,
                 allow_dynamic_functions=True,
                 allow_extend=True,
-                allow_variant=name in needs_config.variant_options,
-                default="",  # TODO get/validate from needs_global_options
+                allow_variant_functions=name in needs_config.variant_options,
+                default=default,  # TODO get/validate from needs_global_options
                 # TODO also predicate defaults
                 directive_option=True,
             )

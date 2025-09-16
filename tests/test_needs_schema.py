@@ -5,11 +5,14 @@ from sphinx_needs.functions.functions import (
     FunctionParsingException,
 )
 from sphinx_needs.needs_schema import (
-    DynamicFunctionArray,
     FieldSchema,
     FieldValue,
-    _split_list_with_dyn_funcs,
+    FunctionArray,
+    ListItemType,
+    _split_list,
+    _split_string,
 )
+from sphinx_needs.variants import VariantFunctionParsed
 
 
 @pytest.mark.parametrize(
@@ -91,7 +94,7 @@ def test_json_schema(type_, item_type, nullable, default, expected):
         type=type_,
         item_type=item_type,
         nullable=nullable,
-        default=default,
+        default=FieldValue(default) if default is not None else None,
     )
     assert field.json_schema() == expected
 
@@ -226,13 +229,13 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
             "string",
             None,
             "[[test()]]",
-            DynamicFunctionParsed(name="test", args=(), kwargs=()),
+            FunctionArray((DynamicFunctionParsed(name="test", args=(), kwargs=()),)),
         ),
         (
             "string",
             None,
             "x [[test()]]y[[other()]]z[[more()",
-            DynamicFunctionArray(
+            FunctionArray(
                 (
                     "x ",
                     DynamicFunctionParsed(name="test", args=(), kwargs=()),
@@ -265,15 +268,13 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
             "array",
             "string",
             "[[test()]]",
-            DynamicFunctionArray(
-                (DynamicFunctionParsed(name="test", args=(), kwargs=()),)
-            ),
+            FunctionArray((DynamicFunctionParsed(name="test", args=(), kwargs=()),)),
         ),
         (
             "array",
             "string",
             "a, [[test()]], c",
-            DynamicFunctionArray(
+            FunctionArray(
                 (
                     "a",
                     DynamicFunctionParsed(name="test", args=(), kwargs=()),
@@ -285,7 +286,7 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
             "array",
             "boolean",
             "true, [[test()]], false",
-            DynamicFunctionArray(
+            FunctionArray(
                 (
                     True,
                     DynamicFunctionParsed(name="test", args=(), kwargs=()),
@@ -297,7 +298,7 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
             "array",
             "integer",
             "1, [[test()]], 3",
-            DynamicFunctionArray(
+            FunctionArray(
                 (
                     1,
                     DynamicFunctionParsed(name="test", args=(), kwargs=()),
@@ -309,7 +310,7 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
             "array",
             "number",
             "1.5, [[ test() ]], 3.5",
-            DynamicFunctionArray(
+            FunctionArray(
                 (
                     1.5,
                     DynamicFunctionParsed(name="test", args=(), kwargs=()),
@@ -325,6 +326,114 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
         type=type_,
         item_type=item_type,
         allow_dynamic_functions=True,
+    )
+    assert field.convert_directive_option(input) == expected
+
+
+@pytest.mark.parametrize(
+    "type_,item_type,input,expected",
+    [
+        (
+            "string",
+            None,
+            "<<a:b,c>>",
+            FunctionArray((VariantFunctionParsed((("a", False, "b"),), "c"),)),
+        ),
+        (
+            "string",
+            None,
+            "x <<a:b,c>>y<<[x]:y>>z<<v",
+            FunctionArray(
+                (
+                    "x ",
+                    VariantFunctionParsed((("a", False, "b"),), "c"),
+                    "y",
+                    VariantFunctionParsed((("x", True, "y"),), None),
+                    "z",
+                    VariantFunctionParsed((), "v"),
+                )
+            ),
+        ),
+        (
+            "boolean",
+            None,
+            "<<test>>",
+            VariantFunctionParsed((), "test"),
+        ),
+        (
+            "integer",
+            None,
+            "<<test>>",
+            VariantFunctionParsed((), "test"),
+        ),
+        (
+            "number",
+            None,
+            "<< test >>",
+            VariantFunctionParsed((), "test"),
+        ),
+        (
+            "array",
+            "string",
+            "<<test>>",
+            FunctionArray((VariantFunctionParsed((), "test"),)),
+        ),
+        (
+            "array",
+            "string",
+            "a, <<test>>, c",
+            FunctionArray(
+                (
+                    "a",
+                    VariantFunctionParsed((), "test"),
+                    "c",
+                )
+            ),
+        ),
+        (
+            "array",
+            "boolean",
+            "true, <<test>>, false",
+            FunctionArray(
+                (
+                    True,
+                    VariantFunctionParsed((), "test"),
+                    False,
+                )
+            ),
+        ),
+        (
+            "array",
+            "integer",
+            "1, <<test>>, 3",
+            FunctionArray(
+                (
+                    1,
+                    VariantFunctionParsed((), "test"),
+                    3,
+                )
+            ),
+        ),
+        (
+            "array",
+            "number",
+            "1.5, << test >>, 3.5",
+            FunctionArray(
+                (
+                    1.5,
+                    VariantFunctionParsed((), "test"),
+                    3.5,
+                )
+            ),
+        ),
+    ],
+)
+def test_convert_directive_option_vf(type_, item_type, input, expected):
+    field = FieldSchema(
+        name="test_field",
+        type=type_,
+        item_type=item_type,
+        allow_variant_functions=True,
     )
     assert field.convert_directive_option(input) == expected
 
@@ -387,73 +496,217 @@ def test_convert_directive_option_df_errors(type_, item_type, input):
     "text, expected",
     [
         (None, []),
-        ("a", [[("a", False, False)]]),
-        ("a,", [[("a", False, False)]]),
-        ("[[a]]", [[("a", True, False)]]),
-        ("a,b", [[("a", False, False)], [("b", False, False)]]),
-        ("a, b", [[("a", False, False)], [("b", False, False)]]),
-        ("a,b,", [[("a", False, False)], [("b", False, False)]]),
-        ("a|b", [[("a", False, False)], [("b", False, False)]]),
-        ("a| b", [[("a", False, False)], [("b", False, False)]]),
-        ("a|b,", [[("a", False, False)], [("b", False, False)]]),
-        ("a;b", [[("a", False, False)], [("b", False, False)]]),
-        ("a; b", [[("a", False, False)], [("b", False, False)]]),
-        ("a;b,", [[("a", False, False)], [("b", False, False)]]),
+        ("a", [[("a", ListItemType.STD)]]),
+        ("a,", [[("a", ListItemType.STD)]]),
+        ("[[a]]", [[("a", ListItemType.DF)]]),
+        ("<<a>>", [[("a", ListItemType.VF)]]),
+        ("a,b", [[("a", ListItemType.STD)], [("b", ListItemType.STD)]]),
+        ("a, b", [[("a", ListItemType.STD)], [("b", ListItemType.STD)]]),
+        ("a,b,", [[("a", ListItemType.STD)], [("b", ListItemType.STD)]]),
+        ("a|b", [[("a", ListItemType.STD)], [("b", ListItemType.STD)]]),
+        ("a| b", [[("a", ListItemType.STD)], [("b", ListItemType.STD)]]),
+        ("a|b,", [[("a", ListItemType.STD)], [("b", ListItemType.STD)]]),
+        ("a;b", [[("a", ListItemType.STD)], [("b", ListItemType.STD)]]),
+        ("a; b", [[("a", ListItemType.STD)], [("b", ListItemType.STD)]]),
+        ("a;b,", [[("a", ListItemType.STD)], [("b", ListItemType.STD)]]),
         (
             "a,b|c;d,",
             [
-                [("a", False, False)],
-                [("b", False, False)],
-                [("c", False, False)],
-                [("d", False, False)],
+                [("a", ListItemType.STD)],
+                [("b", ListItemType.STD)],
+                [("c", ListItemType.STD)],
+                [("d", ListItemType.STD)],
             ],
         ),
-        ("[[x,y]],b", [[("x,y", True, False)], [("b", False, False)]]),
+        (
+            " a ,, b; c ",
+            [
+                [("a", ListItemType.STD)],
+                [("b", ListItemType.STD)],
+                [("c", ListItemType.STD)],
+            ],
+        ),
+        ("[[x,y]],b", [[("x,y", ListItemType.DF)], [("b", ListItemType.STD)]]),
         (
             "a,[[x,y]],b",
-            [[("a", False, False)], [("x,y", True, False)], [("b", False, False)]],
+            [
+                [("a", ListItemType.STD)],
+                [("x,y", ListItemType.DF)],
+                [("b", ListItemType.STD)],
+            ],
         ),
-        ("a,[[x,y", [[("a", False, False)], [("x,y", True, True)]]),
-        ("a,[[x,y]", [[("a", False, False)], [("x,y", True, True)]]),
-        ("[[a]]b", [[("a", True, False), ("b", False, False)]]),
-        ("b[[a]]", [[("b", False, False), ("a", True, False)]]),
+        ("a,[[x,y", [[("a", ListItemType.STD)], [("x,y", ListItemType.DF_U)]]),
+        ("a,[[x,y]", [[("a", ListItemType.STD)], [("x,y", ListItemType.DF_U)]]),
+        ("[[a]]b", [[("a", ListItemType.DF), ("b", ListItemType.STD)]]),
+        ("b[[a]]", [[("b", ListItemType.STD), ("a", ListItemType.DF)]]),
         (
             "[[a]]b[[c]]d",
             [
                 [
-                    ("a", True, False),
-                    ("b", False, False),
-                    ("c", True, False),
-                    ("d", False, False),
+                    ("a", ListItemType.DF),
+                    ("b", ListItemType.STD),
+                    ("c", ListItemType.DF),
+                    ("d", ListItemType.STD),
                 ]
             ],
         ),
-        ("[[a;]],", [[("a;", True, False)]]),
+        ("[[a;]],", [[("a;", ListItemType.DF)]]),
         (
             "a,b;c",
-            [[("a", False, False)], [("b", False, False)], [("c", False, False)]],
+            [
+                [("a", ListItemType.STD)],
+                [("b", ListItemType.STD)],
+                [("c", ListItemType.STD)],
+            ],
         ),
         (
             "[[a]],[[b]];[[c]]",
-            [[("a", True, False)], [("b", True, False)], [("c", True, False)]],
-        ),
-        (
-            " a ,, b; c ",
-            [[("a", False, False)], [("b", False, False)], [("c", False, False)]],
+            [
+                [("a", ListItemType.DF)],
+                [("b", ListItemType.DF)],
+                [("c", ListItemType.DF)],
+            ],
         ),
         (
             " [[a]] ,, [[b]] ; [[c]] ",
-            [[("a", True, False)], [("b", True, False)], [("c", True, False)]],
+            [
+                [("a", ListItemType.DF)],
+                [("b", ListItemType.DF)],
+                [("c", ListItemType.DF)],
+            ],
         ),
         (
             "a,[[b]];c",
-            [[("a", False, False)], [("b", True, False)], [("c", False, False)]],
+            [
+                [("a", ListItemType.STD)],
+                [("b", ListItemType.DF)],
+                [("c", ListItemType.STD)],
+            ],
         ),
         (
             " a ,, [[b;]] ; c ",
-            [[("a", False, False)], [("b;", True, False)], [("c", False, False)]],
+            [
+                [("a", ListItemType.STD)],
+                [("b;", ListItemType.DF)],
+                [("c", ListItemType.STD)],
+            ],
+        ),
+        ("<<x,y>>,b", [[("x,y", ListItemType.VF)], [("b", ListItemType.STD)]]),
+        (
+            "a,<<x,y>>,b",
+            [
+                [("a", ListItemType.STD)],
+                [("x,y", ListItemType.VF)],
+                [("b", ListItemType.STD)],
+            ],
+        ),
+        ("a,<<x,y", [[("a", ListItemType.STD)], [("x,y", ListItemType.VF_U)]]),
+        ("a,<<x,y>", [[("a", ListItemType.STD)], [("x,y", ListItemType.VF_U)]]),
+        ("<<a>>b", [[("a", ListItemType.VF), ("b", ListItemType.STD)]]),
+        ("b<<a>>", [[("b", ListItemType.STD), ("a", ListItemType.VF)]]),
+        (
+            "<<a>>b<<c>>d",
+            [
+                [
+                    ("a", ListItemType.VF),
+                    ("b", ListItemType.STD),
+                    ("c", ListItemType.VF),
+                    ("d", ListItemType.STD),
+                ]
+            ],
+        ),
+        ("<<a;>>,", [[("a;", ListItemType.VF)]]),
+        (
+            "<<a>>,<<b>>;<<c>>",
+            [
+                [("a", ListItemType.VF)],
+                [("b", ListItemType.VF)],
+                [("c", ListItemType.VF)],
+            ],
+        ),
+        (
+            " <<a>> ,, <<b>> ; <<c>> ",
+            [
+                [("a", ListItemType.VF)],
+                [("b", ListItemType.VF)],
+                [("c", ListItemType.VF)],
+            ],
+        ),
+        (
+            "a,<<b>>;c",
+            [
+                [("a", ListItemType.STD)],
+                [("b", ListItemType.VF)],
+                [("c", ListItemType.STD)],
+            ],
+        ),
+        (
+            " a ,, <<b;>> ; c ",
+            [
+                [("a", ListItemType.STD)],
+                [("b;", ListItemType.VF)],
+                [("c", ListItemType.STD)],
+            ],
+        ),
+        (
+            " a << b >> c [[ d ]] e ",
+            [
+                [
+                    ("a ", ListItemType.STD),
+                    (" b ", ListItemType.VF),
+                    (" c ", ListItemType.STD),
+                    (" d ", ListItemType.DF),
+                    (" e", ListItemType.STD),
+                ],
+            ],
+        ),
+        (
+            "a,[[b]],<<c>>;d",
+            [
+                [("a", ListItemType.STD)],
+                [("b", ListItemType.DF)],
+                [("c", ListItemType.VF)],
+                [("d", ListItemType.STD)],
+            ],
         ),
     ],
 )
-def test_split_list_with_dyn_funcs(text, expected):
-    assert list(_split_list_with_dyn_funcs(text)) == expected
+def test_split_list(text, expected):
+    assert list(_split_list(text, True, True)) == expected
+
+
+@pytest.mark.parametrize(
+    "text, expected",
+    [
+        ("", [("", ListItemType.STD)]),
+        ("a", [("a", ListItemType.STD)]),
+        ("[[a]]", [("a", ListItemType.DF)]),
+        ("<<a>>", [("a", ListItemType.VF)]),
+        ("[[a]", [("a", ListItemType.DF_U)]),
+        ("<<a>", [("a", ListItemType.VF_U)]),
+        ("[[a", [("a", ListItemType.DF_U)]),
+        ("<<a", [("a", ListItemType.VF_U)]),
+        (
+            " a << b >> c [[ d ]] e ",
+            [
+                ("a ", ListItemType.STD),
+                (" b ", ListItemType.VF),
+                (" c ", ListItemType.STD),
+                (" d ", ListItemType.DF),
+                (" e", ListItemType.STD),
+            ],
+        ),
+        (
+            "a,[[b]],<<c>>;d",
+            [
+                ("a,", ListItemType.STD),
+                ("b", ListItemType.DF),
+                (",", ListItemType.STD),
+                ("c", ListItemType.VF),
+                (";d", ListItemType.STD),
+            ],
+        ),
+    ],
+)
+def test_split_string(text, expected):
+    assert _split_string(text, True, True) == expected
