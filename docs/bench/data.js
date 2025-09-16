@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757950330598,
+  "lastUpdate": 1758020075473,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14112,6 +14112,42 @@ window.BENCHMARK_DATA = {
             "value": 61.344964902,
             "unit": "s",
             "extra": "Commit: 66b3672e8dffa0af797a7a79f58a91c83d1be0aa\nBranch: master\nTime: 2025-09-15T17:30:10+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4598e708a188e94777d72f4efea9a3f94ed5a832",
+          "message": "‼️ remove parsing of deprecated `needs_global_options` format (#1517)\n\nThis will now simply give a warning that the `needs_global_options` is\nnot a `dict` and skip parsing it entirely",
+          "timestamp": "2025-09-16T12:52:37+02:00",
+          "tree_id": "4ac120a9628811dfd370bcac0f463f324daa3e62",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4598e708a188e94777d72f4efea9a3f94ed5a832"
+        },
+        "date": 1758020055600,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18074087800005145,
+            "unit": "s",
+            "extra": "Commit: 4598e708a188e94777d72f4efea9a3f94ed5a832\nBranch: master\nTime: 2025-09-16T12:52:37+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.976342709999926,
+            "unit": "s",
+            "extra": "Commit: 4598e708a188e94777d72f4efea9a3f94ed5a832\nBranch: master\nTime: 2025-09-16T12:52:37+02:00"
           }
         ]
       }
