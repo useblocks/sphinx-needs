@@ -79,7 +79,6 @@ class _Config:
 
     def __init__(self) -> None:
         self._extra_options: dict[str, ExtraOptionParams] = {}
-        self._field_defaults: dict[str, FieldDefault] = {}
         self._functions: dict[str, NeedFunctionsType] = {}
         self._warnings: dict[
             str, str | Callable[[NeedItem, SphinxLoggerAdapter], bool]
@@ -87,7 +86,6 @@ class _Config:
 
     def clear(self) -> None:
         self._extra_options = {}
-        self._field_defaults = {}
         self._functions = {}
         self._warnings = {}
 
@@ -145,15 +143,6 @@ class _Config:
             description=description,
             schema=schema,
         )
-
-    @property
-    def field_defaults(self) -> Mapping[str, FieldDefault]:
-        """Default values for need fields."""
-        return self._field_defaults
-
-    @field_defaults.setter
-    def field_defaults(self, value: dict[str, FieldDefault]) -> None:
-        self._field_defaults = value
 
     @property
     def functions(self) -> Mapping[str, NeedFunctionsType]:
@@ -344,7 +333,6 @@ class NeedsSphinxConfig:
         if name.startswith("__") or name in (
             "_config",
             "extra_options",
-            "field_defaults",
             "functions",
             "warnings",
         ):
@@ -357,7 +345,6 @@ class NeedsSphinxConfig:
         if name.startswith("__") or name in (
             "_config",
             "extra_options",
-            "field_defaults",
             "functions",
             "warnings",
         ):
@@ -607,11 +594,6 @@ class NeedsSphinxConfig:
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
     """Default values given to specified fields of needs"""
-
-    @property
-    def field_defaults(self) -> Mapping[str, FieldDefault]:
-        """Default values for need fields."""
-        return _NEEDS_CONFIG.field_defaults
 
     duration_option: str = field(
         default="duration", metadata={"rebuild": "html", "types": (str,)}

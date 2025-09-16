@@ -94,6 +94,7 @@ def test_json_schema(type_, item_type, nullable, default, expected):
         type=type_,
         item_type=item_type,
         nullable=nullable,
+        allow_defaults=True,
         default=FieldValue(default) if default is not None else None,
     )
     assert field.json_schema() == expected

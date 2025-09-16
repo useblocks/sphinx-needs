@@ -17,7 +17,6 @@ from sphinx.environment import BuildEnvironment
 import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
 from sphinx_needs import __version__
 from sphinx_needs.api import get_needs_view
-from sphinx_needs.api.need import _split_list_with_dyn_funcs
 from sphinx_needs.builder import (
     NeedsBuilder,
     NeedsIdBuilder,
@@ -29,7 +28,6 @@ from sphinx_needs.builder import (
 )
 from sphinx_needs.config import (
     _NEEDS_CONFIG,
-    FieldDefault,
     LinkOptionsType,
     NeedsSphinxConfig,
 )
@@ -109,7 +107,13 @@ from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.needs_schema import FieldSchema, FieldsSchema, FieldValue
+from sphinx_needs.needs_schema import (
+    FieldSchema,
+    FieldsSchema,
+    FieldValue,
+    LinkSchema,
+    LinksValue,
+)
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
 from sphinx_needs.roles.need_count import NeedCount, process_need_count
@@ -721,156 +725,228 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 "This is not allowed."
             )
 
-    _gather_field_defaults(needs_config, set(link_types))
-
     validate_schemas_config(needs_config)
 
 
 def create_schema(app: Sphinx) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     schema = FieldsSchema()
-    # TODO add core fields
-    for name, extra in needs_config.extra_options.items():
-        default = FieldValue("")
-        schema.add_extra_field(
-            FieldSchema(
-                name=name,
-                description=extra.description,
-                type="string",
-                item_type=None,
-                nullable=False,
-                allow_dynamic_functions=True,
-                allow_extend=True,
-                allow_variant_functions=name in needs_config.variant_options,
-                default=default,  # TODO get/validate from needs_global_options
-                # TODO also predicate defaults
-                directive_option=True,
-            )
-        )
-    # TODO add link fields
-    print(schema)
-    SphinxNeedsData(app.env)._set_schema(schema)
-
-
-def _gather_field_defaults(
-    needs_config: NeedsSphinxConfig, link_types: set[str]
-) -> None:
-    """gather defaults from needs_global_options and set on config"""
-    allowed_internal_defaults: dict[str, Literal["str", "str_list", "bool"]] = {
-        k: v["allow_default"]
-        for k, v in NeedsCoreFields.items()
-        if "allow_default" in v
-    }
-    field_defaults: dict[str, FieldDefault] = {}
-    for key, value in needs_config._global_options.items():
-        single_default: FieldDefault = {}
-
-        if isinstance(value, dict):
-            if unknown := set(value).difference({"predicates", "default"}):
-                log_warning(
-                    LOGGER,
-                    f"needs_global_options {key!r} value contains unknown keys: {unknown}",
-                    "config",
-                    None,
-                )
-            single_default = {  # type: ignore[assignment]
-                k: v for k, v in value.items() if k in {"predicates", "default"}
-            }
-            if "predicates" in single_default and (
-                not isinstance(single_default["predicates"], list | tuple)
-                or not all(
-                    isinstance(x, list | tuple)
-                    and len(x) == 2
-                    and isinstance(x[0], str)
-                    for x in single_default["predicates"]
-                )
-            ):
-                log_warning(
-                    LOGGER,
-                    f"needs_global_options {key!r}, 'predicates', must be a list of (filter string, value) pairs",
-                    "config",
-                    None,
-                )
-                continue
-        else:
+    for field in [
+        FieldSchema(
+            name="status",
+            description="Status of the need",
+            type="string",
+            nullable=True,
+            allow_defaults=True,
+            allow_extend=True,
+            allow_dynamic_functions=True,
+            allow_variant_functions="status" in needs_config.variant_options,
+            directive_option=True,
+        ),
+        FieldSchema(
+            name="tags",
+            description="List of tags",
+            type="array",
+            item_type="string",
+            default=FieldValue([]),
+            allow_defaults=True,
+            allow_extend=True,
+            allow_dynamic_functions=True,
+            directive_option=True,
+        ),
+        FieldSchema(
+            name="collapse",
+            description="Hide the meta-data information of the need.",
+            type="boolean",
+            default=FieldValue(False),
+            allow_defaults=True,
+            allow_extend=True,
+            directive_option=True,
+        ),
+        FieldSchema(
+            name="hide",
+            description="If true, the need is not rendered.",
+            type="boolean",
+            default=FieldValue(False),
+            allow_defaults=True,
+            allow_extend=True,
+            directive_option=True,
+        ),
+        FieldSchema(
+            name="layout",
+            description="Key of the layout, which is used to render the need.",
+            type="string",
+            nullable=True,
+            allow_defaults=True,
+            allow_extend=True,
+            allow_dynamic_functions=True,
+            allow_variant_functions="layout" in needs_config.variant_options,
+            directive_option=True,
+        ),
+        FieldSchema(
+            name="style",
+            description="Comma-separated list of CSS classes (all appended by `needs_style_`).",
+            type="string",
+            nullable=True,
+            allow_defaults=True,
+            allow_extend=True,
+            allow_dynamic_functions=True,
+            allow_variant_functions="style" in needs_config.variant_options,
+            directive_option=True,
+        ),
+        FieldSchema(
+            name="template",
+            description="The template key, if the content was created from a jinja template.",
+            type="string",
+            nullable=True,
+            allow_defaults=True,
+            directive_option=True,
+        ),
+        FieldSchema(
+            name="pre_template",
+            description="The template key, if the pre_content was created from a jinja template.",
+            type="string",
+            nullable=True,
+            allow_defaults=True,
+            directive_option=True,
+        ),
+        FieldSchema(
+            name="post_template",
+            description="The template key, if the post_content was created from a jinja template.",
+            type="string",
+            nullable=True,
+            allow_defaults=True,
+            directive_option=True,
+        ),
+        FieldSchema(
+            name="constraints",
+            description="List of constraint names, which are defined for this need.",
+            type="array",
+            item_type="string",
+            default=FieldValue([]),
+            allow_defaults=True,
+            allow_extend=True,
+            allow_dynamic_functions=True,
+            directive_option=True,
+        ),
+    ]:
+        try:
+            schema.add_core_field(field)
+        except ValueError as exc:
             log_warning(
                 LOGGER,
-                f"needs_global_options {key!r} value is not a dict",
+                f"Could not add core field {field.name!r} to schema: {exc}",
+                "config",
+                None,
+            )
+            continue
+    for name, extra in needs_config.extra_options.items():
+        try:
+            type: Literal["string", "boolean", "integer", "number", "array"] = "string"
+            item_type: None | Literal["string", "boolean", "integer", "number"] = None
+            if extra.schema:
+                type = extra.schema.get("type", "string")
+                if type == "array":
+                    item_type = extra.schema.get("items", {}).get("type", "string")  # type: ignore[attr-defined]
+            field = FieldSchema(
+                name=name,
+                description=extra.description,
+                type=type,
+                item_type=item_type,
+                # TODO for nullable and default, currently if there is no schema,
+                # we configure so that the behaviour follows that of legacy (pre-schema) extra option,
+                # i.e. non-nullable and default of empty string (that can be overriden by needs_global_options).
+                nullable=extra.schema is not None,
+                default=None if extra.schema is not None else FieldValue(""),
+                allow_defaults=True,
+                allow_extend=True,
+                allow_dynamic_functions=True,
+                allow_variant_functions=name in needs_config.variant_options,
+                directive_option=True,
+            )
+            schema.add_extra_field(field)
+        except ValueError as exc:
+            log_warning(
+                LOGGER,
+                f"Could not add extra option {name!r} to schema: {exc}",
                 "config",
                 None,
             )
             continue
 
-        if key in needs_config.extra_options:
-            if _check_type(key, single_default, "str"):
-                field_defaults[key] = single_default
-        elif key in link_types:
-            if _check_type(key, single_default, "str_list"):
-                field_defaults[key] = single_default
-        elif key in allowed_internal_defaults:
-            if _check_type(key, single_default, allowed_internal_defaults[key]):
-                field_defaults[key] = single_default
+    for link in needs_config.extra_links:
+        name = link["option"]
+        try:
+            link_field = LinkSchema(
+                name=name,
+                description="Link field",
+                default=LinksValue([]),
+                allow_defaults=True,
+                allow_extend=True,
+                allow_dynamic_functions=True,
+                allow_variant_functions=name in needs_config.variant_options,
+                directive_option=True,
+            )
+            schema.add_link_field(link_field)
+        except ValueError as exc:
+            log_warning(
+                LOGGER,
+                f"Could not add extra link option {name!r} to schema: {exc}",
+                "config",
+                None,
+            )
+            continue
+
+    for name, default_config in needs_config._global_options.items():
+        if (field_for_default := schema.get_any_field(name)) is None:
+            log_warning(
+                LOGGER,
+                f"needs_global_options {name!r} does not match any defined need option",
+                "config",
+                None,
+            )
+            continue
+        if not isinstance(default_config, dict):
+            log_warning(
+                LOGGER,
+                f"needs_global_options {name!r} value is not a dict",
+                "config",
+                None,
+            )
         else:
-            log_warning(
-                LOGGER,
-                f"needs_global_options {key!r} must also exist in needs_extra_options, needs_extra_links, or {sorted(allowed_internal_defaults)}",
-                "config",
-                None,
-            )
-
-    _NEEDS_CONFIG.field_defaults = field_defaults
-
-
-def _check_type(
-    key: str,
-    default: FieldDefault,
-    type_name: Literal["str", "str_list", "bool"],
-) -> bool:
-    """Check the values in a FieldDefault are the given type."""
-    assert type_name in ("str", "str_list", "bool")
-    type_ = (
-        str if type_name == "str" else (bool if type_name == "bool" else (str, list))
-    )
-    if "default" in default:
-        if not isinstance(default["default"], type_):
-            log_warning(
-                LOGGER,
-                f"needs_global_options {key!r} has a default value that is not of type {type_name!r}",
-                "config",
-                None,
-            )
-            return False
-        if type_name == "str_list":
-            default["default"] = [
-                v
-                for v, _ in _split_list_with_dyn_funcs(
-                    default["default"], None, " (in needs_global_options)"
-                )
-            ]
-    if "predicates" in default:
-        for _, value in default["predicates"]:
-            if not isinstance(value, type_):
+            if unknown := set(default_config).difference({"predicates", "default"}):
                 log_warning(
                     LOGGER,
-                    f"needs_global_options {key!r} has a predicate default value that is not of type {type_name!r}",
+                    f"needs_global_options {name!r} value contains unknown keys: {unknown}",
                     "config",
                     None,
                 )
-                return False
-        if type_name == "str_list":
-            default["predicates"] = [
-                (
-                    predicate,
-                    [
-                        v
-                        for v, _ in _split_list_with_dyn_funcs(
-                            value, None, " (in needs_global_options)"
-                        )
-                    ],
-                )
-                for predicate, value in default["predicates"]
-            ]
-    return True
+            if "default" in default_config:
+                try:
+                    field_for_default._set_default(
+                        default_config["default"], allow_coercion=True
+                    )
+                except Exception as exc:
+                    log_warning(
+                        LOGGER,
+                        f"needs_global_options {name!r} default value is incorrect: {exc}",
+                        "config",
+                        None,
+                    )
+            if "predicates" in default_config:
+                try:
+                    field_for_default._set_predicate_defaults(
+                        default_config["predicates"], allow_coercion=True
+                    )
+                except Exception as exc:
+                    log_warning(
+                        LOGGER,
+                        f"needs_global_options {name!r} predicates are incorrect: {exc}",
+                        "config",
+                        None,
+                    )
+
+    SphinxNeedsData(app.env)._set_schema(schema)
 
 
 def release_data_locks(app: Sphinx, _exception: Exception) -> None:

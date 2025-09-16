@@ -310,8 +310,40 @@ needs_global_options
       .. code-block:: python
          :caption: New format
 
+         needs_external_allow_dynamics = None # None | bool, if None -> warning
+
+         needs_external_needs = [{"allow_dynamics": False}]
+
+         needs_import_allow_dynamics = None # None | bool, if None -> warning
+
+         .. needimport:: xdvcxc
+            :allow-dynamics: false
+
+         - if isinstance(value, str) and allow_dynamics:
+              value = field.from_directive_option(value)
+           else:
+              field.type_check(value)
+
+         "id2": {
+           "my_str_field": "a",
+           #"my_int_field": 1
+         },
+         "id3": {
+           "my_str_field": "[[func()]]",
+           #"my_int_field": "[[func()]]"
+         }
+
+            
+
          needs_global_options = {
-             "field1": {"default": "a"},
+             "field1": {"default": "a"}, # string
+             "fieldx": {"default": 1}, # integer
+             "fieldx": {"default": 1.0}, # number
+             "fieldx": {"default": [1, 2, 3]}, # array[integer]
+             "fieldx": {"default": "[[func()]]"}, # array[integer]
+
+             "fieldx": {"default": "[[func()]]"}, # integer -> default can be an integer OR string
+
              "field2": {"predicates": [('status == "done"', "a")]},
              "field3": {
                  "predicates": [('status == "done"', "a")],
@@ -319,13 +351,16 @@ needs_global_options
              },
              "field4": {
                  "predicates": [
-                     ('status == "done"', "a"),
+                     ('field1 == 1', "a"),
                      ('status == "ongoing"', "b"),
                      ('status == "other"', "c"),
                  ],
                  "default": "d",
              },
          }
+
+         needs_variant_options = ["field1"]
+
 
 This configuration allows for global defaults to be set for all needs,
 for any of the following fields:

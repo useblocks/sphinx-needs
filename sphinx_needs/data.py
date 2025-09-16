@@ -749,7 +749,7 @@ class SphinxNeedsData:
     def get_schema(self) -> FieldsSchema:
         """Get the schema for all fields.
 
-        This is lazily created and cached in the environment.
+        :raises RuntimeError: if the schema has not been initialized yet.
         """
         try:
             return self.env._needs_schema

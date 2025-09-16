@@ -333,6 +333,7 @@ from sphinx.roles import SphinxRole  # noqa: E402
 
 from sphinx_needs.api import generate_need  # noqa: E402
 from sphinx_needs.config import NeedsSphinxConfig  # noqa: E402
+from sphinx_needs.data import SphinxNeedsData  # noqa: E402
 from sphinx_needs.logging import (  # noqa: E402
     WarningSubTypeDescription,
     WarningSubTypes,
@@ -404,6 +405,7 @@ def create_tutorial_needs(app: Sphinx, _env, _docnames):
     for i in range(1, 5):
         need_item = generate_need(
             needs_config,
+            SphinxNeedsData(app.env).get_schema(),
             need_type="tutorial-test",
             id=f"T_00{i}",
             title=f"Unit test {i}",

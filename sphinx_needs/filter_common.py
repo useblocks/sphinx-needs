@@ -574,8 +574,8 @@ class PredicateContextData(TypedDict):
 
     id: str
     type: str
-    title: str
-    tags: tuple[str, ...]
+    title: str | None
+    tags: tuple[str, ...] | None
     status: str | None
     docname: str | None
     is_external: bool

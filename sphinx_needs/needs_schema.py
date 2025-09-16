@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import enum
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import lru_cache, partial
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
-from sphinx_needs.functions.functions import DynamicFunctionParsed
-from sphinx_needs.variants import VariantFunctionParsed
+from sphinx_needs.functions.functions import (
+    DynamicFunctionParsed,
+    FunctionParsingException,
+)
+from sphinx_needs.variants import VariantFunctionParsed, VariantParsingException
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -20,12 +23,26 @@ class FieldSchema:
     name: str
     description: str = ""
     type: Literal["string", "boolean", "integer", "number", "array"]
-    item_type: None | Literal["string", "boolean", "integer", "number"]
+    item_type: None | Literal["string", "boolean", "integer", "number"] = None
     nullable: bool = False
+    directive_option: bool = False
     allow_dynamic_functions: bool = False
     allow_extend: bool = False
     allow_variant_functions: bool = False
-    allow_defaults: bool = True
+    allow_defaults: bool = False
+    predicate_defaults: tuple[
+        tuple[
+            str,
+            FieldValue | DynamicFunctionParsed | VariantFunctionParsed | FunctionArray,
+        ],
+        ...,
+    ] = ()
+    """List of (need filter, value) pairs for default predicate values.
+
+    Used if the field has not been specifically set.
+
+    The value from the first matching filter will be used, if any.
+    """
     default: (
         None
         | FieldValue
@@ -33,8 +50,10 @@ class FieldSchema:
         | VariantFunctionParsed
         | FunctionArray
     ) = None
-    # TODO predicate defaults (and check against allow_defaults)
-    directive_option: bool = True
+    """ The default value for this field.
+    
+    Used if the field has not been specifically set, and no predicate matches.
+    """
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -68,18 +87,109 @@ class FieldSchema:
             raise ValueError("item_type can only be set for array fields.")
         if self.type == "array" and self.item_type is None:
             raise ValueError("item_type must be set for array fields.")
-        if not self.allow_defaults and self.default is not None:
-            raise ValueError("default cannot be set if allow_defaults is False.")
-        if not isinstance(
-            self.default,
-            None
-            | FieldValue
-            | DynamicFunctionParsed
-            | VariantFunctionParsed
-            | FunctionArray,
+        if not isinstance(self.directive_option, bool):
+            raise ValueError("directive_option must be a boolean.")
+        if not isinstance(self.predicate_defaults, tuple) or not all(
+            isinstance(pair, tuple) and len(pair) == 2
+            for pair in self.predicate_defaults
         ):
-            raise ValueError("default value is not of the correct type.")
-            # TODO also check FieldValue contents?
+            raise ValueError(
+                "predicate_defaults must be a list of (filter, value) pairs."
+            )
+        if self.default is not None and not isinstance(
+            self.default,
+            FieldValue | DynamicFunctionParsed | VariantFunctionParsed | FunctionArray,
+        ):
+            raise ValueError(
+                "default must be of type FieldValue, DynamicFunctionParsed, VariantFunctionParsed or FunctionArray."
+            )
+        if self.default is not None and not self.allow_defaults:
+            raise ValueError("Defaults are not allowed for this field.")
+
+    def _set_default(self, value: Any, *, allow_coercion: bool) -> None:
+        """Set the default value for this field.
+
+        :param value: The default value to set.
+        :param allow_coercion: Whether to allow coercion of string values to the correct type.
+            This will also allow dynamic and variant functions if the field allows them.
+
+        :raises ValueError: if defaults are not allowed or value is of the wrong type
+        """
+        if not self.allow_defaults:
+            raise ValueError("Defaults are not allowed for this field.")
+        if allow_coercion and isinstance(value, str):
+            try:
+                default = self.convert_directive_option(value)
+            except ValueError:
+                raise
+            except FunctionParsingException as exc:
+                raise ValueError(f"Error parsing dynamic function: {exc}") from exc
+            except VariantParsingException as exc:
+                raise ValueError(f"Error parsing variant function: {exc}") from exc
+        else:
+            if not self.type_check(value):
+                raise ValueError(
+                    f"Default value '{value}' is not of type {self.type!r}"
+                    + (f" (item_type {self.item_type!r})" if self.item_type else "")
+                )
+            default = FieldValue(value)
+        object.__setattr__(self, "default", default)
+
+    def _set_predicate_defaults(
+        self,
+        defaults: list[
+            tuple[
+                str,
+                AllowedTypes,
+            ]
+        ],
+        *,
+        allow_coercion: bool,
+    ) -> None:
+        """Set the predicate defaults for this field.
+
+        :param defaults: The list of (need filter, value) pairs to set.
+        :param allow_coercion: Whether to allow coercion of string values to the correct type.
+            This will also allow dynamic and variant functions if the field allows them.
+
+        :raises ValueError: if defaults are not allowed or any value is of the wrong type
+        """
+        if not self.allow_defaults:
+            raise ValueError("Defaults are not allowed for this field.")
+        if not isinstance(defaults, Sequence):
+            raise ValueError("defaults must be a list of (filter, value) pairs.")
+        result: list[
+            tuple[
+                str,
+                FieldValue
+                | DynamicFunctionParsed
+                | VariantFunctionParsed
+                | FunctionArray,
+            ]
+        ] = []
+        for filter_value in defaults:
+            if not isinstance(filter_value, Sequence) or len(filter_value) != 2:
+                raise ValueError("defaults must be a list of (filter, value) pairs.")
+            filter_, value = filter_value
+            if not isinstance(filter_, str) or not filter_:
+                raise ValueError("Filter must be a non-empty string.")
+            if allow_coercion and isinstance(value, str):
+                try:
+                    result.append((filter_, self.convert_directive_option(value)))
+                except ValueError:
+                    raise
+                except FunctionParsingException as exc:
+                    raise ValueError(f"Error parsing dynamic function: {exc}") from exc
+                except VariantParsingException as exc:
+                    raise ValueError(f"Error parsing variant function: {exc}") from exc
+            else:
+                if not self.type_check(value):
+                    raise ValueError(
+                        f"Default value '{value}' is not of type {self.type!r}"
+                        + (f" (item_type {self.item_type!r})" if self.item_type else "")
+                    )
+                result.append((filter_, FieldValue(value)))
+        object.__setattr__(self, "predicate_defaults", tuple(result))
 
     def json_schema(self) -> dict[str, Any]:
         """Return a JSON schema representation of this field."""
@@ -226,10 +336,49 @@ class FieldSchema:
             case other:
                 raise RuntimeError(f"Unknown field type '{other}'.")
 
+    def convert_or_type_check(
+        self, value: Any
+    ) -> (
+        None
+        | FieldValue
+        | DynamicFunctionParsed
+        | VariantFunctionParsed
+        | FunctionArray
+    ):
+        """Convert a value to the correct type for this field, or check if it is of the correct type.
+
+        :param value: The value to convert or check.
+
+        :returns: True if the value is of the correct type, False otherwise.
+
+        :raises ValueError: if value cannot be converted to the correct type
+        :raises FunctionParsingException: if a dynamic function is malformed
+        :raises VariantParsingException: if a variant function is malformed
+        """
+        if isinstance(value, str):
+            return self.convert_directive_option(value)
+        else:
+            if self.type_check(value):
+                if value is None:
+                    return None
+                return FieldValue(value)
+            else:
+                raise ValueError(f"Invalid value for field {self.name!r}: {value!r}")
+
+
+AllowedTypes: TypeAlias = (
+    str | bool | int | float | list[str] | list[bool] | list[int] | list[float]
+)
+
 
 @dataclass(frozen=True, slots=True)
 class FieldValue:
-    value: str | bool | int | float | list[str] | list[bool] | list[int] | list[float]
+    value: AllowedTypes
+
+
+@dataclass(frozen=True, slots=True)
+class LinksValue:
+    value: list[str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -281,6 +430,204 @@ def _from_string_item(
 class LinkSchema:
     """Schema for a single link field."""
 
+    name: str
+    description: str = ""
+    directive_option: bool = False
+    allow_extend: bool = False
+    allow_dynamic_functions: bool = False
+    allow_variant_functions: bool = False
+    allow_defaults: bool = False
+    predicate_defaults: tuple[
+        tuple[str, LinksValue | FunctionArray],
+        ...,
+    ] = ()
+    """List of (need filter, value) pairs for default predicate values.
+
+    Used if the field has not been specifically set.
+
+    The value from the first matching filter will be used, if any.
+    """
+    default: None | LinksValue | FunctionArray = None
+    """ The default value for this field.
+    
+    Used if the field has not been specifically set, and no predicate matches.
+    """
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.name, str) or not self.name:
+            raise ValueError("name must be a non-empty string.")
+        if not isinstance(self.allow_dynamic_functions, bool):
+            raise ValueError("allow_dynamic_functions must be a boolean.")
+        if not isinstance(self.allow_variant_functions, bool):
+            raise ValueError("allow_variant_functions must be a boolean.")
+        if not isinstance(self.allow_defaults, bool):
+            raise ValueError("allow_defaults must be a boolean.")
+        if not isinstance(self.allow_extend, bool):
+            raise ValueError("allow_extend must be a boolean.")
+        if not isinstance(self.directive_option, bool):
+            raise ValueError("directive_option must be a boolean.")
+        if not isinstance(self.description, str):
+            raise ValueError("description must be a string.")
+        if not isinstance(self.predicate_defaults, tuple) or not all(
+            isinstance(pair, tuple) and len(pair) == 2
+            for pair in self.predicate_defaults
+        ):
+            raise ValueError(
+                "predicate_defaults must be a list of (filter, value) pairs."
+            )
+        if self.default is not None and not isinstance(
+            self.default, LinksValue | FunctionArray
+        ):
+            raise ValueError(
+                "default must be of type FieldValue, DynamicFunctionParsed, VariantFunctionParsed or FunctionArray."
+            )
+
+    def _set_default(self, value: Any, *, allow_coercion: bool) -> None:
+        """Set the default value for this field.
+
+        :param value: The default value to set.
+        :param allow_coercion: Whether to allow coercion of string values to the correct type.
+            This will also allow dynamic and variant functions if the field allows them.
+
+        :raises ValueError: if defaults are not allowed or value is of the wrong type
+        """
+        if not self.allow_defaults:
+            raise ValueError("Defaults are not allowed for this field.")
+        if allow_coercion and isinstance(value, str):
+            try:
+                default = self.convert_directive_option(value)
+            except ValueError:
+                raise
+            except FunctionParsingException as exc:
+                raise ValueError(f"Error parsing dynamic function: {exc}") from exc
+            except VariantParsingException as exc:
+                raise ValueError(f"Error parsing variant function: {exc}") from exc
+        else:
+            if not self.type_check(value):
+                raise ValueError(
+                    f'Default value \'{value}\' is not of type "array" (item_type "string")'
+                )
+            default = LinksValue(value)
+        object.__setattr__(self, "default", default)
+
+    def _set_predicate_defaults(
+        self,
+        defaults: list[tuple[str, str | list[str]]],
+        *,
+        allow_coercion: bool,
+    ) -> None:
+        """Set the predicate defaults for this field.
+
+        :param defaults: The list of (need filter, value) pairs to set.
+        :param allow_coercion: Whether to allow coercion of string values to the correct type.
+            This will also allow dynamic and variant functions if the field allows them.
+
+        :raises ValueError: if defaults are not allowed or any value is of the wrong type
+        """
+        if not self.allow_defaults:
+            raise ValueError("Defaults are not allowed for this field.")
+        if not isinstance(defaults, Sequence):
+            raise ValueError("defaults must be a list of (filter, value) pairs.")
+        result: list[tuple[str, LinksValue | FunctionArray]] = []
+        for filter_value in defaults:
+            if not isinstance(filter_value, Sequence) or len(filter_value) != 2:
+                raise ValueError("defaults must be a list of (filter, value) pairs.")
+            filter_, value = filter_value
+            if not isinstance(filter_, str) or not filter_:
+                raise ValueError("Filter must be a non-empty string.")
+            if allow_coercion and isinstance(value, str):
+                try:
+                    result.append((filter_, self.convert_directive_option(value)))
+                except ValueError:
+                    raise
+                except FunctionParsingException as exc:
+                    raise ValueError(f"Error parsing dynamic function: {exc}") from exc
+                except VariantParsingException as exc:
+                    raise ValueError(f"Error parsing variant function: {exc}") from exc
+            else:
+                if not self.type_check(value):
+                    raise ValueError(
+                        f'Default value \'{value}\' is not of type "array" (item_type "string")'
+                    )
+                result.append((filter_, LinksValue(value)))  # type: ignore[arg-type]
+        object.__setattr__(self, "predicate_defaults", tuple(result))
+
+    def json_schema(self) -> dict[str, Any]:
+        """Return a JSON schema representation of this field."""
+        schema: dict[str, Any] = {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": f"Link field '{self.name}'",
+        }
+        if self.description:
+            schema["description"] = self.description
+        if isinstance(self.default, LinksValue):
+            schema["default"] = self.default.value
+        return schema
+
+    def type_check(self, value: Any) -> bool:
+        """Check if a value is of the correct type for this field."""
+        return isinstance(value, tuple | list) and all(
+            isinstance(i, str) for i in value
+        )
+
+    def convert_directive_option(self, value: str) -> LinksValue | FunctionArray:
+        """Convert a string to the correct type for this field.
+
+        :raises TypeError: if value is not a string
+        :raises ValueError: if value cannot be converted to the correct type
+        :raises FunctionParsingException: if a dynamic function is malformed
+        :raises VariantParsingException: if a variant function is malformed
+        """
+        if not isinstance(value, str):
+            raise TypeError(f"Value '{value}' is not a string.")
+
+        has_df_or_vf = False
+        array: list[str | DynamicFunctionParsed | VariantFunctionParsed] = []
+        for parsed in _split_list(
+            value, self.allow_dynamic_functions, self.allow_variant_functions
+        ):
+            if len(parsed) != 1:
+                raise ValueError(
+                    "only one string, dynamic function or variant function allowed per array item."
+                )
+            item, item_type = parsed[0]
+            match item_type:
+                case ListItemType.STD:
+                    array.append(item)
+                case ListItemType.DF | ListItemType.DF_U:
+                    # TODO warn on unclosed dynamic function
+                    has_df_or_vf = True
+                    array.append(DynamicFunctionParsed.from_string(item))
+                case ListItemType.VF | ListItemType.VF_U:
+                    # TODO warn on unclosed variant function
+                    has_df_or_vf = True
+                    array.append(VariantFunctionParsed.from_string(item))
+
+        if has_df_or_vf:
+            return FunctionArray(tuple(array))
+        else:
+            return LinksValue(array)  # type: ignore[arg-type]
+
+    def convert_or_type_check(self, value: Any) -> LinksValue | FunctionArray:
+        """Convert a value to the correct type for this field, or check if it is of the correct type.
+
+        :param value: The value to convert or check.
+
+        :returns: True if the value is of the correct type, False otherwise.
+
+        :raises ValueError: if value cannot be converted to the correct type
+        :raises FunctionParsingException: if a dynamic function is malformed
+        :raises VariantParsingException: if a variant function is malformed
+        """
+        if isinstance(value, str):
+            return self.convert_directive_option(value)
+        else:
+            if self.type_check(value):
+                return LinksValue(list(value))
+            else:
+                raise ValueError(f"Invalid value for field {self.name!r}: {value!r}")
+
 
 class FieldsSchema:
     """A schema for the fields of a single need."""
@@ -299,6 +646,19 @@ class FieldsSchema:
             f"link={list(self._link_fields.values())})"
         )
 
+    def add_core_field(self, field: FieldSchema) -> None:
+        """Add a core field to the schema.
+
+        :raises ValueError: if a field with the same name already exists
+        """
+        if (
+            field.name in self._core_fields
+            or field.name in self._extra_fields
+            or field.name in self._link_fields
+        ):
+            raise ValueError(f"Field '{field.name}' already exists.")
+        self._core_fields[field.name] = field
+
     def add_extra_field(self, field: FieldSchema) -> None:
         """Add an extra field to the schema.
 
@@ -311,6 +671,53 @@ class FieldsSchema:
         ):
             raise ValueError(f"Field '{field.name}' already exists.")
         self._extra_fields[field.name] = field
+
+    def add_link_field(self, field: LinkSchema) -> None:
+        """Add a link field to the schema.
+
+        :raises ValueError: if a field with the same name already exists
+        """
+        if (
+            field.name in self._core_fields
+            or field.name in self._extra_fields
+            or field.name in self._link_fields
+        ):
+            raise ValueError(f"Field '{field.name}' already exists.")
+        self._link_fields[field.name] = field
+
+    def get_any_field(self, name: str) -> FieldSchema | LinkSchema | None:
+        """Get a field by name."""
+        if name in self._core_fields:
+            return self._core_fields[name]
+        if name in self._extra_fields:
+            return self._extra_fields[name]
+        if name in self._link_fields:
+            return self._link_fields[name]
+        return None
+
+    def get_core_field(self, name: str) -> FieldSchema | None:
+        """Get a core field by name."""
+        return self._core_fields.get(name)
+
+    def get_extra_field(self, name: str) -> FieldSchema | None:
+        """Get an extra field by name."""
+        return self._extra_fields.get(name)
+
+    def get_link_field(self, name: str) -> LinkSchema | None:
+        """Get a link field by name."""
+        return self._link_fields.get(name)
+
+    def iter_core_fields(self) -> Iterable[FieldSchema]:
+        """Iterate over all core fields in the schema."""
+        yield from self._core_fields.values()
+
+    def iter_extra_fields(self) -> Iterable[FieldSchema]:
+        """Iterate over all extra fields in the schema."""
+        yield from self._extra_fields.values()
+
+    def iter_link_fields(self) -> Iterable[LinkSchema]:
+        """Iterate over all link fields in the schema."""
+        yield from self._link_fields.values()
 
 
 class ListItemType(enum.Enum):

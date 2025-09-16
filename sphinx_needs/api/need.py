@@ -8,7 +8,7 @@ from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -33,10 +33,21 @@ from sphinx_needs.need_item import (
     NeedPartData,
     NeedsContent,
 )
+from sphinx_needs.needs_schema import (
+    FieldSchema,
+    FieldsSchema,
+    FieldValue,
+    FunctionArray,
+    LinksValue,
+)
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import jinja_parse
 from sphinx_needs.views import NeedsView
+
+if TYPE_CHECKING:
+    from sphinx_needs.functions.functions import DynamicFunctionParsed
+    from sphinx_needs.variants import VariantFunctionParsed
 
 logger = get_logger(__name__)
 
@@ -51,6 +62,7 @@ _deprecated_kwargs = {
 
 def generate_need(
     needs_config: NeedsSphinxConfig,
+    needs_schema: FieldsSchema,
     need_type: str,
     title: str,
     *,
@@ -82,7 +94,7 @@ def generate_need(
     external_url: str | None = None,
     external_css: str = "external_link",
     full_title: str | None = None,
-    **kwargs: str,
+    **kwargs: Any,
 ) -> NeedItem:
     """Creates a validated need data entry, without adding it to the project.
 
@@ -197,132 +209,322 @@ def generate_need(
             f"Given ID {need_id!r} does not match configured regex {needs_config.id_regex!r}",
         )
 
-    # validate status
-    if needs_config.statuses and status not in [
-        stat["name"] for stat in needs_config.statuses
-    ]:
+    try:
+        title_schema = needs_schema.get_core_field("title")
+        assert title_schema is not None, "title field does not exist"
+        title_converted = title_schema.convert_or_type_check(title)
+    except Exception as err:
         raise InvalidNeedException(
-            "invalid_status", f"Status {status!r} not in 'needs_statuses'."
-        )
+            "invalid_title", f"title {title!r} is invalid: {err}"
+        ) from err
 
-    # validate tags
-    tags = (
-        [v for v, _ in _split_list_with_dyn_funcs(tags, location)]
-        if tags is not None
-        else None
-    )
-    if (
-        tags is not None
-        and needs_config.tags
-        and (unknown_tags := set(tags) - {t["name"] for t in needs_config.tags})
-    ):
+    try:
+        status_schema = needs_schema.get_core_field("status")
+        assert status_schema is not None, "status field does not exist"
+        status_converted = (
+            None if status is None else status_schema.convert_or_type_check(status)
+        )
+    except Exception as err:
         raise InvalidNeedException(
-            "invalid_tags", f"Tags {unknown_tags!r} not in 'needs_tags'."
-        )
+            "invalid_status", f"status {status!r} is invalid: {err}"
+        ) from err
 
-    # validate constraints
-    constraints = (
-        [v for v, _ in _split_list_with_dyn_funcs(constraints, location)]
-        if constraints is not None
-        else None
-    )
-    if constraints is not None and (
-        unknown_constraints := set(constraints) - set(needs_config.constraints)
-    ):
+    try:
+        tags_schema = needs_schema.get_core_field("tags")
+        assert tags_schema is not None, "tags field does not exist"
+        tags_converted = (
+            None if tags is None else tags_schema.convert_or_type_check(tags)
+        )
+    except Exception as err:
         raise InvalidNeedException(
-            "invalid_constraints",
-            f"Constraints {unknown_constraints!r} not in 'needs_constraints'.",
-        )
+            "invalid_tags", f"tags {tags!r} is invalid: {err}"
+        ) from err
 
-    extras_no_defaults = {
-        # note, for backward-compatibility currently we convert all extra values to strings,
-        # and warn in the import/external need code if they are not of type str
-        key: str(kwargs[key]) if key in kwargs else None
-        for key in needs_config.extra_options
-    }
-    links_no_defaults = {
-        li["option"]: [
-            v for v, _ in _split_list_with_dyn_funcs(kwargs[li["option"]], location)
-        ]
-        if li["option"] in kwargs
-        else None
-        for li in needs_config.extra_links
-    }
+    try:
+        constraints_schema = needs_schema.get_core_field("constraints")
+        assert constraints_schema is not None, "constraints field does not exist"
+        constraints_converted = (
+            None
+            if constraints is None
+            else constraints_schema.convert_or_type_check(constraints)
+        )
+    except Exception as err:
+        raise InvalidNeedException(
+            "invalid_constraints", f"constraints {constraints!r} is invalid: {err}"
+        ) from err
+
+    try:
+        layout_schema = needs_schema.get_core_field("layout")
+        assert layout_schema is not None, "layout field does not exist"
+        layout_converted = (
+            None if layout is None else layout_schema.convert_or_type_check(layout)
+        )
+    except Exception as err:
+        raise InvalidNeedException(
+            "invalid_layout", f"layout {layout!r} is invalid: {err}"
+        ) from err
+
+    try:
+        style_schema = needs_schema.get_core_field("style")
+        assert style_schema is not None, "style field does not exist"
+        style_converted = (
+            None if style is None else style_schema.convert_or_type_check(style)
+        )
+    except Exception as err:
+        raise InvalidNeedException(
+            "invalid_style", f"style {style!r} is invalid: {err}"
+        ) from err
+
+    # # validate status
+    # if needs_config.statuses and status not in [
+    #     stat["name"] for stat in needs_config.statuses
+    # ]:
+    #     raise InvalidNeedException(
+    #         "invalid_status", f"Status {status!r} not in 'needs_statuses'."
+    #     )
+
+    # # validate tags
+    # tags = (
+    #     [v for v, _ in _split_list_with_dyn_funcs(tags, location)]
+    #     if tags is not None
+    #     else None
+    # )
+    # if (
+    #     tags is not None
+    #     and needs_config.tags
+    #     and (unknown_tags := set(tags) - {t["name"] for t in needs_config.tags})
+    # ):
+    #     raise InvalidNeedException(
+    #         "invalid_tags", f"Tags {unknown_tags!r} not in 'needs_tags'."
+    #     )
+
+    # # validate constraints
+    # constraints = (
+    #     [v for v, _ in _split_list_with_dyn_funcs(constraints, location)]
+    #     if constraints is not None
+    #     else None
+    # )
+    # if constraints is not None and (
+    #     unknown_constraints := set(constraints) - set(needs_config.constraints)
+    # ):
+    #     raise InvalidNeedException(
+    #         "invalid_constraints",
+    #         f"Constraints {unknown_constraints!r} not in 'needs_constraints'.",
+    #     )
+
+    extras_no_defaults: dict[
+        str,
+        None
+        | FieldValue
+        | DynamicFunctionParsed
+        | VariantFunctionParsed
+        | FunctionArray,
+    ] = {}
+    for extra_field in needs_schema.iter_extra_fields():
+        if extra_field.name not in kwargs:
+            extras_no_defaults[extra_field.name] = None
+        else:
+            try:
+                extras_no_defaults[extra_field.name] = (
+                    None
+                    if kwargs[extra_field.name] is None
+                    else extra_field.convert_or_type_check(kwargs[extra_field.name])
+                )
+            except Exception as err:
+                raise InvalidNeedException(
+                    "invalid_extra_option",
+                    f"Extra option {extra_field.name!r} is invalid: {err}",
+                ) from err
+
+    links_no_defaults: dict[str, None | LinksValue | FunctionArray] = {}
+    for link_field in needs_schema.iter_link_fields():
+        if link_field.name not in kwargs:
+            links_no_defaults[link_field.name] = None
+        else:
+            try:
+                links_no_defaults[link_field.name] = (
+                    None
+                    if kwargs[link_field.name] is None
+                    else link_field.convert_or_type_check(kwargs[link_field.name])
+                )
+            except Exception as err:
+                raise InvalidNeedException(
+                    "invalid_link_option",
+                    f"Link option {link_field.name!r} is invalid: {err}",
+                ) from err
 
     defaults_ctx: PredicateContextData = {
         "id": need_id,
         "type": need_type,
-        "title": title,
-        "tags": tuple(tags or []),
-        "status": status,
+        "title": title_converted.value  # type: ignore[typeddict-item]
+        if isinstance(title_converted, FieldValue)
+        else None,
+        "tags": tuple(tags_converted.value)  # type: ignore[arg-type]
+        if isinstance(tags_converted, FieldValue)
+        else None,
+        "status": status_converted.value  # type: ignore[typeddict-item]
+        if isinstance(status_converted, FieldValue)
+        else None,
         "docname": source.dict_repr["docname"],
         "is_import": source.dict_repr["is_import"],
         "is_external": source.dict_repr["is_external"],
     }
-    defaults_extras = extras_no_defaults.copy()
-    defaults_links = {k: tuple(v or []) for k, v in links_no_defaults.items()}
+    defaults_extras_ctx = {
+        k: v.value if isinstance(v, FieldValue) else None
+        for k, v in extras_no_defaults.items()
+    }
+    defaults_links_ctx = {
+        k: tuple(v.value) if isinstance(v, LinksValue) else ()
+        for k, v in links_no_defaults.items()
+    }
 
-    status = _get_default_str_none(
-        "status", status, needs_config, defaults_ctx, defaults_extras, defaults_links
+    status_converted = (
+        status_converted
+        if status_converted is not None
+        else _get_core_field_default(needs_schema.get_core_field("status"))
     )
-    tags = _get_default_list(
-        "tags", tags, needs_config, defaults_ctx, defaults_extras, defaults_links
+    tags_converted = (
+        tags_converted
+        if tags_converted is not None
+        else _get_core_field_default(needs_schema.get_core_field("tags"))
     )
-    collapse = _get_default_bool(
-        "collapse",
-        collapse,
-        needs_config,
-        defaults_ctx,
-        defaults_extras,
-        defaults_links,
+    collapse = (
+        collapse
+        if collapse is not None
+        else _get_core_field_default(needs_schema.get_core_field("collapse"))
     )
-    hide = _get_default_bool(
-        "hide", hide, needs_config, defaults_ctx, defaults_extras, defaults_links
+    hide = (
+        hide
+        if hide is not None
+        else _get_core_field_default(needs_schema.get_core_field("hide"))
     )
-    layout = _get_default_str_none(
-        "layout", layout, needs_config, defaults_ctx, defaults_extras, defaults_links
+    constraints_converted = (
+        constraints_converted
+        if constraints_converted is not None
+        else _get_core_field_default(needs_schema.get_core_field("constraints"))
     )
-    style = _get_default_str_none(
-        "style", style, needs_config, defaults_ctx, defaults_extras, defaults_links
+    layout_converted = (
+        layout_converted
+        if layout_converted is not None
+        else _get_core_field_default(needs_schema.get_core_field("layout"))
     )
-    template = _get_default_str_none(
-        "template",
-        template,
-        needs_config,
-        defaults_ctx,
-        defaults_extras,
-        defaults_links,
+    style_converted = (
+        style_converted
+        if style_converted is not None
+        else _get_core_field_default(needs_schema.get_core_field("style"))
     )
-    pre_template = _get_default_str_none(
-        "pre_template",
-        pre_template,
-        needs_config,
-        defaults_ctx,
-        defaults_extras,
-        defaults_links,
+    template = (
+        template
+        if template is not None
+        else _get_core_field_default(needs_schema.get_core_field("template"))
     )
-    post_template = _get_default_str_none(
-        "post_template",
-        post_template,
-        needs_config,
-        defaults_ctx,
-        defaults_extras,
-        defaults_links,
+    pre_template = (
+        pre_template
+        if pre_template is not None
+        else _get_core_field_default(needs_schema.get_core_field("pre_template"))
     )
-    constraints = _get_default_list(
-        "constraints",
-        constraints,
-        needs_config,
-        defaults_ctx,
-        defaults_extras,
-        defaults_links,
+    post_template = (
+        post_template
+        if post_template is not None
+        else _get_core_field_default(needs_schema.get_core_field("post_template"))
     )
-    extras = _get_default_extras(
-        extras_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
-    )
-    links = _get_default_links(
-        links_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
-    )
+
+    # TODO extras and links defaults
+
+    # status_converted = _get_default_str_none(  # None
+    #     "status",
+    #     status_converted,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
+    # tags_converted = _get_default_list(  # []
+    #     "tags",
+    #     tags_converted,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
+    # collapse = _get_default_bool(  # False
+    #     "collapse",
+    #     collapse,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
+    # hide = _get_default_bool(  # False
+    #     "hide",
+    #     hide,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
+    # layout_converted = _get_default_str_none(  # None
+    #     "layout",
+    #     layout_converted,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
+    # style_converted = _get_default_str_none(  # None
+    #     "style",
+    #     style_converted,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
+    # template = _get_default_str_none(  # None
+    #     "template",
+    #     template,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
+    # pre_template = _get_default_str_none(  # None
+    #     "pre_template",
+    #     pre_template,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
+    # post_template = _get_default_str_none(  # None
+    #     "post_template",
+    #     post_template,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
+    # constraints_converted = _get_default_list(  # []
+    #     "constraints",
+    #     constraints_converted,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
+    # extras = _get_default_extras(
+    #     extras_no_defaults,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
+    # links = _get_default_links(  # []
+    #     links_no_defaults,
+    #     needs_config,
+    #     defaults_ctx,
+    #     defaults_extras_ctx,
+    #     defaults_links_ctx,
+    # )
     _copy_links(links, needs_config)
 
     # Add the need and all needed information
@@ -332,15 +534,15 @@ def generate_need(
         "type_prefix": need_type_data["prefix"],
         "type_color": need_type_data.get("color") or "#000000",
         "type_style": need_type_data.get("style") or "node",
-        "status": status,
-        "tags": tags,
-        "constraints": tuple(constraints),
+        "status": status_converted,
+        "tags": tags_converted,
+        "constraints": constraints_converted,
         "id": need_id,
-        "title": title,
+        "title": title_converted,
         "collapse": collapse,
         "arch": arch or {},
-        "style": style,
-        "layout": layout,
+        "style": style_converted,
+        "layout": layout_converted,
         "hide": hide,
         "external_css": external_css or "external_link",
         "has_dead_links": False,
@@ -542,6 +744,7 @@ def add_need(
 
     needs_info = generate_need(
         needs_config=NeedsSphinxConfig(app.config),
+        needs_schema=SphinxNeedsData(app.env).get_schema(),
         need_source=need_source,
         need_type=need_type,
         title=title,
@@ -1046,6 +1249,15 @@ def _get_default(
             return v
 
     return defaults.get("default", None)
+
+
+def _get_core_field_default(
+    scheme: FieldSchema | None,
+) -> None | FieldValue | DynamicFunctionParsed | VariantFunctionParsed | FunctionArray:
+    if scheme is None:
+        return None
+    if scheme.default is not None:
+        return scheme.default
 
 
 def get_needs_view(app: Sphinx) -> NeedsView:
