@@ -248,6 +248,7 @@ class FieldSchema:
         :raises VariantParsingException: if a variant function is malformed
         """
         from sphinx_needs.functions.functions import DynamicFunctionParsed
+
         if not isinstance(value, str):
             raise TypeError(f"Value '{value}' is not a string.")
         match self.type:

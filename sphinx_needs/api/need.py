@@ -260,6 +260,8 @@ def generate_need(
             "invalid_tags", f"Tags {unknown_tags!r} not in 'needs_tags'."
         )
 
+    print(needs_config.constraints)
+    print(constraints_converted)
     if (
         needs_config.constraints
         and isinstance(constraints_converted, FieldLiteralValue)
@@ -429,9 +431,9 @@ def generate_need(
         "signature": signature,
     }
 
-    template=_convert_to_str_none("template", template_converted)
-    pre_template=_convert_to_str_none("pre_template", pre_template_converted)
-    post_template=_convert_to_str_none("post_template", post_template_converted)
+    template = _convert_to_str_none("template", template_converted)
+    pre_template = _convert_to_str_none("pre_template", pre_template_converted)
+    post_template = _convert_to_str_none("post_template", post_template_converted)
     content_info = NeedsContent(
         doctype=doctype,
         content=content,

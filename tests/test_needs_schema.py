@@ -253,19 +253,25 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
             "boolean",
             None,
             "[[test()]]",
-            FieldFunctionArray((DynamicFunctionParsed(name="test", args=(), kwargs=()),)),
+            FieldFunctionArray(
+                (DynamicFunctionParsed(name="test", args=(), kwargs=()),)
+            ),
         ),
         (
             "integer",
             None,
             "[[test()]]",
-            FieldFunctionArray((DynamicFunctionParsed(name="test", args=(), kwargs=()),)),
+            FieldFunctionArray(
+                (DynamicFunctionParsed(name="test", args=(), kwargs=()),)
+            ),
         ),
         (
             "number",
             None,
             "[[ test() ]]",
-            FieldFunctionArray((DynamicFunctionParsed(name="test", args=(), kwargs=()),)),
+            FieldFunctionArray(
+                (DynamicFunctionParsed(name="test", args=(), kwargs=()),)
+            ),
         ),
         (
             "array",

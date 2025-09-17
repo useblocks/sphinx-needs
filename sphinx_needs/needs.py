@@ -302,9 +302,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", merge_default_configs)
     app.connect("config-inited", check_configuration, priority=600)  # runs late
 
-    app.connect("builder-inited", create_schema)
-
     app.connect("env-before-read-docs", prepare_env)
+    app.connect("env-before-read-docs", create_schema)
     app.connect("env-before-read-docs", load_external_needs)
 
     app.connect("env-purge-doc", purge_needs)
@@ -728,7 +727,7 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     validate_schemas_config(needs_config)
 
 
-def create_schema(app: Sphinx) -> None:
+def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     schema = FieldsSchema()
     for field in [
@@ -965,7 +964,7 @@ def create_schema(app: Sphinx) -> None:
                         None,
                     )
 
-    SphinxNeedsData(app.env)._set_schema(schema)
+    SphinxNeedsData(env)._set_schema(schema)
 
 
 def release_data_locks(app: Sphinx, _exception: Exception) -> None:
