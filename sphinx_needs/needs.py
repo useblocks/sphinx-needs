@@ -733,6 +733,17 @@ def create_schema(app: Sphinx) -> None:
     schema = FieldsSchema()
     for field in [
         FieldSchema(
+            name="title",
+            description="Title of the need",
+            type="string",
+            nullable=False,
+            allow_defaults=False,
+            allow_extend=False,
+            allow_dynamic_functions=True,
+            allow_variant_functions=False,
+            directive_option=False,
+        ),
+        FieldSchema(
             name="status",
             description="Status of the need",
             type="string",
@@ -902,6 +913,14 @@ def create_schema(app: Sphinx) -> None:
             log_warning(
                 LOGGER,
                 f"needs_global_options {name!r} does not match any defined need option",
+                "config",
+                None,
+            )
+            continue
+        if not field_for_default.allow_defaults:
+            log_warning(
+                LOGGER,
+                f"needs_global_options {name!r} cannot be set, as field does not allow defaults",
                 "config",
                 None,
             )

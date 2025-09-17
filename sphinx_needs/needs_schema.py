@@ -4,13 +4,12 @@ import enum
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import lru_cache, partial
-from typing import Any, Generic, Literal, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeVar
 
-from sphinx_needs.functions.functions import (
-    DynamicFunctionParsed,
-    FunctionParsingException,
-)
 from sphinx_needs.variants import VariantFunctionParsed, VariantParsingException
+
+if TYPE_CHECKING:
+    from sphinx_needs.functions.functions import DynamicFunctionParsed
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -108,9 +107,12 @@ class FieldSchema:
 
         :raises ValueError: if defaults are not allowed or value is of the wrong type
         """
+
         if not self.allow_defaults:
             raise ValueError("Defaults are not allowed for this field.")
         if allow_coercion and isinstance(value, str):
+            from sphinx_needs.functions.functions import FunctionParsingException
+
             try:
                 default = self.convert_directive_option(value)
             except ValueError:
@@ -167,6 +169,8 @@ class FieldSchema:
             if not isinstance(filter_, str) or not filter_:
                 raise ValueError("Filter must be a non-empty string.")
             if allow_coercion and isinstance(value, str):
+                from sphinx_needs.functions.functions import FunctionParsingException
+
                 try:
                     result.append((filter_, self.convert_directive_option(value)))
                 except ValueError:
@@ -243,6 +247,7 @@ class FieldSchema:
         :raises FunctionParsingException: if a dynamic function is malformed
         :raises VariantParsingException: if a variant function is malformed
         """
+        from sphinx_needs.functions.functions import DynamicFunctionParsed
         if not isinstance(value, str):
             raise TypeError(f"Value '{value}' is not a string.")
         match self.type:
@@ -512,6 +517,8 @@ class LinkSchema:
         if not self.allow_defaults:
             raise ValueError("Defaults are not allowed for this field.")
         if allow_coercion and isinstance(value, str):
+            from sphinx_needs.functions.functions import FunctionParsingException
+
             try:
                 default = self.convert_directive_option(value)
             except ValueError:
@@ -542,6 +549,7 @@ class LinkSchema:
 
         :raises ValueError: if defaults are not allowed or any value is of the wrong type
         """
+
         if not self.allow_defaults:
             raise ValueError("Defaults are not allowed for this field.")
         if not isinstance(defaults, Sequence):
@@ -554,6 +562,8 @@ class LinkSchema:
             if not isinstance(filter_, str) or not filter_:
                 raise ValueError("Filter must be a non-empty string.")
             if allow_coercion and isinstance(value, str):
+                from sphinx_needs.functions.functions import FunctionParsingException
+
                 try:
                     result.append((filter_, self.convert_directive_option(value)))
                 except ValueError:
@@ -599,6 +609,7 @@ class LinkSchema:
         :raises FunctionParsingException: if a dynamic function is malformed
         :raises VariantParsingException: if a variant function is malformed
         """
+
         if not isinstance(value, str):
             raise TypeError(f"Value '{value}' is not a string.")
 
@@ -616,6 +627,8 @@ class LinkSchema:
                 case ListItemType.STD:
                     array.append(item)
                 case ListItemType.DF | ListItemType.DF_U:
+                    from sphinx_needs.functions.functions import DynamicFunctionParsed
+
                     # TODO warn on unclosed dynamic function
                     has_df_or_vf = True
                     array.append(DynamicFunctionParsed.from_string(item))

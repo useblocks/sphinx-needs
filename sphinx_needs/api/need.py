@@ -414,7 +414,7 @@ def generate_need(
         "type_color": need_type_data.get("color") or "#000000",
         "type_style": need_type_data.get("style") or "node",
         "title": _convert_to_str_func("title", title_converted),
-        "status": _convert_to_str_func("status", status_converted),
+        "status": _convert_to_none_str_func("status", status_converted),
         "tags": _convert_to_list_str_func("tags", tags_converted),
         "constraints": _convert_to_list_str_func("constraints", constraints_converted),
         "collapse": _convert_to_bool_func("collapse", collapse_converted),
@@ -455,11 +455,38 @@ def generate_need(
             NeedPartData(id=part_id, content=str(part_data.get("content", "")))
         )
 
+    # TODO for testing, lets go back to old representation (but with functions removed)
+
+    core_old = {
+        **core_data,
+        "title": core_data["title"] if isinstance(core_data["title"], str) else "",
+        "status": core_data["status"] if isinstance(core_data["status"], str) else None,
+        "tags": core_data["tags"]
+        if isinstance(core_data["tags"], tuple | list)
+        else [],
+        "constraints": tuple(core_data["constraints"])
+        if isinstance(core_data["constraints"], tuple | list)
+        else (),
+        "collapse": core_data["collapse"]
+        if isinstance(core_data["collapse"], bool)
+        else False,
+        "hide": core_data["hide"] if isinstance(core_data["hide"], bool) else False,
+        "style": core_data["style"] if isinstance(core_data["status"], str) else None,
+        "layout": core_data["layout"] if isinstance(core_data["status"], str) else None,
+    }
+    extras_old = {
+        k: str(v.value) if isinstance(v, FieldLiteralValue) else ""
+        for k, v in extras.items()
+    }
+    links_old = {
+        k: v.value if isinstance(v, LinksLiteralValue) else [] for k, v in links.items()
+    }
+
     try:
         needs_info = NeedItem(
-            core=core_data,
-            extras=extras,
-            links=links,
+            core=core_old,  # type: ignore[arg-type]
+            extras=extras_old,
+            links=links_old,
             source=source,
             content=content_info,
             parts=parts_objects,
@@ -581,16 +608,16 @@ def _convert_to_none_str_func(
 def _convert_to_bool_func(
     name: str, converted: FieldLiteralValue | FieldFunctionArray | None
 ) -> bool | DynamicFunctionParsed | VariantFunctionParsed:
-    if (
-        isinstance(converted, FieldLiteralValue) and isinstance(converted.value, bool)
-    ) or (
+    if isinstance(converted, FieldLiteralValue) and isinstance(converted.value, bool):
+        return converted.value
+    elif (
         isinstance(converted, FieldFunctionArray)
         and len(converted.value) == 1
         and isinstance(
             converted.value[0], bool | DynamicFunctionParsed | VariantFunctionParsed
         )
     ):
-        return converted.value[0]  # type: ignore[index,return-value]
+        return converted.value[0]
     else:
         raise InvalidNeedException(
             "invalid_value",
