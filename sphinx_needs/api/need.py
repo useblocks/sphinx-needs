@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from copy import copy
 from dataclasses import replace
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypedDict, cast
+from typing import Any, TypedDict, cast
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -30,6 +30,7 @@ from sphinx_needs.filter_common import (
     PredicateContextData,
     apply_default_predicate,
 )
+from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import (
     NeedItem,
@@ -52,11 +53,8 @@ from sphinx_needs.needs_schema import (
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import jinja_parse
+from sphinx_needs.variants import VariantFunctionParsed
 from sphinx_needs.views import NeedsView
-
-if TYPE_CHECKING:
-    from sphinx_needs.functions.functions import DynamicFunctionParsed
-    from sphinx_needs.variants import VariantFunctionParsed
 
 logger = get_logger(__name__)
 

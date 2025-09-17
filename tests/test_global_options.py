@@ -6,7 +6,7 @@ import pytest
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 
 
 @pytest.mark.parametrize(
@@ -32,8 +32,11 @@ def test_doc_global_option(test_app, snapshot):
         "WARNING: needs_global_options 'unknown' does not match any defined need option [needs.config]",
     ]
 
-    needs_config = NeedsSphinxConfig(test_app.config)
-    assert needs_config.field_defaults == snapshot
+    needs_schema = SphinxNeedsData(test_app.env).get_schema()
+    assert {
+        s.name: {"default": s.default, "predicate_defaults": s.predicate_defaults}
+        for s in needs_schema.iter_all_fields()
+    } == snapshot
 
     json_data = Path(test_app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)

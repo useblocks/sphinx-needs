@@ -743,6 +743,12 @@ class FieldsSchema:
         """Get a link field by name."""
         return self._link_fields.get(name)
 
+    def iter_all_fields(self) -> Iterable[FieldSchema | LinkSchema]:
+        """Iterate over all fields in the schema."""
+        yield from self._core_fields.values()
+        yield from self._extra_fields.values()
+        yield from self._link_fields.values()
+
     def iter_core_fields(self) -> Iterable[FieldSchema]:
         """Iterate over all core fields in the schema."""
         yield from self._core_fields.values()

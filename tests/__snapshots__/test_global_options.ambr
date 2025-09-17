@@ -1,95 +1,237 @@
 # serializer version: 1
 # name: test_doc_global_option[test_app0]
   dict({
+    'avatar': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'bad_value_type': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'closed_at': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
     'collapse': dict({
-      'default': True,
+      'default': FieldLiteralValue(value=True),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'completion': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'constraints': dict({
+      'default': FieldLiteralValue(value=[]),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'created_at': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'duration': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
     }),
     'hide': dict({
-      'default': False,
+      'default': FieldLiteralValue(value=False),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'id_prefix': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
     }),
     'layout': dict({
-      'default': 'clean_l',
+      'default': FieldLiteralValue(value='clean_l'),
+      'predicate_defaults': tuple(
+      ),
     }),
     'link1': dict({
-      'default': list([
-        'SPEC_1',
-      ]),
+      'default': LinksLiteralValue(value=['SPEC_1']),
+      'predicate_defaults': tuple(
+      ),
     }),
     'link2': dict({
-      'default': list([
-        'SPEC_1',
-      ]),
-      'predicates': list([
+      'default': LinksLiteralValue(value=['SPEC_1']),
+      'predicate_defaults': tuple(
         tuple(
           'status == "implemented"',
-          list([
-            'SPEC_2',
-            "[[copy('link1')]]",
-          ]),
+          LinksLiteralValue(value=['SPEC_2', "[[copy('link1')]]"]),
         ),
         tuple(
           'status == "closed"',
-          list([
-            'SPEC_3',
-          ]),
+          LinksLiteralValue(value=['SPEC_3']),
         ),
-      ]),
+      ),
+    }),
+    'link3': dict({
+      'default': LinksLiteralValue(value=[]),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'links': dict({
+      'default': LinksLiteralValue(value=[]),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'max_amount': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'max_content_lines': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
     }),
     'option_1': dict({
-      'default': 'test_global',
+      'default': FieldLiteralValue(value='test_global'),
+      'predicate_defaults': tuple(
+      ),
     }),
     'option_2': dict({
-      'default': "[[copy('id')]]",
+      'default': FieldFunctionArray(value=(DynamicFunctionParsed(name='copy', args=('id',), kwargs=()),)),
+      'predicate_defaults': tuple(
+      ),
     }),
     'option_3': dict({
-      'predicates': list([
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
         tuple(
           'status == "implemented"',
-          'STATUS_IMPL',
+          FieldLiteralValue(value='STATUS_IMPL'),
         ),
-      ]),
+      ),
     }),
     'option_4': dict({
-      'default': 'STATUS_UNKNOWN',
-      'predicates': list([
+      'default': FieldLiteralValue(value='STATUS_UNKNOWN'),
+      'predicate_defaults': tuple(
         tuple(
           'status == "closed"',
-          'STATUS_CLOSED',
+          FieldLiteralValue(value='STATUS_CLOSED'),
         ),
-      ]),
+      ),
     }),
     'option_5': dict({
-      'default': 'final',
-      'predicates': list([
+      'default': FieldLiteralValue(value='final'),
+      'predicate_defaults': tuple(
         tuple(
           'status == "implemented"',
-          'STATUS_IMPL',
+          FieldLiteralValue(value='STATUS_IMPL'),
         ),
         tuple(
           'status == "closed"',
-          'STATUS_CLOSED',
+          FieldLiteralValue(value='STATUS_CLOSED'),
         ),
-      ]),
+      ),
+    }),
+    'params': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'parent_needs': dict({
+      'default': LinksLiteralValue(value=[]),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'post_template': dict({
+      'default': None,
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'pre_template': dict({
+      'default': None,
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'prefix': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'query': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'service': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'specific': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'status': dict({
+      'default': None,
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'style': dict({
+      'default': None,
+      'predicate_defaults': tuple(
+      ),
     }),
     'tags': dict({
-      'default': list([
-        'd',
-      ]),
-      'predicates': list([
+      'default': FieldLiteralValue(value=['d']),
+      'predicate_defaults': tuple(
         tuple(
           'status == "implemented"',
-          list([
-            'a',
-            'b',
-          ]),
+          FieldLiteralValue(value=['a', 'b']),
         ),
         tuple(
           'status == "closed"',
-          list([
-            'c',
-          ]),
+          FieldLiteralValue(value=['c']),
         ),
-      ]),
+      ),
+    }),
+    'template': dict({
+      'default': None,
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'title': dict({
+      'default': None,
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'too_many_params': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'updated_at': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'url': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'url_postfix': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
+    }),
+    'user': dict({
+      'default': FieldLiteralValue(value=''),
+      'predicate_defaults': tuple(
+      ),
     }),
   })
 # ---
