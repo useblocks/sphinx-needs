@@ -405,17 +405,6 @@ def generate_need(
     }
     _copy_links(links, needs_config)
 
-    content_info = NeedsContent(
-        doctype=doctype,
-        content=content,
-        pre_content=None,
-        post_content=None,
-        template=_convert_to_str_none("template", template_converted),
-        pre_template=_convert_to_str_none("pre_template", pre_template_converted),
-        post_template=_convert_to_str_none("post_template", post_template_converted),
-        jinja_content=jinja_content or False,
-    )
-
     # Add the need and all needed information
     core_data: NeedsInfoPreProcessedType = {
         "id": need_id,
@@ -439,6 +428,17 @@ def generate_need(
         "sections": tuple(sections or ()),
         "signature": signature,
     }
+
+    content_info = NeedsContent(
+        doctype=doctype,
+        content=content,
+        pre_content=None,
+        post_content=None,
+        template=_convert_to_str_none("template", template_converted),
+        pre_template=_convert_to_str_none("pre_template", pre_template_converted),
+        post_template=_convert_to_str_none("post_template", post_template_converted),
+        jinja_content=jinja_content or False,
+    )
 
     parts_objects = []
     for part_id, part_data in (parts or {}).items():
