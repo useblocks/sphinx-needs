@@ -429,14 +429,17 @@ def generate_need(
         "signature": signature,
     }
 
+    template=_convert_to_str_none("template", template_converted)
+    pre_template=_convert_to_str_none("pre_template", pre_template_converted)
+    post_template=_convert_to_str_none("post_template", post_template_converted)
     content_info = NeedsContent(
         doctype=doctype,
         content=content,
         pre_content=None,
         post_content=None,
-        template=_convert_to_str_none("template", template_converted),
-        pre_template=_convert_to_str_none("pre_template", pre_template_converted),
-        post_template=_convert_to_str_none("post_template", post_template_converted),
+        template=template,
+        pre_template=pre_template,
+        post_template=post_template,
         jinja_content=jinja_content or False,
     )
 
