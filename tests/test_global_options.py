@@ -26,10 +26,10 @@ def test_doc_global_option(test_app, snapshot):
         test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
     ).splitlines()
     assert warnings == [
-        "WARNING: needs_global_options 'link3' has a default value that is not of type 'str_list' [needs.config]",
-        "WARNING: needs_global_options 'bad_value_type' has a default value that is not of type 'str' [needs.config]",
-        "WARNING: needs_global_options 'too_many_params', 'predicates', must be a list of (filter string, value) pairs [needs.config]",
-        "WARNING: needs_global_options 'unknown' must also exist in needs_extra_options, needs_extra_links, or ['collapse', 'constraints', 'hide', 'layout', 'post_template', 'pre_template', 'status', 'style', 'tags', 'template'] [needs.config]",
+        "WARNING: needs_global_options 'link3' default value is incorrect: Default value '1' is not of type \"array\" (item_type \"string\") [needs.config]",
+        "WARNING: needs_global_options 'bad_value_type' default value is incorrect: Default value '1.27' is not of type 'string' [needs.config]",
+        "WARNING: needs_global_options 'too_many_params' predicates are incorrect: defaults must be a list of (filter, value) pairs. [needs.config]",
+        "WARNING: needs_global_options 'unknown' does not match any defined need option [needs.config]",
     ]
 
     needs_config = NeedsSphinxConfig(test_app.config)

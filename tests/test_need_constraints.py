@@ -10,12 +10,43 @@ from syrupy.filters import props
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/need_constraints"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/need_constraints",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_need_constraints(test_app, snapshot):
     app = test_app
     app.build()
+
+    warnings = (
+        strip_colors(test_app._warning.getvalue())
+        .replace(str(test_app.srcdir) + os.path.sep, "<srcdir>/")
+        .splitlines()
+    )
+    # TODO here we remove some spurious warnings that should be fixed properly
+    warnings = [
+        w
+        for w in warnings
+        if "Aborted attempted copy" not in w
+        and "cannot cache unpickable configuration value" not in w
+        and "is already registered" not in w
+    ]
+    assert warnings == [
+        "<srcdir>/index.rst:11: WARNING: Constraint 'critical' in tags for need SP_TOO_002 FAILED! severity: CRITICAL None [needs.constraint]",
+        "<srcdir>/index.rst:32: WARNING: Constraint 'critical' in tags for need SP_3EBFA FAILED! severity: CRITICAL None [needs.constraint]",
+        "<srcdir>/index.rst:39: WARNING: Constraint 'team_requirement' in links for need SP_CA3FB FAILED! severity: MEDIUM None [needs.constraint]",
+        "<srcdir>/style_test.rst:4: WARNING: Constraint 'critical' in tags for need TEST_STYLE FAILED! severity: CRITICAL None [needs.constraint]",
+        "<srcdir>/style_test.rst:11: WARNING: Constraint 'team_requirement' in links for need TEST_STYLE2 FAILED! severity: MEDIUM None [needs.constraint]",
+        "<srcdir>/index.rst:42: WARNING: undefined label: 'needs_constraint_failed_options' [ref.ref]",
+        "WARNING: invalid_status: failed",
+        "\t\tfailed needs: 8 (SP_TOO_001, SP_TOO_002, SECURITY_REQ, SP_109F4, SP_3EBFA, SP_CA3FB, TEST_STYLE, TEST_STYLE2)",
+        "\t\tused filter: status not in ['open', 'closed', 'done', 'example_2', 'example_3'] [needs.warnings]",
+    ]
 
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)

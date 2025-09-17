@@ -303,6 +303,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", check_configuration, priority=600)  # runs late
 
     app.connect("env-before-read-docs", prepare_env)
+    # note we have to place create_schema after prepare_env, as that can add extra options,
+    # but before load_external_needs, where we start to add needs.
     app.connect("env-before-read-docs", create_schema)
     app.connect("env-before-read-docs", load_external_needs)
 

@@ -260,11 +260,8 @@ def generate_need(
             "invalid_tags", f"Tags {unknown_tags!r} not in 'needs_tags'."
         )
 
-    print(needs_config.constraints)
-    print(constraints_converted)
     if (
-        needs_config.constraints
-        and isinstance(constraints_converted, FieldLiteralValue)
+        isinstance(constraints_converted, FieldLiteralValue)
         and isinstance(constraints_converted.value, Iterable)
         and (
             unknown_constraints := set(constraints_converted.value)
@@ -476,8 +473,8 @@ def generate_need(
         if isinstance(core_data["collapse"], bool)
         else False,
         "hide": core_data["hide"] if isinstance(core_data["hide"], bool) else False,
-        "style": core_data["style"] if isinstance(core_data["status"], str) else None,
-        "layout": core_data["layout"] if isinstance(core_data["status"], str) else None,
+        "style": core_data["style"] if isinstance(core_data["style"], str) else None,
+        "layout": core_data["layout"] if isinstance(core_data["layout"], str) else None,
     }
     extras_old = {
         k: str(v.value) if isinstance(v, FieldLiteralValue) else ""
