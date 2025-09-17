@@ -5,9 +5,9 @@ from sphinx_needs.functions.functions import (
     FunctionParsingException,
 )
 from sphinx_needs.needs_schema import (
+    FieldFunctionArray,
+    FieldLiteralValue,
     FieldSchema,
-    FieldValue,
-    FunctionArray,
     ListItemType,
     _split_list,
     _split_string,
@@ -95,7 +95,7 @@ def test_json_schema(type_, item_type, nullable, default, expected):
         item_type=item_type,
         nullable=nullable,
         allow_defaults=True,
-        default=FieldValue(default) if default is not None else None,
+        default=FieldLiteralValue(default) if default is not None else None,
     )
     assert field.json_schema() == expected
 
@@ -220,7 +220,7 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
         item_type=item_type,
         allow_dynamic_functions=allow_df,
     )
-    assert field.convert_directive_option(input) == FieldValue(expected)
+    assert field.convert_directive_option(input) == FieldLiteralValue(expected)
 
 
 @pytest.mark.parametrize(
@@ -230,13 +230,15 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
             "string",
             None,
             "[[test()]]",
-            FunctionArray((DynamicFunctionParsed(name="test", args=(), kwargs=()),)),
+            FieldFunctionArray(
+                (DynamicFunctionParsed(name="test", args=(), kwargs=()),)
+            ),
         ),
         (
             "string",
             None,
             "x [[test()]]y[[other()]]z[[more()",
-            FunctionArray(
+            FieldFunctionArray(
                 (
                     "x ",
                     DynamicFunctionParsed(name="test", args=(), kwargs=()),
@@ -269,13 +271,15 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
             "array",
             "string",
             "[[test()]]",
-            FunctionArray((DynamicFunctionParsed(name="test", args=(), kwargs=()),)),
+            FieldFunctionArray(
+                (DynamicFunctionParsed(name="test", args=(), kwargs=()),)
+            ),
         ),
         (
             "array",
             "string",
             "a, [[test()]], c",
-            FunctionArray(
+            FieldFunctionArray(
                 (
                     "a",
                     DynamicFunctionParsed(name="test", args=(), kwargs=()),
@@ -287,7 +291,7 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
             "array",
             "boolean",
             "true, [[test()]], false",
-            FunctionArray(
+            FieldFunctionArray(
                 (
                     True,
                     DynamicFunctionParsed(name="test", args=(), kwargs=()),
@@ -299,7 +303,7 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
             "array",
             "integer",
             "1, [[test()]], 3",
-            FunctionArray(
+            FieldFunctionArray(
                 (
                     1,
                     DynamicFunctionParsed(name="test", args=(), kwargs=()),
@@ -311,7 +315,7 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
             "array",
             "number",
             "1.5, [[ test() ]], 3.5",
-            FunctionArray(
+            FieldFunctionArray(
                 (
                     1.5,
                     DynamicFunctionParsed(name="test", args=(), kwargs=()),
@@ -338,13 +342,13 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
             "string",
             None,
             "<<a:b,c>>",
-            FunctionArray((VariantFunctionParsed((("a", False, "b"),), "c"),)),
+            FieldFunctionArray((VariantFunctionParsed((("a", False, "b"),), "c"),)),
         ),
         (
             "string",
             None,
             "x <<a:b,c>>y<<[x]:y>>z<<v",
-            FunctionArray(
+            FieldFunctionArray(
                 (
                     "x ",
                     VariantFunctionParsed((("a", False, "b"),), "c"),
@@ -377,13 +381,13 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
             "array",
             "string",
             "<<test>>",
-            FunctionArray((VariantFunctionParsed((), "test"),)),
+            FieldFunctionArray((VariantFunctionParsed((), "test"),)),
         ),
         (
             "array",
             "string",
             "a, <<test>>, c",
-            FunctionArray(
+            FieldFunctionArray(
                 (
                     "a",
                     VariantFunctionParsed((), "test"),
@@ -395,7 +399,7 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
             "array",
             "boolean",
             "true, <<a:yes,no>>, false",
-            FunctionArray(
+            FieldFunctionArray(
                 (
                     True,
                     VariantFunctionParsed((("a", False, True),), False),
@@ -407,7 +411,7 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
             "array",
             "integer",
             "1, <<a:2,4>>, 3",
-            FunctionArray(
+            FieldFunctionArray(
                 (
                     1,
                     VariantFunctionParsed((("a", False, 2),), 4),
@@ -419,7 +423,7 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
             "array",
             "number",
             "1.5, << a:2.5,4.5 >>, 3.5",
-            FunctionArray(
+            FieldFunctionArray(
                 (
                     1.5,
                     VariantFunctionParsed((("a", False, 2.5),), 4.5),

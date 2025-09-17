@@ -108,11 +108,11 @@ from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.needs_schema import (
+    FieldLiteralValue,
     FieldSchema,
     FieldsSchema,
-    FieldValue,
     LinkSchema,
-    LinksValue,
+    LinksLiteralValue,
 )
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
@@ -748,7 +748,7 @@ def create_schema(app: Sphinx) -> None:
             description="List of tags",
             type="array",
             item_type="string",
-            default=FieldValue([]),
+            default=FieldLiteralValue([]),
             allow_defaults=True,
             allow_extend=True,
             allow_dynamic_functions=True,
@@ -758,7 +758,7 @@ def create_schema(app: Sphinx) -> None:
             name="collapse",
             description="Hide the meta-data information of the need.",
             type="boolean",
-            default=FieldValue(False),
+            default=FieldLiteralValue(False),
             allow_defaults=True,
             allow_extend=True,
             directive_option=True,
@@ -767,7 +767,7 @@ def create_schema(app: Sphinx) -> None:
             name="hide",
             description="If true, the need is not rendered.",
             type="boolean",
-            default=FieldValue(False),
+            default=FieldLiteralValue(False),
             allow_defaults=True,
             allow_extend=True,
             directive_option=True,
@@ -823,7 +823,7 @@ def create_schema(app: Sphinx) -> None:
             description="List of constraint names, which are defined for this need.",
             type="array",
             item_type="string",
-            default=FieldValue([]),
+            default=FieldLiteralValue([]),
             allow_defaults=True,
             allow_extend=True,
             allow_dynamic_functions=True,
@@ -857,7 +857,7 @@ def create_schema(app: Sphinx) -> None:
                 # we configure so that the behaviour follows that of legacy (pre-schema) extra option,
                 # i.e. non-nullable and default of empty string (that can be overriden by needs_global_options).
                 nullable=extra.schema is not None,
-                default=None if extra.schema is not None else FieldValue(""),
+                default=None if extra.schema is not None else FieldLiteralValue(""),
                 allow_defaults=True,
                 allow_extend=True,
                 allow_dynamic_functions=True,
@@ -880,7 +880,7 @@ def create_schema(app: Sphinx) -> None:
             link_field = LinkSchema(
                 name=name,
                 description="Link field",
-                default=LinksValue([]),
+                default=LinksLiteralValue([]),
                 allow_defaults=True,
                 allow_extend=True,
                 allow_dynamic_functions=True,

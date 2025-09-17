@@ -4,7 +4,7 @@ import enum
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from functools import lru_cache, partial
-from typing import Any, Literal, TypeAlias
+from typing import Any, Generic, Literal, TypeAlias, TypeVar
 
 from sphinx_needs.functions.functions import (
     DynamicFunctionParsed,
@@ -27,14 +27,11 @@ class FieldSchema:
     nullable: bool = False
     directive_option: bool = False
     allow_dynamic_functions: bool = False
-    allow_extend: bool = False
     allow_variant_functions: bool = False
     allow_defaults: bool = False
+    allow_extend: bool = False
     predicate_defaults: tuple[
-        tuple[
-            str,
-            FieldValue | DynamicFunctionParsed | VariantFunctionParsed | FunctionArray,
-        ],
+        tuple[str, FieldLiteralValue | FieldFunctionArray],
         ...,
     ] = ()
     """List of (need filter, value) pairs for default predicate values.
@@ -43,13 +40,7 @@ class FieldSchema:
 
     The value from the first matching filter will be used, if any.
     """
-    default: (
-        None
-        | FieldValue
-        | DynamicFunctionParsed
-        | VariantFunctionParsed
-        | FunctionArray
-    ) = None
+    default: None | FieldLiteralValue | FieldFunctionArray = None
     """ The default value for this field.
     
     Used if the field has not been specifically set, and no predicate matches.
@@ -90,18 +81,20 @@ class FieldSchema:
         if not isinstance(self.directive_option, bool):
             raise ValueError("directive_option must be a boolean.")
         if not isinstance(self.predicate_defaults, tuple) or not all(
-            isinstance(pair, tuple) and len(pair) == 2
+            isinstance(pair, tuple)
+            and len(pair) == 2
+            and isinstance(pair[0], str)
+            and (isinstance(pair[1], FieldLiteralValue) | FieldFunctionArray)
             for pair in self.predicate_defaults
         ):
             raise ValueError(
                 "predicate_defaults must be a list of (filter, value) pairs."
             )
         if self.default is not None and not isinstance(
-            self.default,
-            FieldValue | DynamicFunctionParsed | VariantFunctionParsed | FunctionArray,
+            self.default, FieldLiteralValue | FieldFunctionArray
         ):
             raise ValueError(
-                "default must be of type FieldValue, DynamicFunctionParsed, VariantFunctionParsed or FunctionArray."
+                "default must be of type FieldLiteralValue or FieldFunctionArray."
             )
         if self.default is not None and not self.allow_defaults:
             raise ValueError("Defaults are not allowed for this field.")
@@ -132,7 +125,7 @@ class FieldSchema:
                     f"Default value '{value}' is not of type {self.type!r}"
                     + (f" (item_type {self.item_type!r})" if self.item_type else "")
                 )
-            default = FieldValue(value)
+            default = FieldLiteralValue(value)
         object.__setattr__(self, "default", default)
 
     def _set_predicate_defaults(
@@ -161,10 +154,10 @@ class FieldSchema:
         result: list[
             tuple[
                 str,
-                FieldValue
+                FieldLiteralValue
                 | DynamicFunctionParsed
                 | VariantFunctionParsed
-                | FunctionArray,
+                | FieldFunctionArray,
             ]
         ] = []
         for filter_value in defaults:
@@ -188,7 +181,7 @@ class FieldSchema:
                         f"Default value '{value}' is not of type {self.type!r}"
                         + (f" (item_type {self.item_type!r})" if self.item_type else "")
                     )
-                result.append((filter_, FieldValue(value)))
+                result.append((filter_, FieldLiteralValue(value)))
         object.__setattr__(self, "predicate_defaults", tuple(result))
 
     def json_schema(self) -> dict[str, Any]:
@@ -202,7 +195,7 @@ class FieldSchema:
             schema["items"] = {"type": self.item_type}
         if self.description:
             schema["description"] = self.description
-        if isinstance(self.default, FieldValue):
+        if isinstance(self.default, FieldLiteralValue):
             schema["default"] = self.default.value
         elif self.nullable:
             schema["default"] = None
@@ -242,7 +235,7 @@ class FieldSchema:
 
     def convert_directive_option(
         self, value: str
-    ) -> FieldValue | DynamicFunctionParsed | VariantFunctionParsed | FunctionArray:
+    ) -> FieldLiteralValue | FieldFunctionArray:
         """Convert a string to the correct type for this field.
 
         :raises TypeError: if value is not a string
@@ -259,24 +252,30 @@ class FieldSchema:
                     and value.lstrip().startswith("[[")
                     and value.rstrip().endswith("]]")
                 ):
-                    return DynamicFunctionParsed.from_string(value.strip()[2:-2])
+                    return FieldFunctionArray(
+                        (DynamicFunctionParsed.from_string(value.strip()[2:-2]),)
+                    )
                 elif (
                     self.allow_variant_functions
                     and value.lstrip().startswith("<<")
                     and value.rstrip().endswith(">>")
                 ):
-                    return VariantFunctionParsed.from_string(
-                        value.strip()[2:-2],
-                        partial(_from_string_item, item_type=self.type),
+                    return FieldFunctionArray(
+                        (
+                            VariantFunctionParsed.from_string(
+                                value.strip()[2:-2],
+                                partial(_from_string_item, item_type=self.type),
+                            ),
+                        )
                     )
                 else:
-                    return FieldValue(_from_string_item(value, self.type))
+                    return FieldLiteralValue(_from_string_item(value, self.type))
             case "string":
                 parsed_items = _split_string(
                     value, self.allow_dynamic_functions, self.allow_variant_functions
                 )
                 if len(parsed_items) == 1 and parsed_items[0][1] == ListItemType.STD:
-                    return FieldValue(parsed_items[0][0])
+                    return FieldLiteralValue(parsed_items[0][0])
                 result: list[DynamicFunctionParsed | VariantFunctionParsed | str] = []
                 for item, item_type in parsed_items:
                     match item_type:
@@ -288,7 +287,7 @@ class FieldSchema:
                         case ListItemType.VF | ListItemType.VF_U:
                             # TODO warn on unclosed variant function
                             result.append(VariantFunctionParsed.from_string(item))
-                return FunctionArray(tuple(result))
+                return FieldFunctionArray(tuple(result))
             case "array":
                 if self.item_type is None:
                     raise RuntimeError("Array field has no item type defined.")
@@ -330,21 +329,15 @@ class FieldSchema:
                             )
 
                 if has_df_or_vf:
-                    return FunctionArray(tuple(array))  # type: ignore[arg-type]
+                    return FieldFunctionArray(tuple(array))  # type: ignore[arg-type]
                 else:
-                    return FieldValue(array)  # type: ignore[arg-type]
+                    return FieldLiteralValue(array)  # type: ignore[arg-type]
             case other:
                 raise RuntimeError(f"Unknown field type '{other}'.")
 
     def convert_or_type_check(
         self, value: Any
-    ) -> (
-        None
-        | FieldValue
-        | DynamicFunctionParsed
-        | VariantFunctionParsed
-        | FunctionArray
-    ):
+    ) -> None | FieldLiteralValue | FieldFunctionArray:
         """Convert a value to the correct type for this field, or check if it is of the correct type.
 
         :param value: The value to convert or check.
@@ -361,7 +354,7 @@ class FieldSchema:
             if self.type_check(value):
                 if value is None:
                     return None
-                return FieldValue(value)
+                return FieldLiteralValue(value)
             else:
                 raise ValueError(f"Invalid value for field {self.name!r}: {value!r}")
 
@@ -372,23 +365,48 @@ AllowedTypes: TypeAlias = (
 
 
 @dataclass(frozen=True, slots=True)
-class FieldValue:
+class FieldLiteralValue:
     value: AllowedTypes
 
 
 @dataclass(frozen=True, slots=True)
-class LinksValue:
+class LinksLiteralValue:
     value: list[str]
 
 
 @dataclass(frozen=True, slots=True)
-class FunctionArray:
+class FieldFunctionArray:
     value: (
         tuple[DynamicFunctionParsed | VariantFunctionParsed | str, ...]
         | tuple[DynamicFunctionParsed | VariantFunctionParsed | bool, ...]
         | tuple[DynamicFunctionParsed | VariantFunctionParsed | int, ...]
         | tuple[DynamicFunctionParsed | VariantFunctionParsed | float, ...]
     )
+
+    def __iter__(
+        self,
+    ) -> Iterator[
+        DynamicFunctionParsed | VariantFunctionParsed | str | bool | int | float
+    ]:
+        return iter(self.value)
+
+
+_ValueType = TypeVar("_ValueType", str, bool, int, float)
+
+
+@dataclass(frozen=True, slots=True)
+class FunctionArrayTyped(Generic[_ValueType]):
+    value: tuple[DynamicFunctionParsed | VariantFunctionParsed | _ValueType, ...]
+
+    def __iter__(
+        self,
+    ) -> Iterator[DynamicFunctionParsed | VariantFunctionParsed | _ValueType]:
+        return iter(self.value)
+
+
+@dataclass(frozen=True, slots=True)
+class LinksFunctionArray:
+    value: tuple[str | DynamicFunctionParsed | VariantFunctionParsed, ...]
 
 
 @lru_cache(maxsize=128)
@@ -438,7 +456,7 @@ class LinkSchema:
     allow_variant_functions: bool = False
     allow_defaults: bool = False
     predicate_defaults: tuple[
-        tuple[str, LinksValue | FunctionArray],
+        tuple[str, LinksLiteralValue | LinksFunctionArray],
         ...,
     ] = ()
     """List of (need filter, value) pairs for default predicate values.
@@ -447,7 +465,7 @@ class LinkSchema:
 
     The value from the first matching filter will be used, if any.
     """
-    default: None | LinksValue | FunctionArray = None
+    default: None | LinksLiteralValue | LinksFunctionArray = None
     """ The default value for this field.
     
     Used if the field has not been specifically set, and no predicate matches.
@@ -476,10 +494,10 @@ class LinkSchema:
                 "predicate_defaults must be a list of (filter, value) pairs."
             )
         if self.default is not None and not isinstance(
-            self.default, LinksValue | FunctionArray
+            self.default, LinksLiteralValue | LinksFunctionArray
         ):
             raise ValueError(
-                "default must be of type FieldValue, DynamicFunctionParsed, VariantFunctionParsed or FunctionArray."
+                "default must be of type LinksLiteralValue or LinksFunctionArray."
             )
 
     def _set_default(self, value: Any, *, allow_coercion: bool) -> None:
@@ -507,7 +525,7 @@ class LinkSchema:
                 raise ValueError(
                     f'Default value \'{value}\' is not of type "array" (item_type "string")'
                 )
-            default = LinksValue(value)
+            default = LinksLiteralValue(value)
         object.__setattr__(self, "default", default)
 
     def _set_predicate_defaults(
@@ -528,7 +546,7 @@ class LinkSchema:
             raise ValueError("Defaults are not allowed for this field.")
         if not isinstance(defaults, Sequence):
             raise ValueError("defaults must be a list of (filter, value) pairs.")
-        result: list[tuple[str, LinksValue | FunctionArray]] = []
+        result: list[tuple[str, LinksLiteralValue | LinksFunctionArray]] = []
         for filter_value in defaults:
             if not isinstance(filter_value, Sequence) or len(filter_value) != 2:
                 raise ValueError("defaults must be a list of (filter, value) pairs.")
@@ -549,7 +567,7 @@ class LinkSchema:
                     raise ValueError(
                         f'Default value \'{value}\' is not of type "array" (item_type "string")'
                     )
-                result.append((filter_, LinksValue(value)))  # type: ignore[arg-type]
+                result.append((filter_, LinksLiteralValue(value)))  # type: ignore[arg-type]
         object.__setattr__(self, "predicate_defaults", tuple(result))
 
     def json_schema(self) -> dict[str, Any]:
@@ -561,7 +579,7 @@ class LinkSchema:
         }
         if self.description:
             schema["description"] = self.description
-        if isinstance(self.default, LinksValue):
+        if isinstance(self.default, LinksLiteralValue):
             schema["default"] = self.default.value
         return schema
 
@@ -571,7 +589,9 @@ class LinkSchema:
             isinstance(i, str) for i in value
         )
 
-    def convert_directive_option(self, value: str) -> LinksValue | FunctionArray:
+    def convert_directive_option(
+        self, value: str
+    ) -> LinksLiteralValue | LinksFunctionArray:
         """Convert a string to the correct type for this field.
 
         :raises TypeError: if value is not a string
@@ -605,11 +625,13 @@ class LinkSchema:
                     array.append(VariantFunctionParsed.from_string(item))
 
         if has_df_or_vf:
-            return FunctionArray(tuple(array))
+            return LinksFunctionArray(tuple(array))
         else:
-            return LinksValue(array)  # type: ignore[arg-type]
+            return LinksLiteralValue(array)  # type: ignore[arg-type]
 
-    def convert_or_type_check(self, value: Any) -> LinksValue | FunctionArray:
+    def convert_or_type_check(
+        self, value: Any
+    ) -> LinksLiteralValue | LinksFunctionArray:
         """Convert a value to the correct type for this field, or check if it is of the correct type.
 
         :param value: The value to convert or check.
@@ -624,7 +646,7 @@ class LinkSchema:
             return self.convert_directive_option(value)
         else:
             if self.type_check(value):
-                return LinksValue(list(value))
+                return LinksLiteralValue(list(value))
             else:
                 raise ValueError(f"Invalid value for field {self.name!r}: {value!r}")
 

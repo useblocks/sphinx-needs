@@ -18,6 +18,7 @@ from typing import (
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.logging import log_warning
+from sphinx_needs.needs_schema import FunctionArrayTyped
 from sphinx_needs.views import NeedsView
 
 if TYPE_CHECKING:
@@ -25,10 +26,12 @@ if TYPE_CHECKING:
     from sphinx.environment import BuildEnvironment
     from typing_extensions import NotRequired
 
+    from sphinx_needs.functions.functions import DynamicFunctionParsed
     from sphinx_needs.need_item import NeedItem
     from sphinx_needs.needs_schema import FieldsSchema
     from sphinx_needs.nodes import Need
     from sphinx_needs.services.manager import ServiceManager
+    from sphinx_needs.variants import VariantFunctionParsed
 
 
 LOGGER = getLogger(__name__)
@@ -479,6 +482,31 @@ class NeedsInfoType(TypedDict):
     """True if any links reference need ids that are not found in the need list,
     and the link type does not allow dead links.
     """
+
+
+class NeedsInfoPreProcessedType(TypedDict):
+    """Data for a single need."""
+
+    id: str
+    type: str
+    type_name: str
+    type_prefix: str
+    type_color: str
+    type_style: str
+    title: str | FunctionArrayTyped[str]
+    status: None | str | FunctionArrayTyped[str]
+    tags: list[str] | FunctionArrayTyped[str]
+    collapse: bool | DynamicFunctionParsed | VariantFunctionParsed
+    hide: bool | DynamicFunctionParsed | VariantFunctionParsed
+    layout: None | str | FunctionArrayTyped[str]
+    style: None | str | FunctionArrayTyped[str]
+    constraints: list[str] | FunctionArrayTyped[str]
+    external_css: str
+    arch: Mapping[str, str]
+    sections: tuple[str, ...]
+    signature: None | str
+    has_dead_links: bool
+    has_forbidden_dead_links: bool
 
 
 class NeedsInfoComputedType(TypedDict):

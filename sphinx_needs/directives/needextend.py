@@ -136,7 +136,7 @@ class NeedextendDirective(SphinxDirective):
                                     key,
                                     etype,
                                     list(
-                                        _split_list_with_dyn_funcs(
+                                        _split_list_with_dyn_funcs(  # TODO replace and remove _split_list_with_dyn_funcs
                                             value, self.get_source_info()
                                         )
                                     ),
