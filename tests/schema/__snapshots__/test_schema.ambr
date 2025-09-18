@@ -1,0 +1,592 @@
+# serializer version: 1
+# name: test_schema_e2e[test_app0]
+  '''
+  WARNING: Need 'FEAt' has validation errors:
+    Severity:       violation
+    Field:          id
+    Need path:      FEAt
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase with numbers and underscores
+    Schema message: 'FEAt' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL' has validation errors:
+    Severity:       violation
+    Field:          
+    Need path:      SPEC_MISSING_APPROVAL
+    Schema path:    spec[1] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('asil', 'priority' were unexpected) [sn_schema.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL' has validation errors:
+    Severity:       violation
+    Field:          
+    Need path:      SPEC_MISSING_APPROVAL
+    Schema path:    spec-approved-required[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: 'approved' is a required property [sn_schema.local_fail]
+  WARNING: Need 'SPEC' has validation errors:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: 'SPEC' does not match '^SPEC_[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
+  WARNING: Need 'SPEC_SAFE_UNSAFE_FEAT' has validation errors:
+    Severity:       violation
+    Field:          
+    Need path:      SPEC_SAFE_UNSAFE_FEAT
+    Schema path:    spec[1] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema.local_fail]
+  WARNING: Need 'SPEC_SAFE_UNSAFE_FEAT' has validation errors:
+    Severity:       violation
+    Need path:      SPEC_SAFE_UNSAFE_FEAT > links
+    Schema path:    safe-spec-[links]->safe-feat[4] > validate > network > links
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: FEAT
+  
+      Details for FEAT
+      Field:          asil
+      Need path:      SPEC_SAFE_UNSAFE_FEAT > links > FEAT
+      Schema path:    safe-spec-[links]->safe-feat[4] > links > local > allOf > 0 > properties > asil > enum
+      Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
+  WARNING: Need 'SPEC_SAFE_ADD_UNSAFE_FEAT' has validation errors:
+    Severity:       violation
+    Field:          
+    Need path:      SPEC_SAFE_ADD_UNSAFE_FEAT
+    Schema path:    spec[1] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema.local_fail]
+  WARNING: Need 'SPEC_SAFE' has validation errors:
+    Severity:       violation
+    Field:          
+    Need path:      SPEC_SAFE
+    Schema path:    spec[1] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-beta_warn_for_extra_link]
+  '''
+  WARNING: Schema interface and validation are still in beta. Interface and validation logic may change when moving to a typed core implementation. [needs.beta]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-contains]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-contains_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    extra_links > schema > properties > links > contains
+    Schema message: ['SPEC_1'] does not contain items matching the given schema [sn_schema.extra_link_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-inject_array]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    extra_links > schema > properties > links > minItems
+    Schema message: ['SPEC_1'] is too short [sn_schema.extra_link_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-items_pattern]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-items_pattern_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          links.0
+    Need path:      IMPL_1
+    Schema path:    extra_links > schema > properties > links > items > pattern
+    Schema message: 'SPEC_1' does not match '^[A-Z0-9_]{10,}' [sn_schema.extra_link_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-max_contains]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-max_contains_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    extra_links > schema > properties > links > contains
+    Schema message: Too many items match the given schema (expected at most 1) [sn_schema.extra_link_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-max_items]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-max_items_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    extra_links > schema > properties > links > maxItems
+    Schema message: ['SPEC_1', 'SPEC_2'] is too long [sn_schema.extra_link_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-min_contains]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-min_contains_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    extra_links > schema > properties > links > contains
+    Schema message: Too few items match the given schema (expected at least 2 but only 1 matched) [sn_schema.extra_link_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-min_items]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-min_items_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    extra_links > schema > properties > links > minItems
+    Schema message: ['SPEC_1'] is too short [sn_schema.extra_link_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-auto_inject_string]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-auto_inject_type]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-auto_inject_type_wrong_const]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: 'QM' was expected [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-beta_warn_for_extra_option]
+  '''
+  WARNING: Schema interface and validation are still in beta. Interface and validation logic may change when moving to a typed core implementation. [needs.beta]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_boolean]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_boolean_from_string_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          approved
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema
+    Schema message: Field 'approved': cannot coerce 'not-a-boolean' to boolean [sn_schema.extra_option_type_error]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_float_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          efforts
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema
+    Schema message: Field 'efforts': cannot coerce '1.2' to integer [sn_schema.extra_option_type_error]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_string_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          efforts
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema
+    Schema message: Field 'efforts': cannot coerce 'QM' to integer [sn_schema.extra_option_type_error]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_number]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_number_from_string_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          efforts
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema
+    Schema message: Field 'efforts': cannot coerce 'QM' to number [sn_schema.extra_option_type_error]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-const]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-const_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: 'QM' was expected [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-default_accepted]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-enum]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-enum_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > enum
+    Schema message: 'E' is not one of ['QM', 'A', 'B', 'C', 'D'] [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-integer_multiple_of]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-integer_multiple_of_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          efforts
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema > properties > efforts > multipleOf
+    Schema message: 8 is not a multiple of 3 [sn_schema.extra_option_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-no_schema]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-number_multiple_of]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-number_multiple_of_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          efforts
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema > properties > efforts > multipleOf
+    Schema message: 5.0 is not a multiple of 3.3 [sn_schema.extra_option_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-required]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_below_threshold]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_missing]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_over_threshold]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          
+    Need path:      IMPL_1
+    Schema path:    [0] > local > required
+    Schema message: 'asil' is a required property [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-required_missing]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          
+    Need path:      IMPL_1
+    Schema path:    [0] > local > required
+    Schema message: 'asil' is a required property [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-set_type_string]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_date]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_date_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          start_date
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema > properties > start_date > format
+    Schema message: 'not-a-date' is not a 'date' [sn_schema.extra_option_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_date_time]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_date_time_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          start_date
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema > properties > start_date > format
+    Schema message: '2025-07-1099:99:99Z' is not a 'date-time' [sn_schema.extra_option_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_duration]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_duration_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          duration
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema > properties > duration > format
+    Schema message: 'P1Q2Q10DT2H30M' is not a 'duration' [sn_schema.extra_option_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_email]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_email_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          email
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema > properties > email > format
+    Schema message: 'not-a-mail' is not a 'email' [sn_schema.extra_option_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_time]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_time_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          time
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema > properties > time > format
+    Schema message: '26:12:13' is not a 'time' [sn_schema.extra_option_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_uri]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_uri_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          uri
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema > properties > uri > format
+    Schema message: 'examplecom' is not a 'uri' [sn_schema.extra_option_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_uuid]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_uuid_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          uuid
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema > properties > uuid > format
+    Schema message: 'deadbeef-deadbeef-deadbeef-deadbeef' is not a 'uuid' [sn_schema.extra_option_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_type]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-wrong_type]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    extra_options > schema
+    Schema message: Field 'asil': cannot coerce 'QM' to integer [sn_schema.extra_option_type_error]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-link_chain_hop_1_min_contains_error]
+  '''
+  WARNING: Need 'IMPL_SAFE' has validation errors:
+    Severity:       violation
+    Need path:      IMPL_SAFE > links
+    Schema path:    safe-impl-[links]->safe-spec[0] > validate > network > links
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_UNSAFE
+  
+      Details for SPEC_UNSAFE
+      Field:          asil
+      Need path:      IMPL_SAFE > links > SPEC_UNSAFE
+      Schema path:    safe-impl-[links]->safe-spec[0] > links > local > allOf > 0 > properties > asil > enum
+      Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-link_chain_hop_2_min_contains_error]
+  '''
+  WARNING: Need 'IMPL_SAFE' has validation errors:
+    Severity:       violation
+    Need path:      IMPL_SAFE > links
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE
+  
+      Details for SPEC_SAFE
+      Need path:      IMPL_SAFE > links > SPEC_SAFE > links
+      Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > validate > network > links
+      User message:   Safe impl links to safe spec links to safe req
+      Schema message: Too few valid links of type 'links' (0 < 1) / nok: REQ_UNSAFE
+  
+        Details for REQ_UNSAFE
+        Field:          asil
+        Need path:      IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-link_chain_w_refs]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-local_max_items]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-local_max_items_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > links > maxItems
+    Schema message: ['SPEC_1', 'SPEC_2'] is too long [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-local_min_items]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-local_min_items_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          links
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > links > minItems
+    Schema message: ['SPEC_1'] is too short [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-max_contains]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-max_contains_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Need path:      IMPL_1 > links
+    Schema path:    [0] > validate > network > links
+    Schema message: Too many valid links of type 'links' (2 > 1) / ok: SPEC_1, SPEC_2 [sn_schema.network_contains_too_many]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-max_network_levels]
+  '''
+  WARNING: Need 'SPEC_1' has validation errors:
+    Severity:       violation
+    Need path:      IMPL_1 > links > SPEC_5 > links > SPEC_4 > links > SPEC_3 > links > SPEC_2 > links > SPEC_1
+    Schema path:    [0] > links > links > links > links > links
+    Schema message: Maximum network validation recursion level 4 reached. [sn_schema.network_max_nest_level]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-min_contains]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-min_contains_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Need path:      IMPL_1 > links
+    Schema path:    [0] > validate > network > links
+    Schema message: Too few valid links of type 'links' (1 < 2) / ok: SPEC_1 [sn_schema.network_contains_too_few]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-schemas_in_conf]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-schemas_in_conf_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Need path:      IMPL_1 > links
+    Schema path:    [0] > validate > network > links
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_1
+  
+      Details for SPEC_1
+      Field:          type
+      Need path:      IMPL_1 > links > SPEC_1
+      Schema path:    [0] > links > local > properties > type > const
+      Schema message: 'req' was expected [sn_schema.network_contains_too_few]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_allof_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('approved' was unexpected) [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('comment' was unexpected) [sn_schema.local_fail]
+  
+  '''
+# ---

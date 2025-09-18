@@ -1,11 +1,11 @@
 import sys
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 import pytest
-import sphinx
 from sphinx.testing.util import SphinxTestApp
+from sphinx.util.console import strip_colors
 
 from sphinx_needs.exceptions import NeedsConfigException
 
@@ -49,9 +49,7 @@ def test_schemas(
     content: dict[str, Any],
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
-    check_ontology_warnings: Callable[
-        [SphinxTestApp, list[list[str | dict[Literal["sphinx8"], list[str]]]]], None
-    ],
+    snapshot,
 ) -> None:
     write_fixture_files(tmpdir, content)
 
@@ -59,7 +57,8 @@ def test_schemas(
     app.build()
 
     assert app.statuscode == 0
-    check_ontology_warnings(app, content["warnings"])
+    warnings = strip_colors(app._warning.getvalue())
+    assert warnings == snapshot
     app.cleanup()
 
 
@@ -68,63 +67,10 @@ def test_schemas(
     [{"buildername": "html", "srcdir": "doc_test/doc_schema_e2e", "no_plantuml": True}],
     indirect=True,
 )
-def test_schema_e2e(
-    test_app: SphinxTestApp, get_warnings_list: Callable[[SphinxTestApp], list[str]]
-) -> None:
+def test_schema_e2e(test_app: SphinxTestApp, snapshot) -> None:
     test_app.builder.build_all()
-    warnings = get_warnings_list(test_app)
-
-    expected_warnings = [
-        (
-            "'FEAt' does not match '^[A-Z0-9_]+$'",
-            "[sn_schema.local_fail]",
-        ),
-        (
-            "Unevaluated properties are not allowed ('asil', 'priority' were unexpected)",
-            "[sn_schema.local_fail]",
-        ),
-        (
-            "'approved' is a required property",
-            "[sn_schema.local_fail]",
-        ),
-        (
-            "'SPEC' does not match '^SPEC_[a-zA-Z0-9_-]*$'",
-            "[sn_schema.local_fail]",
-        ),
-        (
-            "Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected)",
-            "[sn_schema.local_fail]",
-        ),
-        (
-            "Too few valid links of type 'links' (0 < 1) / nok: FEAT",
-            "[sn_schema.network_contains_too_few]",
-        ),
-        (
-            "Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected)",
-            "[sn_schema.local_fail]",
-        ),
-        (
-            "Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected)",
-            "[sn_schema.local_fail]",
-        ),
-    ]
-    for expected in expected_warnings:
-        assert any(expected[0] in warning for warning in warnings), (
-            f"Expected warning not found: {expected[0]}"
-        )
-        if sphinx.version_info[0] >= 8:
-            assert any(expected[1] in warning for warning in warnings), (
-                f"Expected subtype not found: {expected[1]}"
-            )
-
-    assert len(warnings) == len(expected_warnings)
-    unexpected_warnings = [
-        '"approved" is a required property [sn_schema.validation_fail]',  # severity info too low
-    ]
-    for unexpected in unexpected_warnings:
-        assert all(unexpected not in warning for warning in warnings), (
-            f"Unexpected warning found: {unexpected}"
-        )
+    warnings = strip_colors(test_app._warning.getvalue())
+    assert warnings == snapshot
 
     html = Path(test_app.outdir, "index.html").read_text()
     assert html

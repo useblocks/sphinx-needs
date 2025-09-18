@@ -12,10 +12,9 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 import pytest
-import sphinx
 import yaml
 from _pytest.mark import ParameterSet
 from docutils.nodes import document
@@ -446,41 +445,6 @@ def write_fixture_files():
                     raise ValueError(
                         f"Unsupported content type for section '{section}': {type(content[section])}"
                     )
-
-    return _inner
-
-
-@pytest.fixture
-def check_ontology_warnings():
-    def _inner(
-        app: SphinxTestApp,
-        expected_warnings: list[list[str | dict[Literal["sphinx8"], list[str]]]],
-    ) -> None:
-        warnings_raw = strip_colors(app.warning.getvalue())
-        warnings = [part for part in warnings_raw.split("WARNING: ") if part]
-        for expected_warning in expected_warnings:
-            for search_item in expected_warning:
-                if isinstance(search_item, dict):
-                    # Handle the case where we have a dictionary with sphinx8 key
-                    assert "sphinx8" in search_item, (
-                        f"Expected 'sphinx8' key in warning: {search_item}"
-                    )
-                    if sphinx.version_info[0] < 8:
-                        continue
-                    expected_split = search_item["sphinx8"]
-                else:
-                    expected_split = search_item.split(" # ")
-                    # all of the entries in expected_split must be in the warnings on a single line
-                assert any(
-                    all(part in warning for part in expected_split)
-                    for warning in warnings
-                ), (
-                    f"Expected warning '{expected_split}' not found in warnings: {warnings}"
-                )
-
-        assert len(warnings) == len(expected_warnings), (
-            f"Unexpected warnings found: {warnings}"
-        )
 
     return _inner
 
