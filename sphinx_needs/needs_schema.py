@@ -536,6 +536,10 @@ class LinkSchema:
     def item_type(self) -> Literal["string"]:
         return "string"
 
+    @property
+    def nullable(self) -> Literal[False]:
+        return False
+
     def _set_default(self, value: Any, *, allow_coercion: bool) -> None:
         """Set the default value for this field.
 

@@ -26,7 +26,13 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
     from sphinx_needs.need_item import NeedItem
-    from sphinx_needs.needs_schema import FieldsSchema
+    from sphinx_needs.needs_schema import (
+        FieldFunctionArray,
+        FieldLiteralValue,
+        FieldsSchema,
+        LinksFunctionArray,
+        LinksLiteralValue,
+    )
     from sphinx_needs.nodes import Need
     from sphinx_needs.services.manager import ServiceManager
 
@@ -572,12 +578,14 @@ class NeedsExtendType(NeedsBaseDataType):
     """Filter string to select needs to extend."""
     filter_is_id: bool
     """Whether the filter is a single need ID."""
-    modifications: list[tuple[str, ExtendType, str | bool | list[tuple[str, bool]]]]
-    """List of field modifications (type, field, value).
-
-    where value can be:
-    - str, bool, or a passed dynamic function list [(<value>, <is_df>), ...]
-    """
+    modifications: list[
+        tuple[str, ExtendType, FieldLiteralValue | FieldFunctionArray | None]
+    ]
+    """List of field modifications (type, field, value)."""
+    list_modifications: list[
+        tuple[str, ExtendType, LinksLiteralValue | LinksFunctionArray]
+    ]
+    """List of link field modifications (type, field, value)."""
     strict: bool
     """If ``filter`` conforms to ``needs_id_regex``,
     and is not an existing need ID,
