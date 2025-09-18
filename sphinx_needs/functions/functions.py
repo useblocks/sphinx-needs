@@ -321,10 +321,10 @@ def resolve_functions(
                             )
                         ) is not None:
                             if not (
-                                field_schema.type_check(func_return)
+                                field_schema.type_check(var_return)
                                 or (
                                     field_schema.type == "array"
-                                    and field_schema.type_check_item(func_return)
+                                    and field_schema.type_check_item(var_return)
                                 )
                             ):
                                 raise ValueError(
