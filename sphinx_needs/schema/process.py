@@ -7,6 +7,7 @@ from sphinx.util import logging
 
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.logging import log_warning
 from sphinx_needs.needsfile import generate_needs_schema
 from sphinx_needs.schema.config import SchemasRootType
 from sphinx_needs.schema.core import (
@@ -84,8 +85,12 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     formatted_warnings = get_formatted_warnings(need_2_warnings)
     for warning in formatted_warnings:
         if warning["log_lvl"] == "warning":
-            logger.warning(
-                warning["message"], type=warning["type"], subtype=warning["subtype"]
+            log_warning(
+                logger,
+                warning["message"],
+                warning["subtype"],  # type: ignore[arg-type]
+                None,
+                type=warning["type"],
             )
         elif warning["log_lvl"] == "error":
             logger.error(

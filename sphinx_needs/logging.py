@@ -108,18 +108,19 @@ def log_warning(
     *,
     color: str | None = None,
     once: bool = False,
+    type: str = "needs",
 ) -> None:
     # Since sphinx in v7.3, sphinx will show warning types if `show_warning_types=True` is set,
     # and in v8.0 this was made the default.
     if version_info < (8,):
         if subtype:
-            message += f" [needs.{subtype}]"
+            message += f" [{type}.{subtype}]"
         else:
-            message += " [needs]"
+            message += f" [{type}]"
 
     logger.warning(
         message,
-        type="needs",
+        type=type,
         subtype=subtype,
         location=location,
         color=color,
