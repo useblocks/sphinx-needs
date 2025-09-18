@@ -358,8 +358,6 @@ def post_process_needs_data(app: Sphinx) -> None:
         app.emit("needs-before-post-processing", needs)
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_functions(app, needs, needs_config)
-        # resolve_dynamic_values(needs, app)
-        # resolve_variants_options(needs, needs_config, app.builder.tags)
         update_back_links(needs, needs_config)
         process_constraints(needs, needs_config)
         app.emit("needs-before-sealing", needs)

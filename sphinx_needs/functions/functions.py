@@ -17,7 +17,6 @@ from typing import Any, Protocol, TypeAlias
 from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
-from sphinx.util.tags import Tags
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
@@ -26,7 +25,7 @@ from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_func import NeedFunc
-from sphinx_needs.variants import VariantFunctionParsed, match_variants
+from sphinx_needs.variants import VariantFunctionParsed
 from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
@@ -237,37 +236,46 @@ def resolve_functions(
         if not need.has_dynamic_fields:
             continue
         for field in list(need._dynamic_fields):
-            if (field_schema := needs_schema.get_any_field(field)) is None:
-                log_warning(
-                    logger,
-                    f"Need {need['id']!r} has dynamic field {field!r}, but this is not a registered need option.",
-                    "dynamic_function",
-                    location=(need["docname"], need["lineno"])
-                    if need["docname"]
-                    else None,
-                )
-                continue
-            resolved: list[Any] = []
-            for item in need._dynamic_fields[field].value:
-                if isinstance(item, DynamicFunctionParsed):
-                    # TODO turn off returning "??" on error
-                    func_return = execute_func(
-                        app,
-                        need,
-                        needs,
-                        item,
-                        (need["docname"], need["lineno"]) if need["docname"] else None,
-                    )
-                    # TODO do type checking here (and turn off in execute_func)
-                    if isinstance(func_return, list):
-                        resolved.extend(func_return)
-                    else:
-                        resolved.append(func_return)
-                elif isinstance(item, VariantFunctionParsed):
-                    pass  # TODO implement variant functions
-                else:
-                    resolved.append(item)
             try:
+                if (field_schema := needs_schema.get_any_field(field)) is None:
+                    raise RuntimeError("does not exist in schema")
+                resolved: list[Any] = []
+                for item in need._dynamic_fields[field].value:
+                    if isinstance(item, DynamicFunctionParsed):
+                        # TODO turn off returning "??" on error
+                        func_return = execute_func(
+                            app,
+                            need,
+                            needs,
+                            item,
+                            (need["docname"], need["lineno"])
+                            if need["docname"]
+                            else None,
+                        )
+                        # TODO do type checking here (and turn off in execute_func)
+                        if isinstance(func_return, list):
+                            resolved.extend(func_return)
+                        else:
+                            resolved.append(func_return)
+                    elif isinstance(item, VariantFunctionParsed):
+                        var_context: dict[str, Any] = {
+                            **need,
+                            **needs_config.filter_data,
+                            **{tag: True for tag in app.builder.tags},
+                        }
+                        if (
+                            var_return := _get_variant(
+                                item, needs_config.variants, var_context
+                            )
+                        ) is not None:
+                            # TODO do type checking here
+                            if isinstance(var_return, list):
+                                resolved.extend(var_return)
+                            else:
+                                resolved.append(var_return)
+                    else:
+                        resolved.append(item)
+
                 if field_schema.type == "string":
                     # TODO check there should be a space between items?
                     need[field] = " ".join(str(el) for el in resolved)
@@ -276,7 +284,7 @@ def resolve_functions(
             except Exception as err:
                 log_warning(
                     logger,
-                    f"Error while resolving dynamic values for field {field!r}: {err}",
+                    f"Error while resolving dynamic values for field {field!r}, of need {need['id']!r}: {err}",
                     "dynamic_function",
                     location=(need["docname"], need["lineno"])
                     if need["docname"]
@@ -284,56 +292,14 @@ def resolve_functions(
                 )
 
 
-def resolve_variants_options(
-    needs: NeedsMutable,
-    needs_config: NeedsSphinxConfig,
-    tags: Tags,
-) -> None:
-    """
-    Resolve variants options inside need data.
-
-    These are fields specified by the user,
-    that have string values with a special markup syntax like ``var_a:open``.
-    These need to be resolved to the actual value.
-
-    Rough workflow:
-    #. Parse all needs and their fields for variant handling
-    #. Replace original string with return value
-
-    """
-    variants_options = needs_config.variant_options
-
-    if not variants_options:
-        return
-
-    for need in needs.values():
-        # Data to use as filter context.
-        need_context: dict[str, Any] = {**need}
-        need_context.update(
-            **needs_config.filter_data
-        )  # Add needs_filter_data to filter context
-        need_context.update(
-            **{tag: True for tag in tags}
-        )  # Add sphinx tags to filter context
-        location = (need["docname"], need["lineno"]) if need["docname"] else None
-
-        for var_option in variants_options:
-            if var_option not in need or not (
-                need[var_option] is None or isinstance(need[var_option], str)
-            ):
-                # sanity check
-                raise ValueError(
-                    f"Variant option {var_option!r} must be in need {need['id']!r} and be a string or None"
-                )
-            if (
-                result := match_variants(
-                    need[var_option],
-                    need_context,
-                    needs_config.variants,
-                    location=location,
-                )
-            ) is not None:
-                need[var_option] = result
+def _get_variant(
+    variant: VariantFunctionParsed, variants: dict[str, str], context: dict[str, Any]
+) -> None | str | int | float | bool:
+    for expr, _, value in variant.expressions:
+        expr = variants.get(expr, expr)
+        if bool(eval(expr, context.copy())):
+            return value
+    return variant.final_value
 
 
 def check_and_get_content(

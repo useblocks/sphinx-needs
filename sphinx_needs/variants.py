@@ -98,7 +98,7 @@ def match_variants(
     variants: dict[str, str],
     *,
     location: str | tuple[str | None, int | None] | nodes.Node | None = None,
-) -> str | None:
+) -> None | str | int | float | bool:
     """Evaluate an options list and return the first matching variant.
 
     Each item should have the format ``<expression>:<value>``,
@@ -145,7 +145,7 @@ def match_variants(
         expr = variants.get(expr, expr)
         try:
             if bool(eval(expr, context.copy())):
-                return value  # type: ignore[return-value]
+                return value
         except Exception as e:
             log_warning(
                 LOGGER,
@@ -154,4 +154,4 @@ def match_variants(
                 location=location,
             )
 
-    return variant.final_value  # type: ignore[return-value]
+    return variant.final_value
