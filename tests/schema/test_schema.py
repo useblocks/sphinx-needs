@@ -1,3 +1,4 @@
+import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
@@ -57,7 +58,9 @@ def test_schemas(
     app.build()
 
     assert app.statuscode == 0
-    warnings = strip_colors(app._warning.getvalue())
+    warnings = strip_colors(app._warning.getvalue()).replace(
+        str(app.srcdir) + os.path.sep, "<srcdir>/"
+    )
     assert warnings == snapshot
     app.cleanup()
 

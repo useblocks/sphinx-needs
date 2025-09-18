@@ -451,9 +451,9 @@ def _from_string_item(
         case "string":
             return value
         case "boolean":
-            if value.lower() in ("", "true", "yes"):
+            if value.lower() in ("", "true", "yes", "y", "on", "1"):
                 return True
-            if value.lower() in ("false", "no"):
+            if value.lower() in ("false", "no", "n", "off", "0"):
                 return False
             raise ValueError(f"Cannot convert {value!r} to boolean{prefix}")
         case "integer":

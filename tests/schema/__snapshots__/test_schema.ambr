@@ -188,12 +188,7 @@
 # ---
 # name: test_schemas[schema/fixtures/extra_options-coerce_to_boolean_from_string_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
-    Severity:       violation
-    Field:          approved
-    Need path:      IMPL_1
-    Schema path:    extra_options > schema
-    Schema message: Field 'approved': cannot coerce 'not-a-boolean' to boolean [sn_schema.extra_option_type_error]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'approved' is invalid: Cannot convert 'not-a-boolean' to boolean [needs.create_need]
   
   '''
 # ---
@@ -202,23 +197,13 @@
 # ---
 # name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_float_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
-    Severity:       violation
-    Field:          efforts
-    Need path:      IMPL_1
-    Schema path:    extra_options > schema
-    Schema message: Field 'efforts': cannot coerce '1.2' to integer [sn_schema.extra_option_type_error]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'efforts' is invalid: Cannot convert '1.2'  to integer [needs.create_need]
   
   '''
 # ---
 # name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_string_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
-    Severity:       violation
-    Field:          efforts
-    Need path:      IMPL_1
-    Schema path:    extra_options > schema
-    Schema message: Field 'efforts': cannot coerce 'QM' to integer [sn_schema.extra_option_type_error]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'efforts' is invalid: Cannot convert 'QM'  to integer [needs.create_need]
   
   '''
 # ---
@@ -227,12 +212,7 @@
 # ---
 # name: test_schemas[schema/fixtures/extra_options-coerce_to_number_from_string_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
-    Severity:       violation
-    Field:          efforts
-    Need path:      IMPL_1
-    Schema path:    extra_options > schema
-    Schema message: Field 'efforts': cannot coerce 'QM' to number [sn_schema.extra_option_type_error]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'efforts' is invalid: Cannot convert 'QM'  to float [needs.create_need]
   
   '''
 # ---
@@ -435,12 +415,7 @@
 # ---
 # name: test_schemas[schema/fixtures/extra_options-wrong_type]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
-    Severity:       violation
-    Field:          asil
-    Need path:      IMPL_1
-    Schema path:    extra_options > schema
-    Schema message: Field 'asil': cannot coerce 'QM' to integer [sn_schema.extra_option_type_error]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'asil' is invalid: Cannot convert 'QM'  to integer [needs.create_need]
   
   '''
 # ---
