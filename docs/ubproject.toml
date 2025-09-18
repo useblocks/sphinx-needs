@@ -7,9 +7,6 @@ content = true
 parse_content = true
 content_required = true
 
-[needs.global_options]
-author = { default = 1, predicates = [["a", "[[func()]]"]] }
-
 [needs]
 extra_options = [
   "my_extra_option",
