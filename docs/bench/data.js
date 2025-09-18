@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758020075473,
+  "lastUpdate": 1758204186146,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14148,6 +14148,42 @@ window.BENCHMARK_DATA = {
             "value": 60.976342709999926,
             "unit": "s",
             "extra": "Commit: 4598e708a188e94777d72f4efea9a3f94ed5a832\nBranch: master\nTime: 2025-09-16T12:52:37+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4d4e790f18e8f37cd614b75a5d415a01a9adcf31",
+          "message": "🧪 Move to snapshot testing for test_schema (#1519)\n\nThe current method makes it very difficult to inspect changes in future PRs",
+          "timestamp": "2025-09-18T16:01:01+02:00",
+          "tree_id": "a4780a34a4097d0efe49f4045e1f591d30255cda",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4d4e790f18e8f37cd614b75a5d415a01a9adcf31"
+        },
+        "date": 1758204162702,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1752079199999983,
+            "unit": "s",
+            "extra": "Commit: 4d4e790f18e8f37cd614b75a5d415a01a9adcf31\nBranch: master\nTime: 2025-09-18T16:01:01+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.656154883000006,
+            "unit": "s",
+            "extra": "Commit: 4d4e790f18e8f37cd614b75a5d415a01a9adcf31\nBranch: master\nTime: 2025-09-18T16:01:01+02:00"
           }
         ]
       }
