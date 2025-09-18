@@ -417,7 +417,7 @@ def create_parameters(
                 params.append(
                     pytest.param(
                         value,
-                        id=f"{subpath.relative_to(THIS_DIR).with_suffix('')}-{key}",
+                        id=f"{subpath.relative_to(THIS_DIR).with_suffix('').as_posix()}-{key}",
                     )
                 )
         return params
