@@ -48,6 +48,53 @@ class DynamicFunction(Protocol):
     ) -> str | int | float | list[str] | list[int] | list[float] | None: ...
 
 
+def _execute_dynamic_func(
+    app: Sphinx,
+    need: NeedItem | NeedPartItem | None,
+    needs: NeedsView | NeedsMutable,
+    df: DynamicFunctionParsed,
+) -> str | int | float | list[str] | list[int] | list[float] | None:
+    """Executes a given function string.
+
+    :param env: Sphinx environment
+    :param need: Actual need, which contains the found function string
+    :param func_string: string of the found function. Without ``[[ ]]``
+    :param location: source location of the function call
+    :return: return value of executed function
+    """
+    if need is not None:
+        try:
+            df = df.apply_need(need)
+        except Exception as err:
+            raise RuntimeError(
+                f"Error while applying need to function {df.name!r}: {err}"
+            ) from err
+
+    needs_config = NeedsSphinxConfig(app.config)
+
+    if df.name not in needs_config.functions:
+        raise RuntimeError(f"Unknown function {df.name!r}")
+
+    func = measure_time_func(
+        needs_config.functions[df.name]["function"],
+        category="dyn_func",
+        source="user",
+    )
+
+    try:
+        func_return = func(
+            app,
+            need,
+            needs,
+            *df.args,
+            **df.kwargs_dict(),
+        )
+    except Exception as e:
+        raise RuntimeError(f"Error while executing function {df.name!r}: {e}") from e
+
+    return func_return
+
+
 def execute_func(
     app: Sphinx,
     need: NeedItem | NeedPartItem | None,
@@ -242,18 +289,23 @@ def resolve_functions(
                 resolved: list[Any] = []
                 for item in need._dynamic_fields[field].value:
                     if isinstance(item, DynamicFunctionParsed):
-                        # TODO turn off returning "??" on error
-                        func_return = execute_func(
-                            app,
-                            need,
-                            needs,
-                            item,
-                            (need["docname"], need["lineno"])
-                            if need["docname"]
-                            else None,
-                        )
-                        # TODO do type checking here (and turn off in execute_func)
-                        if isinstance(func_return, list):
+                        func_return = _execute_dynamic_func(app, need, needs, item)
+                        if not (
+                            field_schema.type_check(func_return)
+                            or (
+                                field_schema.type == "array"
+                                and field_schema.type_check_item(func_return)
+                            )
+                        ):
+                            raise ValueError(
+                                f"dynamic function value {type(func_return)} is not of type {field_schema.type!r}"
+                                + (
+                                    ""
+                                    if field_schema.type != "array"
+                                    else f" or item type {field_schema.item_type!r}"
+                                )
+                            )
+                        if isinstance(func_return, list | tuple):
                             resolved.extend(func_return)
                         else:
                             resolved.append(func_return)
@@ -268,8 +320,22 @@ def resolve_functions(
                                 item, needs_config.variants, var_context
                             )
                         ) is not None:
-                            # TODO do type checking here
-                            if isinstance(var_return, list):
+                            if not (
+                                field_schema.type_check(func_return)
+                                or (
+                                    field_schema.type == "array"
+                                    and field_schema.type_check_item(func_return)
+                                )
+                            ):
+                                raise ValueError(
+                                    f"variant value {type(var_return)} is not of type {field_schema.type!r}"
+                                    + (
+                                        ""
+                                        if field_schema.type != "array"
+                                        else f" or item type {field_schema.item_type!r}"
+                                    )
+                                )
+                            if isinstance(var_return, list | tuple):
                                 resolved.extend(var_return)
                             else:
                                 resolved.append(var_return)
@@ -277,7 +343,6 @@ def resolve_functions(
                         resolved.append(item)
 
                 if field_schema.type == "string":
-                    # TODO check there should be a space between items?
                     need[field] = " ".join(str(el) for el in resolved)
                 else:
                     need[field] = resolved

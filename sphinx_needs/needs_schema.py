@@ -237,6 +237,26 @@ class FieldSchema:
             case other:
                 raise RuntimeError(f"Unknown field type '{other}'.")
 
+    def type_check_item(self, value: Any) -> bool:
+        """Check if a value is of the correct item type for this field.
+
+        For 'array' field types, this checks against the item_type.
+        For other fields, returns False.
+        """
+        if self.type != "array" or self.item_type is None:
+            return False
+        match self.item_type:
+            case "string":
+                return isinstance(value, str)
+            case "boolean":
+                return isinstance(value, bool)
+            case "integer":
+                return isinstance(value, int)
+            case "number":
+                return isinstance(value, int | float)
+            case other:
+                raise RuntimeError(f"Unknown item type '{other}'.")
+
     def convert_directive_option(
         self, value: str
     ) -> FieldLiteralValue | FieldFunctionArray:
@@ -607,6 +627,14 @@ class LinkSchema:
     def type_check(self, value: Any) -> bool:
         """Check if a value is of the correct type for this field."""
         return isinstance(value, list) and all(isinstance(i, str) for i in value)
+
+    def type_check_item(self, value: Any) -> bool:
+        """Check if a value is of the correct item type for this field.
+
+        For 'array' fields, this checks the type of the array items.
+        For other fields, this checks the type of the field itself.
+        """
+        return isinstance(value, str)
 
     def convert_directive_option(
         self, value: str

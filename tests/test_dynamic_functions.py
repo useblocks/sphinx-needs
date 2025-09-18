@@ -163,12 +163,20 @@ def test_doc_dynamic_functions(test_app, snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_df_calc_sum"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_df_calc_sum",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_doc_df_calc_sum(test_app):
     app = test_app
     app.build()
+    warnings = strip_colors(app._warning.getvalue()).splitlines()
+    assert warnings == []
     html = Path(app.outdir, "index.html").read_text()
     assert "43210" in html  # all hours
     assert "3210" in html  # hours of linked needs
@@ -177,12 +185,20 @@ def test_doc_df_calc_sum(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_df_check_linked_values"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_df_check_linked_values",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_doc_df_linked_values(test_app):
     app = test_app
     app.build()
+    warnings = strip_colors(app._warning.getvalue()).splitlines()
+    assert warnings == []
     html = Path(app.outdir, "index.html").read_text()
     assert "all_good" in html
     assert "all_bad" not in html
@@ -209,7 +225,7 @@ def test_doc_df_user_functions(test_app):
     ).splitlines()
     # print(warnings)
     expected = [
-        "srcdir/index.rst:10: WARNING: Return value of function 'bad_function' is of type <class 'object'>. Allowed are str, int, float, list [needs.dynamic_function]",
+        "srcdir/index.rst:10: WARNING: Error while resolving dynamic values for field 'status', of need 'TEST_2': dynamic function value <class 'object'> is not of type 'string' [needs.dynamic_function]",
         "srcdir/index.rst:8: WARNING: The [[my_own_function()]] syntax in need content is deprecated. Replace with :ndf:`my_own_function()` instead. [needs.deprecated]",
         "srcdir/index.rst:14: WARNING: The [[bad_function()]] syntax in need content is deprecated. Replace with :ndf:`bad_function()` instead. [needs.deprecated]",
         "srcdir/index.rst:14: WARNING: Return value of function 'bad_function' is of type <class 'object'>. Allowed are str, int, float, list [needs.dynamic_function]",
