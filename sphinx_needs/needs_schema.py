@@ -219,7 +219,7 @@ class FieldSchema:
             case "number":
                 return isinstance(value, int | float)
             case "array":
-                if not isinstance(value, list | tuple):
+                if not isinstance(value, list):
                     return False
                 if self.item_type is None:
                     return False
@@ -342,11 +342,13 @@ class FieldSchema:
                 raise RuntimeError(f"Unknown field type '{other}'.")
 
     def convert_or_type_check(
-        self, value: Any
+        self, value: Any, *, allow_coercion: bool
     ) -> None | FieldLiteralValue | FieldFunctionArray:
         """Convert a value to the correct type for this field, or check if it is of the correct type.
 
         :param value: The value to convert or check.
+        :param allow_coercion: Whether to allow coercion of string values to the correct type.
+            This will also allow dynamic and variant functions if the field allows them.
 
         :returns: True if the value is of the correct type, False otherwise.
 
@@ -354,7 +356,7 @@ class FieldSchema:
         :raises FunctionParsingException: if a dynamic function is malformed
         :raises VariantParsingException: if a variant function is malformed
         """
-        if isinstance(value, str):
+        if allow_coercion and isinstance(value, str):
             return self.convert_directive_option(value)
         else:
             if self.type_check(value):
@@ -596,9 +598,7 @@ class LinkSchema:
 
     def type_check(self, value: Any) -> bool:
         """Check if a value is of the correct type for this field."""
-        return isinstance(value, tuple | list) and all(
-            isinstance(i, str) for i in value
-        )
+        return isinstance(value, list) and all(isinstance(i, str) for i in value)
 
     def convert_directive_option(
         self, value: str
@@ -644,11 +644,13 @@ class LinkSchema:
             return LinksLiteralValue(array)  # type: ignore[arg-type]
 
     def convert_or_type_check(
-        self, value: Any
+        self, value: Any, *, allow_coercion: bool
     ) -> LinksLiteralValue | LinksFunctionArray:
         """Convert a value to the correct type for this field, or check if it is of the correct type.
 
         :param value: The value to convert or check.
+        :param allow_coercion: Whether to allow coercion of string values to the correct type.
+            This will also allow dynamic and variant functions if the field allows them.
 
         :returns: True if the value is of the correct type, False otherwise.
 
@@ -656,11 +658,11 @@ class LinkSchema:
         :raises FunctionParsingException: if a dynamic function is malformed
         :raises VariantParsingException: if a variant function is malformed
         """
-        if isinstance(value, str):
+        if allow_coercion and isinstance(value, str):
             return self.convert_directive_option(value)
         else:
             if self.type_check(value):
-                return LinksLiteralValue(list(value))
+                return LinksLiteralValue(value)
             else:
                 raise ValueError(f"Invalid value for field {self.name!r}: {value!r}")
 

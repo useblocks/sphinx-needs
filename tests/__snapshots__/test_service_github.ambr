@@ -81,7 +81,7 @@
           'GITHUB_1110': dict({
             'arch': dict({
             }),
-            'closed_at': 'None',
+            'closed_at': '',
             'completion': '',
             'constraints': list([
             ]),
@@ -159,7 +159,7 @@
           'GITHUB_1112': dict({
             'arch': dict({
             }),
-            'closed_at': 'None',
+            'closed_at': '',
             'completion': '',
             'constraints': list([
             ]),

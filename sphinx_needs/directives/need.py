@@ -103,8 +103,8 @@ class NeedDirective(SphinxDirective):
         )
 
         id: str | None = None
-        collapse: bool | None = None
-        hide: bool | None = None
+        collapse: str | bool | None = None
+        hide: str | bool | None = None
         jinja_content: bool | None = None
         status: str | None = None
         tags: str | None = None
@@ -126,36 +126,28 @@ class NeedDirective(SphinxDirective):
                     case "id":
                         assert value, "'id' must not be empty"
                         id = value
-                    case "collapse":
-                        collapse = coerce_to_boolean(value)
-                    case "hide":
-                        hide = coerce_to_boolean(value)
                     case "jinja_content":
                         jinja_content = coerce_to_boolean(value)
                     case "status":
-                        assert value, f"'{key}' must not be empty"
-                        status = value
+                        status = value or ""
                     case "tags":
-                        assert value, f"'{key}' must not be empty"
-                        tags = value
+                        tags = value or ""
+                    case "collapse":
+                        collapse = value or ""
+                    case "hide":
+                        hide = value or ""
                     case "style":
-                        assert value, f"'{key}' must not be empty"
-                        style = value
+                        style = value or ""
                     case "layout":
-                        assert value, f"'{key}' must not be empty"
-                        layout = value
+                        layout = value or ""
                     case "template":
-                        assert value, f"'{key}' must not be empty"
-                        template = value
+                        template = value or ""
                     case "pre_template":
-                        assert value, f"'{key}' must not be empty"
-                        pre_template = value
+                        pre_template = value or ""
                     case "post_template":
-                        assert value, f"'{key}' must not be empty"
-                        post_template = value
+                        post_template = value or ""
                     case "constraints":
-                        assert value, f"'{key}' must not be empty"
-                        constraints = value
+                        constraints = value or ""
                     case key if key in needs_config.extra_options:
                         extras[key] = value or ""
                     case key if key in link_keys:
