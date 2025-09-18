@@ -429,6 +429,24 @@ def generate_need(
     layout, layout_func = _convert_to_none_str_func("layout", layout_converted)
     style, style_func = _convert_to_none_str_func("style", style_converted)
 
+    function_values: dict[str, FieldFunctionArray | LinksFunctionArray] = {}
+    if title_func:
+        function_values["title"] = title_func
+    if status_func:
+        function_values["status"] = status_func
+    if tags_func:
+        function_values["tags"] = tags_func
+    if constraints_func:
+        function_values["constraints"] = constraints_func
+    if collapse_func:
+        function_values["collapse"] = collapse_func
+    if hide_func:
+        function_values["hide"] = hide_func
+    if layout_func:
+        function_values["layout"] = layout_func
+    if style_func:
+        function_values["style"] = style_func
+
     # Add the need and all needed information
     core_data: NeedsInfoType = {
         "id": need_id,
@@ -482,20 +500,70 @@ def generate_need(
             NeedPartData(id=part_id, content=str(part_data.get("content", "")))
         )
 
-    # TODO for testing, lets go back to old representation (but with functions removed)
-    extras_old = {
-        k: str(v.value) if isinstance(v, FieldLiteralValue) else ""
-        for k, v in extras.items()
-    }
-    links_old = {
-        k: v.value if isinstance(v, LinksLiteralValue) else [] for k, v in links.items()
-    }
+    extras_pre: dict[str, AllowedTypes | None] = {}
+    for k, v in extras.items():
+        if (extra_schema := needs_schema.get_extra_field(k)) is None:
+            raise InvalidNeedException(
+                "invalid_extra_option",
+                f"Extra option {k!r} not in 'needs_extra_options'.",
+            )
+        if v is None:
+            if not extra_schema.nullable:
+                raise InvalidNeedException(
+                    "invalid_extra_option",
+                    f"Extra option {k!r} is not nullable, but no value or default was given.",
+                )
+            extras_pre[k] = None
+        elif isinstance(v, FieldLiteralValue):
+            extras_pre[k] = v.value
+        elif isinstance(v, FieldFunctionArray):
+            function_values[k] = v
+            match extra_schema.type:
+                case "string":
+                    extras_pre[k] = ""
+                case "boolean":
+                    extras_pre[k] = False
+                case "integer":
+                    extras_pre[k] = 0
+                case "number":
+                    extras_pre[k] = 0.0
+                case "array":
+                    extras_pre[k] = []
+                case other:
+                    raise InvalidNeedException(
+                        "invalid_extra_option",
+                        f"Extra option {k!r} has unknown type {other!r}.",
+                    )
+        else:
+            raise InvalidNeedException(
+                "invalid_extra_option",
+                f"Extra option {k!r} has unknown value {v!r}.",
+            )
+
+    links_pre: dict[str, list[str]] = {}
+    for lk, lv in links.items():
+        if lv is None:
+            # TODO currently no link_schema.nullable
+            raise InvalidNeedException(
+                "invalid_link_option",
+                f"Link option {lk!r} is not nullable, but no value or default was given.",
+            )
+        elif isinstance(lv, LinksLiteralValue):
+            links_pre[lk] = lv.value
+        elif isinstance(lv, LinksFunctionArray):
+            function_values[lk] = lv
+            links_pre[lk] = []
+        else:
+            raise InvalidNeedException(
+                "invalid_link_option",
+                f"Link option {lk!r} has unknown value {lv!r}.",
+            )
 
     try:
         needs_info = NeedItem(
             core=core_data,
-            extras=extras_old,
-            links=links_old,
+            extras=extras_pre,
+            links=links_pre,
             source=source,
             content=content_info,
             parts=parts_objects,

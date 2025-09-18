@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import chain
-from typing import Any, Literal, Protocol, overload, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, overload, runtime_checkable
 
 from sphinx_needs.data import (
     NeedsContentInfoType,
@@ -21,6 +21,9 @@ from sphinx_needs.data import (
     NeedsPartType,
     NeedsSourceInfoType,
 )
+
+if TYPE_CHECKING:
+    from sphinx_needs.needs_schema import AllowedTypes
 
 
 @runtime_checkable
@@ -256,7 +259,7 @@ class NeedItem:
         source: NeedItemSourceProtocol | None,
         content: NeedsContent,
         core: NeedsInfoType,
-        extras: dict[str, str],
+        extras: dict[str, AllowedTypes | None],
         links: dict[str, list[str]],
         backlinks: dict[str, list[str]] | None = None,
         parts: Sequence[NeedPartData] = (),
@@ -714,7 +717,7 @@ class NeedItem:
             if (part_item := self.get_part_item(part.id)) is not None:
                 yield part_item
 
-    def get_extra(self, key: str) -> str:
+    def get_extra(self, key: str) -> AllowedTypes | None:
         """Get an extra by key.
 
         :raises KeyError: If the key is not an extra.
@@ -725,7 +728,7 @@ class NeedItem:
         """Yield all extra keys."""
         yield from self._extras.keys()
 
-    def iter_extra_items(self) -> Iterable[tuple[str, str]]:
+    def iter_extra_items(self) -> Iterable[tuple[str, AllowedTypes | None]]:
         """Yield all extras as key-value pairs."""
         yield from self._extras.items()
 
