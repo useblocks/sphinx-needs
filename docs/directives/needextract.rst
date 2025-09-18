@@ -32,7 +32,7 @@ For instance, a supplier could get a copy of requirements but would not see all 
 ``needextract`` supports the full filtering possibilities of sphinx-needs.
 Please read :ref:`filter` for more information.
 
-It also supports arguments as filter string,
+It also supports arguments as a filter string,
 which works like the option `filter`, but also
 supports need ID as filter argument.
 
@@ -42,7 +42,7 @@ supports need ID as filter argument.
       :layout: clean
       :style: green_border
 
-.. note:: arguments and option filter can't be used at the same time.
+.. note:: Arguments and the option filter can't be used at the same time.
 
 Options
 -------
@@ -68,7 +68,7 @@ style
 ~~~~~
 
 ``:style:`` overwrites the need-specific style option and sets the same style for each need.
-The original need provides the layout information , if not overwritten by :ref:`needextract_layout`.
+The original need provides the layout information, if not overwritten by :ref:`needextract_layout`.
 
 See :ref:`styles` for a list of available styles.
 

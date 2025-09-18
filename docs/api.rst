@@ -3,12 +3,12 @@
 Python API
 ==========
 
-**Sphinx-Needs** provides an open API for other Sphinx-extensions to provide specific need-types, create needs or
-make usage of the filter possibilities.
+**Sphinx-Needs** provides an open API for other Sphinx-extensions to provide specific need-types, create needs, or
+make use of the filter possibilities.
 
 The API allows the injection of extra configuration, but
-does not support manipulation of it (e.g remove need types),
-to keep the final configuration transparent for the Sphinx project authors.
+does not support manipulation of it (e.g., removing need types),
+in order to keep the final configuration transparent for Sphinx project authors.
 
 .. _api_configuration:
 

@@ -5,8 +5,8 @@
 needarch
 ========
 
-``needarch`` behaves exactly like :ref:`needuml`, but only works inside a need. It provides also additional exclusive
-jinja functions :ref:`needarch_jinja_need` and :ref:`needarch_jinja_import`.
+``needarch`` behaves exactly like :ref:`needuml`, but only works inside a need. It also provides additional exclusive
+Jinja functions :ref:`needarch_jinja_need` and :ref:`needarch_jinja_import`.
 
 .. need-example::
 
@@ -60,7 +60,7 @@ The `need()` function provides you the need information the :ref:`needarch` is e
 import(need_links_option_name)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This function takes undefined amounts of current need links option names as arguments.
+This function takes an arbitrary number of current need link option names as arguments.
 
 Then it executes :ref:`needuml_jinja_uml` automatically for all links/need_ids defined from the given arguments.
 
@@ -97,9 +97,9 @@ NeedArch Loop Example
 .. versionadded:: 1.0.3
 
 NeedArch can detect include loops `(uml('1') -> uml('2') -> uml('3') -> uml('1')`
-and can avoid to include an element twice. Maybe this is not always the use case
-you have, if so please create an issue and mention this chapter. The algorithm
-does detect different parameter sets and does import `uml()` calls with different
+and can avoid including an element twice. This may not always match your use case; if so,
+please create an issue and mention this chapter. The algorithm
+detects different parameter sets and imports `uml()` calls with different
 :ref:`parameter <needuml_jinja_uml_args>` to the same need.
 
 .. need-example::

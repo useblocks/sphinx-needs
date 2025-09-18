@@ -175,7 +175,7 @@ Adds information of used filters below generated flowchart.
 show_legend
 ~~~~~~~~~~~
 
-Adds a legend below generated flowchart. The legends contains all defined need-types and their configured color
+Adds a legend below the generated flowchart. The legend contains all defined need-types and their configured color
 for flowcharts.
 
 .. need-example::
@@ -235,11 +235,11 @@ Must contain a comma separated list of link type names.
 By default, we show all link_types.
 
 An identical link can show up twice in the generated needflow, if the ``copy``
-option of a specific link type was set to ``True``.
+option of a specific link type has been set to ``True``.
 
 In this case, the link_type **"link"** also contains the copies of the specified link_type and therefore
 there will be two identical connections in the needflow.
-You can avoid this by not setting **"links**" in the ``link_type`` option.
+You can avoid this by not setting **"links"** in the ``link_type`` option.
 
 You can set this option globally via the configuration option :ref:`needs_flow_link_types`.
 
@@ -312,7 +312,7 @@ when using the ``graphviz`` engine.
       :show_link_names:
       :config: monochrome
 
-You can apply multiple configurations together by separating them via ``,`` symbol.
+You can apply multiple configurations together by separating them via the ``,`` symbol.
 
 .. need-example::
 

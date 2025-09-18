@@ -176,7 +176,7 @@ By default it is set to:
 
 .. note::
 
-   `color` can also be an empty string. This makes sense, if the PlantUMl configuration is mostly provided by using
+   `color` can also be an empty string. This makes sense, if the PlantUML configuration is mostly provided by using
    :ref:`needs_flow_configs` and the used colors shall not get overwritten by type specific values.
 
 .. warning::
@@ -435,7 +435,7 @@ Each configured link should define:
 * **allow_dead_links** (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
 * **style** (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
-* **style_part** (optional): Same as **style**, but get used if link is connected to a :ref:`need_part`.
+* **style_part** (optional): Same as **style**, but gets used if link is connected to a :ref:`need_part`.
   See :ref:`links_style`.
 
 Configuration example:
@@ -473,11 +473,11 @@ The above example configuration allows the following usage:
       :checks: EXTRA_REQ_001, DEAD_LINK_NOT_ALLOWED
       :triggers: DEAD_LINK
 
-.. attention:: The used option name can not be reused in the configuration of :ref:`needs_global_options`.
+.. attention:: The used option name cannot be reused in the configuration of :ref:`needs_global_options`.
 
 Link types with option-name **links** and **parent_needs** are added by default.
 You are free to overwrite the default config by defining your own type with option name **links** or **parent_needs**.
-This type will be used as default configuration for all links.
+This type will be used as the default configuration for all links.
 
 .. _`allow_dead_links`:
 
@@ -574,7 +574,7 @@ Use ``style_start`` and ``style_end`` like this:
 .. note::
 
    Some plantuml diagrams have restrictions in the order of color (`style`)
-   and orientation (`left`, `rigth`, `up` and `down`). We suggest to set the orientation
+   and orientation (`left`, `right`, `up` and `down`). We suggest to set the orientation
    in `style_end` like in the example above, as this is more often supported.
 
 .. _`needs_filter_data`:
@@ -596,8 +596,8 @@ Configuration example:
        "sphinx_tag": custom_defined_func(),
    }
 
-The defined ``needs_filter_data`` must be a dictionary. Its values can be a string variable or a custom defined
-function. The function get executed during config loading and must return a string.
+The defined ``needs_filter_data`` must be a dictionary. Its values can be a string variable or a custom-defined
+function. The function gets executed during config loading and must return a string.
 
 The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very powerful
 together with internal needs information to filter needs.
@@ -639,7 +639,7 @@ Fields can be added or existing fields can even be manipulated.
 
 .. note:: Keep in mind this only affects the filter results, original needs as displayed somewhere else are not modified.
 
-If set to False, the filter results contains the original need fields and any manipulations of need fields are lost.
+If set to False, the filter results contain the original need fields and any manipulations of need fields are lost.
 
 .. code-block:: python
 
@@ -682,7 +682,7 @@ needs_flow_show_links
 
 .. versionadded:: 0.3.11
 
-Used to de/activate the output of link type names beside the connection in the :ref:`needflow` directive:
+Used to activate/deactivate the output of link type names beside the connection in the :ref:`needflow` directive:
 
 .. code-block:: python
 
@@ -1754,7 +1754,7 @@ Allows to reference and use external needs without having their representation i
      },
    ]
 
-``needs_external_needs`` must be a list of dictionary elements and each dictionary must/can have the following
+``needs_external_needs`` must be a list of dictionary elements and each dictionary can/must have the following
 keys:
 
 :base_url: Base url which is used to calculate the final, specific need url. Normally the path under which the ``index.html`` is provided.
@@ -1764,14 +1764,14 @@ keys:
   If not, the external need url uses the default calculated ``base_url``.
   |br| The ``target_url`` supports Jinja context ``{{need[]}}``, ``need option`` used as key, e.g ``{{need['id']}}`` or ``{{need['type']}}``.
 :json_url: An url, which can be used to download the ``needs.json`` (or similar) file.
-:json_path: The path to a ``needs.json`` file located inside your documentation project. Can not be used together with
-  ``json_url``. |br| The value must be a relative path, which is relative to the project configuration folder
+:json_path: The path to a ``needs.json`` file located inside your documentation project. Cannot be used together with
+  ``json_url``. |br| The value must be a relative path, relative to the project configuration folder
   (where the **conf.py** is stored). (Since version `0.7.1`)
 :version: Defines the version to use inside the ``needs.json`` file (*optional*).
 :id_prefix: Prefix as string, which will be added to all id of external needs. Needed, if there is the risk that
   needs from different projects may have the same id (*optional*).
 :css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
-  The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
+  The related CSS class definition must be provided by the user, e.g., by :ref:`own_css`.
   (*optional*) (*default*: ``external_link``)
 
 .. _`needs_needextend_strict`:
@@ -1964,7 +1964,7 @@ Example:
 
    needs_build_json_per_id = False
 
-.. hint:: The created single json file per need, located in :ref:`needs_build_json_per_id_path` folder, e.g ``_build/needs_id/abc_432.json``
+.. hint:: The created single json file per need is located in the :ref:`needs_build_json_per_id_path` folder, e.g., ``_build/needs_id/abc_432.json``
 
 .. _`needs_build_json_per_id_path`:
 
@@ -1983,7 +1983,7 @@ Example:
 
    needs_build_json_per_id_path = "needs_id"
 
-.. hint:: The created ``needs_id`` folder gets stored in the ``outdir`` of the current builder. The final location is e.g. ``_build/needs_id``
+.. hint:: The created ``needs_id`` folder is stored in the ``outdir`` of the current builder. The final location is, e.g., ``_build/needs_id``
 
 .. _`needs_build_needumls`:
 
@@ -1995,7 +1995,7 @@ Exports :ref:`needuml` data during each build.
 This option works like :ref:`needs_build_json`. But the value of :ref:`needs_build_needumls` should be a string,
 not a boolean. Default value of is: ``""``.
 
-This value of this option shall be a **relative folder path**, which specifies and creates the relative folder in the
+The value of this option must be a **relative folder path**, which specifies and creates the relative folder in the
 ``outdir`` of the current builder.
 
 Example:
@@ -2265,15 +2265,15 @@ Configuration example:
    }
 
 The``needs_render_context`` configuration option must be a dictionary.
-The dictionary consists of key-value pairs where the key is a string used as reference to the value.
-The value can be any data type (string, integer, list, dict, etc.)
+The dictionary consists of key-value pairs where the key is a string used as a reference to the value.
+The value can be any data type (string, integer, list, dict, etc.).
 
 .. warning::
 
-   The value can also be a custom defined function,
+   The value can also be a custom-defined function,
    however, this will deactivate the caching and incremental build feature of Sphinx.
 
-The data passed via needs_render_context will be available as variable(s) when rendering Jinja templates or strings.
+The data passed via needs_render_context will be available as variables when rendering Jinja templates or strings.
 You can use the data passed via needs_render_context as shown below:
 
 .. need-example::
@@ -2508,4 +2508,4 @@ final need and schema looks like.
 .. note::
 
    For large need counts, the debug output can become very large.
-   Writing debug output also affects the validation performance negatively.
+   Writing debug output also negatively affects validation performance.

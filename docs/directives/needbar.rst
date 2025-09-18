@@ -16,8 +16,8 @@ needbar
       15,10,20
       20,15,10
 
-Each content value gets interpreted either as static float/int value or as a :ref:`filter_string`.
-The amount of found needs by the filter string is then used as value.
+Each content value is interpreted either as a static float/int value or as a :ref:`filter_string`.
+The number of found needs by the filter string is then used as the value.
 
 .. note::
 
@@ -84,10 +84,10 @@ content
 ~~~~~~~
 
 In the example below, we fetch the ``:xlabels:`` and ``:ylabels:`` options from the content using ``FROM_DATA`` with the `labels`_.
-You can use white spaces to format the table to improve readability.
+You can use white space to format the table to improve readability.
 
 From the content, we interpret each value either as a static float/int value or as a :ref:`filter_string`.
-We get the bar chart's data (values) from the amount of **need** objects found by the filter string.
+We get the bar chart's data (values) from the number of **need** objects found by the filter string.
 
 Below is a more realistic example with data fetched from filters, together with hardcoded data:
 
@@ -144,10 +144,10 @@ labels
 ~~~~~~
 
 | Use ``:xlabels:`` to set labels for columns of the data.
-| Use ``:ylabels:`` to set labels for row of the data.
+| Use ``:ylabels:`` to set labels for rows of the data.
 
 You can define the ``:xlabels:`` and/or ``:ylabels:`` by setting a comma separated string.
-The amount of labels must match the amount of values/lines from content. |br|
+The amount of labels must match the number of values/lines from content. |br|
 Also, you can set the ``:xlabels:`` and/or ``:ylabels:`` value to ``FROM_DATA`` to fetch the labels from the content.
 
 .. hint::
@@ -182,7 +182,7 @@ Also, you can set the ``:xlabels:`` and/or ``:ylabels:`` value to ``FROM_DATA`` 
 stacked
 ~~~~~~~
 
-You can render the barchart in a stacked design by setting ``:stacked:`` flag.
+You can render the barchart in a stacked design by setting the ``:stacked:`` flag.
 
 The ``:stacked:`` flag does not support any values.
 
@@ -199,9 +199,9 @@ The ``:stacked:`` flag does not support any values.
 show_sum
 ~~~~~~~~
 
-You can render the barchart with detailed information of the height of each bar by setting the ``:show_sum:`` flag.
+You can render the barchart with detailed information about the height of each bar by setting the ``:show_sum:`` flag.
 
-The ``:show_sum:`` flag does not support any values and it's useful with the ``stacked`` option  enabled.
+The ``:show_sum:`` flag does not support any values and is useful with the ``stacked`` option enabled.
 
 .. need-example::
 
@@ -226,9 +226,9 @@ The ``:show_sum:`` flag does not support any values and it's useful with the ``s
 show_top_sum
 ~~~~~~~~~~~~
 
-You can render the barchart with detailed information of the height of each bar above by setting the ``:show_top_sum:`` flag.
+You can render the barchart with detailed information about the height of each bar above by setting the ``:show_top_sum:`` flag.
 
-The ``:show_sum:`` flag does not support any values and it's useful with the ``stacked`` option  enabled.
+The ``:show_top_sum:`` flag does not support any values and is useful with the ``stacked`` option enabled.
 
 .. need-example::
 
@@ -255,7 +255,7 @@ horizontal
 
 You can render the bar chart with horizontal bars by setting the ``:horizontal:`` flag.
 
-The ``:horizontal:`` flag does not support any values and it's useful with the ``stacked`` option  enabled.
+The ``:horizontal:`` flag does not support any values and is useful with the ``stacked`` option enabled.
 
 .. hint::
    The meaning of `labels`_ will change automatically with the usage of ``:horizontal:``. We will use the
@@ -289,13 +289,13 @@ transpose
 ~~~~~~~~~
 
 You can `transpose <https://en.wikipedia.org/wiki/Transpose>`_ the data in the content by setting the ``:transpose:`` flag.
-The idea is, you can try to see the data from different point of view, without refactoring.
+The idea is that you can try to see the data from a different point of view, without refactoring.
 
-The ``:transpose:`` flag does not support any values and it's useful with big content tables.
+The ``:transpose:`` flag does not support any values and is useful with large content tables.
 
 .. hint::
    * Using the ``:transpose:`` flag, transposes the ``:x_axis_title:`` and ``:y_axis_title:`` fetched from the content data or specified with `labels`_ but does not transpose the extra `axis title`_.
-   * Remember that with the ``:transpose:`` flag, the length and height of the content data changes, not to think about the width of matching elements, like `colors`_. Please review the impact of ``:transpose:`` before using it.
+   * Remember that with the ``:transpose:`` flag, the length and height of the content data change, so do not think about the width of matching elements, like `colors`_. Please review the impact of ``:transpose:`` before using it.
 
 .. need-example::
 
@@ -325,9 +325,9 @@ The ``:transpose:`` flag does not support any values and it's useful with big co
 rotation
 ~~~~~~~~
 
-| Use ``:xlabels_rotation:`` to set rotation of labels for x-axis on the diagram.
-| Use ``:ylabels_rotation:`` to set rotation of labels for y-axis on the diagram.
-| Use ``:sum_rotation:`` to set rotation of labels for bars on the diagram.
+| Use ``:xlabels_rotation:`` to set the rotation of labels for the x-axis on the diagram.
+| Use ``:ylabels_rotation:`` to set the rotation of labels for the y-axis on the diagram.
+| Use ``:sum_rotation:`` to set the rotation of labels for bars on the diagram.
 
 
 .. need-example::
@@ -368,12 +368,12 @@ The ``:separator:`` is a string that supports any symbols.
 colors
 ~~~~~~
 
-``:colors:`` takes a comma separated list of color names and uses them for the bar charts.
+``:colors:`` takes a comma-separated list of color names and uses them for the bar charts.
 
 See `Matplotlib documentation of supported colors <https://matplotlib.org/stable/gallery/color/named_colors.html>`_
 for a complete list of color names.
 
-But besides names, ``:colors:`` options also supports hex-values like ``#ffcc00``.
+But besides names, the ``:colors:`` option also supports hex-values like ``#ffcc00``.
 
 .. hint::
    In a normal bar chart, we use the ``:colors:`` for the legend and bars itself.
@@ -420,7 +420,7 @@ style
 It takes a string, which must match the
 `supported Matplotlib style names <https://matplotlib.org/3.1.1/gallery/style_sheets/style_sheets_reference.html>`_.
 
-Useful styles are for example:
+Useful styles are, for example:
 
 * default
 * classic
