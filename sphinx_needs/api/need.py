@@ -429,23 +429,23 @@ def generate_need(
     layout, layout_func = _convert_to_none_str_func("layout", layout_converted)
     style, style_func = _convert_to_none_str_func("style", style_converted)
 
-    function_values: dict[str, FieldFunctionArray | LinksFunctionArray] = {}
+    dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray] = {}
     if title_func:
-        function_values["title"] = title_func
+        dynamic_fields["title"] = title_func
     if status_func:
-        function_values["status"] = status_func
+        dynamic_fields["status"] = status_func
     if tags_func:
-        function_values["tags"] = tags_func
+        dynamic_fields["tags"] = tags_func
     if constraints_func:
-        function_values["constraints"] = constraints_func
+        dynamic_fields["constraints"] = constraints_func
     if collapse_func:
-        function_values["collapse"] = collapse_func
+        dynamic_fields["collapse"] = collapse_func
     if hide_func:
-        function_values["hide"] = hide_func
+        dynamic_fields["hide"] = hide_func
     if layout_func:
-        function_values["layout"] = layout_func
+        dynamic_fields["layout"] = layout_func
     if style_func:
-        function_values["style"] = style_func
+        dynamic_fields["style"] = style_func
 
     # Add the need and all needed information
     core_data: NeedsInfoType = {
@@ -517,7 +517,7 @@ def generate_need(
         elif isinstance(v, FieldLiteralValue):
             extras_pre[k] = v.value
         elif isinstance(v, FieldFunctionArray):
-            function_values[k] = v
+            dynamic_fields[k] = v
             match extra_schema.type:
                 case "string":
                     extras_pre[k] = ""
@@ -551,7 +551,7 @@ def generate_need(
         elif isinstance(lv, LinksLiteralValue):
             links_pre[lk] = lv.value
         elif isinstance(lv, LinksFunctionArray):
-            function_values[lk] = lv
+            dynamic_fields[lk] = lv
             links_pre[lk] = []
         else:
             raise InvalidNeedException(
@@ -567,6 +567,7 @@ def generate_need(
             source=source,
             content=content_info,
             parts=parts_objects,
+            dynamic_fields=dynamic_fields,
             _validate=False,
         )
     except ValueError as err:
