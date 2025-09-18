@@ -118,7 +118,7 @@ class FieldSchema:
             except ValueError:
                 raise
             except FunctionParsingException as exc:
-                raise ValueError(f"Error parsing dynamic function: {exc}") from exc
+                raise ValueError(str(exc)) from exc
             except VariantParsingException as exc:
                 raise ValueError(f"Error parsing variant function: {exc}") from exc
         else:
@@ -176,7 +176,7 @@ class FieldSchema:
                 except ValueError:
                     raise
                 except FunctionParsingException as exc:
-                    raise ValueError(f"Error parsing dynamic function: {exc}") from exc
+                    raise ValueError(str(exc)) from exc
                 except VariantParsingException as exc:
                     raise ValueError(f"Error parsing variant function: {exc}") from exc
             else:
@@ -508,6 +508,14 @@ class LinkSchema:
                 "default must be of type LinksLiteralValue or LinksFunctionArray."
             )
 
+    @property
+    def type(self) -> Literal["array"]:
+        return "array"
+
+    @property
+    def item_type(self) -> Literal["string"]:
+        return "string"
+
     def _set_default(self, value: Any, *, allow_coercion: bool) -> None:
         """Set the default value for this field.
 
@@ -527,7 +535,7 @@ class LinkSchema:
             except ValueError:
                 raise
             except FunctionParsingException as exc:
-                raise ValueError(f"Error parsing dynamic function: {exc}") from exc
+                raise ValueError(str(exc)) from exc
             except VariantParsingException as exc:
                 raise ValueError(f"Error parsing variant function: {exc}") from exc
         else:
@@ -572,7 +580,7 @@ class LinkSchema:
                 except ValueError:
                     raise
                 except FunctionParsingException as exc:
-                    raise ValueError(f"Error parsing dynamic function: {exc}") from exc
+                    raise ValueError(str(exc)) from exc
                 except VariantParsingException as exc:
                     raise ValueError(f"Error parsing variant function: {exc}") from exc
             else:

@@ -66,21 +66,57 @@ def test_dynamic_function_from_string(
 @pytest.mark.parametrize(
     "func_str,error_message",
     [
-        ("", "Not a function call"),
-        ("x.", "Not a function call"),
-        ("xx", "Not a function call"),
-        ("dunc(None)", "Unsupported arg 0 value type"),
-        ("dunc([None])", "Unsupported arg 0 item 0 value type"),
-        ("dunc(x)", "Unsupported arg 0 value type"),
-        ("dunc(1, x.y)", "Unsupported arg 1 value type"),
-        ("dunc(func())", "Unsupported arg 0 value type"),
-        ("dunc(x=x)", "Unsupported kwarg 'x' value type"),
-        ("dunc(1, y=x.y)", "Unsupported kwarg 'y' value type"),
-        ("dunc(z=func())", "Unsupported kwarg 'z' value type"),
-        ("dunc(x=None)", "Unsupported kwarg 'x' value type"),
-        ("dunc(x=[None])", "Unsupported kwarg 'x' item 0 value type"),
-        ("dunc([need.x])", "Unsupported arg 0 item 0 value type"),
-        ("dunc(x=[1, need.x])", "Unsupported kwarg 'x' item 1 value type"),
+        ("", "Error parsing dynamic function: Not a function call"),
+        ("x.", "Error parsing dynamic function: Not a function call"),
+        ("xx", "Error parsing dynamic function: Not a function call"),
+        (
+            "dunc(None)",
+            "Error parsing dynamic function 'dunc': Unsupported arg 0 value type",
+        ),
+        (
+            "dunc([None])",
+            "Error parsing dynamic function 'dunc': Unsupported arg 0 item 0 value type",
+        ),
+        (
+            "dunc(x)",
+            "Error parsing dynamic function 'dunc': Unsupported arg 0 value type",
+        ),
+        (
+            "dunc(1, x.y)",
+            "Error parsing dynamic function 'dunc': Unsupported arg 1 value type",
+        ),
+        (
+            "dunc(func())",
+            "Error parsing dynamic function 'dunc': Unsupported arg 0 value type",
+        ),
+        (
+            "dunc(x=x)",
+            "Error parsing dynamic function 'dunc': Unsupported kwarg 'x' value type",
+        ),
+        (
+            "dunc(1, y=x.y)",
+            "Error parsing dynamic function 'dunc': Unsupported kwarg 'y' value type",
+        ),
+        (
+            "dunc(z=func())",
+            "Error parsing dynamic function 'dunc': Unsupported kwarg 'z' value type",
+        ),
+        (
+            "dunc(x=None)",
+            "Error parsing dynamic function 'dunc': Unsupported kwarg 'x' value type",
+        ),
+        (
+            "dunc(x=[None])",
+            "Error parsing dynamic function 'dunc': Unsupported kwarg 'x' item 0 value type",
+        ),
+        (
+            "dunc([need.x])",
+            "Error parsing dynamic function 'dunc': Unsupported arg 0 item 0 value type",
+        ),
+        (
+            "dunc(x=[1, need.x])",
+            "Error parsing dynamic function 'dunc': Unsupported kwarg 'x' item 1 value type",
+        ),
     ],
 )
 def test_dynamic_function_from_string_fail(func_str, error_message):
@@ -108,12 +144,12 @@ def test_doc_dynamic_functions(test_app, snapshot):
     ).splitlines()
     assert warnings == [
         'srcdir/index.rst:11: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
+        "srcdir/index.rst:23: WARNING: Need could not be created: 'tags' value is invalid: only one string, dynamic function or variant function allowed per array item. [needs.create_need]",
         'srcdir/index.rst:40: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
         'srcdir/index.rst:44: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        "srcdir/index.rst:23: WARNING: Dynamic function in list field 'tags' is surrounded by text that will be omitted: \"[[copy('title')]]omitted\" [needs.dynamic_function]",
-        "srcdir/index.rst:52: WARNING: Function string 'test(need.unknown)' could not be parsed: need has no attribute 'unknown' [needs.dynamic_function]",
+        "srcdir/index.rst:46: WARNING: Need could not be created: Extra option 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
+        "srcdir/index.rst:52: WARNING: Need could not be created: Extra option 'test_func' is invalid: Error parsing dynamic function 'test': Unsupported arg 0 value type [needs.create_need]",
         'srcdir/index.rst:9: WARNING: The [[copy("id")]] syntax in need content is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
-        'srcdir/index.rst:27: WARNING: The [[copy("tags")]] syntax in need content is deprecated. Replace with :ndf:`copy("tags")` instead. [needs.deprecated]',
         "srcdir/index.rst:33: WARNING: The [[copy('id')]] syntax in need content is deprecated. Replace with :ndf:`copy('id')` instead. [needs.deprecated]",
         "srcdir/index.rst:38: WARNING: The [[copy('id')]] syntax in need content is deprecated. Replace with :ndf:`copy('id')` instead. [needs.deprecated]",
         "srcdir/index.rst:44: WARNING: Error while executing function 'copy': Need not found [needs.dynamic_function]",
@@ -178,7 +214,7 @@ def test_doc_df_user_functions(test_app):
         "srcdir/index.rst:14: WARNING: The [[bad_function()]] syntax in need content is deprecated. Replace with :ndf:`bad_function()` instead. [needs.deprecated]",
         "srcdir/index.rst:14: WARNING: Return value of function 'bad_function' is of type <class 'object'>. Allowed are str, int, float, list [needs.dynamic_function]",
         "srcdir/index.rst:16: WARNING: The [[invalid]] syntax in need content is deprecated. Replace with :ndf:`invalid` instead. [needs.deprecated]",
-        "srcdir/index.rst:16: WARNING: Function string 'invalid' could not be parsed: Not a function call [needs.dynamic_function]",
+        "srcdir/index.rst:16: WARNING: Error parsing dynamic function: Not a function call [needs.dynamic_function]",
         "srcdir/index.rst:18: WARNING: The [[unknown()]] syntax in need content is deprecated. Replace with :ndf:`unknown()` instead. [needs.deprecated]",
         "srcdir/index.rst:18: WARNING: Unknown function 'unknown' [needs.dynamic_function]",
     ]

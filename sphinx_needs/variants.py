@@ -11,8 +11,14 @@ from sphinx_needs.logging import get_logger, log_warning
 LOGGER = get_logger(__name__)
 
 
-class VariantParsingException(BaseException):
+class VariantParsingException(Exception):
     """Called if parsing of given function string has not worked"""
+
+    def __init__(self, message: str) -> None:
+        # as we often catch these exception in a generic way, add a prefix to the message,
+        # to make it easier to identify the source of the error
+        message = f"Error parsing variant function: {message}"
+        super().__init__(message)
 
 
 @dataclass(frozen=True, slots=True)

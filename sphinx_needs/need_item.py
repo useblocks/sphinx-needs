@@ -446,6 +446,11 @@ class NeedItem:
         yield from self._parts.values()
 
     @property
+    def has_dynamic_fields(self) -> bool:
+        """Return True if the need item has dynamic fields, False otherwise."""
+        return bool(self._dynamic_fields)
+
+    @property
     def modifications(self) -> tuple[NeedModification, ...]:
         """Return the modifications of the need item."""
         return self._modifications
