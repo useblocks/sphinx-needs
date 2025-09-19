@@ -4,7 +4,7 @@ Page 3
 .. spec:: Test for Variants
    :id: SP_0013
    :status: close
-   :author: change_author:Daniel Woste, Randy Duodu
+   :author: <<change_author:Daniel Woste, Randy Duodu>>
    :tags: test
 
 
