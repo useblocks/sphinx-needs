@@ -27,7 +27,6 @@ name = "field4"
 description = "Boolean option"
 schema.type = "boolean"
 
-
 [[needs.extra_options]]
 name = "field5"
 description = "Array of strings option"
@@ -51,3 +50,8 @@ name = "field8"
 description = "Array of boolean option"
 schema.type = "array"
 schema.items.type = "boolean"
+
+[[needs.extra_options]]
+name = "field9"
+description = "Number option"
+schema.type = "number"

@@ -68,6 +68,7 @@
           'REQ-1': dict({
             'docname': 'index',
             'external_css': 'external_link',
+            'field2': 2,
             'id': 'REQ-1',
             'lineno': 4,
             'section_name': 'Test',
@@ -104,8 +105,9 @@
               False,
               True,
             ]),
+            'field9': 44.0,
             'id': 'REQ-2',
-            'lineno': 7,
+            'lineno': 8,
             'section_name': 'Test',
             'sections': list([
               'Test',
@@ -296,6 +298,12 @@
                 'type': 'boolean',
               }),
               'type': 'array',
+            }),
+            'field9': dict({
+              'default': None,
+              'description': 'Number option',
+              'field_type': 'extra',
+              'type': 'number',
             }),
             'has_dead_links': dict({
               'default': False,
