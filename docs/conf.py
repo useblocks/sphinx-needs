@@ -401,7 +401,7 @@ def create_tutorial_needs(app: Sphinx, _env, _docnames):
     We do this dynamically, to avoid having to maintain the JSON file manually.
     """
     needs_config = NeedsSphinxConfig(app.config)
-    writer = NeedsList(app.config, outdir=app.confdir, confdir=app.confdir)
+    writer = NeedsList(app.env, outdir=app.confdir, confdir=app.confdir)
     for i in range(1, 5):
         need_item = generate_need(
             needs_config,
