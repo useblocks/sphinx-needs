@@ -45,7 +45,6 @@ def generate_needs_schema(
             "type": field.type,
             "description": field.description,
             "field_type": "extra",
-            "default": field.default,
         }
         if field.item_type is not None:
             properties[field.name]["items"] = {"type": field.item_type}
