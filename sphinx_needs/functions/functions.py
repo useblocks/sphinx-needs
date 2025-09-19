@@ -344,6 +344,13 @@ def resolve_functions(
 
                 if field_schema.type == "string":
                     need[field] = " ".join(str(el) for el in resolved)
+                elif field_schema.type in {"integer", "number", "boolean"}:
+                    # TODO(mh) unboxing the list for non-joinable types
+                    if len(resolved) > 1:
+                        raise ValueError(
+                            f"Field {field!r} of type {field_schema.type!r} cannot have multiple values"
+                        )
+                    need[field] = resolved[0]
                 else:
                     need[field] = resolved
             except Exception as err:
