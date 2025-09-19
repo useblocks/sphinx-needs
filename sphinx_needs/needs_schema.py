@@ -359,13 +359,51 @@ class FieldSchema:
         if allow_coercion and isinstance(value, str):
             return self.convert_directive_option(value)
         else:
-            if self.type_check(value):
-                if value is None:
-                    return None
-                # TODO account for dynamic/variant functions as strings in lists (like links)?
-                return FieldLiteralValue(value)
-            else:
+            if not self.type_check(value):
                 raise ValueError(f"Invalid value for field {self.name!r}: {value!r}")
+            if value is None:
+                return None
+            if (
+                allow_coercion
+                and (self.allow_dynamic_functions or self.allow_variant_functions)
+                and self.type == "array"
+                and self.item_type == "string"
+            ):
+                # TODO perhaps should also allow for other item types? (would need to do before type checking)
+                from sphinx_needs.functions.functions import DynamicFunctionParsed
+
+                new_value: list[
+                    str | DynamicFunctionParsed | VariantFunctionParsed
+                ] = []
+                has_function = False
+                item: str
+                for item in value:
+                    if (
+                        self.allow_dynamic_functions
+                        and item.lstrip().startswith("[[")
+                        and item.rstrip().endswith("]]")
+                    ):
+                        has_function = True
+                        new_value.append(
+                            DynamicFunctionParsed.from_string(item.strip()[2:-2])
+                        )
+                    elif (
+                        self.allow_variant_functions
+                        and item.lstrip().startswith("<<")
+                        and item.rstrip().endswith(">>")
+                    ):
+                        has_function = True
+                        new_value.append(
+                            VariantFunctionParsed.from_string(item.strip()[2:-2])
+                        )
+                    else:
+                        new_value.append(item)
+                if has_function:
+                    return FieldFunctionArray(tuple(new_value))
+                else:
+                    return FieldLiteralValue(value)
+
+            return FieldLiteralValue(value)
 
 
 AllowedTypes: TypeAlias = (

@@ -194,7 +194,7 @@
         ),
         tuple(
           'status == "closed"',
-          FieldLiteralValue(value=['c']),
+          FieldFunctionArray(value=('c', DynamicFunctionParsed(name='copy', args=('status',), kwargs=()))),
         ),
       ),
     }),
@@ -310,6 +310,7 @@
             'status': 'closed',
             'tags': list([
               'c',
+              'closed',
             ]),
             'title': 'Specification 2',
             'type': 'spec',
