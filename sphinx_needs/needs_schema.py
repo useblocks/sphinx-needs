@@ -110,24 +110,17 @@ class FieldSchema:
 
         if not self.allow_defaults:
             raise ValueError("Defaults are not allowed for this field.")
-        if allow_coercion and isinstance(value, str):
-            from sphinx_needs.functions.functions import FunctionParsingException
+        from sphinx_needs.functions.functions import FunctionParsingException
 
-            try:
-                default = self.convert_directive_option(value)
-            except ValueError:
-                raise
-            except FunctionParsingException as exc:
-                raise ValueError(str(exc)) from exc
-            except VariantParsingException as exc:
-                raise ValueError(f"Error parsing variant function: {exc}") from exc
-        else:
-            if not self.type_check(value):
-                raise ValueError(
-                    f"Default value '{value}' is not of type {self.type!r}"
-                    + (f" (item_type {self.item_type!r})" if self.item_type else "")
-                )
-            default = FieldLiteralValue(value)
+        try:
+            default = self.convert_or_type_check(value, allow_coercion=allow_coercion)
+        except ValueError:
+            raise
+        except FunctionParsingException as exc:
+            raise ValueError(str(exc)) from exc
+        except VariantParsingException as exc:
+            raise ValueError(str(exc)) from exc
+
         object.__setattr__(self, "default", default)
 
     def _set_predicate_defaults(
@@ -153,39 +146,26 @@ class FieldSchema:
             raise ValueError("Defaults are not allowed for this field.")
         if not isinstance(defaults, Sequence):
             raise ValueError("defaults must be a list of (filter, value) pairs.")
-        result: list[
-            tuple[
-                str,
-                FieldLiteralValue
-                | DynamicFunctionParsed
-                | VariantFunctionParsed
-                | FieldFunctionArray,
-            ]
-        ] = []
+        result: list[tuple[str, FieldLiteralValue | FieldFunctionArray]] = []
         for filter_value in defaults:
             if not isinstance(filter_value, Sequence) or len(filter_value) != 2:
                 raise ValueError("defaults must be a list of (filter, value) pairs.")
             filter_, value = filter_value
             if not isinstance(filter_, str) or not filter_:
                 raise ValueError("Filter must be a non-empty string.")
-            if allow_coercion and isinstance(value, str):
-                from sphinx_needs.functions.functions import FunctionParsingException
+            from sphinx_needs.functions.functions import FunctionParsingException
 
-                try:
-                    result.append((filter_, self.convert_directive_option(value)))
-                except ValueError:
-                    raise
-                except FunctionParsingException as exc:
-                    raise ValueError(str(exc)) from exc
-                except VariantParsingException as exc:
-                    raise ValueError(f"Error parsing variant function: {exc}") from exc
-            else:
-                if not self.type_check(value):
-                    raise ValueError(
-                        f"Default value '{value}' is not of type {self.type!r}"
-                        + (f" (item_type {self.item_type!r})" if self.item_type else "")
-                    )
-                result.append((filter_, FieldLiteralValue(value)))
+            try:
+                converted_value = self.convert_or_type_check(
+                    value, allow_coercion=allow_coercion
+                )
+            except ValueError:
+                raise
+            except (FunctionParsingException, VariantParsingException) as exc:
+                raise ValueError(str(exc)) from exc
+            if converted_value is not None:
+                result.append((filter_, converted_value))
+
         object.__setattr__(self, "predicate_defaults", tuple(result))
 
     def json_schema(self) -> dict[str, Any]:
@@ -551,23 +531,15 @@ class LinkSchema:
         """
         if not self.allow_defaults:
             raise ValueError("Defaults are not allowed for this field.")
-        if allow_coercion and isinstance(value, str):
-            from sphinx_needs.functions.functions import FunctionParsingException
+        from sphinx_needs.functions.functions import FunctionParsingException
 
-            try:
-                default = self.convert_directive_option(value)
-            except ValueError:
-                raise
-            except FunctionParsingException as exc:
-                raise ValueError(str(exc)) from exc
-            except VariantParsingException as exc:
-                raise ValueError(f"Error parsing variant function: {exc}") from exc
-        else:
-            if not self.type_check(value):
-                raise ValueError(
-                    f'Default value \'{value}\' is not of type "array" (item_type "string")'
-                )
-            default = LinksLiteralValue(value)
+        try:
+            default = self.convert_or_type_check(value, allow_coercion=allow_coercion)
+        except ValueError:
+            raise
+        except (FunctionParsingException, VariantParsingException) as exc:
+            raise ValueError(str(exc)) from exc
+
         object.__setattr__(self, "default", default)
 
     def _set_predicate_defaults(
@@ -596,23 +568,19 @@ class LinkSchema:
             filter_, value = filter_value
             if not isinstance(filter_, str) or not filter_:
                 raise ValueError("Filter must be a non-empty string.")
-            if allow_coercion and isinstance(value, str):
-                from sphinx_needs.functions.functions import FunctionParsingException
 
-                try:
-                    result.append((filter_, self.convert_directive_option(value)))
-                except ValueError:
-                    raise
-                except FunctionParsingException as exc:
-                    raise ValueError(str(exc)) from exc
-                except VariantParsingException as exc:
-                    raise ValueError(f"Error parsing variant function: {exc}") from exc
-            else:
-                if not self.type_check(value):
-                    raise ValueError(
-                        f'Default value \'{value}\' is not of type "array" (item_type "string")'
-                    )
-                result.append((filter_, LinksLiteralValue(value)))  # type: ignore[arg-type]
+            from sphinx_needs.functions.functions import FunctionParsingException
+
+            try:
+                converted_value = self.convert_or_type_check(
+                    value, allow_coercion=allow_coercion
+                )
+            except ValueError:
+                raise
+            except (FunctionParsingException, VariantParsingException) as exc:
+                raise ValueError(str(exc)) from exc
+            result.append((filter_, converted_value))
+
         object.__setattr__(self, "predicate_defaults", tuple(result))
 
     def json_schema(self) -> dict[str, Any]:
