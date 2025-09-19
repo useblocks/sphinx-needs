@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from collections.abc import Callable
@@ -7,6 +8,7 @@ from typing import Any
 import pytest
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
+from syrupy.filters import props
 
 from sphinx_needs.exceptions import NeedsConfigException
 
@@ -63,6 +65,27 @@ def test_schemas(
     )
     assert warnings == snapshot
     app.cleanup()
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/schema_typing", "no_plantuml": True}],
+    indirect=True,
+)
+def test_schema_typing(test_app: SphinxTestApp, snapshot) -> None:
+    test_app.build()
+    warnings = (
+        strip_colors(test_app._warning.getvalue())
+        .replace(str(test_app.srcdir) + os.path.sep, "<srcdir>/")
+        .splitlines()
+    )
+    print(warnings)
+    assert warnings == [
+        "WARNING: Schema interface and validation are still in beta. Interface and validation logic may change when moving to a typed core implementation. [needs.beta]"
+    ]
+
+    needs = json.loads(Path(test_app.outdir, "needs.json").read_text("utf8"))
+    assert needs == snapshot(exclude=props("created", "project", "creator"))
 
 
 @pytest.mark.parametrize(
