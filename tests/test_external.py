@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 from textwrap import dedent
@@ -20,21 +21,25 @@ from syrupy.filters import props
 def test_external_html(test_app: SphinxTestApp):
     app = test_app
     app.build()
-    assert strip_colors(app._warning.getvalue()).strip().splitlines() == [
+    warnings = (
+        strip_colors(app._warning.getvalue())
+        .replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
+        .splitlines()
+    )
+    # print(warnings)
+    assert warnings == [
+        "WARNING: External need 'EXT_TEST_01' in 'needs_test_small.json' could not be added: Extra option 'extra2' is invalid: Invalid value for field 'extra2': 1 [needs.load_external_need]",
         "WARNING: External need 'EXT_TEST_03' in 'needs_test_small.json' could not be added: Unknown need type 'ask'. [needs.load_external_need]",
         "WARNING: Unknown keys in external need source 'needs_test_small.json': ['unknown_key'] [needs.unknown_external_keys]",
-        "WARNING: Non-string values in extra options of external need source 'needs_test_small.json': ['extra2'] [needs.mistyped_external_values]",
+        "WARNING: http://my_company.com/docs/v1/index.html#TEST_02: Need 'EXT_TEST_02' has unknown outgoing link 'EXT_TEST_01' in field 'links' [needs.external_link_outgoing]",
+        "WARNING: http://my_company.com/docs/v1/index.html#TEST_02: Need 'EXT_TEST_02' has unknown outgoing link 'EXT_TEST_01' in field 'parent_needs' [needs.external_link_outgoing]",
+        "<srcdir>/index.rst:12: WARNING: Need 'SPEC_1' has unknown outgoing link 'EXT_TEST_01' in field 'links' [needs.link_outgoing]",
+        "<srcdir>/index.rst:26: WARNING: linked need EXT_TEST_01 not found [needs.link_ref]",
     ]
     html = Path(app.outdir, "index.html").read_text()
     assert (
         '<a class="external_link reference external" href="http://my_company.com/docs/v1/index.html#TEST_02">'
         "EXT_TEST_02</a>" in html
-    )
-
-    assert (
-        '<p>Test need ref: <a class="external_link reference external"'
-        ' href="http://my_company.com/docs/v1/index.html#TEST_01">EXT_TEST_01</a></p>'
-        in html
     )
 
 

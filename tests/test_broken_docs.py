@@ -95,15 +95,13 @@ def test_broken_statuses(test_app: SphinxTestApp):
 def test_broken_syntax(test_app: SphinxTestApp):
     test_app.build()
 
-    assert [li for li in get_warnings(test_app) if li.startswith("<srcdir>")] == [
-        "<srcdir>/index.rst:4: WARNING: Invalid value for 'status' option: 'status' must not be empty [needs.directive]",
-        "<srcdir>/index.rst:11: WARNING: Invalid value for 'tags' option: 'tags' must not be empty [needs.directive]",
-        "<srcdir>/index.rst:19: WARNING: Invalid value for 'collapse' option: not a flag or case-insensitive true/false/yes/no [needs.directive]",
+    assert get_warnings(test_app) == [
+        "<srcdir>/index.rst:19: WARNING: Need could not be created: 'collapse' value is invalid: Cannot convert 'other' to boolean [needs.create_need]",
     ]
 
     html = Path(test_app.outdir, "index.html").read_text()
-    assert "SP_TOO_001" not in html
-    assert "SP_TOO_002" not in html
+    assert "SP_TOO_001" in html
+    assert "SP_TOO_002" in html
     assert "SP_TOO_003" not in html
 
 

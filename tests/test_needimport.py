@@ -219,8 +219,8 @@ def test_need_schema_warnings(test_app, snapshot):
         test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
     ).splitlines()
     assert warnings == [
+        "srcdir/index.rst:4: WARNING: Need 'TEST_01' could not be imported: Extra option 'extra2' is invalid: Invalid value for field 'extra2': 1 [needs.import_need]",
         "srcdir/index.rst:4: WARNING: Unknown keys in import need source: ['unknown_key'] [needs.unknown_import_keys]",
-        "srcdir/index.rst:4: WARNING: Non-string values in extra options of import need source: ['extra2'] [needs.mistyped_import_values]",
     ]
     json_data = Path(test_app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)

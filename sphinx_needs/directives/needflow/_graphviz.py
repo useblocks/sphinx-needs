@@ -292,11 +292,13 @@ def _render_node(
     ):
         params.append(("color", "red"))
     elif node["border_color"]:
-        color = match_variants(
-            node["border_color"],
-            {**need},
-            config.variants,
-            location=node,
+        color = str(
+            match_variants(
+                node["border_color"],
+                {**need},
+                config.variants,
+                location=node,
+            )
         )
         if color:
             params.append(("color", _quote("#" + color)))
@@ -341,11 +343,13 @@ def _render_subgraph(
     if node["highlight"] and filter_single_need(need, config, node["highlight"]):
         params.append(("color", "red"))
     elif node["border_color"]:
-        color = match_variants(
-            node["border_color"],
-            {**need},
-            config.variants,
-            location=node,
+        color = str(
+            match_variants(
+                node["border_color"],
+                {**need},
+                config.variants,
+                location=node,
+            )
         )
         if color:
             params.append(("color", _quote("#" + color)))

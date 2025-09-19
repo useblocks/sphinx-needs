@@ -540,43 +540,53 @@ def reduce_need(
             # is part of the user provided schema
             keep = True
 
+        if value is None:
+            # TODO handle None values
+            keep = False
+
         if keep:
             coerced_value = value
             if schema_field["field_type"] == "extra" and field in config.extra_options:
                 option_schema = config.extra_options[field].schema
-                if (
-                    option_schema is not None
-                    and "type" in option_schema
-                    and option_schema["type"] != "string"
-                ):
-                    type_ = option_schema["type"]
-                    if not isinstance(value, str):
-                        raise TypeCoerceError(
-                            f"Field '{field}': cannot coerce '{value}' (type: {type(value)}) to {type_}",
-                            field=field,
-                        )
-                    try:
-                        if type_ == "integer":
-                            coerced_value = int(value)
-                        elif type_ == "number":
-                            coerced_value = float(value)
-                    except ValueError as exc:
-                        raise TypeCoerceError(
-                            f"Field '{field}': cannot coerce '{value}' to {type_}",
-                            field=field,
-                        ) from exc
-                    if type_ == "boolean":
-                        truthy = {"true", "yes", "y", "on", "1"}
-                        falsy = {"false", "no", "n", "off", "0"}
-                        if value.lower() in truthy:
-                            coerced_value = True
-                        elif value.lower() in falsy:
-                            coerced_value = False
-                        else:
-                            raise TypeCoerceError(
-                                f"Field '{field}': cannot coerce '{value}' to boolean",
-                                field=field,
+                type_ = (
+                    option_schema["type"]
+                    if (option_schema is not None and "type" in option_schema)
+                    else "string"
+                )
+                try:
+                    match type_:
+                        case "string":
+                            coerced_value = str(coerced_value)
+                        case "integer":
+                            coerced_value = int(coerced_value)
+                        case "number":
+                            coerced_value = float(coerced_value)
+                        case "boolean":
+                            if isinstance(coerced_value, bool):
+                                pass
+                            elif isinstance(coerced_value, str):
+                                truthy = {"true", "yes", "y", "on", "1"}
+                                falsy = {"false", "no", "n", "off", "0"}
+                                if coerced_value.lower() in truthy:
+                                    coerced_value = True
+                                elif coerced_value.lower() in falsy:
+                                    coerced_value = False
+                                else:
+                                    raise TypeError()
+                            else:
+                                raise TypeError()
+                        case "array":
+                            pass  # implement array checking
+                        case _:
+                            raise RuntimeError(
+                                f"Unsupported extra option type '{type_}' for field '{field}'"
                             )
+                except (ValueError, TypeError) as exc:
+                    raise TypeCoerceError(
+                        f"Field '{field}': cannot coerce '{coerced_value}' to {type_}",
+                        field=field,
+                    ) from exc
+
             reduced_need[field] = coerced_value
 
     return reduced_need

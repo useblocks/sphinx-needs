@@ -1,5 +1,5 @@
 TEST DOCUMENT NEEDS CONSTRAINTS
-============================
+===============================
 
 .. spec:: Command line interface
     :id: SP_TOO_001
@@ -40,3 +40,5 @@ TEST DOCUMENT NEEDS CONSTRAINTS
     :constraints: team
 
     Example of a failed constraint with medium severity. Note the style from :ref:`needs_constraint_failed_options`
+
+.. toctree:: style_test

@@ -18,8 +18,7 @@ from sphinx_needs.directives.needextend import Needextend, extend_needs_data
 from sphinx_needs.functions.functions import (
     check_and_get_content,
     find_and_replace_node_content,
-    resolve_dynamic_values,
-    resolve_variants_options,
+    resolve_functions,
 )
 from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
@@ -103,8 +102,8 @@ class NeedDirective(SphinxDirective):
         )
 
         id: str | None = None
-        collapse: bool | None = None
-        hide: bool | None = None
+        collapse: str | bool | None = None
+        hide: str | bool | None = None
         jinja_content: bool | None = None
         status: str | None = None
         tags: str | None = None
@@ -126,36 +125,28 @@ class NeedDirective(SphinxDirective):
                     case "id":
                         assert value, "'id' must not be empty"
                         id = value
-                    case "collapse":
-                        collapse = coerce_to_boolean(value)
-                    case "hide":
-                        hide = coerce_to_boolean(value)
                     case "jinja_content":
                         jinja_content = coerce_to_boolean(value)
                     case "status":
-                        assert value, f"'{key}' must not be empty"
-                        status = value
+                        status = value or ""
                     case "tags":
-                        assert value, f"'{key}' must not be empty"
-                        tags = value
+                        tags = value or ""
+                    case "collapse":
+                        collapse = value or ""
+                    case "hide":
+                        hide = value or ""
                     case "style":
-                        assert value, f"'{key}' must not be empty"
-                        style = value
+                        style = value or ""
                     case "layout":
-                        assert value, f"'{key}' must not be empty"
-                        layout = value
+                        layout = value or ""
                     case "template":
-                        assert value, f"'{key}' must not be empty"
-                        template = value
+                        template = value or ""
                     case "pre_template":
-                        assert value, f"'{key}' must not be empty"
-                        pre_template = value
+                        pre_template = value or ""
                     case "post_template":
-                        assert value, f"'{key}' must not be empty"
-                        post_template = value
+                        post_template = value or ""
                     case "constraints":
-                        assert value, f"'{key}' must not be empty"
-                        constraints = value
+                        constraints = value or ""
                     case key if key in needs_config.extra_options:
                         extras[key] = value or ""
                     case key if key in link_keys:
@@ -366,8 +357,7 @@ def post_process_needs_data(app: Sphinx) -> None:
         needs = needs_data.get_needs_mutable()
         app.emit("needs-before-post-processing", needs)
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
-        resolve_dynamic_values(needs, app)
-        resolve_variants_options(needs, needs_config, app.builder.tags)
+        resolve_functions(app, needs, needs_config)
         update_back_links(needs, needs_config)
         process_constraints(needs, needs_config)
         app.emit("needs-before-sealing", needs)

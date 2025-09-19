@@ -26,6 +26,13 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
     from sphinx_needs.need_item import NeedItem
+    from sphinx_needs.needs_schema import (
+        FieldFunctionArray,
+        FieldLiteralValue,
+        FieldsSchema,
+        LinksFunctionArray,
+        LinksLiteralValue,
+    )
     from sphinx_needs.nodes import Need
     from sphinx_needs.services.manager import ServiceManager
 
@@ -104,6 +111,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "Title of the need.",
         "schema": {"type": "string"},
         "allow_df": True,
+        "allow_variants": True,
     },
     "status": {
         "description": "Status of the need.",
@@ -120,11 +128,14 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "show_in_layout": True,
         "allow_default": "str_list",
         "allow_df": True,
+        "allow_variants": True,
         "allow_extend": True,
     },
     "collapse": {
         "description": "Hide the meta-data information of the need.",
         "schema": {"type": "boolean", "default": False},
+        "allow_df": True,
+        "allow_variants": True,
         "allow_default": "bool",
         "exclude_json": True,
         "exclude_external": True,
@@ -133,6 +144,8 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "hide": {
         "description": "If true, the need is not rendered.",
         "schema": {"type": "boolean", "default": False},
+        "allow_df": True,
+        "allow_variants": True,
         "allow_default": "bool",
         "exclude_json": True,
         "exclude_external": True,
@@ -331,6 +344,7 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": "array", "items": {"type": "string"}, "default": ()},
         "allow_default": "str_list",
         "allow_df": True,
+        "allow_variants": True,
         "allow_extend": True,
     },
     "constraints_results": {
@@ -426,8 +440,11 @@ class NeedsContentInfoType(TypedDict):
 class NeedsInfoType(TypedDict):
     """Data for a single need."""
 
+    # core information
     id: str
     """ID of the data."""
+    type: str
+    """Type of the need."""
 
     # meta information
     title: str
@@ -448,13 +465,25 @@ class NeedsInfoType(TypedDict):
     external_css: str
     """CSS class name, added to the external reference."""
 
-    # type information (based on needs_types config)
-    type: str
+    # type information (initially based on needs_types config)
     type_name: str
     type_prefix: str
     type_color: str
     """Hexadecimal color code of the type."""
     type_style: str
+
+    constraints: tuple[str, ...]
+    """List of constraint names, which are defined for this need."""
+
+    # computed from need content (short for architecture)
+    arch: Mapping[str, str]
+    """Mapping of uml key to uml content."""
+
+    # additional source information
+    # set in analyse_need_locations transform
+    sections: tuple[str, ...]
+    signature: None | str
+    """Derived from a docutils desc_name node."""
 
     # these default to False and are updated in update_back_links post-process
     has_dead_links: bool
@@ -463,18 +492,6 @@ class NeedsInfoType(TypedDict):
     """True if any links reference need ids that are not found in the need list,
     and the link type does not allow dead links.
     """
-
-    constraints: tuple[str, ...]
-    """List of constraint names, which are defined for this need."""
-
-    # additional source information
-    # set in analyse_need_locations transform
-    sections: tuple[str, ...]
-    signature: None | str
-    """Derived from a docutils desc_name node."""
-
-    arch: Mapping[str, str]  #  short for architecture.
-    """Mapping of uml key to uml content."""
 
 
 class NeedsInfoComputedType(TypedDict):
@@ -561,12 +578,14 @@ class NeedsExtendType(NeedsBaseDataType):
     """Filter string to select needs to extend."""
     filter_is_id: bool
     """Whether the filter is a single need ID."""
-    modifications: list[tuple[str, ExtendType, str | bool | list[tuple[str, bool]]]]
-    """List of field modifications (type, field, value).
-
-    where value can be:
-    - str, bool, or a passed dynamic function list [(<value>, <is_df>), ...]
-    """
+    modifications: list[
+        tuple[str, ExtendType, FieldLiteralValue | FieldFunctionArray | None]
+    ]
+    """List of field modifications (type, field, value)."""
+    list_modifications: list[
+        tuple[str, ExtendType, LinksLiteralValue | LinksFunctionArray]
+    ]
+    """List of link field modifications (type, field, value)."""
     strict: bool
     """If ``filter`` conforms to ``needs_id_regex``,
     and is not an existing need ID,
@@ -741,6 +760,23 @@ class SphinxNeedsData:
 
     def __init__(self, env: BuildEnvironment) -> None:
         self.env = env
+
+    def get_schema(self) -> FieldsSchema:
+        """Get the schema for all fields.
+
+        :raises RuntimeError: if the schema has not been initialized yet.
+        """
+        try:
+            return self.env._needs_schema
+        except AttributeError:
+            raise RuntimeError("Needs schema has not been initialized yet.")
+
+    def _set_schema(self, schema: FieldsSchema) -> None:
+        """Set the schema for all fields.
+
+        This should only be called once, during initialization.
+        """
+        self.env._needs_schema = schema
 
     @property
     def _env_needs(self) -> dict[str, NeedItem]:

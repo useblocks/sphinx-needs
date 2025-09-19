@@ -4,7 +4,6 @@ from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
 
-from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
@@ -34,14 +33,12 @@ if TYPE_CHECKING:
 LOGGER = get_logger(__name__)
 
 
-@dataclass
+@dataclass(kw_only=True, slots=True)
 class ExtraOptionParams:
     """Defines a single extra option for needs"""
 
     description: str
     """A description of the option."""
-    validator: Callable[[str | None], str]
-    """A function to validate the directive option value."""
     schema: (
         ExtraOptionStringSchemaType
         | ExtraOptionBooleanSchemaType
@@ -82,7 +79,6 @@ class _Config:
 
     def __init__(self) -> None:
         self._extra_options: dict[str, ExtraOptionParams] = {}
-        self._field_defaults: dict[str, FieldDefault] = {}
         self._functions: dict[str, NeedFunctionsType] = {}
         self._warnings: dict[
             str, str | Callable[[NeedItem, SphinxLoggerAdapter], bool]
@@ -90,7 +86,6 @@ class _Config:
 
     def clear(self) -> None:
         self._extra_options = {}
-        self._field_defaults = {}
         self._functions = {}
         self._warnings = {}
 
@@ -117,7 +112,6 @@ class _Config:
         | ExtraOptionNumberSchemaType
         | ExtraOptionMultiValueSchemaType
         | None = None,
-        validator: Callable[[str | None], str] | None = None,
         override: bool = False,
     ) -> None:
         """Adds an extra option to the configuration."""
@@ -146,19 +140,9 @@ class _Config:
 
                 raise NeedsApiConfigWarning(f"Option {name} already registered.")
         self._extra_options[name] = ExtraOptionParams(
-            description,
-            directives.unchanged if validator is None else validator,
-            schema,
+            description=description,
+            schema=schema,
         )
-
-    @property
-    def field_defaults(self) -> Mapping[str, FieldDefault]:
-        """Default values for need fields."""
-        return self._field_defaults
-
-    @field_defaults.setter
-    def field_defaults(self, value: dict[str, FieldDefault]) -> None:
-        self._field_defaults = value
 
     @property
     def functions(self) -> Mapping[str, NeedFunctionsType]:
@@ -349,7 +333,6 @@ class NeedsSphinxConfig:
         if name.startswith("__") or name in (
             "_config",
             "extra_options",
-            "field_defaults",
             "functions",
             "warnings",
         ):
@@ -362,7 +345,6 @@ class NeedsSphinxConfig:
         if name.startswith("__") or name in (
             "_config",
             "extra_options",
-            "field_defaults",
             "functions",
             "warnings",
         ):
@@ -612,11 +594,6 @@ class NeedsSphinxConfig:
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
     """Default values given to specified fields of needs"""
-
-    @property
-    def field_defaults(self) -> Mapping[str, FieldDefault]:
-        """Default values for need fields."""
-        return _NEEDS_CONFIG.field_defaults
 
     duration_option: str = field(
         default="duration", metadata={"rebuild": "html", "types": (str,)}

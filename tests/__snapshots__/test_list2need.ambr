@@ -274,7 +274,7 @@
       'tags': list([
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -366,7 +366,7 @@
         'tag3',
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -458,7 +458,7 @@
       'tags': list([
       ]),
       'template': None,
-      'title': 'Link example ',
+      'title': 'Link example',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -907,7 +907,7 @@
         'global_tag3',
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -1001,7 +1001,7 @@
         'global_tag3',
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -1095,7 +1095,7 @@
         'global_tag3',
       ]),
       'template': None,
-      'title': 'Link example ',
+      'title': 'Link example',
       'triggers': list([
       ]),
       'triggers_back': list([

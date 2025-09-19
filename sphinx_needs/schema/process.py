@@ -7,6 +7,7 @@ from sphinx.util import logging
 
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import log_warning
 from sphinx_needs.needsfile import generate_needs_schema
 from sphinx_needs.schema.config import SchemasRootType
@@ -49,7 +50,8 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
         return
 
     # store the SN generated schema in a global variable
-    needs_schema = generate_needs_schema(config)["properties"]
+    schema = SphinxNeedsData(app.env).get_schema()
+    needs_schema = generate_needs_schema(schema)["properties"]
     _needs_schema.update(needs_schema)
 
     orig_debug_path = Path(config.schema_debug_path)
