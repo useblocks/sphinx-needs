@@ -396,7 +396,8 @@ def calc_sum(
                     None,
                 )
 
-        with contextlib.suppress(ValueError):
+        # TODO(mh) added TypeError for None values
+        with contextlib.suppress(ValueError, TypeError):
             calculated_sum += float(check_need[option])
 
     return calculated_sum
