@@ -29,15 +29,15 @@ def test_need_constraints(test_app, snapshot):
         .splitlines()
     )
     # TODO here we remove some spurious warnings that should be fixed properly
-    warnings = [
+    warnings = {
         w
         for w in warnings
         if "Aborted attempted copy" not in w
-        and "cannot cache unpickable configuration value" not in w
+        and "cannot cache unpickleable configuration value" not in w
         and "is already registered" not in w
-    ]
+    }
     # TODO(mh) ignore warning order and improve debugging which warning failed
-    expected_warnings = [
+    expected_warnings = {
         "<srcdir>/index.rst:11: WARNING: Constraint 'critical' in tags for need SP_TOO_002 FAILED! severity: CRITICAL None [needs.constraint]",
         "<srcdir>/index.rst:32: WARNING: Constraint 'critical' in tags for need SP_3EBFA FAILED! severity: CRITICAL None [needs.constraint]",
         "<srcdir>/index.rst:39: WARNING: Constraint 'team_requirement' in links for need SP_CA3FB FAILED! severity: MEDIUM None [needs.constraint]",
@@ -47,9 +47,15 @@ def test_need_constraints(test_app, snapshot):
         "WARNING: invalid_status: failed",
         "\t\tfailed needs: 8 (SP_TOO_001, SP_TOO_002, SECURITY_REQ, SP_109F4, SP_3EBFA, SP_CA3FB, TEST_STYLE, TEST_STYLE2)",
         "\t\tused filter: status not in ['open', 'closed', 'done', 'example_2', 'example_3'] [needs.warnings]",
-    ]
-    for warning in expected_warnings:
-        assert warning in warnings
+    }
+    # Debug output for mismatched warnings
+    if set(warnings) != set(expected_warnings):
+        warnings_only = set(warnings) - set(expected_warnings)
+        expected_only = set(expected_warnings) - set(warnings)
+        if warnings_only:
+            raise AssertionError(f"Unexpected warnings found: {warnings_only}")
+        if expected_only:
+            raise AssertionError(f"Expected warnings missing: {expected_only}")
 
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
