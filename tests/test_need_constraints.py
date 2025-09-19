@@ -33,6 +33,7 @@ def test_need_constraints(test_app, snapshot):
         w
         for w in warnings
         if "Aborted attempted copy" not in w
+        and "cannot cache unpickable configuration value" not in w
         and "cannot cache unpickleable configuration value" not in w
         and "is already registered" not in w
     }
