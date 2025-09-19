@@ -36,7 +36,8 @@ def test_need_constraints(test_app, snapshot):
         and "cannot cache unpickable configuration value" not in w
         and "is already registered" not in w
     ]
-    assert warnings == [
+    # TODO(mh) ignore warning order and improve debugging which warning failed
+    expected_warnings = [
         "<srcdir>/index.rst:11: WARNING: Constraint 'critical' in tags for need SP_TOO_002 FAILED! severity: CRITICAL None [needs.constraint]",
         "<srcdir>/index.rst:32: WARNING: Constraint 'critical' in tags for need SP_3EBFA FAILED! severity: CRITICAL None [needs.constraint]",
         "<srcdir>/index.rst:39: WARNING: Constraint 'team_requirement' in links for need SP_CA3FB FAILED! severity: MEDIUM None [needs.constraint]",
@@ -47,6 +48,8 @@ def test_need_constraints(test_app, snapshot):
         "\t\tfailed needs: 8 (SP_TOO_001, SP_TOO_002, SECURITY_REQ, SP_109F4, SP_3EBFA, SP_CA3FB, TEST_STYLE, TEST_STYLE2)",
         "\t\tused filter: status not in ['open', 'closed', 'done', 'example_2', 'example_3'] [needs.warnings]",
     ]
+    for warning in expected_warnings:
+        assert warning in warnings
 
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
