@@ -3,7 +3,7 @@ unevaluated_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -32,7 +32,7 @@ unevaluated_allof_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"

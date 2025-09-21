@@ -25,7 +25,7 @@ schemas_in_conf:
         }
       ]
     }
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -65,7 +65,7 @@ schemas_in_conf_error:
         }
       ]
     }
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -89,7 +89,7 @@ min_contains:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -123,7 +123,7 @@ min_contains_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -162,7 +162,7 @@ max_contains:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -196,7 +196,7 @@ max_contains_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -237,7 +237,7 @@ link_chain_w_refs:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -325,7 +325,7 @@ link_chain_hop_1_min_contains_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -387,7 +387,7 @@ link_chain_hop_2_min_contains_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -475,7 +475,7 @@ local_min_items:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -503,7 +503,7 @@ local_min_items_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -536,7 +536,7 @@ local_max_items:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -567,7 +567,7 @@ local_max_items_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -603,7 +603,7 @@ max_network_levels:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
+
   ubproject: |
     [[needs.extra_options]]
     name = "asil"

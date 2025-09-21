@@ -80,9 +80,7 @@ def test_schema_typing(test_app: SphinxTestApp, snapshot) -> None:
         .splitlines()
     )
     print(warnings)
-    assert warnings == [
-        "WARNING: Schema interface and validation are still in beta. Interface and validation logic may change when moving to a typed core implementation. [needs.beta]"
-    ]
+    assert not warnings
 
     needs = json.loads(Path(test_app.outdir, "needs.json").read_text("utf8"))
     assert needs == snapshot(exclude=props("created", "project", "creator"))
