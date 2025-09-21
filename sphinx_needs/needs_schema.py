@@ -466,6 +466,7 @@ def _from_string_item(
 
     :raises ValueError: if value cannot be converted to the correct type
     """
+    # TODO(mh) no caller passes prefix - it is not used as a prefix below
     match item_type:
         case "string":
             return value
