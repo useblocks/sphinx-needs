@@ -209,8 +209,14 @@ def test_type_check(type_, item_type, nullable, input, result):
             " true , yes , no,false ",
             [True, True, False, False],
         ),
-        ("array", "integer", False, "1,2, 3", [1, 2, 3]),
-        ("array", "number", False, "1,1.5,2.5,3.5", [1.0, 1.5, 2.5, 3.5]),
+        ("array", "integer", False, "1,2, 3, 3_000", [1, 2, 3, 3000]),
+        (
+            "array",
+            "number",
+            False,
+            "1,1.5,2.5,3.5,3_000,3.5e2,3.5e-2",
+            [1.0, 1.5, 2.5, 3.5, 3000.0, 350, 0.035],
+        ),
     ],
 )
 def test_convert_directive_option_value(type_, item_type, allow_df, input, expected):
