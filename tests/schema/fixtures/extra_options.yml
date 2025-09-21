@@ -511,19 +511,19 @@ string_format_duration_error:
 
   ubproject: |
     [[needs.extra_options]]
-    name = "duration"
+    name = "_duration"
     schema.type = "string"
     schema.format = "duration"
   rst: |
     .. impl:: title
         :id: IMPL_1
-        :duration: P1Q2Q10DT2H30M
+        :_duration: P1Q2Q10DT2H30M
   warnings:
     - - "Severity # violation"
-      - "Field # duration"
+      - "Field # _duration"
       - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema > properties > duration > format"
-      - "Schema message # 'P1Q2Q10DT2H30M' is not a 'duration'"
+      - "Schema path # extra_options > schema > properties > _duration > format"
+      - "Schema message # 'P1Q2Q10DT2H30M' is not a '_duration'"
       - sphinx8: ["sn_schema.extra_option_fail"]
 
 string_format_email:

@@ -60,7 +60,7 @@ needgantt
        :tags: gantt_example
        :links: ACT_DEPLOY
        :duration: 12
-       :completion: 80%
+       :completion: 80
 
     .. milestone:: Bug solved
        :id: MS_BUG_SOLVED
@@ -305,7 +305,7 @@ Default: :ref:`need_completion`
        :id: ACT_CREATE_EX_C
        :tags: gantt_ex_completion
        :duration: 12
-       :amount: 90%
+       :amount: 90
 
 
     .. action:: Read example

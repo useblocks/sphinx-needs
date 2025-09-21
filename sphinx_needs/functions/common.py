@@ -344,7 +344,7 @@ def calc_sum(
     .. need-example::
 
        .. req:: Result 2
-          :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10")]]
+          :amount: [[calc_sum("hours", "hours is not None and hours > 10")]]
           :collapse: False
 
     **Example 3**
@@ -362,7 +362,7 @@ def calc_sum(
 
        .. req:: Result 4
           :links: sum_input_1; sum_input_3
-          :amount: [[calc_sum("hours", "hours.isdigit() and float(hours) > 10", "True")]]
+          :amount: [[calc_sum("hours", "hours is not None and hours > 10", "True")]]
           :collapse: False
 
     :param option: Options, from which the numbers shall be taken

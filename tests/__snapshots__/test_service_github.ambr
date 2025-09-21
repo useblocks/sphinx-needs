@@ -9,7 +9,7 @@
             'arch': dict({
             }),
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
             'constraints_error': None,
@@ -24,7 +24,7 @@
             'created_at': '2024-02-15T14:04:06Z',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -82,7 +82,7 @@
             'arch': dict({
             }),
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
             'constraints_error': None,
@@ -101,7 +101,7 @@
             'created_at': '2024-02-15T12:19:11Z',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -160,7 +160,7 @@
             'arch': dict({
             }),
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
             'constraints_error': None,
@@ -201,7 +201,7 @@
             'created_at': '2024-02-15T20:45:12Z',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -259,7 +259,7 @@
             'arch': dict({
             }),
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
             'constraints_error': None,
@@ -285,7 +285,7 @@
             'created_at': '2024-02-12T08:36:07.000Z',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -361,10 +361,10 @@
               'type': 'string',
             }),
             'completion': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'constraints': dict({
               'default': list([
@@ -435,10 +435,10 @@
               'type': 'string',
             }),
             'duration': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'external_css': dict({
               'default': '',

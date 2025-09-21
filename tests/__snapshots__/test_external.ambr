@@ -61,10 +61,10 @@
               'type': 'string',
             }),
             'completion': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'constraints': dict({
               'default': list([
@@ -135,10 +135,10 @@
               'type': 'string',
             }),
             'duration': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'external_css': dict({
               'default': '',
@@ -483,8 +483,10 @@
       '1.0': dict({
         'needs': dict({
           'EXT_TEST_02': dict({
+            'completion': 0,
             'content': 'EXT_TEST_02',
             'doctype': '',
+            'duration': 0,
             'external_css': 'external_link',
             'external_url': 'http://my_company.com/docs/v1/index.html#TEST_02',
             'has_dead_links': True,
@@ -592,10 +594,10 @@
               'type': 'string',
             }),
             'completion': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'constraints': dict({
               'default': list([
@@ -666,10 +668,10 @@
               'type': 'string',
             }),
             'duration': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'external_css': dict({
               'default': '',

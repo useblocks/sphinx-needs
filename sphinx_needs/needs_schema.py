@@ -476,17 +476,21 @@ def _from_string_item(
                 return False
             raise ValueError(f"Cannot convert {value!r} to boolean{prefix}")
         case "integer":
+            if value == "":
+                return 0
             try:
                 return int(value)
             except ValueError as exc:
                 raise ValueError(
-                    f"Cannot convert {value!r}  to integer{prefix}"
+                    f"Cannot convert {value!r} to integer{prefix}"
                 ) from exc
         case "number":
+            if value == "":
+                return 0.0
             try:
                 return float(value)
             except ValueError as exc:
-                raise ValueError(f"Cannot convert {value!r}  to float{prefix}") from exc
+                raise ValueError(f"Cannot convert {value!r} to float{prefix}") from exc
         case _:
             raise RuntimeError(f"Unknown item type {item_type!r}{prefix}")
 

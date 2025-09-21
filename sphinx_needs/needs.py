@@ -122,7 +122,7 @@ from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, NeedPartRole, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
-from sphinx_needs.schema.config import SchemasFileRootType
+from sphinx_needs.schema.config import ExtraOptionIntegerSchemaType, SchemasFileRootType
 from sphinx_needs.schema.config_utils import validate_schemas_config
 from sphinx_needs.schema.process import process_schemas
 from sphinx_needs.services.github import GithubService
@@ -515,10 +515,23 @@ def load_config(app: Sphinx, *_args: Any) -> None:
 
         _NEEDS_CONFIG.add_extra_option(name, description, schema=schema, override=True)
 
-    # ensure options for ``needgantt`` functionality are added to the extra options
+    # ensure options for `needgantt` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
+        default_schema: ExtraOptionIntegerSchemaType = {"type": "integer"}
         if option not in _NEEDS_CONFIG.extra_options:
-            _NEEDS_CONFIG.add_extra_option(option, "Added for needgantt functionality")
+            _NEEDS_CONFIG.add_extra_option(
+                option, "Added for needgantt functionality", schema=default_schema
+            )
+        else:
+            # ensure schema is correct
+            existing = _NEEDS_CONFIG.extra_options[option]
+            if existing.schema is None:
+                existing.schema = default_schema
+            else:
+                if existing.schema.get("type") not in {"integer", "number"}:
+                    raise NeedsConfigException(
+                        f"Schema type for option '{option}' is not 'integer' or 'number' as required by needgantt."
+                    )
 
     for t in needs_config.types:
         # Register requested types of needs
