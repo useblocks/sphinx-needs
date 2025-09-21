@@ -159,8 +159,6 @@ class ExtraOptionMultiValueSchemaType(TypedDict):
     """Minimum number of items in the array."""
     maxItems: NotRequired[int]
     """Maximum number of items in the array."""
-    splitChar: NotRequired[str]
-    """Split character for the array items, defaults to ','."""
 
 
 ExtraOptionSchemaTypes = ExtraOptionBaseSchemaTypes | ExtraOptionMultiValueSchemaType
