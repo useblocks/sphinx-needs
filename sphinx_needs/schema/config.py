@@ -49,8 +49,6 @@ class ExtraOptionStringSchemaType(TypedDict):
     """A list of allowed values for the string."""
     const: NotRequired[str]
     """A constant value that the string must match."""
-    default: NotRequired[str]
-    """Default value used in IDE scenarios for autocompletion."""
 
 
 class ExtraOptionNumberSchemaType(TypedDict):
@@ -80,8 +78,6 @@ class ExtraOptionNumberSchemaType(TypedDict):
     """A list of allowed values."""
     const: NotRequired[float]
     """A constant value that the number must match."""
-    default: NotRequired[float]
-    """Default value used in IDE scenarios for autocompletion."""
 
 
 class ExtraOptionIntegerSchemaType(TypedDict):
@@ -108,8 +104,6 @@ class ExtraOptionIntegerSchemaType(TypedDict):
     """A list of allowed values."""
     const: NotRequired[int]
     """A constant value that the integer must match."""
-    default: NotRequired[int]
-    """Default value used in IDE scenarios for autocompletion."""
 
 
 class ExtraOptionBooleanSchemaType(TypedDict):
@@ -128,8 +122,6 @@ class ExtraOptionBooleanSchemaType(TypedDict):
     """Extra option boolean type."""
     const: NotRequired[bool]
     """A constant value that the integer must match."""
-    default: NotRequired[bool]
-    """Default value used in IDE scenarios for autocompletion."""
 
 
 RefItemType = TypedDict(
@@ -177,8 +169,6 @@ class ExtraOptionMultiValueSchemaType(TypedDict):
     """Maximum number of items in the array."""
     splitChar: NotRequired[str]
     """Split character for the array items, defaults to ','."""
-    default: NotRequired[list[str] | list[int] | list[float] | list[bool]]
-    """Default value used in IDE scenarios for autocompletion."""
 
 
 ExtraOptionSchemaTypes = ExtraOptionBaseSchemaTypes | ExtraOptionMultiValueSchemaType

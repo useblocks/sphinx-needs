@@ -941,15 +941,12 @@ default_accepted:
     [[needs.extra_options]]
     name = "efforts1"
     schema.type = "number"
-    schema.default = 0
     [[needs.extra_options]]
     name = "efforts2"
     schema.type = "string"
-    schema.default = "high"
     [[needs.extra_options]]
     name = "approved"
     schema.type = "boolean"
-    schema.default = false
   rst: |
     .. impl:: title
         :id: IMPL_1
