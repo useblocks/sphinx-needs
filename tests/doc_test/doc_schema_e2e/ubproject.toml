@@ -4,6 +4,8 @@
 id_required = true
 id_regex = "^[A-Z0-9_]{3,}"
 schema_severity = 'warning'
+build_json = true
+schema_definitions_from_json = "schemas.json"
 
 [[needs.extra_options]]
 name = "string_option_wo_schema"
@@ -37,6 +39,18 @@ schema.enum = ["QM", "A", "B", "C", "D"]
 name = "approved"
 description = "Approval flag"
 schema.type = "boolean"
+
+[[needs.extra_options]]
+name = "departments"
+description = "Departments"
+schema.type = "array"
+schema.items = { "type" = "string" }
+
+[[needs.extra_options]]
+name = "scores"
+description = "Review scores"
+schema.type = "array"
+schema.items = { "type" = "number" }
 
 [[needs.extra_links]]
 option = "links"

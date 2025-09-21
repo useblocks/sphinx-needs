@@ -92,9 +92,13 @@ def test_schema_typing(test_app: SphinxTestApp, snapshot) -> None:
     indirect=True,
 )
 def test_schema_e2e(test_app: SphinxTestApp, snapshot) -> None:
-    test_app.builder.build_all()
+    test_app.build()
     warnings = strip_colors(test_app._warning.getvalue())
     assert warnings == snapshot
+
+    json_data = Path(test_app.outdir, "needs.json").read_text()
+    needs = json.loads(json_data)
+    assert needs == snapshot(exclude=props("created", "project", "creator"))
 
     html = Path(test_app.outdir, "index.html").read_text()
     assert html
