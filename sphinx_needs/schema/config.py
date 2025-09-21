@@ -55,9 +55,6 @@ class ExtraOptionNumberSchemaType(TypedDict):
     """
     Float extra option schema.
 
-    The option will still be stored as a string in Sphinx-Needs,
-    but during schema validation, the value will be coerced to the given type.
-
     Python reads in JSON numbers as floats. The jsonschema library
     handles precision issues with floats using a tolerance-based approach.
     """
@@ -81,12 +78,7 @@ class ExtraOptionNumberSchemaType(TypedDict):
 
 
 class ExtraOptionIntegerSchemaType(TypedDict):
-    """
-    Integer extra option schema.
-
-    The option will still be stored as a string in Sphinx-Needs,
-    but during schema validation, the value will be coerced to the given type.
-    """
+    """Integer extra option schema."""
 
     type: Literal["integer"]
     """Extra option integer type."""
