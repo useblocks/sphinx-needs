@@ -10,7 +10,7 @@ from typeguard import TypeCheckError, check_type
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.exceptions import NeedsConfigException
-from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.logging import get_logger
 from sphinx_needs.schema.config import (
     EXTRA_OPTION_BASE_TYPES_STR,
     EXTRA_OPTION_BASE_TYPES_TYPE,
@@ -64,19 +64,6 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
     # check for disallowed regex patterns
     validate_regex_patterns_extra_options(needs_config)
     validate_regex_patterns_extra_links(needs_config)
-
-    # emit warning if global or schema definitions are used
-    if (
-        has_any_global_extra_schema_defined(needs_config)
-        or needs_config.schema_definitions
-    ):
-        log_warning(
-            log,
-            "Schema interface and validation are still in beta. Interface and validation logic may change "
-            "when moving to a typed core implementation.",
-            "beta",
-            location=None,
-        )
 
     if not needs_config.schema_definitions:
         # nothing to validate, resolve or inject
