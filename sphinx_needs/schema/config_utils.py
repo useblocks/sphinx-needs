@@ -406,11 +406,19 @@ def populate_field_type(
     """
     Inject field type into select / validate fields in schema.
 
+    If a schema is defined on extra options, the type fields is
+    required. It is the primary type information for the field.
+    The JSON schema definition may also contain the type (NotRequired)
+    but it must match the extra option type. If it is not given, it
+    is injected by this function.
+
     Users might not be aware that schema validation will not complain if e.g.
-    a minimium is set for an integer, but if the type is not set, any json schema
-    validator will not complain. Types are available from needs_config.extra_options.
+    a minimium is set for an integer, but the type is not. JSON schema
+    validators only complain if the type matches to the constraint.
+
     If the field is of type extra option but no type is defined, string is assumed.
-    If the field appears as link and no type is defined, array of string is assumed.
+    For link field types, an array of strings is the only possible value.
+    Due to this, it is NotRequired for extra link schema configuration.
     """
     # TODO(Marco): this function could be improved to run on defined types, not on Any;
     #              this would make the detection of 'properties' safer
