@@ -6,6 +6,7 @@ id_regex = "^[A-Z0-9_]{3,}"
 schema_severity = 'warning'
 build_json = true
 schema_definitions_from_json = "schemas.json"
+schema_debug_active = true
 
 [[needs.extra_options]]
 name = "string_option_wo_schema"

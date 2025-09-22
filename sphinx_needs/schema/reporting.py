@@ -141,7 +141,7 @@ def save_debug_file(
     filename += _sep + warning["rule"].name
 
     with (debug_dir / f"{filename}.json").open("w") as fp:
-        json.dump(warning["need"], fp, indent=2)
+        json.dump(dict(warning["need"]), fp, indent=2)
     if reduced_need := warning.get("reduced_need"):
         with (debug_dir / f"{filename}.reduced.json").open("w") as fp:
             json.dump(reduced_need, fp, indent=2)
