@@ -6,6 +6,7 @@ from docutils.parsers.rst import directives
 from packaging.version import Version
 from sphinx.application import Sphinx
 from sphinx.config import Config
+from sphinxcontrib.test_reports import config
 
 # from docutils import nodes
 from sphinx_needs.api import add_dynamic_function, add_extra_option, add_need_type
@@ -178,9 +179,8 @@ def sphinx_needs_update(app: Sphinx, config: Config) -> None:
     # For details read
     # https://sphinx-needs.readthedocs.io/en/latest/api.html#sphinx_needs.api.configuration.add_extra_option
 
-    file_option = getattr(app.config, "testreports_file_option", "file")
-    add_extra_option(app, file_option)
-    
+    add_extra_option(app, getattr(config, "testreports_file_option", "file"))
+
     add_extra_option(app, "suite")
     add_extra_option(app, "case")
     add_extra_option(app, "case_name")
