@@ -16,6 +16,8 @@ from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.functions.functions import DynamicFunction
 from sphinx_needs.need_item import NeedItem
 
+# TODO(mh) document exactly when API calls are allowed in the Sphinx event system
+
 
 def get_need_types(app: Sphinx) -> list[str]:
     """
@@ -101,7 +103,11 @@ def add_extra_option(
     :param name: Name as string of the extra option
     :return: None
     """
+    # TODO(mh) add schema support
     _NEEDS_CONFIG.add_extra_option(name, description)
+
+
+# TODO(mh) add extra link api
 
 
 def add_dynamic_function(

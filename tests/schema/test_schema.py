@@ -23,6 +23,7 @@ def test_schema_config(
     content: dict[str, Any],
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
+    snapshot,
 ) -> None:
     # Check if test should be skipped based on min_python version
     if "mark" in content and "min_python" in content["mark"]:
@@ -32,13 +33,10 @@ def test_schema_config(
                 f"Test requires Python {'.'.join(map(str, min_version))} or higher"
             )
     write_fixture_files(tmpdir, content)
-    assert "exception" in content
     with pytest.raises(NeedsConfigException) as excinfo:
-        make_app(srcdir=Path(tmpdir), freshenv=True)
-    for snippet in content["exception"]:
-        assert snippet in str(excinfo.value), (
-            f"Expected exception message '{content['exception']}' not found in: {excinfo.value}"
-        )
+        app = make_app(srcdir=Path(tmpdir), freshenv=True)
+        app.build()
+    assert str(excinfo.value) == snapshot
 
 
 @pytest.mark.fixture_file(

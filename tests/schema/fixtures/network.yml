@@ -25,7 +25,6 @@ schemas_in_conf:
         }
       ]
     }
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -241,6 +240,7 @@ link_chain_w_refs:
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
+    schema.type = "string"
     schema.enum = ["QM", "A", "B", "C", "D"]
   rst: |
     .. req:: safe req
@@ -329,6 +329,7 @@ link_chain_hop_1_min_contains_error:
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
+    schema.type = "string"
     schema.enum = ["QM", "A", "B", "C", "D"]
   rst: |
     .. spec:: unsafe spec
@@ -391,6 +392,7 @@ link_chain_hop_2_min_contains_error:
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
+    schema.type = "string"
     schema.enum = ["QM", "A", "B", "C", "D"]
   rst: |
     .. req:: unsafe req

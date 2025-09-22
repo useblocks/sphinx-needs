@@ -5,15 +5,17 @@ from __future__ import annotations
 import re
 from typing import Any, Literal, cast
 
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 from typeguard import TypeCheckError, check_type
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.logging import get_logger
+from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs.schema.config import (
     EXTRA_OPTION_BASE_TYPES_STR,
-    EXTRA_OPTION_BASE_TYPES_TYPE,
     USER_CONFIG_SCHEMA_SEVERITIES,
     AllOfSchemaType,
     ExtraLinkSchemaType,
@@ -51,15 +53,12 @@ def has_any_global_extra_schema_defined(needs_config: NeedsSphinxConfig) -> bool
 
 
 def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
-    """
-    Validates schemas for extra_options, extra_links, and schemas in needs_config.
+    """Check basics in extra option and extra link schemas."""
 
-    Invokes the typeguard library to re-use existing type hints.
-    Mostly checking for TypedDicts.
-    """
-    extra_option_type_map = inject_type_and_validate_extra_option_schemas(needs_config)
-    validate_extra_link_schemas(needs_config)
+    validate_extra_option_schemas(needs_config)
+
     inject_type_extra_link_schemas(needs_config)
+    validate_extra_link_schemas(needs_config)
 
     # check for disallowed regex patterns
     validate_regex_patterns_extra_options(needs_config)
@@ -70,7 +69,7 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
         return
 
     if not isinstance(needs_config.schema_definitions, dict):
-        raise NeedsConfigException("Schemas entry 'schemas' is not a dict.")
+        raise NeedsConfigException("needs_schema_definitions is not a dict.")
 
     if "schemas" not in needs_config.schema_definitions:
         # nothing to validate (also no need to check for $defs)
@@ -95,19 +94,38 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
     for idx, schema in enumerate(needs_config.schema_definitions["schemas"]):
         schema["idx"] = idx
 
-    # inject extra option types to schema, this is required before typeguard check
-    # as the type field switches between the TypedDict options;
-    # this improves error messages
-    extra_links = {link["option"] for link in needs_config.extra_links}
-    core_field_type_map = get_core_field_type_map()
+    # check severity and inject default if not set
+    validate_severity(needs_config.schema_definitions["schemas"])
+
+
+def resolve_schemas_config(
+    app: Sphinx, env: BuildEnvironment, _docnames: list[str]
+) -> None:
+    """
+    Validates schemas for extra_options, extra_links, and schemas in needs_config.
+
+    Invokes the typeguard library to re-use existing type hints.
+    Mostly checking for TypedDicts.
+    """
+    needs_config = NeedsSphinxConfig(app.config)
+
+    if not (
+        needs_config.schema_definitions
+        and "schemas" in needs_config.schema_definitions
+        and needs_config.schema_definitions["schemas"]
+    ):
+        return
+
+    fields_schema = SphinxNeedsData(env).get_schema()
+
+    # inject extra/link/core option types to each nested schema, to avoid silent json schema
+    # failures; this must happens before the typeguard check because it requires type fields
     for schema in needs_config.schema_definitions["schemas"]:
         schema_name = get_schema_name(schema)
         populate_field_type(
             schema,
             schema_name,
-            core_field_type_map,
-            extra_option_type_map,
-            extra_links,
+            fields_schema,
         )
 
     # validate schemas against type hints at runtime
@@ -120,14 +138,12 @@ def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
                 f"Schemas entry '{schema_name}' is not valid:\n{exc}"
             ) from exc
 
+    # after typeguard check, we can safely walk the schema for nested checks;
     # check if network links are defined as extra links
     check_network_links_against_extra_links(
         needs_config.schema_definitions["schemas"],
-        extra_links,
+        fields_schema,
     )
-
-    # check severity and inject default if not set
-    validate_severity(needs_config.schema_definitions["schemas"])
 
     # check safe regex patterns of schemas
     validate_regex_patterns_schemas(needs_config)
@@ -139,34 +155,6 @@ def get_schema_name(schema: SchemasRootType) -> str:
     idx = schema["idx"]
     schema_name = f"{schema_id}[{idx}]" if schema_id else f"[{idx}]"
     return schema_name
-
-
-def get_core_field_type_map() -> dict[str, EXTRA_OPTION_BASE_TYPES_TYPE]:
-    core_field_type_map: dict[str, EXTRA_OPTION_BASE_TYPES_TYPE] = {}
-    for core_field_name, core_field in NeedsCoreFields.items():
-        if "type" in core_field["schema"]:
-            core_type = core_field["schema"]["type"]
-            if isinstance(core_type, str) and core_type in EXTRA_OPTION_BASE_TYPES_STR:
-                core_field_type_map[core_field_name] = cast(
-                    EXTRA_OPTION_BASE_TYPES_TYPE, core_type
-                )
-            elif (
-                isinstance(core_type, list)
-                and "null" in core_type
-                and len(core_type) == 2
-            ):
-                non_null_type = next(t for t in core_type if t != "null")
-                if non_null_type in EXTRA_OPTION_BASE_TYPES_STR:
-                    core_field_type_map[core_field_name] = non_null_type
-            else:
-                # ignore the core field as the type is not supported by the schema validation
-                pass
-        else:
-            raise NeedsConfigException(
-                f"Core field '{core_field_name}' does not have a type defined in schema."
-            )
-
-    return core_field_type_map
 
 
 def validate_severity(schemas: list[SchemasRootType]) -> None:
@@ -190,11 +178,7 @@ def validate_severity(schemas: list[SchemasRootType]) -> None:
 def validate_regex_patterns_extra_options(needs_config: NeedsSphinxConfig) -> None:
     """Validate regex patterns of extra options."""
     for option_name, option in needs_config.extra_options.items():
-        if (
-            option.schema is None
-            or not option.schema
-            or option.schema.get("type") != "string"
-        ):
+        if option.schema is None or option.schema["type"] != "string":
             continue
         validate_schema_patterns(option.schema, f"extra_options.{option_name}.schema")
 
@@ -213,6 +197,8 @@ def validate_regex_patterns_extra_links(needs_config: NeedsSphinxConfig) -> None
 
 def validate_regex_patterns_schemas(needs_config: NeedsSphinxConfig) -> None:
     """Validate regex patterns of schemas."""
+    if "schemas" not in needs_config.schema_definitions:
+        return
     for schema in needs_config.schema_definitions["schemas"]:
         schema_name = get_schema_name(schema)
         try:
@@ -221,6 +207,24 @@ def validate_regex_patterns_schemas(needs_config: NeedsSphinxConfig) -> None:
             raise NeedsConfigException(
                 f"Schemas entry '{schema_name}' is not valid:\n{exc}"
             ) from exc
+
+
+def inject_type_extra_link_schemas(needs_config: NeedsSphinxConfig) -> None:
+    """Inject the optional type field to extra link schemas."""
+
+    for extra_link in needs_config.extra_links:
+        if "schema" not in extra_link or extra_link["schema"] is None:
+            continue
+        if "type" not in extra_link["schema"]:
+            extra_link["schema"]["type"] = "array"
+        type_inject_fields = ["contains", "items"]
+        for field in type_inject_fields:
+            if (
+                field in extra_link["schema"]
+                and "type" not in extra_link["schema"][field]  # type: ignore[literal-required]
+            ):
+                # set string as default
+                extra_link["schema"][field]["type"] = "string"  # type: ignore[literal-required]
 
 
 def validate_extra_link_schemas(needs_config: NeedsSphinxConfig) -> None:
@@ -234,28 +238,21 @@ def validate_extra_link_schemas(needs_config: NeedsSphinxConfig) -> None:
             raise NeedsConfigException(
                 f"Schema for extra link '{extra_link['option']}' is not valid:\n{exc}"
             ) from exc
+        if "contains" not in extra_link["schema"]:
+            contains_deps = {"minContains", "maxContains"}
+            for field in contains_deps:
+                if field in extra_link["schema"]:
+                    raise NeedsConfigException(
+                        f"Schema for extra link '{extra_link['option']}' has '{field}' defined, "
+                        "but 'contains' is missing."
+                    )
 
 
-def inject_type_extra_link_schemas(needs_config: NeedsSphinxConfig) -> None:
-    """Inject the optional type field to extra link schemas."""
-    type_inject_fields = ["contains", "items"]
-    for extra_link in needs_config.extra_links:
-        if "schema" not in extra_link or extra_link["schema"] is None:
-            continue
-        for field in type_inject_fields:
-            if (
-                field in extra_link["schema"]
-                and "type" not in extra_link["schema"][field]  # type: ignore[literal-required]
-            ):
-                # set string as default
-                extra_link["schema"][field]["type"] = "string"  # type: ignore[literal-required]
-
-
-def inject_type_and_validate_extra_option_schemas(
+def validate_extra_option_schemas(
     needs_config: NeedsSphinxConfig,
-) -> dict[str, EXTRA_OPTION_BASE_TYPES_TYPE]:
+) -> None:
     """
-    Inject missing types of extra options in needs_config and validate the config.
+    Check user provided extra options.
 
     :return: Map of extra option names to their types as strings.
     """
@@ -266,29 +263,25 @@ def inject_type_and_validate_extra_option_schemas(
         "number": ExtraOptionNumberSchemaType,
         "array": ExtraOptionMultiValueSchemaType,
     }
-    option_type_map: dict[str, EXTRA_OPTION_BASE_TYPES_TYPE] = {}
+    # iterate over all extra options from config and API;
+    # API needs to make sure to run earlier (see priority) if options are added
     for option, value in needs_config.extra_options.items():
         if value.schema is None:
-            # nothing to check, leave it at None so it is explicitly unset;
-            # remember the type in case it needs to be injected to
-            # needs_config.schema_definitions later
-            option_type_map[option] = "string"
+            # nothing to check, leave it at None so it is explicitly unset
             continue
         if "type" not in value.schema:
-            # set string as default;
-            # mypy is confused because it does not infer that
-            # type decides about which TypedDict applies
-            value.schema["type"] = "string"  # type: ignore[arg-type]
+            raise NeedsConfigException(
+                f"Schema for extra option '{option}' does not define a type."
+            )
         option_type_ = value.schema["type"]
         if option_type_ not in string_type_to_typeddict_map:
             raise NeedsConfigException(
                 f"Schema for extra option '{option}' has invalid type: {option_type_}. "
                 f"Allowed types are: {', '.join(string_type_to_typeddict_map.keys())}"
             )
+
         try:
-            # below check happens late because the type system does not know that
-            # the type field determines the required TypedDict which leads
-            # to improved error messages
+            # this also checks array items / contains types
             check_type(
                 value.schema,
                 string_type_to_typeddict_map[option_type_],
@@ -297,12 +290,25 @@ def inject_type_and_validate_extra_option_schemas(
             raise NeedsConfigException(
                 f"Schema for extra option '{option}' is not valid:\n{exc}"
             ) from exc
-        option_type_map[option] = option_type_
-    return option_type_map
+
+        if (
+            option_type_ == "array"
+            and "items" in value.schema
+            and "contains" in value.schema
+        ):
+            # if the option contains both items and contains, the types must be identical
+            # the type field must exist after the typeguard check
+            items_type = value.schema["items"]["type"]  # type: ignore[typeddict-item]
+            contains_type = value.schema["contains"]["type"]  # type: ignore[typeddict-item]
+            if items_type != contains_type:
+                raise NeedsConfigException(
+                    f"Schema for extra option '{option}' has both 'items' and 'contains' defined, "
+                    f"but their types do not match: items.type={items_type}, contains.type={contains_type}."
+                )
 
 
 def check_network_links_against_extra_links(
-    schemas: list[SchemasRootType], extra_links: set[str]
+    schemas: list[SchemasRootType], fields_schema: FieldsSchema
 ) -> None:
     """Check if network links are defined as extra links."""
     for schema in schemas:
@@ -313,7 +319,7 @@ def check_network_links_against_extra_links(
                 for link_type, resolved_link_schema in validate_schema[
                     "network"
                 ].items():
-                    if link_type not in extra_links:
+                    if fields_schema.get_link_field(link_type) is None:
                         schema_name = get_schema_name(schema)
                         raise NeedsConfigException(
                             f"Schema '{schema_name}' defines an unknown network link type"
@@ -395,13 +401,8 @@ def resolve_refs(
 def populate_field_type(
     curr_item: Any,
     schema_name: str,
-    core_field_type_map: dict[
-        str, Literal["string", "integer", "number", "boolean", "array"]
-    ],
-    extra_option_type_map: dict[
-        str, Literal["string", "integer", "number", "boolean", "array"]
-    ],
-    extra_links: set[str],
+    fields_schema: FieldsSchema,
+    path: str = "",
 ) -> None:
     """
     Inject field type into select / validate fields in schema.
@@ -419,83 +420,212 @@ def populate_field_type(
     If the field is of type extra option but no type is defined, string is assumed.
     For link field types, an array of strings is the only possible value.
     Due to this, it is NotRequired for extra link schema configuration.
+
+    :param curr_item: The current schema item being processed
+    :param schema_name: The name/identifier of the root schema
+    :param fields_schema: The fields schema containing field definitions
+    :param path: The current path in the schema hierarchy for error reporting
     """
     # TODO(Marco): this function could be improved to run on defined types, not on Any;
-    #              this would make the detection of 'properties' safer
+    #              this would make the detection of 'properties' safer;
+    #              however, typeguard looks over the final schema anyway
     if isinstance(curr_item, dict):
-        # looking for 'properties' is a bit dangerous
+        # set 'object' type
+        keys_indicating_object = {"properties", "required", "unevaluatedProperties"}
+        if any(key in curr_item for key in keys_indicating_object):
+            if "type" not in curr_item:
+                curr_item["type"] = "object"
+            else:
+                if curr_item["type"] != "object":
+                    raise NeedsConfigException(
+                        f"Config error in schema '{schema_name}' at path '{path}': "
+                        f"Item has keys {keys_indicating_object}, but type is '{curr_item['type']}', "
+                        f"expected 'object'."
+                    )
+        keys_indicating_array = {
+            "items",
+            "contains",
+            "minItems",
+            "maxItems",
+            "minContains",
+            "maxContains",
+        }
+        if any(key in curr_item for key in keys_indicating_array):
+            if "type" not in curr_item:
+                curr_item["type"] = "array"
+            else:
+                if curr_item["type"] != "array":
+                    raise NeedsConfigException(
+                        f"Config error in schema '{schema_name}' at path '{path}': "
+                        f"Item has keys {keys_indicating_array}, but type is '{curr_item['type']}', "
+                        f"expected 'array'."
+                    )
+        found_properties_or_all_of = False
         if (
             "properties" in curr_item
             and isinstance(curr_item["properties"], dict)
             and all(isinstance(k, str) for k in curr_item["properties"])
             and all(isinstance(v, dict) for v in curr_item["properties"].values())
         ):
-            if "type" not in curr_item:
-                # need dictionary type
-                curr_item["type"] = "object"
-            for key, value in curr_item["properties"].items():
-                if "type" not in value:
-                    if key in extra_option_type_map:
-                        value["type"] = extra_option_type_map[key]
-                    elif key in extra_links:
-                        value["type"] = "array"
-                        if "contains" not in value:
-                            value["contains"] = {"type": "string"}
-                        else:
-                            if "type" not in value["contains"]:
-                                value["contains"]["type"] = "string"
-                    elif key in core_field_type_map:
-                        value["type"] = core_field_type_map[key]
-                    else:
-                        raise NeedsConfigException(
-                            f"Config error in schema '{schema_name}': Field '{key}' does not have a type defined. "
-                            "Please define the type in extra_options or extra_links."
-                        )
-                else:
-                    if (
-                        key in extra_option_type_map
-                        and value["type"] != extra_option_type_map[key]
-                    ):
-                        raise NeedsConfigException(
-                            f"Config error in schema '{schema_name}': Field '{key}' has type '{value['type']}', "
-                            f"but expected '{extra_option_type_map[key]}'."
-                        )
-                    elif key in extra_links and value["type"] != "array":
-                        raise NeedsConfigException(
-                            f"Config error in schema '{schema_name}': Field '{key}' has type '{value['type']}', "
-                            "but expected 'array'."
-                        )
-                    elif (
-                        key in core_field_type_map
-                        and value["type"] != core_field_type_map[key]
-                    ):
-                        raise NeedsConfigException(
-                            f"Config error in schema '{schema_name}': Field '{key}' has type '{value['type']}', "
-                            f"but expected '{core_field_type_map[key]}'."
-                        )
-                    else:
-                        # type is already set, nothing to do;
-                        # mismatching types will be checked by typeguard
-                        pass
+            found_properties_or_all_of = True
+            properties_path = f"{path}.properties" if path else "properties"
 
-        else:
-            for value in curr_item.values():
-                populate_field_type(
-                    value,
-                    schema_name,
-                    core_field_type_map,
-                    extra_option_type_map,
-                    extra_links,
-                )
+            for key, value in curr_item["properties"].items():
+                field_path = f"{properties_path}.{key}"
+
+                if fields_schema.get_extra_field(key) is not None:
+                    extra_field = fields_schema.get_extra_field(key)
+                    assert extra_field is not None  # Type narrowing for pylance
+                    if "type" not in value:
+                        value["type"] = extra_field.type
+                    else:
+                        if value["type"] != extra_field.type:
+                            raise NeedsConfigException(
+                                f"Config error in schema '{schema_name}' at path '{field_path}': "
+                                f"Field '{key}' has type '{value['type']}', but expected '{extra_field.type}'."
+                            )
+                    if extra_field.type == "array":
+                        container_fields = ["items", "contains"]
+                        for container_field in container_fields:
+                            if container_field in value:
+                                container_path = f"{field_path}.{container_field}"
+                                if "type" not in value[container_field]:
+                                    value[container_field]["type"] = (
+                                        extra_field.item_type
+                                    )
+                                else:
+                                    if (
+                                        value[container_field]["type"]
+                                        != extra_field.item_type
+                                    ):
+                                        raise NeedsConfigException(
+                                            f"Config error in schema '{schema_name}' at path '{container_path}': "
+                                            f"Field '{key}' has {container_field}.type '{value[container_field]['type']}', "
+                                            f"but expected '{extra_field.item_type}'."
+                                        )
+                elif fields_schema.get_link_field(key) is not None:
+                    link_field = fields_schema.get_link_field(key)
+                    assert link_field is not None  # Type narrowing for pylance
+                    if "type" not in value:
+                        value["type"] = "array"
+                    else:
+                        if value["type"] != "array":
+                            raise NeedsConfigException(
+                                f"Config error in schema '{schema_name}' at path '{field_path}': "
+                                f"Field '{key}' has type '{value['type']}', but expected 'array'."
+                            )
+                    container_fields = ["items", "contains"]
+                    for container_field in container_fields:
+                        if container_field in value:
+                            container_path = f"{field_path}.{container_field}"
+                            if "type" not in value[container_field]:
+                                value[container_field]["type"] = "string"
+                            else:
+                                if value[container_field]["type"] != "string":
+                                    raise NeedsConfigException(
+                                        f"Config error in schema '{schema_name}' at path '{container_path}': "
+                                        f"Field '{key}' has {container_field}.type '{value[container_field]['type']}', "
+                                        f"but expected 'string'."
+                                    )
+                else:
+                    core_field = fields_schema.get_core_field(key)
+                    if core_field is not None:
+                        _type = core_field.type
+                        _item_type = core_field.item_type
+                    else:
+                        core_field_result = get_core_field_type(key)
+                        if core_field_result is None:
+                            # field is unknown
+                            raise NeedsConfigException(
+                                f"Config error in schema '{schema_name}' at path '{field_path}': "
+                                f"Field '{key}' is not a known extra option, extra link, or core field."
+                            )
+                        _type, _item_type = core_field_result
+                    if "type" not in value:
+                        value["type"] = _type
+                    else:
+                        if value["type"] != _type:
+                            raise NeedsConfigException(
+                                f"Config error in schema '{schema_name}' at path '{field_path}': "
+                                f"Field '{key}' has type '{value['type']}', but expected '{_type}'."
+                            )
+                    if _type == "array":
+                        container_fields = ["items", "contains"]
+                        for container_field in container_fields:
+                            if container_field in value:
+                                container_path = f"{field_path}.{container_field}"
+                                if "type" not in value[container_field]:
+                                    value[container_field]["type"] = _item_type
+                                else:
+                                    if value[container_field]["type"] != _item_type:
+                                        raise NeedsConfigException(
+                                            f"Config error in schema '{schema_name}' at path '{container_path}': "
+                                            f"Field '{key}' has {container_field}.type '{value[container_field]['type']}', "
+                                            f"but expected '{_item_type}'."
+                                        )
+        if "allOf" in curr_item and isinstance(curr_item["allOf"], list):
+            found_properties_or_all_of = True
+            for index, value in enumerate(curr_item["allOf"]):
+                all_of_path = f"{path}.allOf[{index}]" if path else f"allOf[{index}]"
+                populate_field_type(value, schema_name, fields_schema, all_of_path)
+        if not found_properties_or_all_of:
+            # iterate deeper
+            for key, value in curr_item.items():
+                current_path = f"{path}.{key}" if path else key
+                populate_field_type(value, schema_name, fields_schema, current_path)
     elif isinstance(curr_item, list):
-        for value in curr_item:
-            populate_field_type(
-                value,
-                schema_name,
-                core_field_type_map,
-                extra_option_type_map,
-                extra_links,
+        for index, value in enumerate(curr_item):
+            current_path = f"{path}[{index}]" if path else f"[{index}]"
+            populate_field_type(value, schema_name, fields_schema, current_path)
+
+
+def get_core_field_type(
+    field_name: str,
+) -> (
+    tuple[
+        Literal["string", "boolean", "integer", "number", "array"],
+        None | Literal["string", "boolean", "integer", "number"],
+    ]
+    | None
+):
+    """
+    Get the core field type and item type (if array) for a given core field name.
+
+    This should eventually come from FieldsSchema, but it does not feature all
+    core fields (yet).
+    """
+    if field_name not in NeedsCoreFields:
+        return None
+    field = NeedsCoreFields[field_name]
+    assert "schema" in field
+    assert isinstance(field["schema"], dict)
+    assert "type" in field["schema"]
+    schema_type = field["schema"]["type"]
+    core_type: Literal["string", "boolean", "integer", "number", "array"] | None = None
+    if isinstance(schema_type, str):
+        core_type = cast(
+            Literal["string", "boolean", "integer", "number", "array"], schema_type
+        )
+    elif (
+        isinstance(schema_type, list)
+        and "null" in schema_type
+        and len(schema_type) == 2
+    ):
+        non_null_type = next(t for t in schema_type if t != "null")
+        if non_null_type in EXTRA_OPTION_BASE_TYPES_STR:
+            core_type = non_null_type
+    if core_type is None:
+        return None
+    if core_type == "array":
+        item_type = field["schema"].get("items", {}).get("type")
+        if isinstance(item_type, str):
+            return core_type, cast(
+                Literal["string", "boolean", "integer", "number"], item_type
             )
+        else:
+            # array without items type is unexpected
+            return None
+    return core_type, None
 
 
 class UnsafePatternError(ValueError):

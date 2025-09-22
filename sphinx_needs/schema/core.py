@@ -71,14 +71,14 @@ def merge_static_schemas(config: NeedsSphinxConfig) -> bool:
     Writes to the global _extra_option_schemas / _extra_link_schemas variables.
     """
     any_found = False
-    extra_option_properties: NeedFieldsSchemaType = {"properties": {}}
+    extra_option_properties: NeedFieldsSchemaType = {"type": "object", "properties": {}}
     for name, option in config.extra_options.items():
         if option.schema is not None:
             any_found = True
             extra_option_properties["properties"][name] = option.schema
     _extra_option_schemas["properties"] = extra_option_properties["properties"]
 
-    extra_link_properties: NeedFieldsSchemaType = {"properties": {}}
+    extra_link_properties: NeedFieldsSchemaType = {"type": "object", "properties": {}}
     for link in config.extra_links:
         if "schema" in link and link["schema"] is not None:
             any_found = True
@@ -513,7 +513,6 @@ def reduce_need(
 
     :param need: The need to reduce.
     :param json_schema: The user provided and merged JSON merge.
-    :raises ValueError: If a field cannot be coerced to its specified type.
     """
     reduced_need: dict[str, Any] = {}
     schema_properties = get_properties_from_schema(json_schema)
@@ -541,63 +540,13 @@ def reduce_need(
             keep = True
 
         if value is None:
-            # TODO handle None values
+            # value is not provided
             keep = False
 
         if keep:
-            coerced_value = value
-            if schema_field["field_type"] == "extra" and field in config.extra_options:
-                option_schema = config.extra_options[field].schema
-                type_ = (
-                    option_schema["type"]
-                    if (option_schema is not None and "type" in option_schema)
-                    else "string"
-                )
-                try:
-                    match type_:
-                        case "string":
-                            coerced_value = str(coerced_value)
-                        case "integer":
-                            coerced_value = int(coerced_value)
-                        case "number":
-                            coerced_value = float(coerced_value)
-                        case "boolean":
-                            if isinstance(coerced_value, bool):
-                                pass
-                            elif isinstance(coerced_value, str):
-                                truthy = {"true", "yes", "y", "on", "1"}
-                                falsy = {"false", "no", "n", "off", "0"}
-                                if coerced_value.lower() in truthy:
-                                    coerced_value = True
-                                elif coerced_value.lower() in falsy:
-                                    coerced_value = False
-                                else:
-                                    raise TypeError()
-                            else:
-                                raise TypeError()
-                        case "array":
-                            pass  # implement array checking
-                        case _:
-                            raise RuntimeError(
-                                f"Unsupported extra option type '{type_}' for field '{field}'"
-                            )
-                except (ValueError, TypeError) as exc:
-                    raise TypeCoerceError(
-                        f"Field '{field}': cannot coerce '{coerced_value}' to {type_}",
-                        field=field,
-                    ) from exc
-
-            reduced_need[field] = coerced_value
+            reduced_need[field] = value
 
     return reduced_need
-
-
-class TypeCoerceError(ValueError):
-    """Store also the field name for reporting."""
-
-    def __init__(self, message: str, field: str) -> None:
-        super().__init__(message)
-        self.field = field
 
 
 def get_localschema_errors(
@@ -650,20 +599,6 @@ def get_ontology_warnings(
             need=need,
             schema=schema,
         )
-    except TypeCoerceError as exc:
-        warning = {
-            "rule": MessageRuleEnum.extra_option_type_error,
-            "severity": get_severity(MessageRuleEnum.extra_option_type_error),
-            "validation_message": str(exc),
-            "need": need,
-            "schema_path": schema_path,
-            "need_path": need_path,
-            "field": exc.field,
-        }
-        if user_message is not None:
-            warning["user_message"] = user_message
-        warnings.append(warning)
-        return warnings
     except ValidationError as exc:
         warning = {
             "rule": MessageRuleEnum.cfg_schema_error,

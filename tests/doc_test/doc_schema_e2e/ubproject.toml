@@ -12,11 +12,6 @@ name = "string_option_wo_schema"
 description = "String option"
 
 [[needs.extra_options]]
-name = "string_option_w_empty_schema"
-description = "String option"
-schema = {}
-
-[[needs.extra_options]]
 name = "efforts"
 description = "FTE days"
 schema.type = "integer"

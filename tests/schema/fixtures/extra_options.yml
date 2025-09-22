@@ -26,21 +26,6 @@ set_type_string:
         :asil: QM
   warnings: []
 
-auto_inject_string:
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_from_toml = "ubproject.toml"
-
-  ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
-    schema.enum = ["QM"]
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
-        :asil: QM
-  warnings: []
-
 wrong_type:
   conf: |
     extensions = ["sphinx_needs"]

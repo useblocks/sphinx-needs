@@ -123,7 +123,10 @@ from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, NeedPartRole, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.schema.config import ExtraOptionIntegerSchemaType, SchemasFileRootType
-from sphinx_needs.schema.config_utils import validate_schemas_config
+from sphinx_needs.schema.config_utils import (
+    resolve_schemas_config,
+    validate_schemas_config,
+)
 from sphinx_needs.schema.process import process_schemas
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.open_needs import OpenNeedsService
@@ -306,6 +309,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # note we have to place create_schema after prepare_env, as that can add extra options,
     # but before load_external_needs, where we start to add needs.
     app.connect("env-before-read-docs", create_schema)
+    # schemas type injection uses information from create_schema
+    app.connect("env-before-read-docs", resolve_schemas_config)
+
     app.connect("env-before-read-docs", load_external_needs)
 
     app.connect("env-purge-doc", purge_needs)

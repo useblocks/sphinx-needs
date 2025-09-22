@@ -1,4 +1,163 @@
 # serializer version: 1
+# name: test_schema_config[both_definitions_and_json_given]
+  "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
+# ---
+# name: test_schema_config[extra_link_array_wrong_type]
+  '''
+  Schema for extra link 'links' is not valid:
+  value of key 'type' of dict is not any of ('array')
+  '''
+# ---
+# name: test_schema_config[extra_link_pattern_unsafe_error]
+  "Unsafe pattern '^IMPL_(?!SAFE)' at 'extra_links.links.schema.items': contains lookahead/lookbehind assertions"
+# ---
+# name: test_schema_config[extra_option_empty_schema]
+  "Schema for extra option 'efforts' does not define a type."
+# ---
+# name: test_schema_config[extra_option_pattern_unsafe_error]
+  "Unsafe pattern '^IMPL_(?!SAFE)' at 'extra_options.efforts.schema': contains lookahead/lookbehind assertions"
+# ---
+# name: test_schema_config[local_error]
+  "Config error in schema '[0]' at path 'validate.local.properties.efforts': Field 'efforts' has type 'unknown', but expected 'string'."
+# ---
+# name: test_schema_config[missing_type_select]
+  '''
+  Schemas entry '[0]' is not valid:
+  value of key 'select' of dict did not match any element in the union:
+    sphinx_needs.schema.config.RefItemType: has unexpected extra key(s): "properties", "type"
+    sphinx_needs.schema.config.AllOfSchemaType: has unexpected extra key(s): "properties", "type"
+    sphinx_needs.schema.config.NeedFieldsSchemaType: value of key 'efforts' of value of key 'properties' did not match any element in the union:
+      sphinx_needs.schema.config.ExtraOptionStringSchemaType: has unexpected extra key(s): "minimum"
+      sphinx_needs.schema.config.ExtraOptionBooleanSchemaType: has unexpected extra key(s): "minimum"
+      sphinx_needs.schema.config.ExtraOptionIntegerSchemaType: value of key 'type' is not any of ('integer')
+      sphinx_needs.schema.config.ExtraOptionNumberSchemaType: value of key 'type' is not any of ('number')
+      sphinx_needs.schema.config.ExtraOptionMultiValueSchemaType: has unexpected extra key(s): "minimum"
+      sphinx_needs.schema.config.ExtraLinkSchemaType: has unexpected extra key(s): "minimum"
+  '''
+# ---
+# name: test_schema_config[missing_type_validate_local]
+  '''
+  Schemas entry '[0]' is not valid:
+  value of key 'local' of value of key 'validate' of dict did not match any element in the union:
+    sphinx_needs.schema.config.RefItemType: has unexpected extra key(s): "properties", "type"
+    sphinx_needs.schema.config.AllOfSchemaType: has unexpected extra key(s): "properties", "type"
+    sphinx_needs.schema.config.NeedFieldsSchemaType: value of key 'efforts' of value of key 'properties' did not match any element in the union:
+      sphinx_needs.schema.config.ExtraOptionStringSchemaType: has unexpected extra key(s): "minimum"
+      sphinx_needs.schema.config.ExtraOptionBooleanSchemaType: has unexpected extra key(s): "minimum"
+      sphinx_needs.schema.config.ExtraOptionIntegerSchemaType: value of key 'type' is not any of ('integer')
+      sphinx_needs.schema.config.ExtraOptionNumberSchemaType: value of key 'type' is not any of ('number')
+      sphinx_needs.schema.config.ExtraOptionMultiValueSchemaType: has unexpected extra key(s): "minimum"
+      sphinx_needs.schema.config.ExtraLinkSchemaType: has unexpected extra key(s): "minimum"
+  '''
+# ---
+# name: test_schema_config[network_link_not_exist]
+  "Schema '[0]' defines an unknown network link type 'links2'."
+# ---
+# name: test_schema_config[ref_error]
+  "Reference 'not-exist' not found in definitions."
+# ---
+# name: test_schema_config[ref_mixed_error]
+  "Invalid $ref entry, expected a single $ref key: {'$ref': '#/$defs/not-exist', 'required': ['type']}"
+# ---
+# name: test_schema_config[ref_recursive]
+  "Circular reference detected for 'type-impl'."
+# ---
+# name: test_schema_config[schemas_select_pattern_unsafe_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^IMPL_(?!SAFE)' at 'schemas.[0].select.properties.id': contains lookahead/lookbehind assertions
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_atomic_groups_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^(?>test)$' at 'schemas.[0].validate.local.properties.id': contains special groups (other than non-capturing)
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_backref_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^IMPL_(SAFE)_\1' at 'schemas.[0].validate.local.properties.id': contains backreferences
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_comment_groups_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^test(?#comment)$' at 'schemas.[0].validate.local.properties.id': contains special groups (other than non-capturing)
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_conditional_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^(?(1)yes|no)$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: invalid group reference 1 at position 4
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_named_groups_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^(?P<name>test)$' at 'schemas.[0].validate.local.properties.id': contains special groups (other than non-capturing)
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_nested_quantifiers_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^(a+)+$' at 'schemas.[0].validate.local.properties.id': contains nested quantifiers that may cause backtracking
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_possessive_quantifiers_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^test*+$' at 'schemas.[0].validate.local.properties.id': contains possessive quantifiers
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_recursive_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^test(?R)$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: unknown extension ?R at position 6
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_relative_subroutine_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^test(?+1)$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: unknown extension ?+ at position 6
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_subroutine_calls_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^test(?&name)$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: unknown extension ?& at position 6
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_unicode_escapes_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^\u0041$' at 'schemas.[0].validate.local.properties.id': contains Unicode and control character escapes
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_unicode_property_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^\p{L}+$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: bad escape \p at position 1
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_unnamed_groups_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^(test)?(?(1)yes|no)$' at 'schemas.[0].validate.local.properties.id': contains special groups (other than non-capturing)
+  '''
+# ---
+# name: test_schema_config[schemas_validate_pattern_unsafe_error]
+  '''
+  Schemas entry '[0]' is not valid:
+  Unsafe pattern '^IMPL_(?!SAFE)' at 'schemas.[0].validate.local.properties.id': contains lookahead/lookbehind assertions
+  '''
+# ---
+# name: test_schema_config[select_error]
+  "Config error in schema '[0]' at path 'select.properties.efforts': Field 'efforts' has type 'unknown', but expected 'string'."
+# ---
+# name: test_schema_config[type_error]
+  "Schema for extra option 'efforts' has invalid type: unknown. Allowed types are: string, boolean, integer, number, array"
+# ---
 # name: test_schema_e2e[test_app0]
   '''
   WARNING: Need 'FEAt' has validation errors:
@@ -131,7 +290,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -210,7 +368,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -290,7 +447,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -368,7 +524,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -447,7 +602,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -533,7 +687,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -612,7 +765,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -691,7 +843,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -769,7 +920,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -849,7 +999,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -929,7 +1078,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -1009,7 +1157,6 @@
             'signature': None,
             'specific': '',
             'status': None,
-            'string_option_w_empty_schema': None,
             'string_option_wo_schema': '',
             'style': None,
             'tags': list([
@@ -1431,12 +1578,6 @@
                 'string',
                 'null',
               ]),
-            }),
-            'string_option_w_empty_schema': dict({
-              'default': None,
-              'description': 'String option',
-              'field_type': 'extra',
-              'type': 'string',
             }),
             'string_option_wo_schema': dict({
               'default': '',
@@ -2181,9 +2322,6 @@
     Schema message: ['SPEC_1'] is too short [sn_schema.extra_link_fail]
   
   '''
-# ---
-# name: test_schemas[schema/fixtures/extra_options-auto_inject_string]
-  ''
 # ---
 # name: test_schemas[schema/fixtures/extra_options-auto_inject_type]
   ''

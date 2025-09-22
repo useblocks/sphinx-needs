@@ -2484,7 +2484,6 @@ To write all scenarios, set it to an empty list: ``[]``.
 Available scenarios that can be ignored:
 
 - ``cfg_schema_error``: The user provided schema is invalid
-- ``extra_option_type_error``: A need extra option cannot be coerced to the type specified in the schema
 - ``extra_option_success``: Global extra option validation was successful
 - ``extra_option_fail``: Global extra option validation failed
 - ``extra_link_success``: Global extra link validations was successful
