@@ -1,8 +1,8 @@
 import pytest
 
+from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.functions.functions import (
     DynamicFunctionParsed,
-    FunctionParsingException,
 )
 from sphinx_needs.needs_schema import (
     FieldFunctionArray,

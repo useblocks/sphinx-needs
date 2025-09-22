@@ -92,3 +92,24 @@ class NeedsInvalidFilter(SphinxError):
 
 class NeedsConfigException(SphinxError):
     pass
+
+
+class VariantParsingException(Exception):
+    """Called if parsing of given function string has not worked"""
+
+    def __init__(self, message: str) -> None:
+        # as we often catch these exception in a generic way, add a prefix to the message,
+        # to make it easier to identify the source of the error
+        message = f"Error parsing variant function: {message}"
+        super().__init__(message)
+
+
+class FunctionParsingException(Exception):
+    """Called if parsing of given function string has not worked"""
+
+    def __init__(self, message: str, name: str | None) -> None:
+        # as we often catch these exception in a generic way, add a prefix to the message,
+        # to make it easier to identify the source of the error
+        name_str = f" {name!r}" if name else ""
+        message = f"Error parsing dynamic function{name_str}: {message}"
+        super().__init__(message)

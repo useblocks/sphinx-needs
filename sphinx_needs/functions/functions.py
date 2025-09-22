@@ -21,6 +21,7 @@ from sphinx.environment import BuildEnvironment
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
+from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.nodes import Need
@@ -313,7 +314,7 @@ def resolve_functions(
                         var_context: dict[str, Any] = {
                             **need,
                             **needs_config.filter_data,
-                            **{tag: True for tag in app.builder.tags},
+                            **dict.fromkeys(app.builder.tags, True),
                         }
                         if (
                             var_return := _get_variant(
@@ -568,14 +569,3 @@ class DynamicFunctionParsed:
                 )
 
         return cls(func_name, tuple(func_args), tuple(func_kwargs))
-
-
-class FunctionParsingException(Exception):
-    """Called if parsing of given function string has not worked"""
-
-    def __init__(self, message: str, name: str | None) -> None:
-        # as we often catch these exception in a generic way, add a prefix to the message,
-        # to make it easier to identify the source of the error
-        name_str = f" {name!r}" if name else ""
-        message = f"Error parsing dynamic function{name_str}: {message}"
-        super().__init__(message)

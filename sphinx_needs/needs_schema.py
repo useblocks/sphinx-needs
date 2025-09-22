@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeVar
 
-from sphinx_needs.variants import VariantFunctionParsed, VariantParsingException
+from sphinx_needs.exceptions import VariantParsingException
+from sphinx_needs.variants import VariantFunctionParsed
 
 if TYPE_CHECKING:
     from sphinx_needs.functions.functions import DynamicFunctionParsed
@@ -110,7 +111,7 @@ class FieldSchema:
 
         if not self.allow_defaults:
             raise ValueError("Defaults are not allowed for this field.")
-        from sphinx_needs.functions.functions import FunctionParsingException
+        from sphinx_needs.exceptions import FunctionParsingException
 
         try:
             default = self.convert_or_type_check(value, allow_coercion=allow_coercion)
@@ -153,7 +154,7 @@ class FieldSchema:
             filter_, value = filter_value
             if not isinstance(filter_, str) or not filter_:
                 raise ValueError("Filter must be a non-empty string.")
-            from sphinx_needs.functions.functions import FunctionParsingException
+            from sphinx_needs.exceptions import FunctionParsingException
 
             try:
                 converted_value = self.convert_or_type_check(
@@ -409,6 +410,11 @@ class FieldSchema:
 AllowedTypes: TypeAlias = (
     str | bool | int | float | list[str] | list[bool] | list[int] | list[float]
 )
+"""
+Type alias for all allowed types in need fields.
+
+This includes scalar types (str, bool, int, float) and their corresponding list types.
+"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -575,7 +581,7 @@ class LinkSchema:
         """
         if not self.allow_defaults:
             raise ValueError("Defaults are not allowed for this field.")
-        from sphinx_needs.functions.functions import FunctionParsingException
+        from sphinx_needs.exceptions import FunctionParsingException
 
         try:
             default = self.convert_or_type_check(value, allow_coercion=allow_coercion)
@@ -612,7 +618,7 @@ class LinkSchema:
             if not isinstance(filter_, str) or not filter_:
                 raise ValueError("Filter must be a non-empty string.")
 
-            from sphinx_needs.functions.functions import FunctionParsingException
+            from sphinx_needs.exceptions import FunctionParsingException
 
             try:
                 converted_value = self.convert_or_type_check(

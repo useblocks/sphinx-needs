@@ -7,9 +7,9 @@ from sphinx import version_info
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
+from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.functions.functions import (
     DynamicFunctionParsed,
-    FunctionParsingException,
     NeedAttribute,
 )
 

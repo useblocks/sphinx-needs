@@ -8,7 +8,6 @@ from sphinx_needs.functions.common import (
 )
 from sphinx_needs.functions.functions import (  # noqa: F401
     DynamicFunction,
-    FunctionParsingException,
     execute_func,
     find_and_replace_node_content,
 )
