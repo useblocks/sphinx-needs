@@ -276,6 +276,25 @@ And use it like:
           {"name": "my_other_option", "description": "This is a description of the option"}
       ]
 
+.. versionadded:: 6.0.0
+
+   The ``needs_extra_options`` can now contain schema information for each option:
+
+   .. code-block:: python
+
+      needs_extra_options = [
+          {
+              "name": "efforts",
+              "description": "Efforts in days",
+              "schema": {
+                  "type": "integer",
+                  "mininum": 0,
+              },
+          }
+      ]
+   
+   See :ref:`schema_validation` for more.
+
 .. _`needs_global_options`:
 .. _`global_option_filters`:
 
