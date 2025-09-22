@@ -20,3 +20,5 @@ try:
 except ImportError:
     needs_duration_option = 'duration'
     needs_completion_option = 'completion'
+    
+testreports_file_option = "file"

@@ -178,7 +178,9 @@ def sphinx_needs_update(app: Sphinx, config: Config) -> None:
     # For details read
     # https://sphinx-needs.readthedocs.io/en/latest/api.html#sphinx_needs.api.configuration.add_extra_option
 
-    add_extra_option(app, "file")
+    file_option = getattr(app.config, "testreports_file_option", "file")
+    add_extra_option(app, file_option)
+    
     add_extra_option(app, "suite")
     add_extra_option(app, "case")
     add_extra_option(app, "case_name")
