@@ -35,11 +35,10 @@ def safe_add_file(filename, app):
         ):
             app.add_js_file(data_file)
     elif data_file.split(".")[-1] == "css":
-        if (
-            hasattr(app.builder, "css_files")
-            and static_data_file not in app.builder.css_files
-        ):
-            app.add_css_file(data_file)
+        if hasattr(app.builder, "css_files"):
+            css_files = [css.filename for css in app.builder.css_files]
+            if static_data_file not in css_files:
+                app.add_css_file(data_file)
     else:
         raise NotImplementedError(
             "File type {} not support by save_add_file".format(data_file.split(".")[-1])
@@ -65,10 +64,13 @@ def safe_remove_file(filename, app):
             and static_data_file in app.builder.script_files
         ):
             app.builder.script_files.remove(static_data_file)
-    elif data_file.split(".")[-1] == "css" and (
-        hasattr(app.builder, "css_files") and static_data_file in app.builder.css_files
-    ):
-        app.builder.css_files.remove(static_data_file)
+    elif data_file.split(".")[-1] == "css" and hasattr(app.builder, "css_files"):
+        css_files = [css.filename for css in app.builder.css_files]
+        if static_data_file in css_files:
+            to_remove = [css for css in app.builder.css_files if css.filename == static_data_file]
+            for css in to_remove:
+                app.builder.css_files.remove(css)
+
 
 
 # Base implementation from sphinxcontrib-images
