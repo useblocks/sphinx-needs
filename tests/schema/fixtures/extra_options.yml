@@ -9,13 +9,11 @@ no_schema:
     .. impl:: title
         :id: IMPL_1
         :asil: QM
-  warnings: []
 
 set_type_string:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -24,13 +22,11 @@ set_type_string:
     .. impl:: title
         :id: IMPL_1
         :asil: QM
-  warnings: []
 
 wrong_type:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -39,19 +35,12 @@ wrong_type:
     .. impl:: title
         :id: IMPL_1
         :asil: QM
-  warnings:
-    - - "Severity # violation"
-      - "Field # asil"
-      - "Need path # IMPL_1"
-      - "Schema message # Field 'asil': cannot coerce 'QM' to integer"
-      - sphinx8: ["sn_schema.extra_option_type_error"]
 
 const:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -68,14 +57,12 @@ const:
               asil:
                 type: string
                 const: QM
-  warnings: []
 
 const_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -92,20 +79,12 @@ const_error:
               asil:
                 type: string
                 const: QM
-  warnings:
-    - - "Severity # violation"
-      - "Field # asil"
-      - "Need path # IMPL_1"
-      - "Schema path # [0] > local > properties > asil > const"
-      - "Schema message # 'QM' was expected"
-      - sphinx8: ["sn_schema.local_fail"]
 
 enum:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -122,14 +101,12 @@ enum:
               asil:
                 type: string
                 enum: ["QM", "A", "B", "C", "D"]
-  warnings: []
 
 enum_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -146,20 +123,12 @@ enum_error:
               asil:
                 type: string
                 enum: ["QM", "A", "B", "C", "D"]
-  warnings:
-    - - "Severity # violation"
-      - "Field # asil"
-      - "Need path # IMPL_1"
-      - "Schema path # [0] > local > properties > asil > enum"
-      - "Schema message # 'E' is not one of ['QM', 'A', 'B', 'C', 'D']"
-      - sphinx8: ["sn_schema.local_fail"]
 
 auto_inject_type:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -175,14 +144,12 @@ auto_inject_type:
             properties:
               asil:
                 const: QM
-  warnings: []
 
 required:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -196,14 +163,12 @@ required:
       - validate:
           local:
             required: ["asil"]
-  warnings: []
 
 required_missing:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -216,20 +181,12 @@ required_missing:
       - validate:
           local:
             required: ["asil"]
-  warnings:
-    - - "Severity # violation"
-      - "Field # asil"
-      - "Need path # IMPL_1"
-      - "Schema path # [0] > local > required"
-      - "Schema message # 'asil' is a required property"
-      - sphinx8: ["sn_schema.local_fail"]
 
 auto_inject_type_wrong_const:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -245,20 +202,12 @@ auto_inject_type_wrong_const:
             properties:
               asil:
                 const: QM
-  warnings:
-    - - "Severity # violation"
-      - "Field # asil"
-      - "Need path # IMPL_1"
-      - "Schema path # [0] > local > properties > asil > const"
-      - "Schema message # 'QM' was expected"
-      - sphinx8: ["sn_schema.local_fail"]
 
 required_based_on_select_field_missing:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -279,14 +228,12 @@ required_based_on_select_field_missing:
         validate:
           local:
             required: ["asil"]
-  warnings: []
 
 required_based_on_select_field_below_threshold:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -308,14 +255,12 @@ required_based_on_select_field_below_threshold:
         validate:
           local:
             required: ["asil"]
-  warnings: []
 
 required_based_on_select_field_over_threshold:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -329,7 +274,8 @@ required_based_on_select_field_over_threshold:
   schemas:
     $defs: []
     schemas:
-      - select:
+      - message: Required due to high efforts
+        select:
           properties:
             efforts:
               minimum: 15
@@ -337,18 +283,11 @@ required_based_on_select_field_over_threshold:
         validate:
           local:
             required: ["asil"]
-  warnings:
-    - - "Severity # violation"
-      - "Need path # IMPL_1"
-      - "Schema path # [0] > local > required"
-      - "Schema message # 'asil' is a required property"
-      - sphinx8: ["sn_schema.local_fail"]
 
 string_type:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -357,13 +296,11 @@ string_type:
     .. impl:: title
         :id: IMPL_1
         :asil: QM
-  warnings: []
 
 string_format_date:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "start_date"
@@ -373,13 +310,11 @@ string_format_date:
     .. impl:: title
         :id: IMPL_1
         :start_date: 2023-01-01
-  warnings: []
 
 string_format_date_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "start_date"
@@ -389,19 +324,11 @@ string_format_date_error:
     .. impl:: title
         :id: IMPL_1
         :start_date: not-a-date
-  warnings:
-    - - "Severity # violation"
-      - "Field # start_date"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema > properties > start_date > format"
-      - "Schema message # 'not-a-date' is not a 'date'"
-      - sphinx8: ["sn_schema.extra_option_fail"]
 
 string_format_date_time:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "start_date"
@@ -411,13 +338,11 @@ string_format_date_time:
     .. impl:: title
         :id: IMPL_1
         :start_date: 2023-01-01T00:00:00Z
-  warnings: []
 
 string_format_date_time_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "start_date"
@@ -427,19 +352,11 @@ string_format_date_time_error:
     .. impl:: title
         :id: IMPL_1
         :start_date: 2025-07-1099:99:99Z
-  warnings:
-    - - "Severity # violation"
-      - "Field # start_date"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema > properties > start_date > format"
-      - "Schema message # '2025-07-1099:99:99Z' is not a 'date-time'"
-      - sphinx8: ["sn_schema.extra_option_fail"]
 
 string_format_time:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "time"
@@ -449,13 +366,11 @@ string_format_time:
     .. impl:: title
         :id: IMPL_1
         :time: 23:12:13
-  warnings: []
 
 string_format_time_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "time"
@@ -465,19 +380,11 @@ string_format_time_error:
     .. impl:: title
         :id: IMPL_1
         :time: 26:12:13
-  warnings:
-    - - "Severity # violation"
-      - "Field # time"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema > properties > time > format"
-      - "Schema message # '26:12:13' is not a 'time'"
-      - sphinx8: ["sn_schema.extra_option_fail"]
 
 string_format_duration:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "start_date"
@@ -487,13 +394,11 @@ string_format_duration:
     .. impl:: title
         :id: IMPL_1
         :start_date: P1Y2M10DT2H30M
-  warnings: []
 
 string_format_duration_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "_duration"
@@ -503,19 +408,11 @@ string_format_duration_error:
     .. impl:: title
         :id: IMPL_1
         :_duration: P1Q2Q10DT2H30M
-  warnings:
-    - - "Severity # violation"
-      - "Field # _duration"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema > properties > _duration > format"
-      - "Schema message # 'P1Q2Q10DT2H30M' is not a '_duration'"
-      - sphinx8: ["sn_schema.extra_option_fail"]
 
 string_format_email:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "email"
@@ -525,13 +422,11 @@ string_format_email:
     .. impl:: title
         :id: IMPL_1
         :email: test@example.com
-  warnings: []
 
 string_format_email_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "email"
@@ -541,19 +436,11 @@ string_format_email_error:
     .. impl:: title
         :id: IMPL_1
         :email: not-a-mail
-  warnings:
-    - - "Severity # violation"
-      - "Field # email"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema > properties > email > format"
-      - "Schema message # 'not-a-mail' is not a 'email'"
-      - sphinx8: ["sn_schema.extra_option_fail"]
 
 string_format_uri:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "uri"
@@ -563,13 +450,11 @@ string_format_uri:
     .. impl:: title
         :id: IMPL_1
         :uri: https:://example.com
-  warnings: []
 
 string_format_uri_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "uri"
@@ -579,19 +464,11 @@ string_format_uri_error:
     .. impl:: title
         :id: IMPL_1
         :uri: examplecom
-  warnings:
-    - - "Severity # violation"
-      - "Field # uri"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema > properties > uri > format"
-      - "Schema message # 'examplecom' is not a 'uri'"
-      - sphinx8: ["sn_schema.extra_option_fail"]
 
 string_format_uuid:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "uuid"
@@ -601,13 +478,11 @@ string_format_uuid:
     .. impl:: title
         :id: IMPL_1
         :uuid: 123e4567-e89b-12d3-a456-426614174000
-  warnings: []
 
 string_format_uuid_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "uuid"
@@ -617,19 +492,11 @@ string_format_uuid_error:
     .. impl:: title
         :id: IMPL_1
         :uuid: deadbeef-deadbeef-deadbeef-deadbeef
-  warnings:
-    - - "Severity # violation"
-      - "Field # uuid"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema > properties > uuid > format"
-      - "Schema message # 'deadbeef-deadbeef-deadbeef-deadbeef' is not a 'uuid'"
-      - sphinx8: ["sn_schema.extra_option_fail"]
 
 coerce_to_integer:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "efforts1"
@@ -646,13 +513,11 @@ coerce_to_integer:
         :efforts1: 1
         :efforts2: 0
         :efforts3: -1
-  warnings: []
 
 integer_multiple_of:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "efforts1"
@@ -672,13 +537,11 @@ integer_multiple_of:
         :efforts1: 9
         :efforts2: -4
         :efforts3: 4
-  warnings: []
 
 integer_multiple_of_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -688,19 +551,11 @@ integer_multiple_of_error:
     .. impl:: title
         :id: IMPL_1
         :efforts: 8
-  warnings:
-    - - "Severity # violation"
-      - "Field # efforts"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema > properties > efforts > multipleOf"
-      - "Schema message # 8 is not a multiple of 3"
-      - sphinx8: ["sn_schema.extra_option_fail"]
 
 number_multiple_of:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "efforts1"
@@ -720,13 +575,11 @@ number_multiple_of:
         :efforts1: 6.6
         :efforts2: 4.4
         :efforts3: -2.4
-  warnings: []
 
 number_multiple_of_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -736,19 +589,11 @@ number_multiple_of_error:
     .. impl:: title
         :id: IMPL_1
         :efforts: 5.0
-  warnings:
-    - - "Severity # violation"
-      - "Field # efforts"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema > properties > efforts > multipleOf"
-      - "Schema message # 5.0 is not a multiple of 3.3"
-      - sphinx8: ["sn_schema.extra_option_fail"]
 
 coerce_to_integer_from_string_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -757,19 +602,11 @@ coerce_to_integer_from_string_error:
     .. impl:: title
         :id: IMPL_1
         :efforts: QM
-  warnings:
-    - - "Severity # violation"
-      - "Field # efforts"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema"
-      - "Schema message # Field 'efforts': cannot coerce 'QM' to integer"
-      - sphinx8: ["sn_schema.extra_option_type_error"]
 
 coerce_to_number:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "efforts1"
@@ -786,13 +623,11 @@ coerce_to_number:
         :efforts1: 1.0
         :efforts2: 0
         :efforts3: -1.2
-  warnings: []
 
 coerce_to_number_from_string_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -801,19 +636,11 @@ coerce_to_number_from_string_error:
     .. impl:: title
         :id: IMPL_1
         :efforts: QM
-  warnings:
-    - - "Severity # violation"
-      - "Field # efforts"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema"
-      - "Schema message # Field 'efforts': cannot coerce 'QM' to number"
-      - sphinx8: ["sn_schema.extra_option_type_error"]
 
 coerce_to_integer_from_float_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "efforts"
@@ -822,19 +649,11 @@ coerce_to_integer_from_float_error:
     .. impl:: title
         :id: IMPL_1
         :efforts: 1.2
-  warnings:
-    - - "Severity # violation"
-      - "Field # efforts"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema"
-      - "Schema message # Field 'efforts': cannot coerce '1.2' to integer"
-      - sphinx8: ["sn_schema.extra_option_type_error"]
 
 coerce_to_boolean:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "accepted"
@@ -895,13 +714,11 @@ coerce_to_boolean:
     .. impl:: title
         :id: IMPL_14
         :accepted: Off
-  warnings: []
 
 coerce_to_boolean_from_string_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_options]]
     name = "approved"
@@ -910,37 +727,3 @@ coerce_to_boolean_from_string_error:
     .. impl:: title
         :id: IMPL_1
         :approved: not-a-boolean
-  warnings:
-    - - "Severity # violation"
-      - "Field # approved"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_options > schema"
-      - "Schema message # Field 'approved': cannot coerce 'not-a-boolean' to boolean"
-      - sphinx8: ["sn_schema.extra_option_type_error"]
-
-default_accepted:
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_from_toml = "ubproject.toml"
-  ubproject: |
-    [[needs.extra_options]]
-    name = "efforts1"
-    schema.type = "number"
-    [[needs.extra_options]]
-    name = "efforts2"
-    schema.type = "string"
-    [[needs.extra_options]]
-    name = "approved"
-    schema.type = "boolean"
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
-        :efforts1: 6.6
-        :efforts2: 4.4
-        :approved: true
-
-    .. impl:: title
-        :id: IMPL_2
-        :efforts1: 6.6
-        :efforts2: 4.4
-  warnings: []

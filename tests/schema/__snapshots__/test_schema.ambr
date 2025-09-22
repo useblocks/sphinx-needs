@@ -2384,9 +2384,6 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-default_accepted]
-  ''
-# ---
 # name: test_schemas[schema/fixtures/extra_options-enum]
   ''
 # ---
@@ -2448,6 +2445,7 @@
     Field:          
     Need path:      IMPL_1
     Schema path:    [0] > local > required
+    User message:   Required due to high efforts
     Schema message: 'asil' is a required property [sn_schema.local_fail]
   
   '''
