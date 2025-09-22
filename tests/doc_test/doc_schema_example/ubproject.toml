@@ -1,0 +1,53 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+[needs]
+id_required = true
+id_regex = "^[A-Z0-9_]{3,}"
+schema_severity = 'warning'
+build_json = true
+schema_definitions_from_json = "schemas.json"
+schema_debug_active = true
+
+[[needs.extra_options]]
+name = "efforts"
+description = "FTE days"
+schema.type = "integer"
+schema.minimum = 0
+
+[[needs.extra_options]]
+name = "asil"
+description = "Automotive Safety Integrity Level"
+schema.type = "string"
+schema.enum = ["QM", "A", "B", "C", "D"]
+
+[[needs.extra_options]]
+name = "approval"
+description = "Approval flag"
+schema.type = "boolean"
+
+[[needs.extra_links]]
+option = "links"
+outgoing = "links"
+incoming = "linked by"
+
+[[needs.extra_links]]
+option = "details"
+outgoing = "details"
+incoming = "detailed by by"
+
+[[needs.types]]
+directive = "feat"
+title = "Feat"
+prefix = "Feat_"
+
+[[needs.types]]
+directive = "spec"
+title = "Specification"
+prefix = "SPEC_"
+
+[[needs.types]]
+directive = "impl"
+title = "Implementation"
+prefix = "IMPL_"
+
+# link modeling impl -[links]-> spec -[details]-> feat
