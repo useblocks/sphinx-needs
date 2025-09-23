@@ -35,7 +35,6 @@ schemas_in_conf:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings: []
 
 schemas_in_conf_error:
   conf: |
@@ -74,13 +73,6 @@ schemas_in_conf_error:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings:
-    - - "Severity # violation"
-      - "Field # links"
-      - "Need path # IMPL_1 > links"
-      - "Schema path # [0] > validate > network > links"
-      - "Schema message # Too few valid links of type 'links' (0 < 1) / nok: SPEC_1"
-      - sphinx8: ["sn_schema.network_contains_too_few"]
 
 min_contains:
   conf: |
@@ -113,7 +105,6 @@ min_contains:
                     "type":
                       "const": "spec"
               minContains: 1
-  warnings: []
 
 min_contains_error:
   conf: |
@@ -146,12 +137,6 @@ min_contains_error:
                     "type":
                       "const": "spec"
               minContains: 2
-  warnings:
-    - - "Severity # violation"
-      - "Need path # IMPL_1 > links"
-      - "Schema path # [0] > validate > network > links"
-      - "Schema message # Too few valid links of type 'links' (1 < 2) / ok: SPEC_1"
-      - sphinx8: ["sn_schema.network_contains_too_few"]
 
 max_contains:
   conf: |
@@ -184,7 +169,6 @@ max_contains:
                     "type":
                       "const": "spec"
               maxContains: 1
-  warnings: []
 
 max_contains_error:
   conf: |
@@ -219,12 +203,6 @@ max_contains_error:
                     "type":
                       "const": "spec"
               maxContains: 1
-  warnings:
-    - - "Severity # violation"
-      - "Need path # IMPL_1 > links"
-      - "Schema path # [0] > validate > network > links"
-      - "Schema message # Too many valid links of type 'links' (2 > 1) / ok: SPEC_1, SPEC_2"
-      - sphinx8: ["sn_schema.network_contains_too_many"]
 
 link_chain_w_refs:
   conf: |
@@ -312,7 +290,6 @@ link_chain_w_refs:
                         $ref: "#/$defs/safe-req"
                     minContains: 1
               minContains: 1
-  warnings: []
 
 link_chain_hop_1_min_contains_error:
   conf: |
@@ -369,13 +346,8 @@ link_chain_hop_1_min_contains_error:
                 local:
                   $ref: "#/$defs/safe-spec"
               minContains: 1
-  warnings:
-    - - "Severity # violation"
-      - "Need path # IMPL_SAFE > links"
-      - "Schema path # safe-impl-[links]->safe-spec[0] > validate > network > links"
-      - "Schema message # Too few valid links of type 'links' (0 < 1) / nok: SPEC_UNSAFE"
-      - sphinx8: ["sn_schema.network_contains_too_few"]
 
+# TODO: the snpapshot ouput needs to be looked at, the nested 'Schema path' are not consistent
 link_chain_hop_2_min_contains_error:
   conf: |
     extensions = ["sphinx_needs"]
@@ -450,19 +422,6 @@ link_chain_hop_2_min_contains_error:
                         $ref: "#/$defs/safe-req"
                     minContains: 1
               minContains: 1
-  warnings:
-    - - "Severity # violation"
-      - "Need path # IMPL_SAFE > links"
-      - "Schema path # safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links"
-      - "Schema message # Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE"
-      - "Details for SPEC_SAFE"
-      - "Schema message # Too few valid links of type 'links' (0 < 1) / nok: REQ_UNSAFE"
-      - "Details for REQ_UNSAFE"
-      - "Field # asil"
-      - "Need path # IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE"
-      - "Schema path # safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum"
-      - "Schema message # 'QM' is not one of ['A', 'B', 'C', 'D']"
-      - sphinx8: ["sn_schema.network_contains_too_few"]
 
 local_min_items:
   conf: |
@@ -489,7 +448,6 @@ local_min_items:
           local:
             properties:
               links: {minItems: 1}
-  warnings: []
 
 local_min_items_error:
   conf: |
@@ -516,12 +474,6 @@ local_min_items_error:
           local:
             properties:
               links: {minItems: 2}
-  warnings:
-    - - "Severity # violation"
-      - "Need path # IMPL_1"
-      - "Schema path # [0] > local > properties > links > minItems"
-      - "Schema message # ['SPEC_1'] is too short"
-      - sphinx8: ["sn_schema.local_fail"]
 
 local_max_items:
   conf: |
@@ -551,7 +503,6 @@ local_max_items:
           local:
             properties:
               links: {maxItems: 2}
-  warnings: []
 
 local_max_items_error:
   conf: |
@@ -581,12 +532,6 @@ local_max_items_error:
           local:
             properties:
               links: {maxItems: 1}
-  warnings:
-    - - "Severity # violation"
-      - "Need path # IMPL_1"
-      - "Schema path # [0] > local > properties > links > maxItems"
-      - "Schema message # ['SPEC_1', 'SPEC_2'] is too long"
-      - sphinx8: ["sn_schema.local_fail"]
 
 max_network_levels:
   conf: |
@@ -649,10 +594,3 @@ max_network_levels:
                                                 properties:
                                                   type:
                                                     const: spec
-  warnings:
-    - - "Need 'SPEC_1' has validation errors"
-      - "Severity # violation"
-      - "Need path # IMPL_1 > links > SPEC_5 > links > SPEC_4 > links > SPEC_3 > links > SPEC_2 > links > SPEC_1"
-      - "Schema path # [0] > links > links > links > links > links"
-      - "Schema message # Maximum network validation recursion level 4 reached"
-      - sphinx8: ["sn_schema.network_max_nest_level"]
