@@ -2,7 +2,6 @@ inject_array:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -28,7 +27,6 @@ items_pattern:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -48,7 +46,6 @@ items_pattern_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -74,7 +71,6 @@ min_items:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -95,7 +91,6 @@ min_items_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -122,7 +117,6 @@ max_items:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -143,7 +137,6 @@ max_items_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -172,7 +165,6 @@ contains:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -192,7 +184,6 @@ contains_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -218,7 +209,6 @@ min_contains:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -239,7 +229,6 @@ min_contains_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -267,7 +256,6 @@ max_contains:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
@@ -291,7 +279,6 @@ max_contains_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-
   ubproject: |
     [[needs.extra_links]]
     option = "links"
