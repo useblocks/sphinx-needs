@@ -267,7 +267,12 @@ def recurse_validate_type_schmemas(
                             "severity": get_severity(rule, severity),
                             "validation_message": msg,
                             "need": need,
-                            "schema_path": [*schema_path, "network", link_type],
+                            "schema_path": [
+                                *schema_path,
+                                "validate",
+                                "network",
+                                link_type,
+                            ],
                             "need_path": [*need_path, link_type],
                         }
                     )
@@ -275,6 +280,21 @@ def recurse_validate_type_schmemas(
                         warnings[-1]["user_message"] = user_message
                     continue
 
+                schema_path_items = [
+                    *schema_path,
+                    "validate",
+                    "network",
+                    link_type,
+                    "items",
+                ]
+                schema_path_contains = [
+                    *schema_path,
+                    "validate",
+                    "network",
+                    link_type,
+                    "contains",
+                ]
+                need_path_link = [*need_path, link_type, target_need_id]
                 # Handle items validation - all items must pass
                 if link_schema.get("items"):
                     new_success, new_warnings = recurse_validate_type_schmemas(
@@ -283,8 +303,8 @@ def recurse_validate_type_schmemas(
                         needs=needs,
                         user_message=user_message,
                         schema=link_schema["items"],
-                        schema_path=[*schema_path, link_type],
-                        need_path=[*need_path, link_type, target_need_id],
+                        schema_path=schema_path_items,
+                        need_path=need_path_link,
                         recurse_level=recurse_level + 1,
                         severity=severity,
                     )
@@ -304,8 +324,8 @@ def recurse_validate_type_schmemas(
                         needs=needs,
                         user_message=user_message,
                         schema=link_schema["contains"],
-                        schema_path=[*schema_path, link_type],
-                        need_path=[*need_path, link_type, target_need_id],
+                        schema_path=schema_path_contains,
+                        need_path=need_path_link,
                         recurse_level=recurse_level + 1,
                         severity=severity,
                     )
@@ -341,13 +361,7 @@ def recurse_validate_type_schmemas(
                     "severity": get_severity(rule, severity),
                     "validation_message": msg,
                     "need": need,
-                    "schema_path": [
-                        *schema_path,
-                        "validate",
-                        "network",
-                        link_type,
-                        "items",
-                    ],
+                    "schema_path": schema_path_items,
                     "need_path": [*need_path, link_type],
                     "children": items_nok_warnings,  # user is interested in these
                 }
@@ -385,12 +399,7 @@ def recurse_validate_type_schmemas(
                             "severity": get_severity(rule, severity),
                             "validation_message": msg,
                             "need": need,
-                            "schema_path": [
-                                *schema_path,
-                                "validate",
-                                "network",
-                                link_type,
-                            ],
+                            "schema_path": schema_path_contains,
                             "need_path": [*need_path, link_type],
                             "children": contains_nok_warnings,  # user is interested in these
                         }
@@ -413,12 +422,7 @@ def recurse_validate_type_schmemas(
                                 "severity": get_severity(rule, severity),
                                 "validation_message": msg,
                                 "need": need,
-                                "schema_path": [
-                                    *schema_path,
-                                    "validate",
-                                    "network",
-                                    link_type,
-                                ],
+                                "schema_path": schema_path_contains,
                                 "need_path": [*need_path, link_type],
                                 # children not passed, no interest in too much success
                             }

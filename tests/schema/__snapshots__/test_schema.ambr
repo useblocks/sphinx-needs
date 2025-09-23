@@ -195,13 +195,13 @@
   WARNING: Need 'SPEC_SAFE_UNSAFE_FEAT' has validation errors:
     Severity:       violation
     Need path:      SPEC_SAFE_UNSAFE_FEAT > links
-    Schema path:    safe-spec-[links]->safe-feat[4] > validate > network > links
+    Schema path:    safe-spec-[links]->safe-feat[4] > validate > network > links > contains
     Schema message: Too few valid links of type 'links' (0 < 1) / nok: FEAT
   
       Details for FEAT
       Field:          asil
       Need path:      SPEC_SAFE_UNSAFE_FEAT > links > FEAT
-      Schema path:    safe-spec-[links]->safe-feat[4] > links > local > allOf > 0 > properties > asil > enum
+      Schema path:    safe-spec-[links]->safe-feat[4] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
       Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
   WARNING: Need 'SPEC_SAFE_ADD_UNSAFE_FEAT' has validation errors:
     Severity:       violation
@@ -2576,13 +2576,13 @@
   WARNING: Need 'IMPL_SAFE' has validation errors:
     Severity:       violation
     Need path:      IMPL_SAFE > links
-    Schema path:    safe-impl-[links]->safe-spec[0] > validate > network > links
+    Schema path:    safe-impl-[links]->safe-spec[0] > validate > network > links > contains
     Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_UNSAFE
   
       Details for SPEC_UNSAFE
       Field:          asil
       Need path:      IMPL_SAFE > links > SPEC_UNSAFE
-      Schema path:    safe-impl-[links]->safe-spec[0] > links > local > allOf > 0 > properties > asil > enum
+      Schema path:    safe-impl-[links]->safe-spec[0] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
       Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
   
   '''
@@ -2592,19 +2592,19 @@
   WARNING: Need 'IMPL_SAFE' has validation errors:
     Severity:       violation
     Need path:      IMPL_SAFE > links
-    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains
     Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE
   
       Details for SPEC_SAFE
       Need path:      IMPL_SAFE > links > SPEC_SAFE > links
-      Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > validate > network > links
+      Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains
       User message:   Safe impl links to safe spec links to safe req
       Schema message: Too few valid links of type 'links' (0 < 1) / nok: REQ_UNSAFE
   
         Details for REQ_UNSAFE
         Field:          asil
         Need path:      IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE
-        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
         Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
   
   '''
@@ -2648,7 +2648,7 @@
   WARNING: Need 'IMPL_1' has validation errors:
     Severity:       violation
     Need path:      IMPL_1 > links
-    Schema path:    [0] > validate > network > links
+    Schema path:    [0] > validate > network > links > contains
     Schema message: Too many valid links of type 'links' (2 > 1) / ok: SPEC_1, SPEC_2 [sn_schema.network_contains_too_many]
   
   '''
@@ -2658,7 +2658,7 @@
   WARNING: Need 'SPEC_1' has validation errors:
     Severity:       violation
     Need path:      IMPL_1 > links > SPEC_5 > links > SPEC_4 > links > SPEC_3 > links > SPEC_2 > links > SPEC_1
-    Schema path:    [0] > links > links > links > links > links
+    Schema path:    [0] > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items
     Schema message: Maximum network validation recursion level 4 reached. [sn_schema.network_max_nest_level]
   
   '''
@@ -2671,7 +2671,7 @@
   WARNING: Need 'IMPL_1' has validation errors:
     Severity:       violation
     Need path:      IMPL_1 > links
-    Schema path:    [0] > validate > network > links
+    Schema path:    [0] > validate > network > links > contains
     Schema message: Too few valid links of type 'links' (1 < 2) / ok: SPEC_1 [sn_schema.network_contains_too_few]
   
   '''
@@ -2684,13 +2684,13 @@
   WARNING: Need 'IMPL_1' has validation errors:
     Severity:       violation
     Need path:      IMPL_1 > links
-    Schema path:    [0] > validate > network > links
+    Schema path:    [0] > validate > network > links > contains
     Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_1
   
       Details for SPEC_1
       Field:          type
       Need path:      IMPL_1 > links > SPEC_1
-      Schema path:    [0] > links > local > properties > type > const
+      Schema path:    [0] > validate > network > links > contains > local > properties > type > const
       Schema message: 'req' was expected [sn_schema.network_contains_too_few]
   
   '''
