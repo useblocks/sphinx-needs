@@ -142,14 +142,14 @@
       }
     },
     {
-      "id": "safe-spec-[links]->safe-feat",
-      "message": "Safe spec links to safe feat",
+      "id": "safe-spec-[details]->safe-feat",
+      "message": "Safe spec details safe feat",
       "select": {
         "$ref": "#/$defs/safe-spec"
       },
       "validate": {
         "network": {
-          "links": {
+          "details": {
             "contains": {
               "local": {
                 "$ref": "#/$defs/safe-feat"

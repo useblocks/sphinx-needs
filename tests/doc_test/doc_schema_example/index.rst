@@ -2,21 +2,18 @@
 Docs Example
 ============
 
-Simple
-------
-
 .. feat:: Feature
-   :id: FEAT_UNSAFE
-   :asil: QM
+   :id: FEAT_SAFE
+   :asil: B
 
 .. spec:: Specification
-   :id: SPEC_UNSAFE
+   :id: SPEC_SAFE
    :efforts: 20
    :approval: yes
-   :asil: QM
-   :details: FEAT_UNSAFE
+   :asil: B
+   :details: FEAT_SAFE
 
 .. impl:: Implementation
-   :id: IMPL_UNSAFE
-   :asil: QM
-   :links: SPEC_UNSAFE
+   :id: IMPL_SAFE
+   :asil: B
+   :links: SPEC_SAFE

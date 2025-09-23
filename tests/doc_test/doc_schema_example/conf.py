@@ -1,6 +1,4 @@
-project = "basic test"
-# copyright = "2024, basic test"
-# author = "basic test"
+project = "Docs modeling example"
 
 extensions = ["sphinx_needs"]
 
