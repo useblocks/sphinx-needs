@@ -44,7 +44,7 @@ from sphinx_codelinks.source_discover.source_discover import SourceDiscover
                 "comment_type": "java",
             },
             [
-                "Schema validation error in field 'comment_type': 'java' is not one of ['cpp', 'python']"
+                "Schema validation error in field 'comment_type': 'java' is not one of ['cpp', 'cs', 'python']"
             ],
         ),
         (
