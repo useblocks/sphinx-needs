@@ -122,14 +122,15 @@ a list of string need IDs while network checks run on the data of the linked nee
 The distinction is especially important in an IDE context, where local checks can provide instant
 feedback while network requires building the full network index first.
 
-.. note::
-
-   The
-   `full example <https://github.com/useblocks/sphinx-needs/tree/master/tests/doc_test/doc_schema_example>`__
-   for below configuration can be found in the tests.
-   It can directly be executed with::
-
-     tests/doc_test/doc_schema_example $ uv run sphinx-build -b html . _build
+.. TODO enable this once the PR is merged
+   .. note::
+   
+      The
+      `full example <https://github.com/useblocks/sphinx-needs/tree/master/tests/doc_test/doc_schema_example>`__
+      for below configuration can be found in the tests.
+      It can directly be executed with::
+   
+        tests/doc_test/doc_schema_example $ uv run sphinx-build -b html . _build
 
 Here are the full example files as a reference:
 
