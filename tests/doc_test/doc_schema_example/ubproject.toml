@@ -29,11 +29,13 @@ schema.type = "boolean"
 option = "links"
 outgoing = "links"
 incoming = "linked by"
+schema.maxItems = 1
 
 [[needs.extra_links]]
 option = "details"
 outgoing = "details"
 incoming = "detailed by by"
+schema.maxItems = 1
 
 [[needs.types]]
 directive = "feat"

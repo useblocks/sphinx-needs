@@ -105,3 +105,21 @@ def test_schema_e2e(test_app: SphinxTestApp, snapshot) -> None:
     assert report_json.exists(), (
         f"Expected schema validation report JSON file not found: {report_json}"
     )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_schema_example",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_schema_example(test_app: SphinxTestApp, snapshot) -> None:
+    """Check error-free build of the example from the docs."""
+    test_app.build()
+    warnings = strip_colors(test_app._warning.getvalue())
+    assert not warnings
