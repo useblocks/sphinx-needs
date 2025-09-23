@@ -5,11 +5,13 @@ import subprocess
 import pytest
 from tree_sitter import Language, Parser, Query
 from tree_sitter import Node as TreeSitterNode
+import tree_sitter_c_sharp
 import tree_sitter_cpp
 import tree_sitter_python
 
 from sphinx_codelinks.analyse import utils
 from sphinx_codelinks.config import UNIX_NEWLINE
+from sphinx_codelinks.source_discover.config import CommentType
 
 
 @pytest.fixture(scope="session")
@@ -24,6 +26,14 @@ def init_cpp_tree_sitter() -> tuple[Parser, Query]:
 def init_python_tree_sitter() -> tuple[Parser, Query]:
     parsed_language = Language(tree_sitter_python.language())
     query = Query(parsed_language, utils.PYTHON_QUERY)
+    parser = Parser(parsed_language)
+    return parser, query
+
+
+@pytest.fixture(scope="session")
+def init_csharp_tree_sitter() -> tuple[Parser, Query]:
+    parsed_language = Language(tree_sitter_c_sharp.language())
+    query = Query(parsed_language, utils.C_SHARP_QUERY)
     parser = Parser(parsed_language)
     return parser, query
 
@@ -74,7 +84,9 @@ def init_python_tree_sitter() -> tuple[Parser, Query]:
 def test_find_associated_scope_cpp(code, result, init_cpp_tree_sitter):
     parser, query = init_cpp_tree_sitter
     comments = utils.extract_comments(code, parser, query)
-    node: TreeSitterNode | None = utils.find_associated_scope(comments[0])
+    node: TreeSitterNode | None = utils.find_associated_scope(
+        comments[0], CommentType.cpp
+    )
     assert node
     assert node.text
     func_def = node.text.decode("utf-8")
@@ -147,7 +159,57 @@ def test_find_associated_scope_cpp(code, result, init_cpp_tree_sitter):
 def test_find_associated_scope_python(code, result, init_python_tree_sitter):
     parser, query = init_python_tree_sitter
     comments = utils.extract_comments(code, parser, query)
-    node: TreeSitterNode | None = utils.find_associated_scope(comments[0])
+    node: TreeSitterNode | None = utils.find_associated_scope(
+        comments[0], CommentType.python
+    )
+    assert node
+    assert node.text
+    func_def = node.text.decode("utf-8")
+    assert func_def.startswith(result)
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        (
+            b"""
+                // @req-id: need_001
+                public class DummyClass1
+                {
+                }
+            """,
+            "public class DummyClass1",
+        ),
+        (
+            b"""
+                public class DummyClass2
+                {
+                    // @req-id: need_001
+                    public void DummyFunc2()
+                    {
+                    }
+                }
+            """,
+            "public void DummyFunc2",
+        ),
+        (
+            b"""
+                public class DummyClass3
+                {
+                    // @req-id: need_001
+                    public string Property1 { get; set; }
+                }
+            """,
+            "public string Property1",
+        ),
+    ],
+)
+def test_find_associated_scope_csharp(code, result, init_csharp_tree_sitter):
+    parser, query = init_csharp_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    node: TreeSitterNode | None = utils.find_associated_scope(
+        comments[0], CommentType.cs
+    )
     assert node
     assert node.text
     func_def = node.text.decode("utf-8")
@@ -198,7 +260,9 @@ def test_find_associated_scope_python(code, result, init_python_tree_sitter):
 def test_find_enclosing_scope_python(code, result, init_python_tree_sitter):
     parser, query = init_python_tree_sitter
     comments = utils.extract_comments(code, parser, query)
-    node: TreeSitterNode | None = utils.find_enclosing_scope(comments[0])
+    node: TreeSitterNode | None = utils.find_enclosing_scope(
+        comments[0], CommentType.python
+    )
     assert node
     assert node.text
     func_def = node.text.decode("utf-8")
@@ -230,7 +294,7 @@ def test_find_enclosing_scope_python(code, result, init_python_tree_sitter):
 def test_find_next_scope_python(code, result, init_python_tree_sitter):
     parser, query = init_python_tree_sitter
     comments = utils.extract_comments(code, parser, query)
-    node: TreeSitterNode | None = utils.find_next_scope(comments[0])
+    node: TreeSitterNode | None = utils.find_next_scope(comments[0], CommentType.python)
     assert node
     assert node.text
     func_def = node.text.decode("utf-8")
@@ -261,7 +325,45 @@ def test_find_next_scope_python(code, result, init_python_tree_sitter):
 def test_find_next_scope_cpp(code, result, init_cpp_tree_sitter):
     parser, query = init_cpp_tree_sitter
     comments = utils.extract_comments(code, parser, query)
-    node: TreeSitterNode | None = utils.find_next_scope(comments[0])
+    node: TreeSitterNode | None = utils.find_next_scope(comments[0], CommentType.cpp)
+    assert node
+    assert node.text
+    func_def = node.text.decode("utf-8")
+    assert result in func_def
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        (
+            b"""
+                // @req-id: need_001
+                public class DummyClass1
+                {
+                }
+            """,
+            "public class DummyClass1",
+        ),
+        (
+            b"""
+
+                public class DummyClass1
+                {
+                    /* @req-id: need_001 */
+                    /* @req-id: need_002 */
+                    public void DummyFunc1()
+                    {
+                    }
+                }
+            """,
+            "public void DummyFunc1",
+        ),
+    ],
+)
+def test_find_next_scope_csharp(code, result, init_csharp_tree_sitter):
+    parser, query = init_csharp_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    node: TreeSitterNode | None = utils.find_next_scope(comments[0], CommentType.cs)
     assert node
     assert node.text
     func_def = node.text.decode("utf-8")
@@ -292,7 +394,63 @@ def test_find_next_scope_cpp(code, result, init_cpp_tree_sitter):
 def test_find_enclosing_scope_cpp(code, result, init_cpp_tree_sitter):
     parser, query = init_cpp_tree_sitter
     comments = utils.extract_comments(code, parser, query)
-    node: TreeSitterNode | None = utils.find_enclosing_scope(comments[0])
+    node: TreeSitterNode | None = utils.find_enclosing_scope(
+        comments[0], CommentType.cpp
+    )
+    assert node
+    assert node.text
+    func_def = node.text.decode("utf-8")
+    assert result in func_def
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        (
+            b"""
+                public class DummyClass1
+                {
+                    // @req-id: need_001
+                }
+            """,
+            "public class DummyClass1",
+        ),
+        (
+            b"""
+                public class DummyClass1
+                {
+                    public void DummyFunc1()
+                    {
+                        /* @req-id: need_001 */
+                    }
+                }
+            """,
+            "public void DummyFunc1()",
+        ),
+        (
+            b"""
+                public class DummyClass1
+                {
+                    public string DummyProperty1
+                    {
+                        get
+                        {
+                            /* @req-id: need_001 */
+                            return "dummy";
+                        }
+                    }
+                }
+            """,
+            "public string DummyProperty1",
+        ),
+    ],
+)
+def test_find_enclosing_scope_csharp(code, result, init_csharp_tree_sitter):
+    parser, query = init_csharp_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    node: TreeSitterNode | None = utils.find_enclosing_scope(
+        comments[0], CommentType.cs
+    )
     assert node
     assert node.text
     func_def = node.text.decode("utf-8")
@@ -407,6 +565,58 @@ def test_cpp_comment(code, num_comments, result, init_cpp_tree_sitter):
 )
 def test_python_comment(code, num_comments, result, init_python_tree_sitter):
     parser, query = init_python_tree_sitter
+    comments: list[TreeSitterNode] = utils.extract_comments(code, parser, query)
+    comments.sort(key=lambda x: x.start_point.row)
+    assert len(comments) == num_comments
+    assert comments[0].text
+    assert comments[0].text.decode("utf-8") == result
+
+
+@pytest.mark.parametrize(
+    ("code", "num_comments", "result"),
+    [
+        (
+            b"""
+                // @req-id: need_001
+                void DummyFunc1(){
+                }
+            """,
+            1,
+            "// @req-id: need_001",
+        ),
+        (
+            b"""
+                void DummyFunc1(){
+                // @req-id: need_001
+                }
+            """,
+            1,
+            "// @req-id: need_001",
+        ),
+        (
+            b"""
+                /* @req-id: need_001 */
+                void DummyFunc1(){
+                }
+            """,
+            1,
+            "/* @req-id: need_001 */",
+        ),
+        (
+            b"""
+                //  @req-id: need_001
+                //
+                //
+                void DummyFunc1(){
+                }
+            """,
+            3,
+            "//  @req-id: need_001",
+        ),
+    ],
+)
+def test_csharp_comment(code, num_comments, result, init_csharp_tree_sitter):
+    parser, query = init_csharp_tree_sitter
     comments: list[TreeSitterNode] = utils.extract_comments(code, parser, query)
     comments.sort(key=lambda x: x.start_point.row)
     assert len(comments) == num_comments

@@ -322,7 +322,7 @@ class SourceAnalyse:
             if not filepath:
                 continue
             tagged_scope: TreeSitterNode | None = utils.find_associated_scope(
-                src_comment.node
+                src_comment.node, self.analyse_config.comment_type
             )
             if self.analyse_config.get_need_id_refs:
                 anchors = self.extract_anchors(
