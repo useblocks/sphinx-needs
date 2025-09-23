@@ -52,8 +52,8 @@ Type representation in Python is as follows:
 - JSON ``string`` -> Python ``str``
 - JSON ``boolean`` -> Python ``bool``
 - JSON ``integer`` -> Python ``int``
-- JSON ``array`` -> Python ``list``
 - JSON ``number`` -> Python ``float``
+- JSON ``array`` -> Python ``list``
 
 Schema configuration
 --------------------
@@ -87,7 +87,7 @@ The schema is configured in multiple places:
 
    JSON schema requires type information in all schemas to actually perform validation.
    For example, validating an
-   `integer minimum <https://json-schema.org/understanding-json-schema/reference/string#regexp>`__
+   `integer minimum <https://json-schema.org/understanding-json-schema/reference/numeric#range>`__
    constraint on a string field does not make sense, but, depending on the implementation,
    JSON schema might not complain about this. Therefore, Sphinx-Needs injects the type information
    from ``needs_extra_options`` and ``needs_extra_links`` as well as the core fields
@@ -116,9 +116,11 @@ The schema validation in Sphinx-Needs allows you to define declarative rules for
 items based on their types, properties and relationships.
 
 This includes both local checks (validating properties of a single need) and network checks
-(validating relationships between multiple needs). The distinction is especially important in
-an IDE context, where local checks can provide instant feedback while network requires building
-the full network index first.
+(validating relationships between multiple needs). In local checks links to other needs are just
+a list of string need IDs while network checks run on the data of the linked need.
+
+The distinction is especially important in an IDE context, where local checks can provide instant
+feedback while network requires building the full network index first.
 
 .. note::
 
@@ -141,15 +143,15 @@ Here are the full example files as a reference:
    .. literalinclude:: ../../tests/doc_test/doc_schema_example/index.rst
       :language: rst
 
-.. dropdown:: schemas.json
-
-   .. literalinclude:: ../../tests/doc_test/doc_schema_example/schemas.json
-      :language: json
-
 .. dropdown:: ubproject.toml
 
    .. literalinclude:: ../../tests/doc_test/doc_schema_example/ubproject.toml
       :language: toml
+
+.. dropdown:: schemas.json
+
+   .. literalinclude:: ../../tests/doc_test/doc_schema_example/schemas.json
+      :language: json
 
 Field Configuration
 -------------------
@@ -159,7 +161,7 @@ Above modeling can be reached with the following ubproject.toml configuration:
 .. literalinclude:: ../../tests/doc_test/doc_schema_example/ubproject.toml
    :language: toml
 
-As can be seen, the ``needs.extra options`` section defines the extra options used in the modeling
+As can be seen, the ``needs.extra_options`` section defines the extra options used in the modeling
 together with their types and possible schema constraints.
 
 The pictured need types and extra links are also defined.
@@ -182,7 +184,7 @@ The preferred approach is to define schemas in a separate JSON file and load the
    # conf.py
    needs_schema_definitions_from_json = "schemas.json"
 
-Then create a ``schemas.json`` file in your project root:
+Then create a small ``schemas.json`` file in your project root:
 
 .. code-block:: json
 
@@ -212,11 +214,13 @@ Then create a ``schemas.json`` file in your project root:
      ]
    }
 
-.. dropdown:: Full version for example modeling
+Above schema already makes use of :ref:`schema_reuse` via ``$defs`` and ``$ref``.
+
+.. dropdown:: Full version for above example modeling
 
    .. literalinclude:: ../../tests/doc_test/doc_schema_example/schemas.json
 
-**Benefits of JSON File Configuration:**
+Benefits of JSON File Configuration:
 
 - **Declarative**: Schema definitions are separate from Python configuration
 - **Version Control**: Easy to track changes to validation rules
@@ -291,109 +295,9 @@ Local validation checks individual need properties without requiring information
 
 Example local validation schema:
 
-.. code-block:: json
-
-   {
-     "$defs": {
-       "type-feat": {
-         "properties": {
-           "type": { "const": "feat" }
-         }
-       },
-       "type-spec": {
-         "properties": {
-           "type": { "const": "spec" }
-         }
-       },
-       "type-impl": {
-         "properties": {
-           "type": { "const": "impl" }
-         }
-       },
-       "safe-feat": {
-         "allOf": [
-           { "$ref": "#/$defs/safe-need" },
-           { "$ref": "#/$defs/type-feat" }
-         ]
-       },
-       "safe-spec": {
-         "allOf": [
-           { "$ref": "#/$defs/safe-need" },
-           { "$ref": "#/$defs/type-spec" }
-         ]
-       },
-       "safe-impl": {
-         "allOf": [
-           { "$ref": "#/$defs/safe-need" },
-           { "$ref": "#/$defs/type-impl" }
-         ]
-       },
-       "safe-need": {
-         "properties": {
-           "asil": {
-             "enum": ["A", "B", "C", "D"]
-           }
-         },
-         "required": ["asil"]
-       },
-       "high-efforts": {
-         "properties": {
-           "efforts": { "minimum": 15 }
-         },
-         "required": ["efforts"]
-       }
-     },
-     "schemas": [
-       {
-         "id": "spec",
-         "select": { "$ref": "#/$defs/type-spec" },
-         "validate": {
-           "local": {
-             "properties": {
-               "id": { "pattern": "^SPEC_[a-zA-Z0-9_-]*$" },
-               "efforts": { "minimum": 0 }
-             },
-             "unevaluatedProperties": false
-           }
-         }
-       },
-       {
-         "id": "spec-approval-required",
-         "severity": "violation",
-         "message": "Approval required due to high efforts",
-         "select": {
-           "allOf": [
-             { "$ref": "#/$defs/high-efforts" },
-             { "$ref": "#/$defs/type-spec" }
-           ]
-         },
-         "validate": {
-           "local": {
-             "required": ["approval"]
-           }
-         }
-       },
-       {
-         "id": "spec-approval-not-given",
-         "severity": "info",
-         "message": "Approval not given",
-         "select": {
-           "allOf": [
-             { "$ref": "#/$defs/type-spec" },
-             { "$ref": "#/$defs/high-efforts" }
-           ]
-         },
-         "validate": {
-           "local": {
-             "properties": {
-               "approval": { "const": true }
-             },
-             "required": ["approval"]
-           }
-         }
-       }
-     ]
-   }
+.. literalinclude:: ../../tests/doc_test/doc_schema_example/schemas.json
+   :lines: 1-49,57-143,183-
+   :language: json
 
 Above conditions can all be checked locally on need level which allows instant user feedback
 in IDE extensions such as `ubCode`_.
@@ -409,7 +313,7 @@ After network resolution, the following checks can be performed:
 
 - a 'safe' ``impl`` that has an ``asil`` of ``A | B | C | D`` cannot ``link`` to ``spec`` items
   that have an ``asil`` of ``QM``
-- a safe ``impl`` can only link to 'approved' ``spec`` items with link type ``links``
+- a safe ``impl`` can only link approved ``spec`` items with link type ``links``
 - a safe ``spec`` can only link to safe and approved ``feat`` items with link type ``details``
 - a safe ``impl`` can link to *one or more* safe ``spec`` items
 - a spec can only link to *exactly one* ``feat``
@@ -419,24 +323,28 @@ After network resolution, the following checks can be performed:
 Example:
 
 .. literalinclude:: ../../tests/doc_test/doc_schema_example/schemas.json
-   :lines: 1-41,48-49,145-
+   :lines: 1-41,48-49,144-
    :language: json
-
-Network Link Validation
-~~~~~~~~~~~~~~~~~~~~~~~
 
 Network validation supports various constraints on linked needs:
 
 **Link Count Constraints**
 
-- ``minContains``: Minimum number of valid links required
-- ``maxContains``: Maximum number of valid links allowed
+- ``validate.local.properties.<link>.minItems``: Minimum number of links required
+- ``validate.local.properties.<link>.maxItems``: Minimum number of links required
+- ``validate.network.<link>.minContains``: Minimum number of valid links required
+- ``validate.network.<link>.maxContains``: Maximum number of valid links allowed
+
+``minItems`` and ``maxItems`` are located under local, as a link field is always a list of
+need IDs (strings) on local level. That is enough to validate the number of links.
+
+``minContains`` and ``maxContains`` are located under network, as they validate the actual
+need objects that are linked.
 
 .. code-block:: json
 
    {
      "validate": {
-       ""
        "network": {
          "links": {
            "contains": {
@@ -448,16 +356,15 @@ Network validation supports various constraints on linked needs:
                "required": ["type", "asil"]
              }
            },
-           "minContains": 1, // At least one link required
-           "maxContains": 3 // Maximum three links allowed
+           "minContains": 1, // At least one link validates 'contains'
+           "maxContains": 3  // Maximum three links validate 'contains'
          }
        }
      }
    }
 
-**Link Target Validation**
-
-The ``items`` property defines validation rules for each linked need:
+The ``items`` property can be used to define validation rules that must be satisfied
+for *all* linked needs:
 
 .. code-block:: json
 
@@ -465,7 +372,7 @@ The ``items`` property defines validation rules for each linked need:
      "validate": {
        "network": {
          "links": {
-           "contains": {
+           "items": {
              "local": {
                "properties": {
                  "status": { "const": "approved" }
@@ -484,33 +391,39 @@ Network validation can be nested to validate multi-hop link chains:
 .. code-block:: json
 
    {
-       "id": "safe-impl-chain",
-       "select": {"$ref": "#/$defs/safe-impl"},
-       "validate": {
-           "network": {
+     "id": "safe-impl-chain",
+     "select": {
+       "$ref": "#/$defs/safe-impl"
+     },
+     "validate": {
+       "network": {
+         "links": {
+           "contains": {
+             "local": {
+               "$ref": "#/$defs/safe-spec"
+             },
+             "network": {
                "links": {
-                   "contains": {
-                       "local": {"$ref": "#/$defs/safe-spec"},
-                       "network": {
-                           "links": {
-                               "contains": {
-                                   "local": {"$ref": "#/$defs/safe-feat"}
-                               },
-                               "minContains": 1
-                           }
-                       }
-                   },
-                   "minContains": 1
+                 "contains": {
+                   "local": {
+                     "$ref": "#/$defs/safe-feat"
+                   }
+                 },
+                 "minContains": 1
                }
-           }
+             }
+           },
+           "minContains": 1
+         }
        }
+     }
    }
 
 This validates that:
 
 1. A safe implementation links to safe specifications
 #. Those specifications in turn link to safe features
-#. Both link levels have minimum/maximum count requirements
+#. Both link levels have minimum count requirements
 
 Schema Components
 -----------------
@@ -649,6 +562,8 @@ Each schema can specify a severity level:
 The config :ref:`needs_schema_severity` can be used to define a minimum severity level for a
 warning to be reported.
 
+.. _`schema_reuse`:
+
 Schema Definitions ($defs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -679,6 +594,10 @@ Reusable schema components can be defined in the ``$defs`` section:
    }
 
 A full example is outlined in the :ref:`local_validation` section.
+The key ``$ref`` must appear as the only key in the schema where it is used.
+
+Recursive references are not allowed, i.e. a schemas cannot directly or indirectly
+reference itself.
 
 Error Messages
 --------------
@@ -857,10 +776,6 @@ Integer fields store whole numbers with optional range constraints:
      }
    }
 
-**Runtime Behavior**: Integer values are stored as Python ``int`` objects and exported
-as JSON numbers. Type coercion from compatible string representations (e.g., "42") is
-performed automatically during need creation.
-
 Number Type
 ~~~~~~~~~~~
 
@@ -878,20 +793,6 @@ Number fields store floating-point values:
      }
    }
 
-**Runtime Behavior**: Number values are stored as Python ``float`` objects and exported
-as JSON numbers. Both integer and floating-point inputs are accepted.
-
-**Type Validation Example**:
-
-.. code-block:: python
-
-   # ✅ Valid number values
-   add_need(app, state, cost_estimate=1234.56)    # Direct float
-   add_need(app, state, cost_estimate=1234)       # Int coerced to float
-   add_need(app, state, cost_estimate="1234.56")  # String coerced to float
-
-   # ❌ Invalid values (validation errors)
-   add_need(app, state, cost_estimate="expensive") # Non-numeric string
 
 Boolean Type
 ~~~~~~~~~~~~
@@ -906,9 +807,6 @@ Boolean fields store true/false values with flexible input handling:
        "is_critical": {"type": "boolean", "const": true}
      }
    }
-
-**Runtime Behavior**: Boolean values are stored as Python ``bool`` objects and exported
-as JSON booleans.
 
 **Accepted Boolean Values**:
 
@@ -938,15 +836,12 @@ Array fields store lists of homogeneous typed values:
          "items": {"type": "integer"},
          "minItems": 1
        },
-       "milestones": {
+       "approvals": {
          "type": "array",
          "items": {"type": "boolean"}
        }
      }
    }
-
-**Runtime Behavior**: Array values are stored as Python ``list`` objects with strongly
-typed elements and exported as JSON arrays.
 
 **Array Properties**:
 

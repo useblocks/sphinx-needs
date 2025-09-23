@@ -156,7 +156,7 @@
               }
             },
             "minContains": 1,
-            "maxContains": 4
+            "maxContains": 1
           }
         }
       }
@@ -168,21 +168,14 @@
         "$ref": "#/$defs/safe-impl"
       },
       "validate": {
-        "local": {
-          "properties": {
-            "links": {
-              "minItems": 1
-            }
-          },
-          "required": ["links"]
-        },
         "network": {
           "links": {
-            "items": {
+            "contains": {
               "local": {
                 "$ref": "#/$defs/safe-spec"
               }
-            }
+            },
+            "minContains": 1
           }
         }
       }
