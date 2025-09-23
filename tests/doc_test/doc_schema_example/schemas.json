@@ -79,7 +79,7 @@
         "local": {
           "properties": {
             "id": { "pattern": "^SPEC_[a-zA-Z0-9_-]*$" },
-            "efforts": { "minimum": 0 },
+            "efforts": { "minimum": 0, "maximum": 20 },
             "approval": {},
             "asil": {},
             "details": {}
@@ -97,7 +97,7 @@
         "local": {
           "properties": {
             "id": { "pattern": "^FEAT_[a-zA-Z0-9_-]*$" },
-            "efforts": { "minimum": 0 },
+            "efforts": { "minimum": 0, "maximum": 20 },
             "approval": {},
             "asil": {},
             "details": {}
@@ -124,7 +124,7 @@
     },
     {
       "id": "spec-approval-not-given",
-      "severity": "info",
+      "severity": "warning",
       "message": "Approval not given",
       "select": {
         "allOf": [
@@ -168,6 +168,14 @@
         "$ref": "#/$defs/safe-impl"
       },
       "validate": {
+        "local": {
+          "properties": {
+            "links": {
+              "minItems": 1
+            }
+          },
+          "required": ["links"]
+        },
         "network": {
           "links": {
             "items": {
