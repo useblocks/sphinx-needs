@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from sphinx_codelinks.source_discover.config import (
+    COMMENT_FILETYPE,
     SourceDiscoverConfig,
     SourceDiscoverConfigType,
 )
@@ -145,3 +146,30 @@ def test_source_discover(
     assert len(source_discover.source_paths) == num_files
     if suffix:
         assert all(path.suffix == ".cpp" for path in source_discover.source_paths)
+
+
+@pytest.fixture(scope="function")
+def create_source_files(tmp_path: Path) -> Path:
+    for file_types in COMMENT_FILETYPE.values():
+        for ext in file_types:
+            (tmp_path / f"file.{ext}").touch()
+    return tmp_path
+
+
+@pytest.mark.parametrize(
+    ("comment_type", "nums_files"),
+    [
+        ("cpp", len(COMMENT_FILETYPE["cpp"])),
+        ("python", len(COMMENT_FILETYPE["python"])),
+    ],
+)
+def test_comment_filetype(
+    comment_type: str, nums_files: int, create_source_files: Path
+) -> None:
+    src_dir = create_source_files
+
+    config = SourceDiscoverConfig(
+        src_dir=src_dir, comment_type=comment_type, gitignore=False
+    )
+    source_discover = SourceDiscover(config)
+    assert len(source_discover.source_paths) == nums_files

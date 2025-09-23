@@ -1,7 +1,7 @@
-"""Covert the generated JSON file created by CodeLinks anaylse to need-extend in RST."""
+"""Convert the generated JSON file created by CodeLinks analyse to need-extend in RST."""
 
 from collections import deque
-from dataclasses import MISSING, dataclass, field, fields
+from dataclasses import dataclass, field, fields
 from os import linesep
 from string import Template
 from typing import Any, TypedDict, cast
@@ -105,7 +105,7 @@ class MarkedContentSchema:
     @classmethod
     def get_schema(cls, name: str) -> dict[str, Any] | None:  # type: ignore[explicit-any]
         _field = next(_field for _field in fields(cls) if _field.name is name)
-        if _field.metadata is not MISSING and "schema" in _field.metadata:
+        if _field.metadata and "schema" in _field.metadata:
             return cast(dict[str, Any], _field.metadata["schema"])  # type: ignore[explicit-any]
         return None
 
@@ -165,7 +165,7 @@ def convert_marked_content(
     remote_url_field: str = "remote-url",
     title: str | None = None,
 ) -> tuple[list[str], list[str]]:
-    """Convert marked objects extracted by anaylse CLI to needextend in RST"""
+    """Convert marked objects extracted by analyse CLI to needextend in RST"""
     errors = []
     needextend_texts: list[str] = []
     intersted_objs = [

@@ -2,12 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 
-from sphinx_codelinks.config import (
-    ESCAPE,
-    SUPPORTED_COMMENT_TYPES,
-    UNIX_NEWLINE,
-    OneLineCommentStyle,
-)
+from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
 
 # initialize logger
 logger = logging.getLogger(__name__)
@@ -204,15 +199,3 @@ def is_newline_in_field(field: str) -> bool:
     Check if the field contains a new line character.
     """
     return UNIX_NEWLINE in field
-
-
-def get_file_types(comment_type: str) -> list[str] | None:
-    """
-    Get the list of file types to be discovered.
-    """
-    file_types = (
-        list(SUPPORTED_COMMENT_TYPES)
-        if comment_type in SUPPORTED_COMMENT_TYPES
-        else None
-    )
-    return file_types

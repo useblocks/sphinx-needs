@@ -12,6 +12,7 @@ Fixes
 .....
 
 - 🐛 Replace absolute path with relative path to fix ``local-url`` not working on the non-local environment
+- 🐛 Add more file extensions of C/C++ for SourceDiscover
 
 .. _`release:1.0.0`:
 
