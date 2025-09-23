@@ -8,7 +8,7 @@ from jsonschema import ValidationError, validate
 COMMENT_FILETYPE = {
     "cpp": ["c", "ci", "cpp", "cc", "cxx", "h", "hpp", "hxx", "hh", "ihl"],
     "python": ["py"],
-    "cs": ["cs"]
+    "cs": ["cs"],
 }
 
 

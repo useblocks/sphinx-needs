@@ -21,7 +21,7 @@ UNIX_NEWLINE = "\n"
 COMMENT_MARKERS = {
     CommentType.cpp: ["//", "/*"],
     CommentType.python: ["#"],
-    CommentType.cs: ["//", "/*", "///"]
+    CommentType.cs: ["//", "/*", "///"],
 }
 ESCAPE = "\\"
 
