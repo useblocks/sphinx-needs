@@ -59,7 +59,7 @@
 # name: test_schema_config[ref_mixed_error]
   "Invalid $ref entry, expected a single $ref key: {'$ref': '#/$defs/not-exist', 'required': ['type']}"
 # ---
-# name: test_schema_config[ref_recursive]
+# name: test_schema_config[ref_recursive_error]
   "Circular reference detected for 'type-impl'."
 # ---
 # name: test_schema_config[schemas_select_pattern_unsafe_error]
@@ -157,6 +157,15 @@
 # ---
 # name: test_schema_config[type_error]
   "Schema for extra option 'efforts' has invalid type: unknown. Allowed types are: string, boolean, integer, number, array"
+# ---
+# name: test_schema_config[type_mismatch_array_error]
+  "Config error in schema '[0]' at path 'validate.local': Item has keys ['items'], but type is 'object', expected 'array'."
+# ---
+# name: test_schema_config[type_mismatch_object_error]
+  "Config error in schema '[0]' at path 'validate.local': Item has keys ['properties'], but type is 'array', expected 'object'."
+# ---
+# name: test_schema_config[type_mismatch_object_extra_option_error]
+  "Config error in schema '[0]' at path 'validate.local.properties.efforts': Field 'efforts' has type 'integer', but expected 'string'."
 # ---
 # name: test_schema_e2e[test_app0]
   '''

@@ -170,6 +170,65 @@ network_link_not_exist:
             links2:
               minContains: 2
 
+type_mismatch_object_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  schemas:
+    schemas:
+      - validate:
+          local:
+            type: "array"
+            items: []
+            properties:
+              efforts: {}
+
+type_mismatch_object_extra_option_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              efforts: {type: "integer"}
+
+type_mismatch_array_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  schemas:
+    schemas:
+      - validate:
+          local:
+            type: "object"
+            items: {}
+
 ref_error:
   conf: |
     extensions = ["sphinx_needs"]
@@ -207,7 +266,7 @@ ref_mixed_error:
             $ref: "#/$defs/not-exist"
             required: [type]
 
-ref_recursive:
+ref_recursive_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_schema_definitions_from_json = "schemas.json"

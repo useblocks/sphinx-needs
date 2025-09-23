@@ -102,7 +102,7 @@ def resolve_schemas_config(
     app: Sphinx, env: BuildEnvironment, _docnames: list[str]
 ) -> None:
     """
-    Validates schemas for extra_options, extra_links, and schemas in needs_config.
+    Validates schema definitions and inject type information.
 
     Invokes the typeguard library to re-use existing type hints.
     Mostly checking for TypedDicts.
@@ -427,19 +427,20 @@ def populate_field_type(
     :param path: The current path in the schema hierarchy for error reporting
     """
     # TODO(Marco): this function could be improved to run on defined types, not on Any;
-    #              this would make the detection of 'properties' safer;
+    #              this would make the detection of 'array' or 'object' safer;
     #              however, typeguard looks over the final schema anyway
     if isinstance(curr_item, dict):
         # set 'object' type
         keys_indicating_object = {"properties", "required", "unevaluatedProperties"}
-        if any(key in curr_item for key in keys_indicating_object):
+        found_keys_object = [key for key in keys_indicating_object if key in curr_item]
+        if found_keys_object:
             if "type" not in curr_item:
                 curr_item["type"] = "object"
             else:
                 if curr_item["type"] != "object":
                     raise NeedsConfigException(
                         f"Config error in schema '{schema_name}' at path '{path}': "
-                        f"Item has keys {keys_indicating_object}, but type is '{curr_item['type']}', "
+                        f"Item has keys {found_keys_object}, but type is '{curr_item['type']}', "
                         f"expected 'object'."
                     )
         keys_indicating_array = {
@@ -450,6 +451,7 @@ def populate_field_type(
             "minContains",
             "maxContains",
         }
+        found_keys_array = [key for key in keys_indicating_array if key in curr_item]
         if any(key in curr_item for key in keys_indicating_array):
             if "type" not in curr_item:
                 curr_item["type"] = "array"
@@ -457,7 +459,7 @@ def populate_field_type(
                 if curr_item["type"] != "array":
                     raise NeedsConfigException(
                         f"Config error in schema '{schema_name}' at path '{path}': "
-                        f"Item has keys {keys_indicating_array}, but type is '{curr_item['type']}', "
+                        f"Item has keys {found_keys_array}, but type is '{curr_item['type']}', "
                         f"expected 'array'."
                     )
         found_properties_or_all_of = False
@@ -528,11 +530,13 @@ def populate_field_type(
                                         f"but expected 'string'."
                                     )
                 else:
+                    # first try to resolve from FieldsSchema
                     core_field = fields_schema.get_core_field(key)
                     if core_field is not None:
                         _type = core_field.type
                         _item_type = core_field.item_type
                     else:
+                        # no success, look in NeedsCoreFields
                         core_field_result = get_core_field_type(key)
                         if core_field_result is None:
                             # field is unknown
