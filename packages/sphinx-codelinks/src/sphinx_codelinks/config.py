@@ -18,9 +18,13 @@ from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 UNIX_NEWLINE = "\n"
 
 
-COMMENT_MARKERS = {CommentType.cpp: ["//", "/*"], CommentType.python: ["#"]}
+COMMENT_MARKERS = {
+    CommentType.cpp: ["//", "/*"],
+    CommentType.python: ["#"],
+    CommentType.cs: ["//", "/*", "///"]
+}
 ESCAPE = "\\"
-SUPPORTED_COMMENT_TYPES = {"c", "h", "cpp", "hpp", "py"}
+SUPPORTED_COMMENT_TYPES = {"c", "h", "cpp", "hpp", "py", "cs"}
 
 
 class CommentCategory(str, Enum):

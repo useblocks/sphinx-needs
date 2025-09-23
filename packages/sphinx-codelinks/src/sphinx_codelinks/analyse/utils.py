@@ -35,6 +35,7 @@ PYTHON_QUERY = """
                 (class_definition (block (expression_statement (string)) @comment))
             """
 CPP_QUERY = """(comment) @comment"""
+C_SHARP_QUERY = """(comment) @comment"""
 
 
 def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
@@ -63,6 +64,11 @@ def init_tree_sitter(comment_type: CommentType) -> tuple[Parser, Query]:
 
         parsed_language = Language(tree_sitter_python.language())
         query = Query(parsed_language, PYTHON_QUERY)
+    elif comment_type == CommentType.cs:
+        import tree_sitter_c_sharp  # noqa: PLC0415
+
+        parsed_language = Language(tree_sitter_c_sharp.language())
+        query = Query(parsed_language, C_SHARP_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)

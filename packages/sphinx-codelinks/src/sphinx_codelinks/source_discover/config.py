@@ -5,12 +5,17 @@ from typing import Any, Required, TypedDict, cast
 
 from jsonschema import ValidationError, validate
 
-COMMENT_FILETYPE = {"cpp": ["c", "cpp", "h", "hpp"], "python": ["py"]}
+COMMENT_FILETYPE = {
+    "cpp": ["c", "cpp", "h", "hpp"],
+    "python": ["py"],
+    "cs": ["cs"]
+}
 
 
 class CommentType(str, Enum):
     python = "python"
     cpp = "cpp"
+    cs = "cs"
 
 
 class SourceDiscoverSectionConfigType(TypedDict, total=False):

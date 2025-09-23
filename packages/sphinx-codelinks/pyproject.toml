@@ -11,23 +11,26 @@ license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">= 3.12"
 dependencies = [
-  "comment-parser>=1.2.4",
-  "gitignore-parser>=0.1.11",
-  "typer>=0.16.0",
-  "click < 8.2",                # click 8.2.* produces empty errors if no args are given
-  "jsonschema",
-  "sphinx>=7.4,<9",
-  "sphinx-needs>=4.2.0",        # unconstrained versions, to be pinned by user or Sphinx
-  "jinja2",
-  "pygments",
-  "docutils",                   # constrained by user or Sphinx
-  "tree-sitter-cpp>=0.23.4",
-  "giturlparse>=0.12.0",
-  "tree-sitter-python>=0.23.6",
-  # Compiling issue on manylinux aarch64 image, so install from git instead of Pypi
-  # https://github.com/tree-sitter/py-tree-sitter/issues/386#issuecomment-3101430799
-  "tree-sitter~=0.25.1",
-
+    "comment-parser>=1.2.4",
+    "gitignore-parser>=0.1.11",
+    "typer>=0.16.0",
+    "click < 8.2",
+    # click 8.2.* produces empty errors if no args are given
+    "jsonschema",
+    "sphinx>=7.4,<9",
+    "sphinx-needs>=4.2.0",
+    # unconstrained versions, to be pinned by user or Sphinx
+    "jinja2",
+    "pygments",
+    "docutils",
+    # constrained by user or Sphinx
+    "tree-sitter-cpp>=0.23.4",
+    "giturlparse>=0.12.0",
+    "tree-sitter-python>=0.23.6",
+    # Compiling issue on manylinux aarch64 image, so install from git instead of Pypi
+    # https://github.com/tree-sitter/py-tree-sitter/issues/386#issuecomment-3101430799
+    "tree-sitter~=0.25.1",
+    "tree-sitter-c-sharp>=0.23.1",
 ]
 
 [build-system]
