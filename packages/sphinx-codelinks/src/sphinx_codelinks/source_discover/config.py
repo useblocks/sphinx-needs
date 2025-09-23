@@ -5,17 +5,17 @@ from typing import Any, Required, TypedDict, cast
 
 from jsonschema import ValidationError, validate
 
-# TODO: COMMENT_FILETYPE is probably not a good name, as C# uses the same comment style as C++, but it's grammatically different.
-# Therefore, C# requires a different parser of tree-sitter to analyse its AST
 COMMENT_FILETYPE = {
     "cpp": ["c", "ci", "cpp", "cc", "cxx", "h", "hpp", "hxx", "hh", "ihl"],
     "python": ["py"],
+    "cs": ["cs"],
 }
 
 
 class CommentType(str, Enum):
     python = "python"
     cpp = "cpp"
+    cs = "cs"
 
 
 class SourceDiscoverSectionConfigType(TypedDict, total=False):

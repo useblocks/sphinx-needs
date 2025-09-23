@@ -27,7 +27,7 @@ dependencies = [
   # Compiling issue on manylinux aarch64 image, so install from git instead of Pypi
   # https://github.com/tree-sitter/py-tree-sitter/issues/386#issuecomment-3101430799
   "tree-sitter~=0.25.1",
-
+  "tree-sitter-c-sharp>=0.23.1",
 ]
 
 [build-system]

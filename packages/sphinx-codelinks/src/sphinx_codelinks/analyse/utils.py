@@ -12,6 +12,13 @@ from tree_sitter import Node as TreeSitterNode
 from sphinx_codelinks.config import UNIX_NEWLINE, CommentCategory
 from sphinx_codelinks.source_discover.config import CommentType
 
+# Language-specific node types for scope detection
+SCOPE_NODE_TYPES = {
+    CommentType.python: {"function_definition", "class_definition"},
+    CommentType.cpp: {"function_definition", "class_definition"},
+    CommentType.cs: {"method_declaration", "class_declaration", "property_declaration"},
+}
+
 # initialize logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -35,6 +42,7 @@ PYTHON_QUERY = """
                 (class_definition (block (expression_statement (string)) @comment))
             """
 CPP_QUERY = """(comment) @comment"""
+C_SHARP_QUERY = """(comment) @comment"""
 
 
 def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
@@ -63,6 +71,11 @@ def init_tree_sitter(comment_type: CommentType) -> tuple[Parser, Query]:
 
         parsed_language = Language(tree_sitter_python.language())
         query = Query(parsed_language, PYTHON_QUERY)
+    elif comment_type == CommentType.cs:
+        import tree_sitter_c_sharp  # noqa: PLC0415
+
+        parsed_language = Language(tree_sitter_c_sharp.language())
+        query = Query(parsed_language, C_SHARP_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)
@@ -90,39 +103,47 @@ def extract_comments(
     return captures.get("comment")
 
 
-def find_enclosing_scope(node: TreeSitterNode) -> TreeSitterNode | None:
+def find_enclosing_scope(
+    node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
+) -> TreeSitterNode | None:
     """Find the enclosing scope of a comment."""
+    scope_types = SCOPE_NODE_TYPES.get(comment_type, SCOPE_NODE_TYPES[CommentType.cpp])
     current: TreeSitterNode = node
     while current:
-        if current.type in {"function_definition", "class_definition"}:
+        if current.type in scope_types:
             return current
         current: TreeSitterNode | None = current.parent  # type: ignore[no-redef]  # required for node traversal
     return None
 
 
-def find_next_scope(node: TreeSitterNode) -> TreeSitterNode | None:
+def find_next_scope(
+    node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
+) -> TreeSitterNode | None:
     """Find the next scope of a comment."""
+    scope_types = SCOPE_NODE_TYPES.get(comment_type, SCOPE_NODE_TYPES[CommentType.cpp])
     current: TreeSitterNode = node
     while current:
-        if current.type in {"function_definition", "class_definition"}:
+        if current.type in scope_types:
             return current
         current: TreeSitterNode | None = current.next_named_sibling  # type: ignore[no-redef]  # required for node traversal
         if current and current.type == "block":
             for child in current.named_children:
-                if child.type in {"function_definition", "class_definition"}:
+                if child.type in scope_types:
                     return child
     return None
 
 
-def find_associated_scope(node: TreeSitterNode) -> TreeSitterNode | None:
+def find_associated_scope(
+    node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
+) -> TreeSitterNode | None:
     """Find the associated scope of a comment."""
     if node.type == CommentCategory.docstring:
         # Only for python's docstring
-        return find_enclosing_scope(node)
+        return find_enclosing_scope(node, comment_type)
     # General comments regardless of comment types
-    associated_scope = find_next_scope(node)
+    associated_scope = find_next_scope(node, comment_type)
     if not associated_scope:
-        associated_scope = find_enclosing_scope(node)
+        associated_scope = find_enclosing_scope(node, comment_type)
     return associated_scope
 
 
