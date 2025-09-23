@@ -15,13 +15,6 @@ inject_array:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings:
-    - - "Severity # violation"
-      - "Field # links"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_links > schema > properties > links > minItems"
-      - "Schema message # ['SPEC_1'] is too short"
-      - sphinx8: ["sn_schema.extra_link_fail"]
 
 items_pattern:
   conf: |
@@ -40,7 +33,6 @@ items_pattern:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings: []
 
 items_pattern_error:
   conf: |
@@ -59,13 +51,6 @@ items_pattern_error:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings:
-    - - "Severity # violation"
-      - "Field # links.0"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_links > schema > properties > links > items > pattern"
-      - "Schema message # 'SPEC_1' does not match '^[A-Z0-9_]{10,}'"
-      - sphinx8: ["sn_schema.extra_link_fail"]
 
 min_items:
   conf: |
@@ -85,7 +70,6 @@ min_items:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings: []
 
 min_items_error:
   conf: |
@@ -105,13 +89,6 @@ min_items_error:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings:
-    - - "Severity # violation"
-      - "Field # links"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_links > schema > properties > links > minItems"
-      - "Schema message # ['SPEC_1'] is too short"
-      - sphinx8: ["sn_schema.extra_link_fail"]
 
 max_items:
   conf: |
@@ -131,7 +108,6 @@ max_items:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings: []
 
 max_items_error:
   conf: |
@@ -153,13 +129,6 @@ max_items_error:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1, SPEC_2
-  warnings:
-    - - "Severity # violation"
-      - "Field # links"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_links > schema > properties > links > maxItems"
-      - "Schema message # ['SPEC_1', 'SPEC_2'] is too long"
-      - sphinx8: ["sn_schema.extra_link_fail"]
 
 contains:
   conf: |
@@ -178,7 +147,6 @@ contains:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings: []
 
 contains_error:
   conf: |
@@ -197,13 +165,6 @@ contains_error:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings:
-    - - "Severity # violation"
-      - "Field # links"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_links > schema > properties > links > contains"
-      - "Schema message # ['SPEC_1'] does not contain items matching the given schema"
-      - sphinx8: ["sn_schema.extra_link_fail"]
 
 min_contains:
   conf: |
@@ -223,7 +184,6 @@ min_contains:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings: []
 
 min_contains_error:
   conf: |
@@ -244,13 +204,6 @@ min_contains_error:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  warnings:
-    - - "Severity # violation"
-      - "Field # links"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_links > schema > properties > links > contains"
-      - "Schema message # Too few items match the given schema (expected at least 2 but only 1 matched)"
-      - sphinx8: ["sn_schema.extra_link_fail"]
 
 max_contains:
   conf: |
@@ -273,7 +226,6 @@ max_contains:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1, SPEC_2
-  warnings: []
 
 max_contains_error:
   conf: |
@@ -297,10 +249,3 @@ max_contains_error:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1, SPEC_2
-  warnings:
-    - - "Severity # violation"
-      - "Field # links"
-      - "Need path # IMPL_1"
-      - "Schema path # extra_links > schema > properties > links > contains"
-      - "Schema message # Schema message: Too many items match the given schema (expected at most 1)"
-      - sphinx8: ["sn_schema.extra_link_fail"]
