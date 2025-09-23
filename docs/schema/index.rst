@@ -93,6 +93,9 @@ The schema is configured in multiple places:
    from ``needs_extra_options`` and ``needs_extra_links`` as well as the core fields
    into the :ref:`needs_schema_definitions`.
 
+The next sections guides through an example and how do use the type and schema system to enforce
+constraints on need items and links between them.
+
 Modeling example
 ----------------
 
@@ -1051,3 +1054,16 @@ and warning systems.
 3. **Leverage network validation**: Replace complex Python logic with declarative schemas
 4. **Test incrementally**: Validate schemas work as expected before removing legacy rules
 5. **Update documentation**: Ensure team members understand the new validation approach
+
+Tests
+-----
+
+A multitude of test cases exist, that can also be used as a reference for how to use the
+type system and schema validation. Whithin the
+`YAML based fixtures <https://github.com/useblocks/sphinx-needs/tree/master/tests/schema/fixtures>`__
+you will always find full project examples.
+
+The tests use snapshot testing, and the expected validation results can be found
+`here <https://github.com/useblocks/sphinx-needs/blob/master/tests/schema/__snapshots__/test_schema.ambr>`__
+.
+
