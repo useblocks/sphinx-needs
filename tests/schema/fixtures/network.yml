@@ -347,7 +347,6 @@ link_chain_hop_1_min_contains_error:
                   $ref: "#/$defs/safe-spec"
               minContains: 1
 
-# TODO: the snpapshot ouput needs to be looked at, the nested 'Schema path' are not consistent
 link_chain_hop_2_min_contains_error:
   conf: |
     extensions = ["sphinx_needs"]
