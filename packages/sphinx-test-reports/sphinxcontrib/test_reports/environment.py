@@ -67,10 +67,11 @@ def safe_remove_file(filename, app):
     elif data_file.split(".")[-1] == "css" and hasattr(app.builder, "css_files"):
         css_files = [css.filename for css in app.builder.css_files]
         if static_data_file in css_files:
-            to_remove = [css for css in app.builder.css_files if css.filename == static_data_file]
+            to_remove = [
+                css for css in app.builder.css_files if css.filename == static_data_file
+            ]
             for css in to_remove:
                 app.builder.css_files.remove(css)
-
 
 
 # Base implementation from sphinxcontrib-images
