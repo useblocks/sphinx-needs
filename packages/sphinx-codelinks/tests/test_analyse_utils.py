@@ -900,3 +900,345 @@ def test_extract_rst(text, rst_markers, rst_text, positions):
     assert extracted_rst["rst_text"] == rst_text
     assert extracted_rst["start_idx"] == positions["start_idx"]
     assert extracted_rst["end_idx"] == positions["end_idx"]
+
+
+# ========== YAML-specific tests ==========
+
+
+@pytest.mark.parametrize(
+    ("code", "expected_structure"),
+    [
+        # Basic key-value pair
+        (
+            b"""
+                # Comment before key
+                database:
+                  host: localhost
+            """,
+            "database:",
+        ),
+        # Comment in nested structure
+        (
+            b"""
+                services:
+                  web:
+                    # Comment before image
+                    image: nginx:latest
+            """,
+            "image: nginx:latest",
+        ),
+        # Comment before list item
+        (
+            b"""
+                items:
+                  # Comment before list item
+                  - name: item1
+                    value: test
+            """,
+            "- name: item1",
+        ),
+        # Comment in document structure
+        (
+            b"""---
+# Comment in document
+version: "3.8"
+services:
+  app:
+    build: .
+            """,
+            "version:",
+        ),
+        # Flow mapping structure
+        (
+            b"""
+                # Comment before flow mapping
+                config: {debug: true, port: 8080}
+            """,
+            "config:",
+        ),
+    ],
+)
+def test_find_yaml_next_structure(code, expected_structure, init_yaml_tree_sitter):
+    """Test the find_yaml_next_structure function."""
+    parser, query = init_yaml_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    assert comments, "No comments found in the code"
+
+    next_structure = utils.find_yaml_next_structure(comments[0])
+    assert next_structure, "No next structure found"
+    structure_text = next_structure.text.decode("utf-8")
+    assert expected_structure in structure_text
+
+
+@pytest.mark.parametrize(
+    ("code", "expected_structure"),
+    [
+        # Comment associated with key-value pair
+        (
+            b"""
+                # Database configuration
+                database:
+                  host: localhost
+                  port: 5432
+            """,
+            "database:",
+        ),
+        # Comment associated with nested structure
+        (
+            b"""
+                services:
+                  web:
+                    # Web service image
+                    image: nginx:latest
+                    ports:
+                      - "80:80"
+            """,
+            "image: nginx:latest",
+        ),
+        # Comment associated with list item
+        (
+            b"""
+                dependencies:
+                  # First dependency
+                  - name: redis
+                    version: "6.0"
+                  - name: postgres
+                    version: "13"
+            """,
+            "- name: redis",
+        ),
+        # Comment inside parent structure
+        (
+            b"""
+                app:
+                  # Internal comment
+                  name: myapp
+                  version: "1.0"
+            """,
+            "name: myapp",
+        ),
+    ],
+)
+def test_find_yaml_associated_structure(
+    code, expected_structure, init_yaml_tree_sitter
+):
+    """Test the find_yaml_associated_structure function."""
+    parser, query = init_yaml_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    assert comments, "No comments found in the code"
+
+    associated_structure = utils.find_yaml_associated_structure(comments[0])
+    assert associated_structure, "No associated structure found"
+    structure_text = associated_structure.text.decode("utf-8")
+    assert expected_structure in structure_text
+
+
+@pytest.mark.parametrize(
+    ("code", "expected_results"),
+    [
+        # Multiple comments in sequence
+        (
+            b"""
+                # First comment
+                # Second comment
+                database:
+                  host: localhost
+            """,
+            ["database:", "database:"],  # Both comments should associate with database
+        ),
+        # Comments at different nesting levels
+        (
+            b"""
+                # Top level comment
+                services:
+                  web:
+                    # Nested comment
+                    image: nginx:latest
+            """,
+            ["services:", "image: nginx:latest"],
+        ),
+    ],
+)
+def test_multiple_yaml_comments(code, expected_results, init_yaml_tree_sitter):
+    """Test handling of multiple YAML comments in the same file."""
+    parser, query = init_yaml_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    comments.sort(key=lambda x: x.start_point.row)
+
+    assert len(comments) == len(expected_results), (
+        f"Expected {len(expected_results)} comments, found {len(comments)}"
+    )
+
+    for i, comment in enumerate(comments):
+        associated_structure = utils.find_yaml_associated_structure(comment)
+        assert associated_structure, f"No associated structure found for comment {i}"
+        structure_text = associated_structure.text.decode("utf-8")
+        assert expected_results[i] in structure_text
+
+
+@pytest.mark.parametrize(
+    ("code", "has_structure"),
+    [
+        # Comment at end of file with no following structure
+        (
+            b"""
+database:
+  host: localhost
+# End of file comment
+            """,
+            True,  # This will actually find the parent database structure
+        ),
+        # Comment with only whitespace after
+        (
+            b"""
+                # Lonely comment
+
+
+            """,
+            False,
+        ),
+        # Comment before valid structure
+        (
+            b"""
+                # Valid comment
+                key: value
+            """,
+            True,
+        ),
+    ],
+)
+def test_yaml_edge_cases(code, has_structure, init_yaml_tree_sitter):
+    """Test edge cases in YAML comment processing."""
+    parser, query = init_yaml_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+
+    if comments:
+        structure = utils.find_yaml_associated_structure(comments[0])
+        if has_structure:
+            assert structure, "Expected to find associated structure"
+        else:
+            assert structure is None, "Expected no associated structure"
+    else:
+        assert not has_structure, "No comments found but structure was expected"
+
+
+@pytest.mark.parametrize(
+    ("code", "expected_structures"),
+    [
+        # Simpler nested YAML structure
+        (
+            b"""# Global configuration
+version: "3.8"
+
+# Services section
+services:
+  web:
+    image: nginx:latest
+    # Port configuration
+    ports:
+      - "80:80"
+            """,
+            [
+                "version:",  # Global configuration
+                "services:",  # Services section
+                '- "80:80"',  # Port configuration
+            ],
+        ),
+    ],
+)
+def test_complex_yaml_structure(code, expected_structures, init_yaml_tree_sitter):
+    """Test complex nested YAML structures with multiple comments."""
+    parser, query = init_yaml_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    comments.sort(key=lambda x: x.start_point.row)
+
+    assert len(comments) == len(expected_structures), (
+        f"Expected {len(expected_structures)} comments, found {len(comments)}"
+    )
+
+    for i, comment in enumerate(comments):
+        associated_structure = utils.find_yaml_associated_structure(comment)
+        assert associated_structure, f"No associated structure found for comment {i}"
+        structure_text = associated_structure.text.decode("utf-8")
+        assert expected_structures[i] in structure_text, (
+            f"Expected '{expected_structures[i]}' in structure text: '{structure_text}'"
+        )
+
+
+@pytest.mark.parametrize(
+    ("code", "expected_type"),
+    [
+        # Block mapping pair
+        (
+            b"""
+                # Comment
+                key: value
+            """,
+            "block_mapping_pair",
+        ),
+        # Block sequence item
+        (
+            b"""
+                items:
+                  # Comment
+                  - item1
+            """,
+            "block_sequence_item",
+        ),
+        # Nested block mapping
+        (
+            b"""
+                services:
+                  # Comment
+                  web:
+                    image: nginx
+            """,
+            "block_mapping_pair",
+        ),
+    ],
+)
+def test_yaml_structure_types(code, expected_type, init_yaml_tree_sitter):
+    """Test that YAML structures return the correct node types."""
+    parser, query = init_yaml_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    assert comments, "No comments found"
+
+    structure = utils.find_yaml_associated_structure(comments[0])
+    assert structure, "No associated structure found"
+    assert structure.type == expected_type, (
+        f"Expected type {expected_type}, got {structure.type}"
+    )
+
+
+def test_yaml_document_structure(init_yaml_tree_sitter):
+    """Test YAML document structure handling."""
+    code = b"""---
+# Document comment
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+data:
+  # Data comment
+  config.yml: |
+    setting: value
+    """
+
+    parser, query = init_yaml_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    comments.sort(key=lambda x: x.start_point.row)
+
+    # Should find both comments
+    assert len(comments) >= 2, f"Expected at least 2 comments, found {len(comments)}"
+
+    # First comment should associate with apiVersion
+    first_structure = utils.find_yaml_associated_structure(comments[0])
+    assert first_structure, "No structure found for first comment"
+    first_text = first_structure.text.decode("utf-8")
+    assert "apiVersion:" in first_text
+
+    # Second comment should associate with config.yml
+    second_structure = utils.find_yaml_associated_structure(comments[1])
+    assert second_structure, "No structure found for second comment"
+    second_text = second_structure.text.decode("utf-8")
+    assert "config.yml:" in second_text
