@@ -8,6 +8,7 @@ from tree_sitter import Node as TreeSitterNode
 import tree_sitter_c_sharp
 import tree_sitter_cpp
 import tree_sitter_python
+import tree_sitter_yaml
 
 from sphinx_codelinks.analyse import utils
 from sphinx_codelinks.config import UNIX_NEWLINE
@@ -34,6 +35,14 @@ def init_python_tree_sitter() -> tuple[Parser, Query]:
 def init_csharp_tree_sitter() -> tuple[Parser, Query]:
     parsed_language = Language(tree_sitter_c_sharp.language())
     query = Query(parsed_language, utils.C_SHARP_QUERY)
+    parser = Parser(parsed_language)
+    return parser, query
+
+
+@pytest.fixture(scope="session")
+def init_yaml_tree_sitter() -> tuple[Parser, Query]:
+    parsed_language = Language(tree_sitter_yaml.language())
+    query = Query(parsed_language, utils.YAML_QUERY)
     parser = Parser(parsed_language)
     return parser, query
 
@@ -214,6 +223,64 @@ def test_find_associated_scope_csharp(code, result, init_csharp_tree_sitter):
     assert node.text
     func_def = node.text.decode("utf-8")
     assert func_def.startswith(result)
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        (
+            b"""
+                # @req-id: need_001
+                database:
+                  host: localhost
+                  port: 5432
+            """,
+            "database:",
+        ),
+        (
+            b"""
+                services:
+                  web:
+                    # @req-id: need_002
+                    image: nginx:latest
+                    ports:
+                      - "80:80"
+            """,
+            "image: nginx:latest",
+        ),
+        (
+            b"""
+                # @req-id: need_003
+                version: "3.8"
+                services:
+                  app:
+                    build: .
+            """,
+            "version:",
+        ),
+        (
+            b"""
+                items:
+                  # @req-id: need_004
+                  - name: item1
+                    value: test
+                  - name: item2
+                    value: test2
+            """,
+            "- name: item1",
+        ),
+    ],
+)
+def test_find_associated_scope_yaml(code, result, init_yaml_tree_sitter):
+    parser, query = init_yaml_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    node: TreeSitterNode | None = utils.find_associated_scope(
+        comments[0], CommentType.yaml
+    )
+    assert node
+    assert node.text
+    yaml_structure = node.text.decode("utf-8")
+    assert result in yaml_structure
 
 
 @pytest.mark.parametrize(
@@ -617,6 +684,48 @@ def test_python_comment(code, num_comments, result, init_python_tree_sitter):
 )
 def test_csharp_comment(code, num_comments, result, init_csharp_tree_sitter):
     parser, query = init_csharp_tree_sitter
+    comments: list[TreeSitterNode] = utils.extract_comments(code, parser, query)
+    comments.sort(key=lambda x: x.start_point.row)
+    assert len(comments) == num_comments
+    assert comments[0].text
+    assert comments[0].text.decode("utf-8") == result
+
+
+@pytest.mark.parametrize(
+    ("code", "num_comments", "result"),
+    [
+        (
+            b"""
+                # @req-id: need_001
+                database:
+                  host: localhost
+            """,
+            1,
+            "# @req-id: need_001",
+        ),
+        (
+            b"""
+                services:
+                  web:
+                    # @req-id: need_001
+                    image: nginx:latest
+            """,
+            1,
+            "# @req-id: need_001",
+        ),
+        (
+            b"""
+                # Top level comment
+                # @req-id: need_001
+                version: "3.8"
+            """,
+            2,
+            "# Top level comment",
+        ),
+    ],
+)
+def test_yaml_comment(code, num_comments, result, init_yaml_tree_sitter):
+    parser, query = init_yaml_tree_sitter
     comments: list[TreeSitterNode] = utils.extract_comments(code, parser, query)
     comments.sort(key=lambda x: x.start_point.row)
     assert len(comments) == num_comments

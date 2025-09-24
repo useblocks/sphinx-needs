@@ -9,6 +9,7 @@ COMMENT_FILETYPE = {
     "cpp": ["c", "ci", "cpp", "cc", "cxx", "h", "hpp", "hxx", "hh", "ihl"],
     "python": ["py"],
     "cs": ["cs"],
+    "yaml": ["yml", "yaml"],
 }
 
 
@@ -16,6 +17,7 @@ class CommentType(str, Enum):
     python = "python"
     cpp = "cpp"
     cs = "cs"
+    yaml = "yaml"
 
 
 class SourceDiscoverSectionConfigType(TypedDict, total=False):
