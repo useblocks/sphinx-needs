@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758204186146,
+  "lastUpdate": 1758741314291,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14184,6 +14184,42 @@ window.BENCHMARK_DATA = {
             "value": 60.656154883000006,
             "unit": "s",
             "extra": "Commit: 4d4e790f18e8f37cd614b75a5d415a01a9adcf31\nBranch: master\nTime: 2025-09-18T16:01:01+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "38d7abf141f561bbeb4c9b4e28d741f2cc68a2da",
+          "message": "♻️ Allow for typed `needs_extra_options` fields (#1516)\n\nObeying e.g.\n\n```python\nneeds_extra_options = [\n\t{\"name\": \"field1\", \"schema\": {\"type\": \"array\", \"items\": {\"type\": \"string\"}}}\n]\n```\n\nEssentially we change the logics of needs processing, in particular to\nhandle dynamic/variant functions for these fields\n\n1. After all configuration is finalised, and extra option set, create a\n\"central\" FieldsSchema to define core properties of each field on a need\n    - This includes identifying all defaults / predicate defaults\n3. When ingesting a single need via the `add_need` function (from a\ndirective or needs.json)\na. attempt to coersce to the correct type AND parse any variant/dynamic\nfunction\nb. Apply defaults, if the field was not given (i.e. it is `None`) and\ndefaults are allowed\nc. Store the need, with dynamic/variant functions stored separately, for\nlater resolution\n4. After all needs are ingested\n   a. Apply all needextend \nb. Loop through all needs, resolve dynamic/variant functions and set the\nfinal value of the field\n\n\n## Additional breaking change\n\nvariant functions must now be wrapped in `<<...>>`, and the delimiter\ncan only be `,` not `;`\nThey are also allowed as items of arrays, e.g.\n`a,<<predicate:value1,value2>>,b`\n\nIf any field has the wrong type, or cannot be coerced to the correct\ntype, creation of the entire need is currently aborted.\n\nIf any dynamic function or variant function has invalid syntax, creation\nof the entire need is currently aborted.\n\nThe `generate_need` function now requires you to parse it the\n`FieldsSchema`\n\nCurrently, if a user modifies a need field value \"manually\" that\ninitially contained dynamic/variant functions, before these have been\nresolved, then this modification will be overridden, e.g.\n\n```python\ndata = SphinxNeedsData(env)\nneeds = data.get_needs_mutable()\nneeds[\"id1\"][\"my_field\"] = \"my_value\"\n```\n\nThere is also, currently, no type checking for manually modifying a need\nfield value.\nNote, you could add code to `NeedItem.__setitem__` to do some extra\nlogic, if we want to be strict about this,\nalthough it would still be a problem for `array` types, e.g.\n`needs[\"id1\"][\"my_array_field\"][0] = \"my_value\"`;\nto overcome this, you would want to have the array be `tuple` rather\nthan `list`\n\n----\n\n## Todos / Thoughts\n\n- should extra fields be nullable by default, and can we add\nconfiguration for this, i.e. `schema.nullable = true`\n- remove type coercions from schema checking (also handle null values\nand the fact that type errors now lead to need not be created)\n- do we do type coercion of values returned from dynamic/variant\nfunctions?\n- e.g. `calc_sum` returns a `float`, if the field is of `string` type do\nwe convert it to a string, as is done previously\n- Previously, a link default could be like `[\"SPEC_2\",\n\"[[copy('link1')]]\"]`, i.e. it can be a list with items that are dynamic\nfunctions, but now we only account for either a list with no dynamic\nfunctions, or a string that can be coerced, e.g.\n`\"SPEC_2,[[copy('link1')]]\"`. Should we still account for this? also I\nguess this could apply to reading in from `needs.json`\n- this is now fixed for link fields, and a todo added for standard\nfields\n- how to warn/guide users to fix their variant functions to the new\nsyntax\n- Add docs / tests for variants in arrays, e.g. `a,<<test:a,b>>,c`, also\ntests for different field types\n- consider adding a configuration like\n`needs_external_allow_type_coercion` /\n`needs_import_allow_type_coercion`, or also per item, to determine if we\nallow for need field values coming from `needs.json` to be coerced from\nstrings to the correct type and also have dynamic/variant functions\n  - note currently this is always `True`, as was the case previously\n- Run checks against `needs_constraints`, `needs_tags`, `needs_statuses`\nafter the value has been resolved, i.e. after needextend and after\ndynamic/variant function resolution\n- or should we deprecate these configs, in favour of the new schema\nvalidation methodology\n- deprecate `constraints` checking, in favour of the new schema\nvalidation methodology? or merge it together some way? see also #1322\n- More tests of new types\n\n---------\n\nCo-authored-by: Marco Heinemann <marco.heinemann@useblocks.com>",
+          "timestamp": "2025-09-24T21:13:09+02:00",
+          "tree_id": "ae6e464c8a342790615a09bb98ebf7df1d50ed5f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/38d7abf141f561bbeb4c9b4e28d741f2cc68a2da"
+        },
+        "date": 1758741304483,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17559036500000502,
+            "unit": "s",
+            "extra": "Commit: 38d7abf141f561bbeb4c9b4e28d741f2cc68a2da\nBranch: master\nTime: 2025-09-24T21:13:09+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.44724261100001,
+            "unit": "s",
+            "extra": "Commit: 38d7abf141f561bbeb4c9b4e28d741f2cc68a2da\nBranch: master\nTime: 2025-09-24T21:13:09+02:00"
           }
         ]
       }
