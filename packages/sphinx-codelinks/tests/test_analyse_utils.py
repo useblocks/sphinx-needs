@@ -1242,3 +1242,134 @@ data:
     assert second_structure, "No structure found for second comment"
     second_text = second_structure.text.decode("utf-8")
     assert "config.yml:" in second_text
+
+
+def test_yaml_inline_comments_current_behavior(init_yaml_tree_sitter):
+    """Test improved behavior of inline comments in YAML after the fix."""
+    code = b"""key1: value1  # inline comment about key1
+key2: value2
+key3: value3  # inline comment about key3
+"""
+
+    parser, query = init_yaml_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    comments.sort(key=lambda x: x.start_point.row)
+
+    assert len(comments) == 2, f"Expected 2 comments, found {len(comments)}"
+
+    # Fixed behavior: inline comment about key1 now correctly associates with key1
+    first_structure = utils.find_yaml_associated_structure(comments[0])
+    assert first_structure, "No structure found for first comment"
+    first_text = first_structure.text.decode("utf-8")
+    assert "key1:" in first_text, f"Expected 'key1:' in '{first_text}'"
+
+    # Fixed behavior: inline comment about key3 now correctly associates with key3
+    second_structure = utils.find_yaml_associated_structure(comments[1])
+    assert second_structure, "No structure found for second comment"
+    second_text = second_structure.text.decode("utf-8")
+    assert "key3:" in second_text, f"Expected 'key3:' in '{second_text}'"
+
+
+@pytest.mark.parametrize(
+    ("code", "expected_associations"),
+    [
+        # Basic inline comment case
+        (
+            b"""key1: value1  # comment about key1
+key2: value2
+            """,
+            ["key1:"],  # Now correctly associates with key1
+        ),
+        # Multiple inline comments
+        (
+            b"""database:
+  host: localhost  # production server
+  port: 5432       # default postgres port
+  user: admin
+            """,
+            [
+                "host: localhost",
+                "port: 5432",
+            ],  # Now correctly associates with the right structures
+        ),
+    ],
+)
+def test_yaml_inline_comments_fixed_behavior(
+    code, expected_associations, init_yaml_tree_sitter
+):
+    """Test that inline comments now correctly associate with the structure they comment on."""
+    parser, query = init_yaml_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    comments.sort(key=lambda x: x.start_point.row)
+
+    assert len(comments) == len(expected_associations), (
+        f"Expected {len(expected_associations)} comments, found {len(comments)}"
+    )
+
+    for i, comment in enumerate(comments):
+        structure = utils.find_yaml_associated_structure(comment)
+        assert structure, f"No structure found for comment {i}"
+        structure_text = structure.text.decode("utf-8")
+        assert expected_associations[i] in structure_text, (
+            f"Expected '{expected_associations[i]}' in structure text: '{structure_text}'"
+        )
+
+
+@pytest.mark.parametrize(
+    ("code", "expected_associations"),
+    [
+        # Inline comments with list items
+        (
+            b"""items:
+  - name: item1  # first item
+  - name: item2  # second item
+            """,
+            [
+                "name: item1",
+                "name: item2",
+            ],  # The inline comment finds the key-value pair within the list item
+        ),
+        # Mixed inline and block comments
+        (
+            b"""# Block comment for database
+database:
+  host: localhost  # inline comment for host
+  port: 5432
+  # Block comment for user
+  user: admin
+            """,
+            ["database:", "host: localhost", "user: admin"],
+        ),
+        # Inline comments in nested structures
+        (
+            b"""services:
+  web:
+    image: nginx  # web server image
+    ports:
+      - "80:80"   # http port
+            """,
+            ["image: nginx", '- "80:80"'],
+        ),
+    ],
+)
+def test_yaml_inline_comments_comprehensive(
+    code, expected_associations, init_yaml_tree_sitter
+):
+    """Comprehensive test for inline comment behavior in various YAML structures."""
+    parser, query = init_yaml_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    comments.sort(key=lambda x: x.start_point.row)
+
+    assert len(comments) == len(expected_associations), (
+        f"Expected {len(expected_associations)} comments, found {len(comments)}"
+    )
+
+    for i, comment in enumerate(comments):
+        structure = utils.find_yaml_associated_structure(comment)
+        assert structure, (
+            f"No structure found for comment {i}: '{comment.text.decode('utf-8')}'"
+        )
+        structure_text = structure.text.decode("utf-8")
+        assert expected_associations[i] in structure_text, (
+            f"Comment {i} '{comment.text.decode('utf-8')}' -> Expected '{expected_associations[i]}' in '{structure_text}'"
+        )

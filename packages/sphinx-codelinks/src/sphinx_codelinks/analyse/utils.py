@@ -181,9 +181,33 @@ def find_yaml_next_structure(node: TreeSitterNode) -> TreeSitterNode | None:
     return None
 
 
+def find_yaml_prev_sibling_on_same_row(node: TreeSitterNode) -> TreeSitterNode | None:
+    """Find a previous named sibling that is on the same row as the comment."""
+    comment_row = node.start_point.row
+    current = node.prev_named_sibling
+
+    while current:
+        # Check if this sibling ends on the same row as the comment starts
+        # This indicates it's an inline comment
+        if current.end_point.row == comment_row:
+            return current
+        # If we find a sibling that ends before the comment row, we can stop
+        # as we won't find any siblings on the same row going backwards
+        if current.end_point.row < comment_row:
+            break
+        current = current.prev_named_sibling
+
+    return None
+
+
 def find_yaml_associated_structure(node: TreeSitterNode) -> TreeSitterNode | None:
     """Find the YAML structure (key-value pair, list item, etc.) associated with a comment."""
-    # First, try to find the next named sibling (structure after the comment)
+    # First, check if this is an inline comment by looking for a previous sibling on the same row
+    prev_sibling_same_row = find_yaml_prev_sibling_on_same_row(node)
+    if prev_sibling_same_row:
+        return prev_sibling_same_row
+
+    # If no previous sibling on same row, try to find the next named sibling (structure after the comment)
     structure = find_yaml_next_structure(node)
     if structure:
         return structure
