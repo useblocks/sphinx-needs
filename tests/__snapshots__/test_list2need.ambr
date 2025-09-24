@@ -11,7 +11,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -42,7 +42,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -121,7 +121,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -132,7 +132,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -210,7 +210,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -221,7 +221,7 @@
       'created_at': '',
       'docname': 'options',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -274,7 +274,7 @@
       'tags': list([
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -299,7 +299,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -310,7 +310,7 @@
       'created_at': '',
       'docname': 'options',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -366,7 +366,7 @@
         'tag3',
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -391,7 +391,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -402,7 +402,7 @@
       'created_at': '',
       'docname': 'options',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -458,7 +458,7 @@
       'tags': list([
       ]),
       'template': None,
-      'title': 'Link example ',
+      'title': 'Link example',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -483,7 +483,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -494,7 +494,7 @@
       'created_at': '',
       'docname': 'options',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -573,7 +573,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -584,7 +584,7 @@
       'created_at': '',
       'docname': 'links_down',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -662,7 +662,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -673,7 +673,7 @@
       'created_at': '',
       'docname': 'links_down',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -751,7 +751,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -762,7 +762,7 @@
       'created_at': '',
       'docname': 'links_down',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -840,7 +840,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -851,7 +851,7 @@
       'created_at': '',
       'docname': 'global_tags',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -907,7 +907,7 @@
         'global_tag3',
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -932,7 +932,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -943,7 +943,7 @@
       'created_at': '',
       'docname': 'global_tags',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -1001,7 +1001,7 @@
         'global_tag3',
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -1026,7 +1026,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -1037,7 +1037,7 @@
       'created_at': '',
       'docname': 'global_tags',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -1095,7 +1095,7 @@
         'global_tag3',
       ]),
       'template': None,
-      'title': 'Link example ',
+      'title': 'Link example',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -1120,7 +1120,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -1131,7 +1131,7 @@
       'created_at': '',
       'docname': 'global_tags',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -1212,7 +1212,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -1233,7 +1233,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -1312,7 +1312,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -1326,7 +1326,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -1404,7 +1404,7 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -1415,7 +1415,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,

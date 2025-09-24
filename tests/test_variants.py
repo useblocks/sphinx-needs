@@ -28,7 +28,7 @@ from sphinx_needs.variants import VariantFunctionParsed, match_variants
     ],
 )
 def test_parse_variants(text, expected_exprs, expected_final_value):
-    variant = VariantFunctionParsed.from_string(text)
+    variant = VariantFunctionParsed.from_string(text, allow_semicolon=True)
     assert variant.expressions == expected_exprs
     assert variant.final_value == expected_final_value
 
@@ -65,9 +65,9 @@ def test_variant_options_html(test_app, snapshot):
     app.build()
 
     warnings = strip_colors(app._warning.getvalue()).splitlines()
-    print(warnings)
+    # print(warnings)
     assert warnings == [
-        f"{Path(str(app.srcdir)) / 'index.rst'}:29: WARNING: Error in variant expression 'tag_c': name 'tag_c' is not defined [needs.variant]"
+        f"{Path(str(app.srcdir)) / 'index.rst'}:29: WARNING: Error while resolving dynamic values for field 'status', of need 'SPEC_004': name 'tag_c' is not defined [needs.dynamic_function]"
     ]
 
     needs = json.loads(Path(app.outdir, "needs.json").read_text())
@@ -105,6 +105,9 @@ def test_empty_variant_options_html(test_app, snapshot):
     app = test_app
     app.build()
 
+    warnings = strip_colors(app._warning.getvalue()).splitlines()
+    assert warnings == []
+
     needs = json.loads(Path(app.outdir, "needs.json").read_text())
     assert needs == snapshot(
         exclude=props("created", "project", "creator", "needs_schema")
@@ -113,7 +116,3 @@ def test_empty_variant_options_html(test_app, snapshot):
     html = Path(app.outdir, "index.html").read_text()
     assert "Empty Variant Options" in html
     assert "EMPTY_VAR_003" in html
-    assert (
-        '<div class="line"><span class="needs_status"><span class="needs_label">status: </span><span '
-        'class="needs_data">[tag_a]:open, unknown</span></span></div>' in html
-    )

@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import chain
-from typing import Any, Literal, Protocol, overload, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, overload, runtime_checkable
 
 from sphinx_needs.data import (
     NeedsContentInfoType,
@@ -21,6 +21,13 @@ from sphinx_needs.data import (
     NeedsPartType,
     NeedsSourceInfoType,
 )
+
+if TYPE_CHECKING:
+    from sphinx_needs.needs_schema import (
+        AllowedTypes,
+        FieldFunctionArray,
+        LinksFunctionArray,
+    )
 
 
 @runtime_checkable
@@ -241,6 +248,7 @@ class NeedItem:
         "_constraint_results",
         "_content",
         "_core",
+        "_dynamic_fields",
         "_extras",
         "_links",
         "_modifications",
@@ -256,12 +264,14 @@ class NeedItem:
         source: NeedItemSourceProtocol | None,
         content: NeedsContent,
         core: NeedsInfoType,
-        extras: dict[str, str],
+        extras: dict[str, AllowedTypes | None],
         links: dict[str, list[str]],
         backlinks: dict[str, list[str]] | None = None,
         parts: Sequence[NeedPartData] = (),
         modifications: Sequence[NeedModification] = (),
         constraint_results: None | NeedConstraintResults = None,
+        dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray]
+        | None = None,
         _validate: bool = True,
     ) -> None:
         """Initialize the NeedItem instance.
@@ -307,8 +317,13 @@ class NeedItem:
                 raise TypeError(
                     "NeedItem modifications must be a sequence of NeedModification instances."
                 )
+            if not isinstance(dynamic_fields, None | dict):
+                raise TypeError("NeedItem dynamic_fields must be a dictionary or None.")
 
         # set internal fields
+        self._dynamic_fields = (
+            dynamic_fields.copy() if dynamic_fields is not None else {}
+        )
         self._core = core.copy()
         self._extras = extras.copy()
         self._links = links.copy()
@@ -431,6 +446,11 @@ class NeedItem:
         yield from self._parts.values()
 
     @property
+    def has_dynamic_fields(self) -> bool:
+        """Return True if the need item has dynamic fields, False otherwise."""
+        return bool(self._dynamic_fields)
+
+    @property
     def modifications(self) -> tuple[NeedModification, ...]:
         """Return the modifications of the need item."""
         return self._modifications
@@ -442,11 +462,11 @@ class NeedItem:
 
     def __repr__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r}, source={self._source!r}, content={self._content!r}, parts={self._parts!r}, modifications={self._modifications!r})"
+        return f"NeedItem(core={self._core!r}, extras={self._extras!r}, links={self._links!r}, backlinks={self._backlinks!r}, source={self._source!r}, content={self._content!r}, parts={self._parts!r}, modifications={self._modifications!r}, dynamic_fields={self._dynamic_fields!r})"
 
     def __str__(self) -> str:
         """Return a string representation of the NeedItem."""
-        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s}, source={self._source!s}, content={self._content!s}, parts={self._parts!s}, modifications={self._modifications!s})"
+        return f"NeedItem(core={self._core!s}, extras={self._extras!s}, links={self._links!s}, backlinks={self._backlinks!s}, source={self._source!s}, content={self._content!s}, parts={self._parts!s}, modifications={self._modifications!s}, dynamic_fields={self._dynamic_fields!s})"
 
     def copy(self) -> NeedItem:
         """Return a copy of the NeedItem."""
@@ -460,6 +480,7 @@ class NeedItem:
             parts=list(self._parts.values()),
             modifications=self._modifications,
             constraint_results=self._constraint_results,
+            dynamic_fields=self._dynamic_fields,
             _validate=False,
         )
 
@@ -477,6 +498,7 @@ class NeedItem:
             and self._parts == other._parts
             and self._modifications == other._modifications
             and self._constraint_results == other._constraint_results
+            and self._dynamic_fields == other._dynamic_fields
         )
 
     def __ne__(self, other: object) -> bool:
@@ -714,7 +736,7 @@ class NeedItem:
             if (part_item := self.get_part_item(part.id)) is not None:
                 yield part_item
 
-    def get_extra(self, key: str) -> str:
+    def get_extra(self, key: str) -> AllowedTypes | None:
         """Get an extra by key.
 
         :raises KeyError: If the key is not an extra.
@@ -725,7 +747,7 @@ class NeedItem:
         """Yield all extra keys."""
         yield from self._extras.keys()
 
-    def iter_extra_items(self) -> Iterable[tuple[str, str]]:
+    def iter_extra_items(self) -> Iterable[tuple[str, AllowedTypes | None]]:
         """Yield all extras as key-value pairs."""
         yield from self._extras.items()
 

@@ -65,7 +65,7 @@ needs_global_options = {
     "tags": {
         "predicates": [
             ('status == "implemented"', ["a", "b"]),
-            ('status == "closed"', ["c"]),
+            ('status == "closed"', ["c", "[[copy('status')]]"]),
         ],
         "default": ["d"],
     },

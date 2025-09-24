@@ -63,3 +63,8 @@ basic test
    :id: IMPL_SAFE
    :asil: A
    :links: SPEC_SAFE_UNSAFE_FEAT
+
+.. impl:: Impl for array test
+   :id: IMPL_ARRAY_TEST
+   :departments: dep1, dep2, dep3
+   :scores: 0.8, 0.9, 1_000.5

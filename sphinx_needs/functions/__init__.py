@@ -8,11 +8,8 @@ from sphinx_needs.functions.common import (
 )
 from sphinx_needs.functions.functions import (  # noqa: F401
     DynamicFunction,
-    FunctionParsingException,
     execute_func,
     find_and_replace_node_content,
-    resolve_dynamic_values,
-    resolve_variants_options,
 )
 
 NEEDS_COMMON_FUNCTIONS: list[DynamicFunction] = [

@@ -1,3 +1,18 @@
+"""
+Types and violations for schema validation.
+
+There are 3 places the types are used:
+1. In the extra option and extra links definition.
+2. For the JSON schema coming from schema_definitions and schema_definitions_from_json configs.
+3. For typeguard runtime type checking of the loaded JSON schema config.
+
+All below types have the field 'type' set as required field.
+For case 1. this is important, as it is the primar type information source and users *have* to
+provide it.
+For 2. and 3. it is not required. If it is not given, it is injected before the typeguard check
+occurs. If it is given, the types have to match what is provided in 1.
+"""
+
 from __future__ import annotations
 
 from enum import Enum, IntEnum
@@ -24,8 +39,7 @@ MAX_NESTED_NETWORK_VALIDATION_LEVELS: Final[int] = 4
 
 
 class ExtraOptionStringSchemaType(TypedDict):
-    # string is the default type and injected automatically
-    type: NotRequired[Literal["string"]]
+    type: Literal["string"]
     """Extra option string type."""
     minLength: NotRequired[int]
     """Minimum length of the string."""
@@ -49,16 +63,11 @@ class ExtraOptionStringSchemaType(TypedDict):
     """A list of allowed values for the string."""
     const: NotRequired[str]
     """A constant value that the string must match."""
-    default: NotRequired[str]
-    """Default value used in IDE scenarios for autocompletion."""
 
 
 class ExtraOptionNumberSchemaType(TypedDict):
     """
     Float extra option schema.
-
-    The option will still be stored as a string in Sphinx-Needs,
-    but during schema validation, the value will be coerced to the given type.
 
     Python reads in JSON numbers as floats. The jsonschema library
     handles precision issues with floats using a tolerance-based approach.
@@ -80,17 +89,10 @@ class ExtraOptionNumberSchemaType(TypedDict):
     """A list of allowed values."""
     const: NotRequired[float]
     """A constant value that the number must match."""
-    default: NotRequired[float]
-    """Default value used in IDE scenarios for autocompletion."""
 
 
 class ExtraOptionIntegerSchemaType(TypedDict):
-    """
-    Integer extra option schema.
-
-    The option will still be stored as a string in Sphinx-Needs,
-    but during schema validation, the value will be coerced to the given type.
-    """
+    """Integer extra option schema."""
 
     type: Literal["integer"]
     """Extra option integer type."""
@@ -108,8 +110,6 @@ class ExtraOptionIntegerSchemaType(TypedDict):
     """A list of allowed values."""
     const: NotRequired[int]
     """A constant value that the integer must match."""
-    default: NotRequired[int]
-    """Default value used in IDE scenarios for autocompletion."""
 
 
 class ExtraOptionBooleanSchemaType(TypedDict):
@@ -128,8 +128,6 @@ class ExtraOptionBooleanSchemaType(TypedDict):
     """Extra option boolean type."""
     const: NotRequired[bool]
     """A constant value that the integer must match."""
-    default: NotRequired[bool]
-    """Default value used in IDE scenarios for autocompletion."""
 
 
 RefItemType = TypedDict(
@@ -167,18 +165,20 @@ class ExtraOptionMultiValueSchemaType(TypedDict):
     Current SN use case are tags.
     """
 
-    type: NotRequired[Literal["array"]]
+    type: Literal["array"]
     """Multi value extra option such as a list of strings, integers, numbers, or booleans."""
-    items: NotRequired[ExtraOptionBaseSchemaTypes]
-    """Schema constraints for link strings."""
+    items: ExtraOptionBaseSchemaTypes
+    """Schema constraints for all items."""
     minItems: NotRequired[int]
     """Minimum number of items in the array."""
     maxItems: NotRequired[int]
     """Maximum number of items in the array."""
-    splitChar: NotRequired[str]
-    """Split character for the array items, defaults to ','."""
-    default: NotRequired[list[str] | list[int] | list[float] | list[bool]]
-    """Default value used in IDE scenarios for autocompletion."""
+    contains: NotRequired[ExtraOptionBaseSchemaTypes]
+    """Schema constraints for some items."""
+    minContains: NotRequired[int]
+    """Minimum number of contains items in the array."""
+    maxContains: NotRequired[int]
+    """Maximum number of contains items in the array."""
 
 
 ExtraOptionSchemaTypes = ExtraOptionBaseSchemaTypes | ExtraOptionMultiValueSchemaType
@@ -188,8 +188,7 @@ ExtraOptionSchemaTypes = ExtraOptionBaseSchemaTypes | ExtraOptionMultiValueSchem
 class ExtraLinkItemSchemaType(TypedDict):
     """Items in array of link string ids"""
 
-    # links are always string and injected automatically
-    type: NotRequired[Literal["string"]]
+    type: Literal["string"]
     """Extra link string type, can only be string and is injected automatically."""
     minLength: NotRequired[int]
     """Minimum string length of each outgoing link id."""
@@ -202,7 +201,7 @@ class ExtraLinkItemSchemaType(TypedDict):
 class ExtraLinkSchemaType(TypedDict):
     """Defines a schema for unresolved need extra string links."""
 
-    type: NotRequired[Literal["array"]]
+    type: Literal["array"]
     """Type for extra links, can only be array and is injected automatically."""
     items: NotRequired[ExtraLinkItemSchemaType]
     """Schema constraints that applies to all items in the need id string list."""
@@ -232,7 +231,7 @@ class NeedFieldsSchemaType(AllOfSchemaType):
     Intented to validate multiple fields on a need type.
     """
 
-    type: NotRequired[Literal["object"]]
+    type: Literal["object"]
     """All fields of a need stored in a dict (not required because it's the default)."""
     properties: NotRequired[dict[str, ExtraOptionAndLinkSchemaTypes]]
     required: NotRequired[list[str]]
@@ -249,8 +248,6 @@ class MessageRuleEnum(str, Enum):
 
     cfg_schema_error = "cfg_schema_error"
     """The user provided schema is invalid."""
-    extra_option_type_error = "extra_option_type_error"
-    """A need extra option cannot be coerced to the type specified in the schema."""
     extra_option_success = "extra_option_success"
     """Global extra option validation was successful."""
     extra_option_fail = "extra_option_fail"
@@ -345,7 +342,6 @@ Severity levels that can be set in the user provided schemas and for the schema_
 
 MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
     MessageRuleEnum.cfg_schema_error: SeverityEnum.config_error,
-    MessageRuleEnum.extra_option_type_error: SeverityEnum.violation,  # cannot be changed by user
     MessageRuleEnum.extra_option_success: SeverityEnum.none,
     MessageRuleEnum.extra_option_fail: SeverityEnum.violation,  # cannot be changed by user
     MessageRuleEnum.extra_link_success: SeverityEnum.none,
@@ -381,7 +377,7 @@ class ResolvedLinkSchemaType(TypedDict, total=True):
     of the linked needs.
     """
 
-    type: NotRequired[Literal["array"]]
+    type: Literal["array"]
     """Resolved needs list, can only be array and is injected automatically."""
     items: NotRequired[ValidateSchemaType]
     """Schema applied to all resolved linked needs."""
@@ -409,8 +405,8 @@ class SchemasRootType(TypedDict):
     """Computed index in schemas list for logging."""
     id: NotRequired[str]
     """String id of the schema entry, used for logging."""
-    severity: NotRequired[Literal["violation", "warning", "info"]]
-    """Severity of the schema, defaults to violation."""
+    severity: Literal["violation", "warning", "info"]
+    """Severity of the schema, defaults to violation. Injected if not given."""
     message: NotRequired[str]
     """Custom message to be shown in case of validation errors."""
     select: NotRequired[RefItemType | AllOfSchemaType | NeedFieldsSchemaType]
@@ -418,7 +414,7 @@ class SchemasRootType(TypedDict):
     validate: ValidateSchemaType
     """
     Validation schema for the selected needs.
-    
+
     Can be either a need-local schema or a network schema that requires resolving all need links
     before validating.
     """

@@ -6,9 +6,10 @@ import re
 import warnings
 from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
+from copy import copy, deepcopy
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, TypedDict, cast
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -18,13 +19,18 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, NeedsPartType, SphinxNeedsData
+from sphinx_needs.data import (
+    NeedsInfoType,
+    NeedsPartType,
+    SphinxNeedsData,
+)
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
 from sphinx_needs.exceptions import InvalidNeedException
 from sphinx_needs.filter_common import (
     PredicateContextData,
     apply_default_predicate,
 )
+from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import (
     NeedItem,
@@ -33,9 +39,20 @@ from sphinx_needs.need_item import (
     NeedPartData,
     NeedsContent,
 )
+from sphinx_needs.needs_schema import (
+    AllowedTypes,
+    FieldFunctionArray,
+    FieldLiteralValue,
+    FieldSchema,
+    FieldsSchema,
+    LinkSchema,
+    LinksFunctionArray,
+    LinksLiteralValue,
+)
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import jinja_parse
+from sphinx_needs.variants import VariantFunctionParsed
 from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
@@ -51,6 +68,7 @@ _deprecated_kwargs = {
 
 def generate_need(
     needs_config: NeedsSphinxConfig,
+    needs_schema: FieldsSchema,
     need_type: str,
     title: str,
     *,
@@ -69,8 +87,8 @@ def generate_need(
     signature: None | str = None,
     sections: Sequence[str] | None = None,
     jinja_content: bool | None = None,
-    hide: None | bool = None,
-    collapse: None | bool = None,
+    hide: None | bool | str = None,
+    collapse: None | bool | str = None,
     style: None | str = None,
     layout: None | str = None,
     template_root: Path | None = None,
@@ -82,7 +100,7 @@ def generate_need(
     external_url: str | None = None,
     external_css: str = "external_link",
     full_title: str | None = None,
-    **kwargs: str,
+    **kwargs: Any,
 ) -> NeedItem:
     """Creates a validated need data entry, without adding it to the project.
 
@@ -197,158 +215,265 @@ def generate_need(
             f"Given ID {need_id!r} does not match configured regex {needs_config.id_regex!r}",
         )
 
-    # validate status
-    if needs_config.statuses and status not in [
-        stat["name"] for stat in needs_config.statuses
-    ]:
+    # TODO allow this to be configurable, for if external/import source
+    allow_coercion = True
+
+    title_converted = _convert_type_core("title", title, needs_schema, allow_coercion)
+    status_converted = _convert_type_core(
+        "status", status, needs_schema, allow_coercion
+    )
+    tags_converted = _convert_type_core("tags", tags, needs_schema, allow_coercion)
+    constraints_converted = _convert_type_core(
+        "constraints", constraints, needs_schema, allow_coercion
+    )
+    layout_converted = _convert_type_core(
+        "layout", layout, needs_schema, allow_coercion
+    )
+    style_converted = _convert_type_core("style", style, needs_schema, allow_coercion)
+    hide_converted = _convert_type_core("hide", hide, needs_schema, allow_coercion)
+    collapse_converted = _convert_type_core(
+        "collapse", collapse, needs_schema, allow_coercion
+    )
+    template_converted = _convert_type_core(
+        "template", template, needs_schema, allow_coercion
+    )
+    pre_template_converted = _convert_type_core(
+        "pre_template", pre_template, needs_schema, allow_coercion
+    )
+    post_template_converted = _convert_type_core(
+        "post_template", post_template, needs_schema, allow_coercion
+    )
+
+    if (
+        needs_config.statuses
+        and isinstance(status_converted, FieldLiteralValue)
+        and status_converted.value
+        not in [stat["name"] for stat in needs_config.statuses]
+    ):
+        # TODO this check should be later in processing, once we have resolved any dynamic functions
         raise InvalidNeedException(
-            "invalid_status", f"Status {status!r} not in 'needs_statuses'."
+            "invalid_status",
+            f"Status {status_converted.value!r} not in 'needs_statuses'.",
         )
 
-    # validate tags
-    tags = (
-        [v for v, _ in _split_list_with_dyn_funcs(tags, location)]
-        if tags is not None
-        else None
-    )
     if (
-        tags is not None
-        and needs_config.tags
-        and (unknown_tags := set(tags) - {t["name"] for t in needs_config.tags})
+        needs_config.tags
+        and isinstance(tags_converted, FieldLiteralValue)
+        and isinstance(tags_converted.value, Iterable)
+        and (
+            unknown_tags := set(tags_converted.value)
+            - {t["name"] for t in needs_config.tags}
+        )
     ):
+        # TODO this check should be later in processing, once we have resolved any dynamic functions
         raise InvalidNeedException(
             "invalid_tags", f"Tags {unknown_tags!r} not in 'needs_tags'."
         )
 
-    # validate constraints
-    constraints = (
-        [v for v, _ in _split_list_with_dyn_funcs(constraints, location)]
-        if constraints is not None
-        else None
-    )
-    if constraints is not None and (
-        unknown_constraints := set(constraints) - set(needs_config.constraints)
+    if (
+        isinstance(constraints_converted, FieldLiteralValue)
+        and isinstance(constraints_converted.value, Iterable)
+        and (
+            unknown_constraints := set(constraints_converted.value)
+            - set(needs_config.constraints)
+        )
     ):
+        # TODO this check should be later in processing, once we have resolved any dynamic functions
         raise InvalidNeedException(
             "invalid_constraints",
             f"Constraints {unknown_constraints!r} not in 'needs_constraints'.",
         )
 
-    extras_no_defaults = {
-        # note, for backward-compatibility currently we convert all extra values to strings,
-        # and warn in the import/external need code if they are not of type str
-        key: str(kwargs[key]) if key in kwargs else None
-        for key in needs_config.extra_options
-    }
-    links_no_defaults = {
-        li["option"]: [
-            v for v, _ in _split_list_with_dyn_funcs(kwargs[li["option"]], location)
-        ]
-        if li["option"] in kwargs
-        else None
-        for li in needs_config.extra_links
-    }
+    extras_no_defaults: dict[str, None | FieldLiteralValue | FieldFunctionArray] = {}
+    for extra_field in needs_schema.iter_extra_fields():
+        if extra_field.name not in kwargs:
+            extras_no_defaults[extra_field.name] = None
+        else:
+            try:
+                extras_no_defaults[extra_field.name] = (
+                    None
+                    if kwargs[extra_field.name] is None
+                    else extra_field.convert_or_type_check(
+                        kwargs[extra_field.name], allow_coercion=allow_coercion
+                    )
+                )
+            except Exception as err:
+                raise InvalidNeedException(
+                    "invalid_extra_option",
+                    f"Extra option {extra_field.name!r} is invalid: {err}",
+                ) from err
+
+    links_no_defaults: dict[str, None | LinksLiteralValue | LinksFunctionArray] = {}
+    for link_field in needs_schema.iter_link_fields():
+        if link_field.name not in kwargs:
+            links_no_defaults[link_field.name] = None
+        else:
+            try:
+                links_no_defaults[link_field.name] = (
+                    None
+                    if kwargs[link_field.name] is None
+                    else link_field.convert_or_type_check(
+                        kwargs[link_field.name], allow_coercion=allow_coercion
+                    )
+                )
+            except Exception as err:
+                raise InvalidNeedException(
+                    "invalid_link_option",
+                    f"Link option {link_field.name!r} is invalid: {err}",
+                ) from err
 
     defaults_ctx: PredicateContextData = {
         "id": need_id,
         "type": need_type,
-        "title": title,
-        "tags": tuple(tags or []),
-        "status": status,
+        "title": title_converted.value  # type: ignore[typeddict-item]
+        if isinstance(title_converted, FieldLiteralValue)
+        else "",
+        "tags": copy(tags_converted.value)  # type: ignore[arg-type]
+        if isinstance(tags_converted, FieldLiteralValue)
+        else [],  # TODO allow for non-df/vf values?
+        "status": status_converted.value  # type: ignore[typeddict-item]
+        if isinstance(status_converted, FieldLiteralValue)
+        else None,
         "docname": source.dict_repr["docname"],
         "is_import": source.dict_repr["is_import"],
         "is_external": source.dict_repr["is_external"],
     }
-    defaults_extras = extras_no_defaults.copy()
-    defaults_links = {k: tuple(v or []) for k, v in links_no_defaults.items()}
+    defaults_extras_ctx = {
+        k: copy(v.value) if isinstance(v, FieldLiteralValue) else None
+        for k, v in extras_no_defaults.items()
+    }
+    defaults_links_ctx = {
+        k: copy(v.value) if isinstance(v, LinksLiteralValue) else []
+        for k, v in links_no_defaults.items()
+    }
 
-    status = _get_default_str_none(
-        "status", status, needs_config, defaults_ctx, defaults_extras, defaults_links
+    context: DefaultContextData = {
+        "config": needs_config,
+        "core": defaults_ctx,
+        "extras": defaults_extras_ctx,
+        "links": defaults_links_ctx,
+    }
+
+    status_converted = (
+        status_converted
+        if status_converted is not None
+        else _get_field_default(needs_schema.get_core_field("status"), **context)
     )
-    tags = _get_default_list(
-        "tags", tags, needs_config, defaults_ctx, defaults_extras, defaults_links
+    tags_converted = (
+        tags_converted
+        if tags_converted is not None
+        else _get_field_default(needs_schema.get_core_field("tags"), **context)
     )
-    collapse = _get_default_bool(
-        "collapse",
-        collapse,
-        needs_config,
-        defaults_ctx,
-        defaults_extras,
-        defaults_links,
+    collapse_converted = (
+        collapse_converted
+        if collapse_converted is not None
+        else _get_field_default(needs_schema.get_core_field("collapse"), **context)
     )
-    hide = _get_default_bool(
-        "hide", hide, needs_config, defaults_ctx, defaults_extras, defaults_links
+    hide_converted = (
+        hide_converted
+        if hide_converted is not None
+        else _get_field_default(needs_schema.get_core_field("hide"), **context)
     )
-    layout = _get_default_str_none(
-        "layout", layout, needs_config, defaults_ctx, defaults_extras, defaults_links
+    constraints_converted = (
+        constraints_converted
+        if constraints_converted is not None
+        else _get_field_default(needs_schema.get_core_field("constraints"), **context)
     )
-    style = _get_default_str_none(
-        "style", style, needs_config, defaults_ctx, defaults_extras, defaults_links
+    layout_converted = (
+        layout_converted
+        if layout_converted is not None
+        else _get_field_default(needs_schema.get_core_field("layout"), **context)
     )
-    template = _get_default_str_none(
-        "template",
-        template,
-        needs_config,
-        defaults_ctx,
-        defaults_extras,
-        defaults_links,
+    style_converted = (
+        style_converted
+        if style_converted is not None
+        else _get_field_default(needs_schema.get_core_field("style"), **context)
     )
-    pre_template = _get_default_str_none(
-        "pre_template",
-        pre_template,
-        needs_config,
-        defaults_ctx,
-        defaults_extras,
-        defaults_links,
+    template_converted = (
+        template_converted
+        if template_converted is not None
+        else _get_field_default(needs_schema.get_core_field("template"), **context)
     )
-    post_template = _get_default_str_none(
-        "post_template",
-        post_template,
-        needs_config,
-        defaults_ctx,
-        defaults_extras,
-        defaults_links,
+    pre_template_converted = (
+        pre_template_converted
+        if pre_template_converted is not None
+        else _get_field_default(needs_schema.get_core_field("pre_template"), **context)
     )
-    constraints = _get_default_list(
-        "constraints",
-        constraints,
-        needs_config,
-        defaults_ctx,
-        defaults_extras,
-        defaults_links,
+    post_template_converted = (
+        post_template_converted
+        if post_template_converted is not None
+        else _get_field_default(needs_schema.get_core_field("post_template"), **context)
     )
-    extras = _get_default_extras(
-        extras_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
-    )
-    links = _get_default_links(
-        links_no_defaults, needs_config, defaults_ctx, defaults_extras, defaults_links
-    )
+    extras = {
+        k: _get_field_default(needs_schema.get_extra_field(k), **context)
+        if v is None
+        else v
+        for k, v in extras_no_defaults.items()
+    }
+    links = {
+        k: _get_links_default(needs_schema.get_link_field(k), **context)
+        if v is None
+        else v
+        for k, v in links_no_defaults.items()
+    }
     _copy_links(links, needs_config)
+
+    title, title_func = _convert_to_str_func("title", title_converted)
+    status, status_func = _convert_to_none_str_func("status", status_converted)
+    tags, tags_func = _convert_to_list_str_func("tags", tags_converted)
+    constraints, constraints_func = _convert_to_list_str_func(
+        "constraints", constraints_converted
+    )
+    collapse, collapse_func = _convert_to_bool_func("collapse", collapse_converted)
+    hide, hide_func = _convert_to_bool_func("hide", hide_converted)
+    layout, layout_func = _convert_to_none_str_func("layout", layout_converted)
+    style, style_func = _convert_to_none_str_func("style", style_converted)
+
+    dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray] = {}
+    if title_func:
+        dynamic_fields["title"] = title_func
+    if status_func:
+        dynamic_fields["status"] = status_func
+    if tags_func:
+        dynamic_fields["tags"] = tags_func
+    if constraints_func:
+        dynamic_fields["constraints"] = constraints_func
+    if collapse_func:
+        dynamic_fields["collapse"] = collapse_func
+    if hide_func:
+        dynamic_fields["hide"] = hide_func
+    if layout_func:
+        dynamic_fields["layout"] = layout_func
+    if style_func:
+        dynamic_fields["style"] = style_func
 
     # Add the need and all needed information
     core_data: NeedsInfoType = {
+        "id": need_id,
         "type": need_type,
         "type_name": need_type_data["title"],
         "type_prefix": need_type_data["prefix"],
         "type_color": need_type_data.get("color") or "#000000",
         "type_style": need_type_data.get("style") or "node",
+        "title": title,
         "status": status,
         "tags": tags,
         "constraints": tuple(constraints),
-        "id": need_id,
-        "title": title,
         "collapse": collapse,
-        "arch": arch or {},
+        "hide": hide,
         "style": style,
         "layout": layout,
-        "hide": hide,
         "external_css": external_css or "external_link",
+        "arch": arch or {},
         "has_dead_links": False,
         "has_forbidden_dead_links": False,
         "sections": tuple(sections or ()),
         "signature": signature,
     }
 
+    template = _convert_to_str_none("template", template_converted)
+    pre_template = _convert_to_str_none("pre_template", pre_template_converted)
+    post_template = _convert_to_str_none("post_template", post_template_converted)
     content_info = NeedsContent(
         doctype=doctype,
         content=content,
@@ -375,14 +500,74 @@ def generate_need(
             NeedPartData(id=part_id, content=str(part_data.get("content", "")))
         )
 
+    extras_pre: dict[str, AllowedTypes | None] = {}
+    for k, v in extras.items():
+        if (extra_schema := needs_schema.get_extra_field(k)) is None:
+            raise InvalidNeedException(
+                "invalid_extra_option",
+                f"Extra option {k!r} not in 'needs_extra_options'.",
+            )
+        if v is None:
+            if not extra_schema.nullable:
+                raise InvalidNeedException(
+                    "invalid_extra_option",
+                    f"Extra option {k!r} is not nullable, but no value or default was given.",
+                )
+            extras_pre[k] = None
+        elif isinstance(v, FieldLiteralValue):
+            extras_pre[k] = v.value
+        elif isinstance(v, FieldFunctionArray):
+            dynamic_fields[k] = v
+            match extra_schema.type:
+                case "string":
+                    extras_pre[k] = ""
+                case "boolean":
+                    extras_pre[k] = False
+                case "integer":
+                    extras_pre[k] = 0
+                case "number":
+                    extras_pre[k] = 0.0
+                case "array":
+                    extras_pre[k] = []
+                case other:
+                    raise InvalidNeedException(
+                        "invalid_extra_option",
+                        f"Extra option {k!r} has unknown type {other!r}.",
+                    )
+        else:
+            raise InvalidNeedException(
+                "invalid_extra_option",
+                f"Extra option {k!r} has unknown value {v!r}.",
+            )
+
+    links_pre: dict[str, list[str]] = {}
+    for lk, lv in links.items():
+        if lv is None:
+            # TODO currently no link_schema.nullable
+            raise InvalidNeedException(
+                "invalid_link_option",
+                f"Link option {lk!r} is not nullable, but no value or default was given.",
+            )
+        elif isinstance(lv, LinksLiteralValue):
+            links_pre[lk] = lv.value
+        elif isinstance(lv, LinksFunctionArray):
+            dynamic_fields[lk] = lv
+            links_pre[lk] = []
+        else:
+            raise InvalidNeedException(
+                "invalid_link_option",
+                f"Link option {lk!r} has unknown value {lv!r}.",
+            )
+
     try:
         needs_info = NeedItem(
             core=core_data,
-            extras=extras,
-            links=links,
+            extras=extras_pre,
+            links=links_pre,
             source=source,
             content=content_info,
             parts=parts_objects,
+            dynamic_fields=dynamic_fields,
             _validate=False,
         )
     except ValueError as err:
@@ -435,6 +620,116 @@ def generate_need(
     return needs_info
 
 
+def _convert_type_core(
+    name: str, value: Any, schema: FieldsSchema, allow_coercion: bool
+) -> FieldLiteralValue | FieldFunctionArray | None:
+    try:
+        field_schema = schema.get_core_field(name)
+        assert field_schema is not None, f"{name} field schema does not exist"
+        return (
+            None
+            if value is None
+            else field_schema.convert_or_type_check(
+                value, allow_coercion=allow_coercion
+            )
+        )
+    except Exception as err:
+        raise InvalidNeedException(
+            "invalid_value", f"{name!r} value is invalid: {err}"
+        ) from err
+
+
+def _convert_to_str_none(
+    name: str, converted: FieldLiteralValue | FieldFunctionArray | None
+) -> str | None:
+    if converted is None:
+        return None
+    elif isinstance(converted, FieldLiteralValue) and isinstance(converted.value, str):
+        return converted.value
+    else:
+        raise InvalidNeedException(
+            "invalid_template",
+            f"{name} option must be a string or None, got {converted}.",
+        )
+
+
+def _convert_to_str_func(
+    name: str, converted: FieldLiteralValue | FieldFunctionArray | None
+) -> tuple[str, None | FieldFunctionArray]:
+    if isinstance(converted, FieldLiteralValue) and isinstance(converted.value, str):
+        return converted.value, None
+    elif isinstance(converted, FieldFunctionArray) and all(
+        isinstance(x, str | DynamicFunctionParsed | VariantFunctionParsed)
+        for x in converted
+    ):
+        return "", converted
+    else:
+        raise InvalidNeedException(
+            "invalid_value",
+            f"{name} must be a string or function, got {converted}.",
+        )
+
+
+def _convert_to_none_str_func(
+    name: str, converted: FieldLiteralValue | FieldFunctionArray | None
+) -> tuple[None | str, None | FieldFunctionArray]:
+    if converted is None:
+        return None, None
+    elif isinstance(converted, FieldLiteralValue) and isinstance(converted.value, str):
+        return converted.value, None
+    elif isinstance(converted, FieldFunctionArray) and all(
+        isinstance(x, str | DynamicFunctionParsed | VariantFunctionParsed)
+        for x in converted
+    ):
+        return None, converted
+    else:
+        raise InvalidNeedException(
+            "invalid_value",
+            f"{name} must be none, string or function, got {converted}.",
+        )
+
+
+def _convert_to_bool_func(
+    name: str, converted: FieldLiteralValue | FieldFunctionArray | None
+) -> tuple[bool, FieldFunctionArray | None]:
+    if isinstance(converted, FieldLiteralValue) and isinstance(converted.value, bool):
+        return converted.value, None
+    elif (
+        isinstance(converted, FieldFunctionArray)
+        and len(converted.value) == 1
+        and isinstance(
+            converted.value[0], bool | DynamicFunctionParsed | VariantFunctionParsed
+        )
+    ):
+        return False, converted
+    else:
+        raise InvalidNeedException(
+            "invalid_value",
+            f"{name} must be a boolean or function, got {converted}.",
+        )
+
+
+def _convert_to_list_str_func(
+    name: str, converted: FieldLiteralValue | FieldFunctionArray | None
+) -> tuple[list[str], None | FieldFunctionArray]:
+    if (
+        isinstance(converted, FieldLiteralValue)
+        and isinstance(converted.value, list)
+        and all(isinstance(t, str) for t in converted.value)
+    ):
+        return cast(list[str], converted.value), None
+    elif isinstance(converted, FieldFunctionArray) and all(
+        isinstance(x, str | DynamicFunctionParsed | VariantFunctionParsed)
+        for x in converted
+    ):
+        return [], converted
+    else:
+        raise InvalidNeedException(
+            "invalid_value",
+            f"{name} must be a comma separated string, list of strings or function, got {converted}.",
+        )
+
+
 def add_need(
     app: Sphinx,
     state: None | RSTState = None,
@@ -456,8 +751,8 @@ def add_need(
     signature: None | str = None,
     sections: list[str] | None = None,
     jinja_content: bool | None = None,
-    hide: None | bool = None,
-    collapse: None | bool = None,
+    hide: None | bool | str = None,
+    collapse: None | bool | str = None,
     style: None | str = None,
     layout: None | str = None,
     template: None | str = None,
@@ -542,6 +837,7 @@ def add_need(
 
     needs_info = generate_need(
         needs_config=NeedsSphinxConfig(app.config),
+        needs_schema=SphinxNeedsData(app.env).get_schema(),
         need_source=need_source,
         need_type=need_type,
         title=title,
@@ -862,190 +1158,82 @@ def _make_hashed_id(
     return f"{type_prefix}{hashed[: config.id_length]}"
 
 
-def _split_list_with_dyn_funcs(
-    text: None | str | list[str],
-    location: tuple[str, int | None] | None,
-    warn_prefix: str = "",
-) -> Iterable[tuple[str, bool]]:
-    """Split a ``;|,`` delimited string that may contain ``[[...]]`` dynamic functions.
-
-    :param text: The string to split.
-        If the input is a list of strings, yield the list unchanged,
-        or if the input is None, yield nothing.
-    :param location: A location to use for emitting warnings about badly formatted strings.
-
-    :yields: A tuple of the string and a boolean indicating if the string contains one or more dynamic function.
-        Each string is stripped of leading and trailing whitespace,
-        and only yielded if it is not empty.
-
-    """
-    if text is None:
-        return
-
-    if not isinstance(text, str):
-        assert isinstance(text, list) and all(isinstance(x, str) for x in text), (
-            "text must be a string or a list of strings"
-        )
-        yield from ((x, False) for x in text)
-        return
-
-    _current_element = ""
-    _has_dynamic_function = False
-    while text:
-        if text.startswith("[["):
-            _has_dynamic_function = True
-            _current_element += text[:2]
-            text = text[2:]
-            while text and not text.startswith("]]"):
-                _current_element += text[0]
-                text = text[1:]
-            if _current_element.endswith("]"):
-                _current_element += "]"
-            else:
-                _current_element += "]]"
-            if not text.startswith("]]"):
-                log_warning(
-                    logger,
-                    f"Dynamic function not closed correctly: {text}{warn_prefix}",
-                    "dynamic_function",
-                    location=location,
-                )
-            text = text[2:]
-        elif text[0] in ";|,":
-            _current_element = _current_element.strip()
-            if _current_element:
-                yield _current_element, _has_dynamic_function
-            _current_element = ""
-            _has_dynamic_function = False
-            text = text[1:]
-        else:
-            _current_element += text[0]
-            text = text[1:]
-
-    _current_element = _current_element.strip()
-    if _current_element:
-        yield _current_element, _has_dynamic_function
-
-
-def _copy_links(links: dict[str, list[str]], config: NeedsSphinxConfig) -> None:
+def _copy_links(
+    links: dict[str, LinksLiteralValue | LinksFunctionArray | None],
+    config: NeedsSphinxConfig,
+) -> None:
     """Implement 'copy' logic for links."""
-    copy_links: list[str] = []
+    if "links" not in links:
+        return  # should not happen, but be defensive
+    copy_links: list[str | DynamicFunctionParsed | VariantFunctionParsed] = []
     for link_type in config.extra_links:
         if link_type.get("copy", False) and (name := link_type["option"]) != "links":
-            copy_links += links[name]  # Save extra links for main-links
-    links["links"] += copy_links  # Set copied links to main-links
-
-
-def _get_default_str_none(
-    key: str,
-    value: str | None,
-    config: NeedsSphinxConfig,
-    context: PredicateContextData,
-    extras: dict[str, str | None],
-    links: dict[str, tuple[str, ...]],
-) -> str | None:
-    if value is not None:
-        return value
-    return _get_default(key, config, context, extras, links)
-
-
-def _get_default_str(
-    key: str,
-    value: str | None,
-    config: NeedsSphinxConfig,
-    context: PredicateContextData,
-    extras: dict[str, str | None],
-    links: dict[str, tuple[str, ...]],
-) -> str:
-    if value is not None:
-        return value
-    if (_default_value := _get_default(key, config, context, extras, links)) is None:
-        return ""
+            other = links[name]
+            if isinstance(other, LinksLiteralValue | LinksFunctionArray):
+                copy_links.extend(other.value)
+    if any(
+        isinstance(li, DynamicFunctionParsed | VariantFunctionParsed)
+        for li in copy_links
+    ):
+        if links["links"] is None:
+            links["links"] = LinksFunctionArray(tuple(copy_links))
+        else:
+            links["links"] = LinksFunctionArray(
+                tuple(links["links"].value) + tuple(copy_links)
+            )
     else:
-        assert isinstance(_default_value, str)
-        return _default_value
+        copy_links_literal = cast(list[str], copy_links)
+        if links["links"] is None:
+            links["links"] = LinksLiteralValue(copy_links_literal)
+        elif isinstance(links["links"], LinksLiteralValue):
+            links["links"].value.extend(copy_links_literal)
+        else:
+            links["links"] = LinksFunctionArray(
+                tuple(links["links"].value) + tuple(copy_links_literal)
+            )
 
 
-_T = TypeVar("_T")
+class DefaultContextData(TypedDict):
+    config: NeedsSphinxConfig
+    core: PredicateContextData
+    extras: dict[str, AllowedTypes | None]
+    links: dict[str, list[str]]
 
 
-def _get_default_list(
-    key: str,
-    value: None | list[_T],
+def _get_field_default(
+    scheme: FieldSchema | None,
     config: NeedsSphinxConfig,
-    context: PredicateContextData,
-    extras: dict[str, str | None],
-    links: dict[str, tuple[str, ...]],
-) -> list[_T]:
-    if value is not None:
-        return value
-    if (_default_value := _get_default(key, config, context, extras, links)) is None:
-        return []
-    else:
-        assert isinstance(_default_value, list)
-        return _default_value
+    core: PredicateContextData,
+    extras: dict[str, AllowedTypes | None],
+    links: dict[str, list[str]],
+) -> None | FieldLiteralValue | FieldFunctionArray:
+    if scheme is None:
+        return None  # TODO except (and catch upstream)
+    # TODO if we stored default lists as tuples we could avoid the deepcopy here
+    for predicate, v in scheme.predicate_defaults:
+        if apply_default_predicate(predicate, config, core, extras, links):
+            return deepcopy(v)
+    if scheme.default is not None:
+        return deepcopy(scheme.default)
+    return None
 
 
-def _get_default_bool(
-    key: str,
-    value: None | bool,
+def _get_links_default(
+    scheme: LinkSchema | None,
     config: NeedsSphinxConfig,
-    context: PredicateContextData,
-    extras: dict[str, str | None],
-    links: dict[str, tuple[str, ...]],
-    *,
-    default: bool = False,
-) -> bool:
-    if value is not None:
-        return value
-    if (_default_value := _get_default(key, config, context, extras, links)) is None:
-        return default
-    else:
-        assert isinstance(_default_value, bool)
-        return _default_value
-
-
-def _get_default_extras(
-    value: dict[str, str | None],
-    config: NeedsSphinxConfig,
-    context: PredicateContextData,
-    extras: dict[str, str | None],
-    links: dict[str, tuple[str, ...]],
-) -> dict[str, str]:
-    return {
-        key: _get_default_str(key, value[key], config, context, extras, links)
-        for key in value
-    }
-
-
-def _get_default_links(
-    value: dict[str, list[str] | None],
-    config: NeedsSphinxConfig,
-    context: PredicateContextData,
-    extras: dict[str, str | None],
-    links: dict[str, tuple[str, ...]],
-) -> dict[str, list[str]]:
-    return {
-        key: _get_default_list(key, value[key], config, context, extras, links)
-        for key in value
-    }
-
-
-def _get_default(
-    key: str,
-    config: NeedsSphinxConfig,
-    context: PredicateContextData,
-    extras: dict[str, str | None],
-    links: dict[str, tuple[str, ...]],
-) -> None | Any:
-    if (defaults := config.field_defaults.get(key)) is None:
-        return None
-    for predicate, v in defaults.get("predicates", []):
-        # use the first predicate that is satisfied
-        if apply_default_predicate(predicate, config, context, extras, links):
-            return v
-
-    return defaults.get("default", None)
+    core: PredicateContextData,
+    extras: dict[str, AllowedTypes | None],
+    links: dict[str, list[str]],
+) -> None | LinksLiteralValue | LinksFunctionArray:
+    if scheme is None:
+        return None  # TODO except (and catch upstream)
+    # TODO if we stored default lists as tuples we could avoid the deepcopy here
+    for predicate, v in scheme.predicate_defaults:
+        if apply_default_predicate(predicate, config, core, extras, links):
+            return deepcopy(v)
+    if scheme.default is not None:
+        return deepcopy(scheme.default)
+    return None
 
 
 def get_needs_view(app: Sphinx) -> NeedsView:

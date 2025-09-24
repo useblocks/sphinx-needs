@@ -1646,10 +1646,10 @@
               'type': 'string',
             }),
             'completion': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'constraints': dict({
               'default': list([
@@ -1720,10 +1720,10 @@
               'type': 'string',
             }),
             'duration': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'external_css': dict({
               'default': '',
@@ -2065,29 +2065,6 @@
   dict({
     'current_version': '1.0',
     'versions': dict({
-      '1.0': dict({
-        'needs': dict({
-          'TEST_01': dict({
-            'content': 'TEST IMPORT TITLE',
-            'docname': 'index',
-            'external_css': 'external_link',
-            'extra1': 'value1',
-            'extra2': '1',
-            'id': 'TEST_01',
-            'is_import': True,
-            'lineno': 4,
-            'section_name': 'TEST DOCUMENT IMPORT',
-            'sections': list([
-              'TEST DOCUMENT IMPORT',
-            ]),
-            'title': 'TEST IMPORT DESCRIPTION',
-            'type': 'impl',
-            'type_name': 'Implementation',
-          }),
-        }),
-        'needs_amount': 1,
-        'needs_defaults_removed': True,
-      }),
     }),
   })
 # ---
@@ -2099,7 +2076,7 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -2110,7 +2087,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -2180,7 +2157,7 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -2191,7 +2168,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -2260,7 +2237,7 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': tuple(
       ),
       'constraints_error': None,
@@ -2271,7 +2248,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,

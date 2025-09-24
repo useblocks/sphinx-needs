@@ -10,7 +10,7 @@ The API allows the injection of extra configuration, but
 does not support manipulation of it (e.g remove need types),
 to keep the final configuration transparent for the Sphinx project authors.
 
-.. _api_configuration:
+.. _`api_configuration`:
 
 Configuration
 -------------
@@ -42,6 +42,10 @@ Data
 
 .. automodule:: sphinx_needs.data
    :members: NeedsInfoType, NeedsInfoComputedType, NeedsSourceInfoType, NeedsMutable, NeedsPartType
+
+.. automodule:: sphinx_needs.needs_schema
+   :members: FieldsSchema, FieldSchema, FieldFunctionArray, LinksFunctionArray,
+             FieldLiteralValue, LinkSchema, LinksLiteralValue, AllowedTypes
 
 Views
 -----

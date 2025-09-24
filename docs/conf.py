@@ -50,6 +50,7 @@ nitpick_ignore = [
     ("py:class", "sphinx_needs.debug.T"),
     ("py:class", "sphinx_needs.views._LazyIndexes"),
     ("py:class", "sphinx_needs.config.NeedsSphinxConfig"),
+    ("py:class", "AllowedTypes"),
 ]
 
 rst_epilog = """
@@ -333,6 +334,7 @@ from sphinx.roles import SphinxRole  # noqa: E402
 
 from sphinx_needs.api import generate_need  # noqa: E402
 from sphinx_needs.config import NeedsSphinxConfig  # noqa: E402
+from sphinx_needs.data import SphinxNeedsData  # noqa: E402
 from sphinx_needs.logging import (  # noqa: E402
     WarningSubTypeDescription,
     WarningSubTypes,
@@ -400,10 +402,11 @@ def create_tutorial_needs(app: Sphinx, _env, _docnames):
     We do this dynamically, to avoid having to maintain the JSON file manually.
     """
     needs_config = NeedsSphinxConfig(app.config)
-    writer = NeedsList(app.config, outdir=app.confdir, confdir=app.confdir)
+    writer = NeedsList(app.env, outdir=app.confdir, confdir=app.confdir)
     for i in range(1, 5):
         need_item = generate_need(
             needs_config,
+            SphinxNeedsData(app.env).get_schema(),
             need_type="tutorial-test",
             id=f"T_00{i}",
             title=f"Unit test {i}",

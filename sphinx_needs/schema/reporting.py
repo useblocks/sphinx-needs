@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
@@ -140,8 +142,22 @@ def save_debug_file(
         filename += _sep + _field_sep.join(schema_path)
     filename += _sep + warning["rule"].name
 
+    if os.name == "nt":  # Windows
+        # Sanitize filename for Windows compatibility
+        filename = re.sub(r'[<>:"/\\|?*]', "_", filename)
+        # Also remove control characters (0-31)
+        filename = re.sub(r"[\x00-\x1f]", "_", filename)
+        # Limit filename length to 250 characters for Windows compatibility
+        if len(filename) > 250:
+            # Keep the extension if present, truncate the base name
+            if "." in filename:
+                name, ext = filename.rsplit(".", 1)
+                filename = name[: 247 - len(ext) - 1] + "..." + "." + ext
+            else:
+                filename = filename[:247] + "..."
+
     with (debug_dir / f"{filename}.json").open("w") as fp:
-        json.dump(warning["need"], fp, indent=2)
+        json.dump(dict(warning["need"]), fp, indent=2)
     if reduced_need := warning.get("reduced_need"):
         with (debug_dir / f"{filename}.reduced.json").open("w") as fp:
             json.dump(reduced_need, fp, indent=2)

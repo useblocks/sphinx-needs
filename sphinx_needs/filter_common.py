@@ -25,6 +25,7 @@ from sphinx_needs.debug import measure_time, measure_time_func
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.needs_schema import AllowedTypes
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
@@ -575,7 +576,7 @@ class PredicateContextData(TypedDict):
     id: str
     type: str
     title: str
-    tags: tuple[str, ...]
+    tags: list[str]
     status: str | None
     docname: str | None
     is_external: bool
@@ -587,10 +588,13 @@ def apply_default_predicate(
     predicate: str,
     config: NeedsSphinxConfig,
     context: PredicateContextData,
-    extras: dict[str, str | None],
-    links: dict[str, tuple[str, ...]],
+    extras: dict[str, AllowedTypes | None],
+    links: dict[str, list[str]],
 ) -> bool:
-    """Checks if a single need passes a default predicate."""
+    """Checks if a single need passes a default predicate.
+
+    :raises NeedsInvalidFilter: if the predicate is not valid
+    """
     predicate_context = {
         **context,
         **extras,

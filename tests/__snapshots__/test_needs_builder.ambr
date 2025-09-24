@@ -10,7 +10,7 @@
             }),
             'avatar': '',
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
             'constraints_error': None,
@@ -21,7 +21,7 @@
             'created_at': '',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -80,7 +80,7 @@
             }),
             'avatar': '',
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
             'constraints_error': None,
@@ -91,7 +91,7 @@
             'created_at': '',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -150,7 +150,7 @@
             }),
             'avatar': '',
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
             'constraints_error': None,
@@ -161,7 +161,7 @@
             'created_at': '',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -244,10 +244,10 @@
               'type': 'string',
             }),
             'completion': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'constraints': dict({
               'default': list([
@@ -318,10 +318,10 @@
               'type': 'string',
             }),
             'duration': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'external_css': dict({
               'default': '',
@@ -905,10 +905,10 @@
               'type': 'string',
             }),
             'completion': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'constraints': dict({
               'default': list([
@@ -979,10 +979,10 @@
               'type': 'string',
             }),
             'duration': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'external_css': dict({
               'default': '',
@@ -1497,7 +1497,7 @@
             }),
             'avatar': '',
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
             'constraints_error': None,
@@ -1508,7 +1508,7 @@
             'created_at': '',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -1567,7 +1567,7 @@
             }),
             'avatar': '',
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
             'constraints_error': None,
@@ -1578,7 +1578,7 @@
             'created_at': '',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -1637,7 +1637,7 @@
             }),
             'avatar': '',
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
             'constraints_error': None,
@@ -1648,7 +1648,7 @@
             'created_at': '',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -1731,10 +1731,10 @@
               'type': 'string',
             }),
             'completion': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'constraints': dict({
               'default': list([
@@ -1805,10 +1805,10 @@
               'type': 'string',
             }),
             'duration': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'external_css': dict({
               'default': '',

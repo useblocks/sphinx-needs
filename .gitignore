@@ -40,3 +40,5 @@ pyinstrument*
 *.prof
 
 uv.lock
+
+schema_debug/

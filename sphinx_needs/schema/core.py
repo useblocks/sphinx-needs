@@ -71,14 +71,14 @@ def merge_static_schemas(config: NeedsSphinxConfig) -> bool:
     Writes to the global _extra_option_schemas / _extra_link_schemas variables.
     """
     any_found = False
-    extra_option_properties: NeedFieldsSchemaType = {"properties": {}}
+    extra_option_properties: NeedFieldsSchemaType = {"type": "object", "properties": {}}
     for name, option in config.extra_options.items():
         if option.schema is not None:
             any_found = True
             extra_option_properties["properties"][name] = option.schema
     _extra_option_schemas["properties"] = extra_option_properties["properties"]
 
-    extra_link_properties: NeedFieldsSchemaType = {"properties": {}}
+    extra_link_properties: NeedFieldsSchemaType = {"type": "object", "properties": {}}
     for link in config.extra_links:
         if "schema" in link and link["schema"] is not None:
             any_found = True
@@ -267,7 +267,12 @@ def recurse_validate_type_schmemas(
                             "severity": get_severity(rule, severity),
                             "validation_message": msg,
                             "need": need,
-                            "schema_path": [*schema_path, "network", link_type],
+                            "schema_path": [
+                                *schema_path,
+                                "validate",
+                                "network",
+                                link_type,
+                            ],
                             "need_path": [*need_path, link_type],
                         }
                     )
@@ -275,6 +280,21 @@ def recurse_validate_type_schmemas(
                         warnings[-1]["user_message"] = user_message
                     continue
 
+                schema_path_items = [
+                    *schema_path,
+                    "validate",
+                    "network",
+                    link_type,
+                    "items",
+                ]
+                schema_path_contains = [
+                    *schema_path,
+                    "validate",
+                    "network",
+                    link_type,
+                    "contains",
+                ]
+                need_path_link = [*need_path, link_type, target_need_id]
                 # Handle items validation - all items must pass
                 if link_schema.get("items"):
                     new_success, new_warnings = recurse_validate_type_schmemas(
@@ -283,8 +303,8 @@ def recurse_validate_type_schmemas(
                         needs=needs,
                         user_message=user_message,
                         schema=link_schema["items"],
-                        schema_path=[*schema_path, link_type],
-                        need_path=[*need_path, link_type, target_need_id],
+                        schema_path=schema_path_items,
+                        need_path=need_path_link,
                         recurse_level=recurse_level + 1,
                         severity=severity,
                     )
@@ -304,8 +324,8 @@ def recurse_validate_type_schmemas(
                         needs=needs,
                         user_message=user_message,
                         schema=link_schema["contains"],
-                        schema_path=[*schema_path, link_type],
-                        need_path=[*need_path, link_type, target_need_id],
+                        schema_path=schema_path_contains,
+                        need_path=need_path_link,
                         recurse_level=recurse_level + 1,
                         severity=severity,
                     )
@@ -341,13 +361,7 @@ def recurse_validate_type_schmemas(
                     "severity": get_severity(rule, severity),
                     "validation_message": msg,
                     "need": need,
-                    "schema_path": [
-                        *schema_path,
-                        "validate",
-                        "network",
-                        link_type,
-                        "items",
-                    ],
+                    "schema_path": schema_path_items,
                     "need_path": [*need_path, link_type],
                     "children": items_nok_warnings,  # user is interested in these
                 }
@@ -385,12 +399,7 @@ def recurse_validate_type_schmemas(
                             "severity": get_severity(rule, severity),
                             "validation_message": msg,
                             "need": need,
-                            "schema_path": [
-                                *schema_path,
-                                "validate",
-                                "network",
-                                link_type,
-                            ],
+                            "schema_path": schema_path_contains,
                             "need_path": [*need_path, link_type],
                             "children": contains_nok_warnings,  # user is interested in these
                         }
@@ -413,12 +422,7 @@ def recurse_validate_type_schmemas(
                                 "severity": get_severity(rule, severity),
                                 "validation_message": msg,
                                 "need": need,
-                                "schema_path": [
-                                    *schema_path,
-                                    "validate",
-                                    "network",
-                                    link_type,
-                                ],
+                                "schema_path": schema_path_contains,
                                 "need_path": [*need_path, link_type],
                                 # children not passed, no interest in too much success
                             }
@@ -513,7 +517,6 @@ def reduce_need(
 
     :param need: The need to reduce.
     :param json_schema: The user provided and merged JSON merge.
-    :raises ValueError: If a field cannot be coerced to its specified type.
     """
     reduced_need: dict[str, Any] = {}
     schema_properties = get_properties_from_schema(json_schema)
@@ -540,54 +543,14 @@ def reduce_need(
             # is part of the user provided schema
             keep = True
 
+        if value is None:
+            # value is not provided
+            keep = False
+
         if keep:
-            coerced_value = value
-            if schema_field["field_type"] == "extra" and field in config.extra_options:
-                option_schema = config.extra_options[field].schema
-                if (
-                    option_schema is not None
-                    and "type" in option_schema
-                    and option_schema["type"] != "string"
-                ):
-                    type_ = option_schema["type"]
-                    if not isinstance(value, str):
-                        raise TypeCoerceError(
-                            f"Field '{field}': cannot coerce '{value}' (type: {type(value)}) to {type_}",
-                            field=field,
-                        )
-                    try:
-                        if type_ == "integer":
-                            coerced_value = int(value)
-                        elif type_ == "number":
-                            coerced_value = float(value)
-                    except ValueError as exc:
-                        raise TypeCoerceError(
-                            f"Field '{field}': cannot coerce '{value}' to {type_}",
-                            field=field,
-                        ) from exc
-                    if type_ == "boolean":
-                        truthy = {"true", "yes", "y", "on", "1"}
-                        falsy = {"false", "no", "n", "off", "0"}
-                        if value.lower() in truthy:
-                            coerced_value = True
-                        elif value.lower() in falsy:
-                            coerced_value = False
-                        else:
-                            raise TypeCoerceError(
-                                f"Field '{field}': cannot coerce '{value}' to boolean",
-                                field=field,
-                            )
-            reduced_need[field] = coerced_value
+            reduced_need[field] = value
 
     return reduced_need
-
-
-class TypeCoerceError(ValueError):
-    """Store also the field name for reporting."""
-
-    def __init__(self, message: str, field: str) -> None:
-        super().__init__(message)
-        self.field = field
 
 
 def get_localschema_errors(
@@ -640,20 +603,6 @@ def get_ontology_warnings(
             need=need,
             schema=schema,
         )
-    except TypeCoerceError as exc:
-        warning = {
-            "rule": MessageRuleEnum.extra_option_type_error,
-            "severity": get_severity(MessageRuleEnum.extra_option_type_error),
-            "validation_message": str(exc),
-            "need": need,
-            "schema_path": schema_path,
-            "need_path": need_path,
-            "field": exc.field,
-        }
-        if user_message is not None:
-            warning["user_message"] = user_message
-        warnings.append(warning)
-        return warnings
     except ValidationError as exc:
         warning = {
             "rule": MessageRuleEnum.cfg_schema_error,

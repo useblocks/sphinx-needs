@@ -3,7 +3,6 @@ unevaluated_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -20,19 +19,12 @@ unevaluated_error:
           local:
             properties: {"asil": {}}
             unevaluatedProperties: false
-  warnings:
-    - - "Severity # violation"
-      - "Need path # IMPL_1"
-      - "Schema path # [0] > local > unevaluatedProperties"
-      - "Schema message # Unevaluated properties are not allowed ('comment' was unexpected)"
-      - sphinx8: ["sn_schema.local_fail"]
 
 unevaluated_allof_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["needs.beta"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -55,9 +47,3 @@ unevaluated_allof_error:
             unevaluatedProperties: false
             allOf:
               - properties: {"comment": {}}
-  warnings:
-    - - "Severity # violation"
-      - "Need path # IMPL_1"
-      - "Schema path # [0] > local > unevaluatedProperties"
-      - "Schema message # Unevaluated properties are not allowed ('approved' was unexpected)"
-      - sphinx8: ["sn_schema.local_fail"]

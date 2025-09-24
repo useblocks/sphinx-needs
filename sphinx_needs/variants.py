@@ -1,35 +1,50 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
 from docutils import nodes
 
+from sphinx_needs.exceptions import VariantParsingException
 from sphinx_needs.logging import get_logger, log_warning
 
 LOGGER = get_logger(__name__)
-
-
-class VariantParsingException(BaseException):
-    """Called if parsing of given function string has not worked"""
 
 
 @dataclass(frozen=True, slots=True)
 class VariantFunctionParsed:
     """A variant function call."""
 
-    expressions: tuple[tuple[str, bool, str], ...]
-    final_value: str | None
+    expressions: tuple[tuple[str, bool, str | bool | int | float], ...]
+    """List of (expression, is_bracketed, value) tuples."""
+    final_value: str | bool | int | float | None
+    """The final value without expression, if any."""
 
     @classmethod
-    def from_string(cls, text: str) -> VariantFunctionParsed:
+    def from_string(
+        cls,
+        text: str,
+        coersce_value: Callable[[str], str | bool | int | float] | None = None,
+        *,
+        allow_semicolon: bool = False,
+    ) -> VariantFunctionParsed:
         """Parse a variant function string into expressions and final value.
 
+        :param text: The text to parse
+        :param coersce_value: A function to coersce the value string into a
+            specific type, e.g. int, bool, float.
+            The function should raise ValueError if the value cannot be parsed.
+            If None, the value is kept as string.
+        :return: The parsed variant function
+
         :raises VariantParsingException: if parsing fails
+        :raises ValueError: if coersion of value fails
         """
+        coersce_value = coersce_value or (lambda x: x)
         reminaing = text.lstrip()
-        exprs: list[tuple[str, bool, str]] = []
-        final_value: str | None = None
+        exprs: list[tuple[str, bool, str | bool | int | float]] = []
+        final_value: str | bool | int | float | None = None
         while reminaing:
             # is it an enclosed `[expr]:`, a simple `name:`, or a final option without expr?
             if reminaing[0] == "[":
@@ -44,7 +59,7 @@ class VariantFunctionParsed:
             else:
                 end_expr = reminaing.find(":")
                 if end_expr == -1:
-                    final_value = reminaing.strip()
+                    final_value = coersce_value(reminaing.strip())
                     break
                 bracketed = False
                 expr = reminaing[:end_expr]
@@ -52,7 +67,7 @@ class VariantFunctionParsed:
 
             # the value is until the next `,` or `;` or end of string
             end_comma = reminaing.find(",")
-            end_semicolon = reminaing.find(";")
+            end_semicolon = reminaing.find(";") if allow_semicolon else -1
             if end_comma == -1 and end_semicolon == -1:
                 value = reminaing.strip()
                 reminaing = ""
@@ -63,7 +78,7 @@ class VariantFunctionParsed:
                 value = reminaing[:end_semicolon].strip()
                 reminaing = reminaing[end_semicolon + 1 :].lstrip()
 
-            exprs.append((expr, bracketed, value))
+            exprs.append((expr, bracketed, coersce_value(value)))
 
         return cls(tuple(exprs), final_value)
 
@@ -74,7 +89,7 @@ def match_variants(
     variants: dict[str, str],
     *,
     location: str | tuple[str | None, int | None] | nodes.Node | None = None,
-) -> str | None:
+) -> None | str | int | float | bool:
     """Evaluate an options list and return the first matching variant.
 
     Each item should have the format ``<expression>:<value>``,
@@ -107,7 +122,7 @@ def match_variants(
         return None
 
     try:
-        variant = VariantFunctionParsed.from_string(options)
+        variant = VariantFunctionParsed.from_string(options, allow_semicolon=True)
     except VariantParsingException as e:
         log_warning(
             LOGGER,

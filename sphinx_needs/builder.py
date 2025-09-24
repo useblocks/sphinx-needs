@@ -56,7 +56,7 @@ class NeedsBuilder(Builder):
         needs = data.get_needs_view()
         needs_config = NeedsSphinxConfig(self.env.config)
         version = getattr(self.env.config, "version", "unset")
-        needs_list = NeedsList(self.env.config, self.outdir, self.srcdir)
+        needs_list = NeedsList(self.env, self.outdir, self.srcdir)
 
         if needs_config.file:
             needs_file = needs_config.file
@@ -174,9 +174,7 @@ class NeedsIdBuilder(Builder):
         if not os.path.exists(needs_dir):
             os.makedirs(needs_dir, exist_ok=True)
         for need in filtered_needs:
-            needs_list = NeedsList(
-                self.env.config, self.outdir, self.srcdir, add_schema=False
-            )
+            needs_list = NeedsList(self.env, self.outdir, self.srcdir, add_schema=False)
             needs_list.wipe_version(version)
             needs_list.add_need(version, need)
             id = need["id"]

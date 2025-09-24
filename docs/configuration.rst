@@ -276,6 +276,25 @@ And use it like:
           {"name": "my_other_option", "description": "This is a description of the option"}
       ]
 
+.. versionadded:: 6.0.0
+
+   The ``needs_extra_options`` can now contain schema information for each option:
+
+   .. code-block:: python
+
+      needs_extra_options = [
+          {
+              "name": "efforts",
+              "description": "Efforts in days",
+              "schema": {
+                  "type": "integer",
+                  "mininum": 0,
+              },
+          }
+      ]
+   
+   See :ref:`schema_validation` for more.
+
 .. _`needs_global_options`:
 .. _`global_option_filters`:
 
@@ -2484,7 +2503,6 @@ To write all scenarios, set it to an empty list: ``[]``.
 Available scenarios that can be ignored:
 
 - ``cfg_schema_error``: The user provided schema is invalid
-- ``extra_option_type_error``: A need extra option cannot be coerced to the type specified in the schema
 - ``extra_option_success``: Global extra option validation was successful
 - ``extra_option_fail``: Global extra option validation failed
 - ``extra_link_success``: Global extra link validations was successful

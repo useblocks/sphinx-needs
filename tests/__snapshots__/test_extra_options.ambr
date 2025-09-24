@@ -78,10 +78,10 @@
               'type': 'string',
             }),
             'completion': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'constraints': dict({
               'default': list([
@@ -152,10 +152,10 @@
               'type': 'string',
             }),
             'duration': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'external_css': dict({
               'default': '',

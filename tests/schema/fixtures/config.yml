@@ -16,9 +16,18 @@ extra_link_array_wrong_type:
     .. impl:: title
         :id: IMPL_1
         :links: SPEC_1
-  exception:
-    - Schema for extra link 'links' is not valid
-    - value of key 'type' of dict is not any of ('array')
+
+extra_option_empty_schema:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+    schema = {}
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
 
 missing_type_select:
   conf: |
@@ -40,11 +49,6 @@ missing_type_select:
         validate:
           local:
             required: [efforts]
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "value of key 'select' of dict did not match any element in the union"
-    - 'sphinx_needs.schema.config.ExtraOptionStringSchemaType: has unexpected extra key(s): "minimum"'
-    - "sphinx_needs.schema.config.ExtraOptionIntegerSchemaType: value of key 'type' is not any of ('integer')"
 
 missing_type_validate_local:
   conf: |
@@ -64,11 +68,6 @@ missing_type_validate_local:
           local:
             properties:
               efforts: {minimum: 15}
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "value of key 'local' of value of key 'validate' of dict did not match any element in the union"
-    - 'sphinx_needs.schema.config.ExtraOptionStringSchemaType: has unexpected extra key(s): "minimum"'
-    - "sphinx_needs.schema.config.ExtraOptionIntegerSchemaType: value of key 'type' is not any of ('integer')"
 
 type_error:
   conf: |
@@ -82,8 +81,6 @@ type_error:
     .. impl:: title
         :id: IMPL_1
         :efforts: 12
-  exception:
-    - "Schema for extra option 'efforts' has invalid type: unknown. Allowed types are: string, boolean, integer, number, array"
 
 select_error:
   conf: |
@@ -102,8 +99,6 @@ select_error:
       - select:
           properties:
             efforts: {type: "unknown"}
-  exception:
-    - "Config error in schema '[0]': Field 'efforts' has type 'unknown', but expected 'string'."
 
 both_definitions_and_json_given:
   conf: |
@@ -141,8 +136,6 @@ both_definitions_and_json_given:
         validate:
           local:
             required: [efforts]
-  exception:
-    - "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time"
 
 local_error:
   conf: |
@@ -162,8 +155,6 @@ local_error:
           local:
             properties:
               efforts: {type: "unknown"}
-  exception:
-    - "Config error in schema '[0]': Field 'efforts' has type 'unknown', but expected 'string'."
 
 network_link_not_exist:
   conf: |
@@ -178,8 +169,65 @@ network_link_not_exist:
           network:
             links2:
               minContains: 2
-  exception:
-    - "Schema '[0]' defines an unknown network link type 'links2'"
+
+type_mismatch_object_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  schemas:
+    schemas:
+      - validate:
+          local:
+            type: "array"
+            items: []
+            properties:
+              efforts: {}
+
+type_mismatch_object_extra_option_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              efforts: {type: "integer"}
+
+type_mismatch_array_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 12
+  schemas:
+    schemas:
+      - validate:
+          local:
+            type: "object"
+            items: {}
 
 ref_error:
   conf: |
@@ -198,8 +246,6 @@ ref_error:
       - validate:
           local:
             $ref: "#/$defs/not-exist"
-  exception:
-    - "Reference 'not-exist' not found in definitions"
 
 ref_mixed_error:
   conf: |
@@ -219,11 +265,8 @@ ref_mixed_error:
           local:
             $ref: "#/$defs/not-exist"
             required: [type]
-  exception:
-    - "Invalid $ref entry, expected a single $ref key"
-    - "{'$ref': '#/$defs/not-exist', 'required': ['type']}"
 
-ref_recursive:
+ref_recursive_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_schema_definitions_from_json = "schemas.json"
@@ -245,8 +288,6 @@ ref_recursive:
       - validate:
           local:
             $ref: "#/$defs/type-impl"
-  exception:
-    - "Circular reference detected for 'type-impl'"
 
 extra_option_pattern_unsafe_error:
   conf: |
@@ -260,9 +301,6 @@ extra_option_pattern_unsafe_error:
   rst: |
     .. impl:: title
         :id: IMPL_1
-  exception:
-    - "Unsafe pattern '^IMPL_(?!SAFE)' at 'extra_options.efforts.schema'"
-    - "contains lookahead/lookbehind assertions"
 
 extra_link_pattern_unsafe_error:
   conf: |
@@ -277,9 +315,6 @@ extra_link_pattern_unsafe_error:
   rst: |
     .. impl:: title
         :id: IMPL_1
-  exception:
-    - "Unsafe pattern '^IMPL_(?!SAFE)' at 'extra_links.links.schema.items'"
-    - "contains lookahead/lookbehind assertions"
 
 schemas_select_pattern_unsafe_error:
   conf: |
@@ -296,10 +331,6 @@ schemas_select_pattern_unsafe_error:
         validate:
           local:
             required: [id]
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^IMPL_(?!SAFE)' at 'schemas.[0].select.properties.id'"
-    - "contains lookahead/lookbehind assertions"
 
 schemas_validate_pattern_unsafe_error:
   conf: |
@@ -315,10 +346,6 @@ schemas_validate_pattern_unsafe_error:
             properties:
               id:
                 pattern: "^IMPL_(?!SAFE)"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^IMPL_(?!SAFE)' at 'schemas.[0].validate.local.properties.id'"
-    - "contains lookahead/lookbehind assertions"
 
 schemas_validate_pattern_backref_error:
   conf: |
@@ -334,10 +361,6 @@ schemas_validate_pattern_backref_error:
             properties:
               id:
                 pattern: "^IMPL_(SAFE)_\\1"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^IMPL_(SAFE)_\\1' at 'schemas.[0].validate.local.properties.id'"
-    - " contains backreferences"
 
 schemas_validate_pattern_nested_quantifiers_error:
   conf: |
@@ -353,10 +376,6 @@ schemas_validate_pattern_nested_quantifiers_error:
             properties:
               id:
                 pattern: "^(a+)+$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^(a+)+$' at 'schemas.[0].validate.local.properties.id'"
-    - "contains nested quantifiers that may cause backtracking"
 
 schemas_validate_pattern_recursive_error:
   conf: |
@@ -372,10 +391,6 @@ schemas_validate_pattern_recursive_error:
             properties:
               id:
                 pattern: "^test(?R)$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^test(?R)$' at 'schemas.[0].validate.local.properties.id'"
-    - "invalid regex syntax: unknown extension ?R at position 6"
 
 schemas_validate_pattern_possessive_quantifiers_error:
   mark:
@@ -393,10 +408,6 @@ schemas_validate_pattern_possessive_quantifiers_error:
             properties:
               id:
                 pattern: "^test*+$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^test*+$' at 'schemas.[0].validate.local.properties.id'"
-    - "contains possessive quantifiers"
 
 schemas_validate_pattern_atomic_groups_error:
   mark:
@@ -414,10 +425,6 @@ schemas_validate_pattern_atomic_groups_error:
             properties:
               id:
                 pattern: "^(?>test)$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^(?>test)$' at 'schemas.[0].validate.local.properties.id'"
-    - "contains special groups (other than non-capturing)"
 
 schemas_validate_pattern_unicode_property_error:
   conf: |
@@ -433,10 +440,6 @@ schemas_validate_pattern_unicode_property_error:
             properties:
               id:
                 pattern: "^\\p{L}+$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^\\p{L}+$' at 'schemas.[0].validate.local.properties.id'"
-    - "invalid regex syntax: bad escape \\p at position 1"
 
 schemas_validate_pattern_named_groups_error:
   conf: |
@@ -452,10 +455,6 @@ schemas_validate_pattern_named_groups_error:
             properties:
               id:
                 pattern: "^(?P<name>test)$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^(?P<name>test)$' at 'schemas.[0].validate.local.properties.id'"
-    - "contains special groups (other than non-capturing)"
 
 schemas_validate_pattern_unnamed_groups_error:
   conf: |
@@ -471,10 +470,6 @@ schemas_validate_pattern_unnamed_groups_error:
             properties:
               id:
                 pattern: "^(test)?(?(1)yes|no)$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^(test)?(?(1)yes|no)$' at 'schemas.[0].validate.local.properties.id'"
-    - "contains special groups (other than non-capturing)"
 
 schemas_validate_pattern_comment_groups_error:
   conf: |
@@ -490,10 +485,6 @@ schemas_validate_pattern_comment_groups_error:
             properties:
               id:
                 pattern: "^test(?#comment)$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^test(?#comment)$' at 'schemas.[0].validate.local.properties.id'"
-    - "contains special groups (other than non-capturing)"
 
 schemas_validate_pattern_conditional_error:
   conf: |
@@ -509,10 +500,6 @@ schemas_validate_pattern_conditional_error:
             properties:
               id:
                 pattern: "^(?(1)yes|no)$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^(?(1)yes|no)$' at 'schemas.[0].validate.local.properties.id'"
-    - "invalid regex syntax: invalid group reference 1 at position 4"
 
 schemas_validate_pattern_unicode_escapes_error:
   conf: |
@@ -528,10 +515,6 @@ schemas_validate_pattern_unicode_escapes_error:
             properties:
               id:
                 pattern: "^\\u0041$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^\\u0041$' at 'schemas.[0].validate.local.properties.id'"
-    - "contains Unicode and control character escapes"
 
 schemas_validate_pattern_subroutine_calls_error:
   conf: |
@@ -547,10 +530,6 @@ schemas_validate_pattern_subroutine_calls_error:
             properties:
               id:
                 pattern: "^test(?&name)$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^test(?&name)$' at 'schemas.[0].validate.local.properties.id'"
-    - "invalid regex syntax: unknown extension ?& at position 6"
 
 schemas_validate_pattern_relative_subroutine_error:
   conf: |
@@ -566,7 +545,3 @@ schemas_validate_pattern_relative_subroutine_error:
             properties:
               id:
                 pattern: "^test(?+1)$"
-  exception:
-    - "Schemas entry '[0]' is not valid"
-    - "Unsafe pattern '^test(?+1)$' at 'schemas.[0].validate.local.properties.id'"
-    - "invalid regex syntax: unknown extension ?+ at position 6"

@@ -9,17 +9,95 @@ the `Github discussion #1451 <https://github.com/useblocks/sphinx-needs/discussi
 
 The new schema validation is a versatile, fast, safe and declarative way to enforce constraints
 on need items and their relations in Sphinx-Needs. It is supposed to replace the legacy
-:ref:`needs_constraints` and :ref:`needs_warnings` configuration options.
+:ref:`needs_constraints` and :ref:`needs_warnings` configuration options in future.
 See :ref:`migration_from_warnings_constraints` for details on how to migrate.
 
-.. note::
+.. important::
 
-   The validation is coercing need extra options only for the schema validation,
-   so type constraints can be enforced. It does not yet change the Sphinx-Needs internal type
-   system. The goal of this first implementation is to agree on the interface definition
-   format and give users time to migrate their warnings/constraints.
-   A fully typed Sphinx-Needs will come in a second step in the near future and it will affect
-   dynamic functions, filters and exported/imported needs.
+   **Strong Typing System**: Sphinx-Needs features a comprehensive strong typing system
+   that extends throughout the entire application. This includes:
+
+   - **Early Type Validation**: All need fields are validated against their defined types,
+     with support for :ref:`dynamic_functions`, :ref:`variants <needs_variant_support>`,
+     :ref:`needextend` and :ref:`global defaults <needs_global_options>`. Needs that do not
+     conform to their types are not created and lead to a warning.
+   - **JSON Export**: Generated :ref:`needs.json <needs_builder>` files honor the user provided
+     types
+   - **Multi value extra options**: Array types for extra options are fully supported
+   - **Gradual Migration**: Existing projects can migrate step-by-step to the new system,
+     with string types as default for untyped fields.
+   - **Safety**: The new type system core makes it possible to configure fields individually.
+     Users may decide not to disallow variants / dynamic functions / defaults or needextend on
+     certain fields. This makes it possible to build a system in which the RST code is the *only*
+     source of truth.
+     (Look at the constructor of :py:class:`sphinx_needs.needs_schema.FieldSchema`.)
+
+   This represents a major improvement in data integrity and developer experience compared
+   to the previous string-typed system.
+
+Type System
+-----------
+
+The typing system features the following types for need fields:
+
+- **Primitive types**: ``string``, ``boolean``, ``integer``, ``number``
+- **List types**: ``array[string]``, ``array[boolean]``, ``array[integer]``, ``array[number]``
+
+The schema validation implementation is based on JSON schema, therefore
+`JSON schema types <https://json-schema.org/understanding-json-schema/reference/type>`__
+are used for types and schema description.
+
+Type representation in Python is as follows:
+
+- JSON ``string`` -> Python ``str``
+- JSON ``boolean`` -> Python ``bool``
+- JSON ``integer`` -> Python ``int``
+- JSON ``number`` -> Python ``float``
+- JSON ``array`` -> Python ``list``
+
+Schema configuration
+--------------------
+
+The schema is configured in multiple places:
+
+- :ref:`needs_extra_options` is the place to add new extra options that are then available
+  for all need types. The type information for each field is globally set here, so it is valid
+  for all the usages of that field for any need type. This is required for a coherent data
+  storage, as it would be expected by a database system. If different data types are needed for the
+  same option, it means creating a new extra option with a different name and type.
+
+  Further, the ``schema`` field in ``needs_extra_options`` also supports setting global
+  schema constraints for that option, that will be checked for each need type. E.g.
+  minimum/maximum for integers, enum for strings, etc.
+
+- :ref:`needs_extra_links` is the place to add new link options that are then available
+  for all need types. The type for link fields is pre-set to ``array[string]``,
+  as links are always lists of need IDs. The ``schema`` field in ``needs_extra_links``
+  supports setting global schema constraints for that link option, that will be checked
+  for each need type. E.g. minimum/maximum number of links or need id patterns. The schema
+  defined here always runs on unresolved local needs, i.e. links are a list of IDs.
+- :ref:`core fields <need>` such as ``type``, ``id``, ``title``, ``status`` or ``tags`` have
+  pre-defined types that cannot be changed.
+- :ref:`needs_schema_definitions` and :ref:`needs_schema_definitions_from_json` are the places to
+  define more complex validations that can act on need types, collection of fields and
+  resolved network links. It is based on JSON schema, but adapted and used in a way so it
+  fits perfectly in the Sphinx-Needs ecosystem.
+
+.. important::
+
+   JSON schema requires type information in all schemas to actually perform validation.
+   For example, validating an
+   `integer minimum <https://json-schema.org/understanding-json-schema/reference/numeric#range>`__
+   constraint on a string field does not make sense, but, depending on the implementation,
+   JSON schema might not complain about this. Therefore, Sphinx-Needs injects the type information
+   from ``needs_extra_options`` and ``needs_extra_links`` as well as the core fields
+   into the :ref:`needs_schema_definitions`.
+
+The next sections guides through an example and how do use the type and schema system to enforce
+constraints on need items and links between them.
+
+Modeling example
+----------------
 
 Imagine the following modeling of need items:
 
@@ -41,9 +119,58 @@ The schema validation in Sphinx-Needs allows you to define declarative rules for
 items based on their types, properties and relationships.
 
 This includes both local checks (validating properties of a single need) and network checks
-(validating relationships between multiple needs). The distinction is especially important in
-an IDE context, where local checks can provide instant feedback while network requires building
-the full network index first.
+(validating relationships between multiple needs). In local checks links to other needs are just
+a list of string need IDs while network checks run on the data of the linked need.
+
+The distinction is especially important in an IDE context, where local checks can provide instant
+feedback while network requires building the full network index first.
+
+.. TODO enable this once the PR is merged
+   .. note::
+   
+      The
+      `full example <https://github.com/useblocks/sphinx-needs/tree/master/tests/doc_test/doc_schema_example>`__
+      for below configuration can be found in the tests.
+      It can directly be executed with::
+   
+        tests/doc_test/doc_schema_example $ uv run sphinx-build -b html . _build
+
+Here are the full example files as a reference:
+
+.. dropdown:: conf.py
+
+   .. literalinclude:: ../../tests/doc_test/doc_schema_example/conf.py
+      :language: python
+
+.. dropdown:: index.rst
+
+   .. literalinclude:: ../../tests/doc_test/doc_schema_example/index.rst
+      :language: rst
+
+.. dropdown:: ubproject.toml
+
+   .. literalinclude:: ../../tests/doc_test/doc_schema_example/ubproject.toml
+      :language: toml
+
+.. dropdown:: schemas.json
+
+   .. literalinclude:: ../../tests/doc_test/doc_schema_example/schemas.json
+      :language: json
+
+Field Configuration
+-------------------
+
+Above modeling can be reached with the following ubproject.toml configuration:
+
+.. literalinclude:: ../../tests/doc_test/doc_schema_example/ubproject.toml
+   :language: toml
+
+As can be seen, the ``needs.extra_options`` section defines the extra options used in the modeling
+together with their types and possible schema constraints.
+
+The pictured need types and extra links are also defined.
+
+The given types will be injected to the JSON schema models, if not provided there.
 
 Schema Configuration
 --------------------
@@ -61,7 +188,7 @@ The preferred approach is to define schemas in a separate JSON file and load the
    # conf.py
    needs_schema_definitions_from_json = "schemas.json"
 
-Then create a ``schemas.json`` file in your project root:
+Then create a small ``schemas.json`` file in your project root:
 
 .. code-block:: json
 
@@ -91,7 +218,13 @@ Then create a ``schemas.json`` file in your project root:
      ]
    }
 
-**Benefits of JSON File Configuration:**
+Above schema already makes use of :ref:`schema_reuse` via ``$defs`` and ``$ref``.
+
+.. dropdown:: Full version for above example modeling
+
+   .. literalinclude:: ../../tests/doc_test/doc_schema_example/schemas.json
+
+Benefits of JSON File Configuration:
 
 - **Declarative**: Schema definitions are separate from Python configuration
 - **Version Control**: Easy to track changes to validation rules
@@ -166,109 +299,9 @@ Local validation checks individual need properties without requiring information
 
 Example local validation schema:
 
-.. code-block:: json
-
-   {
-     "$defs": {
-       "type-feat": {
-         "properties": {
-           "type": { "const": "feat" }
-         }
-       },
-       "type-spec": {
-         "properties": {
-           "type": { "const": "spec" }
-         }
-       },
-       "type-impl": {
-         "properties": {
-           "type": { "const": "impl" }
-         }
-       },
-       "safe-feat": {
-         "allOf": [
-           { "$ref": "#/$defs/safe-need" },
-           { "$ref": "#/$defs/type-feat" }
-         ]
-       },
-       "safe-spec": {
-         "allOf": [
-           { "$ref": "#/$defs/safe-need" },
-           { "$ref": "#/$defs/type-spec" }
-         ]
-       },
-       "safe-impl": {
-         "allOf": [
-           { "$ref": "#/$defs/safe-need" },
-           { "$ref": "#/$defs/type-impl" }
-         ]
-       },
-       "safe-need": {
-         "properties": {
-           "asil": {
-             "enum": ["A", "B", "C", "D"]
-           }
-         },
-         "required": ["asil"]
-       },
-       "high-efforts": {
-         "properties": {
-           "efforts": { "minimum": 15 }
-         },
-         "required": ["efforts"]
-       }
-     },
-     "schemas": [
-       {
-         "id": "spec",
-         "select": { "$ref": "#/$defs/type-spec" },
-         "validate": {
-           "local": {
-             "properties": {
-               "id": { "pattern": "^SPEC_[a-zA-Z0-9_-]*$" },
-               "efforts": { "minimum": 0 }
-             },
-             "unevaluatedProperties": false
-           }
-         }
-       },
-       {
-         "id": "spec-approved-required",
-         "severity": "violation",
-         "message": "Approval required due to high efforts",
-         "select": {
-           "allOf": [
-             { "$ref": "#/$defs/high-efforts" },
-             { "$ref": "#/$defs/type-spec" }
-           ]
-         },
-         "validate": {
-           "local": {
-             "required": ["approved"]
-           }
-         }
-       },
-       {
-         "id": "spec-approved-not-given",
-         "severity": "info",
-         "message": "Approval not given",
-         "select": {
-           "allOf": [
-             { "$ref": "#/$defs/type-spec" },
-             { "$ref": "#/$defs/high-efforts" }
-           ]
-         },
-         "validate": {
-           "local": {
-             "properties": {
-               "approved": { "const": true }
-             },
-             "required": ["approved"]
-           }
-         }
-       }
-     ]
-   }
+.. literalinclude:: ../../tests/doc_test/doc_schema_example/schemas.json
+   :lines: 1-49,57-143,183-
+   :language: json
 
 Above conditions can all be checked locally on need level which allows instant user feedback
 in IDE extensions such as `ubCode`_.
@@ -284,134 +317,33 @@ After network resolution, the following checks can be performed:
 
 - a 'safe' ``impl`` that has an ``asil`` of ``A | B | C | D`` cannot ``link`` to ``spec`` items
   that have an ``asil`` of ``QM``
-- a safe ``impl`` can only link to 'approved' ``spec`` items with link type ``details``
-- likewise, a safe ``spec`` can only link to safe and approved ``feat`` items
-- the safe ``impl`` can link to *one or more* safe ``spec`` items
+- a safe ``impl`` can only link approved ``spec`` items with link type ``links``
+- a safe ``spec`` can only link to safe and approved ``feat`` items with link type ``details``
+- a safe ``impl`` can link to *one or more* safe ``spec`` items
 - a spec can only link to *exactly one* ``feat``
 - additional links to non-validating items are not allowed (that is the min/max constraints are
   met but there are failing additional link targets)
 
-Example network validation schema:
+Example:
 
-.. code-block:: json
-
-   {
-     "$defs": {
-       "type-feat": {
-         "properties": {
-           "type": { "const": "feat" }
-         }
-       },
-       "type-spec": {
-         "properties": {
-           "type": { "const": "spec" }
-         }
-       },
-       "type-impl": {
-         "properties": {
-           "type": { "const": "impl" }
-         }
-       },
-       "safe-feat": {
-         "allOf": [
-           { "$ref": "#/$defs/safe-need" },
-           { "$ref": "#/$defs/type-feat" }
-         ]
-       },
-       "safe-spec": {
-         "allOf": [
-           { "$ref": "#/$defs/safe-need" },
-           { "$ref": "#/$defs/type-spec" }
-         ]
-       },
-       "safe-impl": {
-         "allOf": [
-           { "$ref": "#/$defs/safe-need" },
-           { "$ref": "#/$defs/type-impl" }
-         ]
-       },
-       "safe-need": {
-         "properties": {
-           "asil": {
-             "enum": ["A", "B", "C", "D"]
-           }
-         },
-         "required": ["asil"]
-       },
-       "high-efforts": {
-         "properties": {
-           "efforts": { "minimum": 15 }
-         },
-         "required": ["efforts"]
-       }
-     },
-     "schemas": [
-       {
-         "id": "safe-spec-[details]->safe-feat",
-         "message": "Safe spec details safe and approved feat",
-         "select": { "$ref": "#/$defs/safe-spec" },
-         "validate": {
-           "network": {
-             "details": {
-               "contains": {
-                 "local": {
-                   "properties": {
-                     "approved": { "const": true }
-                   },
-                   "required": ["approved"],
-                   "allOf": [{ "$ref": "#/$defs/safe-feat" }]
-                 }
-               },
-               "minContains": 1,
-               "maxContains": 1,
-             }
-           }
-         }
-       },
-       {
-         "id": "safe-impl-[links]->safe-spec",
-         "message": "Safe impl links to safe spec",
-         "select": { "$ref": "#/$defs/safe-impl" },
-         "validate": {
-           "network": {
-             "links": {
-               "contains": {
-                 "local": { "$ref": "#/$defs/safe-spec" }
-               },
-               "minContains": 1,
-             }
-           }
-         }
-       }
-     ]
-   }
-
-Network Link Validation
-~~~~~~~~~~~~~~~~~~~~~~~
+.. literalinclude:: ../../tests/doc_test/doc_schema_example/schemas.json
+   :lines: 1-41,48-49,144-
+   :language: json
 
 Network validation supports various constraints on linked needs:
 
 **Link Count Constraints**
 
-- ``minContains``: Minimum number of valid links required
-- ``maxContains``: Maximum number of valid links allowed
+- ``validate.local.properties.<link>.minItems``: Minimum number of links required
+- ``validate.local.properties.<link>.maxItems``: Minimum number of links required
+- ``validate.network.<link>.minContains``: Minimum number of valid links required
+- ``validate.network.<link>.maxContains``: Maximum number of valid links allowed
 
-.. code-block:: json
+``minItems`` and ``maxItems`` are located under local, as a link field is always a list of
+need IDs (strings) on local level. That is enough to validate the number of links.
 
-   {
-     "validate": {
-       "network": {
-         "links": {
-           "minContains": 1, // At least one link required
-           "maxContains": 3 // Maximum three links allowed
-         }
-       }
-     }
-   }
-
-**Link Target Validation**
-
-The ``items`` property defines validation rules for each linked need:
+``minContains`` and ``maxContains`` are located under network, as they validate the actual
+need objects that are linked.
 
 .. code-block:: json
 
@@ -420,6 +352,31 @@ The ``items`` property defines validation rules for each linked need:
        "network": {
          "links": {
            "contains": {
+             "local": {
+               "properties": {
+                  "type": { "const": "spec" },
+                  "asil": { "enum": ["A", "B", "C", "D"] }
+               },
+               "required": ["type", "asil"]
+             }
+           },
+           "minContains": 1, // At least one link validates 'contains'
+           "maxContains": 3  // Maximum three links validate 'contains'
+         }
+       }
+     }
+   }
+
+The ``items`` property can be used to define validation rules that must be satisfied
+for *all* linked needs:
+
+.. code-block:: json
+
+   {
+     "validate": {
+       "network": {
+         "links": {
+           "items": {
              "local": {
                "properties": {
                  "status": { "const": "approved" }
@@ -438,33 +395,39 @@ Network validation can be nested to validate multi-hop link chains:
 .. code-block:: json
 
    {
-       "id": "safe-impl-chain",
-       "select": {"$ref": "#/$defs/safe-impl"},
-       "validate": {
-           "network": {
+     "id": "safe-impl-chain",
+     "select": {
+       "$ref": "#/$defs/safe-impl"
+     },
+     "validate": {
+       "network": {
+         "links": {
+           "contains": {
+             "local": {
+               "$ref": "#/$defs/safe-spec"
+             },
+             "network": {
                "links": {
-                   "contains": {
-                       "local": {"$ref": "#/$defs/safe-spec"},
-                       "network": {
-                           "links": {
-                               "contains": {
-                                   "local": {"$ref": "#/$defs/safe-feat"}
-                               },
-                               "minContains": 1
-                           }
-                       }
-                   },
-                   "minContains": 1
+                 "contains": {
+                   "local": {
+                     "$ref": "#/$defs/safe-feat"
+                   }
+                 },
+                 "minContains": 1
                }
-           }
+             }
+           },
+           "minContains": 1
+         }
        }
+     }
    }
 
 This validates that:
 
 1. A safe implementation links to safe specifications
 #. Those specifications in turn link to safe features
-#. Both link levels have minimum/maximum count requirements
+#. Both link levels have minimum count requirements
 
 Schema Components
 -----------------
@@ -603,6 +566,8 @@ Each schema can specify a severity level:
 The config :ref:`needs_schema_severity` can be used to define a minimum severity level for a
 warning to be reported.
 
+.. _`schema_reuse`:
+
 Schema Definitions ($defs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -633,6 +598,10 @@ Reusable schema components can be defined in the ``$defs`` section:
    }
 
 A full example is outlined in the :ref:`local_validation` section.
+The key ``$ref`` must appear as the only key in the schema where it is used.
+
+Recursive references are not allowed, i.e. a schemas cannot directly or indirectly
+reference itself.
 
 Error Messages
 --------------
@@ -680,65 +649,50 @@ need and the specific link that caused the issue::
 Schema Violation Report JSON File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Schema violations are also stored in a ``schema_violations.json`` file under the Sphinx app's output directory.
+Schema violations are also stored in a ``schema_violations.json`` file under the output directory.
 
 .. dropdown:: Example
 
    .. code-block:: json
 
-    {
-      "validation_summary": "Schema validation completed with 6 warning(s) in 0.007 seconds. Validated 1533 needs/s.",
-      "validated_needs_per_second": 1533,
-      "validated_needs_count": 11,
-      "validation_warnings": {
-        "FEAt": [
-          {
-            "log_lvl": "warning",
-            "type": "sn_schema",
-            "subtype": "local_fail",
-            "details": {
-              "severity": "violation",
-              "field": "id",
-              "need_path": "FEAt",
-              "schema_path": "[0] > local > properties > id > pattern",
-              "user_msg": "id must be uppercase with numbers and underscores",
-              "validation_msg": "'FEAt' does not match '^[A-Z0-9_]+$'"
-            },
-            "children": []
-          }
-        ],
-        "SPEC_MISSING_APPROVAL": [
-          {
-            "log_lvl": "warning",
-            "type": "sn_schema",
-            "subtype": "local_fail",
-            "details": {
-              "severity": "violation",
-              "field": "",
-              "need_path": "SPEC_MISSING_APPROVAL",
-              "schema_path": "spec[1] > local > unevaluatedProperties",
-              "validation_msg": "Unevaluated properties are not allowed ('asil', 'priority' were unexpected)"
-            },
-            "children": []
-          },
-          {
-            "log_lvl": "warning",
-            "type": "sn_schema",
-            "subtype": "local_fail",
-            "details": {
-              "severity": "violation",
-              "field": "",
-              "need_path": "SPEC_MISSING_APPROVAL",
-              "schema_path": "spec-approved-required[2] > local > required",
-              "user_msg": "Approval required due to high efforts",
-              "validation_msg": "'approved' is a required property"
-            },
-            "children": []
-          }
-        ]
+      {
+        "validation_summary": "Schema validation completed with 2 warning(s) in 0.002 seconds. Validated 1368 needs/s.",
+        "validated_needs_per_second": 1368,
+        "validated_needs_count": 3,
+        "validation_warnings": {
+          "FEAT_unsafe": [
+            {
+              "log_lvl": "warning",
+              "type": "sn_schema",
+              "subtype": "local_fail",
+              "details": {
+                "severity": "violation",
+                "field": "id",
+                "need_path": "FEAT_unsafe",
+                "schema_path": "[0] > local > properties > id > pattern",
+                "user_msg": "id must be uppercase with numbers and underscores",
+                "validation_msg": "'FEAT_unsafe' does not match '^[A-Z0-9_]+$'"
+              },
+              "children": []
+            }
+          ],
+          "IMPL_SAFE": [
+            {
+              "log_lvl": "warning",
+              "type": "sn_schema",
+              "subtype": "network_local_fail",
+              "details": {
+                "severity": "violation",
+                "field": "asil",
+                "need_path": "IMPL_SAFE > links > SPEC_UNSAFE",
+                "schema_path": "safe-impl-[links]->safe-spec[7] > links > local > allOf > 0 > properties > asil > enum",
+                "validation_msg": "'QM' is not one of ['A', 'B', 'C', 'D']"
+              },
+              "children": []
+            }
+          ]
+        }
       }
-    }
-
 
 Supported Data Types
 --------------------
@@ -749,7 +703,7 @@ The following data types are available for need options:
 String Type
 ~~~~~~~~~~~
 
-The default data type for need options. Supports various format validations:
+String fields store textual data with optional format validation:
 
 .. code-block:: json
 
@@ -762,6 +716,9 @@ The default data type for need options. Supports various format validations:
        }
      }
    }
+
+**Runtime Behavior**: String values are stored as Python ``str`` objects and exported
+as JSON strings, maintaining full Unicode support.
 
 **String Formats**
 
@@ -808,7 +765,7 @@ String fields can be validated against specific formats using the ``format`` pro
 Integer Type
 ~~~~~~~~~~~~
 
-Whole number validation with range constraints:
+Integer fields store whole numbers with optional range constraints:
 
 .. code-block:: json
 
@@ -823,13 +780,10 @@ Whole number validation with range constraints:
      }
    }
 
-**Note**: Values are stored as strings in Sphinx-Needs but validated as integers during
-schema validation.
-
 Number Type
 ~~~~~~~~~~~
 
-Floating-point number validation:
+Number fields store floating-point values:
 
 .. code-block:: json
 
@@ -843,19 +797,17 @@ Floating-point number validation:
      }
    }
 
-**Note**: Values are stored as strings in Sphinx-Needs but validated as numbers during
-schema validation.
 
 Boolean Type
 ~~~~~~~~~~~~
 
-Boolean validation with flexible input handling:
+Boolean fields store true/false values with flexible input handling:
 
 .. code-block:: json
 
    {
      "properties": {
-       "approved": {"type": "boolean"},
+       "approval": {"type": "boolean"},
        "is_critical": {"type": "boolean", "const": true}
      }
    }
@@ -871,7 +823,7 @@ more expressive.
 Array Type
 ~~~~~~~~~~
 
-Multi-value options supporting arrays of the above basic types:
+Array fields store lists of homogeneous typed values:
 
 .. code-block:: json
 
@@ -881,22 +833,29 @@ Multi-value options supporting arrays of the above basic types:
          "type": "array",
          "items": {"type": "string"},
          "minItems": 1,
-         "maxItems": 10,
-         "splitChar": ","
+         "maxItems": 10
+       },
+       "priorities": {
+         "type": "array",
+         "items": {"type": "integer"},
+         "minItems": 1
+       },
+       "approvals": {
+         "type": "array",
+         "items": {"type": "boolean"}
        }
      }
    }
 
 **Array Properties**:
 
-- ``items``: Schema for individual array elements
+- ``items``: Schema for all array elements
 - ``minItems`` / ``maxItems``: Array size constraints
-- ``splitChar``: Character used to split string input (default: ``,``)
+- ``contains`` Schema for some elements in the array
+- ``minContains`` / ``maxContains``: Constraints on number of elements matching ``contains``;
 
-.. note::
-
-   This ``array`` type with ``splitChar`` does not yet work for extra options. This is
-   planned for a future release.
+  - If ``minContains`` is not given, it defaults to 1 when ``contains`` is present.
+  - If ``maxContains`` is not given, there is no upper limit.
 
 Regex Pattern Restrictions
 --------------------------
@@ -1023,15 +982,8 @@ The schema validation system is designed to replace the older :ref:`needs_constr
 
 .. code-block:: python
 
-   # Old approach - needs_warnings
-   def my_custom_warning_check(need, log):
-       if need["status"] not in ["open", "closed", "done"]:
-           return True
-       return False
-
    needs_warnings = {
        "invalid_status": "status not in ['open', 'closed', 'done']",
-       "type_match": my_custom_warning_check
    }
 
 .. code-block:: json
@@ -1058,7 +1010,7 @@ The schema validation system is designed to replace the older :ref:`needs_constr
 
 **Network Validation Benefits**
 
-The schema system provides capabilities not available in the legacy systems:
+The schema system provides capabilities not available in the legacy system:
 
 .. code-block:: json
 
@@ -1080,7 +1032,7 @@ The schema system provides capabilities not available in the legacy systems:
                  "local": {
                    "allOf": [
                      {"$ref": "#/$defs/type-spec"},
-                     {"properties": {"approved": {"const": true}}}
+                     {"properties": {"approval": {"const": true}}}
                    ]
                  }
                },
@@ -1102,3 +1054,16 @@ and warning systems.
 3. **Leverage network validation**: Replace complex Python logic with declarative schemas
 4. **Test incrementally**: Validate schemas work as expected before removing legacy rules
 5. **Update documentation**: Ensure team members understand the new validation approach
+
+Tests
+-----
+
+A multitude of test cases exist, that can also be used as a reference for how to use the
+type system and schema validation. Whithin the
+`YAML based fixtures <https://github.com/useblocks/sphinx-needs/tree/master/tests/schema/fixtures>`__
+you will always find full project examples.
+
+The tests use snapshot testing, and the expected validation results can be found
+`here <https://github.com/useblocks/sphinx-needs/blob/master/tests/schema/__snapshots__/test_schema.ambr>`__
+.
+

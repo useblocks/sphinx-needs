@@ -101,6 +101,21 @@ class NeedganttDirective(FilterBase, DiagramBase):
             "completion_option", needs_config.completion_option
         )
 
+        for option_name in (duration_option, completion_option):
+            option = needs_config.extra_options[option_name]
+            if option.schema is None:
+                # TODO(mh) should we set a default schema here or rather warn?
+                option.schema = {"type": "integer"}
+            else:
+                if option.schema.get("type") not in {"integer", "number"}:
+                    log_warning(
+                        logger,
+                        f"Schema for option '{option_name}' is not 'integer' or 'number' as required by needgantt.",
+                        "config",
+                        None,
+                    )
+                    return []
+
         attributes: NeedsGanttType = {
             "docname": env.docname,
             "lineno": self.lineno,
@@ -246,7 +261,7 @@ def process_needgantt(
                 duration = need[duration_option]
                 complete_option = current_needgantt["completion_option"]
                 complete = need[complete_option]
-                if not (duration and duration.isdigit()):
+                if not duration:
                     need_location = (
                         f" (located: {need['docname']}:{need['lineno']})"
                         if need["docname"]
@@ -260,12 +275,15 @@ def process_needgantt(
                         location=node,
                     )
                     duration = 1
+                else:
+                    if isinstance(duration, float):
+                        # float durations not supported by plantuml
+                        duration = round(duration)
                 gantt_element = "[{}] as [{}] lasts {} days\n".format(
                     need["title"], need["id"], duration
                 )
 
             if complete:
-                complete = complete.replace("%", "")
                 el_completion_string += "[{}] is {}% completed\n".format(
                     need["title"], complete
                 )

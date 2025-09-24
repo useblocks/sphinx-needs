@@ -1,0 +1,184 @@
+{
+  "$defs": {
+    "type-feat": {
+      "properties": {
+        "type": { "const": "feat" }
+      }
+    },
+    "type-spec": {
+      "properties": {
+        "type": { "const": "spec" }
+      }
+    },
+    "type-impl": {
+      "properties": {
+        "type": { "const": "impl" }
+      }
+    },
+    "safe-feat": {
+      "allOf": [
+        { "$ref": "#/$defs/safe-need" },
+        { "$ref": "#/$defs/type-feat" }
+      ]
+    },
+    "safe-spec": {
+      "allOf": [
+        { "$ref": "#/$defs/safe-need" },
+        { "$ref": "#/$defs/type-spec" }
+      ]
+    },
+    "safe-impl": {
+      "allOf": [
+        { "$ref": "#/$defs/safe-need" },
+        { "$ref": "#/$defs/type-impl" }
+      ]
+    },
+    "safe-need": {
+      "properties": {
+        "asil": { "enum": ["A", "B", "C", "D"] }
+      },
+      "required": ["asil"]
+    },
+    "high-efforts": {
+      "properties": {
+        "efforts": { "minimum": 15 }
+      },
+      "required": ["efforts"]
+    }
+  },
+  "schemas": [
+    {
+      "severity": "warning",
+      "message": "id must be uppercase with numbers and underscores",
+      "validate": {
+        "local": { "properties": { "id": { "pattern": "^[A-Z0-9_]+$" } } }
+      }
+    },
+    {
+      "id": "impl",
+      "select": {
+        "$ref": "#/$defs/type-impl"
+      },
+      "validate": {
+        "local": {
+          "properties": {
+            "id": { "pattern": "^IMPL_[a-zA-Z0-9_-]*$" },
+            "links": {},
+            "asil": {}
+          },
+          "unevaluatedProperties": false
+        }
+      }
+    },
+    {
+      "id": "spec",
+      "select": {
+        "$ref": "#/$defs/type-spec"
+      },
+      "validate": {
+        "local": {
+          "properties": {
+            "id": { "pattern": "^SPEC_[a-zA-Z0-9_-]*$" },
+            "efforts": { "minimum": 0, "maximum": 20 },
+            "approval": {},
+            "asil": {},
+            "details": {}
+          },
+          "unevaluatedProperties": false
+        }
+      }
+    },
+    {
+      "id": "feat",
+      "select": {
+        "$ref": "#/$defs/type-feat"
+      },
+      "validate": {
+        "local": {
+          "properties": {
+            "id": { "pattern": "^FEAT_[a-zA-Z0-9_-]*$" },
+            "efforts": { "minimum": 0, "maximum": 20 },
+            "approval": {},
+            "asil": {},
+            "details": {}
+          },
+          "unevaluatedProperties": false
+        }
+      }
+    },
+    {
+      "id": "spec-approval-required",
+      "severity": "violation",
+      "message": "Approval required due to high efforts",
+      "select": {
+        "allOf": [
+          { "$ref": "#/$defs/high-efforts" },
+          { "$ref": "#/$defs/type-spec" }
+        ]
+      },
+      "validate": {
+        "local": {
+          "required": ["approval"]
+        }
+      }
+    },
+    {
+      "id": "spec-approval-not-given",
+      "severity": "warning",
+      "message": "Approval not given",
+      "select": {
+        "allOf": [
+          { "$ref": "#/$defs/type-spec" },
+          { "$ref": "#/$defs/high-efforts" }
+        ]
+      },
+      "validate": {
+        "local": {
+          "properties": {
+            "approval": { "const": true }
+          },
+          "required": ["approval"]
+        }
+      }
+    },
+    {
+      "id": "safe-spec-[details]->safe-feat",
+      "message": "Safe spec details safe feat",
+      "select": {
+        "$ref": "#/$defs/safe-spec"
+      },
+      "validate": {
+        "network": {
+          "details": {
+            "contains": {
+              "local": {
+                "$ref": "#/$defs/safe-feat"
+              }
+            },
+            "minContains": 1,
+            "maxContains": 1
+          }
+        }
+      }
+    },
+    {
+      "id": "safe-impl-[links]->safe-spec",
+      "message": "Safe impl links to safe spec",
+      "select": {
+        "$ref": "#/$defs/safe-impl"
+      },
+      "validate": {
+        "network": {
+          "links": {
+            "contains": {
+              "local": {
+                "$ref": "#/$defs/safe-spec"
+              }
+            },
+            "minContains": 1
+          }
+        }
+      }
+    }
+  ]
+}
