@@ -17,6 +17,7 @@ SCOPE_NODE_TYPES = {
     CommentType.python: {"function_definition", "class_definition"},
     CommentType.cpp: {"function_definition", "class_definition"},
     CommentType.cs: {"method_declaration", "class_declaration", "property_declaration"},
+    CommentType.yaml: {"block_mapping_pair", "block_sequence_item", "document"},
 }
 
 # initialize logger
@@ -43,6 +44,7 @@ PYTHON_QUERY = """
             """
 CPP_QUERY = """(comment) @comment"""
 C_SHARP_QUERY = """(comment) @comment"""
+YAML_QUERY = """(comment) @comment"""
 
 
 def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
@@ -76,6 +78,11 @@ def init_tree_sitter(comment_type: CommentType) -> tuple[Parser, Query]:
 
         parsed_language = Language(tree_sitter_c_sharp.language())
         query = Query(parsed_language, C_SHARP_QUERY)
+    elif comment_type == CommentType.yaml:
+        import tree_sitter_yaml  # noqa: PLC0415
+
+        parsed_language = Language(tree_sitter_yaml.language())
+        query = Query(parsed_language, YAML_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)
@@ -133,10 +140,96 @@ def find_next_scope(
     return None
 
 
+def _find_yaml_structure_in_block_node(
+    block_node: TreeSitterNode,
+) -> TreeSitterNode | None:
+    """Find YAML structure elements within a block_node."""
+    for grandchild in block_node.named_children:
+        if grandchild.type == "block_mapping":
+            for ggchild in grandchild.named_children:
+                if ggchild.type == "block_mapping_pair":
+                    return ggchild
+        elif grandchild.type == "block_sequence":
+            for ggchild in grandchild.named_children:
+                if ggchild.type == "block_sequence_item":
+                    return ggchild
+    return None
+
+
+def find_yaml_next_structure(node: TreeSitterNode) -> TreeSitterNode | None:
+    """Find the next YAML structure element after the comment node."""
+    current = node.next_named_sibling
+    while current:
+        if current.type in {
+            "block_mapping_pair",
+            "block_sequence_item",
+            "flow_mapping",
+            "flow_sequence",
+        }:
+            return current
+        if current.type == "document":
+            for child in current.named_children:
+                if child.type == "block_node":
+                    result = _find_yaml_structure_in_block_node(child)
+                    if result:
+                        return result
+        if current.type == "block_node":
+            result = _find_yaml_structure_in_block_node(current)
+            if result:
+                return result
+        current = current.next_named_sibling
+    return None
+
+
+def find_yaml_prev_sibling_on_same_row(node: TreeSitterNode) -> TreeSitterNode | None:
+    """Find a previous named sibling that is on the same row as the comment."""
+    comment_row = node.start_point.row
+    current = node.prev_named_sibling
+
+    while current:
+        # Check if this sibling ends on the same row as the comment starts
+        # This indicates it's an inline comment
+        if current.end_point.row == comment_row:
+            return current
+        # If we find a sibling that ends before the comment row, we can stop
+        # as we won't find any siblings on the same row going backwards
+        if current.end_point.row < comment_row:
+            break
+        current = current.prev_named_sibling
+
+    return None
+
+
+def find_yaml_associated_structure(node: TreeSitterNode) -> TreeSitterNode | None:
+    """Find the YAML structure (key-value pair, list item, etc.) associated with a comment."""
+    # First, check if this is an inline comment by looking for a previous sibling on the same row
+    prev_sibling_same_row = find_yaml_prev_sibling_on_same_row(node)
+    if prev_sibling_same_row:
+        return prev_sibling_same_row
+
+    # If no previous sibling on same row, try to find the next named sibling (structure after the comment)
+    structure = find_yaml_next_structure(node)
+    if structure:
+        return structure
+
+    # If no next sibling found, traverse up to find parent structure
+    parent = node.parent
+    while parent:
+        if parent.type in {"block_mapping_pair", "block_sequence_item"}:
+            return parent
+        parent = parent.parent
+
+    return None
+
+
 def find_associated_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
     """Find the associated scope of a comment."""
+    if comment_type == CommentType.yaml:
+        # YAML uses different structure association logic
+        return find_yaml_associated_structure(node)
+
     if node.type == CommentCategory.docstring:
         # Only for python's docstring
         return find_enclosing_scope(node, comment_type)

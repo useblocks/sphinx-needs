@@ -267,7 +267,7 @@ Specifies the comment syntax style used in the source code files. This determine
 
 **Type:** ``str``
 **Default:** ``"cpp"``
-**Supported values:** ``"cpp"``, ``"python"``
+**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"yaml"``
 
 .. code-block:: toml
 
@@ -288,12 +288,22 @@ Specifies the comment syntax style used in the source code files. This determine
      - ``"cpp"``
      - ``//`` (single-line),
        ``/* */`` (multi-line)
-     - ``c``, ``h``, ``.cpp``, and ``.hpp``
+     - ``.c``, ``.ci``, ``.h``, ``.cpp``, ``.cc``, ``.cxx``, ``.hpp``, ``.hh``, ``.hxx`` and ``.ihl``
    * - Python
      - ``"python"``
      - ``#`` (single-line),
        ``""" """`` (docstrings)
      - ``.py``
+   * - C#
+     - ``"cs"``
+     - ``//`` (single-line),
+       ``/* */`` (multi-line),
+       ``///`` (XML doc comments)
+     - ``.cs``
+   * - YAML
+     - ``"yaml"``
+     - ``#`` (single-line)
+     - ``.yaml``, ``.yml``
 
 .. note:: Future versions may support additional programming languages. Currently, only C/C++ and Python comment styles are supported.
 
