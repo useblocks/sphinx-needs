@@ -92,9 +92,20 @@ class NeedimportDirective(SphinxDirective):
             )[1]
 
             if not os.path.exists(correct_need_import_path):
-                raise ReferenceError(
+                warning_text = (
                     f"Could not load needs import file {correct_need_import_path}"
                 )
+                log_warning(
+                    logger,
+                    warning_text,
+                    "needimport",
+                    location=(self.env.docname, self.lineno),
+                )
+
+                paragraph = nodes.paragraph(text=warning_text)
+                warning = nodes.warning()
+                warning += paragraph
+                return [warning]
 
             try:
                 with open(correct_need_import_path) as needs_file:
@@ -244,7 +255,7 @@ class NeedimportDirective(SphinxDirective):
             )
 
             try:
-                nodes = add_need(
+                need_node = add_need(
                     app=self.env.app,
                     state=self.state,
                     need_source=need_source,
@@ -258,7 +269,7 @@ class NeedimportDirective(SphinxDirective):
                     location=self.get_location(),
                 )
             else:
-                need_nodes.extend(nodes)
+                need_nodes.extend(need_node)
 
         if unknown_keys:
             log_warning(
