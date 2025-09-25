@@ -5,8 +5,3 @@ ignore = ["block.title_line"]
 
 [needs]
 id_required = true
-
-[[needs.types]]
-directive = "my-req"
-title = "My Requirement"
-prefix = "M_"

@@ -79,4 +79,8 @@ html_sidebars = {
 html_context = {"repository": "useblocks/sphinx-codelinks"}
 html_css_files = ["furo.css"]
 
+# Sphinx-Needs configuration
+needs_from_toml = "ubproject.toml"
+
+# Src-trace configuration
 src_trace_config_from_toml = "./src_trace.toml"

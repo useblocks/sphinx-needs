@@ -1,0 +1,5 @@
+<document source="<source>">
+    <target anonymous="" ids="SRCTRACE_F70E0" refid="SRCTRACE_F70E0">
+    <Need classes="need need-srctrace" ids="SRCTRACE_F70E0" refid="SRCTRACE_F70E0">
+    <target anonymous="" ids="IMPL_1" refid="IMPL_1">
+    <Need classes="need need-impl" ids="IMPL_1" refid="IMPL_1">

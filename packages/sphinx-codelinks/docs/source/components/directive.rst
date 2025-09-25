@@ -52,12 +52,14 @@ The ``src-trace`` directive can be used with the **file** option:
 .. code-block:: rst
 
    .. src-trace:: dcdc demo_1
+      :id: SRC_001
       :project: dcdc
       :file: ./charge/demo_1.cpp
 
 The needs defined in source code are extracted and rendered to:
 
 .. src-trace:: dcdc demo_1
+   :id: SRC_001
    :project: dcdc
    :file: ./charge/demo_1.cpp
 
@@ -66,12 +68,14 @@ The ``src-trace`` directive can be used with the **directory** option:
 .. code-block:: rst
 
    .. src-trace:: dcdc charge
+      :id: SRC_001
       :project: dcdc
       :directory: ./discharge
 
 The needs defined in source code are extracted and rendered to:
 
 .. src-trace:: dcdc charge
+   :id: SRC_002
    :project: dcdc
    :directory: ./discharge
 
