@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758741314291,
+  "lastUpdate": 1758801998877,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14220,6 +14220,42 @@ window.BENCHMARK_DATA = {
             "value": 66.44724261100001,
             "unit": "s",
             "extra": "Commit: 38d7abf141f561bbeb4c9b4e28d741f2cc68a2da\nBranch: master\nTime: 2025-09-24T21:13:09+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "95444300+PhilipPartsch@users.noreply.github.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0b2c601107d60bfad890ad6b96578fdab5fcd45c",
+          "message": "♻️ Warn for missing needimport files (#1510)\n\nA missing needimport needs.json should lead to a warning, not an\nexception.\nThis makes it possible to user-ignore the problem for use cases outlined\nin issue #1500.",
+          "timestamp": "2025-09-25T14:04:49+02:00",
+          "tree_id": "531faaa6b45770f6ff52a3bdbc53bfcd38b112ed",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0b2c601107d60bfad890ad6b96578fdab5fcd45c"
+        },
+        "date": 1758801992060,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16539918700000555,
+            "unit": "s",
+            "extra": "Commit: 0b2c601107d60bfad890ad6b96578fdab5fcd45c\nBranch: master\nTime: 2025-09-25T14:04:49+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.35919507,
+            "unit": "s",
+            "extra": "Commit: 0b2c601107d60bfad890ad6b96578fdab5fcd45c\nBranch: master\nTime: 2025-09-25T14:04:49+02:00"
           }
         ]
       }
