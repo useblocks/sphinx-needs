@@ -548,6 +548,11 @@ def process_needuml(
             kwargs=current_needuml["extra"],
             config=config,
         )
+        if "uml" not in puml_node:
+            # An error node was returned
+            node.replace_self(puml_node)
+            continue
+
         duration = time.perf_counter() - start
 
         if (
