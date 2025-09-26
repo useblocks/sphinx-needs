@@ -186,7 +186,7 @@ def process_needgantt(
 
         content = []
         try:
-            if "sphinxcontrib.plantuml" not in app.config.extensions:
+            if "sphinxcontrib.plantuml" not in app.extensions:
                 raise ImportError
             from sphinxcontrib.plantuml import generate_name, plantuml
         except ImportError:
