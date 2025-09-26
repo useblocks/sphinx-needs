@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1758801998877,
+  "lastUpdate": 1758867460735,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14256,6 +14256,42 @@ window.BENCHMARK_DATA = {
             "value": 61.35919507,
             "unit": "s",
             "extra": "Commit: 0b2c601107d60bfad890ad6b96578fdab5fcd45c\nBranch: master\nTime: 2025-09-25T14:04:49+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fc765b4ea6fdf79ad146cf2ce66e084178de3a9f",
+          "message": "🔧 Improve plantuml check + add tests (#1521)\n\nsphinxcontrib.plantuml existence is dertermined by looking at app.extensions and not app.config.extensions.\nThat enables registering plantuml programmatically.\n\nCredits to @AlexanderLanin\n\n---------\n\nCo-authored-by: Alexander Lanin <Alexander.Lanin@etas.com>",
+          "timestamp": "2025-09-26T08:15:51+02:00",
+          "tree_id": "da92f938b9df5379670ee9e80938bf94e8c59acf",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/fc765b4ea6fdf79ad146cf2ce66e084178de3a9f"
+        },
+        "date": 1758867453905,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16308817000000175,
+            "unit": "s",
+            "extra": "Commit: fc765b4ea6fdf79ad146cf2ce66e084178de3a9f\nBranch: master\nTime: 2025-09-26T08:15:51+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.956775447999995,
+            "unit": "s",
+            "extra": "Commit: fc765b4ea6fdf79ad146cf2ce66e084178de3a9f\nBranch: master\nTime: 2025-09-26T08:15:51+02:00"
           }
         ]
       }
