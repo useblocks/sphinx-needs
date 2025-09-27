@@ -39,6 +39,8 @@ MAX_NESTED_NETWORK_VALIDATION_LEVELS: Final[int] = 4
 
 
 class ExtraOptionStringSchemaType(TypedDict):
+    """String extra option schema."""
+
     type: Literal["string"]
     """Extra option string type."""
     minLength: NotRequired[int]
