@@ -13,83 +13,86 @@ This release introduces strong typing for extra option fields to the Sphinx-Need
 This also effects imported and exported needs.json files.
 The default type for extra options is still ``string``, so existing configuration should work
 as before. Type errors are detected early once each need is fully resolved, i.e. after
-reading in the sources and evaluating :ref:`needs_global_options`, :ref:`needextend`,
-:ref:`variants <needs_variant_support>` and :ref:`dynamic_functions`.
+reading in the sources and evaluating :ref:`needs_global_options` (defaults),
+:ref:`needextend`, :ref:`variants <needs_variant_support>` and :ref:`dynamic_functions`.
 Errors in the typing system leads to needs not being created.
 
 The release also introduces a new :ref:`schema_validation` system that integrates
-into the strong typing.
+into the strong typing. It is JSON schema complient in large parts with custom extensions
+to support network validation.
 
 The core of Sphinx-Needs had to be refactored in large parts to enables these changes.
-The following PRs were part of that:
+The following are the main user-facing changes:
 
 - ♻️ Allow for typed ``needs_extra_options`` fields :pr:`1516`
 
-  **Major Feature**: Introduces comprehensive strong typing system for extra option fields
-  throughout the Sphinx-Needs codebase. This fundamental change affects imported and exported
-  ``needs.json`` files and provides type safety across the entire ecosystem.
+  The ``needs_extra_options`` configuration option was extended to support schema information.
+  The field ``schema.type`` globally sets the type for the field. Users can select between
+  ``string``, ``number`` (float), ``integer``, ``boolean`` and ``array``. For the ``array`` type
+  another keyword ``schema.items.type`` defines the list items type.
+
+  Examples in TOML configuration:
+
+  .. code-block:: toml
+
+     [[needs.extra_options]]
+     name = "priority"
+     description = "Priority level, 1-5 where 1 is highest and 5 is lowest"
+     schema.type = "integer"
+     schema.minimum = 1
+     schema.maximum = 5
+     
+     [[needs.extra_options]]
+     name = "asil"
+     description = "Automotive Safety Integrity Level"
+     schema.type = "string"
+     schema.enum = ["QM", "A", "B", "C", "D"]
 
   **Key Changes:**
 
   - Strong typing for ``needs_extra_options`` with JSON Schema validation
-  - Automatic type coercion from string inputs (directive options) to proper types
-  - Type validation during need creation, processing, and export
-  - Variants now supported in array elements (e.g., ``a,<<predicate:value1,value2>>,b``)
-  - Enhanced error reporting with full schema paths for debugging
-  - Type-safe ``needs.json`` export with proper JSON types (not just strings)
-  - Integration with schema validation system
   - Delayed resolution for dynamic functions, needextend, defaults, and variants
+  - Automatic type coercion from string inputs (directive options) to proper types
+  - Missing fields are set to ``None`` (null in JSON)
+  - needs.json import/export with type validation and coercion; empty ``""`` field values
+    of existing needs.json files of type ``integer`` are coerced to ``0``, and for
+    type ``number`` to ``0.0``.
+  - Integration with schema validation system
 
-  **Breaking Changes:**
-
-  - Variant syntax changed from ``predicate:value`` to ``<<predicate:value>>``
-  - If any field has wrong type or cannot be coerced, need creation is aborted
-  - Manual field modifications before dynamic/variant resolution may be overridden
-  - Filter functions and exported data now use proper types instead of strings only
-
-  This is a core improvement introducing hours of design work to maintain compatibility
-  with delayed resolution features while providing strong typing throughout the system.
+  The implementation strives to be as backwards compatible as possible. See below for details.
 
 - ✨ Schema validation :pr:`1467`
 
-  Comprehensive schema validation system v2 with JSON Schema compliance
-  and advanced validation capabilities. This is a follow-up to the initial validation work,
-  providing a production-ready validation framework.
+  The PR adds a fast, declarative and versatile JSON schema based need validation.
+  The schema is defined in the :ref:`needs_schema_definitions` configuration option or
+  as JSON format passed via :ref:`needs_schema_definitions_from_json`.
 
   **Key Features:**
 
   - JSON Schema standard compliance using ``$defs`` and ``$ref`` for reusable sub-schemas
   - Fully typed implementation with runtime validation of schema definitions
   - Auto-injection of default string type when not specified
-  - Replaced ``trigger_schema`` with ``select`` for better query language alignment
-  - Root ``validate`` key with ``local`` and ``network`` sub-sections for validation types
-  - Network validation with automatic error bubbling to root schema
-  - Multiple network rule types for granular debugging control
-  - Declarative YAML-based test definitions for comprehensive testing
-  - String pattern (regex) constraints with cross-engine compatibility
+  - Select mechanism, comparable to database queries to select need nodes for validation.
+  - Root ``validate`` key with ``local`` and ``network`` sub-sections for validation types.
+    The split enables IDE extensions such as ``ubCode`` to validate-on-type for need-local
+    changes and also run network validation once the index is fully built.
+  - Debug mechanism using :ref:`needs_schema_debug` to check why validation pass or fail.
+  - String pattern constraints with cross-engine compatibility
   - Semantic equivalence to JSON Schema spec for ``items``, ``minItems``, ``maxItems``,
     ``contains``, ``minContains``, and ``maxContains``
-  - Comprehensive documentation with examples and migration guides
-  - Comparison and migration path from ``needs_warnings`` and ``needs_constraints``
 
-  **Technical Improvements:**
+  The new validation can replace :ref:`needs_warnings`, :ref:`needs_constraints`,
+  :ref:`needs_id_regex` and :ref:`needs_statuses` and :ref:`needs_tags` in future.
 
-  - Simplified validation logic and code architecture
-  - Enhanced error reporting with precise violation details
-  - Beta feature warning for early adopters
-  - Integration preparation for upcoming strong typing system
-
-  This establishes the foundation for advanced need validation and quality assurance
-  in Sphinx-Needs projects.
-
-- Always generate schema violations.json report file :pr:`1511`
 - 👌 Write schema violations into a JSON file :pr:`1503`
 
   Schema validation violations are now exported to a JSON file (``schema_violations.json``)
   for external tooling integration and automated quality assurance workflows. This enables
   CI/CD systems and external analysis tools to programmatically process validation results.
 
-These PRs were part of the internal changes:
+- Always generate schema violations.json report file :pr:`1511`
+
+**These PRs were part of the internal changes:**
 
 - 🧪 Move to snapshot testing for test_schema :pr:`1519`
 - 🔧 Add ``VariantFunctionParsed`` dataclass :pr:`1515`
