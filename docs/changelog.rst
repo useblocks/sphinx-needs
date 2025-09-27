@@ -10,18 +10,18 @@ Changelog
 :Full Changelog: `v5.1.0...v6.0.0 <https://github.com/useblocks/sphinx-needs/compare/5.1.0...fc765b4ea6fdf79ad146cf2ce66e084178de3a9f>`__
 
 This release introduces strong typing for extra option fields to the Sphinx-Needs codebase.
-This also effects imported and exported needs.json files.
+This also affects imported and exported needs.json files.
 The default type for extra options is still ``string``, so existing configuration should work
 as before. Type errors are detected early once each need is fully resolved, i.e. after
 reading in the sources and evaluating :ref:`needs_global_options` (defaults),
 :ref:`needextend`, :ref:`variants <needs_variant_support>` and :ref:`dynamic_functions`.
-Errors in the typing system leads to needs not being created.
+Errors in the typing system lead to needs not being created.
 
 The release also introduces a new :ref:`schema_validation` system that integrates
-into the strong typing. It is JSON schema complient in large parts with custom extensions
+into the strong typing. It is JSON schema compliant in large parts with custom extensions
 to support network validation.
 
-The core of Sphinx-Needs had to be refactored in large parts to enables these changes.
+The core of Sphinx-Needs had to be refactored in large parts to enable these changes.
 The following are the main user-facing changes:
 
 - ♻️ Allow for typed ``needs_extra_options`` fields :pr:`1516`
@@ -41,7 +41,7 @@ The following are the main user-facing changes:
      schema.type = "integer"
      schema.minimum = 1
      schema.maximum = 5
-     
+
      [[needs.extra_options]]
      name = "asil"
      description = "Automotive Safety Integrity Level"
@@ -76,13 +76,13 @@ The following are the main user-facing changes:
   - Root ``validate`` key with ``local`` and ``network`` sub-sections for validation types.
     The split enables IDE extensions such as ``ubCode`` to validate-on-type for need-local
     changes and also run network validation once the index is fully built.
-  - Debug mechanism using :ref:`needs_schema_debug` to check why validation pass or fail.
+  - Debug mechanism using :ref:`needs_schema_debug` to check why validations pass or fail.
   - String pattern constraints with cross-engine compatibility
   - Semantic equivalence to JSON Schema spec for ``items``, ``minItems``, ``maxItems``,
     ``contains``, ``minContains``, and ``maxContains``
 
   The new validation can replace :ref:`needs_warnings`, :ref:`needs_constraints`,
-  :ref:`needs_id_regex` and :ref:`needs_statuses` and :ref:`needs_tags` in future.
+  :ref:`needs_id_regex`, :ref:`needs_statuses`, and :ref:`needs_tags` in the future.
 
 - 👌 Write schema violations into a JSON file :pr:`1503`
 
@@ -113,7 +113,7 @@ The following are the main user-facing changes:
 
 **Breaking Changes**
 
-- :ref:`Variants <needs_variant_support>` have to be wrappend with ``<< >>``. This allows
+- :ref:`Variants <needs_variant_support>` have to be wrapped with ``<< >>``. This allows
   for a safer parsing strategy and support for usage in array elements.
 - The variant delimiter has changed to only allow ``,``. Formerly also ``;`` was possible.
 - 🐛 Fix: disallow need variants for list type fields :pr:`1489`
@@ -132,7 +132,7 @@ The following are the main user-facing changes:
 - ‼️ Improve needs default field application (via needs_global_options) :pr:`1478`
 
   Previously defaults would be applied to any fields of a need with a "falsy" value,
-  e.g. None, False, 0 , "", []. This is an issue, if the user wants to specifically set fields
+  e.g. None, False, 0, "", []. This is an issue if the user wants to specifically set fields
   to these values, without them being overridden by defaults.
   Therefore, now defaults are only applied to fields with a missing or None value.
 
@@ -140,7 +140,7 @@ The following are the main user-facing changes:
 
   Needs are stored in a flat dictionary as of now, so they cannot overlap.
 
-- ♻️ Store needs as ``NeedItem`` / ``NeedPartItem`, rather than standard ``dict`` :pr:`1485`
+- ♻️ Store needs as ``NeedItem`` / ``NeedPartItem``, rather than standard ``dict`` :pr:`1485`
 
   Replaces standard dictionary storage with specialized ``NeedItem`` and ``NeedPartItem`` classes.
   This allows better encapsulation and control over data mutation.
@@ -179,14 +179,14 @@ The following are the main user-facing changes:
 - ♻️ Exclude ``is_need`` / ``is_part`` from ``needs.json`` output :pr:`1505`
 
   It doesn't make sense to have these, since only needs are written, not parts.
-  And also these fields are "thrown away" when passing in external/import needs.json.
+  Also, these fields are "thrown away" when passing in external/import needs.json.
 
   These fields are only really used during processing, within filter contexts, when filtering
   across both needs and parts.
 
 - 👌 Reset directive option specs at start of build :pr:`1448`
 
-  Internal fix to reset directive options for consistent testing.
+  Internal fix to reset directive options for consistent builds & testing.
 
 - 🐛 Warn on dynamic function with surrounding text :pr:`1426`
 
