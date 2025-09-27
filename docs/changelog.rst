@@ -12,7 +12,9 @@ Changelog
 :Full Changelog: `v5.1.0...v6.0.0 <https://github.com/useblocks/sphinx-needs/compare/5.1.0...fc765b4ea6fdf79ad146cf2ce66e084178de3a9f>`__
 
 This release introduces strong typing for extra option fields to the Sphinx-Needs codebase.
-This also affects imported and exported needs.json files.
+This affects needs read from RST sources (or others like .md), but also imported/exported needs
+of needs.json files.
+
 The default type for extra options is still ``string``, so existing configuration should work
 as before. Type errors are detected early once each need is fully resolved, i.e. after
 reading in the sources and evaluating :ref:`needs_global_options` (defaults),
@@ -52,13 +54,14 @@ The following are the main user-facing changes:
 
   **Key Changes:**
 
-  - Strong typing for ``needs_extra_options`` with JSON Schema validation
+  - Strong typing for ``needs_extra_options`` with JSON schema validation
   - Delayed resolution for dynamic functions, needextend, defaults, and variants
   - Automatic type coercion from string inputs (directive options) to proper types
   - Missing fields are set to ``None`` (null in JSON)
   - needs.json import/export with type validation and coercion; empty ``""`` field values
     of existing needs.json files of type ``integer`` are coerced to ``0``, and for
-    type ``number`` to ``0.0``.
+    type ``number`` to ``0.0`` for backwards compatibility. Empty strings for ``boolean``
+    fields are coerced to ``True`` as this is often used as a flag.
   - Integration with schema validation system. The same fields for :ref:`supported_data_types`
     can be set in the definition, so they are set globally for that field.
 
@@ -132,7 +135,7 @@ The following are the main user-facing changes:
 - ‼️ remove parsing of deprecated ``needs_global_options`` format :pr:`1517`
 
   Removes support for the deprecated legacy format of
-  ``needs_global_options``. The system now only accepts the modern dictionary format
+  ``needs_global_options``. The system now only accepts the dictionary format
   introduced in version 5.1.0. Projects using the old format will receive a warning
   that the configuration is not a ``dict`` and the parsing will be skipped entirely.
   Users must migrate to the new explicit format for global options to continue working.
@@ -140,8 +143,8 @@ The following are the main user-facing changes:
 - ‼️ Improve needs default field application (via needs_global_options) :pr:`1478`
 
   Previously defaults would be applied to any fields of a need with a "falsy" value,
-  e.g. None, False, 0, "", []. This is an issue if the user wants to specifically set fields
-  to these values, without them being overridden by defaults.
+  e.g. ``None``, ``False``, ``0``, ``""``, ``[]``. This is an issue if the user wants to
+  specifically set fields to these values, without them being overridden by defaults.
   Therefore, now defaults are only applied to fields with a missing or None value.
 
 - ‼️ Disallow ``add_extra_option`` overriding an internal field :pr:`1477`
@@ -155,9 +158,9 @@ The following are the main user-facing changes:
 
   This is breaking for any users doing "non-API" modifications or additions to the needs data,
   i.e. directly adding dict items.
-  It should not change interactions with standard APIs like add_need or filter strings.
+  It should not change interactions with standard APIs like ``add_need`` or filter strings.
 
-  This PR is also related:
+  These PRs are also related:
 
   - ♻️ Improve storage of part data on NeedItem :pr:`1509`
   - 🔧 Improve storage of content generation on ``NeedItem`` :pr:`1506`
@@ -165,8 +168,6 @@ The following are the main user-facing changes:
   - 👌 Capture more information about modifications on ``NeedItem`` :pr:`1502`
   - ♻️ split off ``source`` fields in ``NeedItem`` internal data :pr:`1491`
   - ♻️ split ``NeedItem`` internal data into core, extras, links and backlinks :pr:`1490`
-
-  Major internal restructuring of need data organization for better performance.
 
 - ⬆️ Drop Python 3.9 :pr:`1468`
 - ⬆️ Drop Sphinx<7.4, test against Python 3.13 :pr:`1447`
@@ -198,13 +199,15 @@ The following are the main user-facing changes:
 
 - 🐛 Warn on dynamic function with surrounding text :pr:`1426`
 
-  Added warning when dynamic functions are used with surrounding text.
+  Added warning when dynamic functions are used for a list type with surrounding text
+  as the surrounding text will be silently ignored.
 
 - Allow ``collapse`` and ``hide`` in ``needs_global_options`` :pr:`1456`
 - 🔧 Allow template global_options :pr:`1454`
 - 👌 Re-allow dynamic functions for ``layout`` field :pr:`1423`
+- 🔧 Allow pre/post template ``global_options`` :pr:`1428`
 
-**Minor documentation fixes**
+**Minor documentation updates**
 
 - 📚 Clarify c.this_doc() for needextend :pr:`1475`
 - 📚 Fix needs_extra_links name :pr:`1501`
@@ -218,7 +221,6 @@ The following are the main user-facing changes:
 - 🔧 Added yamlfmt pre-commit :pr:`1446`
 - 🔧 Use ubuntu-latest in CI :pr:`1439`
 - 📚 update tox version to py39 :pr:`1438`
-- 🔧 Allow pre/post template ``global_options`` :pr:`1428`
 
 5.1.0
 -----
