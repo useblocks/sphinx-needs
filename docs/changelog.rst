@@ -1,3 +1,5 @@
+.. _ubCode: https://ubcode.useblocks.com/
+
 .. _changelog:
 
 Changelog
@@ -6,7 +8,7 @@ Changelog
 6.0.0
 -----
 
-:Released: 26.09.2025
+:Released: 27.09.2025
 :Full Changelog: `v5.1.0...v6.0.0 <https://github.com/useblocks/sphinx-needs/compare/5.1.0...fc765b4ea6fdf79ad146cf2ce66e084178de3a9f>`__
 
 This release introduces strong typing for extra option fields to the Sphinx-Needs codebase.
@@ -57,7 +59,8 @@ The following are the main user-facing changes:
   - needs.json import/export with type validation and coercion; empty ``""`` field values
     of existing needs.json files of type ``integer`` are coerced to ``0``, and for
     type ``number`` to ``0.0``.
-  - Integration with schema validation system
+  - Integration with schema validation system. The same fields for :ref:`supported_data_types`
+    can be set in the definition, so they are set globally for that field.
 
   The implementation strives to be as backwards compatible as possible. See below for details.
 
@@ -74,15 +77,22 @@ The following are the main user-facing changes:
   - Auto-injection of default string type when not specified
   - Select mechanism, comparable to database queries to select need nodes for validation.
   - Root ``validate`` key with ``local`` and ``network`` sub-sections for validation types.
-    The split enables IDE extensions such as ``ubCode`` to validate-on-type for need-local
+    The split enables IDE extensions such as `ubCode`_ to validate-on-type for need-local
     changes and also run network validation once the index is fully built.
-  - Debug mechanism using :ref:`needs_schema_debug` to check why validations pass or fail.
-  - String pattern constraints with cross-engine compatibility
-  - Semantic equivalence to JSON Schema spec for ``items``, ``minItems``, ``maxItems``,
+  - Debug mechanism using :ref:`needs_schema_debug_active` to check why validations pass or fail.
+    4 files are written per validation: original need, reduced need, applied schema and
+    a result file with user and validation message. File naming pattern is
+    ``<need_id>__<schema_path>__<validation_rule>.<json|txt>``. Nested graph-validations are also
+    dumped.
+  - String regex pattern constraints with cross-engine compatibility
+  - Semantic equivalence to JSON Schema spec for array ``items``, ``minItems``, ``maxItems``,
     ``contains``, ``minContains``, and ``maxContains``
 
   The new validation can replace :ref:`needs_warnings`, :ref:`needs_constraints`,
   :ref:`needs_id_regex`, :ref:`needs_statuses`, and :ref:`needs_tags` in the future.
+
+  The implementation of the new strong typing and schema validation into `ubCode`_ is on the
+  immediate roadmap.
 
 - 👌 Write schema violations into a JSON file :pr:`1503`
 
@@ -104,9 +114,6 @@ The following are the main user-facing changes:
 - 🧪 Improve test for need parts :pr:`1507`
 - 👌 Improve need part processing :pr:`1469`
 - 🔧 Centralise allowed variant core need fields :pr:`1424`
-
-  Internal refactoring to centralize variant core field validation.
-
 - ✨ Add ``is_import`` need field :pr:`1429`
 
   New field to identify needs that were imported from external sources.
@@ -118,7 +125,8 @@ The following are the main user-facing changes:
 - The variant delimiter has changed to only allow ``,``. Formerly also ``;`` was possible.
 - 🐛 Fix: disallow need variants for list type fields :pr:`1489`
 
-  Variants no longer supported in list-type fields. This feature might be re-introduced in future.
+  Variants no longer supported in list-type fields due to parsing instability.
+  This feature might be re-introduced in future.
   The new syntax ``<< >>`` would make this much easier.
 
 - ‼️ remove parsing of deprecated ``needs_global_options`` format :pr:`1517`
