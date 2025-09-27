@@ -296,8 +296,8 @@ And use it like:
    The same fields for the :ref:`supported_data_types` as in the :ref:`schema_validation`
    are accepted. If ``schema`` is given, ``type`` is required. All the other keys can also
    be defined via :ref:`needs_schema_definitions` or in the file passed via
-   :ref:`needs_definitions_from_json`. If specified via ``needs_extra_options``, the constraints
-   are applied to *all* usages of the option.
+   :ref:`needs_schema_definitions_from_json`. If specified via ``needs_extra_options``,
+   the constraints are applied to *all* usages of the option.
 
 .. _`needs_global_options`:
 .. _`global_option_filters`:
