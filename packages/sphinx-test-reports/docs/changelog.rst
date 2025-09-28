@@ -3,9 +3,39 @@
 Changelog
 =========
 
-1.2.1
+1.3.1
 -----
 :Released: under development
+
+
+1.3.0
+-----
+:Released: 28.09.2025
+
+* Improvement: Support for Sphinx-Needs 5.1.
+  `#119 <https://github.com/useblocks/sphinx-test-reports/pull/119>`_
+* Bugfix: Fix plantuml on RTD.
+  `#115 <https://github.com/useblocks/sphinx-test-reports/pull/115>`_
+* Maintenance: Removed py38 from classifiers.
+  `#116 <https://github.com/useblocks/sphinx-test-reports/pull/116>`_
+* Maintenance: Activate mypy.
+  `#113 <https://github.com/useblocks/sphinx-test-reports/pull/113>`_
+* Maintenance: Remove baumpfleger.
+  `#112 <https://github.com/useblocks/sphinx-test-reports/pull/112>`_
+* Maintenance: Clean makefile.
+  `#111 <https://github.com/useblocks/sphinx-test-reports/pull/111>`_
+* Maintenance: Use flit.
+  `#110 <https://github.com/useblocks/sphinx-test-reports/pull/110>`_
+* Maintenance: Added all_good job.
+  `#109 <https://github.com/useblocks/sphinx-test-reports/pull/109>`_
+* Maintenance: Add standard hooks.
+  `#106 <https://github.com/useblocks/sphinx-test-reports/pull/106>`_
+* Maintenance: Add yamlfmt.
+  `#105 <https://github.com/useblocks/sphinx-test-reports/pull/105>`_
+* Maintenance: Introduce ruff.
+  `#104 <https://github.com/useblocks/sphinx-test-reports/pull/104>`_
+* Maintenance: Add taplo pre-commit.
+  `#103 <https://github.com/useblocks/sphinx-test-reports/pull/103>`_
 
 
 1.2.0
