@@ -40,7 +40,6 @@ docs = [
   "sphinx-design",
   "sphinx-immaterial",
   "sphinx-needs>=4",
-  "sphinx-test-reports>=0.3.3",
   "sphinx==7",
   "sphinxcontrib-plantuml",
 ]

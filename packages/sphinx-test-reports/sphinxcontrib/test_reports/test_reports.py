@@ -47,6 +47,8 @@ def setup(app: Sphinx):
     * test_report
     """
 
+    app.add_config_value("tr_file_option", "file", "html")
+
     log = logging.getLogger(__name__)
     log.info("Setting up sphinx-test-reports extension")
 
@@ -178,7 +180,8 @@ def sphinx_needs_update(app: Sphinx, config: Config) -> None:
     # For details read
     # https://sphinx-needs.readthedocs.io/en/latest/api.html#sphinx_needs.api.configuration.add_extra_option
 
-    add_extra_option(app, "file")
+    add_extra_option(app, getattr(config, "tr_file_option", "file"))
+
     add_extra_option(app, "suite")
     add_extra_option(app, "case")
     add_extra_option(app, "case_name")

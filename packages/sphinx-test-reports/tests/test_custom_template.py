@@ -28,7 +28,7 @@ def test_custom_template(test_app):
 def test_custom_utf8_template(test_app):
     app = test_app
     app.build()
-    html = Path(app.outdir / "index.html").read_text()
+    html = Path(app.outdir / "index.html").read_text(encoding="utf-8")
 
     assert "Änderungen" in html
     assert "Testfälle" in html
