@@ -3,14 +3,16 @@
 Changelog
 =========
 
-1.3.1
------
+Unreleased
+----------
 :Released: under development
-
 
 1.3.0
 -----
 :Released: 28.09.2025
+
+This release makes Sphinx-Test-Reports compatible with Sphinx-Needs 5.1 and
+introduces several maintenance improvements.
 
 * Improvement: Support for Sphinx-Needs 5.1.
   `#119 <https://github.com/useblocks/sphinx-test-reports/pull/119>`_
