@@ -8,7 +8,7 @@ Changelog
 6.0.0
 -----
 
-:Released: 27.09.2025
+:Released: 28.09.2025
 :Full Changelog: `v5.1.0...v6.0.0 <https://github.com/useblocks/sphinx-needs/compare/5.1.0...fc765b4ea6fdf79ad146cf2ce66e084178de3a9f>`__
 
 This release introduces strong typing for extra option fields to the Sphinx-Needs codebase.
