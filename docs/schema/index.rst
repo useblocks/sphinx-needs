@@ -1,4 +1,4 @@
-.. _ubcode: https://ubcode.useblocks.com/
+.. _ubCode: https://ubcode.useblocks.com/
 .. _`schema_validation`:
 
 Schema validation
@@ -694,6 +694,8 @@ Schema violations are also stored in a ``schema_violations.json`` file under the
         }
       }
 
+.. _supported_data_types:
+
 Supported Data Types
 --------------------
 
@@ -717,8 +719,13 @@ String fields store textual data with optional format validation:
      }
    }
 
-**Runtime Behavior**: String values are stored as Python ``str`` objects and exported
-as JSON strings, maintaining full Unicode support.
+The following schema constraints are supported for ``string`` fields:
+
+- ``minLength`` / ``maxLength``: Minimum and maximum length of the string
+- ``pattern``: Regex pattern that the string must match
+- ``format``: Predefined string formats (see below)
+- ``enum``: Enumerated set of allowed string values
+- ``const``: Exact allowed string value
 
 **String Formats**
 
@@ -737,7 +744,7 @@ String fields can be validated against specific formats using the ``format`` pro
      }
    }
 
-**Communication Formats**
+**Communication formats**
 
 .. code-block:: json
 
@@ -780,6 +787,14 @@ Integer fields store whole numbers with optional range constraints:
      }
    }
 
+The following schema constraints are supported for ``integer`` fields:
+
+- ``minimum`` / ``maximum``: Minimum and maximum value of the integer
+- ``exclusiveMinimum`` / ``exclusiveMaximum``: Exclusive minimum and maximum value
+- ``multipleOf``: Value must be a multiple of this integernumber
+- ``enum``: Enumerated set of allowed integer values
+- ``const``: Exact allowed integer value
+
 Number Type
 ~~~~~~~~~~~
 
@@ -797,6 +812,13 @@ Number fields store floating-point values:
      }
    }
 
+The following schema constraints are supported for ``number`` fields:
+
+- ``minimum`` / ``maximum``: Minimum and maximum value of the number
+- ``exclusiveMinimum`` / ``exclusiveMaximum``: Exclusive minimum and maximum value
+- ``multipleOf``: Value must be a multiple of this number
+- ``enum``: Enumerated set of allowed number values
+- ``const``: Exact allowed number value
 
 Boolean Type
 ~~~~~~~~~~~~
@@ -849,9 +871,12 @@ Array fields store lists of homogeneous typed values:
 
 **Array Properties**:
 
-- ``items``: Schema for all array elements
+- ``items``: Schema for all array elements (required).
+  The dictionary can contain any of the basic type schemas outlined above.
+  The ``items.type`` field is required.
 - ``minItems`` / ``maxItems``: Array size constraints
-- ``contains`` Schema for some elements in the array
+- ``contains`` Schema for some elements in the array.
+  The dictionary can contain any of the basic type schemas outlined above.
 - ``minContains`` / ``maxContains``: Constraints on number of elements matching ``contains``;
 
   - If ``minContains`` is not given, it defaults to 1 when ``contains`` is present.

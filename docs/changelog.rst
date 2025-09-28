@@ -1,7 +1,226 @@
+.. _ubCode: https://ubcode.useblocks.com/
+
 .. _changelog:
 
 Changelog
 =========
+
+6.0.0
+-----
+
+:Released: 28.09.2025
+:Full Changelog: `v5.1.0...v6.0.0 <https://github.com/useblocks/sphinx-needs/compare/5.1.0...fc765b4ea6fdf79ad146cf2ce66e084178de3a9f>`__
+
+This release introduces strong typing for extra option fields to the Sphinx-Needs codebase.
+This affects needs read from RST sources (or others like .md), but also imported/exported needs
+of needs.json files.
+
+The default type for extra options is still ``string``, so existing configuration should work
+as before. Type errors are detected early once each need is fully resolved, i.e. after
+reading in the sources and evaluating :ref:`needs_global_options` (defaults),
+:ref:`needextend`, :ref:`variants <needs_variant_support>` and :ref:`dynamic_functions`.
+Errors in the typing system lead to needs not being created.
+
+The release also introduces a new :ref:`schema_validation` system that integrates
+into the strong typing. It is JSON schema compliant in large parts with custom extensions
+to support network validation.
+
+The core of Sphinx-Needs had to be refactored in large parts to enable these changes.
+The following are the main user-facing changes:
+
+- ♻️ Allow for typed ``needs_extra_options`` fields :pr:`1516`
+
+  The ``needs_extra_options`` configuration option was extended to support schema information.
+  The field ``schema.type`` globally sets the type for the field. Users can select between
+  ``string``, ``number`` (float), ``integer``, ``boolean`` and ``array``. For the ``array`` type
+  another keyword ``schema.items.type`` defines the list items type.
+
+  Examples in TOML configuration:
+
+  .. code-block:: toml
+
+     [[needs.extra_options]]
+     name = "priority"
+     description = "Priority level, 1-5 where 1 is highest and 5 is lowest"
+     schema.type = "integer"
+     schema.minimum = 1
+     schema.maximum = 5
+
+     [[needs.extra_options]]
+     name = "asil"
+     description = "Automotive Safety Integrity Level"
+     schema.type = "string"
+     schema.enum = ["QM", "A", "B", "C", "D"]
+
+  **Key Changes:**
+
+  - Strong typing for ``needs_extra_options`` with JSON schema validation
+  - Delayed resolution for dynamic functions, needextend, defaults, and variants
+  - Automatic type coercion from string inputs (directive options) to proper types
+  - Missing fields are set to ``None`` (null in JSON)
+  - needs.json import/export with type validation and coercion; empty ``""`` field values
+    of existing needs.json files of type ``integer`` are coerced to ``0``, and for
+    type ``number`` to ``0.0`` for backwards compatibility. Empty strings for ``boolean``
+    fields are coerced to ``True`` as this is often used as a flag.
+  - Integration with schema validation system. The same fields for :ref:`supported_data_types`
+    can be set in the definition, so they are set globally for that field.
+
+  The implementation strives to be as backwards compatible as possible. See below for details.
+
+- ✨ Schema validation :pr:`1467`
+
+  The PR adds a fast, declarative and versatile JSON schema based need validation.
+  The schema is defined in the :ref:`needs_schema_definitions` configuration option or
+  as JSON format passed via :ref:`needs_schema_definitions_from_json`.
+
+  **Key Features:**
+
+  - JSON Schema standard compliance using ``$defs`` and ``$ref`` for reusable sub-schemas
+  - Fully typed implementation with runtime validation of schema definitions
+  - Auto-injection of default string type when not specified
+  - Select mechanism, comparable to database queries to select need nodes for validation.
+  - Root ``validate`` key with ``local`` and ``network`` sub-sections for validation types.
+    The split enables IDE extensions such as `ubCode`_ to validate-on-type for need-local
+    changes and also run network validation once the index is fully built.
+  - Debug mechanism using :ref:`needs_schema_debug_active` to check why validations pass or fail.
+    4 files are written per validation: original need, reduced need, applied schema and
+    a result file with user and validation message. File naming pattern is
+    ``<need_id>__<schema_path>__<validation_rule>.<json|txt>``. Nested graph-validations are also
+    dumped.
+  - String regex pattern constraints with cross-engine compatibility
+  - Semantic equivalence to JSON Schema spec for array ``items``, ``minItems``, ``maxItems``,
+    ``contains``, ``minContains``, and ``maxContains``
+
+  The new validation can replace :ref:`needs_warnings`, :ref:`needs_constraints`,
+  :ref:`needs_id_regex`, :ref:`needs_statuses`, and :ref:`needs_tags` in the future.
+
+  The implementation of the new strong typing and schema validation into `ubCode`_ is on the
+  immediate roadmap.
+
+- 👌 Write schema violations into a JSON file :pr:`1503`
+
+  Schema validation violations are now exported to a JSON file (``schema_violations.json``)
+  for external tooling integration and automated quality assurance workflows. This enables
+  CI/CD systems and external analysis tools to programmatically process validation results.
+
+- Always generate schema violations.json report file :pr:`1511`
+
+**These PRs were part of the internal changes:**
+
+- 🧪 Move to snapshot testing for test_schema :pr:`1519`
+- 🔧 Add ``VariantFunctionParsed`` dataclass :pr:`1515`
+- 🔧 Add ``DynamicFunctionParsed`` dataclass :pr:`1514`
+- ♻️ Auto-compute certain need fields :pr:`1496`
+- ♻️ Set some core need fields to nullable :pr:`1488`
+- 🔧 Split import item filtering to separate function :pr:`1484`
+- ♻️ Lazily assess directive options :pr:`1482`
+- 🧪 Improve test for need parts :pr:`1507`
+- 👌 Improve need part processing :pr:`1469`
+- 🔧 Centralise allowed variant core need fields :pr:`1424`
+- ✨ Add ``is_import`` need field :pr:`1429`
+
+  New field to identify needs that were imported from external sources.
+
+**Breaking Changes**
+
+- :ref:`Variants <needs_variant_support>` have to be wrapped with ``<< >>``. This allows
+  for a safer parsing strategy and support for usage in array elements.
+- The variant delimiter has changed to only allow ``,``. Formerly also ``;`` was possible.
+- 🐛 Fix: disallow need variants for list type fields :pr:`1489`
+
+  Variants no longer supported in list-type fields due to parsing instability.
+  This feature might be re-introduced in future.
+  The new syntax ``<< >>`` would make this much easier.
+
+- ‼️ remove parsing of deprecated ``needs_global_options`` format :pr:`1517`
+
+  Removes support for the deprecated legacy format of
+  ``needs_global_options``. The system now only accepts the dictionary format
+  introduced in version 5.1.0. Projects using the old format will receive a warning
+  that the configuration is not a ``dict`` and the parsing will be skipped entirely.
+  Users must migrate to the new explicit format for global options to continue working.
+
+- ‼️ Improve needs default field application (via needs_global_options) :pr:`1478`
+
+  Previously defaults would be applied to any fields of a need with a "falsy" value,
+  e.g. ``None``, ``False``, ``0``, ``""``, ``[]``. This is an issue if the user wants to
+  specifically set fields to these values, without them being overridden by defaults.
+  Therefore, now defaults are only applied to fields with a missing or None value.
+
+- ‼️ Disallow ``add_extra_option`` overriding an internal field :pr:`1477`
+
+  Needs are stored in a flat dictionary as of now, so they cannot overlap.
+
+- ♻️ Store needs as ``NeedItem`` / ``NeedPartItem``, rather than standard ``dict`` :pr:`1485`
+
+  Replaces standard dictionary storage with specialized ``NeedItem`` and ``NeedPartItem`` classes.
+  This allows better encapsulation and control over data mutation.
+
+  This is breaking for any users doing "non-API" modifications or additions to the needs data,
+  i.e. directly adding dict items.
+  It should not change interactions with standard APIs like ``add_need`` or filter strings.
+
+  These PRs are also related:
+
+  - ♻️ Improve storage of part data on NeedItem :pr:`1509`
+  - 🔧 Improve storage of content generation on ``NeedItem`` :pr:`1506`
+  - 🔧 Improve storage of constraint results on ``NeedItem`` :pr:`1504`
+  - 👌 Capture more information about modifications on ``NeedItem`` :pr:`1502`
+  - ♻️ split off ``source`` fields in ``NeedItem`` internal data :pr:`1491`
+  - ♻️ split ``NeedItem`` internal data into core, extras, links and backlinks :pr:`1490`
+
+- ⬆️ Drop Python 3.9 :pr:`1468`
+- ⬆️ Drop Sphinx<7.4, test against Python 3.13 :pr:`1447`
+
+**Further improvements and fixes**
+
+- 🔧 Improve plantuml check + add tests :pr:`1521`
+
+  PlantUML extension detection now uses ``app.extensions`` for better compatibility with dynamic
+  registration. Thanks to @AlexanderLanin for the initial implementation.
+
+- ♻️ Warn for missing needimport files :pr:`1510`
+
+  Missing :ref:`needimport` files now emit warnings instead of throwing exceptions, making
+  it possible to ignore the problem for specific use cases.
+
+- 🐛 Avoid leaking auth credentials for ext. need warnings :pr:`1512`
+- ♻️ Exclude ``is_need`` / ``is_part`` from ``needs.json`` output :pr:`1505`
+
+  It doesn't make sense to have these, since only needs are written, not parts.
+  Also, these fields are "thrown away" when passing in external/import needs.json.
+
+  These fields are only really used during processing, within filter contexts, when filtering
+  across both needs and parts.
+
+- 👌 Reset directive option specs at start of build :pr:`1448`
+
+  Internal fix to reset directive options for consistent builds & testing.
+
+- 🐛 Warn on dynamic function with surrounding text :pr:`1426`
+
+  Added warning when dynamic functions are used for a list type with surrounding text
+  as the surrounding text will be silently ignored.
+
+- Allow ``collapse`` and ``hide`` in ``needs_global_options`` :pr:`1456`
+- 🔧 Allow template global_options :pr:`1454`
+- 👌 Re-allow dynamic functions for ``layout`` field :pr:`1423`
+- 🔧 Allow pre/post template ``global_options`` :pr:`1428`
+
+**Minor documentation updates**
+
+- 📚 Clarify c.this_doc() for needextend :pr:`1475`
+- 📚 Fix needs_extra_links name :pr:`1501`
+- 📚 Format configuration.rst :pr:`1473`
+- 📚 Fix escape sequences :pr:`1470`
+
+**Infrastructure**
+
+- 🔧 benchmark group non win32 :pr:`1450`
+- 🐛 Fix cyclic imports :pr:`1443`
+- 🔧 Added yamlfmt pre-commit :pr:`1446`
+- 🔧 Use ubuntu-latest in CI :pr:`1439`
+- 📚 update tox version to py39 :pr:`1438`
 
 5.1.0
 -----
