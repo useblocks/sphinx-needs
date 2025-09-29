@@ -185,7 +185,7 @@ def load_schemas_config_from_json(app: Sphinx, config: _SphinxConfig) -> None:
 
     if not json_file.exists():
         raise NeedsConfigException(
-            f"'sn_schema_from_json' file does not exist: {json_file}"
+            f"'needs_schema_definitions_from_json' file does not exist: {json_file}"
         )
 
     try:
