@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759170224006,
+  "lastUpdate": 1759172277217,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14400,6 +14400,42 @@ window.BENCHMARK_DATA = {
             "value": 67.818783932,
             "unit": "s",
             "extra": "Commit: 927434e7c2d67c2d0838edc25b0b60eefd34b470\nBranch: master\nTime: 2025-09-29T20:21:47+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "48ebb58c3f2460079f8323a20a8ad0e88f8986d6",
+          "message": "🔧 Fix schema json missing exc message (#1526)",
+          "timestamp": "2025-09-29T20:55:57+02:00",
+          "tree_id": "5542fbd573c4de1adba0633bba9dbba891914da5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/48ebb58c3f2460079f8323a20a8ad0e88f8986d6"
+        },
+        "date": 1759172269380,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18590752799999422,
+            "unit": "s",
+            "extra": "Commit: 48ebb58c3f2460079f8323a20a8ad0e88f8986d6\nBranch: master\nTime: 2025-09-29T20:55:57+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.92604535299999,
+            "unit": "s",
+            "extra": "Commit: 48ebb58c3f2460079f8323a20a8ad0e88f8986d6\nBranch: master\nTime: 2025-09-29T20:55:57+02:00"
           }
         ]
       }
