@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759132420755,
+  "lastUpdate": 1759170224006,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14364,6 +14364,42 @@ window.BENCHMARK_DATA = {
             "value": 69.93899851100001,
             "unit": "s",
             "extra": "Commit: e0b34918e0fc64cc04d1c4cd388aa428879b5743\nBranch: master\nTime: 2025-09-29T09:51:40+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "927434e7c2d67c2d0838edc25b0b60eefd34b470",
+          "message": "🔧 Improve error for variant options (#1524)\n\nSpecific message if variant options is set to a link type.",
+          "timestamp": "2025-09-29T20:21:47+02:00",
+          "tree_id": "3332fc2bcf9d362bfbd8035fb76483c657f1d547",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/927434e7c2d67c2d0838edc25b0b60eefd34b470"
+        },
+        "date": 1759170216398,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21211183799999844,
+            "unit": "s",
+            "extra": "Commit: 927434e7c2d67c2d0838edc25b0b60eefd34b470\nBranch: master\nTime: 2025-09-29T20:21:47+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.818783932,
+            "unit": "s",
+            "extra": "Commit: 927434e7c2d67c2d0838edc25b0b60eefd34b470\nBranch: master\nTime: 2025-09-29T20:21:47+02:00"
           }
         ]
       }
