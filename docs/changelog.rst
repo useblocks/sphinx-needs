@@ -5,6 +5,8 @@
 Changelog
 =========
 
+.. _`release:6.0.0`:
+
 6.0.0
 -----
 
@@ -222,6 +224,8 @@ The following are the main user-facing changes:
 - 🔧 Use ubuntu-latest in CI :pr:`1439`
 - 📚 update tox version to py39 :pr:`1438`
 
+.. _`release:5.1.0`:
+
 5.1.0
 -----
 
@@ -274,6 +278,8 @@ Additionally, checks are put in place to ensure that the keys used are from the 
          "default": "d",
       },
    }
+
+.. _`release:5.0.0`:
 
 5.0.0
 -----
@@ -368,6 +374,8 @@ but may be in some corner cases.
 
 - 🔧 Synchronize list splitting behaviour in ``need`` and ``needextend`` directives :pr:`1385`
 
+.. _`release:4.2.0`:
+
 4.2.0
 -----
 
@@ -380,6 +388,8 @@ but may be in some corner cases.
 - 🐛 Make external paths relative to ``confdir``, not ``srcdir`` :pr:`1378`
 - 🔧 Release needs data mutation lock at end of process :pr:`1359`
 - 🔧 Add ``lineno`` to default output of ``needs.json`` :pr:`1346`
+
+.. _`release:4.1.0`:
 
 4.1.0
 -----
@@ -408,6 +418,7 @@ Fixes
 - 🔧 Remove some internal fields from needs layout :pr:`1330`
 - 🔧 Merge defaults into user-defined configuration earlier (to avoid sphinx warnings) :pr:`1341`
 
+.. _`release:4.0.0`:
 
 4.0.0
 -----
@@ -516,6 +527,8 @@ Bug Fixes
 - 🐛 Fix parts title for ``needflow`` with ``graphviz`` engine in :pr:`1280`
 - 🐛 Fix ``need_count`` division by 0 in :pr:`1324`
 
+.. _`release:3.0.0`:
+
 3.0.0
 -----
 
@@ -590,6 +603,8 @@ Additional improvements
 - 🐛 fix warnings for duplicate needs in parallel builds in :pr:`1223`
 - 🐛 Fix rendering of ``needextract`` needs and use warnings instead of exceptions in :pr:`1243` and :pr:`1249`
 
+.. _`release:2.1.0`:
+
 2.1.0
 -----
 
@@ -636,6 +651,8 @@ Internal improvements
 - 🔧 Remove ``hidden`` field from ``extra_options`` in :pr:`1124`
 - 🔧 Remove ``constraints`` from ``extra_options`` in :pr:`1123`
 - 🔧 Remove use of deprecated ``needs_extra_options`` as ``dict`` in :pr:`1126`
+
+.. _`release:2.0.0`:
 
 2.0.0
 -----
@@ -719,6 +736,8 @@ Internal
 * 🧪 Add testing of JS scripts using Cypress integrated into PyTest (:pr:`1051`)
 * 🧪 Add code coverage to CI testing (:pr:`1067`)
 
+.. _`release:1.3.0`:
+
 1.3.0
 -----
 Released: 16.08.2023
@@ -744,12 +763,16 @@ Released: 16.08.2023
   :ref:`filter_func`.
   (:issue:`831`)
 
+.. _`release:1.2.2`:
+
 1.2.2
 -----
 Released: 08.02.2023
 
 * Bugfix: Changed needed version of jsonschema-lib to be not so strict.
   (:pr:`871`)
+
+.. _`release:1.2.1`:
 
 1.2.1
 -----
@@ -758,6 +781,8 @@ Released: 08.02.2023
 * Bugfix: Fixed pygls version compatibility.
   (:pr:`867`,
   :pr:`865`)
+
+.. _`release:1.2.0`:
 
 1.2.0
 -----
@@ -768,6 +793,7 @@ Released: 24.01.2023
 * Improvement: Adds :ref:`list2need` directive, which allows to create simple needs from list.
   (:issue:`854`)
 
+.. _`release:1.1.1`:
 
 1.1.1
 -----
@@ -788,6 +814,8 @@ Released: 21.12.2022
 * Bugfix: Needextract handles substitutions correctly.
   (:issue:`835`).
 
+.. _`release:1.1.0`:
+
 1.1.0
 -----
 Released: 22.11.2022
@@ -804,6 +832,8 @@ Released: 22.11.2022
   (:issue:`759`)
 * Bugfix: needflow: nested needs on same level throws PlantUML error.
   (:issue:`799`)
+
+.. _`release:1.0.3`:
 
 1.0.3
 -----
@@ -855,6 +885,8 @@ Released: 08.11.2022
 * Improvement: Updated pantuml in test folder to same version as in doc folder
   (:issue:`765`)
 
+.. _`release:1.0.2`:
+
 1.0.2
 -----
 Released: 22.09.2022
@@ -889,6 +921,8 @@ Released: 22.09.2022
   (:issue:`673`)
 * Improvement: Providing IDE features support for **ide_myst**.
 
+.. _`release:1.0.1`:
+
 1.0.1
 -----
 Released: 11.07.2022
@@ -917,6 +951,8 @@ Released: 11.07.2022
   (:issue:`498`)
 * Bugfix: :ref:`needimport` uses source-folder for relative path calculation (instead of confdir).
 
+.. _`release:0.7.9`:
+
 0.7.9
 -----
 Released: 10.05.2022
@@ -927,6 +963,8 @@ Released: 10.05.2022
   (:issue:`531`)
 * Bugfix: :ref:`needextract` not correctly rendering nested :ref:`needs <need>`.
   (:issue:`329`)
+
+.. _`release:0.7.8`:
 
 0.7.8
 -----
@@ -942,6 +980,7 @@ Released: 29.03.2022
 * Bugfix: Empty and invalid ``need.json`` files throw user-friendly exceptions.
   (:issue:`441`)
 
+.. _`release:0.7.7`:
 
 0.7.7
 -----
@@ -953,6 +992,8 @@ Released: 04.03.2022
   (:issue:`505`)
 * Bugfix: Correct css/js file registration on windows.
   (:issue:`455`)
+
+.. _`release:0.7.6`:
 
 0.7.6
 -----
@@ -968,6 +1009,8 @@ Released: 28.02.2022
   (:issue:`481`)
 * Bugfix: :ref:`needs_external_needs` working with :ref:`role_need`.
   (:issue:`483`)
+
+.. _`release:0.7.5`:
 
 0.7.5
 -----
@@ -993,6 +1036,8 @@ Released: 21.01.2022
 * Bugfix: Changed :ref:`needs_external_needs` getting from URL was using parameter related to local file.
   (:issue:`458`)
 
+.. _`release:0.7.4`:
+
 0.7.4
 -----
 Released: 30.11.2021
@@ -1005,6 +1050,8 @@ Released: 30.11.2021
   (:issue:`404`)
 * Improvement: Adds :ref:`needtable_colwidths` to :ref:`needtable` directive, to allow the definition of column widths.
   (:issue:`402`)
+
+.. _`release:0.7.3`:
 
 0.7.3
 -----
@@ -1021,6 +1068,8 @@ Released: 08.11.2021
 * Bugfix: :ref:`needs_external_needs` reads external need status now and warnings gets not checked for
   :ref:`needs_external_needs`
   (:issue:`375`)
+
+.. _`release:0.7.2`:
 
 0.7.2
 -----
@@ -1054,6 +1103,8 @@ Released: 08.10.2021
 * Bugfix: :ref:`needimport` relative path not consistent to Sphinx default directives.
   (:issue:`351`)
 
+.. _`release:0.7.1`:
+
 0.7.1
 -----
 Released: 21.07.2021
@@ -1064,6 +1115,8 @@ Released: 21.07.2021
   (:issue:`328`)
 * Improvement: Internal :ref:`performance measurement <performance>` script
 * Improvement: :ref:`Profiling support <profiling>` for selected functions
+
+.. _`release:0.7.0`:
 
 0.7.0
 -----
@@ -1083,6 +1136,8 @@ Released: 06.07.2021
   :issue:`294`)
 * Bugfix: :ref:`needpie` amount labels get calculated correctly.
   (:issue:`297`)
+
+.. _`release:0.6.3`:
 
 0.6.3
 -----
@@ -1110,6 +1165,8 @@ Released: 18.06.2021
 * Bugfix: Dynamic Functions registration working for external extensions.
   (:issue:`288`)
 
+.. _`release:0.6.2`:
+
 0.6.2
 -----
 Released: 30.04.2021
@@ -1121,6 +1178,7 @@ Released: 30.04.2021
 * Bugfix: Link function for layouts setting correct text.
   (:issue:`251`)
 
+.. _`release:0.6.1`:
 
 0.6.1
 -----
@@ -1144,6 +1202,7 @@ Released: 23.04.2021
 * Bugfix: JS-code for meta area collapse is working again.
   (:issue:`242`)
 
+.. _`release:0.6.0`:
 
 0.6.0
 -----
@@ -1155,6 +1214,7 @@ Released: 23.04.2021
 * Bugfix: Role :ref:`role_need_outgoing` shows correct link instead of *None*
   (:issue:`160`)
 
+.. _`release:0.5.6`:
 
 0.5.6
 -----
@@ -1163,6 +1223,8 @@ Released: 23.04.2021
   (:issue:`147`)
 * Bugfix: Deactivated linked gantt elements in :ref:`needgantt`, as PlantUML does not support them in its
   latest version (not beta).
+
+.. _`release:0.5.5`:
 
 0.5.5
 -----
@@ -1174,12 +1236,15 @@ Released: 23.04.2021
   **conf.py** does not raise an exception any more. (:issue:`142`)
 * Improvement: Clean up of internal configuration handling and avoiding needs_functions to get pickled by sphinx.
 
+.. _`release:0.5.4`:
 
 0.5.4
 -----
 * Improvement: Added options :ref:`need_pre_template` and :ref:`need_post_template` for needs. (:issue:`139`)
 * Bugfix: Setting correct default value for :ref:`needs_statuses` (:issue:`136`)
 * Bugfix: Dynamic functions can be used in links (text and url) now.
+
+.. _`release:0.5.3`:
 
 0.5.3
 -----
@@ -1194,6 +1259,8 @@ Released: 23.04.2021
 * Bugfix: :ref:`need_template` can now be set via :ref:`needs_global_options`.
 * Bugfix: Setting correct urls for needs in :ref:`needflow` charts.
 * Bugfix: Setting correct image candidates (:issue:`134`)
+
+.. _`release:0.5.2`:
 
 0.5.2
 -----
@@ -1214,11 +1281,15 @@ Released: 23.04.2021
   (:issue:`124`)
 * Bugfix: Need access inside list comprehensions in :ref:`filter_string` is now working.
 
+.. _`release:0.5.1`:
+
 0.5.1
 -----
 * Improvement: Added :ref:`needextract` directive to mirror existing needs for special outputs. (:issue:`66`)
 * Improvement: Added new styles ``discreet`` and ``discreet_border``.
 * Bugfix: Some minor css fixes for new layout system.
+
+.. _`release:0.5.0`:
 
 0.5.0
 -----
@@ -1231,7 +1302,6 @@ Released: 23.04.2021
   Example: ``need-test`` instead of not valid ``need-test case``. (:issue:`108`)
 * Bugfix: No more exception raise if ``copy`` value not set inside :ref:`needs_extra_links`.
 * Improvement: Better log message, if required id is missing. (:issue:`112`)
-
 * Removed: Configuration option :ref:`!needs_collapse_details`. This is now realized by :ref:`layouts`.
 * Removed: Configuration option :ref:`!needs_hide_options`. This is now realized by :ref:`layouts`.
 * Removed: Need option :ref:`!need_hide_status`. This is now realized by :ref:`layouts`.
@@ -1239,6 +1309,8 @@ Released: 23.04.2021
 
 **WARNING**: This version changes a lot the html output and therefore the needed css selectors. So if you are using
 custom css definitions you need to update them.
+
+.. _`release:0.4.3`:
 
 0.4.3
 -----
@@ -1254,6 +1326,8 @@ custom css definitions you need to update them.
   (:issue:`100`)
 * Bugfix: Double entries for same need in :ref:`needtable` fixed. (:issue:`93`)
 
+.. _`release:0.4.2`:
+
 0.4.2
 -----
 
@@ -1262,11 +1336,14 @@ custom css definitions you need to update them.
   test cases to needs documented by
   `sphinx-autodoc <https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html>`_.
 
+.. _`release:0.4.1`:
+
 0.4.1
 -----
 * Improvement: Added :ref:`need_style` option to allow custom styles for needs.
 * Improvement: Added :ref:`needtable_style_row` option to allow custom styles for table rows and columns.
 
+.. _`release:0.4.0`:
 
 0.4.0
 -----
@@ -1274,20 +1351,28 @@ custom css definitions you need to update them.
 * Improvement: Added :ref:`support` page.
 * Bugfix: Fixed deprecation warnings to support upcoming Sphinx3.0 API.
 
+.. _`release:0.3.15`:
+
 0.3.15
 ------
 * Improvement: In filter operations, all needs can be accessed  by using keyword ``needs``.
 * Bugfix: Removed prefix from normal needs for needtable (:issue:`97`)
+
+.. _`release:0.3.14`:
 
 0.3.14
 ------
 * Improvement: Added config option :ref:`needs_role_need_max_title_length` to define the maximum title length of
   referenced needs. (:issue:`95`)
 
+.. _`release:0.3.13`:
+
 0.3.13
 ------
 * Bugfix: Filters on needs with ``id_parent`` or ``id_complete`` do not raise an exception any more and filters
   gets executed correctly.
+
+.. _`release:0.3.12`:
 
 0.3.12
 ------
@@ -1296,6 +1381,7 @@ custom css definitions you need to update them.
 * Bugfix: Links to :ref:`need_part` are no longer rendered to parent need, instead the link goes directly to the need_part. (:issue:`91`)
 * Bugfix: Links in :ref:`needflow` get shown again by default (:issue:`90`)
 
+.. _`release:0.3.11`:
 
 0.3.11
 ------
@@ -1306,6 +1392,8 @@ custom css definitions you need to update them.
 * Improvement: Added config option :ref:`needs_flow_link_types` and related needflow option :ref:`needflow_link_types`.
 * Bugfix: Unicode handling for Python 2.7 fixed. (:issue:`86`)
 
+.. _`release:0.3.10`:
+
 0.3.10
 ------
 * Bugfix: **type** was missing in output of builder :ref:`needs_builder` (:issue:`79`)
@@ -1313,12 +1401,15 @@ custom css definitions you need to update them.
   containing python methods. Internal workaround added, so that usage of own
   :ref:`dynamic_functions` stays the same as in prior versions (:issue:`78`)
 
+.. _`release:0.3.9`:
 
 0.3.9
 -----
 * Bugfix: Grubby tag/link strings in needs, which define empty links/tags, produce a warning now.
 * Bugfix: Better logging of document location, if a filter string is not valid.
 * Bugfix: Replaced all print-statements with sphinx warnings.
+
+.. _`release:0.3.8`:
 
 0.3.8
 -----
@@ -1327,12 +1418,16 @@ custom css definitions you need to update them.
   in :ref:`filter_string`.
 * Improvement: :ref:`needtable` supports presentation of filtered :ref:`need_part` (without showing parent need).
 
+.. _`release:0.3.7`:
+
 0.3.7
 -----
 * Improvement: :ref:`filter_string` now supports the filtering of :ref:`need_part`.
 * Improvement: The ID of a need is now printed as link, which can easily be used for sharing. (:issue:`75`)
 * Bugfix: Filter functionality in different directives are now using the same internal filter function.
 * Bugfix: Reused IDs for a :ref:`need_part` are now detected and a warning gets printed. (:issue:`74`)
+
+.. _`release:0.3.6`:
 
 0.3.6
 -----
@@ -1341,24 +1436,32 @@ custom css definitions you need to update them.
 * Improvement: Added docname to output file of builder :ref:`needs_builder`
 * Bugfix: Added missing needs_import template to MANIFEST.ini.
 
+.. _`release:0.3.5`:
+
 0.3.5
 -----
 * Bugfix: A :ref:`need_part` without a given ID gets a random id based on its content now.
 * Bugfix: Calculation of outgoing links does not crash, if need_parts are involved.
 
+.. _`release:0.3.4`:
 
 0.3.4
 -----
 * Bugfix: Need representation in PDFs were broken (e.g. all meta data on one line).
 
+.. _`release:0.3.3`:
 
 0.3.3
 -----
 * Bugfix: Latex and Latexpdf are working again.
 
+.. _`release:0.3.2`:
+
 0.3.2
 -----
 * Bugfix: Links to parts of needs (:ref:`need_part`) are now stored and presented as *links incoming* of target link.
+
+.. _`release:0.3.1`:
 
 0.3.1
 -----
@@ -1369,6 +1472,8 @@ custom css definitions you need to update them.
    need_parts containing needs.
 * Bugfix: Links to :ref:`need_part` in :ref:`needtable` are now shown and linked correctly in tables.
 
+.. _`release:0.3.0`:
+
 0.3.0
 -----
 * Improvement: :ref:`dynamic_functions` are now available to support calculation of need values.
@@ -1378,19 +1483,27 @@ custom css definitions you need to update them.
 * Bugfix: Removed needs are now deleted from existing needs.json (:issue:`68`)
 * Removed: :ref:`!needs_template` and :ref:`!needs_template_collapse` are no longer supported.
 
+.. _`release:0.2.5`:
+
 0.2.5
 -----
 * Bugfix: Fix for changes made in 0.2.5.
 
+.. _`release:0.2.4`:
+
 0.2.4
 -----
 * Bugfix: Fixed performance issue (:issue:`63`)
+
+.. _`release:0.2.3`:
 
 0.2.3
 -----
 * Improvement: Titles can now be made optional.  See :ref:`needs_title_optional`. (:issue:`49`)
 * Improvement: Titles be auto-generated from the first sentence of a requirement.  See :ref:`needs_title_from_content` and :ref:`title_from_content`. (:issue:`49`)
 * Improvement: Titles can have a maximum length.  See :ref:`needs_max_title_length`. (:issue:`49`)
+
+.. _`release:0.2.2`:
 
 0.2.2
 -----
@@ -1399,11 +1512,14 @@ custom css definitions you need to update them.
 * Bugfix: Logging fixed (:issue:`50` )
 * Bugfix: Tests for custom styles are now working when executed with all other tests (:pr:`47`)
 
+.. _`release:0.2.1`:
 
 0.2.1
 -----
 * Bugfix: Sphinx warnings fixed, if need-collapse was used. (:issue:`46`)
 * Bugfix: dark.css, blank.css and common.css used wrong need-container selector. Fixed.
+
+.. _`release:0.2.0`:
 
 0.2.0
 -----
@@ -1418,10 +1534,14 @@ custom css definitions you need to update them.
 * Bugfix: Needs with no status shows up on filters (:issue:`45`)
 * Bugfix: Supporting Sphinx 1.7 (:issue:`41`)
 
+.. _`release:0.1.49`:
+
 0.1.49
 ------
 * Bugfix: Supporting plantuml >= 0.9 (:issue:`38`)
 * Bugfix: need_outgoing does not crash, if given need-id does not exist (:issue:`32`)
+
+.. _`release:0.1.48`:
 
 0.1.48
 ------
@@ -1430,27 +1550,39 @@ custom css definitions you need to update them.
 * Refactoring: needs development files are stored internally under *sphinxcontrib/needs*, which is in sync with
    most other sphinxcontrib-packages.
 
+.. _`release:0.1.47`:
+
 0.1.47
 ------
 * Bugfix: dark.css was missing in MANIFEST.in.
 * Improvement: Better output, if configured needs_css file can not be found during build.
 
+.. _`release:0.1.46`:
+
 0.1.46
 ------
 * Bugfix: Added python2/3 compatibility for needs_import.
+
+.. _`release:0.1.45`:
 
 0.1.45
 ------
 * Bugfix: needs with no status are handled the correct way now.
 
+.. _`release:0.1.44`:
+
 0.1.44
 ------
 * Bugfix: Import statements are checked, if Python 2 or 3 is used.
+
+.. _`release:0.1.43`:
 
 0.1.43
 ------
 * Improvement: Added "dark.css" as style
 * Bugfix: Removed "," as as separator of links in need presentation.
+
+.. _`release:0.1.42`:
 
 0.1.42
 ------
@@ -1458,33 +1590,47 @@ custom css definitions you need to update them.
 * Improvement: Most need-elements (title, id, tags, status, ...) got their own html class attribute to support custom styles.
 * Improvement: Set default style "modern.css" for all projects without configured :ref:`needs_css` parameter.
 
+.. _`release:0.1.41`:
+
 0.1.41
 ------
 
 * Improvement: Added config parameters :ref:`needs_statuses` and :ref:`needs_tags` to allow only configured statuses/tags inside documentation.
 * Bugfix: Added LICENSE file (MIT)
 
+.. _`release:0.1.40`:
+
 0.1.40
 ------
 * Bugfix: Removed jinja activation
+
+.. _`release:0.1.39`:
 
 0.1.39
 ------
 * Bugfix: Added missing needimport_template.rst to package
 * Bugfix: Corrected version param of needimport
 
+.. _`release:0.1.38`:
+
 0.1.38
 ------
 * Improvement: **:links:**, **:tags:** and other list-based options can handle "," as delimiter
    (beside documented ";"). No spooky errors are thrown any more if "," is used accidentally.
 
+.. _`release:0.1.37`:
+
 0.1.37
 ------
 * Bugfix: Implemented 0.1.36 bugfix also for ``needfilter`` and :ref:`needimport`.
 
+.. _`release:0.1.36`:
+
 0.1.36
 ------
 * Bugfix: Empty **:links:** and **:tags:** options for :ref:`need` raise no error during build.
+
+.. _`release:0.1.35`:
 
 0.1.35
 ------
@@ -1493,10 +1639,14 @@ custom css definitions you need to update them.
 * Bugfix: Set correct default value for **need_list** option. So no more warnings should be thrown during build.
 * Bugfix: Imported needs gets sorted by id before adding them to the related document.
 
+.. _`release:0.1.34`:
+
 0.1.34
 ------
 * Improvement: New option **tags** for :ref:`needimport` directive
 * Bugfix: Handling of relative paths in needs builder
+
+.. _`release:0.1.33`:
 
 0.1.33
 ------
@@ -1505,25 +1655,35 @@ custom css definitions you need to update them.
 * Bugfix: Wrong version in needs.json, if an existing needs.json got imported
 * Bugfix: Wrong need amount in initial needs.json fixed
 
+.. _`release:0.1.32`:
+
 0.1.32
 ------
 * Bugfix: Setting correct working directory during conf.py import
 * Bugfix: Better config handling, if Sphinx builds gets called multiple times during one single python process. (Configs from prio sphinx builds may still be active.)
 * Bugifx: Some clean ups for using Sphinx >= 1.6
 
+.. _`release:0.1.31`:
+
 0.1.31
 ------
 
 * Bugfix: Added missing dependency to setup.py: Sphinx>=1.6
 
+.. _`release:0.1.30`:
+
 0.1.30
 ------
 * Improvement: Builder :ref:`needs_builder` added, which exports all needs to a json file.
+
+.. _`release:0.1.29`:
 
 0.1.29
 ------
 
 * Bugfix: Build has crashed, if sphinx-needs was loaded but not a single need was defined.
+
+.. _`release:0.1.28`:
 
 0.1.28
 ------
@@ -1531,17 +1691,23 @@ custom css definitions you need to update them.
 * Bugfix: Added support for multiple sphinx projects initialisations/builds during a single python process call.
            (Reliable sphinx-needs configuration separation)
 
+.. _`release:0.1.27`:
+
 0.1.27
 ------
 
 * New config: :ref:`needs_show_link_type`
 * New config: :ref:`needs_show_link_title`
 
+.. _`release:0.1.26`:
+
 0.1.26
 ------
 
 * Bugfix: Working placement of "," for links list produced by roles :ref:`role_need_outgoing`
    and :ref:`role_need_incoming`.
+
+.. _`release:0.1.25`:
 
 0.1.25
 ------
@@ -1551,10 +1717,14 @@ custom css definitions you need to update them.
 * Improvement: Role :ref:`role_need_outgoing` was added to print outgoing links from a given need
 * Improvement: Role :ref:`role_need_incoming` was added to print incoming links to a given need
 
+.. _`release:0.1.24`:
+
 0.1.24
 ------
 
 * Bugfix: Reactivated jinja execution for documentation.
+
+.. _`release:0.1.23`:
 
 0.1.23
 ------
@@ -1563,20 +1733,28 @@ custom css definitions you need to update them.
 * Improvement: :ref:`complex filter <filter>` has access to nearly all need variables (id, title, content, ...)`.
 * Bugfix: If a duplicated ID is detected an error gets thrown.
 
+.. _`release:0.1.22`:
+
 0.1.22
 ------
 
 * Improvement: needfilter directives supports complex filter-logic by using parameter :ref:`filter`.
+
+.. _`release:0.1.21`:
 
 0.1.21
 ------
 
 * Improvement: Added word highlighting of need titles in linked pages of svg diagram boxes.
 
+.. _`release:0.1.20`:
+
 0.1.20
 ------
 
 * Bugfix for custom needs_types: Parameter in conf.py was not taken into account.
+
+.. _`release:0.1.19`:
 
 0.1.19
 ------
@@ -1586,6 +1764,8 @@ custom css definitions you need to update them.
 
 * Reimplemented **needlist** as alias for ``needfilter``
 * Added *need* directive/need as part of the default :ref:`needs_types` configuration.
+
+.. _`release:0.1.18`:
 
 0.1.18
 ------
