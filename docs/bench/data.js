@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759075333102,
+  "lastUpdate": 1759132420755,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14328,6 +14328,42 @@ window.BENCHMARK_DATA = {
             "value": 64.701471967,
             "unit": "s",
             "extra": "Commit: be2a70557cf8deb551191b3603a217ef524c6344\nBranch: master\nTime: 2025-09-28T18:00:16+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e0b34918e0fc64cc04d1c4cd388aa428879b5743",
+          "message": "📚 Add release labels to changelog (#1523)\n\nThis leads to stable release URLs.",
+          "timestamp": "2025-09-29T09:51:40+02:00",
+          "tree_id": "bee210f63af969e17e67ee8b9ce0f78b72aed62c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e0b34918e0fc64cc04d1c4cd388aa428879b5743"
+        },
+        "date": 1759132413008,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19721799600000622,
+            "unit": "s",
+            "extra": "Commit: e0b34918e0fc64cc04d1c4cd388aa428879b5743\nBranch: master\nTime: 2025-09-29T09:51:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.93899851100001,
+            "unit": "s",
+            "extra": "Commit: e0b34918e0fc64cc04d1c4cd388aa428879b5743\nBranch: master\nTime: 2025-09-29T09:51:40+02:00"
           }
         ]
       }
