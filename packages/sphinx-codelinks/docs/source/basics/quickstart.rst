@@ -45,7 +45,7 @@ Directive
 Example
 -------
 
-.. src-trace:: dummy src
+.. src-trace::
    :project: src
 
 .. note:: **local-url** is not working on the website as it only supports local browse

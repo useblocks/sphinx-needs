@@ -9,7 +9,7 @@ Directive
 
 .. code-block:: rst
 
-   .. src-trace:: example_with_file
+   .. src-trace::
       :project: project_config
       :file: example.cpp
 
@@ -17,7 +17,7 @@ or
 
 .. code-block:: rst
 
-   .. src-trace:: example_with_directory
+   .. src-trace::
       :project: project_config
       :directory: ./example
 
@@ -51,15 +51,13 @@ The ``src-trace`` directive can be used with the **file** option:
 
 .. code-block:: rst
 
-   .. src-trace:: dcdc demo_1
-      :id: SRC_001
+   .. src-trace::
       :project: dcdc
       :file: ./charge/demo_1.cpp
 
 The needs defined in source code are extracted and rendered to:
 
-.. src-trace:: dcdc demo_1
-   :id: SRC_001
+.. src-trace::
    :project: dcdc
    :file: ./charge/demo_1.cpp
 
@@ -67,15 +65,13 @@ The ``src-trace`` directive can be used with the **directory** option:
 
 .. code-block:: rst
 
-   .. src-trace:: dcdc charge
-      :id: SRC_001
+   .. src-trace::
       :project: dcdc
       :directory: ./discharge
 
 The needs defined in source code are extracted and rendered to:
 
-.. src-trace:: dcdc charge
-   :id: SRC_002
+.. src-trace::
    :project: dcdc
    :directory: ./discharge
 

@@ -1,6 +1,4 @@
 <document source="<source>">
-    <target anonymous="" ids="ST_776C6" refid="ST_776C6">
-    <Need classes="need need-srctrace" ids="ST_776C6" refid="ST_776C6">
     <target anonymous="" ids="IMPL_singleLineExample" refid="IMPL_singleLineExample">
     <Need classes="need need-impl" ids="IMPL_singleLineExample" refid="IMPL_singleLineExample">
     <target anonymous="" ids="IMPL_multiLineExample" refid="IMPL_multiLineExample">
@@ -9,8 +7,6 @@
     <Need classes="need need-impl" ids="IMPL_14" refid="IMPL_14">
     <target anonymous="" ids="IMPL_main_supercharge" refid="IMPL_main_supercharge">
     <Need classes="need need-impl" ids="IMPL_main_supercharge" refid="IMPL_main_supercharge">
-    <target anonymous="" ids="ST_FB728" refid="ST_FB728">
-    <Need classes="need need-srctrace" ids="ST_FB728" refid="ST_FB728">
     <target anonymous="" ids="IMPL_processAssemble" refid="IMPL_processAssemble">
     <Need classes="need need-impl" ids="IMPL_processAssemble" refid="IMPL_processAssemble">
     <target anonymous="" ids="IMPL_filterData" refid="IMPL_filterData">
@@ -21,8 +17,6 @@
     <Need classes="need need-impl" ids="IMPL_processAggregate" refid="IMPL_processAggregate">
     <target anonymous="" ids="IMPL_main_demo2" refid="IMPL_main_demo2">
     <Need classes="need need-impl" ids="IMPL_main_demo2" refid="IMPL_main_demo2">
-    <target anonymous="" ids="ST_9F1BA" refid="ST_9F1BA">
-    <Need classes="need need-srctrace" ids="ST_9F1BA" refid="ST_9F1BA">
     <target anonymous="" ids="IMPL_displayUI" refid="IMPL_displayUI">
     <Need classes="need need-impl" ids="IMPL_displayUI" refid="IMPL_displayUI">
     <target anonymous="" ids="IMPL_backupData" refid="IMPL_backupData">

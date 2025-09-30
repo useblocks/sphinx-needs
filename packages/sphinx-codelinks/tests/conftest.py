@@ -58,7 +58,7 @@ def temporary_gitignore(source_directory: Path):
 
 class DoctreeSnapshotExtension(SingleFileSnapshotExtension):
     _write_mode = WriteMode.TEXT
-    _file_extension = "doctree.xml"
+    file_extension = "doctree.xml"
 
     def serialize(self, data, **_kwargs):
         if not isinstance(data, document):
@@ -84,7 +84,7 @@ def snapshot_doctree(snapshot):
 
 class AnchorsSnapshotExtension(SingleFileSnapshotExtension):
     _write_mode = WriteMode.TEXT
-    _file_extension = "anchors.json"
+    file_extension = "anchors.json"
 
     def serialize(self, data, **_kwargs):
         if not isinstance(data, list):

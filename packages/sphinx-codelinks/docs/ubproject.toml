@@ -5,3 +5,37 @@ ignore = ["block.title_line"]
 
 [needs]
 id_required = true
+
+[parse.extend_directives.src-trace]
+argument = false
+options = true
+content = false
+content_required = false
+parse_content = false
+description = "A directive to generate need items from one-line definition"
+extension = "sphinx-codelinks"                                              # The extension that provides the directive
+
+[parse.extend_directives.video]
+argument = true
+content = false
+options = true
+
+[parse.extend_directives.tabs]
+argument = true
+content = true
+options = true
+
+[parse.extend_directives.typer]
+argument = true
+content = true
+options = true
+
+[parse.extend_directives.button-ref]
+argument = true
+content = true
+options = true
+
+[parse.extend_directives.button-link]
+argument = true
+content = true
+options = true

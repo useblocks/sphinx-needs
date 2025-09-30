@@ -1,2 +1,2 @@
-.. src-trace:: dummy src
+.. src-trace::
    :project: src

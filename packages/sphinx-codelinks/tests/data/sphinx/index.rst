@@ -1,11 +1,11 @@
-.. src-trace:: dcdc_supercharge
+.. src-trace::
    :project: dcdc
    :file: supercharge.cpp
 
-.. src-trace:: dcdc_charge
+.. src-trace::
    :project: dcdc
    :directory: ./charge
 
-.. src-trace:: dcdc_discharge
+.. src-trace::
    :project: dcdc
    :directory: ./discharge

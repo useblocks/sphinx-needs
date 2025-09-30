@@ -1,5 +1,4 @@
 from collections.abc import Callable
-import hashlib
 import os
 from pathlib import Path
 from typing import Any, ClassVar, cast
@@ -8,7 +7,6 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from packaging.version import Version
 import sphinx
-from sphinx.config import Config as _SphinxConfig
 from sphinx.util.docutils import SphinxDirective
 from sphinx_needs.api import add_need  # type: ignore[import-untyped]
 from sphinx_needs.utils import add_doc  # type: ignore[import-untyped]
@@ -33,42 +31,6 @@ else:
     import logging  # type: ignore[no-redef]
 
 logger = logging.getLogger(__name__)
-
-
-def _check_id(
-    config: _SphinxConfig,
-    id: str | None,
-    src_strings: list[str],
-    options: dict[str, str],
-    additional_options: dict[str, str],
-) -> None:
-    """Check and set the id for the need.
-
-    src_strings[0] is always the title.
-    src_strings[1] is always the project.
-    """
-    if config.needs_id_required:
-        if id:
-            additional_options["id"] = id
-        else:
-            if "directory" in options:
-                src_strings.append(options["directory"])
-            if "file" in options:
-                src_strings.append(options["file"])
-
-            additional_options["id"] = _make_hashed_id("SRCTRACE_", src_strings, config)
-
-
-def _make_hashed_id(
-    type_prefix: str, src_strings: list[str], config: _SphinxConfig
-) -> str:
-    """Create an ID based on the type and title of the need."""
-    full_title = src_strings[0]  # title is always the first element
-    hashable_content = "_".join(src_strings)
-    hashed = hashlib.sha256(hashable_content.encode("UTF-8")).hexdigest().upper()
-    if config.needs_id_from_title:
-        hashed = full_title.upper().replace(" ", "_") + "_" + hashed
-    return f"{type_prefix}{hashed[: config.needs_id_length]}"
 
 
 def get_rel_path(doc_path: Path, code_path: Path, base_dir: Path) -> tuple[Path, Path]:
@@ -114,13 +76,12 @@ class SourceTracing(nodes.General, nodes.Element):
 
 
 class SourceTracingDirective(SphinxDirective):
-    required_arguments = 1
+    required_arguments = 0
     optional_arguments = 0
     final_argument_whitespace = True
     # this enables content in the directive
-    has_content = True
+    has_content = False
     option_spec: ClassVar[dict[str, Callable[[str], str]] | None] = {
-        "id": directives.unchanged_required,
         "project": directives.unchanged_required,
         "file": directives.unchanged_required,
         "directory": directives.unchanged_required,
@@ -131,8 +92,6 @@ class SourceTracingDirective(SphinxDirective):
         validate_option(self.options)
 
         project = self.options["project"]
-        id = self.options.get("id")
-        title = self.arguments[0]
         # get source tracing config
         src_trace_sphinx_config = CodeLinksConfig.from_sphinx(self.env.config)
 
@@ -147,12 +106,6 @@ class SourceTracingDirective(SphinxDirective):
         # the directory where the source files are copied to
         target_dir = out_dir / src_dir.name
 
-        additional_options = {"project": project}
-
-        _check_id(
-            self.env.config, id, [title, project], self.options, additional_options
-        )
-
         source_files = self.get_src_files(self.options, src_dir, src_discover_config)
 
         # add source files into the dependency
@@ -165,20 +118,6 @@ class SourceTracingDirective(SphinxDirective):
         analyse_config.src_files = source_files
         src_analyse = SourceAnalyse(analyse_config)
         src_analyse.run()
-
-        needs = []
-
-        # create the need for src-trace directive
-        src_trace_need = add_need(
-            app=self.env.app,  # The Sphinx application object
-            state=self.state,  # The docutils state object
-            docname=self.env.docname,  # The current document name
-            lineno=self.lineno,  # The line number where the directive is used
-            need_type="srctrace",  # The type of the need
-            title=title,  # The title of the need
-            **additional_options,
-        )
-        needs.extend(src_trace_need)
 
         dirs = {
             "src_dir": src_dir,
@@ -233,14 +172,12 @@ class SourceTracingDirective(SphinxDirective):
             remote_url_field,
             dirs,
         )
-        if rendered_needs:
-            needs.extend(rendered_needs)
 
         # for post-processing of need links
         # https://github.com/useblocks/sphinx-needs/issues/1210
         add_doc(self.env, self.env.docname)
 
-        return needs
+        return rendered_needs
 
     def get_src_files(
         self,
