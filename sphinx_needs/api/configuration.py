@@ -15,6 +15,7 @@ from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.functions.functions import DynamicFunction
 from sphinx_needs.need_item import NeedItem
+from sphinx_needs.schema.config import ExtraOptionSchemaTypes
 
 # TODO(mh) document exactly when API calls are allowed in the Sphinx event system
 
@@ -86,7 +87,11 @@ def add_need_type(
 
 
 def add_extra_option(
-    app: Sphinx, name: str, *, description: str = "Added by add_extra_option API"
+    app: Sphinx,
+    name: str,
+    *,
+    description: str = "Added by add_extra_option API",
+    schema: ExtraOptionSchemaTypes | None = None,
 ) -> None:
     """
     Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
@@ -100,11 +105,12 @@ def add_extra_option(
         add_extra_option(app, 'my_extra_option')
 
     :param app: Sphinx application object
-    :param name: Name as string of the extra option
+    :param name: Name of the extra option
+    :param description: Description of the extra option
+    :param schema: Schema definition for the extra option
     :return: None
     """
-    # TODO(mh) add schema support
-    _NEEDS_CONFIG.add_extra_option(name, description)
+    _NEEDS_CONFIG.add_extra_option(name, description, schema=schema)
 
 
 # TODO(mh) add extra link api
