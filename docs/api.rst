@@ -43,10 +43,6 @@ Data
 .. automodule:: sphinx_needs.data
    :members: NeedsInfoType, NeedsInfoComputedType, NeedsSourceInfoType, NeedsMutable, NeedsPartType
 
-.. automodule:: sphinx_needs.needs_schema
-   :members: FieldsSchema, FieldSchema, FieldFunctionArray, LinksFunctionArray,
-             FieldLiteralValue, LinkSchema, LinksLiteralValue, AllowedTypes
-
 Views
 -----
 
@@ -57,3 +53,15 @@ but should not be instantiated directly.
    :members:
    :undoc-members:
    :special-members: __iter__, __getitem__, __len__
+
+Schema
+------
+
+.. automodule:: sphinx_needs.needs_schema
+   :members: FieldsSchema, FieldSchema, FieldFunctionArray, LinksFunctionArray,
+             FieldLiteralValue, LinkSchema, LinksLiteralValue, AllowedTypes
+
+.. automodule:: sphinx_needs.schema.config
+   :members: ExtraOptionStringSchemaType, ExtraOptionBooleanSchemaType,
+             ExtraOptionIntegerSchemaType, ExtraOptionNumberSchemaType,
+             ExtraOptionMultiValueSchemaType
