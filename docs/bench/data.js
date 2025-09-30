@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759172277217,
+  "lastUpdate": 1759227876932,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14436,6 +14436,42 @@ window.BENCHMARK_DATA = {
             "value": 68.92604535299999,
             "unit": "s",
             "extra": "Commit: 48ebb58c3f2460079f8323a20a8ad0e88f8986d6\nBranch: master\nTime: 2025-09-29T20:55:57+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1e25a66a5d96c06082695235218d7738ba44df03",
+          "message": "👌 Add schema to add_extra_option (#1527)\n\nNeed to expose needs extra option `schema` to the API because extensions\nadd typed fields programmatically.",
+          "timestamp": "2025-09-30T12:22:50+02:00",
+          "tree_id": "7834089d4f487ff53f678d3b2379b26d161780f3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1e25a66a5d96c06082695235218d7738ba44df03"
+        },
+        "date": 1759227868377,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16852566300000404,
+            "unit": "s",
+            "extra": "Commit: 1e25a66a5d96c06082695235218d7738ba44df03\nBranch: master\nTime: 2025-09-30T12:22:50+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.581356754999995,
+            "unit": "s",
+            "extra": "Commit: 1e25a66a5d96c06082695235218d7738ba44df03\nBranch: master\nTime: 2025-09-30T12:22:50+02:00"
           }
         ]
       }
