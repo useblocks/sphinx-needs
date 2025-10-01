@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759227876932,
+  "lastUpdate": 1759306529997,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14472,6 +14472,42 @@ window.BENCHMARK_DATA = {
             "value": 62.581356754999995,
             "unit": "s",
             "extra": "Commit: 1e25a66a5d96c06082695235218d7738ba44df03\nBranch: master\nTime: 2025-09-30T12:22:50+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0e858caff8a877ac995190fe275d1a15e3c7ab14",
+          "message": "🐛 Fix name error schema_path_contains (#1530)\n\nHappens when using `contains` on empty link lists.\nFixed & added a test case to prevent regressions.",
+          "timestamp": "2025-10-01T10:13:24+02:00",
+          "tree_id": "9e6b8e10fbc92d9ef06029e6ff0ce2ce7954b2d8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0e858caff8a877ac995190fe275d1a15e3c7ab14"
+        },
+        "date": 1759306508906,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16719201499998348,
+            "unit": "s",
+            "extra": "Commit: 0e858caff8a877ac995190fe275d1a15e3c7ab14\nBranch: master\nTime: 2025-10-01T10:13:24+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.993387684,
+            "unit": "s",
+            "extra": "Commit: 0e858caff8a877ac995190fe275d1a15e3c7ab14\nBranch: master\nTime: 2025-10-01T10:13:24+02:00"
           }
         ]
       }
