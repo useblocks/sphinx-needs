@@ -51,7 +51,7 @@ Rules for specifying variant definitions
 * When evaluating a variant definition, we use data from the current need object,
   `Sphinx-Tags <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-t>`_,
   and :ref:`needs_filter_data` as the context for filtering.
-  Sphinx tags are injected under the name ``sphinx_tags`` as a set of strings.
+  Sphinx tags are injected under the name ``build_tags`` as a set of strings.
 * You can set a *need option* to multiple variant definitions by separating each definition with either
   the ``,`` symbol, like ``var_a:open, ['name' in tags]:assigned``.|br|
   With multiple variant definitions, we set the first matching variant as the *need option's* value.
@@ -83,7 +83,7 @@ For example, in your ``conf.py``:
 .. code-block:: python
 
    needs_variants = {
-     "var_a": "'var_a' in sphinx_tags"  # filter_string, check for Sphinx tags
+     "var_a": "'var_a' in build_tags"  # filter_string, check for Sphinx tags
      "var_b": "assignee == 'me'"
    }
 
@@ -140,7 +140,7 @@ In your ``.rst`` file:
 
    .. req:: Example
       :id: VA_003
-      :status: <<['tag_a' in sphinx_tags and 'tag_b' in sphinx_tags]:open, closed>>
+      :status: <<['tag_a' in build_tags and 'tag_b' in build_tags]:open, closed>>
 
 From the above example, if a tag is defined, the plugin can access it in the filter context when handling variants.
 If a variant definition is true, then we set the *need option* to the value of the variant definition.

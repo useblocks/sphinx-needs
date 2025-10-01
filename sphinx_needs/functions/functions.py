@@ -314,7 +314,7 @@ def resolve_functions(
                         var_context: dict[str, Any] = {
                             **need,
                             **needs_config.filter_data,
-                            "sphinx_tags": set(app.builder.tags),
+                            "build_tags": set(app.builder.tags),
                         }
                         if (
                             var_return := _get_variant(
