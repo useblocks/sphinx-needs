@@ -2226,7 +2226,7 @@ For example, in ``conf.py``:
 .. code-block:: python
 
    needs_variants = {
-     "var_a": "'var_a' in sphinx_tags"  # filter_string
+     "var_a": "'var_a' in build_tags"  # filter_string
      "var_b": "assignee == 'me'"
    }
 

@@ -51,13 +51,14 @@ Rules for specifying variant definitions
 * When evaluating a variant definition, we use data from the current need object,
   `Sphinx-Tags <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-t>`_,
   and :ref:`needs_filter_data` as the context for filtering.
+  Sphinx tags are injected under the name ``build_tags`` as a set of strings.
 * You can set a *need option* to multiple variant definitions by separating each definition with either
-  the ``,`` symbol, like ``var_a:open, ['name' in tags]:assigned``. |br|
+  the ``,`` symbol, like ``var_a:open, ['name' in tags]:assigned``.|br|
   With multiple variant definitions, we set the first matching variant as the *need option's* value.
 * When you set a *need option* to multiple variant definitions, you can specify the last definition as
   a default "variant-free" option which we can use if no variant definition matches. |br|
-  Example; In this multi-variant definitions, ``[status in tags]:added, var_a:changed, unknown``, *unknown* will be used
-  if none of the other variant definitions are True.
+  Example; In this multi-variant definitions, ``[status in tags]:added, var_a:changed, unknown``,
+  *unknown* will be used if none of the other variant definitions are True.
 * If you prefer your variant definitions to use rules instead of keys, then you should put your filter string
   inside square brackets like this: ``['name' in tags]:assigned``.
 * For multi-variant definitions, you can mix both rule and variant-named options like this:
@@ -82,7 +83,7 @@ For example, in your ``conf.py``:
 .. code-block:: python
 
    needs_variants = {
-     "var_a": "'var_a' in sphinx_tags"  # filter_string
+     "var_a": "'var_a' in build_tags"  # filter_string, check for Sphinx tags
      "var_b": "assignee == 'me'"
    }
 
@@ -95,7 +96,7 @@ In your ``.rst`` file:
       :status: <<var_a:open, var_b:closed, unknown>>
 
 From the above example, if a *need option* has variants defined, then we get the filter string
-from our ``needs_variants`` configuration and evaluate it.
+from the ``needs_variants`` configuration and evaluate it.
 If a variant definition is true, then we set the *need option* to the value of the variant definition.
 
 Use Case 2
@@ -139,7 +140,7 @@ In your ``.rst`` file:
 
    .. req:: Example
       :id: VA_003
-      :status: <<[tag_a and tag_b]:open, closed>>
+      :status: <<['tag_a' in build_tags and 'tag_b' in build_tags]:open, closed>>
 
 From the above example, if a tag is defined, the plugin can access it in the filter context when handling variants.
 If a variant definition is true, then we set the *need option* to the value of the variant definition.
