@@ -250,6 +250,20 @@ def recurse_validate_type_schmemas(
             """List of target need ids for contains validation that failed."""
             contains_warnings_per_target: dict[str, list[OntologyWarning]] = {}
             """Map of target need id to warnings for failed contains validation."""
+            schema_path_items = [
+                *schema_path,
+                "validate",
+                "network",
+                link_type,
+                "items",
+            ]
+            schema_path_contains = [
+                *schema_path,
+                "validate",
+                "network",
+                link_type,
+                "contains",
+            ]
             for target_need_id in need[link_type]:
                 # collect all downstream warnings for broken links, items and contains
                 # evaluation happens later
@@ -280,20 +294,6 @@ def recurse_validate_type_schmemas(
                         warnings[-1]["user_message"] = user_message
                     continue
 
-                schema_path_items = [
-                    *schema_path,
-                    "validate",
-                    "network",
-                    link_type,
-                    "items",
-                ]
-                schema_path_contains = [
-                    *schema_path,
-                    "validate",
-                    "network",
-                    link_type,
-                    "contains",
-                ]
                 need_path_link = [*need_path, link_type, target_need_id]
                 # Handle items validation - all items must pass
                 if link_schema.get("items"):

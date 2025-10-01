@@ -2685,6 +2685,16 @@
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/network-no_error_empty_links]
+  '''
+  WARNING: Need 'IMPL_SAFE' has validation errors:
+    Severity:       violation
+    Need path:      IMPL_SAFE > links
+    Schema path:    impl-[links]->spec[0] > validate > network > links > contains
+    Schema message: Too few valid links of type 'links' (0 < 1) [sn_schema.network_contains_too_few]
+  
+  '''
+# ---
 # name: test_schemas[schema/fixtures/network-schemas_in_conf]
   ''
 # ---

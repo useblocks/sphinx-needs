@@ -74,6 +74,42 @@ schemas_in_conf_error:
         :id: IMPL_1
         :links: SPEC_1
 
+no_error_empty_links:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs]
+    schema_definitions_from_json = "schemas.json"
+  rst: |
+    .. spec:: unsafe spec
+        :id: SPEC_UNSAFE
+
+    .. impl:: safe impl
+       :id: IMPL_SAFE
+  schemas:
+    $defs:
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-impl:
+        properties:
+          type:
+            const: impl
+    schemas:
+      - id: "impl-[links]->spec"
+        message: impl links to spec
+        select:
+          $ref: "#/$defs/type-impl"
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/type-spec"
+              minContains: 1
+
 min_contains:
   conf: |
     extensions = ["sphinx_needs"]
