@@ -22,7 +22,6 @@ Source Code Parsing
 - Extend language support by adding parsers for more comment styles, including but not limited to:
 
   - Rust
-  - YAML
 
 - Enhance ``.gitignore`` handling to support nested ``.gitignore`` files.
 
