@@ -7,7 +7,7 @@ Variant Handling Test
 
 .. spec:: Tags Example
    :id: VA_003
-   :status: <<[tag_a and tag_b]:tags_implemented, closed>>
+   :status: <<[all(x in sphinx_tags for x in ['tag_a', 'tag_b'])]:tags_implemented, closed>>
 
 .. story:: Test story
    :id: ST_001
@@ -24,11 +24,11 @@ Variant Handling Test
 
 .. spec:: Variant Specification
    :id: SPEC_003
-   :status: <<[tag_a]:open, unknown>>
+   :status: <<['tag_a' in sphinx_tags]:open, unknown>>
 
 .. spec:: Unknown Variant
    :id: SPEC_004
-   :status: <<[tag_c]:open, unknown>>
+   :status: <<['tag_c' in sphinx_tags]:open, unknown>>
 
 .. needtable::
    :filter: status in ("open", "close", "progress")

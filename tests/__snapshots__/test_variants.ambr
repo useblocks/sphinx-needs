@@ -14,7 +14,7 @@
             'sections': list([
               'Empty Variant Options Handling Test',
             ]),
-            'status': '<<[tag_a]:open, unknown>>',
+            'status': 'open',
             'title': 'Empty Variant Options',
             'type': 'spec',
             'type_name': 'Specification',
@@ -75,6 +75,7 @@
             'sections': list([
               'Variant Handling Test',
             ]),
+            'status': 'unknown',
             'title': 'Unknown Variant',
             'type': 'spec',
             'type_name': 'Specification',

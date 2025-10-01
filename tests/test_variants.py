@@ -65,10 +65,7 @@ def test_variant_options_html(test_app, snapshot):
     app.build()
 
     warnings = strip_colors(app._warning.getvalue()).splitlines()
-    # print(warnings)
-    assert warnings == [
-        f"{Path(str(app.srcdir)) / 'index.rst'}:29: WARNING: Error while resolving dynamic values for field 'status', of need 'SPEC_004': name 'tag_c' is not defined [needs.dynamic_function]"
-    ]
+    assert warnings == []
 
     needs = json.loads(Path(app.outdir, "needs.json").read_text())
     assert needs == snapshot(
