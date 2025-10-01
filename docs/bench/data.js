@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759306529997,
+  "lastUpdate": 1759326620556,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14508,6 +14508,42 @@ window.BENCHMARK_DATA = {
             "value": 64.993387684,
             "unit": "s",
             "extra": "Commit: 0e858caff8a877ac995190fe275d1a15e3c7ab14\nBranch: master\nTime: 2025-10-01T10:13:24+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "02eb6e771a6cc39cc8875c9a77520c02135cc084",
+          "message": "🐛 Inject build_tags to variant filter strings (#1531)\n\nInstead of passing Sphinx tags directly into the context variable scope\nfor filter strings, a new variable `build_tags` is injected which is a\n`set[str]`.\nThis avoids namespace clutter and also `NameError`s when checking for\ntags.\n\nFor now, this is only available for variants. Need to discuss whether to\napply this to all filter strings.",
+          "timestamp": "2025-10-01T15:48:28+02:00",
+          "tree_id": "d9b9c9f2a8d38913191112f6bc9303f2a2159973",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/02eb6e771a6cc39cc8875c9a77520c02135cc084"
+        },
+        "date": 1759326611293,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1707669939999903,
+            "unit": "s",
+            "extra": "Commit: 02eb6e771a6cc39cc8875c9a77520c02135cc084\nBranch: master\nTime: 2025-10-01T15:48:28+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.44496905899999,
+            "unit": "s",
+            "extra": "Commit: 02eb6e771a6cc39cc8875c9a77520c02135cc084\nBranch: master\nTime: 2025-10-01T15:48:28+02:00"
           }
         ]
       }
