@@ -5,6 +5,41 @@
 Changelog
 =========
 
+.. _`release:6.0.1`:
+
+6.0.1
+-----
+
+:Released: 02.10.2025
+:Full Changelog: `v6.0.0...v6.0.1 <https://github.com/useblocks/sphinx-needs/compare/6.0.0...02eb6e771a6cc39cc8875c9a77520c02135cc084>`__
+
+This release contains bug fixes for the 6.0.0 schema validation system and some minor improvements.
+
+- 👌 Add schema to add_extra_option :pr:`1527`
+
+  Added ``schema`` parameter to ``add_extra_option`` API to support typed fields
+  in extensions that add extra options programmatically.
+
+- 🐛 Inject build_tags to variant filter strings :pr:`1531`
+
+  Introduced a new context variable ``build_tags`` into variant filter strings that contains
+  all defined Sphinx build tags to be used as variant selector.
+  The new variable can be used like this: ``'tag1' in build_tags``.
+  This also avoids polluting the variable namespace with tags.
+
+- 🐛 Fix name error schema_path_contains :pr:`1530`
+
+  Fixed bug when using ``contains`` validation on empty link lists.
+
+- 🔧 Fix schema json missing exc message :pr:`1526`
+- 🔧 Improve error for variant options :pr:`1524`
+
+  Better error messages when variant options are incorrectly set to link types.
+
+- 📚 Add release labels to changelog :pr:`1523`
+
+  Added stable release labels to changelog for better URL references.
+
 .. _`release:6.0.0`:
 
 6.0.0
