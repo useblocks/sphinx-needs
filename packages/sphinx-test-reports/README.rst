@@ -1,7 +1,7 @@
 Sphinx-Test-Reports
 ===================
 
-.. image:: docs/_static/sphinx-test-reports-logo.png
+.. image:: https://raw.githubusercontent.com/useblocks/sphinx-test-reports/master/docs/_static/sphinx-test-reports-logo.png
 
 Sphinx-Test-Reports shows test results of your unit tests inside your sphinx documentation.
 
