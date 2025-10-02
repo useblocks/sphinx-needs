@@ -17,12 +17,14 @@ This release contains bug fixes for the 6.0.0 schema validation system and some 
 
 - 👌 Add schema to add_extra_option :pr:`1527`
 
-  Added ``schema`` parameter to ``add_extra_option`` API to support typed fields
-  in extensions that add extra options programmatically.
+  Added ``schema`` parameter to
+  :py:func:`add_extra_option <sphinx_needs.api.configuration.add_extra_option>`
+  API to support typed fields in extensions that add extra options programmatically.
 
 - 🐛 Inject build_tags to variant filter strings :pr:`1531`
 
-  Introduced a new context variable ``build_tags`` into variant filter strings that contains
+  Introduced a new context variable ``build_tags`` into
+  :ref:`variant filter strings <needs_variant_support>` that contains
   all defined Sphinx build tags to be used as variant selector.
   The new variable can be used like this: ``'tag1' in build_tags``.
   This also avoids polluting the variable namespace with tags.
