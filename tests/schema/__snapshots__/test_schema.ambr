@@ -170,7 +170,7 @@
 # name: test_schema_e2e[test_app0]
   '''
   WARNING: Need 'FEAt' has validation errors:
-    Severity:       violation
+    Severity:       warning
     Field:          id
     Need path:      FEAt
     Schema path:    [0] > local > properties > id > pattern
@@ -2711,6 +2711,67 @@
       Need path:      IMPL_1 > links > SPEC_1
       Schema path:    [0] > validate > network > links > contains > local > properties > type > const
       Schema message: 'req' was expected [sn_schema.network_contains_too_few]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_info_min_unset_is_reported]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       info
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: 'A' was expected [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_info_min_warning_not_reported]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_unset_min_unset_is_reported]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: 'A' was expected [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_violation_min_unset_is_reported]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: 'A' was expected [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_unset_is_reported]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       warning
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: 'A' was expected [sn_schema.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_violation_not_reported]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_warning_is_reported]
+  '''
+  WARNING: Need 'IMPL_1' has validation errors:
+    Severity:       warning
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: 'A' was expected [sn_schema.local_fail]
   
   '''
 # ---
