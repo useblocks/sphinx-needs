@@ -156,7 +156,7 @@ def validate_need(
             local_network_schema["local"] = type_schema["validate"]["local"]
         if "network" in type_schema["validate"]:
             local_network_schema["network"] = type_schema["validate"]["network"]
-        _, new_warnings_recurse = recurse_validate_type_schmemas(
+        _, new_warnings_recurse = recurse_validate_schemas(
             config,
             need,
             needs,
@@ -172,7 +172,7 @@ def validate_need(
     return all_warnings
 
 
-def recurse_validate_type_schmemas(
+def recurse_validate_schemas(
     config: NeedsSphinxConfig,
     need: NeedItem,
     needs: NeedsView,
@@ -228,6 +228,7 @@ def recurse_validate_type_schmemas(
             schema_path=[*schema_path, "local"],
             need_path=need_path,
             user_message=user_message if recurse_level == 0 else None,
+            user_severity=severity if recurse_level == 0 else None,
         )
         save_debug_files(config, warnings_local)
         warnings_local_filtered = filter_warnings_severity(
@@ -297,7 +298,7 @@ def recurse_validate_type_schmemas(
                 need_path_link = [*need_path, link_type, target_need_id]
                 # Handle items validation - all items must pass
                 if link_schema.get("items"):
-                    new_success, new_warnings = recurse_validate_type_schmemas(
+                    new_success, new_warnings = recurse_validate_schemas(
                         config=config,
                         need=target_need,
                         needs=needs,
@@ -318,7 +319,7 @@ def recurse_validate_type_schmemas(
 
                 # Handle contains validation - at least some items must pass
                 if link_schema.get("contains"):
-                    new_success, new_warnings = recurse_validate_type_schmemas(
+                    new_success, new_warnings = recurse_validate_schemas(
                         config=config,
                         need=target_need,
                         needs=needs,
@@ -594,6 +595,7 @@ def get_ontology_warnings(
     schema_path: list[str],
     need_path: list[str],
     user_message: str | None = None,
+    user_severity: SeverityEnum | None = None,
 ) -> list[OntologyWarning]:
     warnings: list[OntologyWarning] = []
     warning: OntologyWarning
@@ -620,7 +622,7 @@ def get_ontology_warnings(
         for msg in validation_report["messages"]:
             warning = {
                 "rule": fail_rule,
-                "severity": get_severity(fail_rule),
+                "severity": get_severity(fail_rule, user_severity),
                 "validation_message": msg["message"],
                 "need": need,
                 "reduced_need": validation_report["reduced_need"],

@@ -43,6 +43,7 @@ def test_schema_config(
     "schema/fixtures/extra_links.yml",
     "schema/fixtures/extra_options.yml",
     "schema/fixtures/network.yml",
+    "schema/fixtures/reporting.yml",
     "schema/fixtures/unevaluated.yml",
 )
 def test_schemas(
