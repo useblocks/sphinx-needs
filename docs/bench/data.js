@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759407120420,
+  "lastUpdate": 1759781580477,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14580,6 +14580,42 @@ window.BENCHMARK_DATA = {
             "value": 62.13928056500001,
             "unit": "s",
             "extra": "Commit: 5a0d196f1b7e17d39cefb6c0943c3827a4c63036\nBranch: master\nTime: 2025-10-02T14:10:13+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "69ee2dd9eeaffdcff4ab55b9ba94a615c1c2b7a9",
+          "message": "🐛 Fix schema rule severity (#1535)\n\nThis fixes the reported rule severity set in schema rule\ndefinitions.\n\nThe filtering for severity based on rule severity and the `needs_schema_severity`\n(minimum report severity) actually did work, but the reported severity\nwas not set correctly.",
+          "timestamp": "2025-10-06T22:11:06+02:00",
+          "tree_id": "19e9076df6282a4ff2547e0a34e9a76afb2b3d39",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/69ee2dd9eeaffdcff4ab55b9ba94a615c1c2b7a9"
+        },
+        "date": 1759781570557,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17489488600000413,
+            "unit": "s",
+            "extra": "Commit: 69ee2dd9eeaffdcff4ab55b9ba94a615c1c2b7a9\nBranch: master\nTime: 2025-10-06T22:11:06+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.27821154600002,
+            "unit": "s",
+            "extra": "Commit: 69ee2dd9eeaffdcff4ab55b9ba94a615c1c2b7a9\nBranch: master\nTime: 2025-10-06T22:11:06+02:00"
           }
         ]
       }
