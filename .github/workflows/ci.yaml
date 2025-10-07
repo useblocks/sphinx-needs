@@ -16,6 +16,17 @@ jobs:
           python-version: '3.10'
       - uses: pre-commit/action@v3.0.1
 
+  ubc:
+    name: ubc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: useblocks/ubc-action
+        with:
+          version: 0.18.1
+      - name: Run 'ubc check docs'
+        run: ubc check docs
+
   tests-core:
     name: "Core py${{ matrix.python-version }} sphinx~=${{ matrix.sphinx-version }} ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
