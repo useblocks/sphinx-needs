@@ -150,7 +150,7 @@ jobs:
           python -m pip freeze
       - name: Run pytest
         run: |
-          python -m pytest -v tests/no_mpl_tests.py
+          python -m pytest -v tests/no_jsonschema_tests.py
       - name: Run HTML build
         # the docs should build without matplotlib (just issuing warnings)
         run: sphinx-build -b html . _build
