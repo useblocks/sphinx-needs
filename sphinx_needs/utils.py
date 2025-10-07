@@ -8,6 +8,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache, reduce, wraps
+from types import ModuleType
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 from urllib.parse import urlparse
 
@@ -417,6 +418,19 @@ def import_matplotlib() -> matplotlib | None:
     if not os.environ.get("DISPLAY"):
         matplotlib.use("Agg")
     return matplotlib
+
+
+@lru_cache
+def import_jsonschema() -> ModuleType | None:
+    """Import and return matplotlib, or return None if it cannot be imported.
+
+    Also sets the interactive backend to ``Agg``, if ``DISPLAY`` is not set.
+    """
+    try:
+        import jsonschema
+    except ImportError:
+        return None
+    return jsonschema
 
 
 def save_matplotlib_figure(

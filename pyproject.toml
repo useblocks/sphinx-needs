@@ -30,7 +30,6 @@ dependencies = [
   "sphinx>=7.4,<9",
   "requests-file~=2.1",             # external links
   "requests~=2.32",                 # external links
-  "jsonschema[format]>=3.2.0",      # schema validation for needsimport and ontology
   "sphinx-data-viewer~=0.1.5",      # needservice debug output
   "sphinxcontrib-jquery~=4.0",      # needed for datatables in sphinx>=6
   "tomli; python_version < '3.11'", # for needs_from_toml configuration
@@ -40,6 +39,9 @@ dependencies = [
 
 [project.optional-dependencies]
 plotting = ["matplotlib>=3.3.0"] # for needpie / needbar
+schema = [
+  "jsonschema[format]>=3.2.0",
+] # for schema validation for needsimport and ontology
 test = [
   "defusedxml~=0.7.1",
   "matplotlib>=3.3.0",
