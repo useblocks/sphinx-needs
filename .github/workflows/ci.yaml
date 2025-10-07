@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: useblocks/ubc-action@pd-fix-path-issue
+      - uses: useblocks/ubc-action@main
         with:
           version: 0.18.1
       - name: Run 'ubc check docs'
