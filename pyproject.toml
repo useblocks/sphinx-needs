@@ -45,6 +45,7 @@ schema = [
 test = [
   "defusedxml~=0.7.1",
   "matplotlib>=3.3.0",
+  "jsonschema[format]>=3.2.0",
   "pytest~=8.0",
   "pytest-cov~=6.0",
   "syrupy~=4.0",

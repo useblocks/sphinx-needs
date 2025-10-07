@@ -133,7 +133,7 @@ jobs:
         working-directory: docs
 
   tests-no-jsonschema:
-    name: Test matplotlib uninstalled
+    name: Test jsonschema uninstalled
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
