@@ -54,6 +54,12 @@ Using pip
 
     pip install sphinx-needs
 
+To use schema validation features of sphinx-needs, you need to also install ``jsonschema``, which is available *via* the ``schema`` extra:
+
+.. code-block:: bash
+
+    pip install sphinx-needs[schema]
+
 If you wish to also use the plotting features of sphinx-needs (see ``needbar`` and ``needpie``), you need to also install ``matplotlib``, which is available *via* the ``plotting`` extra:
 
 .. code-block:: bash
