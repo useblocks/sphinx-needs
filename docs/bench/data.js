@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1759781580477,
+  "lastUpdate": 1760011326242,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14616,6 +14616,42 @@ window.BENCHMARK_DATA = {
             "value": 64.27821154600002,
             "unit": "s",
             "extra": "Commit: 69ee2dd9eeaffdcff4ab55b9ba94a615c1c2b7a9\nBranch: master\nTime: 2025-10-06T22:11:06+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "536c20ef635ce2632f603c246437b215c333c9ec",
+          "message": "📚 Co-locate dynamic and variant function docs (#1544)\n\nTo some extent they are two ways to do the same thing, and behave very\nsimilar\n\n\nhttps://sphinx-needs--1544.org.readthedocs.build/en/1544/dynamic_functions.html\n\n---------\n\nCo-authored-by: Marco Heinemann <marco.heinemann@useblocks.com>",
+          "timestamp": "2025-10-09T14:00:13+02:00",
+          "tree_id": "0348350b43398b47958f61cbc994a15e28db0ab2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/536c20ef635ce2632f603c246437b215c333c9ec"
+        },
+        "date": 1760011317266,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20484095200000496,
+            "unit": "s",
+            "extra": "Commit: 536c20ef635ce2632f603c246437b215c333c9ec\nBranch: master\nTime: 2025-10-09T14:00:13+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.34072358200001,
+            "unit": "s",
+            "extra": "Commit: 536c20ef635ce2632f603c246437b215c333c9ec\nBranch: master\nTime: 2025-10-09T14:00:13+02:00"
           }
         ]
       }
