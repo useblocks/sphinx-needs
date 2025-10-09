@@ -7,7 +7,7 @@ Sphinx-needs offers the possibility to delay the evaluation of certain need fiel
 There are two syntaxes provided to achieve this:
 
 - Using double square brackets ``[[...]]`` to encapsulate a dynamic function call.
-- Using double angled brackets ``<<...>>`` to encapsulate a variant function call.
+- Using double angled brackets ``<<...>>`` to encapsulate a variant definition.
 
 .. _dynamic_functions:
 
