@@ -23,7 +23,7 @@ Or if you will request specific data from an external server like JIRA.
 
 To refer to a dynamic function, you can use the following syntax:
 
-- In a need directive option, wrap the function call in double square brackets: ``function_name(arg)``
+- In a need directive option, wrap the function call in double square brackets: ``[[function_name(arg)]]``
 - In a need content, use the :ref:`ndf` role: ``:ndf:`function_name(arg)```
 
 .. need-example:: Dynamic function example
