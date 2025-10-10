@@ -499,6 +499,8 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     for option in needs_config._extra_options:
         description = "Added by needs_extra_options config"
         schema = None
+        dynamic_functions = None
+        variant_functions = None
         if isinstance(option, str):
             name = option
         elif isinstance(option, dict):
@@ -514,6 +516,8 @@ def load_config(app: Sphinx, *_args: Any) -> None:
                 continue
             description = option.get("description", description)
             schema = option.get("schema")
+            dynamic_functions = option.get("dynamic_functions")
+            variant_functions = option.get("variant_functions")
         else:
             log_warning(
                 LOGGER,
@@ -523,7 +527,14 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             )
             continue
 
-        _NEEDS_CONFIG.add_extra_option(name, description, schema=schema, override=True)
+        _NEEDS_CONFIG.add_extra_option(
+            name,
+            description,
+            schema=schema,
+            override=True,
+            dynamic_functions=dynamic_functions,
+            variant_functions=variant_functions,
+        )
 
     # ensure options for `needgantt` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
@@ -722,6 +733,17 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 " Please use another name in your config (needs_extra_links)."
             )
 
+    # check for correct keys in needs_core_options
+    allowed_core_options = {
+        key
+        for key, val in NeedsCoreFields.items()
+        if val.get("add_to_field_schema", False)
+    }
+    if disallowed_keys := set(needs_config.core_options) - allowed_core_options:
+        raise NeedsConfigException(
+            f"Keys in needs_core_options are not allowed: {disallowed_keys}"
+        )
+
     # Check if option and link are using the same name
     for link in link_types:
         if link in extra_options:
@@ -735,29 +757,20 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 " This is not allowed.".format(link + "_back")
             )
 
-    external_variants = needs_config.variants
-    external_variant_options = needs_config.variant_options
-    for value in external_variants.values():
+    for value in needs_config.variants.values():
         # Check if external filter values is really a string
         if not isinstance(value, str):
             raise NeedsConfigException(
-                f"Variant filter value: {value} from needs_variants {external_variants} is not a string."
+                f"Variant filter value: {value} from needs_variants {needs_config.variants} is not a string."
             )
 
-    allowed_internal_variants = {
-        k for k, v in NeedsCoreFields.items() if v.get("allow_variants")
-    }
-    for option in external_variant_options:
-        # Check variant option is added to an allowed field
-        if option in link_types:
-            raise NeedsConfigException(
-                f"Variant option `{option}` is a link type. This is not allowed."
-            )
-        if option not in extra_options and option not in allowed_internal_variants:
-            raise NeedsConfigException(
-                f"Variant option `{option}` is not added in extra options. "
-                "This is not allowed."
-            )
+    if needs_config.variant_options:
+        log_warning(
+            LOGGER,
+            'Config option "needs_variant_options" is deprecated. Please enable "variant_functions" in "needs_core_options" or "needs_extra_options" instead.',
+            "deprecated",
+            None,
+        )
 
     validate_schemas_config(app, needs_config)
 
@@ -768,6 +781,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     for name, data in NeedsCoreFields.items():
         if not data.get("add_to_field_schema", False):
             continue
+        overrides = needs_config.core_options.get(name, {})
         type_ = data["schema"]["type"]
         nullable = False
         if isinstance(type_, list):
@@ -775,6 +789,29 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             type_ = type_[0]
             nullable = True
         default = data["schema"].get("default", None)
+
+        allow_variants = overrides.get("variant_functions", False)
+        if name in needs_config.variant_options:
+            allow_variants = True
+        if allow_variants and not data.get("allow_variants"):
+            log_warning(
+                LOGGER,
+                f"Core field {name!r} cannot be configured to allow variant functions, as it does not support them.",
+                "config",
+                None,
+            )
+            allow_variants = False
+
+        allow_df = overrides.get("dynamic_functions", data.get("allow_df", False))
+        if allow_df and not data.get("allow_df"):
+            log_warning(
+                LOGGER,
+                f"Core field {name!r} cannot be configured to allow dynamic functions, as it does not support them.",
+                "config",
+                None,
+            )
+            allow_df = False
+
         field = FieldSchema(
             name=name,
             description=data["description"],
@@ -784,10 +821,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             default=None if default is None else FieldLiteralValue(default),
             allow_defaults=data.get("allow_default", False),
             allow_extend=data.get("allow_extend", False),
-            allow_dynamic_functions=data.get("allow_df", False),
-            allow_variant_functions=name in needs_config.variant_options
-            if data.get("allow_variants", False)
-            else False,
+            allow_dynamic_functions=allow_df,
+            allow_variant_functions=allow_variants,
             directive_option=name != "title",
         )
         try:
@@ -808,6 +843,15 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 type = extra.schema.get("type", "string")
                 if type == "array":
                     item_type = extra.schema.get("items", {}).get("type", "string")  # type: ignore[attr-defined]
+
+            allow_variants = (
+                extra.variant_functions
+                if extra.variant_functions is not None
+                else False
+            )
+            if name in needs_config.variant_options:
+                allow_variants = True
+
             field = FieldSchema(
                 name=name,
                 description=extra.description,
@@ -820,8 +864,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 default=None if extra.schema is not None else FieldLiteralValue(""),
                 allow_defaults=True,
                 allow_extend=True,
-                allow_dynamic_functions=True,
-                allow_variant_functions=name in needs_config.variant_options,
+                allow_dynamic_functions=True
+                if extra.dynamic_functions is None
+                else extra.dynamic_functions,
+                allow_variant_functions=allow_variants,
                 directive_option=True,
             )
             schema.add_extra_field(field)
@@ -843,8 +889,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 default=LinksLiteralValue([]),
                 allow_defaults=True,
                 allow_extend=True,
-                allow_dynamic_functions=True,
-                allow_variant_functions=name in needs_config.variant_options,
+                allow_dynamic_functions=link.get("dynamic_functions", True),
+                allow_variant_functions=link.get("variant_functions", False),
                 directive_option=True,
             )
             schema.add_link_field(link_field)

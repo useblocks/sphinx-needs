@@ -57,6 +57,26 @@ def test_match_variants(option, context, variants, expected):
 
 @pytest.mark.parametrize(
     "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/variant_doc_old", "tags": ["tag_a"]}],
+    indirect=True,
+)
+def test_variant_options_html_old(test_app, snapshot):
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).splitlines()
+    assert warnings == [
+        'WARNING: Config option "needs_variant_options" is deprecated. Please enable "variant_functions" in "needs_core_options" or "needs_extra_options" instead. [needs.deprecated]',
+    ]
+
+    needs = json.loads(Path(app.outdir, "needs.json").read_text())
+    assert needs == snapshot(
+        exclude=props("created", "project", "creator", "needs_schema")
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app",
     [{"buildername": "html", "srcdir": "doc_test/variant_doc", "tags": ["tag_a"]}],
     indirect=True,
 )

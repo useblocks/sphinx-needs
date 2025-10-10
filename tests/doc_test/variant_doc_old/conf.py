@@ -1,4 +1,11 @@
-extensions = ["sphinx_needs"]
+tags.add("tag_b")  # noqa: F821
+
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+
+# note, the plantuml executable command is set globally in the test suite
+plantuml_output_format = "svg"
+
+needs_id_regex = "^[A-Za-z0-9_]"
 
 needs_types = [
     {
@@ -32,12 +39,20 @@ needs_types = [
 ]
 needs_variants = {"change_author": "assignee == 'Randy Duodu'"}
 needs_filter_data = {"assignee": "Randy Duodu"}
-needs_core_options = {
-    "status": {"variant_functions": True},
-}
+needs_variant_options = ["author", "status"]
 needs_extra_options = [
     "my_extra_option",
     "another_option",
-    {"name": "author", "variant_functions": True},
+    "author",
     "comment",
+    "amount",
+    "hours",
+    "image",
+    "config",
+    "github",
+    "value",
+    "unit",
 ]
+
+needs_build_json = True
+needs_json_remove_defaults = True

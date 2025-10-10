@@ -39,6 +39,10 @@ class ExtraOptionParams:
 
     description: str
     """A description of the option."""
+    dynamic_functions: bool | None
+    """If True, allow dynamic functions when defining this field."""
+    variant_functions: bool | None
+    """If True, allow variant functions when defining this field."""
     schema: (
         ExtraOptionStringSchemaType
         | ExtraOptionBooleanSchemaType
@@ -106,6 +110,8 @@ class _Config:
         name: str,
         description: str,
         *,
+        dynamic_functions: bool | None = None,
+        variant_functions: bool | None = None,
         schema: ExtraOptionStringSchemaType
         | ExtraOptionBooleanSchemaType
         | ExtraOptionIntegerSchemaType
@@ -139,9 +145,19 @@ class _Config:
                 )
 
                 raise NeedsApiConfigWarning(f"Option {name} already registered.")
+        if not isinstance(dynamic_functions, bool | None):
+            raise NeedsApiConfigWarning(
+                f"dynamic_functions for {name!r} must be a bool or None"
+            )
+        if not isinstance(variant_functions, bool | None):
+            raise NeedsApiConfigWarning(
+                f"variant_functions for {name!r} must be a bool or None"
+            )
         self._extra_options[name] = ExtraOptionParams(
             description=description,
             schema=schema,
+            dynamic_functions=dynamic_functions,
+            variant_functions=variant_functions,
         )
 
     @property
@@ -273,6 +289,10 @@ class LinkOptionsType(TypedDict, total=False):
     The schema is applied locally on unresolved links, i.e. on the list of string ids.
     For more granular control and graph traversal, use the `needs_schema_definitions` configuration.
     """
+    dynamic_functions: NotRequired[bool]
+    """If True, allow dynamic functions when defining this field (default: True)."""
+    variant_functions: NotRequired[bool]
+    """If True, allow variant functions when defining this field (default: False)."""
 
 
 class NeedType(TypedDict):
@@ -303,6 +323,19 @@ class NeedExtraOption(TypedDict):
     If given, the schema will apply to all needs that use this option.
     For more granular control, use the `needs_schema_definitions` configuration.
     """
+    dynamic_functions: NotRequired[bool]
+    """If True, allow dynamic functions when defining this field (default: True)."""
+    variant_functions: NotRequired[bool]
+    """If True, allow variant functions when defining this field (default: False)."""
+
+
+class NeedCoreOption(TypedDict):
+    """Defines an override for a core option for needs"""
+
+    dynamic_functions: NotRequired[bool]
+    """If True, allow dynamic functions when defining this field (default: True)."""
+    variant_functions: NotRequired[bool]
+    """If True, allow variant functions when defining this field (default: False)."""
 
 
 class NeedStatusesOption(TypedDict):
@@ -597,10 +630,14 @@ class NeedsSphinxConfig:
         default=30, metadata={"rebuild": "html", "types": (int,)}
     )
     """Maximum length of the title in the need role output."""
+    core_options: Mapping[str, NeedCoreOption] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+    )
+    """Override certain core fields for needs."""
     _extra_options: list[str | NeedExtraOption] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
-    """List of extra options for needs, that get added as directive options and need fields."""
+    """List of extra fields for needs, that get added as directive options and need fields."""
 
     @property
     def extra_options(self) -> Mapping[str, ExtraOptionParams]:
