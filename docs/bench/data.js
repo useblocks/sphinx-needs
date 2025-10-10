@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760011326242,
+  "lastUpdate": 1760103837642,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14652,6 +14652,42 @@ window.BENCHMARK_DATA = {
             "value": 65.34072358200001,
             "unit": "s",
             "extra": "Commit: 536c20ef635ce2632f603c246437b215c333c9ec\nBranch: master\nTime: 2025-10-09T14:00:13+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "344480abc7eda4470f13e729e69a700dd9ea6df5",
+          "message": "🔧 Derive core `FieldSchema` from `NeedsCoreFields` (#1546)\n\nTo ensure these are kept in sync, rather than duplicating data for both",
+          "timestamp": "2025-10-10T15:41:58+02:00",
+          "tree_id": "be5e2f0a9924ca7503f6a24e212fcb6851f42715",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/344480abc7eda4470f13e729e69a700dd9ea6df5"
+        },
+        "date": 1760103827967,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18178921300000184,
+            "unit": "s",
+            "extra": "Commit: 344480abc7eda4470f13e729e69a700dd9ea6df5\nBranch: master\nTime: 2025-10-10T15:41:58+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 69.07677346100002,
+            "unit": "s",
+            "extra": "Commit: 344480abc7eda4470f13e729e69a700dd9ea6df5\nBranch: master\nTime: 2025-10-10T15:41:58+02:00"
           }
         ]
       }
