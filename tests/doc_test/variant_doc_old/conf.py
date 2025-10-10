@@ -39,9 +39,7 @@ needs_types = [
 ]
 needs_variants = {"change_author": "assignee == 'Randy Duodu'"}
 needs_filter_data = {"assignee": "Randy Duodu"}
-needs_core_options = {
-    "status": {"variant_functions": True},
-}
+needs_variant_options = ["author", "status"]
 needs_extra_options = [
     "my_extra_option",
     "another_option",
