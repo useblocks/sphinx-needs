@@ -141,7 +141,7 @@ def generate_need(
     :param content: Content of the need
     :param status: Status as string.
     :param tags: A list of tags, or a comma separated string.
-    :param constraints: Constraints as single, comma separated, string.
+    :param constraints: Constraint names as comma separated string or list of strings
     :param constraints_passed: Contains bool describing if all constraints have passed
     :param hide: If True then the need is not rendered.
         ``None`` means that the value can be overriden by global defaults, else it is set to False.
@@ -458,7 +458,7 @@ def generate_need(
         "title": title,
         "status": status,
         "tags": tags,
-        "constraints": tuple(constraints),
+        "constraints": constraints,
         "collapse": collapse,
         "hide": hide,
         "style": style,

@@ -2077,8 +2077,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': None,
-      'constraints': tuple(
-      ),
+      'constraints': list([
+      ]),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -2158,8 +2158,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': None,
-      'constraints': tuple(
-      ),
+      'constraints': list([
+      ]),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
@@ -2238,8 +2238,8 @@
       'closed_at': '',
       'collapse': False,
       'completion': None,
-      'constraints': tuple(
-      ),
+      'constraints': list([
+      ]),
       'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({

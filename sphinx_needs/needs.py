@@ -755,122 +755,31 @@ def check_configuration(app: Sphinx, config: Config) -> None:
 def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     schema = FieldsSchema()
-    for field in [
-        FieldSchema(
-            name="title",
-            description="Title of the need",
-            type="string",
-            nullable=False,
-            allow_defaults=False,
-            allow_extend=False,
-            allow_dynamic_functions=True,
-            allow_variant_functions="title" in needs_config.variant_options,
-            directive_option=False,
-        ),
-        FieldSchema(
-            name="status",
-            description="Status of the need",
-            type="string",
-            nullable=True,
-            allow_defaults=True,
-            allow_extend=True,
-            allow_dynamic_functions=True,
-            allow_variant_functions="status" in needs_config.variant_options,
-            directive_option=True,
-        ),
-        FieldSchema(
-            name="tags",
-            description="List of tags",
-            type="array",
-            item_type="string",
-            default=FieldLiteralValue([]),
-            allow_defaults=True,
-            allow_extend=True,
-            allow_dynamic_functions=True,
-            allow_variant_functions="tags" in needs_config.variant_options,
-            directive_option=True,
-        ),
-        FieldSchema(
-            name="collapse",
-            description="Hide the meta-data information of the need.",
-            type="boolean",
-            allow_dynamic_functions=True,
-            allow_variant_functions="collapse" in needs_config.variant_options,
-            default=FieldLiteralValue(False),
-            allow_defaults=True,
-            allow_extend=True,
-            directive_option=True,
-        ),
-        FieldSchema(
-            name="hide",
-            description="If true, the need is not rendered.",
-            type="boolean",
-            allow_dynamic_functions=True,
-            allow_variant_functions="hide" in needs_config.variant_options,
-            default=FieldLiteralValue(False),
-            allow_defaults=True,
-            allow_extend=True,
-            directive_option=True,
-        ),
-        FieldSchema(
-            name="layout",
-            description="Key of the layout, which is used to render the need.",
-            type="string",
-            nullable=True,
-            allow_defaults=True,
-            allow_extend=True,
-            allow_dynamic_functions=True,
-            allow_variant_functions="layout" in needs_config.variant_options,
-            directive_option=True,
-        ),
-        FieldSchema(
-            name="style",
-            description="Comma-separated list of CSS classes (all appended by `needs_style_`).",
-            type="string",
-            nullable=True,
-            allow_defaults=True,
-            allow_extend=True,
-            allow_dynamic_functions=True,
-            allow_variant_functions="style" in needs_config.variant_options,
-            directive_option=True,
-        ),
-        FieldSchema(
-            name="template",
-            description="The template key, if the content was created from a jinja template.",
-            type="string",
-            nullable=True,
-            allow_defaults=True,
-            directive_option=True,
-        ),
-        FieldSchema(
-            name="pre_template",
-            description="The template key, if the pre_content was created from a jinja template.",
-            type="string",
-            nullable=True,
-            allow_defaults=True,
-            directive_option=True,
-        ),
-        FieldSchema(
-            name="post_template",
-            description="The template key, if the post_content was created from a jinja template.",
-            type="string",
-            nullable=True,
-            allow_defaults=True,
-            directive_option=True,
-        ),
-        FieldSchema(
-            name="constraints",
-            description="List of constraint names, which are defined for this need.",
-            type="array",
-            item_type="string",
-            default=FieldLiteralValue([]),
-            allow_defaults=True,
-            allow_extend=True,
-            allow_dynamic_functions=True,
-            allow_variant_functions="constraints" in needs_config.variant_options,
-            directive_option=True,
-        ),
-    ]:
+    for name, data in NeedsCoreFields.items():
+        if not data.get("add_to_field_schema", False):
+            continue
+        type_ = data["schema"]["type"]
+        nullable = False
+        if isinstance(type_, list):
+            assert type_[1] == "null", "Only nullable types supported as list"
+            type_ = type_[0]
+            nullable = True
+        default = data["schema"].get("default", None)
+        field = FieldSchema(
+            name=name,
+            description=data["description"],
+            nullable=nullable,
+            type=type_,
+            item_type=data["schema"].get("items", {}).get("type", None),
+            default=None if default is None else FieldLiteralValue(default),
+            allow_defaults=data.get("allow_default", False),
+            allow_extend=data.get("allow_extend", False),
+            allow_dynamic_functions=data.get("allow_df", False),
+            allow_variant_functions=name in needs_config.variant_options
+            if data.get("allow_variants", False)
+            else False,
+            directive_option=name != "title",
+        )
         try:
             schema.add_core_field(field)
         except ValueError as exc:
