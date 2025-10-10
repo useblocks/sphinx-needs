@@ -64,8 +64,10 @@ class CoreFieldParameters(TypedDict):
     """Description of the field."""
     schema: dict[str, Any]
     """JSON schema for the field."""
-    allow_default: NotRequired[Literal["str", "str_list", "bool"]]
-    """Whether the field allows custom default values to be set, and their type,
+    add_to_field_schema: NotRequired[bool]
+    """Whether to add the field to the field schema (False if not present)."""
+    allow_default: NotRequired[bool]
+    """Whether the field allows custom default values to be set,
     via needs_global_options (False if not present).
     """
     allow_extend: NotRequired[bool]
@@ -110,14 +112,16 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "title": {
         "description": "Title of the need.",
         "schema": {"type": "string"},
+        "add_to_field_schema": True,
         "allow_df": True,
         "allow_variants": True,
     },
     "status": {
         "description": "Status of the need.",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "show_in_layout": True,
-        "allow_default": "str",
+        "allow_default": True,
         "allow_df": True,
         "allow_variants": True,
         "allow_extend": True,
@@ -125,8 +129,9 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "tags": {
         "description": "List of tags.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "add_to_field_schema": True,
         "show_in_layout": True,
-        "allow_default": "str_list",
+        "allow_default": True,
         "allow_df": True,
         "allow_variants": True,
         "allow_extend": True,
@@ -134,9 +139,10 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "collapse": {
         "description": "Hide the meta-data information of the need.",
         "schema": {"type": "boolean", "default": False},
+        "add_to_field_schema": True,
         "allow_df": True,
         "allow_variants": True,
-        "allow_default": "bool",
+        "allow_default": True,
         "exclude_json": True,
         "exclude_external": True,
         "allow_extend": True,
@@ -144,9 +150,10 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "hide": {
         "description": "If true, the need is not rendered.",
         "schema": {"type": "boolean", "default": False},
+        "add_to_field_schema": True,
         "allow_df": True,
         "allow_variants": True,
-        "allow_default": "bool",
+        "allow_default": True,
         "exclude_json": True,
         "exclude_external": True,
         "allow_extend": True,
@@ -154,8 +161,9 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "layout": {
         "description": "Key of the layout, which is used to render the need.",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "show_in_layout": True,
-        "allow_default": "str",
+        "allow_default": True,
         "allow_df": True,
         "allow_variants": True,
         "exclude_external": True,
@@ -164,9 +172,10 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "style": {
         "description": "Comma-separated list of CSS classes (all appended by `needs_style_`).",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "show_in_layout": True,
         "exclude_external": True,
-        "allow_default": "str",
+        "allow_default": True,
         "allow_df": True,
         "allow_variants": True,
         "allow_extend": True,
@@ -296,20 +305,23 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "template": {
         "description": "The template key, if the content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "exclude_external": True,
-        "allow_default": "str",
+        "allow_default": True,
     },
     "pre_template": {
         "description": "The template key, if the pre_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "exclude_external": True,
-        "allow_default": "str",
+        "allow_default": True,
     },
     "post_template": {
         "description": "The template key, if the post_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "exclude_external": True,
-        "allow_default": "str",
+        "allow_default": True,
     },
     "content": {
         "description": "The main content of the need.",
@@ -341,8 +353,9 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "constraints": {
         "description": "List of constraint names, which are defined for this need.",
-        "schema": {"type": "array", "items": {"type": "string"}, "default": ()},
-        "allow_default": "str_list",
+        "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "add_to_field_schema": True,
+        "allow_default": True,
         "allow_df": True,
         "allow_variants": True,
         "allow_extend": True,
@@ -472,7 +485,7 @@ class NeedsInfoType(TypedDict):
     """Hexadecimal color code of the type."""
     type_style: str
 
-    constraints: tuple[str, ...]
+    constraints: list[str]
     """List of constraint names, which are defined for this need."""
 
     # computed from need content (short for architecture)
