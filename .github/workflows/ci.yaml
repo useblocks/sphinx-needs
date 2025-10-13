@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: useblocks/ubc-action@main
         with:
-          version: 0.18.1
+          version: 0.19.1
       - name: Run 'ubc check docs'
         run: ubc check docs
 
