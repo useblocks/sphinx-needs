@@ -677,7 +677,7 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
 
     for link in needs_config.extra_links:
         if "outgoing" not in link:
-            link["outgoing"] = link['option']
+            link["outgoing"] = link["option"]
         if "incoming" not in link:
             link["incoming"] = f"{link['option']} incoming"
 
