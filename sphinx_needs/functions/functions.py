@@ -31,7 +31,6 @@ from sphinx_needs.views import NeedsView
 
 logger = get_logger(__name__)
 unicode = str
-ast_boolean = ast.NameConstant
 
 
 class DynamicFunction(Protocol):
