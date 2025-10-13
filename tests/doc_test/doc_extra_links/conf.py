@@ -39,8 +39,6 @@ needs_types = [
 needs_extra_links = [
     {
         "option": "links",
-        "incoming": "is linked by",
-        "outgoing": "links to",
         "copy": False,
         "style": "#black",
         "style_part": "dotted,#black",

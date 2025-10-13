@@ -675,6 +675,12 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
 
     needs_config.extra_links = common_links + needs_config.extra_links
 
+    for link in needs_config.extra_links:
+        if "outgoing" not in link:
+            link["outgoing"] = link["option"]
+        if "incoming" not in link:
+            link["incoming"] = f"{link['option']} incoming"
+
 
 def check_configuration(app: Sphinx, config: Config) -> None:
     """Checks the configuration for invalid options.
