@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760103837642,
+  "lastUpdate": 1760339142462,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14688,6 +14688,42 @@ window.BENCHMARK_DATA = {
             "value": 69.07677346100002,
             "unit": "s",
             "extra": "Commit: 344480abc7eda4470f13e729e69a700dd9ea6df5\nBranch: master\nTime: 2025-10-10T15:41:58+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ff786018aeb3cdcaed2eb773b9ae001cd4541c9",
+          "message": "👌 Make `incoming`/`outgoing` keys optional in `needs_extra_links` (#1548)\n\nPreviously specifying links as below would eventually result in a\n`KeyError` later during the build.\n\n```python\nneeds_extra_links = [{\"option\": \"links\"}]\n```\n\nNow, default values are created for missing `incoming` and `outgoing`\nkeys, making configuration easier.",
+          "timestamp": "2025-10-13T09:03:43+02:00",
+          "tree_id": "eb572b9d88f8906770c432d0bca9715516e58014",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9ff786018aeb3cdcaed2eb773b9ae001cd4541c9"
+        },
+        "date": 1760339132472,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.220976370999999,
+            "unit": "s",
+            "extra": "Commit: 9ff786018aeb3cdcaed2eb773b9ae001cd4541c9\nBranch: master\nTime: 2025-10-13T09:03:43+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.297815053,
+            "unit": "s",
+            "extra": "Commit: 9ff786018aeb3cdcaed2eb773b9ae001cd4541c9\nBranch: master\nTime: 2025-10-13T09:03:43+02:00"
           }
         ]
       }
