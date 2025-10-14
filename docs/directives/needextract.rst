@@ -33,7 +33,7 @@ For instance, a supplier could get a copy of requirements but would not see all 
 Please read :ref:`filter` for more information.
 
 It also supports arguments as filter string,
-which works like the option `filter`, but also
+which works like the option ``filter``, but also
 supports need ID as filter argument.
 
 .. need-example::

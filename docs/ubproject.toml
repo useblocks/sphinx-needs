@@ -7,6 +7,41 @@ content = true
 parse_content = true
 content_required = true
 
+[parse.extend_directives.grid-item-card]
+argument = false
+options = true
+content = true
+parse_content = true
+content_required = true
+
+[parse.extend_directives.button-link]
+argument = true
+options = true
+content = true
+parse_content = true
+content_required = true
+
+[parse.extend_directives.button-ref]
+argument = true
+options = true
+content = true
+parse_content = true
+content_required = true
+
+[parse.extend_directives.uml]
+argument = true
+options = true
+content = true
+parse_content = false
+content_required = false
+
+[parse.extend_directives.need-warnings]
+argument = false
+options = false
+content = false
+parse_content = false
+content_required = false
+
 [needs]
 variant_options = ["status"]
 show_link_type = false
