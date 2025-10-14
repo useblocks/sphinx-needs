@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760339142462,
+  "lastUpdate": 1760442597431,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14724,6 +14724,42 @@ window.BENCHMARK_DATA = {
             "value": 67.297815053,
             "unit": "s",
             "extra": "Commit: 9ff786018aeb3cdcaed2eb773b9ae001cd4541c9\nBranch: master\nTime: 2025-10-13T09:03:43+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cb1490533b2214260aaca8774bf0065258749d02",
+          "message": "🔧 Removed unused code (#1550)\n\nAlso fixes the code for python 3.14\n\ncloses #1549",
+          "timestamp": "2025-10-14T13:48:07+02:00",
+          "tree_id": "9834629df97e5089057360ce5788a2e5329271a9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/cb1490533b2214260aaca8774bf0065258749d02"
+        },
+        "date": 1760442586974,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16619605599999687,
+            "unit": "s",
+            "extra": "Commit: cb1490533b2214260aaca8774bf0065258749d02\nBranch: master\nTime: 2025-10-14T13:48:07+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.415399541,
+            "unit": "s",
+            "extra": "Commit: cb1490533b2214260aaca8774bf0065258749d02\nBranch: master\nTime: 2025-10-14T13:48:07+02:00"
           }
         ]
       }
