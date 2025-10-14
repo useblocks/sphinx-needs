@@ -26,6 +26,8 @@ jobs:
           version: 0.19.1
       - name: Run 'ubc check docs'
         run: ubc check docs
+      - name: Run 'ubc build index docs'
+        run: ubc build index docs --show-warnings
 
   tests-core:
     name: "Core py${{ matrix.python-version }} sphinx~=${{ matrix.sphinx-version }} ${{ matrix.os }}"
