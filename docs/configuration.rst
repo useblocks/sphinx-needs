@@ -1086,6 +1086,7 @@ will be used over the generated title.
 .. need-example::
 
    .. req::
+      :id: R_ERROR_LOGGING
 
       The tool must have error logging.
       All critical errors must be written to the console.
