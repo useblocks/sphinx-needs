@@ -87,6 +87,16 @@ description = "Time in hours"
 schema.type = "integer"
 
 [[needs.extra_options]]
+name = "duration"
+description = "Time in days"
+schema.type = "integer"
+
+[[needs.extra_options]]
+name = "completion"
+description = "Completion in %"
+schema.type = "integer"
+
+[[needs.extra_options]]
 name = "image"
 description = "Image reference"
 
