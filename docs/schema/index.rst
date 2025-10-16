@@ -85,13 +85,19 @@ The schema is configured in multiple places:
 
 .. important::
 
+   **Type Information and Automatic Injection**
+
    JSON schema requires type information in all schemas to actually perform validation.
    For example, validating an
    `integer minimum <https://json-schema.org/understanding-json-schema/reference/numeric#range>`__
    constraint on a string field does not make sense, but, depending on the implementation,
-   JSON schema might not complain about this. Therefore, Sphinx-Needs injects the type information
-   from ``needs_extra_options`` and ``needs_extra_links`` as well as the core fields
-   into the :ref:`needs_schema_definitions`.
+   JSON schema might not complain about this.
+
+   Therefore, Sphinx-Needs automatically injects the type information from ``needs_extra_options``
+   and ``needs_extra_links`` (as well as core field definitions) into the
+   :ref:`needs_schema_definitions` when type information is not explicitly provided in the
+   schemas.json file. If type information is provided in schemas.json, it must match the
+   definition from ``needs_extra_options`` or core fields.
 
 The next sections guides through an example and how do use the type and schema system to enforce
 constraints on need items and links between them.
@@ -164,12 +170,67 @@ Above modeling can be reached with the following ubproject.toml configuration:
 .. literalinclude:: ../../tests/doc_test/doc_schema_example/ubproject.toml
    :language: toml
 
-As can be seen, the ``needs.extra_options`` section defines the extra options used in the modeling
-together with their types and possible schema constraints.
+**Primary Type Definition**
 
-The pictured need types and extra links are also defined.
+The ``[[needs.extra_options]]`` section is where the **primary type information** for fields is
+defined. This type information is globally valid for all usages of that field across any need type.
 
-The given types will be injected to the JSON schema models, if not provided there.
+For **primitive types** (string, integer, number, boolean):
+
+.. code-block:: toml
+
+   [[needs.extra_options]]
+   name = "efforts"
+   schema.type = "integer"
+
+   [[needs.extra_options]]
+   name = "approval"
+   schema.type = "boolean"
+
+For **array types**, both the array type and the item type must be specified:
+
+.. code-block:: toml
+
+   [[needs.extra_options]]
+   name = "tags"
+   schema.type = "array"
+   schema.items.type = "string"
+
+   [[needs.extra_options]]
+   name = "priorities"
+   schema.type = "array"
+   schema.items.type = "integer"
+
+**Type Constraints**
+
+Additional schema constraints can also be defined here, which will be validated globally:
+
+.. code-block:: toml
+
+   [[needs.extra_options]]
+   name = "asil"
+   schema.type = "string"
+   schema.enum = ["QM", "A", "B", "C", "D"]
+
+   [[needs.extra_options]]
+   name = "efforts"
+   schema.type = "integer"
+   schema.minimum = 0
+   schema.maximum = 100
+
+**Type Information in schemas.json**
+
+The ``schemas.json`` file (or :ref:`needs_schema_definitions`) also requires type information for
+validation, but:
+
+- **If type is not specified** in schemas.json, it will be **automatically injected** from the
+  ``needs.extra_options`` definition (or from core field definitions for built-in fields)
+- **If type is specified** in schemas.json, it **must match** the type defined in
+  ``needs.extra_options`` (or the core field definition)
+
+This ensures type consistency across your entire configuration while reducing duplication.
+
+.. note:: The pictured need types and extra links are also defined in the ubproject.toml file shown above.
 
 Schema Configuration
 --------------------
