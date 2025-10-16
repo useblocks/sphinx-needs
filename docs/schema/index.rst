@@ -14,17 +14,17 @@ See :ref:`migration_from_warnings_constraints` for details on how to migrate.
 
 .. important::
 
-   **Strong Typing System**: Sphinx-Needs features a comprehensive strong typing system
+   **Strong typing system**: Sphinx-Needs features a comprehensive strong typing system
    that extends throughout the entire application. This includes:
 
-   - **Early Type Validation**: All need fields are validated against their defined types,
+   - **Early type validation**: All need fields are validated against their defined types,
      with support for :ref:`dynamic_functions`, :ref:`variants <needs_variant_support>`,
      :ref:`needextend` and :ref:`global defaults <needs_global_options>`. Needs that do not
      conform to their types are not created and lead to a warning.
-   - **JSON Export**: Generated :ref:`needs.json <needs_builder>` files honor the user provided
+   - **JSON export**: Generated :ref:`needs.json <needs_builder>` files honor the user provided
      types
    - **Multi value extra options**: Array types for extra options are fully supported
-   - **Gradual Migration**: Existing projects can migrate step-by-step to the new system,
+   - **Gradual migration**: Existing projects can migrate step-by-step to the new system,
      with string types as default for untyped fields.
    - **Safety**: The new type system core makes it possible to configure fields individually.
      Users may decide not to disallow variants / dynamic functions / defaults or needextend on
@@ -35,7 +35,7 @@ See :ref:`migration_from_warnings_constraints` for details on how to migrate.
    This represents a major improvement in data integrity and developer experience compared
    to the previous string-typed system.
 
-Type System
+Type system
 -----------
 
 The typing system features the following types for need fields:
@@ -85,7 +85,7 @@ The schema is configured in multiple places:
 
 .. important::
 
-   **Type Information and Automatic Injection**
+   **Type information and automatic injection**
 
    JSON schema requires type information in all schemas to actually perform validation.
    For example, validating an
@@ -162,7 +162,7 @@ Here are the full example files as a reference:
    .. literalinclude:: ../../tests/doc_test/doc_schema_example/schemas.json
       :language: json
 
-Field Configuration
+Field configuration
 -------------------
 
 Above modeling can be reached with the following ubproject.toml configuration:
@@ -170,10 +170,11 @@ Above modeling can be reached with the following ubproject.toml configuration:
 .. literalinclude:: ../../tests/doc_test/doc_schema_example/ubproject.toml
    :language: toml
 
-**Primary Type Definition**
+Primary type definition
+~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``[[needs.extra_options]]`` section is where the **primary type information** for fields is
-defined. This type information is globally valid for all usages of that field across any need type.
+The configuration :ref:`needs_extra_options` is used to define the **primary type information** for
+fields. This type information is globally valid for all usages of that field across any need type.
 
 For **primitive types** (string, integer, number, boolean):
 
@@ -201,7 +202,8 @@ For **array types**, both the array type and the item type must be specified:
    schema.type = "array"
    schema.items.type = "integer"
 
-**Type Constraints**
+Type constraints
+~~~~~~~~~~~~~~~~
 
 Additional schema constraints can also be defined here, which will be validated globally:
 
@@ -218,7 +220,10 @@ Additional schema constraints can also be defined here, which will be validated 
    schema.minimum = 0
    schema.maximum = 100
 
-**Type Information in schemas.json**
+The same constraints as defined in :ref:`supported_data_types` can be used here.
+
+Type information in schemas.json
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``schemas.json`` file (or :ref:`needs_schema_definitions`) also requires type information for
 validation, but:
@@ -229,16 +234,15 @@ validation, but:
   ``needs.extra_options`` (or the core field definition)
 
 This ensures type consistency across your entire configuration while reducing duplication.
+The injection to the schema rules is required for safe JSON schema validation.
 
-.. note:: The pictured need types and extra links are also defined in the ubproject.toml file shown above.
-
-Schema Configuration
---------------------
+Schemas configuration
+---------------------
 
 Schemas can be configured in two ways: directly in the ``conf.py`` file or loaded from a separate
 JSON file.
 
-JSON File Configuration (Recommended)
+JSON file configuration (recommended)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The preferred approach is to define schemas in a separate JSON file and load them using the
@@ -294,10 +298,10 @@ See :ref:`schemas_json_structure` for complete file format details.
 Benefits of JSON File Configuration:
 
 - **Declarative**: Schema definitions are separate from Python configuration
-- **Version Control**: Easy to track changes to validation rules
-- **IDE Support**: `ubCode`_ can read the JSON file
+- **Version control**: Easy to track changes to validation rules
+- **IDE support**: `ubCode`_ can read the JSON file
 
-Python Configuration (Alternative)
+Python configuration (alternative)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Alternatively, schemas can be configured directly using the :ref:`needs_schema_definitions`
@@ -334,7 +338,7 @@ configuration option in ``conf.py``. The structure is identical to the JSON file
 
 .. _`schemas_json_structure`:
 
-Schema File Structure Reference
+Schema file structure reference
 -------------------------------
 
 A ``schemas.json`` file (or ``needs_schema_definitions`` dict) has the following structure:
@@ -359,14 +363,14 @@ A ``schemas.json`` file (or ``needs_schema_definitions`` dict) has the following
      ]
    }
 
-**Top-Level Properties:**
+**Top-level properties:**
 
 - ``$defs`` (optional): Dictionary of reusable schema components referenced via ``$ref``.
   See :ref:`schema_reuse`.
 - ``schemas`` (required): Array of schema objects. Each schema in this array defines validation
   rules that will be applied to needs.
 
-**Schema Object Properties:**
+**Schema object properties:**
 
 Each object within the ``schemas`` array can contain:
 
@@ -382,7 +386,7 @@ Each object within the ``schemas`` array can contain:
 
 See :ref:`schema_components` for detailed documentation of each component.
 
-Validation Concepts
+Validation concepts
 -------------------
 
 Validation in Sphinx-Needs operates at two levels: local and network. Understanding the difference
@@ -390,7 +394,7 @@ is critical for designing effective schemas and providing appropriate feedback t
 
 .. _`local_validation`:
 
-Local Validation
+Local validation
 ~~~~~~~~~~~~~~~~
 
 Consider the following local checks:
@@ -432,7 +436,7 @@ in IDE extensions such as `ubCode`_.
 
 .. _`network_validation`:
 
-Network Validation
+Network validation
 ~~~~~~~~~~~~~~~~~~
 
 On the other hand, network checks require information from other needs:
@@ -458,7 +462,7 @@ Example:
 
 Network validation supports various constraints on linked needs:
 
-Link Count Constraints
+Link count constraints
 ^^^^^^^^^^^^^^^^^^^^^^
 
 - ``validate.local.properties.<link>.minItems``: Minimum number of links required
@@ -515,7 +519,7 @@ for *all* linked needs:
      }
    }
 
-Nested Network Validation
+Nested network validation
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Network validation can be nested to validate multi-hop link chains:
@@ -559,7 +563,7 @@ This validates that:
 
 .. important::
 
-   **Network Validation Recursion Limit**
+   **Network validation recursion limit**
 
    Nested network validation has a maximum recursion depth of **4 levels** to prevent
    performance issues and infinite loops. This means you can validate chains up to 4 hops deep
@@ -573,14 +577,14 @@ This validates that:
 
 .. _`schema_components`:
 
-Schema Components Reference
+Schema components reference
 ---------------------------
 
 This section provides detailed documentation of all components that can be used within a schema
 definition in the ``schemas`` array. These components work together to define selection criteria,
 validation rules, and error handling.
 
-Select Criteria
+Select criteria
 ~~~~~~~~~~~~~~~
 
 The ``select`` section defines which needs the schema applies to:
@@ -600,7 +604,7 @@ If no ``select`` is provided, the schema applies to all needs.
 ``select`` is always a local validation, meaning it only checks properties of the need itself.
 ``select`` validation also means all link fields are list of need ID strings, not need objects.
 
-Validation Rules
+Validation rules
 ~~~~~~~~~~~~~~~~
 
 The ``validate`` section contains the actual validation rules:
@@ -622,7 +626,7 @@ The ``validate`` section contains the actual validation rules:
 
 ``local`` validation also means all link fields are list of need ID strings, not need objects.
 
-**Unevaluated Properties Control**
+**Unevaluated properties control**
 
 The ``unevaluatedProperties`` property controls whether properties not explicitly defined in the
 schema are allowed:
@@ -674,7 +678,7 @@ In this example, both ``asil`` and ``comment`` properties are considered evaluat
 two properties would be allowed on the need. Empty schemas for a field are allowed to mark
 them as evaluated. The behavior is aligned with the JSON Schema specification.
 
-**required vs unevaluatedProperties**
+**Required vs unevaluated properties**
 
 The ``required`` list has no impact on ``unevaluatedProperties`` validation.
 Properties listed in ``required`` must still be explicitly defined in ``properties`` or pulled
@@ -695,7 +699,7 @@ in via ``allOf`` to be considered evaluated:
 In this case, a need with a ``priority`` property would still trigger an unevaluated properties
 error, even though ``priority`` is in the ``required`` list.
 
-Severity Levels
+Severity levels
 ~~~~~~~~~~~~~~~
 
 Each schema can specify a severity level:
@@ -716,7 +720,7 @@ warning to be reported.
 
 .. _`schema_reuse`:
 
-Schema Definitions ($defs)
+Schema definitions ($defs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Reusable schema components can be defined in the ``$defs`` section:
@@ -753,14 +757,14 @@ reference itself.
 
 .. _`supported_data_types`:
 
-Supported Data Types and Constraints
+Supported data types and constraints
 ------------------------------------
 
 Sphinx-Needs supports comprehensive data type validation for need options through JSON Schema.
 The following data types are available for need options and are defined in :ref:`needs_extra_options`.
 These types must be specified for fields before they can be validated in schemas.
 
-String Type
+String type
 ~~~~~~~~~~~
 
 String fields store textual data with optional format validation:
@@ -785,11 +789,11 @@ The following schema constraints are supported for ``string`` fields:
 - ``enum``: Enumerated set of allowed string values
 - ``const``: Exact allowed string value
 
-**String Formats**
+**String formats**
 
 String fields can be validated against specific formats using the ``format`` property:
 
-**Date and Time Formats (ISO 8601)**
+**Date and time formats (ISO 8601)**
 
 .. code-block:: json
 
@@ -814,7 +818,7 @@ String fields can be validated against specific formats using the ``format`` pro
      }
    }
 
-**Enumerated Values**
+**Enumerated values**
 
 .. code-block:: json
 
@@ -829,21 +833,21 @@ String fields can be validated against specific formats using the ``format`` pro
 
 .. _`regex_restrictions`:
 
-**Regex Pattern Restrictions**
+**Regex pattern restrictions**
 
 When using ``pattern`` for string validation, regex patterns must be compatible across Python,
 Rust, and SQLite engines used in the Sphinx-Needs ecosystem.
 
-**Prohibited Constructs:**
+**Prohibited constructs:**
 
 - **Lookaheads/Lookbehinds**: ``(?=pattern)``, ``(?!pattern)``, ``(?<=pattern)``, ``(?<!pattern)``
 - **Backreferences**: ``\1``, ``\2``, etc.
-- **Nested Quantifiers**: ``(a+)+``, ``(a*)*`` (can cause catastrophic backtracking)
-- **Possessive Quantifiers**: ``a++``, ``a*+`` (not supported in all engines)
-- **Atomic Groups**: ``(?>pattern)`` (not supported in all engines)
-- **Recursive Patterns**: ``(?R)`` (not supported in all engines)
+- **Nested quantifiers**: ``(a+)+``, ``(a*)*`` (can cause catastrophic backtracking)
+- **Possessive quantifiers**: ``a++``, ``a*+`` (not supported in all engines)
+- **Atomic groups**: ``(?>pattern)`` (not supported in all engines)
+- **Recursive patterns**: ``(?R)`` (not supported in all engines)
 
-**Safe Patterns:**
+**Safe patterns:**
 
 .. code-block:: json
 
@@ -855,7 +859,7 @@ Rust, and SQLite engines used in the Sphinx-Needs ecosystem.
      }
    }
 
-**Unsafe Patterns:**
+**Unsafe patterns:**
 
 .. code-block:: json
 
@@ -869,7 +873,7 @@ Rust, and SQLite engines used in the Sphinx-Needs ecosystem.
 
 The validation will reject schemas containing unsafe patterns with clear error messages.
 
-Integer Type
+Integer type
 ~~~~~~~~~~~~
 
 Integer fields store whole numbers with optional range constraints:
@@ -895,7 +899,7 @@ The following schema constraints are supported for ``integer`` fields:
 - ``enum``: Enumerated set of allowed integer values
 - ``const``: Exact allowed integer value
 
-Number Type
+Number type
 ~~~~~~~~~~~
 
 Number fields store floating-point values:
@@ -920,7 +924,7 @@ The following schema constraints are supported for ``number`` fields:
 - ``enum``: Enumerated set of allowed number values
 - ``const``: Exact allowed number value
 
-Boolean Type
+Boolean type
 ~~~~~~~~~~~~
 
 Boolean fields store true/false values with flexible input handling:
@@ -934,7 +938,7 @@ Boolean fields store true/false values with flexible input handling:
      }
    }
 
-**Accepted Boolean Values**:
+**Accepted boolean values**:
 
 - **Truthy**: ``true``, ``yes``, ``y``, ``on``, ``1``, ``True``, ``Yes``, ``On``
 - **Falsy**: ``false``, ``no``, ``n``, ``off``, ``0``, ``False``, ``No``, ``Off``
@@ -942,7 +946,7 @@ Boolean fields store true/false values with flexible input handling:
 The ``enum`` keyword cannot be used for booleans as ``const`` is functionally equivalent and
 more expressive.
 
-Array Type
+Array type
 ~~~~~~~~~~
 
 Array fields store lists of homogeneous typed values:
@@ -969,7 +973,7 @@ Array fields store lists of homogeneous typed values:
      }
    }
 
-**Array Properties**:
+**Array properties**:
 
 - ``items``: Schema for all array elements (required).
   The dictionary can contain any of the basic type schemas outlined above.
@@ -982,13 +986,13 @@ Array fields store lists of homogeneous typed values:
   - If ``minContains`` is not given, it defaults to 1 when ``contains`` is present.
   - If ``maxContains`` is not given, there is no upper limit.
 
-Running Validation and Understanding Errors
+Running validation and understanding errors
 -------------------------------------------
 
 After defining your schema configuration, running Sphinx will validate all needs against the
 defined schemas. This section explains the validation process and how to interpret errors.
 
-Error Messages and Output
+Error messages and output
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Validation errors include detailed information:
@@ -1031,7 +1035,7 @@ need and the specific link that caused the issue::
         Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum
         Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
 
-Schema Violation Report JSON File
+Schema violation report JSON file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Schema violations are also stored in a ``schema_violations.json`` file under the output directory.
@@ -1079,7 +1083,7 @@ Schema violations are also stored in a ``schema_violations.json`` file under the
         }
       }
 
-Best Practices
+Best practices
 --------------
 
 1. **Use descriptive IDs**: Give your schemas meaningful IDs for easier debugging
@@ -1091,7 +1095,7 @@ Best Practices
 
 .. _`migration_from_warnings_constraints`:
 
-Migration from Legacy Validation
+Migration from legacy validation
 --------------------------------
 
 The schema validation system is designed to replace the older :ref:`needs_constraints` and
@@ -1100,12 +1104,12 @@ The schema validation system is designed to replace the older :ref:`needs_constr
 - **Declarative**: JSON-based configuration instead of Python code
 - **Powerful**: Supports selection, local, and network validation
 - **Performance**: Schema validation is faster than custom validations written in Python
-- **IDE Support**: Full IntelliSense and validation in supported editors like `ubCode`_
-- **Type Safety**: Strong typing with comprehensive data type support
-- **Network Validation**: Multi-hop link validation capabilities
+- **IDE support**: Full IntelliSense and validation in supported editors like `ubCode`_
+- **Type safety**: Strong typing with comprehensive data type support
+- **Network validation**: Multi-hop link validation capabilities
 - **Maintainability**: Easier to read, write, and version control
 
-**Migration Examples**
+**Migration examples**
 
 **From needs_constraints:**
 
@@ -1184,7 +1188,7 @@ The schema validation system is designed to replace the older :ref:`needs_constr
      ]
    }
 
-**Network Validation Benefits**
+**Network validation benefits**
 
 The schema system provides capabilities not available in the legacy system:
 
@@ -1223,7 +1227,7 @@ The schema system provides capabilities not available in the legacy system:
 This type of multi-need relationship validation was not possible with the legacy constraint
 and warning systems.
 
-**Recommended Migration Path**
+**Recommended migration path**
 
 1. **Audit existing constraints and warnings**: Review your current validation rules
 2. **Start with local validations**: Convert simple property checks first
@@ -1231,14 +1235,14 @@ and warning systems.
 4. **Test incrementally**: Validate schemas work as expected before removing legacy rules
 5. **Update documentation**: Ensure team members understand the new validation approach
 
-Learning from Examples
+Learning from examples
 ----------------------
 
 The Sphinx-Needs test suite contains comprehensive examples demonstrating schema validation in
 real-world scenarios. These tests are excellent learning resources showing various validation
 patterns and their expected outcomes.
 
-**Test Fixtures**
+**Test fixtures**
 
 The `YAML-based test fixtures <https://github.com/useblocks/sphinx-needs/tree/master/tests/schema/fixtures>`__
 contain complete, self-contained project examples with:
@@ -1250,7 +1254,7 @@ contain complete, self-contained project examples with:
 
 Each fixture is a working example you can study and adapt for your own projects.
 
-**Snapshot Testing Results**
+**Snapshot testing results**
 
 The tests use snapshot testing to verify validation behavior. The expected outputs and error messages
 can be found in the
