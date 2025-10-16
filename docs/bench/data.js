@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760442597431,
+  "lastUpdate": 1760598721028,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14760,6 +14760,42 @@ window.BENCHMARK_DATA = {
             "value": 64.415399541,
             "unit": "s",
             "extra": "Commit: cb1490533b2214260aaca8774bf0065258749d02\nBranch: master\nTime: 2025-10-14T13:48:07+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "44b50aa987bc323eada6b8ef3b27d38e8cb52256",
+          "message": "📚 Enable link to full schema example (#1538)",
+          "timestamp": "2025-10-16T09:10:02+02:00",
+          "tree_id": "2b7ef642204237b3dd20a22a932cd69602945603",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/44b50aa987bc323eada6b8ef3b27d38e8cb52256"
+        },
+        "date": 1760598708860,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1693174159999984,
+            "unit": "s",
+            "extra": "Commit: 44b50aa987bc323eada6b8ef3b27d38e8cb52256\nBranch: master\nTime: 2025-10-16T09:10:02+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.01429671300001,
+            "unit": "s",
+            "extra": "Commit: 44b50aa987bc323eada6b8ef3b27d38e8cb52256\nBranch: master\nTime: 2025-10-16T09:10:02+02:00"
           }
         ]
       }
