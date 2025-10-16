@@ -25,14 +25,14 @@ class VariantFunctionParsed:
     def from_string(
         cls,
         text: str,
-        coersce_value: Callable[[str], str | bool | int | float] | None = None,
+        coerce_value: Callable[[str], str | bool | int | float] | None = None,
         *,
         allow_semicolon: bool = False,
     ) -> VariantFunctionParsed:
         """Parse a variant function string into expressions and final value.
 
         :param text: The text to parse
-        :param coersce_value: A function to coersce the value string into a
+        :param coerce_value: A function to coerce the value string into a
             specific type, e.g. int, bool, float.
             The function should raise ValueError if the value cannot be parsed.
             If None, the value is kept as string.
@@ -41,7 +41,7 @@ class VariantFunctionParsed:
         :raises VariantParsingException: if parsing fails
         :raises ValueError: if coersion of value fails
         """
-        coersce_value = coersce_value or (lambda x: x)
+        coerce_value = coerce_value or (lambda x: x)
         reminaing = text.lstrip()
         exprs: list[tuple[str, bool, str | bool | int | float]] = []
         final_value: str | bool | int | float | None = None
@@ -59,7 +59,7 @@ class VariantFunctionParsed:
             else:
                 end_expr = reminaing.find(":")
                 if end_expr == -1:
-                    final_value = coersce_value(reminaing.strip())
+                    final_value = coerce_value(reminaing.strip())
                     break
                 bracketed = False
                 expr = reminaing[:end_expr]
@@ -78,7 +78,7 @@ class VariantFunctionParsed:
                 value = reminaing[:end_semicolon].strip()
                 reminaing = reminaing[end_semicolon + 1 :].lstrip()
 
-            exprs.append((expr, bracketed, coersce_value(value)))
+            exprs.append((expr, bracketed, coerce_value(value)))
 
         return cls(tuple(exprs), final_value)
 
