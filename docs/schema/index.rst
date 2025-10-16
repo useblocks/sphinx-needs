@@ -1,4 +1,4 @@
-.. _ubCode: https://ubcode.useblocks.com/
+.. _ubcode: https://ubcode.useblocks.com/
 .. _`schema_validation`:
 
 Schema validation
@@ -132,7 +132,7 @@ feedback while network requires building the full network index first.
    for below configuration can be found in the tests.
    It can directly be executed with::
 
-      tests/doc_test/doc_schema_example $ uv run sphinx-build -b html . _build
+     tests/doc_test/doc_schema_example $ uv run sphinx-build -b html . _build
 
 Here are the full example files as a reference:
 
@@ -177,7 +177,8 @@ Schema Configuration
 Schemas can be configured in two ways: directly in the ``conf.py`` file or loaded from a separate
 JSON file.
 
-**JSON File Configuration (recommended)**
+JSON File Configuration (Recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The preferred approach is to define schemas in a separate JSON file and load them using the
 :ref:`needs_schema_definitions_from_json` configuration option:
@@ -187,7 +188,12 @@ The preferred approach is to define schemas in a separate JSON file and load the
    # conf.py
    needs_schema_definitions_from_json = "schemas.json"
 
-Then create a small ``schemas.json`` file in your project root:
+Then create a ``schemas.json`` file in your project root. The file structure contains two top-level keys:
+
+- ``"$defs"``: (Optional) Reusable schema components referenced via ``$ref`` (see :ref:`schema_reuse`)
+- ``"schemas"``: (Required) Array of validation schema definitions
+
+Basic example:
 
 .. code-block:: json
 
@@ -197,7 +203,7 @@ Then create a small ``schemas.json`` file in your project root:
          "properties": {
            "type": { "const": "spec" }
          }
-       },
+       }
      },
      "schemas": [
        {
@@ -217,7 +223,8 @@ Then create a small ``schemas.json`` file in your project root:
      ]
    }
 
-Above schema already makes use of :ref:`schema_reuse` via ``$defs`` and ``$ref``.
+Each schema in the ``schemas`` array must be contained within this top-level structure.
+See :ref:`schemas_json_structure` for complete file format details.
 
 .. dropdown:: Full version for above example modeling
 
@@ -229,10 +236,11 @@ Benefits of JSON File Configuration:
 - **Version Control**: Easy to track changes to validation rules
 - **IDE Support**: `ubCode`_ can read the JSON file
 
-**Python Configuration (Alternative)**
+Python Configuration (Alternative)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Alternatively, schemas can be configured directly using the :ref:`needs_schema_definitions`
-configuration option in ``conf.py``:
+configuration option in ``conf.py``. The structure is identical to the JSON file format:
 
 .. code-block:: python
 
@@ -243,7 +251,7 @@ configuration option in ``conf.py``:
          "properties": {
            "type": { "const": "spec" }
          }
-       },
+       }
      },
      "schemas": [
        {
@@ -263,10 +271,66 @@ configuration option in ``conf.py``:
      ]
    }
 
+.. _`schemas_json_structure`:
+
+Schema File Structure Reference
+-------------------------------
+
+A ``schemas.json`` file (or ``needs_schema_definitions`` dict) has the following structure:
+
+.. code-block:: json
+
+   {
+     "$defs": {
+       "reusable-component-name": { /* JSON Schema definition */ }
+     },
+     "schemas": [
+       {
+         "id": "schema-identifier",  /* Used for reporting */
+         "severity": "violation|warning|info",
+         "message": "User-friendly error message",
+         "select": { /* Selection criteria - which needs to validate */ },
+         "validate": {
+           "local": { /* Local validation rules */ },
+           "network": { /* Network validation rules */ }
+         }
+       }
+     ]
+   }
+
+**Top-Level Properties:**
+
+- ``$defs`` (optional): Dictionary of reusable schema components referenced via ``$ref``.
+  See :ref:`schema_reuse`.
+- ``schemas`` (required): Array of schema objects. Each schema in this array defines validation
+  rules that will be applied to needs.
+
+**Schema Object Properties:**
+
+Each object within the ``schemas`` array can contain:
+
+- ``id`` (optional): Unique identifier for the schema, useful for debugging
+- ``severity`` (optional): ``"violation"`` (default), ``"warning"``, or ``"info"``
+- ``message`` (optional): Custom message shown when validation fails
+- ``select`` (optional): Criteria to filter which needs this schema applies to. Uses JSON Schema
+  syntax for local need properties. If omitted, applies to all needs.
+- ``validate`` (required): Validation rules with two subsections:
+
+  - ``local``: Validates properties of the need itself (see :ref:`local_validation`)
+  - ``network``: Validates relationships with linked needs (see :ref:`network_validation`)
+
+See :ref:`schema_components` for detailed documentation of each component.
+
+Validation Concepts
+-------------------
+
+Validation in Sphinx-Needs operates at two levels: local and network. Understanding the difference
+is critical for designing effective schemas and providing appropriate feedback timing.
+
 .. _`local_validation`:
 
 Local Validation
-----------------
+~~~~~~~~~~~~~~~~
 
 Consider the following local checks:
 
@@ -305,8 +369,10 @@ Example local validation schema:
 Above conditions can all be checked locally on need level which allows instant user feedback
 in IDE extensions such as `ubCode`_.
 
+.. _`network_validation`:
+
 Network Validation
-------------------
+~~~~~~~~~~~~~~~~~~
 
 On the other hand, network checks require information from other needs:
 
@@ -331,7 +397,8 @@ Example:
 
 Network validation supports various constraints on linked needs:
 
-**Link Count Constraints**
+Link Count Constraints
+^^^^^^^^^^^^^^^^^^^^^^
 
 - ``validate.local.properties.<link>.minItems``: Minimum number of links required
 - ``validate.local.properties.<link>.maxItems``: Minimum number of links required
@@ -387,7 +454,8 @@ for *all* linked needs:
      }
    }
 
-**Nested Network Validation**
+Nested Network Validation
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Network validation can be nested to validate multi-hop link chains:
 
@@ -428,8 +496,28 @@ This validates that:
 #. Those specifications in turn link to safe features
 #. Both link levels have minimum count requirements
 
-Schema Components
------------------
+.. important::
+
+   **Network Validation Recursion Limit**
+
+   Nested network validation has a maximum recursion depth of **4 levels** to prevent
+   performance issues and infinite loops. This means you can validate chains up to 4 hops deep
+   (e.g., ``impl → spec → feat → requirement``).
+
+   If validation exceeds this limit, an error will be raised:
+   ``Maximum network validation recursion level 4 reached.``
+
+   For most use cases, 4 levels of nesting is sufficient. If you need deeper validation chains,
+   consider restructuring your validation logic or link relationships.
+
+.. _`schema_components`:
+
+Schema Components Reference
+---------------------------
+
+This section provides detailed documentation of all components that can be used within a schema
+definition in the ``schemas`` array. These components work together to define selection criteria,
+validation rules, and error handling.
 
 Select Criteria
 ~~~~~~~~~~~~~~~
@@ -602,104 +690,14 @@ The key ``$ref`` must appear as the only key in the schema where it is used.
 Recursive references are not allowed, i.e. a schemas cannot directly or indirectly
 reference itself.
 
-Error Messages
---------------
+.. _`supported_data_types`:
 
-Validation errors include detailed information:
-
-- **Severity**: The severity level of the violation
-- **Field**: The specific field that failed validation
-- **Need path**: The ID of the need that failed or the link chain for network validation
-- **Schema path**: The JSON path within the schema that was violated
-- **User message**: Custom message from the needs_schema.schemas list
-- **Schema message**: Detailed technical validation message from the validator
-
-Example error output::
-
-  Need 'SPEC_P01' has validation errors:
-    Severity:       violation
-    Field:          id
-    Need path:      SPEC_P01
-    Schema path:    spec[1] > local > properties > id > pattern
-    Schema message: 'SPEC_P01' does not match '^REQ[a-zA-Z0-9_-]*$'
-
-For nested network validation, it can be difficult to determine which constraint and need
-caused the error in the chain. In such cases, the error will emit details about the failed
-need and the specific link that caused the issue::
-
-  WARNING: Need 'IMPL_SAFE' has validation errors:
-    Severity:       violation
-    Need path:      IMPL_SAFE > links
-    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links
-    User message:   Safe impl links to safe spec links to safe req
-    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE
-
-      Details for SPEC_SAFE
-      Need path:      IMPL_SAFE > links > SPEC_SAFE > links
-      Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > validate > network > links
-      Schema message: Too few valid links of type 'links' (0 < 1) / nok: REQ_UNSAFE
-
-        Details for REQ_UNSAFE
-        Field:          asil
-        Need path:      IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE
-        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum
-        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
-
-Schema Violation Report JSON File
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Schema violations are also stored in a ``schema_violations.json`` file under the output directory.
-
-.. dropdown:: Example
-
-   .. code-block:: json
-
-      {
-        "validation_summary": "Schema validation completed with 2 warning(s) in 0.002 seconds. Validated 1368 needs/s.",
-        "validated_needs_per_second": 1368,
-        "validated_needs_count": 3,
-        "validation_warnings": {
-          "FEAT_unsafe": [
-            {
-              "log_lvl": "warning",
-              "type": "sn_schema",
-              "subtype": "local_fail",
-              "details": {
-                "severity": "violation",
-                "field": "id",
-                "need_path": "FEAT_unsafe",
-                "schema_path": "[0] > local > properties > id > pattern",
-                "user_msg": "id must be uppercase with numbers and underscores",
-                "validation_msg": "'FEAT_unsafe' does not match '^[A-Z0-9_]+$'"
-              },
-              "children": []
-            }
-          ],
-          "IMPL_SAFE": [
-            {
-              "log_lvl": "warning",
-              "type": "sn_schema",
-              "subtype": "network_local_fail",
-              "details": {
-                "severity": "violation",
-                "field": "asil",
-                "need_path": "IMPL_SAFE > links > SPEC_UNSAFE",
-                "schema_path": "safe-impl-[links]->safe-spec[7] > links > local > allOf > 0 > properties > asil > enum",
-                "validation_msg": "'QM' is not one of ['A', 'B', 'C', 'D']"
-              },
-              "children": []
-            }
-          ]
-        }
-      }
-
-.. _supported_data_types:
-
-Supported Data Types
---------------------
+Supported Data Types and Constraints
+------------------------------------
 
 Sphinx-Needs supports comprehensive data type validation for need options through JSON Schema.
-The following data types are available for need options:
+The following data types are available for need options and are defined in :ref:`needs_extra_options`.
+These types must be specified for fields before they can be validated in schemas.
 
 String Type
 ~~~~~~~~~~~
@@ -721,7 +719,7 @@ String fields store textual data with optional format validation:
 The following schema constraints are supported for ``string`` fields:
 
 - ``minLength`` / ``maxLength``: Minimum and maximum length of the string
-- ``pattern``: Regex pattern that the string must match
+- ``pattern``: Regex pattern that the string must match (see :ref:`Regex Restrictions <regex_restrictions>`)
 - ``format``: Predefined string formats (see below)
 - ``enum``: Enumerated set of allowed string values
 - ``const``: Exact allowed string value
@@ -768,6 +766,48 @@ String fields can be validated against specific formats using the ``format`` pro
      }
    }
 
+.. _`regex_restrictions`:
+
+**Regex Pattern Restrictions**
+
+When using ``pattern`` for string validation, regex patterns must be compatible across Python,
+Rust, and SQLite engines used in the Sphinx-Needs ecosystem.
+
+**Prohibited Constructs:**
+
+- **Lookaheads/Lookbehinds**: ``(?=pattern)``, ``(?!pattern)``, ``(?<=pattern)``, ``(?<!pattern)``
+- **Backreferences**: ``\1``, ``\2``, etc.
+- **Nested Quantifiers**: ``(a+)+``, ``(a*)*`` (can cause catastrophic backtracking)
+- **Possessive Quantifiers**: ``a++``, ``a*+`` (not supported in all engines)
+- **Atomic Groups**: ``(?>pattern)`` (not supported in all engines)
+- **Recursive Patterns**: ``(?R)`` (not supported in all engines)
+
+**Safe Patterns:**
+
+.. code-block:: json
+
+   {
+     "properties": {
+       "id": { "pattern": "^[A-Z0-9_]+$" },           // ✓ Safe
+       "version": { "pattern": "^v[0-9]+\\.[0-9]+$" }, // ✓ Safe
+       "status": { "pattern": "^(open|closed)$" }      // ✓ Safe
+     }
+   }
+
+**Unsafe Patterns:**
+
+.. code-block:: json
+
+   {
+     "properties": {
+       "id": { "pattern": "^(?=.*[A-Z]).*$" },      // ✗ Lookahead
+       "ref": { "pattern": "^(\\w+)_\\1$" },        // ✗ Backreference
+       "complex": { "pattern": "^(a+)+$" }          // ✗ Nested quantifiers
+     }
+   }
+
+The validation will reject schemas containing unsafe patterns with clear error messages.
+
 Integer Type
 ~~~~~~~~~~~~
 
@@ -790,7 +830,7 @@ The following schema constraints are supported for ``integer`` fields:
 
 - ``minimum`` / ``maximum``: Minimum and maximum value of the integer
 - ``exclusiveMinimum`` / ``exclusiveMaximum``: Exclusive minimum and maximum value
-- ``multipleOf``: Value must be a multiple of this integernumber
+- ``multipleOf``: Value must be a multiple of this number
 - ``enum``: Enumerated set of allowed integer values
 - ``const``: Exact allowed integer value
 
@@ -881,51 +921,102 @@ Array fields store lists of homogeneous typed values:
   - If ``minContains`` is not given, it defaults to 1 when ``contains`` is present.
   - If ``maxContains`` is not given, there is no upper limit.
 
-Regex Pattern Restrictions
---------------------------
+Running Validation and Understanding Errors
+-------------------------------------------
 
-When using ``pattern`` for string types in schemas, the regex patterns must be compatible
-across multiple language engines such as Python, Rust, and SQLite to consume the patterns
-also in the bigger Sphinx-Needs ecosystem.
-The following constructs are **not allowed**:
+After defining your schema configuration, running Sphinx will validate all needs against the
+defined schemas. This section explains the validation process and how to interpret errors.
 
-**Prohibited Constructs:**
+Error Messages and Output
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- **Lookaheads/Lookbehinds**: ``(?=pattern)``, ``(?!pattern)``, ``(?<=pattern)``, ``(?<!pattern)``
-- **Backreferences**: ``\1``, ``\2``, etc.
-- **Nested Quantifiers**: ``(a+)+``, ``(a*)*`` (can cause catastrophic backtracking)
-- **Possessive Quantifiers**: ``a++``, ``a*+`` (not supported in all engines)
-- **Atomic Groups**: ``(?>pattern)`` (not supported in all engines)
-- **Recursive Patterns**: ``(?R)`` (not supported in all engines)
+Validation errors include detailed information:
 
-**Safe Patterns:**
+- **Severity**: The severity level of the violation
+- **Field**: The specific field that failed validation
+- **Need path**: The ID of the need that failed or the link chain for network validation
+- **Schema path**: The JSON path within the schema that was violated
+- **User message**: Custom message from the needs_schema.schemas list
+- **Schema message**: Detailed technical validation message from the validator
 
-.. code-block:: json
+Example error output::
 
-   {
-     "properties": {
-       "id": { "pattern": "^[A-Z0-9_]+$" },           // ✓ Safe
-       "version": { "pattern": "^v[0-9]+\\.[0-9]+$" }, // ✓ Safe
-       "status": { "pattern": "^(open|closed)$" }      // ✓ Safe
-     }
-   }
+  Need 'SPEC_P01' has validation errors:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P01
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: 'SPEC_P01' does not match '^REQ[a-zA-Z0-9_-]*$'
 
-**Unsafe Patterns:**
+For nested network validation, it can be difficult to determine which constraint and need
+caused the error in the chain. In such cases, the error will emit details about the failed
+need and the specific link that caused the issue::
 
-.. code-block:: json
+  WARNING: Need 'IMPL_SAFE' has validation errors:
+    Severity:       violation
+    Need path:      IMPL_SAFE > links
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links
+    User message:   Safe impl links to safe spec links to safe req
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE
 
-   {
-     "properties": {
-       "id": { "pattern": "^(?=.*[A-Z]).*$" },      // ✗ Lookahead
-       "ref": { "pattern": "^(\\w+)_\\1$" },        // ✗ Backreference
-       "complex": { "pattern": "^(a+)+$" }          // ✗ Nested quantifiers
-     }
-   }
+      Details for SPEC_SAFE
+      Need path:      IMPL_SAFE > links > SPEC_SAFE > links
+      Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > validate > network > links
+      Schema message: Too few valid links of type 'links' (0 < 1) / nok: REQ_UNSAFE
 
-The validation will reject schemas containing unsafe patterns and provide
-clear error messages indicating the specific issue. Some constructs might be
-restricted in future versions of Sphinx-Needs if they cannot be safely evaluated
-in all relevant engines.
+        Details for REQ_UNSAFE
+        Field:          asil
+        Need path:      IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
+
+Schema Violation Report JSON File
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Schema violations are also stored in a ``schema_violations.json`` file under the output directory.
+
+.. dropdown:: Example
+
+   .. code-block:: json
+
+      {
+        "validation_summary": "Schema validation completed with 2 warning(s) in 0.002 seconds. Validated 1368 needs/s.",
+        "validated_needs_per_second": 1368,
+        "validated_needs_count": 3,
+        "validation_warnings": {
+          "FEAT_unsafe": [
+            {
+              "log_lvl": "warning",
+              "type": "sn_schema",
+              "subtype": "local_fail",
+              "details": {
+                "severity": "violation",
+                "field": "id",
+                "need_path": "FEAT_unsafe",
+                "schema_path": "[0] > local > properties > id > pattern",
+                "user_msg": "id must be uppercase with numbers and underscores",
+                "validation_msg": "'FEAT_unsafe' does not match '^[A-Z0-9_]+$'"
+              },
+              "children": []
+            }
+          ],
+          "IMPL_SAFE": [
+            {
+              "log_lvl": "warning",
+              "type": "sn_schema",
+              "subtype": "network_local_fail",
+              "details": {
+                "severity": "violation",
+                "field": "asil",
+                "need_path": "IMPL_SAFE > links > SPEC_UNSAFE",
+                "schema_path": "safe-impl-[links]->safe-spec[7] > links > local > allOf > 0 > properties > asil > enum",
+                "validation_msg": "'QM' is not one of ['A', 'B', 'C', 'D']"
+              },
+              "children": []
+            }
+          ]
+        }
+      }
 
 Best Practices
 --------------
@@ -1079,15 +1170,37 @@ and warning systems.
 4. **Test incrementally**: Validate schemas work as expected before removing legacy rules
 5. **Update documentation**: Ensure team members understand the new validation approach
 
-Tests
------
+Learning from Examples
+----------------------
 
-A multitude of test cases exist, that can also be used as a reference for how to use the
-type system and schema validation. Whithin the
-`YAML based fixtures <https://github.com/useblocks/sphinx-needs/tree/master/tests/schema/fixtures>`__
-you will always find full project examples.
+The Sphinx-Needs test suite contains comprehensive examples demonstrating schema validation in
+real-world scenarios. These tests are excellent learning resources showing various validation
+patterns and their expected outcomes.
 
-The tests use snapshot testing, and the expected validation results can be found
-`here <https://github.com/useblocks/sphinx-needs/blob/master/tests/schema/__snapshots__/test_schema.ambr>`__
-.
+**Test Fixtures**
 
+The `YAML-based test fixtures <https://github.com/useblocks/sphinx-needs/tree/master/tests/schema/fixtures>`__
+contain complete, self-contained project examples with:
+
+- Full ``conf.py`` or ``ubproject.toml`` configuration
+- Schema definitions in ``schemas.json``
+- Sample RST files demonstrating the schemas in action
+- Various validation scenarios (passing and failing)
+
+Each fixture is a working example you can study and adapt for your own projects.
+
+**Snapshot Testing Results**
+
+The tests use snapshot testing to verify validation behavior. The expected outputs and error messages
+can be found in the
+`test snapshots <https://github.com/useblocks/sphinx-needs/blob/master/tests/schema/__snapshots__/test_schema.ambr>`__.
+
+These snapshots show:
+
+- Expected validation errors for specific scenarios
+- Error message formatting and content
+- Different severity levels and their output
+- Network validation chain details
+
+By examining both the fixtures (input) and snapshots (expected output), you can understand how
+schemas work in practice and what validation errors look like for different scenarios.
