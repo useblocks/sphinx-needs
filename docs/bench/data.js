@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760613578951,
+  "lastUpdate": 1760700087304,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14832,6 +14832,42 @@ window.BENCHMARK_DATA = {
             "value": 63.715338354000004,
             "unit": "s",
             "extra": "Commit: 5ec1a74c51b73e81a1bd1797b4e47610b23e616c\nBranch: master\nTime: 2025-10-16T13:17:38+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0030e6c2c9de3b852d26b2dd704817172874c2ca",
+          "message": "📚 Improve schema docs (#1554)\n\n- More structure / headlines\n- Document network recursion limit\n- More explanation how to learn from tests\n- Section that explains the basic schemas structure\n- Primary field typing and relation to schemas.json\n\nFixes https://github.com/useblocks/sphinx-needs/issues/1542 and\nhttps://github.com/useblocks/sphinx-needs/issues/1539.",
+          "timestamp": "2025-10-17T13:19:27+02:00",
+          "tree_id": "501a173ce5b4695d96ba2271f6d9f200381c69c8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0030e6c2c9de3b852d26b2dd704817172874c2ca"
+        },
+        "date": 1760700075555,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20447874999999271,
+            "unit": "s",
+            "extra": "Commit: 0030e6c2c9de3b852d26b2dd704817172874c2ca\nBranch: master\nTime: 2025-10-17T13:19:27+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.26356169,
+            "unit": "s",
+            "extra": "Commit: 0030e6c2c9de3b852d26b2dd704817172874c2ca\nBranch: master\nTime: 2025-10-17T13:19:27+02:00"
           }
         ]
       }
