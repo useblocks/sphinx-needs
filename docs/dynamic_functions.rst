@@ -9,7 +9,7 @@ There are two syntaxes provided to achieve this:
 - Using double square brackets ``[[...]]`` to encapsulate a dynamic function call.
 - Using double angled brackets ``<<...>>`` to encapsulate a variant definition.
 
-.. _dynamic_functions:
+.. _`dynamic_functions`:
 
 Dynamic functions
 =================
@@ -51,51 +51,51 @@ Dynamic functions can be used for the following directive options:
    The :ref:`ndf` role replaces the use of the ``[[...]]`` syntax in need content.
 
 Built-in functions
--------------------
+------------------
 
 The following functions are available by default.
 
-.. note::
-
-   The parameters ``app``, ``need`` and ``needs`` of the following functions are set automatically.
+.. note:: The parameters ``app``, ``need`` and ``needs`` of the following functions are set automatically.
 
 test
 ~~~~
+
 .. autofunction:: sphinx_needs.functions.common.test
 
 .. _echo:
 
 echo
 ~~~~
+
 .. autofunction:: sphinx_needs.functions.common.echo
 
 .. _copy:
 
 copy
 ~~~~
+
 .. autofunction:: sphinx_needs.functions.common.copy
 
-.. _check_linked_values:
+.. _`check_linked_values`:
 
 check_linked_values
 ~~~~~~~~~~~~~~~~~~~
+
 .. autofunction:: sphinx_needs.functions.common.check_linked_values
 
-
-.. _calc_sum:
+.. _`calc_sum`:
 
 calc_sum
 ~~~~~~~~
 
 .. autofunction:: sphinx_needs.functions.common.calc_sum
 
-.. _links_content:
+.. _`links_content`:
 
 links_from_content
 ~~~~~~~~~~~~~~~~~~
 
 .. autofunction:: sphinx_needs.functions.common.links_from_content
-
 
 Develop own functions
 ---------------------
@@ -122,26 +122,27 @@ inside your **conf.py** file, to add a :py:class:`.DynamicFunction`:
 
    .. code-block:: python
 
-         from sphinx_needs.api import add_dynamic_function
+      from sphinx_needs.api import add_dynamic_function
 
-            def my_function(app, need, needs, *args, **kwargs):
-                # Do magic here
-                return "some data"
+         def my_function(app, need, needs, *args, **kwargs):
+             # Do magic here
+             return "some data"
 
-            def setup(app):
-                  add_dynamic_function(app, my_function)
+         def setup(app):
+               add_dynamic_function(app, my_function)
 
 Restrictions
 ~~~~~~~~~~~~
 
 incoming_links
 ++++++++++++++
+
 Incoming links are not available when dynamic functions gets calculated.
 
 That's because a dynamic function can change outgoing links, so that the incoming links of the target need will
 be recalculated. This is automatically done but not until all dynamic functions are resolved.
 
-.. _needs_variant_support:
+.. _`needs_variant_support`:
 
 Variant functions
 =================

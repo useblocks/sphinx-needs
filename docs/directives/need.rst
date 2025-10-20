@@ -8,13 +8,13 @@ You can define the type using the correct directive, like ``.. req::`` or ``.. t
 
 .. need-example::
 
-    .. req:: User needs to login
-       :id: ID123
-       :status: open
-       :tags: user;login
-       :collapse: false
+   .. req:: User needs to login
+      :id: ID123
+      :status: open
+      :tags: user;login
+      :collapse: false
 
-       Our users needs to get logged in via our login forms on **/login.php**.
+      Our users needs to get logged in via our login forms on **/login.php**.
 
 The code example above creates a new requirement, with a title, content, given id, a status and several tags.
 
@@ -23,13 +23,14 @@ but you must set a title as an argument (i.e. if you do not specify :ref:`needs_
 
 .. note::
 
-    By default, the above example works also with ``.. spec::``, ``.. impl::``, ``.. test::`` and all other need types,
-    which are configured via :ref:`needs_types`.
+   By default, the above example works also with ``.. spec::``, ``.. impl::``, ``.. test::`` and all other need types,
+   which are configured via :ref:`needs_types`.
 
-.. _need_diagram:
+.. _`need_diagram`:
 
 Diagram support
 ---------------
+
 A need objects can also define it's own PlantUML representation.
 Therefore Sphinx-Needs looks for the :ref:`needuml` directive inside the content
 and stores its PlantUML code under given key from :ref:`needuml` directive under the option name ``arch``.
@@ -61,12 +62,12 @@ This diagram data can then be used in other :ref:`needuml` calls to combine and 
 
       system => int_a
 
-
 This simple mechanism is really powerful to design reusable and configurable SW architecture diagrams.
 For more examples and details, please read :ref:`needuml`.
 
 Filter for diagrams
 ~~~~~~~~~~~~~~~~~~~
+
 The option ``arch`` can be easily used for filtering. For instance to show all need objects, which
 are representing some kind of a diagram.
 
@@ -77,38 +78,40 @@ are representing some kind of a diagram.
       :style: table
       :columns: id, type, title
 
-
 Options for Need Type
 ---------------------
 
-.. _need_id:
+.. _`need_id`:
 
 id
 ~~
+
 The given ID must match the regular expression (regex) value for the :ref:`needs_id_regex` parameter in **conf.py**.
 The Sphinx build stops if the ID does not match the regex value.
 
-If you do not specify the id option, we calculate a short hash value based on the title. The calculated value can 
+If you do not specify the id option, we calculate a short hash value based on the title. The calculated value can
 also include title if :ref:`needs_id_from_title` is set to **True**.
 If you don’t change the title, the id will work for all upcoming documentation generations.
 
-.. _need_status:
+.. _`need_status`:
 
 status
 ~~~~~~
+
 A need can only have one status, and the :ref:`needs_statuses` configuration parameter may restrict its selection.
 
-
-.. _need_tags:
+.. _`need_tags`:
 
 tags
 ~~~~
+
 You can give multiple tags by separating each with **;** symbol, like ``tag1;tag2;tag3``. White spaces get removed.
 
-.. _need_links:
+.. _`need_links`:
 
 links
 ~~~~~
+
 The ``links`` option can create a link to one or several other needs, no matter the need type.
 All you must specify is the ID for the need.
 
@@ -126,7 +129,7 @@ You can easily set links to multiple needs by using **;** as a separator.
 
       This sets a link to id ``REQ_LINK_1``.
 
-.. _need_extra_links:
+.. _`need_extra_links`:
 
 extra links
 +++++++++++
@@ -164,7 +167,7 @@ By using :ref:`needs_extra_links <needs_extra_links>`, you can use the configure
 
       Perform some tests
 
-.. _need_delete:
+.. _`need_delete`:
 
 delete
 ~~~~~~
@@ -181,9 +184,7 @@ Allowed values (case-insensitive):
 
 Default: False
 
-.. note::
-
-   If you delete a need using the :delete: option, the need will not be part of any filter result.
+.. note:: If you delete a need using the :delete: option, the need will not be part of any filter result.
 
 .. need-example::
 
@@ -206,11 +207,11 @@ Default: False
 
          Need with ``:delete:`` option not set.
 
-
-.. _need_hide:
+.. _`need_hide`:
 
 hide
 ~~~~
+
 There is a **:hide:** option. If this is set to **True**, the need will not be printed in the documentation.
 But you can use it with **need filters**.
 
@@ -221,10 +222,11 @@ Allowed values (case-insensitive):
 
 Default: False
 
-.. _need_collapse:
+.. _`need_collapse`:
 
 collapse
 ~~~~~~~~
+
 If set to **True**, the details section containing status, links or tags is not visible.
 You can view the details by clicking on the forward arrow symbol near the need title.
 
@@ -251,7 +253,7 @@ Default: False
 
       Title, tags, links and everything else is shown directly.
 
-.. _jinja_content:
+.. _`jinja_content`:
 
 jinja_content
 ~~~~~~~~~~~~~
@@ -282,40 +284,38 @@ Default: False
         'jinja_content': 'true'
       }
 
-
 .. need-example::
 
-    .. req:: First Req Need
-       :id: JINJAID123
-       :jinja_content: false
+   .. req:: First Req Need
+      :id: JINJAID123
+      :jinja_content: false
 
-       Need with ``:jinja_content:`` equal to ``false``.
+      Need with ``:jinja_content:`` equal to ``false``.
 
-       .. spec:: Nested Spec Need
-          :id: JINJAID125
-          :status: open
-          :tags: user;login
-          :links: JINJAID126
-          :jinja_content:
+      .. spec:: Nested Spec Need
+         :id: JINJAID125
+         :status: open
+         :tags: user;login
+         :links: JINJAID126
+         :jinja_content:
 
-          Nested need with ``:jinja_content:`` option set to ``true``.
-          This requirement has tags: **{{ tags | join(', ') }}**.
+         Nested need with ``:jinja_content:`` option set to ``true``.
+         This requirement has tags: **{{ tags | join(', ') }}**.
 
-          It links to:
-          {% for link in links %}
-          - {{ link }}
-          {% endfor %}
+         It links to:
+         {% for link in links %}
+         - {{ link }}
+         {% endfor %}
 
+   .. spec:: First Spec Need
+      :id: JINJAID126
+      :status: open
+      :jinja_content:
 
-    .. spec:: First Spec Need
-       :id: JINJAID126
-       :status: open
-       :jinja_content:
+      Need with ``:jinja_content:`` equal to ``true``.
+      This requirement has status: **{{ status }}**.
 
-       Need with ``:jinja_content:`` equal to ``true``.
-       This requirement has status: **{{ status }}**.
-
-.. _title_from_content:
+.. _`title_from_content`:
 
 title_from_content
 ~~~~~~~~~~~~~~~~~~
@@ -331,21 +331,21 @@ elided title if needed.  By default there is no limit to the title length.
 
 .. note::
 
-    When using this setting ensure that the first sentence does not contain
-    any special formatting you would not want in the title (bulleted lists, nested directives, etc.)
+   When using this setting ensure that the first sentence does not contain
+   any special formatting you would not want in the title (bulleted lists, nested directives, etc.)
 
 If a title is provided and the flag is present, then the provided title will
 be used and a warning will be issued.
 
 .. need-example::
 
-    .. req::
-       :title_from_content:
+   .. req::
+      :title_from_content:
 
-       The first sentence will be the title.  
-       Anything after the first sentence will not be part of the title.
+      The first sentence will be the title.
+      Anything after the first sentence will not be part of the title.
 
-.. _need_layout:
+.. _`need_layout`:
 
 layout
 ~~~~~~
@@ -383,8 +383,7 @@ layout
 
 Please take a look into :ref:`layouts` for more information.
 
-
-.. _need_style:
+.. _`need_style`:
 
 style
 ~~~~~
@@ -436,7 +435,7 @@ which leads to the CSS class ``needs_style_open`` if the ``status`` option is se
       :tags: style_example
       :style: [[copy("status")]]
 
-.. _need_template:
+.. _`need_template`:
 
 template
 ~~~~~~~~
@@ -477,7 +476,7 @@ the ``debug`` :ref:`layout <layouts>`.
 
 You can automatically assign templates to specific needs by using :ref:`needs_global_options`.
 
-.. _need_pre_template:
+.. _`need_pre_template`:
 
 pre_template
 ~~~~~~~~~~~~
@@ -500,7 +499,7 @@ For example, you can use it to set a section name before each **need**.
 
       This is my **specification** content.
 
-.. _need_post_template:
+.. _`need_post_template`:
 
 post_template
 ~~~~~~~~~~~~~
@@ -524,7 +523,7 @@ You can use it to show some need-specific analytics, like dependency diagrams or
 
       This is my **specification** content.
 
-.. _need_duration:
+.. _`need_duration`:
 
 duration
 ~~~~~~~~
@@ -535,8 +534,7 @@ Track the duration of a need.
 
 The need allows any value but the :ref:`needgantt` directive uses and interprets it as days by default.
 
-
-.. _need_completion:
+.. _`need_completion`:
 
 completion
 ~~~~~~~~~~
@@ -546,7 +544,6 @@ completion
 Track the completion of a need.
 
 The need allows any value but the :ref:`needgantt` directive uses and interprets it as percentage by default.
-
 
 Customized Options
 ------------------

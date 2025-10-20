@@ -9,9 +9,9 @@ needsequence
 
 .. need-example::
 
-    .. needsequence:: My sequence chart
-       :start: USER_A, USER_D
-       :link_types: links, triggers
+   .. needsequence:: My sequence chart
+      :start: USER_A, USER_D
+      :link_types: links, triggers
 
 .. dropdown:: Show the needs used in the above example
 
@@ -114,7 +114,6 @@ The above, linked example gets interpreted for ``needsequence`` as follows:
 
    @enduml
 
-
 Options
 -------
 
@@ -151,7 +150,7 @@ As an example, we use the same ``needsequence`` from the beginning, but without 
 
 .. need-example::
 
-    .. needsequence:: My filtered sequence chart
-       :start: USER_A, USER_D
-       :link_types: links, triggers
-       :filter: "Expert" not in title
+   .. needsequence:: My filtered sequence chart
+      :start: USER_A, USER_D
+      :link_types: links, triggers
+      :filter: "Expert" not in title

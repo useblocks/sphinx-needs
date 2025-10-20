@@ -6,7 +6,7 @@ Filtering needs
 The filtering of needs and need parts is supported consistently across numerous directives and roles,
 either by using filter options or by using a filter string.
 
-.. _filter_options:
+.. _`filter_options`:
 
 Filter options
 --------------
@@ -27,13 +27,13 @@ For **:status:**, **:tags:** and **:types:** values are separated by "**;**".
 
 The logic, if a need belongs to the final result list, is as followed::
 
-    status = (open OR in_progress) AND tags = (user OR login) AND types = (req OR spec) AND eval(filter) is True
+  status = (open OR in_progress) AND tags = (user OR login) AND types = (req OR spec) AND eval(filter) is True
 
-
-.. _option_status:
+.. _`option_status`:
 
 status
 ~~~~~~
+
 Use the **status** option to filter needs by their status.
 
 You can easily filter for multiple statuses by separating them by ";". Example: *open; in progress; reopen*.
@@ -46,7 +46,7 @@ You can easily filter for multiple statuses by separating them by ";". Example: 
          :status: open
          :show_status:
 
-.. _option_tags:
+.. _`option_tags`:
 
 tags
 ~~~~
@@ -63,10 +63,11 @@ To search for multiple tags, simply separate them by using ";".
          :tags: main_example
          :show_tags:
 
-.. _option_types:
+.. _`option_types`:
 
 types
 ~~~~~
+
 For **:types:** the type itself or the human-readable type-title can be used as filter value.
 
 .. dropdown:: Show example
@@ -76,10 +77,11 @@ For **:types:** the type itself or the human-readable type-title can be used as 
       .. needtable::
          :types: test
 
-.. _option_sort_by:
+.. _`option_sort_by`:
 
 sort_by
 ~~~~~~~
+
 Sorts the result list. Allowed values are ``status`` or any alphanumerical property.
 
 .. dropdown:: Show example
@@ -90,7 +92,7 @@ Sorts the result list. Allowed values are ``status`` or any alphanumerical prope
          :sort_by: id
          :status: open
 
-.. _option_filter:
+.. _`option_filter`:
 
 filter
 ~~~~~~
@@ -98,7 +100,7 @@ filter
 The filter option allows the definition of a complex query string, which gets evaluated via eval() in Python.
 Please see :ref:`filter_string` for more details.
 
-.. _filter_string:
+.. _`filter_string`:
 
 Filter string
 -------------
@@ -113,7 +115,6 @@ The usage of a filter string is supported/required by:
 * :ref:`needbar`
 * :ref:`needuml` / :ref:`needarch`
 
-
 The filter string must be a valid Python expression:
 
 .. need-example::
@@ -124,9 +125,7 @@ A filter string gets evaluated on needs and need_parts!
 A need_part inherits all options from its parent need, if the need_part has no own content for this option.
 E.g. the need_part *content* is kept, but the *status* attribute is taken from its parent need.
 
-.. note::
-
-   The following attributes are kept inside a need_part: id, title, links_back
+.. note:: The following attributes are kept inside a need_part: id, title, links_back
 
 This allows to perform searches for need_parts, where search options are based on parent attributes.
 
@@ -144,8 +143,10 @@ Additional variables for :ref:`need_part`:
 * **id_complete** as Python string. Contains the concatenated ids of parent need and need_part.
   (compare like ``id_complete != 'ABC_01.03'``)
 
-.. note:: If extra options were specified using :ref:`needs_extra_options` then
-          those will be available for use in filter expressions as well.
+.. note::
+
+   If extra options were specified using :ref:`needs_extra_options` then
+   those will be available for use in filter expressions as well.
 
 Finally, the following are available:
 
@@ -188,7 +189,7 @@ If it is invalid or returns False, the related need is not taken into account fo
       .. needlist::
          :filter: "filter_example" in tags and (("B" in tags or ("spec" == type and "closed" == status)) or "test" == type)
 
-.. _filter_current_page:
+.. _`filter_current_page`:
 
 Filtering for needs on the current page
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -205,7 +206,7 @@ to filter for needs only in the same document as the directive.
       :filter: c.this_doc()
       :style: datatables
 
-.. _re_search:
+.. _`re_search`:
 
 search
 ~~~~~~
@@ -227,7 +228,7 @@ The second parameter should be one of the above variables(status, id, content, .
       .. needlist::
          :filter: search(r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
 
-.. _filter_string_performance:
+.. _`filter_string_performance`:
 
 Filter string performance
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -256,14 +257,15 @@ Also see :ref:`needs_uml_process_max_time`, to guard against long running ``need
 
 To debug which filters are being used across your project and their run times, you can enable the :ref:`needs_debug_filters` configuration option.
 
-.. _export_id:
+.. _`export_id`:
+
 .. deprecated:: 4.0.0
 
    The directive option ``export_id`` was previously used to export filter information in the ``needs.json`` file.
    This is deprecated and will be removed in a future version.
    Instead use the above :ref:`needs_debug_filters` configuration option.
 
-.. _filter_code:
+.. _`filter_code`:
 
 Filter code
 -----------
@@ -287,7 +289,7 @@ The code also has access to a variable called ``needs``, which is a :class:`.Nee
       # which are linked to each other.
 
       results = []
-      
+
       for need in needs.filter_types(["req"]):
          for links_id in need['links']:
             linked_need = needs.get_need(links_id)
@@ -305,8 +307,7 @@ If ``filter code`` is used, all other filter related options (like ``status`` or
    This feature executes every given Python code.
    So be sure to trust the input/writers.
 
-
-.. _filter_func:
+.. _`filter_func`:
 
 Filter function
 ---------------
@@ -323,8 +324,8 @@ Usage inside a rst file:
 
 .. code-block:: rst
 
-    .. needtable:: Filter function example
-       :filter-func: filter_file.own_filter_code
+   .. needtable:: Filter function example
+      :filter-func: filter_file.own_filter_code
 
 The code of the referenced file ``filter_file.py`` with function ``own_filter_code``:
 
@@ -343,6 +344,7 @@ So it must be part of the Python Path variable. To update this, add
 
 Arguments
 ~~~~~~~~~
+
 .. versionadded:: 0.7.6
 
 Filter function are supporting arguments: ``filter_file.own_filter_code(value_1,value_2)``.
@@ -356,9 +358,8 @@ Example:
 
 .. code-block:: rst
 
-    .. needtable:: Filter function example
-       :filter-func: filter_file.own_filter_code(1,2.5,open)
-
+   .. needtable:: Filter function example
+      :filter-func: filter_file.own_filter_code(1,2.5,open)
 
 .. code-block::
 
@@ -371,6 +372,7 @@ The function developer is responsible to perform any needed typecast.
 
 Needpie
 ~~~~~~~
+
 :ref:`needpie` also supports filter-code.
 But instead of needs, a list of resulting numbers must be returned.
 
@@ -381,7 +383,6 @@ Example:
    .. needpie:: Filter code func pie
       :labels: new,done
       :filter-func: filter_code_func.my_pie_filter_code_args(new,done)
-
 
 .. code-block:: python
 
@@ -406,7 +407,7 @@ The default text "No needs passed the filter".
 
 If this is not intended, add the option
 
-.. _option_filter_warning:
+.. _`option_filter_warning`:
 
 filter_warning
 ~~~~~~~~~~~~~~
@@ -449,7 +450,6 @@ More Examples
 
          This test checks :need:`IMPL_01` for :need:`OWN_ID_123` inside a
          Python 2.7 environment.
-
 
 .. need-example:: Filter result as table
 

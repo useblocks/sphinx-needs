@@ -7,19 +7,18 @@ In this tutorial, we will demonstrate the use of sphinx-needs to build up a simp
 We will create need items, link them together, visualize the relationships between them, and generate traceability reports.
 
 .. needflow:: Engineering plan to develop a car
-    :alt: Engineering plan to develop a car
-    :root_id: T_CAR
-    :config: tutorial
-    :show_link_names:
-    :border_color:
-        [status == 'open']:FF0000, 
-        [status == 'in progress']:0000FF, 
-        [status == 'closed']:00FF00
+   :alt: Engineering plan to develop a car
+   :root_id: T_CAR
+   :config: tutorial
+   :show_link_names:
+   :border_color: [status == 'open']:FF0000,
+                  [status == 'in progress']:0000FF,
+                  [status == 'closed']:00FF00
 
 .. admonition:: Prerequisites
 
-    This tutorial assumes that you have already :ref:`installed sphinx-needs <installation>`,
-    and that you have a basic understanding of how to use :external+sphinx:doc:`Sphinx <index>` and :external+sphinx:ref:`reStructuredText <rst-primer>`.
+   This tutorial assumes that you have already :ref:`installed sphinx-needs <installation>`,
+   and that you have a basic understanding of how to use :external+sphinx:doc:`Sphinx <index>` and :external+sphinx:ref:`reStructuredText <rst-primer>`.
 
 Need Lifecycle
 --------------
@@ -51,50 +50,50 @@ sphinx-needs comes with some default types: ``req``, ``spec``, ``impl``, and ``t
 
 .. need-example:: A basic need item
 
-    .. req:: Basic need example
-        :id: basic_example
+   .. req:: Basic need example
+      :id: basic_example
 
-        A basic example of a need item.
+      A basic example of a need item.
 
 For our car though, we want to use custom types, to describe aspects of the process.
 This can be created in the ``conf.py`` file, using the :ref:`needs_types` configuration option:
 
 .. code-block:: python
 
-    needs_types = [
-        {
-            "directive": "tutorial-project",
-            "title": "Project",
-            "prefix": "P_",  # prefix for auto-generated IDs
-            "style": "rectangle", # style for the type in diagrams
-            "color": "#BFD8D2", # color for the type in diagrams
-        }
-    ]
+   needs_types = [
+       {
+           "directive": "tutorial-project",
+           "title": "Project",
+           "prefix": "P_",  # prefix for auto-generated IDs
+           "style": "rectangle", # style for the type in diagrams
+           "color": "#BFD8D2", # color for the type in diagrams
+       }
+   ]
 
-There are also some optional directive fields 
+There are also some optional directive fields
 that can be used to add additional data to the item or further style its representation:
 
 .. need-example:: A custom need item
 
-    .. tutorial-project:: Our new car
-        :id: T_CAR
-        :tags: tutorial
-        :layout: clean_l
-        :image: _images/car.png
-        :collapse: true
+   .. tutorial-project:: Our new car
+      :id: T_CAR
+      :tags: tutorial
+      :layout: clean_l
+      :image: _images/car.png
+      :collapse: true
 
-        Presenting the “TeenTrek,” an autonomous driving car tailored for teenagers without a driving license.
-        Equipped with advanced AI navigation and safety protocols, it ensures effortless and secure transportation. 
-        The interior boasts entertainment systems, study areas, and social hubs, catering to teen preferences. 
-        The TeenTrek fosters independence while prioritizing safety and convenience for young passengers.
+      Presenting the “TeenTrek,” an autonomous driving car tailored for teenagers without a driving license.
+      Equipped with advanced AI navigation and safety protocols, it ensures effortless and secure transportation.
+      The interior boasts entertainment systems, study areas, and social hubs, catering to teen preferences.
+      The TeenTrek fosters independence while prioritizing safety and convenience for young passengers.
 
 .. seealso::
-    
-    For full options see the reference sections for :ref:`needs_types configuration <needs_types>` and :ref:`need items directive <need>`.
 
-    To add additional fields to the directive,
-    see :ref:`needs_extra_options`,
-    and to set default values see :ref:`needs_global_options`.
+   For full options see the reference sections for :ref:`needs_types configuration <needs_types>` and :ref:`need items directive <need>`.
+
+   To add additional fields to the directive,
+   see :ref:`needs_extra_options`,
+   and to set default values see :ref:`needs_global_options`.
 
 Enforcing valid need items
 ..........................
@@ -106,7 +105,6 @@ you can configure :ref:`needs_statuses`, :ref:`needs_tags` or :ref:`needs_warnin
 
 These will emit warnings when building the documentation if the values are not as expected.
 
-
 Referring to a need item
 ------------------------
 
@@ -114,12 +112,11 @@ We can refer to the needs we create in the text using the :ref:`need role <role_
 By default this will display the title and ID of the need item, but we can also different fields to display,
 by using an explicit title and using ``[[field]]`` syntax:
 
-
 .. need-example:: Referring to a need item
 
-    The project is described in more detail in :need:`T_CAR`.
+   The project is described in more detail in :need:`T_CAR`.
 
-    The project is described in more detail in :need:`[[title]] <T_CAR>`.
+   The project is described in more detail in :need:`[[title]] <T_CAR>`.
 
 We shall also see later how to create tables and other visualizations of multiple items.
 
@@ -133,14 +130,14 @@ We can define custom link types in the ``conf.py`` file, using the :ref:`needs_e
 
 .. code-block:: python
 
-    needs_extra_links = [
-      {
-        "option": "tutorial_required_by",
-        "incoming": "requires",  # text to describe incoming links
-        "outgoing": "required by",  # text to describe outgoing links
-        "style": "#00AA00",  # color for the link in diagrams
-      },
-    ]
+   needs_extra_links = [
+     {
+       "option": "tutorial_required_by",
+       "incoming": "requires",  # text to describe incoming links
+       "outgoing": "required by",  # text to describe outgoing links
+       "style": "#00AA00",  # color for the link in diagrams
+     },
+   ]
 
 We can now uses these links when specifying need items, notice how "back links" are automatically generated when displaying the item:
 
@@ -157,7 +154,7 @@ We can now uses these links when specifying need items, notice how "back links" 
       :id: T_CONNECT
       :tags: tutorial
       :tutorial_required_by: T_CAR
-      
+
       The car should be equipped with built-in Wi-Fi, Bluetooth connectivity, and compatibility with smartphone integration systems to enable seamless communication and entertainment for teenagers on the go.
 
 Lets also add some more need items to our plan:
@@ -171,14 +168,13 @@ Lets also add some more need items to our plan:
          :tags: tutorial
          :tutorial_specifies: T_SAFE
 
-         The RADAR sensor software for the car must accurately detect and track surrounding objects 
-         within a specified range. It should employ signal processing algorithms to filter out noise 
-         nd interference, ensuring reliable object detection in various weather and road conditions. 
-         The software should integrate seamlessly with the car's control system, providing real-time 
-         data on detected objects to enable collision avoidance and adaptive cruise control functionalities. 
-         Additionally, it should adhere to industry standards for safety and reliability, with robust 
+         The RADAR sensor software for the car must accurately detect and track surrounding objects
+         within a specified range. It should employ signal processing algorithms to filter out noise
+         nd interference, ensuring reliable object detection in various weather and road conditions.
+         The software should integrate seamlessly with the car's control system, providing real-time
+         data on detected objects to enable collision avoidance and adaptive cruise control functionalities.
+         Additionally, it should adhere to industry standards for safety and reliability, with robust
          error handling mechanisms in place.
-
 
       .. tutorial-spec:: Implement distant detection
          :id: T_DIST
@@ -187,9 +183,7 @@ Lets also add some more need items to our plan:
 
          Software Specification for Distance Detection Algorithm.
 
-.. seealso::
-    
-    For full options see the reference sections for :ref:`need_extra_links configuration <need_extra_links>` and :ref:`need items directive <need>`.
+.. seealso:: For full options see the reference sections for :ref:`need_extra_links configuration <need_extra_links>` and :ref:`need items directive <need>`.
 
 Importing need items
 --------------------
@@ -201,13 +195,11 @@ Lets import some test cases, we add an additional tag to each, to make them easi
 
 .. need-example:: Importing need items
 
-    .. needimport:: _static/tutorial_needs.json
-        :tags: tutorial,tutorial_tests
-        :collapse: true
+   .. needimport:: _static/tutorial_needs.json
+      :tags: tutorial,tutorial_tests
+      :collapse: true
 
-.. seealso::
-    
-    For full options see the reference sections for :ref:`needimport directive <needimport>` and :ref:`needservice directive <needservice>`.
+.. seealso:: For full options see the reference sections for :ref:`needimport directive <needimport>` and :ref:`needservice directive <needservice>`.
 
 Modifying need items
 --------------------
@@ -222,24 +214,22 @@ Here we filter by the tag we set on the imported items above:
 
 .. need-example:: Extending need items
 
-    .. needextend:: "tutorial_tests" in tags
-        :+tutorial_tests: T_RADAR
-        :status: open
+   .. needextend:: "tutorial_tests" in tags
+      :+tutorial_tests: T_RADAR
+      :status: open
 
-    .. needextend:: T_001
-        :status: closed
+   .. needextend:: T_001
+      :status: closed
 
-    .. needextend:: T_002
-        :status: in progress
+   .. needextend:: T_002
+      :status: in progress
 
-.. note:: 
+.. note::
 
-    The ``needextend`` does not have any visible output,
-    but it you look at the items, they will now have the additional link and status fields.
+   The ``needextend`` does not have any visible output,
+   but it you look at the items, they will now have the additional link and status fields.
 
-.. seealso:: 
-    
-    For full options see the reference sections for :ref:`needextend directive <needextend>`.
+.. seealso:: For full options see the reference sections for :ref:`needextend directive <needextend>`.
 
 Summarising needs
 -----------------
@@ -261,62 +251,60 @@ sorted by ID, and showing the status of each item:
 
 .. need-example:: Simple list
 
-    .. needlist::
-        :tags: tutorial
-        :sort_by: id
-        :show_status:
+   .. needlist::
+      :tags: tutorial
+      :sort_by: id
+      :show_status:
 
 Similarly, we can display the same items in a table format:
 
 .. need-example:: Simple table
 
-    .. needtable::
-        :tags: tutorial
-        :sort: id
-        :columns: id,type,title,status
-        :style: table
+   .. needtable::
+      :tags: tutorial
+      :sort: id
+      :columns: id,type,title,status
+      :style: table
 
 There are currently two styles for the table; a simple HTML ``table``, or the default ``datatables`` style to add dynamic pagination, filtering and sorting,
 using the `DataTables <https://datatables.net/>`__ JS package:
 
 .. need-example:: Table with dynamic features
 
-    .. needtable::
-        :tags: tutorial
-        :sort: id
-        :columns: id,type,title,status
-        :style: datatable
+   .. needtable::
+      :tags: tutorial
+      :sort: id
+      :columns: id,type,title,status
+      :style: datatable
 
 Finally, we can display a :ref:`flow diagram <needflow>` of the need items, to also show the relationships between them:
- 
+
 .. need-example:: Flow diagram
 
-    .. needflow:: Engineering plan to develop a car
-        :alt: Engineering plan to develop a car
-        :root_id: T_CAR
-        :config: lefttoright,tutorial
-        :show_link_names:
-        :border_color: 
-            [status == 'open']:FF0000, 
-            [status == 'in progress']:0000FF, 
-            [status == 'closed']:00FF00
+   .. needflow:: Engineering plan to develop a car
+      :alt: Engineering plan to develop a car
+      :root_id: T_CAR
+      :config: lefttoright,tutorial
+      :show_link_names:
+      :border_color: [status == 'open']:FF0000,
+                     [status == 'in progress']:0000FF,
+                     [status == 'closed']:00FF00
 
 .. dropdown:: Aternative use of Graphviz engine
 
-    You can also use the Graphviz engine to render the flow diagram, by setting the ``engine`` option to ``graphviz``:
+   You can also use the Graphviz engine to render the flow diagram, by setting the ``engine`` option to ``graphviz``:
 
-    .. need-example:: Flow diagram with Graphviz
+   .. need-example:: Flow diagram with Graphviz
 
-        .. needflow:: Engineering plan to develop a car
-            :engine: graphviz
-            :alt: Engineering plan to develop a car
-            :root_id: T_CAR
-            :config: lefttoright,tutorial
-            :show_link_names:
-            :border_color: 
-                [status == 'open']:FF0000, 
-                [status == 'in progress']:0000FF, 
-                [status == 'closed']:00FF00
+      .. needflow:: Engineering plan to develop a car
+         :engine: graphviz
+         :alt: Engineering plan to develop a car
+         :root_id: T_CAR
+         :config: lefttoright,tutorial
+         :show_link_names:
+         :border_color: [status == 'open']:FF0000,
+                        [status == 'in progress']:0000FF,
+                        [status == 'closed']:00FF00
 
 Analysing Metrics
 -----------------
@@ -331,9 +319,9 @@ In the following examples we will display metrics of the test cases we imported 
 
 .. need-example:: Count of need items
 
-    - Open: :need_count:`'tutorial_tests' in tags and status == 'open'`
-    - In Progress: :need_count:`'tutorial_tests' in tags and status == 'in progress'`
-    - Closed: :need_count:`'tutorial_tests' in tags and status == 'closed'`
+   - Open: :need_count:`'tutorial_tests' in tags and status == 'open'`
+   - In Progress: :need_count:`'tutorial_tests' in tags and status == 'in progress'`
+   - Closed: :need_count:`'tutorial_tests' in tags and status == 'closed'`
 
 .. need-example:: Pie chart of metric
 
@@ -370,8 +358,7 @@ Also, see :ref:`other extensions <other-extensions>` offered by `useblocks <http
 
 .. todo::
 
-    - Tracking progress
-        - mainly to introduce needgantt
-
-    - finally link to the new "core" useblocks site and
-      the "enterprise tools" like ubtrace etc
+   - Tracking progress
+       - mainly to introduce needgantt
+   - finally link to the new "core" useblocks site and
+     the "enterprise tools" like ubtrace etc

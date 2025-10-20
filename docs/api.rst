@@ -27,7 +27,6 @@ Need
 .. automodule:: sphinx_needs.api.need
    :members:
 
-
 Exceptions
 ----------
 
