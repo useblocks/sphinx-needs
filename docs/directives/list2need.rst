@@ -56,7 +56,7 @@ For details please see :ref:`list2need_meta_data`.
 .. warning::
 
    There are currently known limitations in the list parser.
-   For instance new content lines starting with `*` or `:` may get handled incorrectly.
+   For instance new content lines starting with ``*`` or ``:`` may get handled incorrectly.
 
 List structure
 --------------

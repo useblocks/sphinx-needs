@@ -437,9 +437,9 @@ but may be in some corner cases.
 New
 ...
 
-- ✨ Add `needs_from_toml` configuration :pr:`1337`
+- ✨ Add ``needs_from_toml`` configuration :pr:`1337`
 
-  Configuration can now be loaded from a TOML file, using the `needs_from_toml` configuration option.
+  Configuration can now be loaded from a TOML file, using the ``needs_from_toml`` configuration option.
   See :ref:`needs_from_toml` for more information.
 
 - ✨ Allow configuring description of extra options in ``needs_extra_options`` :pr:`1338`
@@ -479,7 +479,7 @@ Filter strings such as ``id == "my_id"`` are then pre-processed to take advantag
 
 This change has required changes to the internal API and stricter control on the access to and modification of need data, which may affect custom extensions that modified needs data directly:
 
-- Access to internal data from the Sphinx `env` object has been made private
+- Access to internal data from the Sphinx ``env`` object has been made private
 - Needs data during the write phase is exposed with either the read-only :class:`.NeedsView` or :class:`.NeedsAndPartsListView`, depending on the context.
 - Access to needs data, during the write phase, can now be achieved via :func:`.get_needs_view`
 - Access to mutable needs should generally be avoided outside of the formal means, but for back-compatibility the following :external+sphinx:ref:`Sphinx event callbacks <events>` are now available:
@@ -560,7 +560,7 @@ Bug Fixes
 - 🐛 Disallow dynamic functions ``[[..]]`` in literal content in :pr:`1263`
 - 🐛 fix parts defined in nested needs in :pr:`1265`
 - 🐛 Handle malformed ``filter-func`` option value in :pr:`1254`
-- 🐛 Pass ``needs`` to ``highlight`` filter of ``graphviz`` `needflow` in :pr:`1274`
+- 🐛 Pass ``needs`` to ``highlight`` filter of ``graphviz`` ``needflow`` in :pr:`1274`
 - 🐛 Fix parts title for ``needflow`` with ``graphviz`` engine in :pr:`1280`
 - 🐛 Fix ``need_count`` division by 0 in :pr:`1324`
 
@@ -597,7 +597,7 @@ and :pr:`1178`, :pr:`1181`, :pr:`1182` and :pr:`1184` for the changes.
 ``needflow`` improvements
 ..........................
 
-The use of `Graphviz <https://graphviz.org/>`__ as the underlying engine for `needflow` diagrams, in addition to the default `PlantUML <http://plantuml.com>`__,
+The use of `Graphviz <https://graphviz.org/>`__ as the underlying engine for ``needflow`` diagrams, in addition to the default `PlantUML <http://plantuml.com>`__,
 is now allowed via the global :ref:`needs_flow_engine` configuration option, or the per-diagram :ref:`engine <needflow_engine>` option.
 
 The intention being to simplify and improve performance of graph builds, since ``plantuml`` has issues with JVM initialisation times and reliance on a third-party sphinx extension.
@@ -782,7 +782,7 @@ Released: 16.08.2023
 * Improvement: Configuration option :ref:`needs_debug_measurement` added, which creates a runtime report
   for debugging purposes.
   (:pr:`917`)
-* Bugfix: Replace hardcoded `index` with config value `root_doc`.
+* Bugfix: Replace hardcoded ``index`` with config value ``root_doc``.
   (:pr:`877`)
 * Bugfix: Fix unbounded memory usage in pickle environment.
   (:pr:`912`)
@@ -842,7 +842,7 @@ Released: 21.12.2022
   (:issue:`413`)
 * Improvement: Added vector output support to need figures.
   (:issue:`815`).
-* Improvement: Introduce the jinja function `ref` for :ref:`needuml`.
+* Improvement: Introduce the jinja function ``ref`` for :ref:`needuml`.
   (:issue:`789`)
 * Bugfix: Needflow fix bug in child need handling.
   (:issue:`785`).
@@ -859,7 +859,7 @@ Released: 22.11.2022
 
 * Bugfix: Expand/Collapse button does not work.
   (:issue:`795`).
-* Bugfix: `singlehtml` and `latex` related builders are working again.
+* Bugfix: ``singlehtml`` and ``latex`` related builders are working again.
   (:issue:`796`).
 * Bugfix: Needextend throws the same information 3 times as part of a single warning.
   (:issue:`747`).
@@ -895,7 +895,7 @@ Released: 08.11.2022
   (:issue:`704`)
 * Improvement: Supported ``target_url`` for :ref:`needs_external_needs`.
   (:issue:`701`)
-* Bugfix: Fixed needuml key shown in need meta data by providing internal need option `arch`.
+* Bugfix: Fixed needuml key shown in need meta data by providing internal need option ``arch``.
   (:issue:`687`)
 * Improvement: Included child needs inside their parent need for :ref:`needflow`.
   (:issue:`714`)
@@ -937,17 +937,17 @@ Released: 22.09.2022
   (:issue:`624`)
 * Improvement: Support for :ref:`needs_string_links` in :ref:`needtable`.
   (:issue:`535`)
-* Improvement: Added `key` option for :ref:`needuml`.
-* Bugfix: Removed default setting `allowmixing` for :ref:`needuml`.
+* Improvement: Added ``key`` option for :ref:`needuml`.
+* Bugfix: Removed default setting ``allowmixing`` for :ref:`needuml`.
   (:issue:`649`)
 * Bugfix: Fixed the collapse button issue for needs including nested needs.
   (:issue:`659`)
 * Bugfix: Fixed :ref:`needextract` filter options issue involved with :ref:`need_part`.
   (:issue:`651`)
-* Improvement: Added `save` option for :ref:`needuml`.
-* Improvement: Added builder :ref:`needumls_builder` and config option :ref:`needs_build_needumls` in `conf.py`.
-* Improvement: Added `filter` function for :ref:`needuml`.
-* Improvement: Renamed jinja function `need` to `flow` for :ref:`needuml`.
+* Improvement: Added ``save`` option for :ref:`needuml`.
+* Improvement: Added builder :ref:`needumls_builder` and config option :ref:`needs_build_needumls` in ``conf.py``.
+* Improvement: Added ``filter`` function for :ref:`needuml`.
+* Improvement: Renamed jinja function ``need`` to ``flow`` for :ref:`needuml`.
 * Improvement: Added directive :ref:`needarch`.
 * Improvement: Added configuration option **needs_ide_snippets_id** to support custom need ID for :ref:`ide` snippets.
 * Improvement: Provides jinja function :ref:`needarch_jinja_import` for :ref:`needarch` to execute :ref:`needuml_jinja_uml`
@@ -971,9 +971,9 @@ Released: 11.07.2022
 * Improvement: Provides initial support for Sphinx-Needs IDE language features.
   (:pr:`584`)
 * Improvement: Support snippet for auto directive completion for Sphinx-Needs IDE language features.
-* Improvement: Added `show_top_sum` to :ref:`Needbar <needbar>` and make it possible to rotate the bar labels.
+* Improvement: Added ``show_top_sum`` to :ref:`Needbar <needbar>` and make it possible to rotate the bar labels.
   (:issue:`516`)
-* Improvement: Added `needs_constraints` option. Constraints can be set for individual needs and describe properties
+* Improvement: Added ``needs_constraints`` option. Constraints can be set for individual needs and describe properties
   a need has to meet.
 * Improvement: Added customizable link text of :ref:`Need <needref>`.
   (`#439 <https://github.com/useblocks/sphinx-needs/discussions/439>`_)
@@ -1231,10 +1231,10 @@ Released: 23.04.2021
   (:issue:`193`)
 * Bugfix: :ref:`needimport` supports extra options and extra fields.
   (:issue:`227`)
-* Bugfix: Checking for ending `/` of given github api url.
+* Bugfix: Checking for ending ``/`` of given github api url.
   (:issue:`187`)
 * Bugfix: Using correct indention for pre and post_template function of needs.
-* Bugfix: Certain log message don't use python internal `id` any more.
+* Bugfix: Certain log message don't use python internal ``id`` any more.
   (:issue:`225`)
 * Bugfix: JS-code for meta area collapse is working again.
   (:issue:`242`)
@@ -1312,7 +1312,7 @@ Released: 23.04.2021
 * Bugfix: :ref:`needs_title_from_content` takes ``\n`` and ``.`` as delimiter.
 * Bugfix: Setting css-attribute ``white-space: normal`` for all need-tables, which is set badly in some sphinx-themes.
   (Yes, I'm looking at you *ReadTheDocs theme*...)
-* Bugfix: ``meta_all`` :ref:`layout function <layout_functions>` also outputs extra links and the `no_links`
+* Bugfix: ``meta_all`` :ref:`layout function <layout_functions>` also outputs extra links and the ``no_links``
   parameter now works as expected
 * Bugfix: Added need-type as css-class back on need. Css class name is ``needs_type_(need_type attribute)``.
   (:issue:`124`)
@@ -1451,7 +1451,7 @@ custom css definitions you need to update them.
 0.3.8
 -----
 
-* Improvement: :ref:`need_part` has now attributes `id_parent` and `id_complete`, which can be referenced
+* Improvement: :ref:`need_part` has now attributes ``id_parent`` and ``id_complete``, which can be referenced
   in :ref:`filter_string`.
 * Improvement: :ref:`needtable` supports presentation of filtered :ref:`need_part` (without showing parent need).
 

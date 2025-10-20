@@ -66,7 +66,7 @@ are used.
 
 Used command: ``python performance_test.py series --needs 10 --pages 500 --dummies 10 --needtables 0 --parallel 1 --parallel 8``
 
-The parallel execution can used by any documentation build , just use `-j` option.
+The parallel execution can used by any documentation build , just use ``-j`` option.
 Example, which uses 4 processes in parallel: ``sphinx-build -j 4 -b html . _build/html``
 
 

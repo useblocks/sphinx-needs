@@ -13,11 +13,11 @@ Filter options
 
 The following filter options are supported by directives:
 
- * :ref:`needlist`
- * :ref:`needtable`
- * :ref:`needflow`
- * :ref:`needpie`
- * :ref:`needextend`
+* :ref:`needlist`
+* :ref:`needtable`
+* :ref:`needflow`
+* :ref:`needpie`
+* :ref:`needextend`
 
 Related to the used directive and its representation, the filter options create a list of needs, which match the
 filters for status, tags, types and filter.

@@ -33,7 +33,7 @@ need()
 
 .. versionadded:: 1.0.3
 
-The `need()` function provides you the need information the :ref:`needarch` is embedded in.
+The ``need()`` function provides you the need information the :ref:`needarch` is embedded in.
 
 .. need-example::
 
@@ -96,10 +96,10 @@ NeedArch Loop Example
 
 .. versionadded:: 1.0.3
 
-NeedArch can detect include loops `(uml('1') -> uml('2') -> uml('3') -> uml('1')`
+NeedArch can detect include loops ``(uml('1') -> uml('2') -> uml('3') -> uml('1')``
 and can avoid to include an element twice. Maybe this is not always the use case
 you have, if so please create an issue and mention this chapter. The algorithm
-does detect different parameter sets and does import `uml()` calls with different
+does detect different parameter sets and does import ``uml()`` calls with different
 :ref:`parameter <needuml_jinja_uml_args>` to the same need.
 
 .. need-example::
