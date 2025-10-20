@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760997671359,
+  "lastUpdate": 1760999577080,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14904,6 +14904,42 @@ window.BENCHMARK_DATA = {
             "value": 68.97253287199999,
             "unit": "s",
             "extra": "Commit: 158a995aa82cda1189ecf5e0439cccf8a8f88e95\nBranch: master\nTime: 2025-10-20T23:59:02+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0e7aa92f21ee8c2c1977952652d59ba84bb440b6",
+          "message": "🔧 Run new ubc action on docs (#1541)\n\nIntroduce https://github.com/useblocks/ubc-action\n\nThe PR makes the docs 100% usable with ubCode / ubc and is free of\nwarnings / errors.\n\nNotes:\n- CI: run `ubc check` and `ubc build index --show-warnings` on docs\n- Added `completion` and `duration` explicitly to the config so `ubc` is\naware of it\n- Added dynamically generated `tutorial_needs.json` to git so `ubc` sees\nit (generation is reproducible)\n- Added `uml` and sphinx-design directives to ubproject.toml parse\nconfig\n- Fixed list indentation issues and `inline.role_no_name`",
+          "timestamp": "2025-10-21T00:30:46+02:00",
+          "tree_id": "4307f36435d7a13eeb0cc81e6a8485e2071f53c6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0e7aa92f21ee8c2c1977952652d59ba84bb440b6"
+        },
+        "date": 1760999562274,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18706545700001698,
+            "unit": "s",
+            "extra": "Commit: 0e7aa92f21ee8c2c1977952652d59ba84bb440b6\nBranch: master\nTime: 2025-10-21T00:30:46+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.09853797799997,
+            "unit": "s",
+            "extra": "Commit: 0e7aa92f21ee8c2c1977952652d59ba84bb440b6\nBranch: master\nTime: 2025-10-21T00:30:46+02:00"
           }
         ]
       }
