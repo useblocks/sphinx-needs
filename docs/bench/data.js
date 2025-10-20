@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760700087304,
+  "lastUpdate": 1760997671359,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14868,6 +14868,42 @@ window.BENCHMARK_DATA = {
             "value": 63.26356169,
             "unit": "s",
             "extra": "Commit: 0030e6c2c9de3b852d26b2dd704817172874c2ca\nBranch: master\nTime: 2025-10-17T13:19:27+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "158a995aa82cda1189ecf5e0439cccf8a8f88e95",
+          "message": "📚 Fix linkchecks (#1556)\n\nActivate -W for the `linkcheck` builder.\n\nIt was emitting warnings in the past that were ignored.\nWhen `linkcheck` actually fails due to a real problem it's hard to spot\nwhen there are 40 warnings. Fixed those.\n\n- Running on Python 3.12 now\n- Suppress expected warnings\n- Added a tox env for local execution",
+          "timestamp": "2025-10-20T23:59:02+02:00",
+          "tree_id": "e9b52bc2502af3262444064fc615d3be8cccceeb",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/158a995aa82cda1189ecf5e0439cccf8a8f88e95"
+        },
+        "date": 1760997658096,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22099732899999935,
+            "unit": "s",
+            "extra": "Commit: 158a995aa82cda1189ecf5e0439cccf8a8f88e95\nBranch: master\nTime: 2025-10-20T23:59:02+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 68.97253287199999,
+            "unit": "s",
+            "extra": "Commit: 158a995aa82cda1189ecf5e0439cccf8a8f88e95\nBranch: master\nTime: 2025-10-20T23:59:02+02:00"
           }
         ]
       }
