@@ -113,7 +113,6 @@ class NeedimportDirective(SphinxDirective):
             except (OSError, json.JSONDecodeError) as e:
                 # TODO: Add exception handling
                 raise SphinxNeedsFileException(correct_need_import_path) from e
-            
         errors = check_needs_data(needs_import_list)
         if errors.schema:
             logger.info(
