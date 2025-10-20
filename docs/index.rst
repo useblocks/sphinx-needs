@@ -219,4 +219,3 @@ Contents
    support
    contributing
    license
-
