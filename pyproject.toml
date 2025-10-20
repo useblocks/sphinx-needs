@@ -191,4 +191,9 @@ commands_pre =
   python -c "import shutil; shutil.rmtree('docs/_build/{env:BUILDER:html}/{env:DOCS_THEME:}', ignore_errors=True) if '{env:CLEAN:}' else None"
 commands = 
   sphinx-build -nW --keep-going -b {env:BUILDER:html} docs/ docs/_build/{env:BUILDER:html}/{env:DOCS_THEME:} {posargs:-T}
+
+[testenv:docs-linkcheck]
+basepython = python3.12
+extras = docs
+commands = sphinx-build -E -W -b linkcheck docs/ docs/_build/linkcheck
 """
