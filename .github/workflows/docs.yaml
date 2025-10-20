@@ -18,5 +18,5 @@ jobs:
         run: |
           python -m pip install -e .[docs]
       - name: Run linkcheck
-        run: sphinx-build -b linkcheck . _build
+        run: sphinx-build -W -b linkcheck . _build
         working-directory: docs

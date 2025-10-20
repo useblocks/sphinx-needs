@@ -420,8 +420,15 @@ def create_tutorial_needs(app: Sphinx, _env, _docnames):
     outpath.write_text(json_str)
 
 
+def suppress_linkcheck_warnings(app: Sphinx):
+    """Suppress needflow warnings when running linkcheck builder."""
+    if app.builder.name == "linkcheck":
+        app.config.suppress_warnings.append("needs.needflow")
+
+
 def setup(app: Sphinx):
     app.add_directive("need-example", NeedExampleDirective)
     app.add_directive("need-warnings", NeedsWarningsDirective)
     app.add_role("need_config_default", NeedConfigDefaultRole())
+    app.connect("builder-inited", suppress_linkcheck_warnings)
     app.connect("env-before-read-docs", create_tutorial_needs, priority=600)
