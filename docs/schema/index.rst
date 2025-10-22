@@ -575,6 +575,25 @@ This validates that:
    For most use cases, 4 levels of nesting is sufficient. If you need deeper validation chains,
    consider restructuring your validation logic or link relationships.
 
+.. _`severity_levels`:
+
+Severity levels
+---------------
+
+The schema validation supports three severity levels for reporting violations:
+
+- ``info``: A non-critical constraint violation indicating an informative message.
+- ``warning``: A non-critical constraint violation indicating a warning.
+- ``violation`` : A constraint violation.
+
+The specific severity value has no impact on the validation, but it can influence how violations
+are reported to the user. See :ref:`understanding_errors` for more details how Sphinx
+console output can be configured and how to :ref:`suppress errors <suppress_validation_messages>`.
+
+Schema violations are categorised with :ref:`message types <message_types>`. Each
+message type is assigned a default severity of ``violation``.
+The default can be overwritten in :ref:`schema rules <rule_severity>`.
+
 .. _`schema_components`:
 
 Schema components reference
@@ -699,24 +718,49 @@ in via ``allOf`` to be considered evaluated:
 In this case, a need with a ``priority`` property would still trigger an unevaluated properties
 error, even though ``priority`` is in the ``required`` list.
 
-Severity levels
-~~~~~~~~~~~~~~~
+.. _`rule_severity`:
 
-Each schema can specify a severity level:
+Rule severity
+~~~~~~~~~~~~~
 
-- ``violation`` (default): Violation message
-- ``warning``: Warning message
-- ``info``: Informational message
+Each schema rule can specify one of the following severity levels:
 
-.. code-block:: json
+- ``info``: A non-critical constraint violation indicating an informative message.
+- ``warning``: A non-critical constraint violation indicating a warning.
+- ``violation`` : A constraint violation.
+
+  If that is not given, a violation
+
+rule specific default kicks in. The severity influences how validation failures are displayed
+in the console:
+
+.. code-block:: python
 
    {
      "severity": "warning",
      "message": "Approval required due to high efforts"
    }
 
-The config :ref:`needs_schema_severity` can be used to define a minimum severity level for a
-warning to be reported.
+All severities are reported during schema validation.
+
+**Console output example:**
+
+.. code-block:: text
+
+   WARNING: Need 'FEAt' has validation warnings:
+     Severity:       warning
+     Field:          id
+     Need path:      FEAt
+     Schema path:    [0] > local > properties > id > pattern
+     User message:   id must be uppercase with numbers and underscores
+     Schema message: 'FEAt' does not match '^[A-Z0-9_]+$' [sn_schema_warning.local_fail]
+
+   ERROR: Need 'SPEC' has validation errors:
+     Severity:       violation
+     Field:          id
+     Need path:      SPEC
+     Schema path:    spec[1] > local > properties > id > pattern
+     Schema message: 'SPEC' does not match '^SPEC_[a-zA-Z0-9_-]*$' [sn_schema_violation.local_fail]
 
 .. _`schema_reuse`:
 
@@ -986,11 +1030,75 @@ Array fields store lists of homogeneous typed values:
   - If ``minContains`` is not given, it defaults to 1 when ``contains`` is present.
   - If ``maxContains`` is not given, there is no upper limit.
 
+.. _`understanding_errors`:
+
 Running validation and understanding errors
 -------------------------------------------
 
 After defining your schema configuration, running Sphinx will validate all needs against the
 defined schemas. This section explains the validation process and how to interpret errors.
+
+.. _`severity_handling`:
+
+Severity handling
+~~~~~~~~~~~~~~~~~
+
+The :ref:`severity_levels` affect how Sphinx emits validation messages.
+Here is how they map to Sphinx logging levels and console output.
+
+Schema severity **info**:
+
+- Mapped to Sphinx logging level ``warning``
+- Displayed as ``WARNING:`` in red color in console
+- Logged with type ``sn_schema_info``
+
+Schema severity **warning**:
+
+- Mapped to Sphinx logging level ``warning``
+- Displayed as ``WARNING:`` in red color in console
+- Logged with type ``sn_schema_warning``
+
+Schema severity **violation**:
+
+- Mapped to Sphinx logging level ``error``
+- Displayed as ``ERROR:`` in dark red color in console
+- Logged with type ``sn_schema_violation``
+
+Besides the ``type`` information mentioned above, log messages also receive a
+``subtype`` described in :ref:`message_types`.
+
+The output format is ``WARNING|ERROR: <message> [type.subtype]``.
+
+The combination of ``type`` and ``subtype`` can be used to selectively
+:ref:`suppress validation messages <suppress_validation_messages>`.
+
+.. _`message_types`:
+
+Message types
+~~~~~~~~~~~~~
+
+The schema validation is done on :ref:`local <local_validation>` or
+:ref:`network <network_validation>` level. Accordingly, the following message subtypes are used
+to indicate which validation failed.
+
+Local validation:
+
+- ``extra_option_fail``: Extra option schema validation failed
+  (local validation, defined via ``schema`` key in :ref:`needs_extra_options`)
+- ``extra_link_fail``: Extra link schema validation failed
+  (defined via ``schema`` key in :ref:`needs_extra_links`)
+- ``local_fail``: Need-local validation failed
+  (defined via ``validate.local`` in schemas of :ref:`needs_schema_definitions`)
+
+Network validation:
+
+- ``network_missing_target``: Outgoing link target cannot be resolved
+- ``network_contains_too_few``: Not enough valid links (minContains failed)
+- ``network_contains_too_many``: Too many valid links (maxContains failed)
+- ``network_items_fail``: Linked need's item validation failed
+
+If not overridden in the :ref:`schema rules <rule_severity>`, a default severity of ``violation``
+is used for all message types.
 
 Error messages and output
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1001,7 +1109,7 @@ Validation errors include detailed information:
 - **Field**: The specific field that failed validation
 - **Need path**: The ID of the need that failed or the link chain for network validation
 - **Schema path**: The JSON path within the schema that was violated
-- **User message**: Custom message from the needs_schema.schemas list
+- **User message**: Custom message from each of the ``schemas`` in :ref:`needs_schema_definitions`
 - **Schema message**: Detailed technical validation message from the validator
 
 Example error output::
@@ -1034,6 +1142,57 @@ need and the specific link that caused the issue::
         Need path:      IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE
         Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum
         Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
+
+.. _`suppress_validation_messages`:
+
+Suppressing validation messages
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Schema validation messages can be selectively suppressed using Sphinx's
+`suppress_warnings <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings>`__
+configuration option.
+
+**Examples:**
+
+Suppress all schema violation errors:
+
+.. code-block:: python
+
+   suppress_warnings = ["sn_schema_violation"]
+
+Suppress all schema warnings:
+
+.. code-block:: python
+
+   suppress_warnings = ["sn_schema_warning"]
+
+Suppress specific validation rule failures:
+
+.. code-block:: python
+
+   # Suppress only local validation failures for violations
+   suppress_warnings = ["sn_schema_violation.local_fail"]
+
+   # Suppress only network link count issues for warnings
+   suppress_warnings = ["sn_schema_warning.network_contains_too_few"]
+
+Suppress multiple specific types:
+
+.. code-block:: python
+
+   suppress_warnings = [
+       "sn_schema_violation.local_fail",
+       "sn_schema_warning.extra_option_fail",
+       "sn_schema_info",  # Suppress all info messages
+   ]
+
+.. note::
+
+   Suppressing validation messages does not prevent the validation from occurring; it only
+   hides the output. All violations will still be recorded in the schema violation report
+   (see :ref:`schema_violation_json`).
+
+.. _`schema_violation_json`:
 
 Schema violation report JSON file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
