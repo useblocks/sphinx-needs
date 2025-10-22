@@ -1,4 +1,4 @@
-severity_rule_unset_min_unset_is_reported:
+severity_rule_default:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
@@ -19,7 +19,7 @@ severity_rule_unset_min_unset_is_reported:
               asil:
                 const: A
 
-severity_rule_info_min_unset_is_reported:
+severity_rule_info:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
@@ -41,7 +41,7 @@ severity_rule_info_min_unset_is_reported:
               asil:
                 const: A
 
-severity_rule_warning_min_unset_is_reported:
+severity_rule_warning:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
@@ -63,7 +63,7 @@ severity_rule_warning_min_unset_is_reported:
               asil:
                 const: A
 
-severity_rule_violation_min_unset_is_reported:
+severity_rule_violation:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
@@ -85,12 +85,12 @@ severity_rule_violation_min_unset_is_reported:
               asil:
                 const: A
 
-severity_rule_info_min_warning_not_reported:
+severity_default_suppress_severity:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
-    suppress_warnings = ["sn_schema_info"]
+    suppress_warnings = ["sn_schema_violation"]
   ubproject: |
     [[needs.extra_options]]
     name = "asil"
@@ -101,22 +101,25 @@ severity_rule_info_min_warning_not_reported:
   schemas:
     $defs: []
     schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                const: A
       - severity: "info"
         validate:
           local:
             properties:
               asil:
-                const: A
+                const: B
 
-severity_rule_warning_min_warning_is_reported:
+severity_default_suppress_severity_and_rule:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["sn_schema_violation.local_fail"]
   ubproject: |
-    [needs]
-    schema_severity = "warning"
-
     [[needs.extra_options]]
     name = "asil"
   rst: |
@@ -126,34 +129,14 @@ severity_rule_warning_min_warning_is_reported:
   schemas:
     $defs: []
     schemas:
-      - severity: "warning"
-        validate:
+      - validate:
           local:
             properties:
               asil:
                 const: A
-
-severity_rule_warning_min_violation_not_reported:
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_from_toml = "ubproject.toml"
-    needs_schema_definitions_from_json = "schemas.json"
-  ubproject: |
-    [needs]
-    schema_severity = "violation"
-
-    [[needs.extra_options]]
-    name = "asil"
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
-        :asil: QM
-  schemas:
-    $defs: []
-    schemas:
-      - severity: "warning"
+      - severity: "info"
         validate:
           local:
             properties:
               asil:
-                const: A
+                const: B

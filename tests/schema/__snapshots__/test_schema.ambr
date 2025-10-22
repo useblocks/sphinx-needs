@@ -3729,7 +3729,137 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_info_min_unset_is_reported]
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity]
+  '''
+  WARNING: Need 'IMPL_1' has schema infos:
+    Severity:       info
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [1] > local > properties > asil > const
+    Schema message: 'B' was expected [sn_schema_info.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': "'A' was expected",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[1] > local > properties > asil > const',
+            'severity': 'info',
+            'validation_msg': "'B' was expected",
+          }),
+          'log_lvl': 'warning',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_info',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity_and_rule]
+  '''
+  WARNING: Need 'IMPL_1' has schema infos:
+    Severity:       info
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [1] > local > properties > asil > const
+    Schema message: 'B' was expected [sn_schema_info.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity_and_rule].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': "'A' was expected",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[1] > local > properties > asil > const',
+            'severity': 'info',
+            'validation_msg': "'B' was expected",
+          }),
+          'log_lvl': 'warning',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_info',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_default]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: 'A' was expected [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_default].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': "'A' was expected",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_info]
   '''
   WARNING: Need 'IMPL_1' has schema infos:
     Severity:       info
@@ -3740,7 +3870,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_info_min_unset_is_reported].1
+# name: test_schemas[schema/fixtures/reporting-severity_rule_info].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3763,33 +3893,7 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_info_min_warning_not_reported]
-  ''
-# ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_info_min_warning_not_reported].1
-  dict({
-    'validated_needs_count': 1,
-    'validation_warnings': dict({
-      'IMPL_1': list([
-        dict({
-          'children': list([
-          ]),
-          'details': dict({
-            'field': 'asil',
-            'need_path': 'IMPL_1',
-            'schema_path': '[0] > local > properties > asil > const',
-            'severity': 'info',
-            'validation_msg': "'A' was expected",
-          }),
-          'log_lvl': 'warning',
-          'subtype': 'local_fail',
-          'type': 'sn_schema_info',
-        }),
-      ]),
-    }),
-  })
-# ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_unset_min_unset_is_reported]
+# name: test_schemas[schema/fixtures/reporting-severity_rule_violation]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -3800,7 +3904,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_unset_min_unset_is_reported].1
+# name: test_schemas[schema/fixtures/reporting-severity_rule_violation].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3823,41 +3927,7 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_violation_min_unset_is_reported]
-  '''
-  ERROR: Need 'IMPL_1' has schema violations:
-    Severity:       violation
-    Field:          asil
-    Need path:      IMPL_1
-    Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema_violation.local_fail]
-  
-  '''
-# ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_violation_min_unset_is_reported].1
-  dict({
-    'validated_needs_count': 1,
-    'validation_warnings': dict({
-      'IMPL_1': list([
-        dict({
-          'children': list([
-          ]),
-          'details': dict({
-            'field': 'asil',
-            'need_path': 'IMPL_1',
-            'schema_path': '[0] > local > properties > asil > const',
-            'severity': 'violation',
-            'validation_msg': "'A' was expected",
-          }),
-          'log_lvl': 'error',
-          'subtype': 'local_fail',
-          'type': 'sn_schema_violation',
-        }),
-      ]),
-    }),
-  })
-# ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_unset_is_reported]
+# name: test_schemas[schema/fixtures/reporting-severity_rule_warning]
   '''
   WARNING: Need 'IMPL_1' has schema warnings:
     Severity:       warning
@@ -3868,75 +3938,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_unset_is_reported].1
-  dict({
-    'validated_needs_count': 1,
-    'validation_warnings': dict({
-      'IMPL_1': list([
-        dict({
-          'children': list([
-          ]),
-          'details': dict({
-            'field': 'asil',
-            'need_path': 'IMPL_1',
-            'schema_path': '[0] > local > properties > asil > const',
-            'severity': 'warning',
-            'validation_msg': "'A' was expected",
-          }),
-          'log_lvl': 'warning',
-          'subtype': 'local_fail',
-          'type': 'sn_schema_warning',
-        }),
-      ]),
-    }),
-  })
-# ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_violation_not_reported]
-  '''
-  WARNING: Need 'IMPL_1' has schema warnings:
-    Severity:       warning
-    Field:          asil
-    Need path:      IMPL_1
-    Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema_warning.local_fail]
-  
-  '''
-# ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_violation_not_reported].1
-  dict({
-    'validated_needs_count': 1,
-    'validation_warnings': dict({
-      'IMPL_1': list([
-        dict({
-          'children': list([
-          ]),
-          'details': dict({
-            'field': 'asil',
-            'need_path': 'IMPL_1',
-            'schema_path': '[0] > local > properties > asil > const',
-            'severity': 'warning',
-            'validation_msg': "'A' was expected",
-          }),
-          'log_lvl': 'warning',
-          'subtype': 'local_fail',
-          'type': 'sn_schema_warning',
-        }),
-      ]),
-    }),
-  })
-# ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_warning_is_reported]
-  '''
-  WARNING: Need 'IMPL_1' has schema warnings:
-    Severity:       warning
-    Field:          asil
-    Need path:      IMPL_1
-    Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema_warning.local_fail]
-  
-  '''
-# ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_warning_is_reported].1
+# name: test_schemas[schema/fixtures/reporting-severity_rule_warning].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
