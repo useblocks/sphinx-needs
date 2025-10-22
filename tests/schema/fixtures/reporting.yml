@@ -90,10 +90,8 @@ severity_rule_info_min_warning_not_reported:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["sn_schema_info"]
   ubproject: |
-    [needs]
-    schema_severity = "warning"
-
     [[needs.extra_options]]
     name = "asil"
   rst: |

@@ -238,6 +238,8 @@ def get_formatted_warnings_recurse(
     formatted_warnings.append(formatted_warning)
     if "children" in warning:
         for child_warning in warning["children"]:
+            if child_warning["severity"] == SeverityEnum.none:
+                continue
             formatted_child_warnings = get_formatted_warnings_recurse(
                 warning=child_warning, level=level + 1
             )
@@ -247,7 +249,6 @@ def get_formatted_warnings_recurse(
                     f"\n\n{indent}Details for {child_warning['need']['id']}"
                     + formatted_child_warning["message"]
                 )
-            # formatted_warnings.extend(formatted_child_warnings)
     return formatted_warnings
 
 
@@ -409,7 +410,8 @@ def get_json_formatted_warnings(
             new_warnings = get_json_formatted_warnings_recurse(warning=warning, level=0)
             formatted_warnings.extend(new_warnings)
 
-        need_formatted_warnings[need_id] = formatted_warnings
+        if formatted_warnings:
+            need_formatted_warnings[need_id] = formatted_warnings
     return need_formatted_warnings
 
 

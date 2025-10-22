@@ -620,8 +620,9 @@ def get_ontology_warnings(
                 "final_schema": validation_report["final_schema"],
                 "schema_path": [*schema_path, *msg["schema_path"]],
                 "need_path": need_path,
-                "field": msg["field"],
             }
+            if msg.get("field"):
+                warning["field"] = msg["field"]
             if user_message is not None:
                 warning["user_message"] = user_message
             warnings.append(warning)

@@ -63,6 +63,14 @@ def test_schemas(
         str(app.srcdir) + os.path.sep, "<srcdir>/"
     )
     assert warnings == snapshot
+
+    schema_violations: dict[str, Any] = json.loads(
+        Path(app.outdir, "schema_violations.json").read_text("utf8")
+    )
+    exclude_keys = {"validated_needs_per_second", "validation_summary"}
+    for key in exclude_keys:
+        schema_violations.pop(key, None)
+    assert schema_violations == snapshot
     app.cleanup()
 
 
