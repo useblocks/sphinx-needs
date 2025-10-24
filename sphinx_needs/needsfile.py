@@ -15,7 +15,6 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Any
 
-from jsonschema import Draft7Validator
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.config import NeedsSphinxConfig
@@ -23,6 +22,7 @@ from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.needs_schema import FieldLiteralValue, FieldsSchema
+from sphinx_needs.utils import import_jsonschema
 
 log = get_logger(__name__)
 
@@ -276,7 +276,12 @@ def check_needs_data(data: Any) -> Errors:
     """
     needs_schema = _load_schema()
 
-    validator = Draft7Validator(needs_schema)
+    jsonschema = import_jsonschema()
+    if jsonschema is None:
+        # skipping schema validation due to missing dependency
+        return Errors([])
+
+    validator = jsonschema.Draft7Validator(needs_schema)
     schema_errors = list(validator.iter_errors(data))
 
     # In future there may be additional types of validations.
