@@ -23,7 +23,6 @@ from sphinx_needs.schema.reporting import (
     OntologyWarning,
     ValidateNeedMessageType,
     ValidateNeedType,
-    filter_warnings_severity,
     save_debug_files,
 )
 from sphinx_needs.schema.utils import get_properties_from_schema
@@ -114,7 +113,7 @@ def validate_need(
             need_path=[need["id"]],
         )
         save_debug_files(config, new_warnings_options)
-        all_warnings.extend(filter_warnings_severity(config, new_warnings_options))
+        all_warnings.extend(new_warnings_options)
 
     if _extra_link_schemas.get("properties"):
         new_warnings_links = get_ontology_warnings(
@@ -127,7 +126,7 @@ def validate_need(
             need_path=[need["id"]],
         )
         save_debug_files(config, new_warnings_links)
-        all_warnings.extend(filter_warnings_severity(config, new_warnings_links))
+        all_warnings.extend(new_warnings_links)
 
     for type_schema in type_schemas:
         # maintain state for nested network validation
@@ -231,10 +230,7 @@ def recurse_validate_schemas(
             user_severity=severity if recurse_level == 0 else None,
         )
         save_debug_files(config, warnings_local)
-        warnings_local_filtered = filter_warnings_severity(
-            config, warnings_local, severity
-        )
-        warnings.extend(warnings_local_filtered)
+        warnings.extend(warnings_local)
         if any_not_of_rule(warnings_local, rule_success):
             success = False
     if "network" in schema:
@@ -369,9 +365,7 @@ def recurse_validate_schemas(
                 if recurse_level == 0 and user_message is not None:
                     # user message only added to the root validation
                     warning["user_message"] = user_message
-                warnings.extend(
-                    filter_warnings_severity(config, items_nok_warnings, severity)
-                )
+                warnings.extend(items_nok_warnings)
 
             # Check contains validation results
             contains_success = True
@@ -433,10 +427,7 @@ def recurse_validate_schemas(
                             contains_warnings[-1]["user_message"] = user_message
                         contains_success = False
 
-                filtered_contains_warnings = filter_warnings_severity(
-                    config, contains_warnings, severity
-                )
-                warnings.extend(filtered_contains_warnings)
+                warnings.extend(contains_warnings)
 
             # Overall success requires both items and minmax validation to pass
             if not (items_success and contains_success):
@@ -629,8 +620,9 @@ def get_ontology_warnings(
                 "final_schema": validation_report["final_schema"],
                 "schema_path": [*schema_path, *msg["schema_path"]],
                 "need_path": need_path,
-                "field": msg["field"],
             }
+            if msg.get("field"):
+                warning["field"] = msg["field"]
             if user_message is not None:
                 warning["user_message"] = user_message
             warnings.append(warning)

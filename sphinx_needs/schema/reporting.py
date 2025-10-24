@@ -6,10 +6,11 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypedDict
 
+from sphinx.errors import SphinxError
+
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.schema.config import (
-    MAP_RULE_DEFAULT_SEVERITY,
     MessageRuleEnum,
     NeedFieldsSchemaWithVersionType,
     SeverityEnum,
@@ -70,45 +71,6 @@ _field_sep = "."
 """Separator between nested parts of field names in debug output file names."""
 _sep = "__"
 """Separator between nested parts of debug output file names."""
-
-
-def filter_warnings_severity(
-    config: NeedsSphinxConfig,
-    warnings: list[OntologyWarning],
-    schema_root_severity: SeverityEnum | None = None,
-) -> list[OntologyWarning]:
-    """
-    Filter warnings by severity.
-
-    There are multiple severity sources:
-    - needs_config.schema_severity: the minimum severity for warnings to be reported
-    - needs_config.schema_definitions: contains a severity field that determines the reported rule severity
-    - schemas.config.MAP_RULE_DEFAULT_SEVERITY: default if the schemas severities field is not set
-
-    Precedence for reporting:
-    - if the rule has a default severity of none, it is ignored; those are never of interest
-      as reporting target, only for debugging purposes
-    - if the schema root severity is set, it overrides the rule severity
-    - if the schema root severity is not set, the rule default severity is used
-    """
-    min_severity_for_report = SeverityEnum[config.schema_severity]
-    filtered_warnings = []
-    for warning in warnings:
-        rule_default_severity = MAP_RULE_DEFAULT_SEVERITY[warning["rule"]]
-        if rule_default_severity is SeverityEnum.none:
-            # rule is not of interest for final reporting (e.g. unselected needs)
-            # it might be logged for schema debugging however
-            continue
-        # the warning severity is overriden by the schema root severity
-        # if it is unset, the rule mapping MAP_RULE_DEFAULT_SEVERITY is used
-        warning_severity = (
-            schema_root_severity
-            if schema_root_severity is not None
-            else warning["severity"]
-        )
-        if warning_severity >= min_severity_for_report:
-            filtered_warnings.append(warning)
-    return filtered_warnings
 
 
 def save_debug_files(
@@ -192,9 +154,17 @@ class WarningDetails(TypedDict):
     user_msg: NotRequired[str]
 
 
+class JSONFormattedWarningChild(TypedDict):
+    """JSON Formatted child warning (nested within parent warnings)."""
+
+    subtype: str
+    details: WarningDetails
+    children: list[ChildWarning]
+
+
 class ChildWarning(TypedDict):
     need_id: str
-    warning: JSONFormattedWarning
+    warning: JSONFormattedWarningChild
 
 
 class JSONFormattedWarning(TypedDict):
@@ -226,33 +196,50 @@ def get_formatted_warnings_recurse(
     formatted_warnings: list[FormattedWarning] = []
     warning_msg = get_warning_msg(level, warning)
     has_title = level == 0
+    log_lvl: Literal["warning", "error"]
+
+    # Map severity to logger level and type
     if warning["severity"] == SeverityEnum.config_error:
         title = (
             f"Need '{warning['need']['id']}' has configuration errors:"
             if has_title
             else ""
         )
-        formatted_warning = FormattedWarning(
-            log_lvl="error",
-            type="sn_schema",
-            subtype=warning["rule"].value,
-            message=f"{title}{warning_msg}",
-        )
-    else:
+        log_lvl = "error"
+        type_str = "sn_schema"
+    elif warning["severity"] == SeverityEnum.violation:
         title = (
-            f"Need '{warning['need']['id']}' has validation errors:"
+            f"Need '{warning['need']['id']}' has schema violations:"
             if has_title
             else ""
         )
-        formatted_warning = FormattedWarning(
-            log_lvl="warning",
-            type="sn_schema",
-            subtype=warning["rule"].value,
-            message=f"{title}{warning_msg}",
+        log_lvl = "error"
+        type_str = "sn_schema_violation"
+    elif warning["severity"] == SeverityEnum.warning:
+        title = (
+            f"Need '{warning['need']['id']}' has schema warnings:" if has_title else ""
         )
+        log_lvl = "warning"
+        type_str = "sn_schema_warning"
+    elif warning["severity"] == SeverityEnum.info:
+        title = f"Need '{warning['need']['id']}' has schema infos:" if has_title else ""
+        log_lvl = "warning"
+        type_str = "sn_schema_info"
+    else:
+        # SeverityEnum.none is filtered out earlier
+        raise SphinxError("Unexpected severity 'none' in console formatting.")
+
+    formatted_warning = FormattedWarning(
+        log_lvl=log_lvl,
+        type=type_str,
+        subtype=warning["rule"].value,
+        message=f"{title}{warning_msg}",
+    )
     formatted_warnings.append(formatted_warning)
     if "children" in warning:
         for child_warning in warning["children"]:
+            if child_warning["severity"] == SeverityEnum.none:
+                continue
             formatted_child_warnings = get_formatted_warnings_recurse(
                 warning=child_warning, level=level + 1
             )
@@ -262,7 +249,6 @@ def get_formatted_warnings_recurse(
                     f"\n\n{indent}Details for {child_warning['need']['id']}"
                     + formatted_child_warning["message"]
                 )
-            # formatted_warnings.extend(formatted_child_warnings)
     return formatted_warnings
 
 
@@ -272,78 +258,19 @@ def get_formatted_warnings(
     """
     Pretty format warnings from the ontology validation.
 
+    Warnings with severity 'none' are filtered out as they are only for debugging.
+
     :returns: tuple [log level, type, sub-type, message]
     """
     formatted_warnings: list[FormattedWarning] = []
     for warnings in need_2_warnings.values():
         for warning in warnings:
+            # Skip warnings with severity none (debug only)
+            if warning["severity"] == SeverityEnum.none:
+                continue
             new_warnings = get_formatted_warnings_recurse(warning=warning, level=0)
             formatted_warnings.extend(new_warnings)
     return formatted_warnings
-
-
-def get_json_formatted_warnings_recurse(
-    warning: OntologyWarning, level: int
-) -> list[JSONFormattedWarning]:
-    """
-    Recursively format warning details.
-
-    :param warning: The OntologyWarning to format.
-    :param level: The OntologyWarning level.
-    :return: A list of JSONFormattedWarning objects.
-    """
-    formatted_warnings: list[JSONFormattedWarning] = []
-    warning_details = get_json_warning_details(level, warning)
-    if warning["severity"] == SeverityEnum.config_error:
-        formatted_warning = JSONFormattedWarning(
-            log_lvl="error",
-            type="sn_schema",
-            subtype=warning["rule"].value,
-            details=warning_details,
-            children=[],
-        )
-    else:
-        formatted_warning = JSONFormattedWarning(
-            log_lvl="warning",
-            type="sn_schema",
-            subtype=warning["rule"].value,
-            details=warning_details,
-            children=[],
-        )
-    formatted_warnings.append(formatted_warning)
-    if "children" in warning:
-        for child_warning in warning["children"]:
-            formatted_child_warnings = get_json_formatted_warnings_recurse(
-                warning=child_warning, level=level + 1
-            )
-            for formatted_child_warning in formatted_child_warnings:
-                formatted_warning["children"].append(
-                    {
-                        "need_id": child_warning["need"]["id"],
-                        "warning": formatted_child_warning,
-                    }
-                )
-    return formatted_warnings
-
-
-def get_json_formatted_warnings(
-    need_2_warnings: dict[str, list[OntologyWarning]],
-) -> dict[str, list[JSONFormattedWarning]]:
-    """
-    JSON formatted warnings from the ontology validation for each need.
-
-    :param need_2_warnings: A dictionary mapping need IDs to their warnings.
-    :return: A dictionary with list of JSONFormattedWarning objects.
-    """
-    need_formatted_warnings: dict[str, list[JSONFormattedWarning]] = {}
-    for need_id, warnings in need_2_warnings.items():
-        formatted_warnings: list[JSONFormattedWarning] = []
-        for warning in warnings:
-            new_warnings = get_json_formatted_warnings_recurse(warning=warning, level=0)
-            formatted_warnings.extend(new_warnings)
-
-        need_formatted_warnings[need_id] = formatted_warnings
-    return need_formatted_warnings
 
 
 def get_warning_msg(base_lvl: int, warning: OntologyWarning) -> str:
@@ -384,6 +311,108 @@ def get_warning_msg(base_lvl: int, warning: OntologyWarning) -> str:
         )
 
     return warning_msg
+
+
+def _get_json_formatted_child_recurse(
+    warning: OntologyWarning, level: int
+) -> JSONFormattedWarningChild:
+    """Helper function to format nested child warnings without log_lvl and type."""
+    warning_details = get_json_warning_details(level, warning)
+
+    formatted_child = JSONFormattedWarningChild(
+        subtype=warning["rule"].value,
+        details=warning_details,
+        children=[],
+    )
+    if "children" in warning:
+        for child_warning in warning["children"]:
+            formatted_child["children"].append(
+                {
+                    "need_id": child_warning["need"]["id"],
+                    "warning": _get_json_formatted_child_recurse(
+                        child_warning, level=level + 1
+                    ),
+                }
+            )
+    return formatted_child
+
+
+def get_json_formatted_warnings_recurse(
+    warning: OntologyWarning, level: int
+) -> list[JSONFormattedWarning]:
+    """
+    Recursively format warning details.
+
+    :param warning: The OntologyWarning to format.
+    :param level: The OntologyWarning level (0 for root).
+    :return: A list of JSONFormattedWarning objects.
+    """
+    warning_details = get_json_warning_details(level, warning)
+
+    log_lvl: Literal["warning", "error"]
+
+    # Root level warning includes log_lvl and type
+    # Map severity to logger level and type
+    if warning["severity"] == SeverityEnum.config_error:
+        log_lvl = "error"
+        type_str = "sn_schema"
+    elif warning["severity"] == SeverityEnum.violation:
+        log_lvl = "error"
+        type_str = "sn_schema_violation"
+    elif warning["severity"] == SeverityEnum.warning:
+        log_lvl = "warning"
+        type_str = "sn_schema_warning"
+    elif warning["severity"] == SeverityEnum.info:
+        log_lvl = "warning"
+        type_str = "sn_schema_info"
+    else:
+        # SeverityEnum.none is filtered out earlier
+        raise SphinxError("Unexpected severity 'none' in JSON formatting.")
+
+    formatted_warning = JSONFormattedWarning(
+        log_lvl=log_lvl,
+        type=type_str,
+        subtype=warning["rule"].value,
+        details=warning_details,
+        children=[],
+    )
+    if "children" in warning:
+        for child_warning in warning["children"]:
+            formatted_warning["children"].append(
+                {
+                    "need_id": child_warning["need"]["id"],
+                    "warning": _get_json_formatted_child_recurse(
+                        child_warning, level=level + 1
+                    ),
+                }
+            )
+    return [formatted_warning]
+
+
+def get_json_formatted_warnings(
+    need_2_warnings: dict[str, list[OntologyWarning]],
+) -> dict[str, list[JSONFormattedWarning]]:
+    """
+    JSON formatted warnings from the ontology validation for each need.
+
+    Warnings with severity 'none' are filtered out as they are only for debugging.
+
+    :param need_2_warnings: A dictionary mapping need IDs to their warnings.
+    :return: A dictionary with list of JSONFormattedWarning objects.
+    """
+    need_formatted_warnings: dict[str, list[JSONFormattedWarning]] = {}
+    for need_id, warnings in need_2_warnings.items():
+        formatted_warnings: list[JSONFormattedWarning] = []
+        for warning in warnings:
+            # Skip warnings with severity none (debug only)
+            if warning["severity"] == SeverityEnum.none:
+                continue
+            new_warnings = get_json_formatted_warnings_recurse(warning=warning, level=0)
+            formatted_warnings.extend(new_warnings)
+
+        if formatted_warnings:
+            need_formatted_warnings[need_id] = formatted_warnings
+    return need_formatted_warnings
 
 
 def get_json_warning_details(base_lvl: int, warning: OntologyWarning) -> WarningDetails:

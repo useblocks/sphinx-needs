@@ -366,6 +366,8 @@ MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
 Default severity for each rule.
 
 User provided schemas can overwrite the severity of a rule.
+The rules ``extra_option_fail`` and ``extra_link_fail`` cannot be changed by the user,
+but they can be suppressed specifically using suppress_warnings config.
 """
 
 

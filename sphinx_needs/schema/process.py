@@ -8,7 +8,7 @@ from sphinx.util import logging
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.logging import log_warning
+from sphinx_needs.logging import log_error, log_warning
 from sphinx_needs.needsfile import generate_needs_schema
 from sphinx_needs.schema.config import SchemasRootType
 from sphinx_needs.schema.core import (
@@ -95,8 +95,12 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
                 type=warning["type"],
             )
         elif warning["log_lvl"] == "error":
-            logger.error(
-                warning["message"], type=warning["type"], subtype=warning["subtype"]
+            log_error(
+                logger,
+                warning["message"],
+                warning["subtype"],  # type: ignore[arg-type]
+                None,
+                type=warning["type"],
             )
 
     duration = end_time - start_time

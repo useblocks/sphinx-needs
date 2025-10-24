@@ -19,7 +19,6 @@ from sphinx_needs.schema.config import (
     ExtraOptionSchemaTypes,
     ExtraOptionStringSchemaType,
     SchemasFileRootType,
-    SeverityEnum,
 )
 
 if TYPE_CHECKING:
@@ -411,12 +410,6 @@ class NeedsSphinxConfig:
         default=None, metadata={"rebuild": "env", "types": (str, type(None))}
     )
     """Path to a JSON file to load the schemas from."""
-
-    schema_severity: str = field(
-        default=SeverityEnum.info.name,
-        metadata={"rebuild": "env", "types": (str,)},
-    )
-    """Severity level for the schema validation reporting."""
 
     schema_debug_active: bool = field(
         default=False,

@@ -292,7 +292,7 @@ And use it like:
               },
           }
       ]
-   
+
    The same fields for the :ref:`supported_data_types` as in the :ref:`schema_validation`
    are accepted. If ``schema`` is given, ``type`` is required. All the other keys can also
    be defined via :ref:`needs_schema_definitions` or in the file passed via
@@ -2413,31 +2413,6 @@ Default value: ``None``
    needs_schema_definitions_from_json = "schemas.json"
 
 The JSON file should contain the same structure as :ref:`needs_schema_definitions`:
-
-.. _`needs_schema_severity`:
-
-needs_schema_severity
-~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 6.0.0
-
-Minimum severity level for schema validation reporting.
-Extra option and extra link schema errors are always reported as violations.
-For each entry in :ref:`needs_schema_definitions` the severity can be defined by the user.
-
-Available severity levels:
-
-- ``info``: Informational message (default)
-- ``warning``: Warning message
-- ``violation``: Violation message
-
-The levels align with how `SHACL <https://www.w3.org/TR/shacl/#severity>`__ defines severity levels.
-
-Default value: ``"info"``
-
-.. code-block:: python
-
-   needs_schema_severity = "warning"
 
 .. _`needs_schema_debug_active`:
 

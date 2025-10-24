@@ -169,39 +169,42 @@
 # ---
 # name: test_schema_e2e[test_app0]
   '''
-  WARNING: Need 'FEAt' has validation errors:
+  WARNING: Need 'FEAt' has schema warnings:
     Severity:       warning
     Field:          id
     Need path:      FEAt
     Schema path:    [0] > local > properties > id > pattern
     User message:   id must be uppercase with numbers and underscores
-    Schema message: 'FEAt' does not match '^[A-Z0-9_]+$' [sn_schema.local_fail]
-  WARNING: Need 'SPEC_MISSING_APPROVAL' has validation errors:
+    Schema message: 'FEAt' does not match '^[A-Z0-9_]+$' [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL' has schema violations:
     Severity:       violation
-    Field:          
     Need path:      SPEC_MISSING_APPROVAL
     Schema path:    spec[1] > local > unevaluatedProperties
-    Schema message: Unevaluated properties are not allowed ('asil', 'priority' were unexpected) [sn_schema.local_fail]
-  WARNING: Need 'SPEC_MISSING_APPROVAL' has validation errors:
+    Schema message: Unevaluated properties are not allowed ('asil', 'priority' were unexpected) [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL' has schema violations:
     Severity:       violation
-    Field:          
     Need path:      SPEC_MISSING_APPROVAL
     Schema path:    spec-approved-required[2] > local > required
     User message:   Approval required due to high efforts
-    Schema message: 'approved' is a required property [sn_schema.local_fail]
-  WARNING: Need 'SPEC' has validation errors:
+    Schema message: 'approved' is a required property [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL
+    Schema path:    spec-approved-not-given[3] > local > required
+    User message:   Approval not given
+    Schema message: 'approved' is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC' has schema violations:
     Severity:       violation
     Field:          id
     Need path:      SPEC
     Schema path:    spec[1] > local > properties > id > pattern
-    Schema message: 'SPEC' does not match '^SPEC_[a-zA-Z0-9_-]*$' [sn_schema.local_fail]
-  WARNING: Need 'SPEC_SAFE_UNSAFE_FEAT' has validation errors:
+    Schema message: 'SPEC' does not match '^SPEC_[a-zA-Z0-9_-]*$' [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT' has schema violations:
     Severity:       violation
-    Field:          
     Need path:      SPEC_SAFE_UNSAFE_FEAT
     Schema path:    spec[1] > local > unevaluatedProperties
-    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema.local_fail]
-  WARNING: Need 'SPEC_SAFE_UNSAFE_FEAT' has validation errors:
+    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT' has schema violations:
     Severity:       violation
     Need path:      SPEC_SAFE_UNSAFE_FEAT > links
     Schema path:    safe-spec-[links]->safe-feat[4] > validate > network > links > contains
@@ -211,19 +214,17 @@
       Field:          asil
       Need path:      SPEC_SAFE_UNSAFE_FEAT > links > FEAT
       Schema path:    safe-spec-[links]->safe-feat[4] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
-      Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
-  WARNING: Need 'SPEC_SAFE_ADD_UNSAFE_FEAT' has validation errors:
+      Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema_violation.network_contains_too_few]
+  ERROR: Need 'SPEC_SAFE_ADD_UNSAFE_FEAT' has schema violations:
     Severity:       violation
-    Field:          
     Need path:      SPEC_SAFE_ADD_UNSAFE_FEAT
     Schema path:    spec[1] > local > unevaluatedProperties
-    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema.local_fail]
-  WARNING: Need 'SPEC_SAFE' has validation errors:
+    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE' has schema violations:
     Severity:       violation
-    Field:          
     Need path:      SPEC_SAFE
     Schema path:    spec[1] > local > unevaluatedProperties
-    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema.local_fail]
+    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema_violation.local_fail]
   
   '''
 # ---
@@ -2240,114 +2241,354 @@
 # name: test_schemas[schema/fixtures/extra_links-contains]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_links-contains].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_links-contains_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > contains
-    Schema message: ['SPEC_1'] does not contain items matching the given schema [sn_schema.extra_link_fail]
+    Schema message: ['SPEC_1'] does not contain items matching the given schema [sn_schema_violation.extra_link_fail]
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/extra_links-contains_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_links > schema > properties > links > contains',
+            'severity': 'violation',
+            'validation_msg': "['SPEC_1'] does not contain items matching the given schema",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_links-inject_array]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > minItems
-    Schema message: ['SPEC_1'] is too short [sn_schema.extra_link_fail]
+    Schema message: ['SPEC_1'] is too short [sn_schema_violation.extra_link_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-inject_array].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_links > schema > properties > links > minItems',
+            'severity': 'violation',
+            'validation_msg': "['SPEC_1'] is too short",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_links-items_pattern]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_links-items_pattern].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_links-items_pattern_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links.0
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > items > pattern
-    Schema message: 'SPEC_1' does not match '^[A-Z0-9_]{10,}' [sn_schema.extra_link_fail]
+    Schema message: 'SPEC_1' does not match '^[A-Z0-9_]{10,}' [sn_schema_violation.extra_link_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-items_pattern_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links.0',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_links > schema > properties > links > items > pattern',
+            'severity': 'violation',
+            'validation_msg': "'SPEC_1' does not match '^[A-Z0-9_]{10,}'",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_links-max_contains]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_links-max_contains].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_links-max_contains_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > contains
-    Schema message: Too many items match the given schema (expected at most 1) [sn_schema.extra_link_fail]
+    Schema message: Too many items match the given schema (expected at most 1) [sn_schema_violation.extra_link_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-max_contains_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_links > schema > properties > links > contains',
+            'severity': 'violation',
+            'validation_msg': 'Too many items match the given schema (expected at most 1)',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_links-max_items]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_links-max_items].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_links-max_items_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > maxItems
-    Schema message: ['SPEC_1', 'SPEC_2'] is too long [sn_schema.extra_link_fail]
+    Schema message: ['SPEC_1', 'SPEC_2'] is too long [sn_schema_violation.extra_link_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-max_items_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_links > schema > properties > links > maxItems',
+            'severity': 'violation',
+            'validation_msg': "['SPEC_1', 'SPEC_2'] is too long",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_links-min_contains]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_links-min_contains].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_links-min_contains_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > contains
-    Schema message: Too few items match the given schema (expected at least 2 but only 1 matched) [sn_schema.extra_link_fail]
+    Schema message: Too few items match the given schema (expected at least 2 but only 1 matched) [sn_schema_violation.extra_link_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-min_contains_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_links > schema > properties > links > contains',
+            'severity': 'violation',
+            'validation_msg': 'Too few items match the given schema (expected at least 2 but only 1 matched)',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_links-min_items]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_links-min_items].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_links-min_items_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > minItems
-    Schema message: ['SPEC_1'] is too short [sn_schema.extra_link_fail]
+    Schema message: ['SPEC_1'] is too short [sn_schema_violation.extra_link_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_links-min_items_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_links > schema > properties > links > minItems',
+            'severity': 'violation',
+            'validation_msg': "['SPEC_1'] is too short",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_link_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-auto_inject_type]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-auto_inject_type].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-auto_inject_type_wrong_const]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
-    Schema message: 'QM' was expected [sn_schema.local_fail]
+    Schema message: 'QM' was expected [sn_schema_violation.local_fail]
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-auto_inject_type_wrong_const].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': "'QM' was expected",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-coerce_to_boolean]
   ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_boolean].1
+  dict({
+    'validated_needs_count': 14,
+    'validation_warnings': dict({
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-coerce_to_boolean_from_string_error]
   '''
@@ -2355,8 +2596,22 @@
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_boolean_from_string_error].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-coerce_to_integer]
   ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_float_error]
   '''
@@ -2364,14 +2619,35 @@
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_float_error].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_string_error]
   '''
   <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'efforts' is invalid: Cannot convert 'QM' to integer [needs.create_need]
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_string_error].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-coerce_to_number]
   ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_number].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-coerce_to_number_from_string_error]
   '''
@@ -2379,200 +2655,622 @@
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-coerce_to_number_from_string_error].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-const]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-const].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-const_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
-    Schema message: 'QM' was expected [sn_schema.local_fail]
+    Schema message: 'QM' was expected [sn_schema_violation.local_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-const_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': "'QM' was expected",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-enum]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-enum].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-enum_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > enum
-    Schema message: 'E' is not one of ['QM', 'A', 'B', 'C', 'D'] [sn_schema.local_fail]
+    Schema message: 'E' is not one of ['QM', 'A', 'B', 'C', 'D'] [sn_schema_violation.local_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-enum_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > enum',
+            'severity': 'violation',
+            'validation_msg': "'E' is not one of ['QM', 'A', 'B', 'C', 'D']",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-integer_multiple_of]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-integer_multiple_of].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-integer_multiple_of_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          efforts
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > efforts > multipleOf
-    Schema message: 8 is not a multiple of 3 [sn_schema.extra_option_fail]
+    Schema message: 8 is not a multiple of 3 [sn_schema_violation.extra_option_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-integer_multiple_of_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'efforts',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_options > schema > properties > efforts > multipleOf',
+            'severity': 'violation',
+            'validation_msg': '8 is not a multiple of 3',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_option_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-no_schema]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-no_schema].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-number_multiple_of]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-number_multiple_of].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-number_multiple_of_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          efforts
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > efforts > multipleOf
-    Schema message: 5.0 is not a multiple of 3.3 [sn_schema.extra_option_fail]
+    Schema message: 5.0 is not a multiple of 3.3 [sn_schema_violation.extra_option_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-number_multiple_of_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'efforts',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_options > schema > properties > efforts > multipleOf',
+            'severity': 'violation',
+            'validation_msg': '5.0 is not a multiple of 3.3',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_option_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-required]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-required].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_below_threshold]
   ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_below_threshold].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_missing]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_missing].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_over_threshold]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
-    Field:          
     Need path:      IMPL_1
     Schema path:    [0] > local > required
     User message:   Required due to high efforts
-    Schema message: 'asil' is a required property [sn_schema.local_fail]
+    Schema message: 'asil' is a required property [sn_schema_violation.local_fail]
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_over_threshold].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > required',
+            'severity': 'violation',
+            'user_msg': 'Required due to high efforts',
+            'validation_msg': "'asil' is a required property",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-required_missing]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
-    Field:          
     Need path:      IMPL_1
     Schema path:    [0] > local > required
-    Schema message: 'asil' is a required property [sn_schema.local_fail]
+    Schema message: 'asil' is a required property [sn_schema_violation.local_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-required_missing].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > required',
+            'severity': 'violation',
+            'validation_msg': "'asil' is a required property",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-set_type_string]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-set_type_string].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_date]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_date].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_date_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          start_date
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > start_date > format
-    Schema message: 'not-a-date' is not a 'date' [sn_schema.extra_option_fail]
+    Schema message: 'not-a-date' is not a 'date' [sn_schema_violation.extra_option_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_date_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'start_date',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_options > schema > properties > start_date > format',
+            'severity': 'violation',
+            'validation_msg': "'not-a-date' is not a 'date'",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_option_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_date_time]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_date_time].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_date_time_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          start_date
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > start_date > format
-    Schema message: '2025-07-1099:99:99Z' is not a 'date-time' [sn_schema.extra_option_fail]
+    Schema message: '2025-07-1099:99:99Z' is not a 'date-time' [sn_schema_violation.extra_option_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_date_time_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'start_date',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_options > schema > properties > start_date > format',
+            'severity': 'violation',
+            'validation_msg': "'2025-07-1099:99:99Z' is not a 'date-time'",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_option_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_duration]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_duration].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_duration_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          _duration
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > _duration > format
-    Schema message: 'P1Q2Q10DT2H30M' is not a 'duration' [sn_schema.extra_option_fail]
+    Schema message: 'P1Q2Q10DT2H30M' is not a 'duration' [sn_schema_violation.extra_option_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_duration_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': '_duration',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_options > schema > properties > _duration > format',
+            'severity': 'violation',
+            'validation_msg': "'P1Q2Q10DT2H30M' is not a 'duration'",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_option_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_email]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_email].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_email_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          email
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > email > format
-    Schema message: 'not-a-mail' is not a 'email' [sn_schema.extra_option_fail]
+    Schema message: 'not-a-mail' is not a 'email' [sn_schema_violation.extra_option_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_email_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'email',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_options > schema > properties > email > format',
+            'severity': 'violation',
+            'validation_msg': "'not-a-mail' is not a 'email'",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_option_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_time]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_time].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_time_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          time
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > time > format
-    Schema message: '26:12:13' is not a 'time' [sn_schema.extra_option_fail]
+    Schema message: '26:12:13' is not a 'time' [sn_schema_violation.extra_option_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_time_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'time',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_options > schema > properties > time > format',
+            'severity': 'violation',
+            'validation_msg': "'26:12:13' is not a 'time'",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_option_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_uri]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_uri].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_uri_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          uri
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > uri > format
-    Schema message: 'examplecom' is not a 'uri' [sn_schema.extra_option_fail]
+    Schema message: 'examplecom' is not a 'uri' [sn_schema_violation.extra_option_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_uri_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'uri',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_options > schema > properties > uri > format',
+            'severity': 'violation',
+            'validation_msg': "'examplecom' is not a 'uri'",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_option_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_uuid]
   ''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_uuid].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_uuid_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          uuid
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > uuid > format
-    Schema message: 'deadbeef-deadbeef-deadbeef-deadbeef' is not a 'uuid' [sn_schema.extra_option_fail]
+    Schema message: 'deadbeef-deadbeef-deadbeef-deadbeef' is not a 'uuid' [sn_schema_violation.extra_option_fail]
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-string_format_uuid_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'uuid',
+            'need_path': 'IMPL_1',
+            'schema_path': 'extra_options > schema > properties > uuid > format',
+            'severity': 'violation',
+            'validation_msg': "'deadbeef-deadbeef-deadbeef-deadbeef' is not a 'uuid'",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'extra_option_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-string_type]
   ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-string_type].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-wrong_type]
   '''
@@ -2580,9 +3278,16 @@
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/extra_options-wrong_type].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-link_chain_hop_1_min_contains_error]
   '''
-  WARNING: Need 'IMPL_SAFE' has validation errors:
+  ERROR: Need 'IMPL_SAFE' has schema violations:
     Severity:       violation
     Need path:      IMPL_SAFE > links
     Schema path:    safe-impl-[links]->safe-spec[0] > validate > network > links > contains
@@ -2592,13 +3297,49 @@
       Field:          asil
       Need path:      IMPL_SAFE > links > SPEC_UNSAFE
       Schema path:    safe-impl-[links]->safe-spec[0] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
-      Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
+      Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema_violation.network_contains_too_few]
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/network-link_chain_hop_1_min_contains_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_SAFE': list([
+        dict({
+          'children': list([
+            dict({
+              'need_id': 'SPEC_UNSAFE',
+              'warning': dict({
+                'children': list([
+                ]),
+                'details': dict({
+                  'field': 'asil',
+                  'need_path': 'IMPL_SAFE > links > SPEC_UNSAFE',
+                  'schema_path': 'safe-impl-[links]->safe-spec[0] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum',
+                  'validation_msg': "'QM' is not one of ['A', 'B', 'C', 'D']",
+                }),
+                'subtype': 'network_local_fail',
+              }),
+            }),
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_SAFE > links',
+            'schema_path': 'safe-impl-[links]->safe-spec[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (0 < 1) / nok: SPEC_UNSAFE",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-link_chain_hop_2_min_contains_error]
   '''
-  WARNING: Need 'IMPL_SAFE' has validation errors:
+  ERROR: Need 'IMPL_SAFE' has schema violations:
     Severity:       violation
     Need path:      IMPL_SAFE > links
     Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains
@@ -2614,93 +3355,331 @@
         Field:          asil
         Need path:      IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE
         Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
-        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema_violation.network_contains_too_few]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/network-link_chain_hop_2_min_contains_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_SAFE': list([
+        dict({
+          'children': list([
+            dict({
+              'need_id': 'SPEC_SAFE',
+              'warning': dict({
+                'children': list([
+                ]),
+                'details': dict({
+                  'need_path': 'IMPL_SAFE > links > SPEC_SAFE',
+                  'schema_path': 'safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > local',
+                }),
+                'subtype': 'network_local_success',
+              }),
+            }),
+            dict({
+              'need_id': 'SPEC_SAFE',
+              'warning': dict({
+                'children': list([
+                  dict({
+                    'need_id': 'REQ_UNSAFE',
+                    'warning': dict({
+                      'children': list([
+                      ]),
+                      'details': dict({
+                        'field': 'asil',
+                        'need_path': 'IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE',
+                        'schema_path': 'safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains > local > allOf > 0 > properties > asil > enum',
+                        'validation_msg': "'QM' is not one of ['A', 'B', 'C', 'D']",
+                      }),
+                      'subtype': 'network_local_fail',
+                    }),
+                  }),
+                ]),
+                'details': dict({
+                  'need_path': 'IMPL_SAFE > links > SPEC_SAFE > links',
+                  'schema_path': 'safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains',
+                  'user_msg': 'Safe impl links to safe spec links to safe req',
+                  'validation_msg': "Too few valid links of type 'links' (0 < 1) / nok: REQ_UNSAFE",
+                }),
+                'subtype': 'network_contains_too_few',
+              }),
+            }),
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_SAFE > links',
+            'schema_path': 'safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/network-link_chain_w_refs]
   ''
 # ---
+# name: test_schemas[schema/fixtures/network-link_chain_w_refs].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-local_max_items]
   ''
 # ---
+# name: test_schemas[schema/fixtures/network-local_max_items].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-local_max_items_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > links > maxItems
-    Schema message: ['SPEC_1', 'SPEC_2'] is too long [sn_schema.local_fail]
+    Schema message: ['SPEC_1', 'SPEC_2'] is too long [sn_schema_violation.local_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/network-local_max_items_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > links > maxItems',
+            'severity': 'violation',
+            'validation_msg': "['SPEC_1', 'SPEC_2'] is too long",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/network-local_min_items]
   ''
 # ---
+# name: test_schemas[schema/fixtures/network-local_min_items].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-local_min_items_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > links > minItems
-    Schema message: ['SPEC_1'] is too short [sn_schema.local_fail]
+    Schema message: ['SPEC_1'] is too short [sn_schema_violation.local_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/network-local_min_items_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'links',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > links > minItems',
+            'severity': 'violation',
+            'validation_msg': "['SPEC_1'] is too short",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/network-max_contains]
   ''
 # ---
+# name: test_schemas[schema/fixtures/network-max_contains].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-max_contains_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Need path:      IMPL_1 > links
     Schema path:    [0] > validate > network > links > contains
-    Schema message: Too many valid links of type 'links' (2 > 1) / ok: SPEC_1, SPEC_2 [sn_schema.network_contains_too_many]
+    Schema message: Too many valid links of type 'links' (2 > 1) / ok: SPEC_1, SPEC_2 [sn_schema_violation.network_contains_too_many]
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/network-max_contains_error].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links',
+            'schema_path': '[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too many valid links of type 'links' (2 > 1) / ok: SPEC_1, SPEC_2",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_many',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-max_network_levels]
   '''
-  WARNING: Need 'SPEC_1' has validation errors:
+  ERROR: Need 'SPEC_1' has schema violations:
     Severity:       violation
     Need path:      IMPL_1 > links > SPEC_5 > links > SPEC_4 > links > SPEC_3 > links > SPEC_2 > links > SPEC_1
     Schema path:    [0] > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items
-    Schema message: Maximum network validation recursion level 4 reached. [sn_schema.network_max_nest_level]
+    Schema message: Maximum network validation recursion level 4 reached. [sn_schema_violation.network_max_nest_level]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/network-max_network_levels].1
+  dict({
+    'validated_needs_count': 6,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links > SPEC_5 > links > SPEC_4 > links > SPEC_3 > links > SPEC_2 > links > SPEC_1',
+            'schema_path': '[0] > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items > validate > network > links > items',
+            'severity': 'violation',
+            'validation_msg': 'Maximum network validation recursion level 4 reached.',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_max_nest_level',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/network-min_contains]
   ''
 # ---
+# name: test_schemas[schema/fixtures/network-min_contains].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-min_contains_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Need path:      IMPL_1 > links
     Schema path:    [0] > validate > network > links > contains
-    Schema message: Too few valid links of type 'links' (1 < 2) / ok: SPEC_1 [sn_schema.network_contains_too_few]
+    Schema message: Too few valid links of type 'links' (1 < 2) / ok: SPEC_1 [sn_schema_violation.network_contains_too_few]
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/network-min_contains_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links',
+            'schema_path': '[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (1 < 2) / ok: SPEC_1",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-no_error_empty_links]
   '''
-  WARNING: Need 'IMPL_SAFE' has validation errors:
+  ERROR: Need 'IMPL_SAFE' has schema violations:
     Severity:       violation
     Need path:      IMPL_SAFE > links
     Schema path:    impl-[links]->spec[0] > validate > network > links > contains
-    Schema message: Too few valid links of type 'links' (0 < 1) [sn_schema.network_contains_too_few]
+    Schema message: Too few valid links of type 'links' (0 < 1) [sn_schema_violation.network_contains_too_few]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/network-no_error_empty_links].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_SAFE': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_SAFE > links',
+            'schema_path': 'impl-[links]->spec[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (0 < 1)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/network-schemas_in_conf]
   ''
 # ---
+# name: test_schemas[schema/fixtures/network-schemas_in_conf].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-schemas_in_conf_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Need path:      IMPL_1 > links
     Schema path:    [0] > validate > network > links > contains
@@ -2710,90 +3689,339 @@
       Field:          type
       Need path:      IMPL_1 > links > SPEC_1
       Schema path:    [0] > validate > network > links > contains > local > properties > type > const
-      Schema message: 'req' was expected [sn_schema.network_contains_too_few]
+      Schema message: 'req' was expected [sn_schema_violation.network_contains_too_few]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_info_min_unset_is_reported]
+# name: test_schemas[schema/fixtures/network-schemas_in_conf_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+            dict({
+              'need_id': 'SPEC_1',
+              'warning': dict({
+                'children': list([
+                ]),
+                'details': dict({
+                  'field': 'type',
+                  'need_path': 'IMPL_1 > links > SPEC_1',
+                  'schema_path': '[0] > validate > network > links > contains > local > properties > type > const',
+                  'validation_msg': "'req' was expected",
+                }),
+                'subtype': 'network_local_fail',
+              }),
+            }),
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links',
+            'schema_path': '[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (0 < 1) / nok: SPEC_1",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  WARNING: Need 'IMPL_1' has schema infos:
+    Severity:       info
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [1] > local > properties > asil > const
+    Schema message: 'B' was expected [sn_schema_info.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': "'A' was expected",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[1] > local > properties > asil > const',
+            'severity': 'info',
+            'validation_msg': "'B' was expected",
+          }),
+          'log_lvl': 'warning',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_info',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity_and_rule]
+  '''
+  WARNING: Need 'IMPL_1' has schema infos:
+    Severity:       info
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [1] > local > properties > asil > const
+    Schema message: 'B' was expected [sn_schema_info.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity_and_rule].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': "'A' was expected",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[1] > local > properties > asil > const',
+            'severity': 'info',
+            'validation_msg': "'B' was expected",
+          }),
+          'log_lvl': 'warning',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_info',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_default]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: 'A' was expected [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_default].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': "'A' was expected",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-severity_rule_info]
+  '''
+  WARNING: Need 'IMPL_1' has schema infos:
     Severity:       info
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema.local_fail]
+    Schema message: 'A' was expected [sn_schema_info.local_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_info_min_warning_not_reported]
-  ''
+# name: test_schemas[schema/fixtures/reporting-severity_rule_info].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'info',
+            'validation_msg': "'A' was expected",
+          }),
+          'log_lvl': 'warning',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_info',
+        }),
+      ]),
+    }),
+  })
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_unset_min_unset_is_reported]
+# name: test_schemas[schema/fixtures/reporting-severity_rule_violation]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema.local_fail]
+    Schema message: 'A' was expected [sn_schema_violation.local_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_violation_min_unset_is_reported]
-  '''
-  WARNING: Need 'IMPL_1' has validation errors:
-    Severity:       violation
-    Field:          asil
-    Need path:      IMPL_1
-    Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema.local_fail]
-  
-  '''
+# name: test_schemas[schema/fixtures/reporting-severity_rule_violation].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': "'A' was expected",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_unset_is_reported]
+# name: test_schemas[schema/fixtures/reporting-severity_rule_warning]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  WARNING: Need 'IMPL_1' has schema warnings:
     Severity:       warning
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema.local_fail]
+    Schema message: 'A' was expected [sn_schema_warning.local_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_violation_not_reported]
-  ''
-# ---
-# name: test_schemas[schema/fixtures/reporting-severity_rule_warning_min_warning_is_reported]
-  '''
-  WARNING: Need 'IMPL_1' has validation errors:
-    Severity:       warning
-    Field:          asil
-    Need path:      IMPL_1
-    Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema.local_fail]
-  
-  '''
+# name: test_schemas[schema/fixtures/reporting-severity_rule_warning].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'warning',
+            'validation_msg': "'A' was expected",
+          }),
+          'log_lvl': 'warning',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_warning',
+        }),
+      ]),
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/unevaluated-unevaluated_allof_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
-    Field:          
     Need path:      IMPL_1
     Schema path:    [0] > local > unevaluatedProperties
-    Schema message: Unevaluated properties are not allowed ('approved' was unexpected) [sn_schema.local_fail]
+    Schema message: Unevaluated properties are not allowed ('approved' was unexpected) [sn_schema_violation.local_fail]
   
   '''
 # ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_allof_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('approved' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/unevaluated-unevaluated_error]
   '''
-  WARNING: Need 'IMPL_1' has validation errors:
+  ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
-    Field:          
     Need path:      IMPL_1
     Schema path:    [0] > local > unevaluatedProperties
-    Schema message: Unevaluated properties are not allowed ('comment' was unexpected) [sn_schema.local_fail]
+    Schema message: Unevaluated properties are not allowed ('comment' was unexpected) [sn_schema_violation.local_fail]
   
   '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('comment' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
 # ---
