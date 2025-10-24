@@ -1,6 +1,4 @@
-.. _open_needs_service:
-
-
+.. _`open_needs_service`:
 
 Open-Needs services
 ===================
@@ -22,16 +20,19 @@ Example of an imported open-needs:
 
 Options
 -------
+
 The following options can be specified under ``.. needservice:: open-needs`` directive.
 
 prefix
 ######
+
 A string, which is taken as prefix for the need-id. E.g. ``ONS_IMPORT_`` –> ``ONS_IMPORT_003``.
 
 **Default value**: ``ONS_NEEDS_``
 
 params
 ######
+
 A query string used to filter and organize the data retrieved from the ``open-needs`` service.
 For example: The query string ``limit=10`` can be used as:
 
@@ -47,6 +48,7 @@ Example: ``:params: skip=1;limit=10``
 
 url
 ###
+
 URL of the server. The final ``RESTful API`` address endpoint(`url_postfix <#url_postfix>`_) gets added automatically.
 E.g.: ``http://127.0.0.1:9595`` or ``https://open-needs.org/``
 
@@ -54,16 +56,19 @@ E.g.: ``http://127.0.0.1:9595`` or ``https://open-needs.org/``
 
 url_postfix
 ###########
+
 The final address of the endpoint. E.g.: ``/api/needs/``
 
 **Default value**: ``/api/needs/``
 
 max_content_lines
 #################
+
 Maximum amount of lines from open-needs objects description/content to be used in need content.
 
 Config
 ------
+
 Most configuration needs to be done via the :ref:`needs_services` configuration in your **conf.py** file.
 
 :ref:`needs_services` must contain a key with the service name, E.g. ``open-needs``
@@ -72,29 +77,34 @@ The following key-value configuration parameters can be set for the Open-Need se
 
 url
 ###
+
 Open-Needs service instance url. Default: ``https://api.open-need.com/``
 
 username
 ########
+
 Username credentials used for login.
 
 password
 ########
+
 Password credentials used for login.
 
 id_prefix
 #########
+
 Prefix string for the final need id.
 
 mapping
 #######
+
 The field names of a service object do not often map to option names of Sphinx-Needs.
 So **mapping** defines where a Sphinx-Needs option shall get its value inside the service data.
 
 **mapping** must be a dictionary, where the key is the needs object name and the value is either a Jinja string such as ``is_{{status}}``
 or a list/tuple, which defines the location of the value in the retrieved service data object.
 
-.. _open_need_data:
+.. _`open_need_data`:
 
 .. dropdown:: Example of an Open-Needs service data object
 
@@ -125,7 +135,6 @@ or a list/tuple, which defines the location of the value in the retrieved servic
          },
       ]
 
-
 **Example using a Jinja string as value for the Open-Needs service**
 
 Goal: The need option ``author`` shall be set to the last and first names.
@@ -135,12 +144,11 @@ under ``lastname`` and ``firstname``.
 
 The **mapping** entry for ``author`` would like this:
 
-
 .. code-block:: python
 
-    'mapping': {
-        'author': "{{options.lastname}} {{options.firstname}}",
-    }
+   'mapping': {
+       'author': "{{options.lastname}} {{options.firstname}}",
+   }
 
 .. note::
 
@@ -156,17 +164,19 @@ The **mapping** entry for ``author`` would like this:
 
 .. code-block:: python
 
-    'mapping': {
-        'author': ["options", "lastname"],
-    }
+   'mapping': {
+       'author': ["options", "lastname"],
+   }
 
 content
 #######
+
 Content takes a string, which gets interpreted as rst-code for the need-content area.
 Jinja support is also available, so that service data is available and can be accessed like ``{{data.description}}``.
 
 mappings_replaces
 #################
+
 There are use cases, where a value inside service data is not valid for a Sphinx-Needs options.
 For instance: In the data retrieved from the Open-Needs server, ``type`` is named ``Requirement``, but Sphinx-Needs supports only ``req`` as value for type option.
 
@@ -174,13 +184,13 @@ For instance: In the data retrieved from the Open-Needs server, ``type`` is name
 
 extra_data
 ##########
+
 There may be information stored inside the :ref:`Open-Needs <open_need_data>` service data fields
 which cannot be mapped to the Sphinx-Needs options, but is available inside the Need object.
 
 This can be done by using ``extra_data``, which adds this kind of information to the end of the content of a need object.
 
 The logic and syntax is the same as used by `mapping <#mapping>`_.
-
 
 .. note::
 
@@ -199,10 +209,9 @@ The logic and syntax is the same as used by `mapping <#mapping>`_.
    :language: python
    :lines: 329-346
 
-
-
 Examples
 --------
+
 **Code**
 
 .. code-block:: rst
@@ -216,9 +225,7 @@ Examples
 
 **Result**
 
-.. hint::
-
-   The below examples are just images, as no Open-Needs Server instance was available during documentation build.
+.. hint:: The below examples are just images, as no Open-Needs Server instance was available during documentation build.
 
 .. image:: /_images/ons_example.png
    :align: center

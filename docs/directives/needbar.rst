@@ -1,7 +1,7 @@
 .. _needbar:
 
 needbar
-========
+=======
 
 .. versionadded:: 0.7.5
 
@@ -21,8 +21,8 @@ The amount of found needs by the filter string is then used as value.
 
 .. note::
 
-    This generates multiple image files per ``needbar`` and allows
-    the document engine to pick the appropriate image type (vector or raster).
+   This generates multiple image files per ``needbar`` and allows
+   the document engine to pick the appropriate image type (vector or raster).
 
 Options
 -------
@@ -126,6 +126,7 @@ axis title
 You can enable axis titles on the barchart by setting the ``:x_axis_title:`` or ``:y_axis_title:`` options.
 
 .. hint::
+
    If you use `horizontal`_ or `transpose`_, the meaning of ``:x_axis_title:`` and ``:y_axis_title:`` must be understandable.
    So you have to change the description accordingly.
 
@@ -151,6 +152,7 @@ The amount of labels must match the amount of values/lines from content. |br|
 Also, you can set the ``:xlabels:`` and/or ``:ylabels:`` value to ``FROM_DATA`` to fetch the labels from the content.
 
 .. hint::
+
    In a normal bar chart, we use the ``:xlabels:`` as the labels of the x-axis on the chart and the ``:ylabels:`` as the labels of legend.
 
    But if you use `horizontal`_ or `transpose`_, the meaning of ``:x_axis_title:`` and ``:y_axis_title:`` will change automatically.
@@ -177,7 +179,6 @@ Also, you can set the ``:xlabels:`` and/or ``:ylabels:`` value to ``FROM_DATA`` 
       Y,10,15,10
       X,15,10,20
       W,20,15,10
-
 
 stacked
 ~~~~~~~
@@ -222,7 +223,6 @@ The ``:show_sum:`` flag does not support any values and it's useful with the ``s
       15,10,20
       20,15,10
 
-
 show_top_sum
 ~~~~~~~~~~~~
 
@@ -258,6 +258,7 @@ You can render the bar chart with horizontal bars by setting the ``:horizontal:`
 The ``:horizontal:`` flag does not support any values and it's useful with the ``stacked`` option  enabled.
 
 .. hint::
+
    The meaning of `labels`_ will change automatically with the usage of ``:horizontal:``. We will use the
    ``:x_axis_title:`` as labels for the y-axis and use the ``:y_axis_title:`` as the values in the `legend`_.
 
@@ -294,6 +295,7 @@ The idea is, you can try to see the data from different point of view, without r
 The ``:transpose:`` flag does not support any values and it's useful with big content tables.
 
 .. hint::
+
    * Using the ``:transpose:`` flag, transposes the ``:x_axis_title:`` and ``:y_axis_title:`` fetched from the content data or specified with `labels`_ but does not transpose the extra `axis title`_.
    * Remember that with the ``:transpose:`` flag, the length and height of the content data changes, not to think about the width of matching elements, like `colors`_. Please review the impact of ``:transpose:`` before using it.
 
@@ -321,14 +323,12 @@ The ``:transpose:`` flag does not support any values and it's useful with big co
       X,15,10,20
       W,20,15,10
 
-
 rotation
 ~~~~~~~~
 
 | Use ``:xlabels_rotation:`` to set rotation of labels for x-axis on the diagram.
 | Use ``:ylabels_rotation:`` to set rotation of labels for y-axis on the diagram.
 | Use ``:sum_rotation:`` to set rotation of labels for bars on the diagram.
-
 
 .. need-example::
 
@@ -376,6 +376,7 @@ for a complete list of color names.
 But besides names, ``:colors:`` options also supports hex-values like ``#ffcc00``.
 
 .. hint::
+
    In a normal bar chart, we use the ``:colors:`` for the legend and bars itself.
    When you use `horizontal`_ or `transpose`_, the bar's length must be equal to ``:xlabels:`` or ``:ylabels:``.
    If the length does not fit, it will fill the bar with the colors again and you will get a warning.
