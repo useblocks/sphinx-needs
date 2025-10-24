@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1760999577080,
+  "lastUpdate": 1761294481434,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14940,6 +14940,42 @@ window.BENCHMARK_DATA = {
             "value": 64.09853797799997,
             "unit": "s",
             "extra": "Commit: 0e7aa92f21ee8c2c1977952652d59ba84bb440b6\nBranch: master\nTime: 2025-10-21T00:30:46+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fbcfbabb9d38ac7bdf46bd2d70e7c8017ae466be",
+          "message": "👌 Improve schema severity handling (#1561)\n\nVarious schema reporting improvements:\n- Remove setting `needs_schema_severity`\n- Output *all* violations to console unless suppressed by\n`suppress_warnings`\n- Introduce severity based log `type`, so they can specifically be\nsuppressed\n  - info: `sn_schema_info`\n  - warning: `sn_schema_warning`\n  - violation: `sn_schema_violation`\n- Severity `info` and `warning` is logged as `logger.warning()`\n- Severity `violation` is logged as `logger.error()` for a different\ncolor\n- Changes to schema_violations.json\n- Write *all* violations, irrespective of the severity and\n`suppress_warnings`\n  - The `log_lvl` information reflect what Sphinx does.\n     Possible values are `warning` or `error`.\n   - Do not output `log_lvl` and `type` for children.\nThis information is only required on the root, the nested fields are\nduplicates.\n   - Do not print need IDs that have no warnings\n- Do not print `Field:` in schema console reports if not set\n- Update docs and tests accordingly\n\nFixes #1553",
+          "timestamp": "2025-10-24T10:26:04+02:00",
+          "tree_id": "261aa00fb547d96d193da3aaf60a63763575a58f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/fbcfbabb9d38ac7bdf46bd2d70e7c8017ae466be"
+        },
+        "date": 1761294469479,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1486068659999944,
+            "unit": "s",
+            "extra": "Commit: fbcfbabb9d38ac7bdf46bd2d70e7c8017ae466be\nBranch: master\nTime: 2025-10-24T10:26:04+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.46236122799999,
+            "unit": "s",
+            "extra": "Commit: fbcfbabb9d38ac7bdf46bd2d70e7c8017ae466be\nBranch: master\nTime: 2025-10-24T10:26:04+02:00"
           }
         ]
       }
