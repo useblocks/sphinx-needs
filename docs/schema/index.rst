@@ -723,44 +723,57 @@ error, even though ``priority`` is in the ``required`` list.
 Rule severity
 ~~~~~~~~~~~~~
 
-Each schema rule can specify one of the following severity levels:
+Each schema rule can specify one of the severity levels ``info``, ``warning``, or
+``violation`` as described in :ref:`severity_levels`. If not given, ``violation`` is used as
+a default.
 
-- ``info``: A non-critical constraint violation indicating an informative message.
-- ``warning``: A non-critical constraint violation indicating a warning.
-- ``violation`` : A constraint violation.
+The severity influences how validation failures are displayed in the console.
 
-  If that is not given, a violation
-
-rule specific default kicks in. The severity influences how validation failures are displayed
-in the console:
-
-.. code-block:: python
+.. code-block:: json
 
    {
      "severity": "warning",
-     "message": "Approval required due to high efforts"
+     "select": {
+       "properties": { "type": { "const": "feat" } }
+     },
+     "validate": {
+       "local": {
+         "properties": { "id": { "pattern": "^FEAT_[a-zA-Z0-9_-]*$" } }
+       }
+     }
+   },
+   {
+     "select": {
+       "properties": { "type": { "const": "spec" } }
+     },
+     "validate": {
+       "local": {
+         "properties": { "id": { "pattern": "^SPEC_[a-zA-Z0-9_-]*$" } }
+       }
+     }
    }
 
-All severities are reported during schema validation.
-
-**Console output example:**
+**Console output for above example:**
 
 .. code-block:: text
 
-   WARNING: Need 'FEAt' has validation warnings:
+   WARNING: Need 'FEAT' has schema warnings:
      Severity:       warning
      Field:          id
-     Need path:      FEAt
+     Need path:      FEAT
      Schema path:    [0] > local > properties > id > pattern
-     User message:   id must be uppercase with numbers and underscores
-     Schema message: 'FEAt' does not match '^[A-Z0-9_]+$' [sn_schema_warning.local_fail]
+     Schema message: 'FEAT' does not match '^FEAT_[a-zA-Z0-9_-]*$' [sn_schema_warning.local_fail]
 
-   ERROR: Need 'SPEC' has validation errors:
+   ERROR: Need 'SPEC' has schema violations:
      Severity:       violation
      Field:          id
      Need path:      SPEC
-     Schema path:    spec[1] > local > properties > id > pattern
+     Schema path:    [1] > local > properties > id > pattern
      Schema message: 'SPEC' does not match '^SPEC_[a-zA-Z0-9_-]*$' [sn_schema_violation.local_fail]
+
+Note how the ``FEAT`` report has a severity ``warning`` while ``SPEC`` is reported as ``violation``.
+This is because the first schema explicitly set the severity to ``warning``, while the second
+schema used the default ``violation``.
 
 .. _`schema_reuse`:
 
@@ -1038,6 +1051,60 @@ Running validation and understanding errors
 After defining your schema configuration, running Sphinx will validate all needs against the
 defined schemas. This section explains the validation process and how to interpret errors.
 
+Error messages and output
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Validation errors include detailed information:
+
+- **Severity**: The :ref:`severity level <severity_levels>` of the violation
+- **Field**: The specific field that failed validation
+- **Need path**: The ID of the need that failed or the link chain for network validation.
+  Link chains are represented as in ``IMPL_SAFE > links > SPEC_SAFE > specifies > FEAT_SAFE``, so
+  need IDs and link types form the chain, separated by ``>``.
+- **Schema path**: The JSON path within the schema that was violated. The path starts with an
+  identifier built from the :ref:`schema rule id <schemas_json_structure>` and the 0-based index
+  of the rule in the list. Examples::
+
+      [0] > local > properties > id > pattern
+      spec[1] > local > properties > id > pattern
+
+   The first example has no schema rule ID defined, so only the index is used.
+
+- **User message**: Optional user-friendly :ref:`message <schemas_json_structure>` set in the
+  schema rules.
+- **Schema message**: Detailed technical validation message from the validator
+
+Example error output::
+
+  Need 'SPEC_P01' has validation errors:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P01
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: 'SPEC_P01' does not match '^REQ[a-zA-Z0-9_-]*$'
+
+For nested network validation, it can be difficult to determine which constraint and need
+caused the error in the chain. In such cases, the error will emit details about the failed
+need and the specific link that caused the issue::
+
+  WARNING: Need 'IMPL_SAFE' has validation errors:
+    Severity:       violation
+    Need path:      IMPL_SAFE > links
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links
+    User message:   Safe impl links to safe spec links to safe req
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE
+
+      Details for SPEC_SAFE
+      Need path:      IMPL_SAFE > links > SPEC_SAFE > links
+      Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > validate > network > links
+      Schema message: Too few valid links of type 'links' (0 < 1) / nok: REQ_UNSAFE
+
+        Details for REQ_UNSAFE
+        Field:          asil
+        Need path:      IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE
+        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum
+        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
+
 .. _`severity_handling`:
 
 Severity handling
@@ -1099,49 +1166,6 @@ Network validation:
 
 If not overridden in the :ref:`schema rules <rule_severity>`, a default severity of ``violation``
 is used for all message types.
-
-Error messages and output
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Validation errors include detailed information:
-
-- **Severity**: The severity level of the violation
-- **Field**: The specific field that failed validation
-- **Need path**: The ID of the need that failed or the link chain for network validation
-- **Schema path**: The JSON path within the schema that was violated
-- **User message**: Custom message from each of the ``schemas`` in :ref:`needs_schema_definitions`
-- **Schema message**: Detailed technical validation message from the validator
-
-Example error output::
-
-  Need 'SPEC_P01' has validation errors:
-    Severity:       violation
-    Field:          id
-    Need path:      SPEC_P01
-    Schema path:    spec[1] > local > properties > id > pattern
-    Schema message: 'SPEC_P01' does not match '^REQ[a-zA-Z0-9_-]*$'
-
-For nested network validation, it can be difficult to determine which constraint and need
-caused the error in the chain. In such cases, the error will emit details about the failed
-need and the specific link that caused the issue::
-
-  WARNING: Need 'IMPL_SAFE' has validation errors:
-    Severity:       violation
-    Need path:      IMPL_SAFE > links
-    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links
-    User message:   Safe impl links to safe spec links to safe req
-    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_SAFE
-
-      Details for SPEC_SAFE
-      Need path:      IMPL_SAFE > links > SPEC_SAFE > links
-      Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > validate > network > links
-      Schema message: Too few valid links of type 'links' (0 < 1) / nok: REQ_UNSAFE
-
-        Details for REQ_UNSAFE
-        Field:          asil
-        Need path:      IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE
-        Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > links > links > local > allOf > 0 > properties > asil > enum
-        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema.network_contains_too_few]
 
 .. _`suppress_validation_messages`:
 
