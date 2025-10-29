@@ -1,5 +1,4 @@
 import time
-from pathlib import Path
 
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
@@ -53,11 +52,6 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     schema = SphinxNeedsData(app.env).get_schema()
     needs_schema = generate_needs_schema(schema)["properties"]
     _needs_schema.update(needs_schema)
-
-    orig_debug_path = Path(config.schema_debug_path)
-    if not orig_debug_path.is_absolute():
-        # make it relative to confdir
-        config.schema_debug_path = str((Path(app.confdir) / orig_debug_path).resolve())
 
     if config.schema_debug_active:
         clear_debug_dir(config)
