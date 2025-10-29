@@ -254,6 +254,13 @@ def sphinx_test_tempdir(request) -> path:
     return sphinx_test_tempdir
 
 
+def test_check_parent_child(app: Sphinx, doctree: document, docname: str):
+    for idx, node in enumerate(doctree.findall()):
+        if idx == 0:
+            continue
+        assert node.parent
+
+
 @pytest.fixture(scope="function")
 def test_app(make_app, sphinx_test_tempdir, request):
     """
@@ -329,6 +336,8 @@ def test_app(make_app, sphinx_test_tempdir, request):
     # Since we've bound the ``test_js`` function to the Sphinx object using ``__get__``,
     # ``test_js`` behaves like a method.
     app.test_js = test_js.__get__(app, Sphinx)
+
+    app.connect("doctree-resolved", test_check_parent_child, priority=999)
 
     yield app
 
