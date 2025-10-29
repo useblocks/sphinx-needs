@@ -263,7 +263,10 @@ def find_and_replace_node_content(
             for child in node.children:
                 new_child = find_and_replace_node_content(child, env, need)
                 new_children.append(new_child)
-                node.children = new_children
+
+            node.children = new_children
+            for subchild in node.children:
+                node.setup_child(subchild)
         else:
             node = nodes.Text(new_text)
         return node
@@ -275,7 +278,10 @@ def find_and_replace_node_content(
                 continue
             new_child = find_and_replace_node_content(child, env, need)
             new_children.append(new_child)
+
         node.children = new_children
+        for subchild in node.children:
+            node.setup_child(subchild)
     return node
 
 

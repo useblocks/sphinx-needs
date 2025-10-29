@@ -56,6 +56,10 @@ Bug fixes
   of need load order (e.g. when using :ref:`needs_external_needs`)
   (:issue:`1371`)
 
+- 🐛 Fix parent-child relationship of newly created nodes for needs. This
+  fixes interoperability with Sphinx extensions that look up source lines,
+  like sphinxcontrib-spelling (:issue:`1564`)
+
 .. _`release:8.1.1`:
 
 8.1.1
