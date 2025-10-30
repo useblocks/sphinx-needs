@@ -755,7 +755,7 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 "This is not allowed."
             )
 
-    validate_schemas_config(needs_config)
+    validate_schemas_config(app, needs_config)
 
 
 def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:

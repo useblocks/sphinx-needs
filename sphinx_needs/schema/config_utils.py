@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any, Literal, cast
 
 from sphinx.application import Sphinx
@@ -52,8 +53,15 @@ def has_any_global_extra_schema_defined(needs_config: NeedsSphinxConfig) -> bool
     return False
 
 
-def validate_schemas_config(needs_config: NeedsSphinxConfig) -> None:
+def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> None:
     """Check basics in extra option and extra link schemas."""
+
+    orig_debug_path = Path(needs_config.schema_debug_path)
+    if not orig_debug_path.is_absolute():
+        # make it relative to confdir
+        needs_config.schema_debug_path = str(
+            (Path(app.confdir) / orig_debug_path).resolve()
+        )
 
     validate_extra_option_schemas(needs_config)
 
