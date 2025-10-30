@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761294481434,
+  "lastUpdate": 1761809497054,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -14976,6 +14976,42 @@ window.BENCHMARK_DATA = {
             "value": 64.46236122799999,
             "unit": "s",
             "extra": "Commit: fbcfbabb9d38ac7bdf46bd2d70e7c8017ae466be\nBranch: master\nTime: 2025-10-24T10:26:04+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1b256d9b3bea6a246f4c6f6eaca5d7f5a47d102b",
+          "message": "♻️ Early resolution of schema_debug_path (#1563)\n\nThe configuration should ideally be final after `config-inited` and\nlatest with `env-before-read-docs`.\nThe PR moved the resolution of `schema_debug_path` from `write-started`\nto `config-inited`.",
+          "timestamp": "2025-10-30T08:29:39+01:00",
+          "tree_id": "d8180437f4632762289d978b6159d8bb251bd6cd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1b256d9b3bea6a246f4c6f6eaca5d7f5a47d102b"
+        },
+        "date": 1761809484510,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18114624500000076,
+            "unit": "s",
+            "extra": "Commit: 1b256d9b3bea6a246f4c6f6eaca5d7f5a47d102b\nBranch: master\nTime: 2025-10-30T08:29:39+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.061402069,
+            "unit": "s",
+            "extra": "Commit: 1b256d9b3bea6a246f4c6f6eaca5d7f5a47d102b\nBranch: master\nTime: 2025-10-30T08:29:39+01:00"
           }
         ]
       }
