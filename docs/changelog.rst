@@ -19,7 +19,8 @@ Main focus of this release is the improvement of the schema severity handling.
   The PR removes the setting ``needs_schema_severity``.
 
   All violations are printed to the console unless suppressed by ``suppress_warnings``.
-  To enable granular warning suppression, the following types were added:
+  To enable :ref:`granular warning suppression <suppress_validation_messages>`,
+  the following warning types were added:
 
   - info: sn_schema_info
   - warning: sn_schema_warning
@@ -31,15 +32,19 @@ Main focus of this release is the improvement of the schema severity handling.
 
   The ``schema_violations.json`` file contains all violations, irrespective of the severity.
   Any downstream tool can filter for the required severity levels.
-  Child elements do not contain ``log_lvl`` and ``type`` anymore to avoid duplication.
+
+  In ``schema_violations.json``, child elements do not contain ``log_lvl`` and ``type`` anymore
+  to avoid duplication.
 
 - 👌 Make ``incoming`` / ``outgoing`` keys optional in ``needs_extra_links`` (:pr:`1548`)
 
   Defining a link is now possible with just ``needs_extra_links = [{"option": "links"}]``.
 
-A new ``ubc`` GitHub action is now used to lint all RST sources in CI:
-
 - 🔧 Run new ubc action on docs (:pr:`1541`)
+
+  A new `GitHub action <https://github.com/useblocks/ubc-action>`__ to run ``ubc``
+  is now used to lint all RST sources in the CI. Next step is to create a
+  pre-commit hook for local usage.
 
 Minor documentation updates and internal improvements:
 
