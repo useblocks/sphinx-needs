@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761809497054,
+  "lastUpdate": 1761914720174,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15012,6 +15012,42 @@ window.BENCHMARK_DATA = {
             "value": 62.061402069,
             "unit": "s",
             "extra": "Commit: 1b256d9b3bea6a246f4c6f6eaca5d7f5a47d102b\nBranch: master\nTime: 2025-10-30T08:29:39+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "07e311c0278834a0feefbbb9afd7c3e797f1d84c",
+          "message": "🚀 Release v6.1.0 (#1565)",
+          "timestamp": "2025-10-31T13:43:15+01:00",
+          "tree_id": "ac874b1735f818c499399ac317593a945bfd9cfd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/07e311c0278834a0feefbbb9afd7c3e797f1d84c"
+        },
+        "date": 1761914703192,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2282071070000029,
+            "unit": "s",
+            "extra": "Commit: 07e311c0278834a0feefbbb9afd7c3e797f1d84c\nBranch: master\nTime: 2025-10-31T13:43:15+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.56433696199999,
+            "unit": "s",
+            "extra": "Commit: 07e311c0278834a0feefbbb9afd7c3e797f1d84c\nBranch: master\nTime: 2025-10-31T13:43:15+01:00"
           }
         ]
       }
