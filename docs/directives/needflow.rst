@@ -65,7 +65,7 @@ Options
    **needflow** supports the full filtering possibilities of **Sphinx-Needs**.
    Please see :ref:`filter` for more information.
 
-.. _needflow_engine:
+.. _`needflow_engine`:
 
 engine
 ~~~~~~
@@ -75,11 +75,10 @@ engine
 You can set the engine to use for rendering the flowchart,
 to either ``plantuml`` (default) or ``graphviz``.
 
-.. _needflow_root_id:
-.. _needflow_root_direction:
-.. _needflow_root_depth:
-
-.. _needflow_alt:
+.. _`needflow_root_id`:
+.. _`needflow_root_direction`:
+.. _`needflow_root_depth`:
+.. _`needflow_alt`:
 
 alt
 ~~~
@@ -150,7 +149,7 @@ Other need filters are applied on this initial selection of connected needs.
       :link_types: tests, blocks
       :show_link_names:
 
-.. _needflow_show_filters:
+.. _`needflow_show_filters`:
 
 show_filters
 ~~~~~~~~~~~~
@@ -170,7 +169,7 @@ Adds information of used filters below generated flowchart.
       :tags: flow_example
       :show_filters:
 
-.. _needflow_show_legend:
+.. _`needflow_show_legend`:
 
 show_legend
 ~~~~~~~~~~~
@@ -191,7 +190,7 @@ for flowcharts.
       :tags: flow_example
       :show_legend:
 
-.. _needflow_show_link_names:
+.. _`needflow_show_link_names`:
 
 show_link_names
 ~~~~~~~~~~~~~~~
@@ -216,7 +215,7 @@ Setup data can be found in test case document ``tests/doc_test/doc_extra_links``
       :tags: flow_example
       :show_link_names:
 
-.. _needflow_link_types:
+.. _`needflow_link_types`:
 
 link_types
 ~~~~~~~~~~
@@ -228,9 +227,8 @@ Must contain a comma separated list of link type names.
 
 .. code-block:: rst
 
-    .. needflow::
-       :link_types: links,blocks
-
+   .. needflow::
+      :link_types: links,blocks
 
 By default, we show all link_types.
 
@@ -289,7 +287,7 @@ See also :ref:`needs_extra_links` for more details about specific link types.
       :link_types: tests, blocks
       :show_link_names:
 
-.. _needflow_config:
+.. _`needflow_config`:
 
 config
 ~~~~~~
@@ -379,7 +377,7 @@ For ``needs_graphviz_styles`` they are:
    - * transparent
      * Transparent background
 
-.. _needflow_scale:
+.. _`needflow_scale`:
 
 scale
 ~~~~~
@@ -400,7 +398,7 @@ We also support the numbers between ``1`` and ``300``.
       :link_types: tests, blocks
       :scale: 50
 
-.. _needflow_highlight:
+.. _`needflow_highlight`:
 
 highlight
 ~~~~~~~~~
@@ -425,7 +423,7 @@ sets the border for each need of the needflow to **red** if the need also passes
       :link_types: tests, blocks
       :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
 
-.. _needflow_border_color:
+.. _`needflow_border_color`:
 
 border_color
 ~~~~~~~~~~~~
@@ -440,10 +438,9 @@ The value should be written with the :ref:`variant syntax <needs_variant_support
    .. needflow:: Engineering plan to develop a car
       :tags: flow_example
       :link_types: tests, blocks
-      :border_color:
-         [type == 'req']:FF0000,
-         [type == 'spec']:0000FF,
-         [type == 'test']:00FF00
+      :border_color: [type == 'req']:FF0000,
+                     [type == 'spec']:0000FF,
+                     [type == 'test']:00FF00
 
 .. dropdown:: Using Graphviz engine
 
@@ -451,12 +448,11 @@ The value should be written with the :ref:`variant syntax <needs_variant_support
       :engine: graphviz
       :tags: flow_example
       :link_types: tests, blocks
-      :border_color:
-         [type == 'req']:FF0000,
-         [type == 'spec']:0000FF,
-         [type == 'test']:00FF00
+      :border_color: [type == 'req']:FF0000,
+                     [type == 'spec']:0000FF,
+                     [type == 'test']:00FF00
 
-.. _needflow_align:
+.. _`needflow_align`:
 
 align
 ~~~~~
@@ -479,7 +475,7 @@ Allowed values are: ``left``, ``center``, ``right``
       :tags: flow_example
       :align: center
 
-.. _needflow_debug:
+.. _`needflow_debug`:
 
 debug
 ~~~~~
@@ -516,4 +512,3 @@ common filters
 * :ref:`option_tags`
 * :ref:`option_types`
 * :ref:`option_filter`
-

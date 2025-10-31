@@ -36,7 +36,6 @@ You can use the template file to customise the content generated  by ``needrepor
    .. needreport::
       :types:
 
-
 Options
 -------
 
@@ -53,7 +52,6 @@ The flag does not require any values.
    .. needreport::
       :types:
 
-
 .. _links:
 
 links
@@ -66,7 +64,6 @@ The flag does not require any values.
 
    .. needreport::
       :links:
-
 
 .. _options:
 
@@ -83,6 +80,7 @@ The flag does not require any values.
 
 usage
 ~~~~~
+
 Flag for adding information about all the ``need`` objects in the current project.
 The flag does not require any values.
 

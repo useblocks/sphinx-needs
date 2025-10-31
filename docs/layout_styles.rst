@@ -1,4 +1,4 @@
-.. _layouts_styles:
+.. _`layouts_styles`:
 
 Layouts & Styles
 ================
@@ -20,6 +20,7 @@ Both features can be set directly during need-configuration or inside the sphinx
 
 Layouts
 -------
+
 Layouts are using a predefined :ref:`grid system <grids>` and define which data shall be shown in which grid-cells.
 
 There can be multiple layouts using the same :ref:`grid system <grids>`, but maybe showing different data.
@@ -78,7 +79,6 @@ Most useful layouts are:
    This is a need using **FOCUS layout**.
    The same meta is set as the two needs above.
 
-
 There are also some *extensions* for the layouts above available:
 
 .. list-table::
@@ -130,7 +130,7 @@ If you need another field as source, you must create your own layout.
    :id: EX_CLEAN_R
    :status: open
    :tags: a, b, c, example
-   :image:  _images/needs_logo.png
+   :image: _images/needs_logo.png
    :layout: clean_r
 
    This is a need using **CLEAN_R layout**.
@@ -139,7 +139,7 @@ If you need another field as source, you must create your own layout.
    :id: EX_CLEAN_LP
    :status: open
    :tags: a, b, c, example
-   :image:  _images/needs_logo.png
+   :image: _images/needs_logo.png
    :layout: clean_lp
 
    This is a need using **CLEAN_LP layout**.
@@ -148,7 +148,7 @@ If you need another field as source, you must create your own layout.
    :id: EX_CLEAN_RP
    :status: open
    :tags: a, b, c, example
-   :image:  _images/needs_logo.png
+   :image: _images/needs_logo.png
    :layout: clean_rp
 
    This is a need using **CLEAN_RP layout**.
@@ -177,7 +177,6 @@ If you need another field as source, you must create your own layout.
 
    This is a need using **FOCUS_R layout**.
 
-
 Special layouts:
 
 .. list-table::
@@ -205,38 +204,39 @@ Special layouts:
 
 Using layouts
 ~~~~~~~~~~~~~
+
 There are two ways of setting a layout for a need:
 
 Set it globally via :ref:`needs_default_layout` in your **conf.py** file::
 
-   # conf.py
-   needs_default_layout = 'complete'
+  # conf.py
+  needs_default_layout = 'complete'
 
 Or set it locally for each need by using :ref:`need_layout` option::
 
-   .. req:: My requirement
-      :layout: complete
+  .. req:: My requirement
+     :layout: complete
 
-
-.. _own_layouts:
+.. _`own_layouts`:
 
 Defining own layouts
 ~~~~~~~~~~~~~~~~~~~~
+
 Own layouts can be defined by using the the config parameter :ref:`needs_layouts` in your **conf.py** file.
 
 ``needs_layouts`` must be a dictionary and each key represents a layout. A layout must define the used grid-system and
 a layout-structure. Example::
 
-    needs_layouts = {
-        'my_layout': {
-            'grid': 'simple',
-            'layout': {
-                'head': ['my custom head']
-                'meta': [ 'my first meta line',
-                          'my second meta line']
-            }
-        }
-    }
+  needs_layouts = {
+      'my_layout': {
+          'grid': 'simple',
+          'layout': {
+              'head': ['my custom head']
+              'meta': [ 'my first meta line',
+                        'my second meta line']
+          }
+      }
+  }
 
 The ``layout-structure`` must also be a dictionary, where each key reference an area in the used grid system.
 By default these can be: ``head``, ``meta``, ``footer`` and more.
@@ -252,18 +252,16 @@ This line can contain :ref:`layout_functions`, which care about getting need-dat
    **Sphinx-Needs** provides some default layouts. These layouts can **not** be overwritten.
    See :ref:`layout list <layouts>` for more information.
 
-.. note::
+.. note:: The ``content`` area of a grid can not be overwritten. It is always there and can't be changed or replaced.
 
-   The ``content`` area of a grid can not be overwritten. It is always there and can't be changed or replaced.
-
-
-.. _layout_line:
+.. _`layout_line`:
 
 Layout line
 +++++++++++
+
 A layout line may look like this::
 
-   **style**: my_<<meta('status')>>_style
+  **style**: my_<<meta('status')>>_style
 
 This line contains:
 
@@ -282,7 +280,7 @@ You can combine as many :ref:`layout_functions` and text elements as you want fo
 
 The head-line for the default Sphinx-Needs layout ``clean`` looks like this::
 
-   <<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>>
+  <<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>>  <<collapse_button("meta", collapsed="icon:arrow-down-circle", visible="icon:arrow-right-circle", initial=False)>>
 
 You are free to surround a layout function with a rst role. Like ``**<<meta("title")>>**`` to get a bold printed title.
 
@@ -293,7 +291,7 @@ As example, there may be an ``author`` option in a bug-need and you want to show
 
 The line for the ``side`` area could look like::
 
-   '<<image("_images/{{author}}.png", align="center")>>'
+  '<<image("_images/{{author}}.png", align="center")>>'
 
 .. spec:: My test spec
    :author: daniel
@@ -342,7 +340,7 @@ Here is the complete used code
       :tags: example
       :style: yellow, blue_border
 
-.. _layout_functions:
+.. _`layout_functions`:
 
 Layout functions
 ++++++++++++++++
@@ -384,6 +382,7 @@ Available layout functions are:
 
 Styles
 ------
+
 Styles handle mostly colors for background, border and co. for a need.
 Their definition is done in css files, so that **Sphinx-Needs** only cares about setting the correct class in HTML
 output. This also means that styles do not have any impact to the need design in PDFs and other output formats.
@@ -521,29 +520,30 @@ Different styles can also be combined by setting a comma-separated string: ``yel
 
 Using styles
 ~~~~~~~~~~~~
+
 There are two ways of setting a style for a need:
 
 Set it globally via :ref:`needs_default_style` in your **conf.py** file::
 
-   # conf.py
-   needs_default_style = 'red'
+  # conf.py
+  needs_default_style = 'red'
 
 Or set it locally for each need by using :ref:`need_style` option::
 
-   .. req:: My requirement
-      :style: red
+  .. req:: My requirement
+     :style: red
 
 By setting a style to ``None``, no style is set and the normal Sphinx-Needs style is used.
 
 Own style configuration
-~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 If you need to customize the css definitions, there are two ways of doing it:
 
 * Provide a css file by using :ref:`needs_css`
 * Set own css on sphinx level
 
-.. _styles_css:
+.. _`styles_css`:
 
 Sphinx-needs CSS option
 +++++++++++++++++++++++
@@ -565,7 +565,7 @@ Sphinx-needs provides the following css styles:
 
 .. image:: /_images/need_dark.png
 
-.. _own_css:
+.. _`own_css`:
 
 Own CSS file on sphinx level
 ++++++++++++++++++++++++++++
@@ -573,14 +573,14 @@ Own CSS file on sphinx level
 If you want to use most of the sphinx-needs internal styles but only need some specific changes for single elements, you
 can provide your own CSS file by register it inside your conf.py::
 
-    html_css_files = ['css/my_custom.css']  
-    
+  html_css_files = ['css/my_custom.css']
+
 See `html_css_files <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_css_files>`_ for changing priority or media type.
 
 .. hint::
 
-    Do not name it **custom.css** if you are using `Read the docs <http://readthedocs.org>`_ as
-    this name is already taken.
+   Do not name it **custom.css** if you are using `Read the docs <http://readthedocs.org>`_ as
+   this name is already taken.
 
 HTML output
 -----------
@@ -588,7 +588,7 @@ HTML output
 For **html output** the used layout and style names are added as css-class to the need table object.
 Beside this also the used grid system is added::
 
-   <table class="need needs_grid_simple needs_layout_complex needs_style_blue docutils" id="SPEC_1">
+  <table class="need needs_grid_simple needs_layout_complex needs_style_blue docutils" id="SPEC_1">
 
 The above line contains the following css classes:
 
@@ -606,15 +606,17 @@ So if a user defined layout has the name ``specification_layout``, the related c
 
 Grids
 -----
+
 The following grids are available.
 
 Simple grids
 ~~~~~~~~~~~~
 
-.. _grid_simple:
+.. _`grid_simple`:
 
 simple
 ++++++
+
 This is the default layout used by **Sphinx-Needs**.
 
 .. table::
@@ -628,7 +630,7 @@ This is the default layout used by **Sphinx-Needs**.
    | content |
    +---------+
 
-.. _grid_simple_footer:
+.. _`grid_simple_footer`:
 
 simple_footer
 +++++++++++++
@@ -646,7 +648,7 @@ simple_footer
    | footer  |
    +---------+
 
-.. _grid_simple_side_left:
+.. _`grid_simple_side_left`:
 
 simple_side_left
 ++++++++++++++++
@@ -662,15 +664,13 @@ simple_side_left
    |      | content |
    +------+---------+
 
-
-.. _grid_simple_side_right:
+.. _`grid_simple_side_right`:
 
 simple_side_right
 +++++++++++++++++
 
 .. table::
    :class: needs_grid_example
-
 
    +---------+------+
    | head    | side |
@@ -680,8 +680,7 @@ simple_side_right
    | content |      |
    +---------+------+
 
-
-.. _grid_simple_side_left_partial:
+.. _`grid_simple_side_left_partial`:
 
 simple_side_left_partial
 ++++++++++++++++++++++++
@@ -697,7 +696,7 @@ simple_side_left_partial
    | content     |
    +-------------+
 
-.. _grid_simple_side_right_partial:
+.. _`grid_simple_side_right_partial`:
 
 simple_side_right_partial
 +++++++++++++++++++++++++
@@ -716,7 +715,7 @@ simple_side_right_partial
 Complex grids
 ~~~~~~~~~~~~~
 
-.. _grid_complex:
+.. _`grid_complex`:
 
 complex
 +++++++
@@ -724,20 +723,20 @@ complex
 .. table::
    :class: needs_grid_example
 
-   +-------------+--------+--------------+
-   | head_left   | head   | head_right   |
-   +-------------+----+---+--------------+
-   | meta_left        | meta_right       |
-   +------------------+------------------+
-   | content                             |
-   +-------------+--------+--------------+
-   | footer_left | footer | footer_right |
-   +-------------+--------+--------------+
+   +-------------+------------+--------------+
+   | head_left   | head       | head_right   |
+   +-------------+-----+------+--------------+
+   | meta_left         | meta_right          |
+   +-------------------+---------------------+
+   | content                                 |
+   +-------------+------------+--------------+
+   | footer_left | footer     | footer_right |
+   +-------------+------------+--------------+
 
 Content focused grids
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. _grid_content:
+.. _`grid_content`:
 
 content
 +++++++
@@ -749,7 +748,7 @@ content
    | content |
    +---------+
 
-.. _grid_content_footer:
+.. _`grid_content_footer`:
 
 content_footer
 ++++++++++++++
@@ -763,7 +762,7 @@ content_footer
    | footer  |
    +---------+
 
-.. _grid_content_side_left:
+.. _`grid_content_side_left`:
 
 content_side_left
 +++++++++++++++++
@@ -775,7 +774,7 @@ content_side_left
    | side | content |
    +------+---------+
 
-.. _grid_content_side_right:
+.. _`grid_content_side_right`:
 
 content_side_right
 ++++++++++++++++++
@@ -787,7 +786,7 @@ content_side_right
    | content | side |
    +---------+------+
 
-.. _grid_content_footer_side_left:
+.. _`grid_content_footer_side_left`:
 
 content_footer_side_left
 ++++++++++++++++++++++++
@@ -795,13 +794,13 @@ content_footer_side_left
 .. table::
    :class: needs_grid_example
 
-   +--------+---------+
-   | side   | content |
-   |        +---------+
-   |        | footer  |
-   +--------+---------+
+   +------+---------+
+   | side | content |
+   |      +---------+
+   |      | footer  |
+   +------+---------+
 
-.. _grid_content_footer_side_right:
+.. _`grid_content_footer_side_right`:
 
 content_footer_side_right
 +++++++++++++++++++++++++
