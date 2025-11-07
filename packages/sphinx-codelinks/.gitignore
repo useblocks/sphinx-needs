@@ -19,3 +19,7 @@ requirements-dev.lock
 
 # rye is the primary tool, uv is only used for on-the-fly setups
 uv.lock
+
+# coverage files
+.coverage
+coverage.xml

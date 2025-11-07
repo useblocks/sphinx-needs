@@ -21,4 +21,4 @@ repos:
     hooks:
       - id: taplo-format
       # lint fetches schemas online at each call, deactivate for now
-      - id: taplo-lint
+      # - id: taplo-lint # excluded because json is fetched online and not reachable (503)
