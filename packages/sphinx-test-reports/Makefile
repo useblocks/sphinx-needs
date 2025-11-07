@@ -14,6 +14,10 @@ test:
 test-matrix:
 	nox
 
+.PHONY: coverage
+coverage:
+	pytest --cov --cov-branch --cov-report=xml
+
 .PHONY: docs-html
 docs-html:
 	make --directory docs/ clean && make --directory docs/ html

@@ -32,6 +32,7 @@ test = [
   "nox>=2025.2.9",
   "pytest-xdist",
   "pytest>=7.0",
+  "pytest-cov",
   "sphinx_design",
   "sphinxcontrib-plantuml",
 ]

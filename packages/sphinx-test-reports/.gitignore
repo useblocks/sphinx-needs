@@ -21,3 +21,6 @@ _build
 .VSCodeCounter
 
 uv.lock
+
+.coverage
+coverage.xml
