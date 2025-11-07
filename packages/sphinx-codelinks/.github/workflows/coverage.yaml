@@ -1,0 +1,25 @@
+name: Run tests and upload coverage
+
+on: push
+
+jobs:
+  pytest-cov:
+    name: Run tests and collect coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+
+      - name: Setup rye
+        uses: ./.github/actions/setup_rye
+
+      - name: Run tests
+        run: rye test -a -- --cov --cov-branch --cov-report=xml
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
