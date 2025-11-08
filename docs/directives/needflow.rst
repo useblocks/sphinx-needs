@@ -201,7 +201,7 @@ show_link_names
 Adds the link type name beside connections.
 
 You can configure it globally by setting :ref:`needs_flow_show_links` in **conf.py**.
-Setup data can be found in test case document `tests/doc_test/doc_extra_links`.
+Setup data can be found in test case document ``tests/doc_test/doc_extra_links``.
 
 .. need-example::
 

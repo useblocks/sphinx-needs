@@ -51,7 +51,7 @@ To run testing and documentation building, `tox <https://tox.readthedocs.io/>`__
 
    tox -av  # to see all environments
 
-Note, it is recommended to also install the `tox-uv <https://github.com/tox-dev/tox-uv>`__ plugin, which will use `uv` to create isolated environments faster, and to use `pyenv <https://github.com/pyenv/pyenv>`__ to manage multiple Python versions.
+Note, it is recommended to also install the `tox-uv <https://github.com/tox-dev/tox-uv>`__ plugin, which will use ``uv`` to create isolated environments faster, and to use `pyenv <https://github.com/pyenv/pyenv>`__ to manage multiple Python versions.
 
 Build docs
 ----------
@@ -85,7 +85,7 @@ Or use tox (recommended):
 
 .. code-block:: bash
 
-   tox -e py39
+   tox -e py310
 
 Note some tests use `syrupy <https://github.com/tophat/syrupy>`__ to perform snapshot testing.
 These snapshots can be updated by running:
@@ -210,7 +210,7 @@ Benchmark test cases are available under ``tests/benchmarks``.
 The results for each PR/commit get added to a chart, which is available under
 http://useblocks.com/sphinx-needs/bench/index.html.
 
-The benchmark data is stored on the `benchmarks` branch, which is also used by github-pages as
+The benchmark data is stored on the ``benchmarks`` branch, which is also used by github-pages as
 source.
 
 Publishing a new release
@@ -278,11 +278,11 @@ The following is an outline of the build events which this extension adds to the
 
 #. At the end of the build (``build-finished`` event)
 
-   - Call all user defined need data checks, a.k.a `needs_warnings` (``process_warnings``)
-   - Write the ``needs.json`` to the output folder, if `needs_build_json = True` (``build_needs_json``)
-   - Write the ``needs.json`` per ID to the output folder, if `needs_build_json_per_id = True` (``build_needs_id_json``)
-   - Write all UML files to the output folder, if `needs_build_needumls = True` (``build_needumls_pumls``)
-   - Print process timing, if `needs_debug_measurement = True`  (``process_timing``)
+   - Call all user defined need data checks, a.k.a ``needs_warnings`` (``process_warnings``)
+   - Write the ``needs.json`` to the output folder, if ``needs_build_json = True`` (``build_needs_json``)
+   - Write the ``needs.json`` per ID to the output folder, if ``needs_build_json_per_id = True`` (``build_needs_id_json``)
+   - Write all UML files to the output folder, if ``needs_build_needumls = True`` (``build_needumls_pumls``)
+   - Print process timing, if ``needs_debug_measurement = True``  (``process_timing``)
 
 .. Include our contributors and maintainers.
 .. include:: ../AUTHORS

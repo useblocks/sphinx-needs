@@ -17,23 +17,25 @@ classifiers = [
   'Operating System :: OS Independent',
   'Programming Language :: Python',
   'Programming Language :: Python :: 3',
-  'Programming Language :: Python :: 3.9',
   'Programming Language :: Python :: 3.10',
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
+  'Programming Language :: Python :: 3.13',
   'Topic :: Documentation',
   'Topic :: Utilities',
   'Framework :: Sphinx :: Extension',
 ]
-requires-python = ">=3.9,<4"
+requires-python = ">=3.10,<4"
 dependencies = [
-  "sphinx>=7.0,<9",
+  "sphinx>=7.4,<9",
   "requests-file~=2.1",             # external links
   "requests~=2.32",                 # external links
-  "jsonschema>=3.2.0",              # needsimport schema validation
+  "jsonschema[format]>=3.2.0",      # schema validation for needsimport and ontology
   "sphinx-data-viewer~=0.1.5",      # needservice debug output
   "sphinxcontrib-jquery~=4.0",      # needed for datatables in sphinx>=6
   "tomli; python_version < '3.11'", # for needs_from_toml configuration
+  "typing-extensions>=4.14.0",      # for dict NotRequired type indication
+  "typeguard>=4.4.4",               # for type checking complex schema configs
 ]
 
 [project.optional-dependencies]
@@ -48,6 +50,7 @@ test = [
   "lxml>=4.6.5,<6.0",
   "responses~=0.22.0",
   "pytest-xprocess~=1.0",
+  "pyyaml ~= 6.0",
 ]
 test-parallel = ["pytest-xdist"]
 benchmark = [
@@ -71,7 +74,9 @@ dev = ["pre-commit~=3.0", "tox~=4.23", "tox-uv~=1.15"]
 
 [tool.pytest.ini_options]
 markers = [
+  "fixture_file: marks tests that use a fixture file (deselect with '-m \"not fixture_file\"')",
   "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
+  "benchmark: marks tests as expensive benchmark test (deselect with '-m \"not benchmark\"')",
 ]
 filterwarnings = [
   "ignore:.*removed in Python 3.14.*:DeprecationWarning",
@@ -144,19 +149,19 @@ disable_error_code = ["no-redef"]
 
 legacy_tox_ini = """
 [tox]
-envlist = py39
+envlist = py310
 
 [testenv]
 usedevelop = true
 
-[testenv:py{39,310,311,312,313}]
+[testenv:py{310,311,312,313}]
 extras =
   test
   test-parallel
 commands =
   pytest --ignore tests/benchmarks {posargs:tests}
 
-[testenv:py{39,310,311,312,313}-benchmark]
+[testenv:py{310,311,312,313}-benchmark]
 extras =
   test
   benchmark
@@ -186,4 +191,9 @@ commands_pre =
   python -c "import shutil; shutil.rmtree('docs/_build/{env:BUILDER:html}/{env:DOCS_THEME:}', ignore_errors=True) if '{env:CLEAN:}' else None"
 commands = 
   sphinx-build -nW --keep-going -b {env:BUILDER:html} docs/ docs/_build/{env:BUILDER:html}/{env:DOCS_THEME:} {posargs:-T}
+
+[testenv:docs-linkcheck]
+basepython = python3.12
+extras = docs
+commands = sphinx-build -E -W -b linkcheck docs/ docs/_build/linkcheck
 """

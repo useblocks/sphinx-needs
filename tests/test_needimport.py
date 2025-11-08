@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -20,17 +21,8 @@ from sphinx_needs.needsfile import SphinxNeedsFileException
 def test_import_json(test_app):
     app = test_app
     app.build()
-    warnings = app._warning.getvalue()
-    warnings_list = strip_colors(
-        warnings.replace(str(app.srcdir) + os.sep + "subdoc" + os.sep, "srcdir/subdoc/")
-    ).splitlines()
-
-    if os.name != "nt":
-        assert warnings_list == [
-            "srcdir/subdoc/deprecated_rel_path_import.rst:6: WARNING: Deprecation warning: Relative path must be relative to the current document in future, not to the conf.py location. Use a starting '/', like '/needs.json', to make the path relative to conf.py. [needs.deprecated]"
-        ]
-    else:
-        assert "Deprecation" in warnings
+    assert app.statuscode == 0
+    assert not app.warning_list
 
     html = Path(app.outdir, "index.html").read_text()
     assert "TEST IMPORT TITLE" in html
@@ -61,11 +53,130 @@ def test_import_json(test_app):
     rel_path_import_html = Path(app.outdir, "subdoc/rel_path_import.html").read_text()
     assert "small_rel_path_TEST_01" in rel_path_import_html
 
-    # Check deprecated relative path import based on conf.py
-    deprec_rel_path_import_html = Path(
-        app.outdir, "subdoc/deprecated_rel_path_import.html"
-    ).read_text()
-    assert "small_depr_rel_path_TEST_01" in deprec_rel_path_import_html
+
+needs_json = """
+{
+    "current_version": "1",
+    "versions": {
+        "1": {
+            "needs": {
+                "TEST_01": {
+                    "id": "TEST_01",
+                    "title": "TEST IMPORT TITLE",
+                    "type": "impl"
+                }
+            },
+            "needs_amount": 1
+        }
+    }
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "index_content",
+    [
+        ".. needimport:: needs.json",
+        ".. needimport:: nested/needs.json",
+        ".. needimport:: /needs.json",
+        ".. needimport:: /nested/needs.json",
+    ],
+)
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                ("conf.py", 'extensions = ["sphinx_needs"]'),
+                ("needs.json", needs_json),
+                ("nested/needs.json", needs_json),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_import_rel_abs_sphinx_paths(test_app, index_content):
+    """Test various relative and absolute import file paths."""
+    # write the parametrized index.rst content
+    index_path = Path(test_app.srcdir, "index.rst")
+    index_path.write_text(index_content)
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert not app.warning_list
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert "TEST IMPORT TITLE" in html
+    assert "TEST_01" in html
+
+
+@pytest.mark.parametrize("path_sep", ["/", "\\", "\\\\"])
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                ("conf.py", 'extensions = ["sphinx_needs"]'),
+                ("needs.json", needs_json),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+@pytest.mark.skipif(sys.platform != "win32", reason="Test only runs on Windows")
+def test_import_abs_paths_win(test_app, path_sep):
+    """Test various relative and absolute import file paths."""
+    # write the parametrized index.rst content
+    index_path = Path(test_app.srcdir, "index.rst")
+    json_abs_path = str((Path(test_app.srcdir).resolve() / "needs.json").absolute())
+    json_abs_path = json_abs_path.replace(os.path.sep, path_sep)
+    index_path.write_text(f".. needimport:: {json_abs_path}")
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert not app.warning_list
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert "TEST IMPORT TITLE" in html
+    assert "TEST_01" in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                ("conf.py", 'extensions = ["sphinx_needs"]'),
+                ("needs.json", needs_json),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+@pytest.mark.skipif(sys.platform == "win32", reason="Test only runs on Linux and MacOS")
+def test_import_abs_paths_lin_mac(test_app):
+    """Test various relative and absolute import file paths."""
+    # write the parametrized index.rst content
+    index_path = Path(test_app.srcdir, "index.rst")
+    json_abs_path = str((Path(test_app.srcdir).resolve() / "needs.json").absolute())
+    index_path.write_text(f".. needimport:: /{json_abs_path}")
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert not app.warning_list
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert "TEST IMPORT TITLE" in html
+    assert "TEST_01" in html
 
 
 @pytest.mark.parametrize(
@@ -108,8 +219,8 @@ def test_need_schema_warnings(test_app, snapshot):
         test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
     ).splitlines()
     assert warnings == [
+        "srcdir/index.rst:4: WARNING: Need 'TEST_01' could not be imported: Extra option 'extra2' is invalid: Invalid value for field 'extra2': 1 [needs.import_need]",
         "srcdir/index.rst:4: WARNING: Unknown keys in import need source: ['unknown_key'] [needs.unknown_import_keys]",
-        "srcdir/index.rst:4: WARNING: Non-string values in extra options of import need source: ['extra2'] [needs.mistyped_import_values]",
     ]
     json_data = Path(test_app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)
@@ -151,11 +262,17 @@ def test_empty_file_check(test_app):
 def test_import_non_exists_json(test_app):
     # Check non exists file import
     app = test_app
-    with pytest.raises(ReferenceError) as err:
-        app.build()
+    app.build()
 
-    assert err.value.args[0].startswith("Could not load needs import file")
-    assert "non_exists_file_import" in err.value.args[0]
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
+    ).splitlines()
+
+    assert app.statuscode == 0
+
+    assert warnings == [
+        "<srcdir>/index.rst:4: WARNING: Could not load needs import file <srcdir>/non_exists_file.json [needs.needimport]",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -242,7 +359,9 @@ def test_needimport_needs_json_download(test_app, snapshot):
         m.get("http://my_company.com/docs/v1/remote-needs.json", json=remote_json)
         app.build()
 
-    needs_all_needs = dict(SphinxNeedsData(app.env).get_needs_view())
+    needs_all_needs = {
+        k: {**v} for k, v in SphinxNeedsData(app.env).get_needs_view().items()
+    }
     assert needs_all_needs == snapshot()
 
 

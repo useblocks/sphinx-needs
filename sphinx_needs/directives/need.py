@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
-from typing import Any
+from collections.abc import Callable, Sequence
+from typing import Any, Final
 
 from docutils import nodes
 from sphinx.addnodes import desc_name, desc_signature
@@ -14,20 +14,21 @@ from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.defaults import NEED_DEFAULT_OPTIONS
 from sphinx_needs.directives.needextend import Needextend, extend_needs_data
 from sphinx_needs.functions.functions import (
     check_and_get_content,
     find_and_replace_node_content,
-    resolve_dynamic_values,
-    resolve_variants_options,
+    resolve_functions,
 )
 from sphinx_needs.layout import build_need_repr
-from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
+from sphinx_needs.need_item import NeedItem, NeedItemSourceDirective
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import (
+    DummyOptionSpec,
     add_doc,
+    coerce_to_boolean,
     profile,
     remove_node_from_tree,
     split_need_id,
@@ -39,125 +40,197 @@ NON_BREAKING_SPACE = re.compile("\xa0+")
 
 
 class NeedDirective(SphinxDirective):
-    """
-    Collects mainly all needed need-information and renders its rst-based content.
+    """Collect the specification for a requirement, validate it and store it."""
 
-    It only creates a basic node-structure to support later manipulation.
-    """
-
-    # this enables content in the directive
+    required_arguments = 0
+    optional_arguments = 1
+    final_argument_whitespace = True
+    option_spec: Final[DummyOptionSpec] = DummyOptionSpec()
     has_content = True
 
-    required_arguments = 1
-    optional_arguments = 0
-    option_spec = NEED_DEFAULT_OPTIONS
+    options: dict[str, str | None]
 
-    final_argument_whitespace = True
+    def _log_warning(
+        self, message: str, code: WarningSubTypes = "directive", /
+    ) -> None:
+        """Log a warning with the given message and code."""
+        log_warning(
+            LOGGER,
+            message,
+            code,
+            location=self.get_location(),
+        )
 
     @measure_time("need")
     def run(self) -> Sequence[nodes.Node]:
-        if self.options.get("delete"):
+        # throughout this function, we gradually pop values from self.options
+        # so that we can warn about unknown options at the end
+        options: dict[str, str | None] = self.options
+
+        try:
+            delete = (
+                coerce_to_boolean(options.pop("delete"))
+                if "delete" in options
+                else False
+            )
+        except ValueError as err:
+            self._log_warning(f"Invalid value for 'delete' option: {err}")
+            return []
+        if delete:
             return []
 
         needs_config = NeedsSphinxConfig(self.env.config)
 
-        collapse = self.options.get("collapse")
-        jinja_content = self.options.get("jinja_content")
-        hide = "hide" in self.options
-
-        id = self.options.get("id")
-        status = self.options.get("status")
-        tags = self.options.get("tags", "")
-        style = self.options.get("style")
-        layout = self.options.get("layout", "")
-        template = self.options.get("template")
-        pre_template = self.options.get("pre_template")
-        post_template = self.options.get("post_template")
-        constraints = self.options.get("constraints", [])
-
-        title, full_title = self._get_title(needs_config)
-
-        need_extra_options = {}
-        for extra_link in needs_config.extra_links:
-            need_extra_options[extra_link["option"]] = self.options.get(
-                extra_link["option"], ""
+        try:
+            # override global title_from_content if user set it in the directive
+            title_from_content = (
+                coerce_to_boolean(options.pop("title_from_content"))
+                if "title_from_content" in options
+                else needs_config.title_from_content
             )
+        except ValueError as err:
+            self._log_warning(f"Invalid value for 'title_from_content' option: {err}")
+            return []
 
-        for extra_option in needs_config.extra_options:
-            need_extra_options[extra_option] = self.options.get(extra_option, "")
+        title, full_title = _get_title(
+            self.arguments,
+            self.content,
+            title_optional=needs_config.title_optional,
+            title_from_content=title_from_content,
+            max_title_length=needs_config.max_title_length,
+            warn=self._log_warning,
+        )
+
+        id: str | None = None
+        collapse: str | bool | None = None
+        hide: str | bool | None = None
+        jinja_content: bool | None = None
+        status: str | None = None
+        tags: str | None = None
+        style: str | None = None
+        layout: str | None = None
+        template: str | None = None
+        pre_template: str | None = None
+        post_template: str | None = None
+        constraints: str | None = None
+        extras: dict[str, str] = {}
+        links: dict[str, str] = {}
+
+        link_keys = {li["option"] for li in needs_config.extra_links}
+
+        while options:
+            key, value = options.popitem()
+            try:
+                match key:
+                    case "id":
+                        assert value, "'id' must not be empty"
+                        id = value
+                    case "jinja_content":
+                        jinja_content = coerce_to_boolean(value)
+                    case "status":
+                        status = value or ""
+                    case "tags":
+                        tags = value or ""
+                    case "collapse":
+                        collapse = value or ""
+                    case "hide":
+                        hide = value or ""
+                    case "style":
+                        style = value or ""
+                    case "layout":
+                        layout = value or ""
+                    case "template":
+                        template = value or ""
+                    case "pre_template":
+                        pre_template = value or ""
+                    case "post_template":
+                        post_template = value or ""
+                    case "constraints":
+                        constraints = value or ""
+                    case key if key in needs_config.extra_options:
+                        extras[key] = value or ""
+                    case key if key in link_keys:
+                        links[key] = value or ""
+                    case _:
+                        self._log_warning(f"Unknown option '{key}'")
+            except (AssertionError, ValueError) as err:
+                self._log_warning(f"Invalid value for '{key}' option: {err}")
+                return []
+
+        source = NeedItemSourceDirective(
+            docname=self.env.docname,
+            lineno=self.lineno,
+            lineno_content=self.content_offset + 1,
+        )
 
         try:
             need_nodes = add_need(
-                self.env.app,
-                self.state,
-                self.env.docname,
-                self.lineno,
+                app=self.env.app,
+                state=self.state,
+                need_source=source,
                 need_type=self.name,
                 title=title,
                 full_title=full_title,
                 id=id,
                 content=self.content,
-                lineno_content=self.content_offset + 1,
                 status=status,
                 tags=tags,
-                hide=hide,
                 template=template,
                 pre_template=pre_template,
                 post_template=post_template,
+                hide=hide,
                 collapse=collapse,
                 style=style,
                 layout=layout,
                 jinja_content=jinja_content,
                 constraints=constraints,
-                **need_extra_options,
+                **extras,  # type: ignore[arg-type]
+                **links,  # type: ignore[arg-type]
             )
         except InvalidNeedException as err:
-            log_warning(
-                LOGGER,
-                f"Need could not be created: {err.message}",
-                "create_need",
-                location=self.get_location(),
+            self._log_warning(
+                f"Need could not be created: {err.message}", "create_need"
             )
             return []
         add_doc(self.env, self.env.docname)
         return need_nodes
 
-    def _get_title(self, config: NeedsSphinxConfig) -> tuple[str, str | None]:
-        """Determines the title for the need in order of precedence:
-        directive argument, first sentence of requirement
-        (if `:title_from_content:` was set, and '' if no title is to be derived).
 
-        :return: The title and the full title (if title was trimmed)
-        """
-        if len(self.arguments) > 0:  # a title was passed
-            if "title_from_content" in self.options:
-                log_warning(
-                    LOGGER,
-                    "need directive has :title_from_content: set, but a title was provided.",
-                    "title",
-                    location=self.get_location(),
-                )
-            return self.arguments[0], None
-        elif "title_from_content" in self.options or config.title_from_content:
-            first_sentence = re.split(r"[.\n]", "\n".join(self.content))[0]
-            if not first_sentence:
-                log_warning(
-                    LOGGER,
-                    ":title_from_content: set, but no content provided.",
-                    "title",
-                    location=self.get_location(),
-                )
-            title = first_sentence or ""
-            # Trim title if it is too long
-            max_length = config.max_title_length
-            if max_length == -1 or len(title) <= max_length:
-                return title, None
-            elif max_length <= 3:
-                return title[:max_length], title
-            else:
-                return title[: max_length - 3] + "...", title
+def _get_title(
+    args: list[str],
+    content: str,
+    *,
+    title_optional: bool,
+    title_from_content: bool,
+    max_title_length: int,
+    warn: Callable[[str], None],
+) -> tuple[str, str | None]:
+    """Determines the title for the need in order of precedence:
+    directive argument, first sentence of requirement
+    (if `:title_from_content:` was set, and '' if no title is to be derived).
+
+    :return: The title and the full title (if title was trimmed)
+    """
+    if len(args) > 0:  # a title was passed
+        if title_from_content:
+            warn("title_from_content set to True, but a title was provided.")
+        return args[0], None
+    elif title_from_content:
+        first_sentence = re.split(r"[.\n]", "\n".join(content))[0]
+        if not first_sentence:
+            warn("title_from_content set to True, but no content provided.")
+        title = first_sentence or ""
+        # Trim title if it is too long
+        if max_title_length == -1 or len(title) <= max_title_length:
+            return title, None
+        elif max_title_length <= 3:
+            return title[:max_title_length], title
         else:
-            return "", None
+            return title[: max_title_length - 3] + "...", title
+    else:
+        if not title_optional:
+            warn("No title given, but title is required by configuration.")
+        return "", None
 
 
 def get_sections_and_signature_and_needs(
@@ -235,22 +308,6 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
         need_id = need_node["refid"]
         need_info = needs[need_id]
 
-        # first we initialize to default values
-        if "sections" not in need_info:
-            need_info["sections"] = []
-
-        if "section_name" not in need_info:
-            need_info["section_name"] = ""
-
-        if "signature" not in need_info:
-            need_info["signature"] = ""
-
-        if "parent_needs" not in need_info:
-            need_info["parent_needs"] = []
-
-        if "parent_need" not in need_info:
-            need_info["parent_need"] = ""
-
         # Fetch values from need
         # Start from the target node, which is a sibling of the current need node
         sections, signature, parent_needs = get_sections_and_signature_and_needs(
@@ -258,16 +315,9 @@ def analyse_need_locations(app: Sphinx, doctree: nodes.document) -> None:
         )
 
         # append / set values from need
-        if sections:
-            need_info["sections"] = sections
-            need_info["section_name"] = sections[0]
-
-        if signature:
-            need_info["signature"] = signature
-
-        if parent_needs:
-            need_info["parent_needs"] = parent_needs
-            need_info["parent_need"] = parent_needs[0]
+        need_info["sections"] = tuple(sections)
+        need_info["signature"] = str(signature) if signature is not None else None
+        need_info["parent_needs"] = parent_needs
 
         if need_node.get("hidden"):
             hidden_needs.append(need_node)
@@ -307,12 +357,19 @@ def post_process_needs_data(app: Sphinx) -> None:
         needs = needs_data.get_needs_mutable()
         app.emit("needs-before-post-processing", needs)
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
-        resolve_dynamic_values(needs, app)
-        resolve_variants_options(needs, needs_config, app.builder.tags)
-        check_links(needs, needs_config)
-        create_back_links(needs, needs_config)
+        resolve_functions(app, needs, needs_config)
+        update_back_links(needs, needs_config)
         process_constraints(needs, needs_config)
         app.emit("needs-before-sealing", needs)
+        # run a last check to ensure all needs are of the correct type
+        # this is done as a back-compatibility check,
+        # in case users are using sphinx-needs in an unexpected way that may previously work.
+        for need in needs.values():
+            if not isinstance(need, NeedItem):
+                raise AssertionError(
+                    f"Found at least one need item that is not a NeedItem instance: {type(need)}\n"
+                    "If you are adding needs manually, consider using the add_need API."
+                )
         needs_data.needs_is_post_processed = True
 
 
@@ -371,82 +428,56 @@ def format_need_nodes(
         node_need.parent.replace(node_need, rendered_node)
 
 
-def check_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
-    """Checks if set links are valid or are dead (referenced need does not exist.)
-
-    For needs with dead links, an extra ``has_dead_links`` field is added and,
-    if the link is not allowed to be dead,
-    the ``has_forbidden_dead_links`` field is also added.
-    """
-    extra_links = config.extra_links
-    report_dead_links = config.report_dead_links
+def update_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
+    """Update needs with back-links, i.e. for each need A that links to need B,"""
     for need in needs.values():
-        for link_type in extra_links:
-            _value = need[link_type["option"]]  # type: ignore[literal-required]
-            need_link_value = [_value] if isinstance(_value, str) else _value
-            for need_id_full in need_link_value:
+        need.reset_backlinks()
+
+    for key, need in needs.items():
+        dead_links = []
+
+        for link_type, references in need.iter_links_items():
+            for need_id_full in references:
                 need_id_main, need_id_part = split_need_id(need_id_full)
+                if linked_need := needs.get(need_id_main):
+                    linked_need.add_backlink(link_type, key)
+                    if need_id_part is not None:
+                        if linked_part := linked_need.get_part(need_id_part):
+                            if link_type not in linked_part.backlinks:
+                                linked_part.backlinks[link_type] = []
+                            linked_part.backlinks[link_type].append(key)
+                        else:
+                            dead_links.append((link_type, need_id_full))
+                else:
+                    dead_links.append((link_type, need_id_full))
 
-                if need_id_main not in needs or (
-                    need_id_main in needs
-                    and need_id_part
-                    and need_id_part not in needs[need_id_main]["parts"]
-                ):
-                    need["has_dead_links"] = True
-                    if not link_type.get("allow_dead_links", False):
-                        need["has_forbidden_dead_links"] = True
-                        if report_dead_links:
-                            message = f"Need '{need['id']}' has unknown outgoing link '{need_id_full}' in field '{link_type['option']}'"
-                            # if the need has been imported from an external URL,
-                            # we want to provide that URL as the location of the warning,
-                            # otherwise we use the location of the need in the source file
-                            if need.get("is_external", False):
-                                log_warning(
-                                    LOGGER,
-                                    f"{need['external_url']}: {message}",
-                                    "external_link_outgoing",
-                                    None,
-                                )
-                            else:
-                                log_warning(
-                                    LOGGER,
-                                    message,
-                                    "link_outgoing",
-                                    location=(need["docname"], need["lineno"]),
-                                )
-
-
-def create_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
-    """Create back-links in all found needs.
-
-    These are fields for each link type, ``<link_name>_back``,
-    which contain a list of all IDs of needs that link to the current need.
-    """
-    for links in config.extra_links:
-        option = links["option"]
-        option_back = f"{option}_back"
-
-        for key, need in needs.items():
-            need_link_value: list[str] = (
-                [need[option]] if isinstance(need[option], str) else need[option]  # type: ignore[literal-required]
-            )
-            for need_id_full in need_link_value:
-                need_id_main, need_id_part = split_need_id(need_id_full)
-
-                if need_id_main in needs:
-                    if key not in needs[need_id_main][option_back]:  # type: ignore[literal-required]
-                        needs[need_id_main][option_back].append(key)  # type: ignore[literal-required]
-
-                    # Handling of links to need_parts inside a need
-                    if need_id_part and need_id_part in needs[need_id_main]["parts"]:
-                        if (
-                            option_back
-                            not in needs[need_id_main]["parts"][need_id_part]
-                        ):
-                            needs[need_id_main]["parts"][need_id_part][option_back] = []  # type: ignore[literal-required]
-                        needs[need_id_main]["parts"][need_id_part][option_back].append(  # type: ignore[literal-required]
-                            key
-                        )
+        need["has_dead_links"] = bool(dead_links)
+        allow_dead_links = {
+            li["option"]: li.get("allow_dead_links", False) for li in config.extra_links
+        }
+        need["has_forbidden_dead_links"] = bool(
+            any(not allow_dead_links.get(lt, False) for lt, _ in dead_links)
+        )
+        if need["has_forbidden_dead_links"] and config.report_dead_links:
+            for link_type, need_id_full in dead_links:
+                message = f"Need '{need.id}' has unknown outgoing link '{need_id_full}' in field '{link_type}'"
+                # if the need has been imported from an external URL,
+                # we want to provide that URL as the location of the warning,
+                # otherwise we use the location of the need in the source file
+                if need["is_external"]:
+                    log_warning(
+                        LOGGER,
+                        f"{need['external_url']}: {message}",
+                        "external_link_outgoing",
+                        None,
+                    )
+                else:
+                    log_warning(
+                        LOGGER,
+                        message,
+                        "link_outgoing",
+                        location=(need["docname"], need["lineno"]),
+                    )
 
 
 #####################

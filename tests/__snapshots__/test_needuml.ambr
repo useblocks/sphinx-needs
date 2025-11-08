@@ -7,9 +7,10 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -27,7 +28,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -43,7 +44,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 19,
       'lineno_content': 22,
       'links': list([
@@ -54,23 +55,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDUML',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDUML',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -94,9 +97,10 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -104,7 +108,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -120,7 +124,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 14,
       'lineno_content': 17,
       'links': list([
@@ -131,23 +135,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDUML',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDUML',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -183,9 +189,10 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -214,7 +221,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -230,7 +237,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 70,
       'lineno_content': 73,
       'links': list([
@@ -241,23 +248,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDUML',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDUML',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -295,9 +304,10 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -323,7 +333,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -339,7 +349,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 95,
       'lineno_content': 98,
       'links': list([
@@ -350,23 +360,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDUML',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDUML',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -408,9 +420,10 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -447,7 +460,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -463,7 +476,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 117,
       'lineno_content': 120,
       'links': list([
@@ -474,23 +487,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDUML',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDUML',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -514,9 +529,10 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -530,7 +546,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -546,7 +562,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 46,
       'lineno_content': 49,
       'links': list([
@@ -557,23 +573,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDUML',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDUML',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -597,9 +615,10 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -607,7 +626,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -623,7 +642,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 4,
       'lineno_content': 7,
       'links': list([
@@ -634,23 +653,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDUML',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDUML',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -674,9 +695,10 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -684,7 +706,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -700,7 +722,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 9,
       'lineno_content': 12,
       'links': list([
@@ -711,23 +733,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDUML',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDUML',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -751,9 +775,10 @@
       'avatar': '',
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -770,7 +795,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -786,7 +811,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 33,
       'lineno_content': 36,
       'links': list([
@@ -797,23 +822,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT NEEDUML',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT NEEDUML',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,

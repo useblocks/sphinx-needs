@@ -11,9 +11,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -41,7 +42,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -57,7 +58,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 26,
       'lineno_content': 32,
       'links': list([
@@ -68,7 +69,7 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
@@ -77,16 +78,18 @@
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT LIST2NEED',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -118,9 +121,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -128,7 +132,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -144,7 +148,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 32,
       'lineno_content': 35,
       'links': list([
@@ -163,16 +167,18 @@
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT LIST2NEED',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -204,9 +210,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -214,7 +221,7 @@
       'created_at': '',
       'docname': 'options',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -230,7 +237,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 20,
       'lineno_content': 24,
       'links': list([
@@ -242,30 +249,32 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED OPTIONS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED OPTIONS',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'open',
       'style': None,
       'tags': list([
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -290,9 +299,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -300,7 +310,7 @@
       'created_at': '',
       'docname': 'options',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -316,7 +326,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 27,
       'lineno_content': 32,
       'links': list([
@@ -328,23 +338,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED OPTIONS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED OPTIONS',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'done',
       'style': None,
@@ -354,7 +366,7 @@
         'tag3',
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -379,9 +391,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -389,7 +402,7 @@
       'created_at': '',
       'docname': 'options',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -405,7 +418,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 35,
       'lineno_content': 39,
       'links': list([
@@ -420,30 +433,32 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED OPTIONS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED OPTIONS',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
       'tags': list([
       ]),
       'template': None,
-      'title': 'Link example ',
+      'title': 'Link example',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -468,9 +483,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -478,7 +494,7 @@
       'created_at': '',
       'docname': 'options',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -494,7 +510,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 42,
       'lineno_content': 49,
       'links': list([
@@ -506,23 +522,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED OPTIONS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED OPTIONS',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'in progress',
       'style': None,
@@ -555,9 +573,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -565,7 +584,7 @@
       'created_at': '',
       'docname': 'links_down',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -581,7 +600,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 19,
       'lineno_content': 23,
       'links': list([
@@ -592,23 +611,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED LINKS_DOWN',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED LINKS_DOWN',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -641,9 +662,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -651,7 +673,7 @@
       'created_at': '',
       'docname': 'links_down',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -667,7 +689,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 25,
       'lineno_content': 29,
       'links': list([
@@ -678,23 +700,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED LINKS_DOWN',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED LINKS_DOWN',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -727,9 +751,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -737,7 +762,7 @@
       'created_at': '',
       'docname': 'links_down',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -753,7 +778,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 31,
       'lineno_content': 34,
       'links': list([
@@ -764,23 +789,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED LINKS_DOWN',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED LINKS_DOWN',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -813,9 +840,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -823,7 +851,7 @@
       'created_at': '',
       'docname': 'global_tags',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -839,7 +867,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 21,
       'lineno_content': 26,
       'links': list([
@@ -851,23 +879,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED GLOBAL TAGS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'open',
       'style': None,
@@ -877,7 +907,7 @@
         'global_tag3',
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -902,9 +932,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -912,7 +943,7 @@
       'created_at': '',
       'docname': 'global_tags',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -928,7 +959,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 29,
       'lineno_content': 34,
       'links': list([
@@ -939,23 +970,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED GLOBAL TAGS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'done',
       'style': None,
@@ -968,7 +1001,7 @@
         'global_tag3',
       ]),
       'template': None,
-      'title': 'Need example on level 1 ',
+      'title': 'Need example on level 1',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -993,9 +1026,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -1003,7 +1037,7 @@
       'created_at': '',
       'docname': 'global_tags',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -1019,7 +1053,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 37,
       'lineno_content': 42,
       'links': list([
@@ -1033,23 +1067,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED GLOBAL TAGS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -1059,7 +1095,7 @@
         'global_tag3',
       ]),
       'template': None,
-      'title': 'Link example ',
+      'title': 'Link example',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -1084,9 +1120,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -1094,7 +1131,7 @@
       'created_at': '',
       'docname': 'global_tags',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -1110,7 +1147,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 45,
       'lineno_content': 53,
       'links': list([
@@ -1122,23 +1159,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'LIST2NEED GLOBAL TAGS',
-      'sections': list([
+      'sections': tuple(
         'LIST2NEED GLOBAL TAGS',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': 'in progress',
       'style': None,
@@ -1173,9 +1212,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -1193,7 +1233,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -1209,7 +1249,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 38,
       'lineno_content': 42,
       'links': list([
@@ -1229,16 +1269,18 @@
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT LIST2NEED',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -1270,9 +1312,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -1283,7 +1326,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -1299,7 +1342,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 45,
       'lineno_content': 49,
       'links': list([
@@ -1318,16 +1361,18 @@
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT LIST2NEED',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,
@@ -1359,9 +1404,10 @@
       ]),
       'closed_at': '',
       'collapse': False,
-      'completion': '',
+      'completion': None,
       'constraints': list([
       ]),
+      'constraints_error': None,
       'constraints_passed': True,
       'constraints_results': dict({
       }),
@@ -1369,7 +1415,7 @@
       'created_at': '',
       'docname': 'index',
       'doctype': '.rst',
-      'duration': '',
+      'duration': None,
       'external_css': 'external_link',
       'external_url': None,
       'has_dead_links': False,
@@ -1385,7 +1431,7 @@
       'is_need': True,
       'is_part': False,
       'jinja_content': False,
-      'layout': '',
+      'layout': None,
       'lineno': 20,
       'lineno_content': 23,
       'links': list([
@@ -1396,23 +1442,25 @@
       'max_content_lines': '',
       'modifications': 0,
       'params': '',
-      'parent_need': '',
+      'parent_need': None,
       'parent_needs': list([
       ]),
       'parent_needs_back': list([
       ]),
       'parts': dict({
       }),
+      'post_content': None,
       'post_template': None,
+      'pre_content': None,
       'pre_template': None,
       'prefix': '',
       'query': '',
       'section_name': 'TEST DOCUMENT LIST2NEED',
-      'sections': list([
+      'sections': tuple(
         'TEST DOCUMENT LIST2NEED',
-      ]),
+      ),
       'service': '',
-      'signature': '',
+      'signature': None,
       'specific': '',
       'status': None,
       'style': None,

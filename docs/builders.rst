@@ -161,7 +161,7 @@ needumls
 The **needumls** builder saves each :ref:`needuml` generated plantuml code to a file, and stores all the files into a single folder during the build.
 The file is created only if the option ``:save:`` from :ref:`needuml` is configured.
 
-The build creates a folder called **needumls** inside the given build-folder, e.g. `_build/needumls`.
+The build creates a folder called **needumls** inside the given build-folder, e.g. ``_build/needumls``.
 
 Usage
 +++++

@@ -13,11 +13,11 @@ Filter options
 
 The following filter options are supported by directives:
 
- * :ref:`needlist`
- * :ref:`needtable`
- * :ref:`needflow`
- * :ref:`needpie`
- * :ref:`needextend`
+* :ref:`needlist`
+* :ref:`needtable`
+* :ref:`needflow`
+* :ref:`needpie`
+* :ref:`needextend`
 
 Related to the used directive and its representation, the filter options create a list of needs, which match the
 filters for status, tags, types and filter.
@@ -225,7 +225,7 @@ The second parameter should be one of the above variables(status, id, content, .
       .. req:: Set admin e-mail to admin@mycompany.com
 
       .. needlist::
-         :filter: search("([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
+         :filter: search(r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)", title)
 
 .. _filter_string_performance:
 

@@ -1,0 +1,142 @@
+severity_rule_default:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                const: A
+
+severity_rule_info:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - severity: "info"
+        validate:
+          local:
+            properties:
+              asil:
+                const: A
+
+severity_rule_warning:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - severity: "warning"
+        validate:
+          local:
+            properties:
+              asil:
+                const: A
+
+severity_rule_violation:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - severity: "violation"
+        validate:
+          local:
+            properties:
+              asil:
+                const: A
+
+severity_default_suppress_severity:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["sn_schema_violation"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                const: A
+      - severity: "info"
+        validate:
+          local:
+            properties:
+              asil:
+                const: B
+
+severity_default_suppress_severity_and_rule:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+    suppress_warnings = ["sn_schema_violation.local_fail"]
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                const: A
+      - severity: "info"
+        validate:
+          local:
+            properties:
+              asil:
+                const: B

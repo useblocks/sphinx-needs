@@ -5,6 +5,7 @@ which is stored in the Sphinx environment.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,37 +21,40 @@ from sphinx_needs.logging import log_warning
 from sphinx_needs.views import NeedsView
 
 if TYPE_CHECKING:
-    from docutils.nodes import Text
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
-    from typing_extensions import NotRequired, Required
+    from typing_extensions import NotRequired
 
+    from sphinx_needs.need_item import NeedItem
+    from sphinx_needs.needs_schema import (
+        FieldFunctionArray,
+        FieldLiteralValue,
+        FieldsSchema,
+        LinksFunctionArray,
+        LinksLiteralValue,
+    )
     from sphinx_needs.nodes import Need
     from sphinx_needs.services.manager import ServiceManager
 
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 2
+ENV_DATA_VERSION: Final = 3
 """Version of the data stored in the environment.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
 
 
-class NeedsPartType(TypedDict):
+class NeedsPartType(TypedDict, total=False):
     """Data for a single need part."""
 
     id: str
     """ID of the part"""
     content: str
     """Content of the part."""
-    links: list[str]
-    """List of need IDs, which are referenced by this part."""
-    links_back: list[str]
-    """List of need IDs, which are referencing this part."""
 
-    # note back links for each type are also set dynamically in post_process_needs_data (-> create_back_links)
+    # note back links for each type are also set dynamically in post_process_needs_data (-> update_back_links)
 
 
 class CoreFieldParameters(TypedDict):
@@ -60,8 +64,10 @@ class CoreFieldParameters(TypedDict):
     """Description of the field."""
     schema: dict[str, Any]
     """JSON schema for the field."""
-    allow_default: NotRequired[Literal["str", "str_list"]]
-    """Whether the field allows custom default values to be set, and their type,
+    add_to_field_schema: NotRequired[bool]
+    """Whether to add the field to the field schema (False if not present)."""
+    allow_default: NotRequired[bool]
+    """Whether the field allows custom default values to be set,
     via needs_global_options (False if not present).
     """
     allow_extend: NotRequired[bool]
@@ -106,13 +112,16 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "title": {
         "description": "Title of the need.",
         "schema": {"type": "string"},
+        "add_to_field_schema": True,
         "allow_df": True,
+        "allow_variants": True,
     },
     "status": {
         "description": "Status of the need.",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "show_in_layout": True,
-        "allow_default": "str",
+        "allow_default": True,
         "allow_df": True,
         "allow_variants": True,
         "allow_extend": True,
@@ -120,8 +129,9 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "tags": {
         "description": "List of tags.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "add_to_field_schema": True,
         "show_in_layout": True,
-        "allow_default": "str_list",
+        "allow_default": True,
         "allow_df": True,
         "allow_variants": True,
         "allow_extend": True,
@@ -129,6 +139,10 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "collapse": {
         "description": "Hide the meta-data information of the need.",
         "schema": {"type": "boolean", "default": False},
+        "add_to_field_schema": True,
+        "allow_df": True,
+        "allow_variants": True,
+        "allow_default": True,
         "exclude_json": True,
         "exclude_external": True,
         "allow_extend": True,
@@ -136,6 +150,10 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "hide": {
         "description": "If true, the need is not rendered.",
         "schema": {"type": "boolean", "default": False},
+        "add_to_field_schema": True,
+        "allow_df": True,
+        "allow_variants": True,
+        "allow_default": True,
         "exclude_json": True,
         "exclude_external": True,
         "allow_extend": True,
@@ -143,18 +161,21 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "layout": {
         "description": "Key of the layout, which is used to render the need.",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "show_in_layout": True,
-        "allow_default": "str",
+        "allow_default": True,
         "allow_df": True,
         "allow_variants": True,
         "exclude_external": True,
+        "allow_extend": True,
     },
     "style": {
         "description": "Comma-separated list of CSS classes (all appended by `needs_style_`).",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "show_in_layout": True,
         "exclude_external": True,
-        "allow_default": "str",
+        "allow_default": True,
         "allow_df": True,
         "allow_variants": True,
         "allow_extend": True,
@@ -183,11 +204,13 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "URL of the need, if it is an external need.",
         "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
+        "exclude_external": True,
         "exclude_import": True,
     },
     "external_css": {
         "description": "CSS class name, added to the external reference.",
         "schema": {"type": "string", "default": ""},
+        "exclude_external": True,
         "exclude_import": True,
     },
     "type": {
@@ -243,12 +266,14 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "schema": {"type": "boolean", "default": True},
         "exclude_external": True,
         "exclude_import": True,
+        "exclude_json": True,
     },
     "is_part": {
         "description": "Whether the need is a part.",
         "schema": {"type": "boolean", "default": False},
         "exclude_external": True,
         "exclude_import": True,
+        "exclude_json": True,
     },
     "parts": {
         "description": "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
@@ -273,40 +298,44 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "exclude_import": True,
     },
     "jinja_content": {
-        "description": "Whether the content should be pre-processed by jinja.",
+        "description": "Whether the content was pre-processed by jinja.",
         "schema": {"type": "boolean", "default": False},
         "exclude_external": True,
     },
     "template": {
-        "description": "Template of the need.",
+        "description": "The template key, if the content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "exclude_external": True,
+        "allow_default": True,
     },
     "pre_template": {
-        "description": "Pre-template of the need.",
+        "description": "The template key, if the pre_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "exclude_external": True,
-        "allow_default": "str",
+        "allow_default": True,
     },
     "post_template": {
-        "description": "Post-template of the need.",
+        "description": "The template key, if the post_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
+        "add_to_field_schema": True,
         "exclude_external": True,
-        "allow_default": "str",
+        "allow_default": True,
     },
     "content": {
-        "description": "Content of the need.",
+        "description": "The main content of the need.",
         "schema": {"type": "string", "default": ""},
     },
     "pre_content": {
-        "description": "Pre-content of the need.",
-        "schema": {"type": "string", "default": ""},
+        "description": "Additional content before the need.",
+        "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "exclude_import": True,
     },
     "post_content": {
-        "description": "Post-content of the need.",
-        "schema": {"type": "string", "default": ""},
+        "description": "Additional content after the need.",
+        "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "exclude_import": True,
     },
@@ -325,15 +354,16 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "constraints": {
         "description": "List of constraint names, which are defined for this need.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
-        "allow_default": "str_list",
+        "add_to_field_schema": True,
+        "allow_default": True,
         "allow_df": True,
         "allow_variants": True,
         "allow_extend": True,
     },
     "constraints_results": {
-        "description": "Mapping of constraint name, to check name, to result.",
+        "description": "Mapping of constraint name, to check name, to result, None if not yet checked.",
         "schema": {
-            "type": "object",
+            "type": ["object", "null"],
             "additionalProperties": {"type": "object"},
             "default": {},
         },
@@ -342,203 +372,172 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     },
     "constraints_passed": {
         "description": "True if all constraints passed, False if any failed, None if not yet checked.",
-        "schema": {"type": "boolean", "default": True},
+        "schema": {"type": ["boolean", "null"], "default": True},
         "exclude_external": True,
         "exclude_import": True,
     },
     "constraints_error": {
         "description": "An error message set if any constraint failed, and `error_message` field is set in config.",
-        "schema": {"type": "string", "default": ""},
+        "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "exclude_import": True,
     },
     "doctype": {
-        "description": "Type of the document where the need is defined, e.g. '.rst'.",
+        "description": "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
         "schema": {"type": "string", "default": ".rst"},
     },
     "sections": {
         "description": "Sections of the need.",
-        "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "schema": {"type": "array", "items": {"type": "string"}, "default": ()},
         "exclude_import": True,
     },
     "section_name": {
         "description": "Simply the first section.",
-        "schema": {"type": "string", "default": ""},
+        "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "exclude_import": True,
     },
     "signature": {
         "description": "Derived from a docutils desc_name node.",
-        "schema": {"type": "string", "default": ""},
+        "schema": {"type": ["string", "null"], "default": None},
         "show_in_layout": True,
         "exclude_import": True,
     },
     "parent_need": {
         "description": "Simply the first parent id.",
-        "schema": {"type": "string", "default": ""},
+        "schema": {"type": ["string", "null"], "default": None},
         "exclude_external": True,
         "exclude_import": True,
     },
 }
 
 
-class NeedsInfoType(TypedDict, total=False):
+class NeedsSourceInfoType(TypedDict):
+    """Data for the source of a single need."""
+
+    docname: str | None
+    """Name of the document where the need is defined (None if external)."""
+    lineno: int | None
+    """Line number where the need is defined (None if external)."""
+    lineno_content: int | None
+    """Line number on which the need content starts (None if external)."""
+    external_url: None | str
+    """URL of the need, if it is an external need."""
+    is_import: bool
+    """If true, the need was derived from an import."""
+    is_external: bool
+    """If true, no node is created and need is referencing external url."""
+
+
+class NeedsContentInfoType(TypedDict):
+    """Data for the content of a single need."""
+
+    jinja_content: bool
+    """Whether the content was pre-processed by jinja."""
+    template: None | str
+    """The template key, if the content was created from a jinja template."""
+    pre_template: None | str
+    """The template key, if the pre_content was created from a jinja template."""
+    post_template: None | str
+    """The template key, if the post_content was created from a jinja template."""
+    doctype: str
+    """The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'."""
+    content: str
+    """The main content of the need."""
+    pre_content: None | str
+    """Additional content before the need."""
+    post_content: None | str
+    """Additional content after the need."""
+
+
+class NeedsInfoType(TypedDict):
     """Data for a single need."""
 
-    id: Required[str]
+    # core information
+    id: str
     """ID of the data."""
-
-    docname: Required[str | None]
-    """Name of the document where the need is defined (None if external)."""
-    lineno: Required[int | None]
-    """Line number where the need is defined (None if external)."""
-    lineno_content: Required[int | None]
-    """Line number on which the need content starts (None if external)."""
+    type: str
+    """Type of the need."""
 
     # meta information
-    title: Required[str]
+    title: str
     """Title of the need."""
-    status: Required[None | str]
-    tags: Required[list[str]]
+    status: None | str
+    tags: list[str]
 
     # rendering information
-    collapse: Required[bool]
+    collapse: bool
     """Hide the meta-data information of the need."""
-    hide: Required[bool]
+    hide: bool
     """If true, the need is not rendered."""
-    layout: Required[None | str]
+    layout: None | str
     """Key of the layout, which is used to render the need."""
-    style: Required[None | str]
+    style: None | str
     """Comma-separated list of CSS classes (all appended by `needs_style_`)."""
 
-    # TODO why is it called arch?
-    arch: Required[dict[str, str]]
-    """Mapping of uml key to uml content."""
-
-    is_import: Required[bool]
-    """If true, the need was derived from an import."""
-
-    # external reference information
-    is_external: Required[bool]
-    """If true, no node is created and need is referencing external url."""
-    external_url: Required[None | str]
-    """URL of the need, if it is an external need."""
-    external_css: Required[str]
+    external_css: str
     """CSS class name, added to the external reference."""
 
-    # type information (based on needs_types config)
-    type: Required[str]
-    type_name: Required[str]
-    type_prefix: Required[str]
-    type_color: Required[str]
+    # type information (initially based on needs_types config)
+    type_name: str
+    type_prefix: str
+    type_color: str
     """Hexadecimal color code of the type."""
-    type_style: Required[str]
+    type_style: str
 
-    is_modified: Required[bool]
-    """Whether the need was modified by needextend."""
-    modifications: Required[int]
-    """Number of modifications by needextend."""
+    constraints: list[str]
+    """List of constraint names, which are defined for this need."""
 
-    # used to distinguish a part from a need
-    is_need: Required[bool]
-    is_part: Required[bool]
-    # Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data
-    parts: Required[dict[str, NeedsPartType]]
-    # additional information required for compatibility with parts
-    id_parent: Required[str]
-    """<parent ID>, or <self ID> if not a part."""
-    id_complete: Required[str]
-    """<parent ID>.<self ID>, or <self ID> if not a part."""
+    # computed from need content (short for architecture)
+    arch: Mapping[str, str]
+    """Mapping of uml key to uml content."""
 
-    # content creation information
-    jinja_content: Required[bool]
-    template: Required[None | str]
-    pre_template: Required[None | str]
-    post_template: Required[None | str]
-    content: Required[str]
-    pre_content: str
-    post_content: str
+    # additional source information
+    # set in analyse_need_locations transform
+    sections: tuple[str, ...]
+    signature: None | str
+    """Derived from a docutils desc_name node."""
 
-    # these default to False and are updated in check_links post-process
-    has_dead_links: Required[bool]
+    # these default to False and are updated in update_back_links post-process
+    has_dead_links: bool
     """True if any links reference need ids that are not found in the need list."""
-    has_forbidden_dead_links: Required[bool]
+    has_forbidden_dead_links: bool
     """True if any links reference need ids that are not found in the need list,
     and the link type does not allow dead links.
     """
 
-    # constraints information
-    constraints: Required[list[str]]
-    """List of constraint names, which are defined for this need."""
-    # set in process_need_nodes (-> process_constraints) transform
-    constraints_results: Required[dict[str, dict[str, bool]]]
-    """Mapping of constraint name, to check name, to result."""
-    constraints_passed: Required[bool]
-    """True if all constraints passed, False if any failed, None if not yet checked."""
-    constraints_error: str
-    """An error message set if any constraint failed, and `error_message` field is set in config."""
 
-    # additional source information
-    doctype: Required[str]
-    """Type of the document where the need is defined, e.g. '.rst'."""
-    # set in analyse_need_locations transform
-    sections: Required[list[str]]
-    section_name: Required[str]
+class NeedsInfoComputedType(TypedDict):
+    """Data for a single need, that can be computed from existing data.
+
+    These fields are used for convenience in filters.
+    """
+
+    is_need: bool
+    is_part: bool
+    parts: Mapping[str, NeedsPartType]
+    """Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data"""
+    is_modified: bool
+    """Whether the need was modified by needextend."""
+    modifications: int
+    """Number of modifications by needextend."""
+    # additional information required for compatibility with parts
+    id_parent: str
+    """<parent ID>, or <self ID> if not a part."""
+    id_complete: str
+    """<parent ID>.<self ID>, or <self ID> if not a part."""
+    section_name: None | str
     """Simply the first section."""
-    signature: Required[str | Text]
-    """Derived from a docutils desc_name node."""
-    parent_need: Required[str]
+    parent_need: None | str
     """Simply the first parent id."""
-
-    # link information
-    # Note, there is more dynamically added link information;
-    # for each item in needs_extra_links config
-    # (and in prepare_env 'links' and 'parent_needs' are added if not present),
-    # you end up with a key named by the "option" field,
-    # and then another key named by the "option" field + "_back"
-    # these all have value type `list[str]`
-    # back links are all set in process_need_nodes (-> create_back_links) transform
-    links: list[str]
-    """List of need IDs, which are referenced by this need."""
-    links_back: list[str]
-    """List of need IDs, which are referencing this need."""
-    parent_needs: list[str]
-    """List of parents of the this need (by id),
-    i.e. if this need is nested in another
-    """
-    parent_needs_back: list[str]
-    """List of children of this need (by id),
-    i.e. if needs are nested within this one
-    """
-
-    # Fields added dynamically by services:
-    # options from ``BaseService.options`` get added to ``extra_options``,
-    # via `ServiceManager.register`,
-    # which in turn means they are added to every need via ``add_need``
-    # ``GithubService.options``
-    avatar: str
-    closed_at: str
-    created_at: str
-    max_amount: str
-    service: str
-    specific: str
-    ## type: str  # although this is already an internal field
-    updated_at: str
-    user: str
-    # ``OpenNeedsService.options``
-    params: str
-    prefix: str
-    url_postfix: str
-    # shared ``GithubService.options`` and ``OpenNeedsService.options``
-    max_content_lines: str
-    id_prefix: str
-    query: str
-    url: str
-
-    # Note there are also these dynamic keys:
-    # - items in ``needs_extra_options`` + ``needs_duration_option`` + ``needs_completion_option``,
-    #   which get added to ``extra_options``,
-    #   and in turn means they are added to every need via ``add_need`` (as strings)
+    # constraints information
+    # set in process_need_nodes (-> process_constraints) transform
+    constraints_results: None | Mapping[str, Mapping[str, bool]]
+    """Mapping of constraint name, to check name, to result, None if not yet checked."""
+    constraints_error: None | str
+    """An error message set if any constraint failed, and `error_message` field is set in config."""
+    constraints_passed: None | bool
+    """True if all constraints passed, False if any failed, None if not yet checked."""
 
 
 class NeedsBaseDataType(TypedDict):
@@ -577,6 +576,14 @@ class NeedsBarType(NeedsBaseDataType):
     text_color: str
 
 
+class ExtendType(str, Enum):
+    """Enum to represent the type of extend operation."""
+
+    REPLACE = ""
+    DELETE = "-"
+    APPEND = "+"
+
+
 class NeedsExtendType(NeedsBaseDataType):
     """Data to modify existing need(s)."""
 
@@ -584,11 +591,14 @@ class NeedsExtendType(NeedsBaseDataType):
     """Filter string to select needs to extend."""
     filter_is_id: bool
     """Whether the filter is a single need ID."""
-    modifications: dict[str, Any]
-    """Mapping of field name to new value.
-    If the field name starts with a ``+``, the new value is appended to the existing value.
-    If the field name starts with a ``-``, the existing value is cleared (new value is ignored).
-    """
+    modifications: list[
+        tuple[str, ExtendType, FieldLiteralValue | FieldFunctionArray | None]
+    ]
+    """List of field modifications (type, field, value)."""
+    list_modifications: list[
+        tuple[str, ExtendType, LinksLiteralValue | LinksFunctionArray]
+    ]
+    """List of link field modifications (type, field, value)."""
     strict: bool
     """If ``filter`` conforms to ``needs_id_regex``,
     and is not an existing need ID,
@@ -753,7 +763,7 @@ class NeedsUmlType(NeedsBaseDataType):
     """Time taken to process the diagram."""
 
 
-NeedsMutable = NewType("NeedsMutable", dict[str, NeedsInfoType])
+NeedsMutable = NewType("NeedsMutable", dict[str, "NeedItem"])
 """A mutable view of the needs, before resolution
 """
 
@@ -764,8 +774,25 @@ class SphinxNeedsData:
     def __init__(self, env: BuildEnvironment) -> None:
         self.env = env
 
+    def get_schema(self) -> FieldsSchema:
+        """Get the schema for all fields.
+
+        :raises RuntimeError: if the schema has not been initialized yet.
+        """
+        try:
+            return self.env._needs_schema
+        except AttributeError:
+            raise RuntimeError("Needs schema has not been initialized yet.")
+
+    def _set_schema(self, schema: FieldsSchema) -> None:
+        """Set the schema for all fields.
+
+        This should only be called once, during initialization.
+        """
+        self.env._needs_schema = schema
+
     @property
-    def _env_needs(self) -> dict[str, NeedsInfoType]:
+    def _env_needs(self) -> dict[str, NeedItem]:
         try:
             return self.env._needs_all_needs
         except AttributeError:
@@ -776,7 +803,7 @@ class SphinxNeedsData:
         """Check if a need with the given ID exists."""
         return need_id in self._env_needs
 
-    def add_need(self, need: NeedsInfoType) -> None:
+    def add_need(self, need: NeedItem) -> None:
         """Add an unprocessed need to the cache.
 
         This will overwrite any existing need with the same ID.

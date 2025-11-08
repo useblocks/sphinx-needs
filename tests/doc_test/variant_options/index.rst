@@ -3,8 +3,7 @@ Empty Variant Options Handling Test
 
 .. spec:: Empty Variant Options
    :id: EMPTY_VAR_003
-   :links: [tag_c]:CV_0002, [tag_b]:VA_003, unknown
-   :status: [tag_a]:open, unknown
+   :status: <<['tag_a' in build_tags]:open, unknown>>
 
 .. toctree::
    :maxdepth: 2

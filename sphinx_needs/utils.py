@@ -5,9 +5,10 @@ import importlib
 import operator
 import os
 import re
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache, reduce, wraps
-from typing import TYPE_CHECKING, Any, Callable, Protocol, TypeVar
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -16,10 +17,11 @@ from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
 if TYPE_CHECKING:
@@ -46,6 +48,34 @@ MONTH_NAMES = [
 ]
 
 
+class DummyOptionSpec(dict[str, Callable[[str], str]]):
+    """An option_spec allows any options."""
+
+    def __bool__(self) -> bool:
+        """Behaves like some options are defined."""
+        return True
+
+    def __getitem__(self, _key: str) -> Callable[[str], str]:
+        return lambda x: x
+
+
+def coerce_to_boolean(argument: str | None) -> bool:
+    """Convert a string to a boolean.
+
+    The value can be one of case-insensitive "true"/"false" or "yes"/"no",
+    or the empty string also evaluates to True.
+
+    :raises ValueError: If the value is not a valid flag or case-insensitive true/false/yes/no.
+    """
+    if argument is None:
+        return True
+    if argument.upper() in ["", "TRUE", "YES"]:
+        return True
+    if argument.upper() in ["FALSE", "NO"]:
+        return False
+    raise ValueError("not a flag or case-insensitive true/false/yes/no")
+
+
 def split_need_id(need_id_full: str) -> tuple[str, str | None]:
     """A need id can be a combination of a main id and a part id,
     split by a dot.
@@ -66,7 +96,7 @@ def row_col_maker(
     app: Sphinx,
     fromdocname: str,
     all_needs: NeedsView,
-    need_info: NeedsInfoType,
+    need_info: NeedItem | NeedPartItem,
     need_key: str,
     make_ref: bool = False,
     ref_lookup: bool = False,
@@ -96,9 +126,9 @@ def row_col_maker(
     for v in needs_config.string_links.values():
         needs_string_links_option.extend(v["options"])
 
-    if need_key in need_info and need_info[need_key] is not None:  # type: ignore[literal-required]
-        value = need_info[need_key]  # type: ignore[literal-required]
-        if isinstance(value, (list, set)):
+    if need_key in need_info and need_info[need_key] is not None:
+        value = need_info[need_key]
+        if isinstance(value, list | set):
             data = value
         elif isinstance(value, str) and need_key in needs_string_links_option:
             data = re.split(r",|;", value)
@@ -487,88 +517,6 @@ def match_string_link(
         )
     else:
         return ref_item
-
-
-def match_variants(
-    options: str | list[str] | set[str] | tuple[str, ...],
-    context: dict[str, Any],
-    variants: dict[str, str],
-    *,
-    location: str | tuple[str | None, int | None] | nodes.Node | None = None,
-) -> str | None:
-    """Evaluate an options list and return the first matching variant.
-
-    Each item should have the format ``<expression>:<value>``,
-    where ``<expression>`` is evaluated in the context and if it is ``True``, the value is returned.
-
-    The ``<expression>`` can also be a key in the ``variants`` dict,
-    with the actual expression.
-
-    The last item in the list can be a ``<value>`` without an expression,
-    which is returned if no other variant matches.
-
-    :param options: A string (delimited by , or ;) or iterable of strings,
-        which are evaluated as variant rules
-    :param context: Mapping of variables to values used in the expressions
-    :param variants: mapping of variables to expressions
-    :param location: The source location of the option value,
-         which can be a string (the docname or docname:lineno), a tuple of (docname, lineno).
-         Used for logging warnings.
-    :return: A string if a variant is matched, else None
-    """
-    if not options:
-        return None
-
-    options_list: list[str]
-    if isinstance(options, str):
-        options_list = re.split(
-            r"([\[\]]{1}[\w=:'. \-\"]+[\[\(\{]{1}[\w=,.': \-\"]*[\]\)\}]{1}[\[\]]{1}:[\w.\- ]+)|([\[\]]{1}[\w=:.'\-\[\] \"]+[\[\]]{1}:[\w.\- ]+)|([\w.: ]+[,;]{1})",
-            rf"""{options}""",
-        )
-        options_list = [
-            re.sub(r"^([;, ]+)|([;, ]+$)", "", i)
-            for i in options_list
-            if i not in (None, ";", "", " ")
-        ]
-    elif isinstance(options, (list, set, tuple)):
-        options_list = [str(opt) for opt in options]
-    else:
-        raise TypeError(
-            f"Option value must be a string or iterable of strings. {type(options)} found."
-        )
-
-    variant_regex = re.compile(r"^([\w'=,:.\-\"\[\] ]+):([\w'=:.\-\"\[\] ]+)$")
-    is_variant_rule = []
-    for option in options_list:
-        if not (result := variant_regex.match(option)):
-            is_variant_rule.append(False)
-            continue
-        is_variant_rule.append(True)
-        filter_string = result.group(1)
-        if filter_string.startswith("[") and filter_string.endswith("]"):
-            filter_string = filter_string[1:-1]
-        filter_string = variants.get(filter_string, filter_string)
-        try:
-            # First matching variant definition defines the output
-            if bool(eval(filter_string, context.copy())):
-                return result.group(2).lstrip(":")
-        except Exception as e:
-            log_warning(
-                logger,
-                f"Error in filter {filter_string!r}: {e}",
-                "variant",
-                location=location,
-            )
-
-    # If there were no variant-rules, return None
-    if all(m is False for m in is_variant_rule):
-        return None
-
-    # If no variant-rule matched, set to last if it is a variant-free option
-    if is_variant_rule[-1] is False:
-        return re.sub(r"[;,] ", "", options_list[-1])
-
-    return None
 
 
 pattern = r"(https://|http://|www\.|[\w]*?)([\w\-/.]+):([\w\-/.]+)@([\w\-/.]+)"

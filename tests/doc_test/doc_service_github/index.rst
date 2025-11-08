@@ -7,6 +7,7 @@ Title
    :query: repo:useblocks/sphinx-needs
    :max_amount: 1
    :max_content_lines: 2
+   :type: req
 
 .. needservice:: github-prs
    :query: repo:useblocks/sphinx-needs

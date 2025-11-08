@@ -31,4 +31,8 @@ needs_types = [
     },
 ]
 
-needs_extra_options = ["test_func", "hours", "amount"]
+# TODO(mh) moved to typed options
+needs_extra_options = [
+    {"name": "hours", "description": "Some hours", "schema": {"type": "number"}},
+    {"name": "amount", "description": "Some amount", "schema": {"type": "number"}},
+]

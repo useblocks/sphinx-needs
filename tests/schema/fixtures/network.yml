@@ -1,0 +1,631 @@
+schemas_in_conf:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions = {
+      "schemas": [
+        {
+          "select": {
+            "properties": {
+              "type": {"const": "impl"}
+            }
+          },
+          "validate": {
+            "network": {
+              "links": {
+                "contains": {
+                  "local": {
+                    "properties": {"type": {"const": "spec"}}
+                  }
+                },
+                "minContains": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+schemas_in_conf_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions = {
+      "schemas": [
+        {
+          "select": {
+            "properties": {
+              "type": {"const": "impl"}
+            }
+          },
+          "validate": {
+            "network": {
+              "links": {
+                "contains": {
+                  "local": {
+                    "properties": {"type": {"const": "req"}}
+                  }
+                },
+                "minContains": 1
+              }
+            }
+          }
+        }
+      ]
+    }
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+no_error_empty_links:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs]
+    schema_definitions_from_json = "schemas.json"
+  rst: |
+    .. spec:: unsafe spec
+        :id: SPEC_UNSAFE
+
+    .. impl:: safe impl
+       :id: IMPL_SAFE
+  schemas:
+    $defs:
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-impl:
+        properties:
+          type:
+            const: impl
+    schemas:
+      - id: "impl-[links]->spec"
+        message: impl links to spec
+        select:
+          $ref: "#/$defs/type-impl"
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/type-spec"
+              minContains: 1
+
+min_contains:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type:
+              const: "impl"
+        validate:
+          network:
+            links:
+              "contains":
+                "local":
+                  "properties":
+                    "type":
+                      "const": "spec"
+              minContains: 1
+
+min_contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type:
+              const: "impl"
+        validate:
+          network:
+            links:
+              "contains":
+                "local":
+                  "properties":
+                    "type":
+                      "const": "spec"
+              minContains: 2
+
+max_contains:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type:
+              const: "impl"
+        validate:
+          network:
+            links:
+              "contains":
+                "local":
+                  "properties":
+                    "type":
+                      "const": "spec"
+              maxContains: 1
+
+max_contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_2
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1, SPEC_2
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          network:
+            links:
+              "contains":
+                "local":
+                  "properties":
+                    "type":
+                      "const": "spec"
+              maxContains: 1
+
+link_chain_w_refs:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    schema.type = "string"
+    schema.enum = ["QM", "A", "B", "C", "D"]
+  rst: |
+    .. req:: safe req
+       :id: REQ_SAFE
+       :asil: C
+
+    .. spec:: safe spec
+       :id: SPEC_SAFE
+       :asil: B
+       :links: REQ_SAFE
+
+    .. impl:: safe impl
+       :id: IMPL_SAFE
+       :asil: A
+       :links: SPEC_SAFE
+  schemas:
+    $defs:
+      type-req:
+        properties:
+          type:
+            const: req
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-impl:
+        properties:
+          type:
+            const: impl
+      safe-req:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-req"
+      safe-spec:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-spec"
+      safe-impl:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-impl"
+      safe-need:
+        properties:
+          asil:
+            enum: [A, B, C, D]
+        required:
+          - asil
+    schemas:
+      - id: "safe-impl-[links]->safe-spec"
+        message: Safe impl links to safe spec
+        select:
+          $ref: "#/$defs/safe-impl"
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/safe-spec"
+              minContains: 1
+              maxContains: 4
+      - id: "safe-impl-[links]->safe-spec-[links]->safe-req"
+        message: Safe impl links to safe spec links to safe req
+        select:
+          $ref: "#/$defs/safe-impl"
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/safe-spec"
+                network:
+                  links:
+                    contains:
+                      local:
+                        $ref: "#/$defs/safe-req"
+                    minContains: 1
+              minContains: 1
+
+link_chain_hop_1_min_contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    schema.type = "string"
+    schema.enum = ["QM", "A", "B", "C", "D"]
+  rst: |
+    .. spec:: unsafe spec
+        :id: SPEC_UNSAFE
+        :asil: QM
+
+    .. impl:: safe impl
+       :id: IMPL_SAFE
+       :asil: A
+       :links: SPEC_UNSAFE
+  schemas:
+    $defs:
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-impl:
+        properties:
+          type:
+            const: impl
+      safe-spec:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-spec"
+      safe-impl:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-impl"
+      safe-need:
+        properties:
+          asil:
+            enum: [A, B, C, D]
+        required:
+          - asil
+    schemas:
+      - id: "safe-impl-[links]->safe-spec"
+        message: Safe impl links to safe spec
+        select:
+          $ref: "#/$defs/safe-impl"
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/safe-spec"
+              minContains: 1
+
+link_chain_hop_2_min_contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    schema.type = "string"
+    schema.enum = ["QM", "A", "B", "C", "D"]
+  rst: |
+    .. req:: unsafe req
+       :id: REQ_UNSAFE
+       :asil: QM
+
+    .. spec:: safe spec
+       :id: SPEC_SAFE
+       :asil: B
+       :links: REQ_UNSAFE
+
+    .. impl:: safe impl
+       :id: IMPL_SAFE
+       :asil: A
+       :links: SPEC_SAFE
+  schemas:
+    $defs:
+      type-req:
+        properties:
+          type:
+            const: req
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-impl:
+        properties:
+          type:
+            const: impl
+      safe-req:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-req"
+      safe-spec:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-spec"
+      safe-impl:
+        allOf:
+          - $ref: "#/$defs/safe-need"
+          - $ref: "#/$defs/type-impl"
+      safe-need:
+        properties:
+          asil:
+            enum: [A, B, C, D]
+        required:
+          - asil
+    schemas:
+      - id: "safe-impl-[links]->safe-spec-[links]->safe-req"
+        message: Safe impl links to safe spec links to safe req
+        select:
+          $ref: "#/$defs/safe-impl"
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/safe-spec"
+                network:
+                  links:
+                    contains:
+                      local:
+                        $ref: "#/$defs/safe-req"
+                    minContains: 1
+              minContains: 1
+
+local_min_items:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          local:
+            properties:
+              links: {minItems: 1}
+
+local_min_items_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          local:
+            properties:
+              links: {minItems: 2}
+
+local_max_items:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_2
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1, SPEC_2
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          local:
+            properties:
+              links: {maxItems: 2}
+
+local_max_items_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_2
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1, SPEC_2
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          local:
+            properties:
+              links: {maxItems: 1}
+
+max_network_levels:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_2
+        :links: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_3
+        :links: SPEC_2
+
+    .. spec:: title
+        :id: SPEC_4
+        :links: SPEC_3
+
+    .. spec:: title
+        :id: SPEC_5
+        :links: SPEC_4
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_5
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type:
+              const: impl
+        validate:
+          network:
+            links:
+              items:
+                network:
+                  links:
+                    items:
+                      network:
+                        links:
+                          items:
+                            network:
+                              links:
+                                items:
+                                  network:
+                                    links:
+                                      items:
+                                        network:
+                                          links:
+                                            items:
+                                              local:
+                                                properties:
+                                                  type:
+                                                    const: spec

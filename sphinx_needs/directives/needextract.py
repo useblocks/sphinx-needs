@@ -11,7 +11,7 @@ from sphinx.environment.collectors.asset import DownloadFileCollector, ImageColl
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsExtractType, NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import NeedsExtractType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
@@ -21,6 +21,7 @@ from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import find_and_replace_node_content
 from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import log_warning
+from sphinx_needs.need_item import NeedItem
 from sphinx_needs.utils import add_doc, remove_node_from_tree
 
 LOGGER = getLogger(__name__)
@@ -138,6 +139,7 @@ def process_needextract(
             if (
                 need_info["is_need"]
                 and not need_info["is_part"]
+                and isinstance(need_info, NeedItem)
                 and (
                     need_extract := _build_needextract(
                         app, node, need_info, current_needextract
@@ -167,7 +169,7 @@ def process_needextract(
 def _build_needextract(
     app: Sphinx,
     extract_node: Needextract,
-    need_data: NeedsInfoType,
+    need_data: NeedItem,
     extract_data: NeedsExtractType,
 ) -> nodes.container | None:
     """Creates a new need representation."""

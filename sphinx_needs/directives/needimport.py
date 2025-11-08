@@ -4,6 +4,7 @@ import json
 import os
 import re
 from collections.abc import Sequence
+from typing import Any
 from urllib.parse import urlparse
 
 import requests
@@ -14,13 +15,18 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, NeedsInfoType
+from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.debug import measure_time
-from sphinx_needs.defaults import string_to_boolean
-from sphinx_needs.filter_common import filter_single_need
+from sphinx_needs.filter_common import filter_import_item
 from sphinx_needs.logging import log_warning
+from sphinx_needs.need_item import NeedItemSourceImport
 from sphinx_needs.needsfile import SphinxNeedsFileException, check_needs_data
-from sphinx_needs.utils import add_doc, import_prefix_link_edit, logger
+from sphinx_needs.utils import (
+    add_doc,
+    coerce_to_boolean,
+    import_prefix_link_edit,
+    logger,
+)
 
 
 class Needimport(nodes.General, nodes.Element):
@@ -36,7 +42,7 @@ class NeedimportDirective(SphinxDirective):
     option_spec = {
         "version": directives.unchanged_required,
         "hide": directives.flag,
-        "collapse": string_to_boolean,
+        "collapse": coerce_to_boolean,
         "ids": directives.unchanged_required,
         "filter": directives.unchanged_required,
         "id_prefix": directives.unchanged_required,
@@ -81,39 +87,25 @@ class NeedimportDirective(SphinxDirective):
         else:
             logger.info(f"Importing needs from {need_import_path}")
 
-            if not os.path.isabs(need_import_path):
-                # Relative path should start from current rst file directory
-                curr_dir = os.path.dirname(self.docname)
-                new_need_import_path = os.path.join(
-                    self.env.app.srcdir, curr_dir, need_import_path
-                )
-
-                correct_need_import_path = new_need_import_path
-                if not os.path.exists(new_need_import_path):
-                    # Check the old way that calculates relative path starting from conf.py directory
-                    old_need_import_path = os.path.join(
-                        self.env.app.srcdir, need_import_path
-                    )
-                    if os.path.exists(old_need_import_path):
-                        correct_need_import_path = old_need_import_path
-                        log_warning(
-                            logger,
-                            "Deprecation warning: Relative path must be relative to the current document in future, "
-                            "not to the conf.py location. Use a starting '/', like '/needs.json', to make the path "
-                            "relative to conf.py.",
-                            "deprecated",
-                            location=(self.env.docname, self.lineno),
-                        )
-            else:
-                # Absolute path starts with /, based on the source directory. The / need to be striped
-                correct_need_import_path = os.path.join(
-                    self.env.app.srcdir, need_import_path[1:]
-                )
+            correct_need_import_path = self.env.relfn2path(
+                need_import_path, self.env.docname
+            )[1]
 
             if not os.path.exists(correct_need_import_path):
-                raise ReferenceError(
+                warning_text = (
                     f"Could not load needs import file {correct_need_import_path}"
                 )
+                log_warning(
+                    logger,
+                    warning_text,
+                    "needimport",
+                    location=(self.env.docname, self.lineno),
+                )
+
+                paragraph = nodes.paragraph(text=warning_text)
+                warning = nodes.warning()
+                warning += paragraph
+                return [warning]
 
             try:
                 with open(correct_need_import_path) as needs_file:
@@ -152,8 +144,8 @@ class NeedimportDirective(SphinxDirective):
                 key: data["needs"][key] for key in id_list if key in data["needs"]
             }
 
-        # TODO this is not exactly NeedsInfoType, because the export removes/adds some keys
-        needs_list: dict[str, NeedsInfoType] = data["needs"]
+        # note this is not exactly NeedsInfoType, because the export removes/adds some keys
+        needs_list: dict[str, dict[str, Any]] = data["needs"]
         if schema := data.get("needs_schema"):
             # Set defaults from schema
             defaults = {
@@ -175,9 +167,9 @@ class NeedimportDirective(SphinxDirective):
 
                 if "description" in need and not need.get("content"):
                     # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
-                    filter_context["content"] = need["description"]  # type: ignore[typeddict-item]
+                    filter_context["content"] = need["description"]
                 try:
-                    if filter_single_need(filter_context, needs_config, filter_string):
+                    if filter_import_item(filter_context, needs_config, filter_string):
                         needs_list_filtered[key] = need
                 except Exception as e:
                     log_warning(
@@ -217,7 +209,6 @@ class NeedimportDirective(SphinxDirective):
 
         # collect keys for warning logs, so that we only log one warning per key
         unknown_keys: set[str] = set()
-        non_string_extra_keys: set[str] = set()
 
         # directive options that can be override need fields
         override_options = (
@@ -233,42 +224,43 @@ class NeedimportDirective(SphinxDirective):
         for need_params in needs_list.values():
             if "description" in need_params and not need_params.get("content"):
                 # legacy versions of sphinx-needs changed "description" to "content" when outputting to json
-                need_params["content"] = need_params["description"]  # type: ignore[typeddict-item]
-                del need_params["description"]  # type: ignore[typeddict-item]
+                need_params["content"] = need_params["description"]
+                del need_params["description"]
 
             # Remove unknown options, as they may be defined in source system, but not in this sphinx project
             for option in list(need_params):
                 if option not in known_keys:
                     unknown_keys.add(option)
-                    del need_params[option]  # type: ignore[misc]
+                    del need_params[option]
                 elif option in omitted_keys:
-                    del need_params[option]  # type: ignore[misc]
-                if option in needs_config.extra_options and not isinstance(
-                    need_params[option],  # type: ignore[literal-required]
-                    str,
-                ):
-                    non_string_extra_keys.add(option)
+                    del need_params[option]
 
             for override_option in override_options:
                 if override_option in self.options:
-                    need_params[override_option] = self.options[override_option]  # type: ignore[literal-required]
+                    need_params[override_option] = self.options[override_option]
             if "hide" in self.options:
                 need_params["hide"] = True
 
             # These keys need to be different for add_need() api call.
-            need_params["need_type"] = need_params.pop("type", "")  # type: ignore[misc,typeddict-unknown-key]
+            need_params["need_type"] = need_params.pop("type", "")
 
             # Replace id, to get unique ids
             need_id = need_params["id"] = id_prefix + need_params["id"]
 
-            # override location
-            need_params["docname"] = self.docname
-            need_params["lineno"] = self.lineno
-
-            need_params["is_import"] = True
+            # set location
+            need_source = NeedItemSourceImport(
+                docname=self.env.docname,
+                lineno=self.lineno,
+                path=need_import_path,
+            )
 
             try:
-                nodes = add_need(self.env.app, self.state, **need_params)  # type: ignore[call-arg]
+                need_node = add_need(
+                    app=self.env.app,
+                    state=self.state,
+                    need_source=need_source,
+                    **need_params,
+                )
             except InvalidNeedException as err:
                 log_warning(
                     logger,
@@ -277,20 +269,13 @@ class NeedimportDirective(SphinxDirective):
                     location=self.get_location(),
                 )
             else:
-                need_nodes.extend(nodes)
+                need_nodes.extend(need_node)
 
         if unknown_keys:
             log_warning(
                 logger,
                 f"Unknown keys in import need source: {sorted(unknown_keys)!r}",
                 "unknown_import_keys",
-                location=self.get_location(),
-            )
-        if non_string_extra_keys:
-            log_warning(
-                logger,
-                f"Non-string values in extra options of import need source: {sorted(non_string_extra_keys)!r}",
-                "mistyped_import_values",
                 location=self.get_location(),
             )
 

@@ -26,137 +26,6 @@ but you must set a title as an argument (i.e. if you do not specify :ref:`needs_
     By default, the above example works also with ``.. spec::``, ``.. impl::``, ``.. test::`` and all other need types,
     which are configured via :ref:`needs_types`.
 
-.. _needs_variant_support:
-
-Variants for options support
-----------------------------
-.. versionadded:: 1.0.2
-
-Needs variants add support for variants handling on need options. |br|
-The support for variants options introduce new ideologies on how to set values for *need options*.
-
-To implement variants options, you can set a *need option* to a variant definition or multiple variant definitions.
-A variant definition can look like ``var_a:open`` or ``['name' in tags]:assigned``.
-
-A variant definition has two parts: the **rule or key** and the **value**. |br|
-For example, if we specify a variant definition as ``var_a:open``, then ``var_a`` is the key and ``open`` is the value.
-On the other hand, if we specify a variant definition as ``['name' in tags]:assigned``, then ``['name' in tags]`` is the rule
-and ``assigned`` is the value.
-
-Rules for specifying variant definitions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-* Variants gets checked from left to right.
-* When evaluating a variant definition, we use data from the current need object,
-  `Sphinx-Tags <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-t>`_,
-  and :ref:`needs_filter_data` as the context for filtering.
-* You can set a *need option* to multiple variant definitions by separating each definition with either
-  the ``,`` or ``;`` symbol, like ``var_a:open; ['name' in tags]:assigned``. |br|
-  With multiple variant definitions, we set the first matching variant as the *need option's* value.
-* When you set a *need option* to multiple variant definitions, you can specify the last definition as
-  a default "variant-free" option which we can use if no variant definition matches. |br|
-  Example; In this multi-variant definitions, ``[status in tags]:added; var_a:changed; unknown``, *unknown* will be used
-  if none of the other variant definitions are True.
-* If you prefer your variant definitions to use rules instead of keys, then you should put your filter string
-  inside square brackets like this: ``['name' in tags]:assigned``.
-* For multi-variant definitions, you can mix both rule and variant-named options like this:
-  ``[author["test"][0:4] == 'me']:Me, var_a:Variant A, Unknown``
-
-To implement variants options, you must configure the following in your ``conf.py`` file:
-
-* :ref:`needs_variants`
-* :ref:`needs_variant_options`
-
-There are various use cases for variants options support.
-
-Use Case 1
-~~~~~~~~~~
-
-In this example, you set the :ref:`needs_variants` configuration that comprises pre-defined variants assigned to
-"filter strings".
-You can then use the keys in your ``needs_variants`` as references when defining variants for a *need option*.
-
-For example, in your ``conf.py``:
-
-.. code-block:: python
-
-   needs_variants = {
-     "var_a": "'var_a' in sphinx_tags"  # filter_string
-     "var_b": "assignee == 'me'"
-   }
-
-In your ``.rst`` file:
-
-.. code-block:: rst
-
-   .. req:: Example
-      :id: VA_001
-      :status: var_a:open, var_b:closed, unknown
-
-From the above example, if a *need option* has variants defined, then we get the filter string
-from our ``needs_variants`` configuration and evaluate it.
-If a variant definition is true, then we set the *need option* to the value of the variant definition.
-
-Use Case 2
-~~~~~~~~~~
-
-In this example, you can use the filter string directly in the *need option's* variant definition.
-
-For example, in your ``.rst`` file:
-
-.. code-block:: rst
-
-   .. req:: Example
-      :id: VA_002
-      :status: ['var_a' in tags]:open, [assignee == 'me']:closed, unknown
-
-From the above example, we evaluate the filter string in our variant definition without referring to :ref:`needs_variants`.
-If a variant definition is true, then we set the *need option* to the value of the variant definition.
-
-Use Case 3
-~~~~~~~~~~
-
-In this example, you can use defined tags (via the `-t <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-t>`_
-command-line option or within conf.py, see `here <https://www.sphinx-doc.org/en/master/usage/configuration.html#conf-tags>`_)
-in the *need option's* variant definition.
-
-First of all, define your Sphinx-Tags using either the ``-t`` command-line ``sphinx-build`` option:
-
-.. code-block:: bash
-
-   sphinx-build -b html -t tag_a . _build
-
-or using the special object named ``tags`` which is available in your Sphinx config file (``conf.py`` file):
-
-.. code-block:: python
-
-   tags.add("tag_b")   # Add "tag_b" which is set to True
-
-In your ``.rst`` file:
-
-.. code-block:: rst
-
-   .. req:: Example
-      :id: VA_003
-      :status: [tag_a and tag_b]:open, closed
-
-From the above example, if a tag is defined, the plugin can access it in the filter context when handling variants.
-If a variant definition is true, then we set the *need option* to the value of the variant definition.
-
-.. note:: Undefined tags are false and defined tags are true.
-
-Below is an implementation of variants for need options:
-
-.. need-example::
-
-   .. req:: Variant options
-      :id: VA_004
-      :status: ['variants' in tags and not collapse]:enabled, disabled
-      :tags: variants;support
-      :collapse:
-
-      Variants for need options in action
-
 .. _need_diagram:
 
 Diagram support
@@ -299,17 +168,16 @@ By using :ref:`needs_extra_links <needs_extra_links>`, you can use the configure
 
 delete
 ~~~~~~
-There is a **:delete:** option. If the value of the option is set to ``true``, the need will be deleted completely
+
+There is a **:delete:** option. If the value of the option is set to **True**, the need will be deleted completely
 from any NeedLists or NeedDicts including the ``needs.json`` file.
 
 This option allows a user to have multiple need-objects with the same id, but only one is shown in the documentation.
 
-If set to ``false``, the need is not removed.
+Allowed values (case-insensitive):
 
-Allowed values:
-
-* ``true`` or ``yes`` or ``1``
-* ``false`` or ``no`` or ``0``
+:True: empty, ``true`` or ``yes``
+:False: ``false`` or ``no``
 
 Default: False
 
@@ -343,8 +211,15 @@ Default: False
 
 hide
 ~~~~
-There is a **:hide:** option. If this is set (no value is needed), the need will not be printed in the
-documentation. But you can use it with **need filters**.
+There is a **:hide:** option. If this is set to **True**, the need will not be printed in the documentation.
+But you can use it with **need filters**.
+
+Allowed values (case-insensitive):
+
+:True: empty, ``true`` or ``yes``
+:False: ``false`` or ``no``
+
+Default: False
 
 .. _need_collapse:
 
@@ -355,10 +230,10 @@ You can view the details by clicking on the forward arrow symbol near the need t
 
 If set to **False**, the need shows the details section.
 
-Allowed values:
+Allowed values (case-insensitive):
 
- * true; yes; 1
- * false; no; 0
+:True: empty, ``true`` or ``yes``
+:False: ``false`` or ``no``
 
 Default: False
 
@@ -389,10 +264,10 @@ and the data in :ref:`needs_filter_data`.
 
 If you set the option to **False**, you deactivate jinja-parsing for the need's content.
 
-Allowed values:
+Allowed values (case-insensitive):
 
-* empty, ``true`` or ``yes``
-* ``false`` or ``no``
+:True: empty, ``true`` or ``yes``
+:False: ``false`` or ``no``
 
 Default: False
 

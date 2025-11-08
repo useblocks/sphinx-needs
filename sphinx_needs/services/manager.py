@@ -5,7 +5,6 @@ from typing import Any
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.directives.needservice import NeedserviceDirective
 from sphinx_needs.logging import get_logger
 from sphinx_needs.services.base import BaseService
 
@@ -28,14 +27,13 @@ class ServiceManager:
 
         # Register options from service class
         for option in klass.options:
-            if option not in _NEEDS_CONFIG.extra_options:
+            if option == "type":
+                # TODO this should probably be done a bit more systematically;
+                # the github service adds a "type" option, but this is related to the core need field NOT an extra option
+                pass
+            elif option not in _NEEDS_CONFIG.extra_options:
                 self.log.debug(f'Register option "{option}" for service "{name}"')
                 _NEEDS_CONFIG.add_extra_option(option, f"Added by service {name}")
-                # Register new option directly in Service directive, as its class options got already
-                # calculated
-                NeedserviceDirective.option_spec[option] = _NEEDS_CONFIG.extra_options[
-                    option
-                ].validator
 
         # Init service with custom config
         self.services[name] = klass(self.app, name, config, **kwargs)

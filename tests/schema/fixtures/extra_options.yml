@@ -1,0 +1,729 @@
+no_schema:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+
+set_type_string:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    schema.type = "string"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+
+wrong_type:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    schema.type = "integer"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+
+const:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                type: string
+                const: QM
+
+const_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: A
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                type: string
+                const: QM
+
+enum:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                type: string
+                enum: ["QM", "A", "B", "C", "D"]
+
+enum_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: E
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                type: string
+                enum: ["QM", "A", "B", "C", "D"]
+
+auto_inject_type:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                const: QM
+
+required:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            required: ["asil"]
+
+required_missing:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            required: ["asil"]
+
+auto_inject_type_wrong_const:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: A
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                const: QM
+
+required_based_on_select_field_missing:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    [[needs.extra_options]]
+    name = "efforts"
+    schema.type = "integer"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            efforts:
+              minimum: 15
+          required: ["efforts"]
+        validate:
+          local:
+            required: ["asil"]
+
+required_based_on_select_field_below_threshold:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    [[needs.extra_options]]
+    name = "efforts"
+    schema.type = "integer"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 14
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            efforts:
+              minimum: 15
+          required: ["efforts"]
+        validate:
+          local:
+            required: ["asil"]
+
+required_based_on_select_field_over_threshold:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    [[needs.extra_options]]
+    name = "efforts"
+    schema.type = "integer"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 15
+  schemas:
+    $defs: []
+    schemas:
+      - message: Required due to high efforts
+        select:
+          properties:
+            efforts:
+              minimum: 15
+          required: ["efforts"]
+        validate:
+          local:
+            required: ["asil"]
+
+string_type:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    schema.type = "string"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+
+string_format_date:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "start_date"
+    schema.type = "string"
+    schema.format = "date"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :start_date: 2023-01-01
+
+string_format_date_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "start_date"
+    schema.type = "string"
+    schema.format = "date"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :start_date: not-a-date
+
+string_format_date_time:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "start_date"
+    schema.type = "string"
+    schema.format = "date-time"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :start_date: 2023-01-01T00:00:00Z
+
+string_format_date_time_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "start_date"
+    schema.type = "string"
+    schema.format = "date-time"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :start_date: 2025-07-1099:99:99Z
+
+string_format_time:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "time"
+    schema.type = "string"
+    schema.format = "time"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :time: 23:12:13
+
+string_format_time_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "time"
+    schema.type = "string"
+    schema.format = "time"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :time: 26:12:13
+
+string_format_duration:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "start_date"
+    schema.type = "string"
+    schema.format = "duration"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :start_date: P1Y2M10DT2H30M
+
+string_format_duration_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "_duration"
+    schema.type = "string"
+    schema.format = "duration"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :_duration: P1Q2Q10DT2H30M
+
+string_format_email:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "email"
+    schema.type = "string"
+    schema.format = "email"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :email: test@example.com
+
+string_format_email_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "email"
+    schema.type = "string"
+    schema.format = "email"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :email: not-a-mail
+
+string_format_uri:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "uri"
+    schema.type = "string"
+    schema.format = "uri"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :uri: https:://example.com
+
+string_format_uri_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "uri"
+    schema.type = "string"
+    schema.format = "uri"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :uri: examplecom
+
+string_format_uuid:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "uuid"
+    schema.type = "string"
+    schema.format = "uuid"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :uuid: 123e4567-e89b-12d3-a456-426614174000
+
+string_format_uuid_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "uuid"
+    schema.type = "string"
+    schema.format = "uuid"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :uuid: deadbeef-deadbeef-deadbeef-deadbeef
+
+coerce_to_integer:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts1"
+    schema.type = "integer"
+    [[needs.extra_options]]
+    name = "efforts2"
+    schema.type = "integer"
+    [[needs.extra_options]]
+    name = "efforts3"
+    schema.type = "integer"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts1: 1
+        :efforts2: 0
+        :efforts3: -1
+
+integer_multiple_of:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts1"
+    schema.type = "integer"
+    schema.multipleOf = 3
+    [[needs.extra_options]]
+    name = "efforts2"
+    schema.type = "integer"
+    schema.multipleOf = -1
+    [[needs.extra_options]]
+    name = "efforts3"
+    schema.type = "integer"
+    schema.multipleOf = -1
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts1: 9
+        :efforts2: -4
+        :efforts3: 4
+
+integer_multiple_of_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+    schema.type = "integer"
+    schema.multipleOf = 3
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 8
+
+number_multiple_of:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts1"
+    schema.type = "number"
+    schema.multipleOf = 3.3
+    [[needs.extra_options]]
+    name = "efforts2"
+    schema.type = "number"
+    schema.multipleOf = -1.1
+    [[needs.extra_options]]
+    name = "efforts3"
+    schema.type = "number"
+    schema.multipleOf = 1.2
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts1: 6.6
+        :efforts2: 4.4
+        :efforts3: -2.4
+
+number_multiple_of_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+    schema.type = "number"
+    schema.multipleOf = 3.3
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 5.0
+
+coerce_to_integer_from_string_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+    schema.type = "integer"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: QM
+
+coerce_to_number:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts1"
+    schema.type = "number"
+    [[needs.extra_options]]
+    name = "efforts2"
+    schema.type = "number"
+    [[needs.extra_options]]
+    name = "efforts3"
+    schema.type = "number"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts1: 1.0
+        :efforts2: 0
+        :efforts3: -1.2
+
+coerce_to_number_from_string_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+    schema.type = "number"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: QM
+
+coerce_to_integer_from_float_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "efforts"
+    schema.type = "integer"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :efforts: 1.2
+
+coerce_to_boolean:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "accepted"
+    schema.type = "boolean"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :accepted: True
+
+    .. impl:: title
+        :id: IMPL_2
+        :accepted: true
+
+    .. impl:: title
+        :id: IMPL_3
+        :accepted: false
+
+    .. impl:: title
+        :id: IMPL_4
+        :accepted: False
+
+    .. impl:: title
+        :id: IMPL_5
+        :accepted: yes
+
+    .. impl:: title
+        :id: IMPL_6
+        :accepted: Yes
+
+    .. impl:: title
+        :id: IMPL_7
+        :accepted: no
+
+    .. impl:: title
+        :id: IMPL_8
+        :accepted: No
+
+    .. impl:: title
+        :id: IMPL_9
+        :accepted: 1
+
+    .. impl:: title
+        :id: IMPL_10
+        :accepted: 0
+
+    .. impl:: title
+        :id: IMPL_11
+        :accepted: on
+
+    .. impl:: title
+        :id: IMPL_12
+        :accepted: On
+
+    .. impl:: title
+        :id: IMPL_13
+        :accepted: off
+
+    .. impl:: title
+        :id: IMPL_14
+        :accepted: Off
+
+coerce_to_boolean_from_string_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "approved"
+    schema.type = "boolean"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :approved: not-a-boolean

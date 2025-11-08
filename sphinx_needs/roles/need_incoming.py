@@ -33,7 +33,7 @@ def process_need_incoming(
 
         # Let's check if NeedIncoming shall follow a specific link type
         if "link_type" in node_need_backref.attributes:
-            links_back = ref_need[node_need_backref.attributes["link_type"]]  # type: ignore[literal-required]
+            links_back = ref_need[node_need_backref.attributes["link_type"]]
         # if not, follow back to default links
         else:
             links_back = ref_need["links_back"]

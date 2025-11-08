@@ -4,6 +4,7 @@ import html
 import os
 import time
 from collections.abc import Sequence
+from pathlib import PurePosixPath
 from typing import TYPE_CHECKING, Any, TypedDict
 
 from docutils import nodes
@@ -13,13 +14,13 @@ from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType, SphinxNeedsData
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link
 from sphinx_needs.directives.needflow._plantuml import make_entity_name
 from sphinx_needs.filter_common import filter_needs_view
 from sphinx_needs.logging import log_warning
-from sphinx_needs.roles.need_part import create_need_from_part
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.roles.need_ref import value_to_string
 from sphinx_needs.utils import add_doc, logger, split_need_id
 
@@ -107,9 +108,9 @@ class NeedumlDirective(SphinxDirective):
         save_path = self.options.get("save")
         plantuml_code_out_path = None
         if save_path:
-            if os.path.isabs(save_path):
+            if PurePosixPath(save_path).is_absolute():
                 raise NeedumlException(
-                    f"Given save path: {save_path}, is not a relative path."
+                    f"Given save path: {save_path}, is not a relative posix path."
                 )
             else:
                 plantuml_code_out_path = save_path
@@ -159,7 +160,7 @@ def transform_uml_to_plantuml_node(
     config: str,
 ) -> plantuml:
     try:
-        if "sphinxcontrib.plantuml" not in app.config.extensions:
+        if "sphinxcontrib.plantuml" not in app.extensions:
             raise ImportError
         from sphinxcontrib.plantuml import plantuml
     except ImportError:
@@ -415,25 +416,27 @@ class JinjaFunctions:
                 "Jinja function ref requires exactly one entry 'option' or 'text'"
             )
 
-        need_info = self.needs[need_id_main]
+        need = self.needs[need_id_main]
+
+        need_or_part: NeedItem | NeedPartItem
 
         if need_id_part:
-            if need_id_part not in need_info["parts"]:
+            if (part := need.get_part_item(need_id_part)) is None:
                 raise NeedumlException(
                     f"Jinja function ref is called with undefined need_id part: '{need_id}'."
                 )
-            need_info = create_need_from_part(
-                need_info, need_info["parts"][need_id_part]
-            )
+            need_or_part = part
+        else:
+            need_or_part = need
 
-        link = calculate_link(self.app, need_info, self.fromdocname)
+        link = calculate_link(self.app, need_or_part, self.fromdocname)
         link_text = (
-            value_to_string(need_info.get(option, "")) if option else str(text or "")
+            value_to_string(need_or_part.get(option, "")) if option else str(text or "")
         ).strip()
 
         return f"[[{link}{' ' if link_text else ''}{link_text}]]"
 
-    def filter(self, filter_string: str) -> list[NeedsInfoType]:
+    def filter(self, filter_string: str) -> list[NeedItem]:
         """
         Return a list of found needs that pass the given filter string.
         """
@@ -453,7 +456,7 @@ class JinjaFunctions:
             # check if link option_name exists in current need object
             if option_value := need_info.get(option_name):
                 try:
-                    iterable_value = list(option_value)  # type: ignore
+                    iterable_value = list(option_value)
                 except TypeError:
                     raise NeedumlException(
                         f"Option value for {option_name!r} is not iterable."
@@ -469,7 +472,7 @@ class JinjaFunctions:
                 umls += local_uml_from_need
         return umls
 
-    def need(self) -> NeedsInfoType:
+    def need(self) -> NeedItem:
         if not self.parent_need_id:
             raise NeedumlException(
                 "Jinja function 'need()' is not supported in needuml directive."
@@ -545,6 +548,11 @@ def process_needuml(
             kwargs=current_needuml["extra"],
             config=config,
         )
+        if "uml" not in puml_node:
+            # An error node was returned
+            node.replace_self(puml_node)
+            continue
+
         duration = time.perf_counter() - start
 
         if (

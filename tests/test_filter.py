@@ -6,6 +6,12 @@ import pytest
 from sphinx.util.console import strip_colors
 
 from sphinx_needs.filter_common import filter_needs_parts, filter_needs_view
+from sphinx_needs.need_item import (
+    NeedItem,
+    NeedItemSourceExternal,
+    NeedPartData,
+    NeedsContent,
+)
 from sphinx_needs.views import NeedsView
 
 
@@ -111,80 +117,133 @@ def test_filter_build_html(test_app):
 
 
 def create_needs_view():
-    needs = [
-        {
-            "id": "req_a_1",
-            "type": "requirement",
-            "type_name": "Req",
-            "tags": ["a", "b"],
-            "status": "",
-            "is_external": False,
-            "parts": {},
-        },
-        {
-            "id": "req_b_1",
-            "type": "requirement",
-            "type_name": "Req",
-            "tags": ["b", "c"],
-            "status": "",
-            "is_external": False,
-            "parts": {},
-        },
-        {
-            "id": "req_c_1",
-            "type": "requirement",
-            "type_name": "Req",
-            "tags": ["c", "d"],
-            "status": "",
-            "is_external": False,
-            "parts": {},
-        },
-        {
-            "id": "story_a_1",
-            "type": "story",
-            "type_name": "Story",
-            "tags": ["a", "b"],
-            "status": "",
-            "is_external": True,
-            "parts": {},
-        },
-        {
-            "id": "story_b_1",
-            "type": "story",
-            "type_name": "Story",
-            "tags": ["b", "c"],
-            "status": "ongoing",
-            "is_external": False,
-            "parts": {},
-        },
-        {
-            "id": "story_a_b_1",
-            "type": "story",
-            "type_name": "Story",
-            "tags": ["a", "b", "c"],
-            "status": "done",
-            "is_external": False,
-            "parts": {
-                "part_a": {
-                    "id": "part_a",
-                },
+    needs_core = [
+        (
+            {
+                "id": "req_a_1",
+                "type": "requirement",
+                "type_name": "Req",
+                "tags": ["a", "b"],
+                "status": "",
             },
-        },
+            None,
+            (),
+        ),
+        (
+            {
+                "id": "req_b_1",
+                "type": "requirement",
+                "type_name": "Req",
+                "tags": ["b", "c"],
+                "status": "",
+            },
+            None,
+            (),
+        ),
+        (
+            {
+                "id": "req_c_1",
+                "type": "requirement",
+                "type_name": "Req",
+                "tags": ["c", "d"],
+                "status": "",
+            },
+            None,
+            (),
+        ),
+        (
+            {
+                "id": "story_a_1",
+                "type": "story",
+                "type_name": "Story",
+                "tags": ["a", "b"],
+                "status": "",
+            },
+            NeedItemSourceExternal(url="https://example.com"),
+            (),
+        ),
+        (
+            {
+                "id": "story_b_1",
+                "type": "story",
+                "type_name": "Story",
+                "tags": ["b", "c"],
+                "status": "ongoing",
+            },
+            None,
+            (),
+        ),
+        (
+            {
+                "id": "story_a_b_1",
+                "type": "story",
+                "type_name": "Story",
+                "tags": ["a", "b", "c"],
+                "status": "done",
+            },
+            None,
+            (
+                NeedPartData(
+                    id="part_a",
+                    content="Part A",
+                ),
+            ),
+        ),
     ]
 
-    return NeedsView._from_needs({n["id"]: n for n in needs})
+    core_base = {
+        "id": "abc",
+        "type": "type",
+        "type_name": "type title",
+        "type_prefix": "type prefix",
+        "type_color": "#000000",
+        "type_style": "node",
+        "status": None,
+        "tags": ["tag1"],
+        "constraints": ("const1",),
+        "title": "title",
+        "collapse": False,
+        "arch": {},
+        "style": None,
+        "layout": None,
+        "hide": False,
+        "external_css": "external_link",
+        "has_dead_links": False,
+        "has_forbidden_dead_links": False,
+        "sections": (),
+        "signature": None,
+    }
+
+    content = NeedsContent(
+        content="content",
+        doctype=".rst",
+    )
+
+    need_items = [
+        NeedItem(
+            core=core_base | core,
+            extras={},
+            links={},
+            source=source,
+            content=content,
+            parts=parts,
+        )
+        for core, source, parts in needs_core
+    ]
+
+    return NeedsView._from_needs({n["id"]: n for n in need_items})
 
 
 std_test_params = (
-    ("", list(create_needs_view()), True),
-    ("True", list(create_needs_view()), True),
-    ("xxx", list(create_needs_view()), False),
+    ("", "__all__", True),
+    ("True", "__all__", True),
+    ("xxx", "__all__", False),
     ("not xxx", [], False),
     ("False", [], True),
     ("False and False", [], True),
     ("False and True", [], True),
-    ("True and True", list(create_needs_view()), True),
-    ("True or False", list(create_needs_view()), False),
+    ("True and True", "__all__", True),
+    ("True or False", "__all__", False),
     ("id == 'req_a_1'", ["req_a_1"], True),
     ("id == 'unknown'", [], True),
     ("is_external", ["story_a_1"], True),
@@ -208,6 +267,8 @@ std_test_params = (
     ids=[s for s, _, _ in std_test_params],
 )
 def test_filter_needs_view(filter_string, expected_ids, strict_eval):
+    if expected_ids == "__all__":
+        expected_ids = list(create_needs_view())
     mock_config = Mock()
     mock_config.filter_data = {"xxx": True}
     result = filter_needs_view(
@@ -216,21 +277,16 @@ def test_filter_needs_view(filter_string, expected_ids, strict_eval):
     assert {n["id"] for n in result} == set(expected_ids)
 
 
-_all_need_part_ids = []
-for need in create_needs_view().values():
-    _all_need_part_ids.append(need["id"])
-    _all_need_part_ids.extend(need["parts"])
-
 part_test_params = (
-    ("", _all_need_part_ids, True),
-    ("True", _all_need_part_ids, True),
-    ("xxx", _all_need_part_ids, False),
+    ("", "__all__", True),
+    ("True", "__all__", True),
+    ("xxx", "__all__", False),
     ("not xxx", [], False),
     ("False", [], True),
     ("False and False", [], True),
     ("False and True", [], True),
-    ("True and True", _all_need_part_ids, True),
-    ("True or False", _all_need_part_ids, False),
+    ("True and True", "__all__", True),
+    ("True or False", "__all__", False),
     ("id == 'req_a_1'", ["req_a_1"], True),
     ("id == 'unknown'", [], True),
     ("is_external", ["story_a_1"], True),
@@ -257,6 +313,11 @@ part_test_params = (
     ids=[s for s, _, _ in part_test_params],
 )
 def test_filter_needs_parts(filter_string, expected_ids, strict_eval):
+    if expected_ids == "__all__":
+        expected_ids = []
+        for need in create_needs_view().values():
+            expected_ids.append(need["id"])
+            expected_ids.extend(need["parts"])
     mock_config = Mock()
     mock_config.filter_data = {"xxx": True}
     result = filter_needs_parts(

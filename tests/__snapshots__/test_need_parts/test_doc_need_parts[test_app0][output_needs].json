@@ -1,0 +1,124 @@
+{
+  "OTHER_1": {
+    "docname": "index",
+    "external_css": "external_link",
+    "has_dead_links": true,
+    "has_forbidden_dead_links": true,
+    "id": "OTHER_1",
+    "lineno": 38,
+    "links": [
+      "SP_TOO_001.unknown_part"
+    ],
+    "other_links": [
+      "SP_TOO_001",
+      "SP_TOO_001.1"
+    ],
+    "section_name": "NEED PARTS",
+    "sections": [
+      "NEED PARTS"
+    ],
+    "title": "Other",
+    "type": "test",
+    "type_name": "Test Case"
+  },
+  "OTHER_2": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "OTHER_2",
+    "lineno": 43,
+    "more_links": [
+      "SP_TOO_001"
+    ],
+    "section_name": "NEED PARTS",
+    "sections": [
+      "NEED PARTS"
+    ],
+    "title": "Other 2",
+    "type": "test",
+    "type_name": "Test Case"
+  },
+  "SP_TOO_001": {
+    "content": "The Tool awesome shall have a command line interface with following commands:\n\n* :need_part:`(1)exit()`\n* :need_part:`(2)start()`\n* :need_part:`(awesome_id)blub()`\n* :need_part:`(multiline_id)\n  has multi-lines`\n\n\n* :np:`unknown_id_1`\n* :np:`unknown_id_2`\n\n.. spec:: TEST_2\n    :id: TEST_2\n\n    Part in nested need: :need_part:`(nested_id)something`",
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "SP_TOO_001",
+    "lineno": 4,
+    "links_back": [
+      "OTHER_1"
+    ],
+    "more_links_back": [
+      "OTHER_2"
+    ],
+    "other_links_back": [
+      "OTHER_1"
+    ],
+    "parent_needs_back": [
+      "TEST_2"
+    ],
+    "parts": {
+      "1": {
+        "content": "exit()",
+        "id": "1",
+        "other_links_back": [
+          "OTHER_1"
+        ]
+      },
+      "2": {
+        "content": "start()",
+        "id": "2"
+      },
+      "5DA": {
+        "content": "unknown_id_1",
+        "id": "5DA"
+      },
+      "7FF": {
+        "content": "unknown_id_2",
+        "id": "7FF"
+      },
+      "awesome_id": {
+        "content": "blub()",
+        "id": "awesome_id"
+      },
+      "multiline_id": {
+        "content": "\nhas multi-lines",
+        "id": "multiline_id"
+      }
+    },
+    "section_name": "NEED PARTS",
+    "sections": [
+      "NEED PARTS"
+    ],
+    "status": "implemented",
+    "tags": [
+      "test",
+      "test2"
+    ],
+    "title": "Command line interface",
+    "type": "spec",
+    "type_name": "Specification"
+  },
+  "TEST_2": {
+    "content": "Part in nested need: :need_part:`(nested_id)something`",
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "TEST_2",
+    "lineno": 21,
+    "parent_need": "SP_TOO_001",
+    "parent_needs": [
+      "SP_TOO_001"
+    ],
+    "parts": {
+      "nested_id": {
+        "content": "something",
+        "id": "nested_id"
+      }
+    },
+    "section_name": "NEED PARTS",
+    "sections": [
+      "NEED PARTS"
+    ],
+    "title": "TEST_2",
+    "type": "spec",
+    "type_name": "Specification"
+  }
+}

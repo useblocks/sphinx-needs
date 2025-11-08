@@ -1,0 +1,251 @@
+inject_array:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.minItems = 2
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+items_pattern:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.items = { type = "string", pattern = "^[A-Z0-9_]{3,}" }
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+items_pattern_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.items = { type = "string", pattern = "^[A-Z0-9_]{10,}" }
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+min_items:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.type = "array"
+    schema.minItems = 1
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+min_items_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.type = "array"
+    schema.minItems = 2
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+max_items:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.type = "array"
+    schema.maxItems = 1
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+max_items_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.maxItems = 1
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_2
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1, SPEC_2
+
+contains:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.contains = { pattern = "^SPEC_" }
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.contains = { pattern = "^REQ_" }
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+min_contains:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.contains = { pattern = "^SPEC_" }
+    schema.minContains = 1
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+min_contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.type = "array"
+    schema.contains = { pattern = "^SPEC_" }
+    schema.minContains = 2
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+max_contains:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.contains = { pattern = "^SPEC_" }
+    schema.maxContains = 2
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_2
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1, SPEC_2
+
+max_contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.type = "array"
+    schema.contains = { pattern = "^SPEC_" }
+    schema.maxContains = 1
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. spec:: title
+        :id: SPEC_2
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1, SPEC_2

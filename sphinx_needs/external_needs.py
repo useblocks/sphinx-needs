@@ -14,6 +14,7 @@ from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.need_item import NeedItemSourceExternal
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
 log = get_logger(__name__)
@@ -136,7 +137,6 @@ def load_external_needs(
 
         # collect keys for warning logs, so that we only log one warning per key
         unknown_keys: set[str] = set()
-        non_string_extra_keys: set[str] = set()
 
         for need in needs.values():
             need_params = {**defaults, **need}
@@ -153,10 +153,6 @@ def load_external_needs(
                     del need_params[option]
                 elif option in omitted_keys:
                     del need_params[option]
-                if option in needs_config.extra_options and not isinstance(
-                    need_params[option], str
-                ):
-                    non_string_extra_keys.add(option)
 
             # These keys need to be different for add_need() api call.
             need_params["need_type"] = need_params.pop("type", "")
@@ -170,11 +166,9 @@ def load_external_needs(
                 # render jinja content
                 mem_template = get_target_template(target_url)
                 cal_target_url = mem_template.render(**{"need": need})
-                need_params["external_url"] = f"{source['base_url']}/{cal_target_url}"
+                external_url = f"{source['base_url']}/{cal_target_url}"
             else:
-                need_params["external_url"] = (
-                    f"{source['base_url']}/{need.get('docname', '__error__')}.html#{need['id']}"
-                )
+                external_url = f"{source['base_url']}/{need.get('docname', '__error__')}.html#{need['id']}"
 
             # check if external needs already exist
             ext_need_id = need_params["id"]
@@ -190,12 +184,18 @@ def load_external_needs(
                 del_need(app, ext_need_id)
 
             try:
-                add_external_need(app, **need_params)
+                add_external_need(
+                    app,
+                    need_source=NeedItemSourceExternal(url=external_url),
+                    **need_params,
+                )
             except InvalidNeedException as err:
                 location = source.get("json_url", "") or source.get("json_path", "")
                 log_warning(
                     log,
-                    f"External need {ext_need_id!r} in {location!r} could not be added: {err.message}",
+                    clean_log(
+                        f"External need {ext_need_id!r} in {location!r} could not be added: {err.message}"
+                    ),
                     "load_external_need",
                     location=None,
                 )
@@ -204,15 +204,10 @@ def load_external_needs(
         if unknown_keys:
             log_warning(
                 log,
-                f"Unknown keys in external need source {source_str!r}: {sorted(unknown_keys)!r}",
+                clean_log(
+                    f"Unknown keys in external need source {source_str!r}: {sorted(unknown_keys)!r}"
+                ),
                 "unknown_external_keys",
-                location=None,
-            )
-        if non_string_extra_keys:
-            log_warning(
-                log,
-                f"Non-string values in extra options of external need source {source_str!r}: {sorted(non_string_extra_keys)!r}",
-                "mistyped_external_values",
                 location=None,
             )
 

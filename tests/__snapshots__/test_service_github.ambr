@@ -9,9 +9,10 @@
             'arch': dict({
             }),
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
+            'constraints_error': None,
             'constraints_passed': True,
             'constraints_results': dict({
             }),
@@ -23,7 +24,7 @@
             'created_at': '2024-02-15T14:04:06Z',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -33,11 +34,9 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': 'github',
-            'lineno': 19,
+            'lineno': 20,
             'links': list([
             ]),
             'links_back': list([
@@ -46,14 +45,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
@@ -62,7 +63,7 @@
               'Title',
             ]),
             'service': 'github-commits',
-            'signature': '',
+            'signature': None,
             'specific': 'useblocks/sphinx-needs/050bec750ff2c5acf881415fa2b5efb5fcce8414',
             'status': None,
             'style': None,
@@ -80,10 +81,11 @@
           'GITHUB_1110': dict({
             'arch': dict({
             }),
-            'closed_at': 'None',
-            'completion': '',
+            'closed_at': '',
+            'completion': None,
             'constraints': list([
             ]),
+            'constraints_error': None,
             'constraints_passed': True,
             'constraints_results': dict({
             }),
@@ -99,7 +101,7 @@
             'created_at': '2024-02-15T12:19:11Z',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -109,8 +111,6 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': 'github',
             'lineno': 6,
@@ -122,14 +122,16 @@
             'max_content_lines': '2',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': 'repo:useblocks/sphinx-needs',
@@ -138,7 +140,7 @@
               'Title',
             ]),
             'service': 'github-issues',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': 'open',
             'style': None,
@@ -147,8 +149,8 @@
             ]),
             'template': None,
             'title': 'needreport usage should count needs in post-process',
-            'type': 'issue',
-            'type_name': 'Issue',
+            'type': 'req',
+            'type_name': 'Requirement',
             'updated_at': '2024-02-15T12:19:30Z',
             'url': 'https://github.com/useblocks/sphinx-needs/issues/1110',
             'url_postfix': '',
@@ -157,10 +159,11 @@
           'GITHUB_1112': dict({
             'arch': dict({
             }),
-            'closed_at': 'None',
-            'completion': '',
+            'closed_at': '',
+            'completion': None,
             'constraints': list([
             ]),
+            'constraints_error': None,
             'constraints_passed': True,
             'constraints_results': dict({
             }),
@@ -198,7 +201,7 @@
             'created_at': '2024-02-15T20:45:12Z',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -208,11 +211,9 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': 'github',
-            'lineno': 11,
+            'lineno': 12,
             'links': list([
             ]),
             'links_back': list([
@@ -221,14 +222,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': 'repo:useblocks/sphinx-needs',
@@ -237,7 +240,7 @@
               'Title',
             ]),
             'service': 'github-prs',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': 'open',
             'style': None,
@@ -256,9 +259,10 @@
             'arch': dict({
             }),
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
+            'constraints_error': None,
             'constraints_passed': True,
             'constraints_results': dict({
             }),
@@ -281,7 +285,7 @@
             'created_at': '2024-02-12T08:36:07.000Z',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -291,11 +295,9 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
             'layout': 'github',
-            'lineno': 15,
+            'lineno': 16,
             'links': list([
             ]),
             'links_back': list([
@@ -304,14 +306,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': 'repo:useblocks/sphinx-needs error',
@@ -320,7 +324,7 @@
               'Title',
             ]),
             'service': 'github-commits',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': None,
             'style': None,
@@ -357,10 +361,10 @@
               'type': 'string',
             }),
             'completion': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'constraints': dict({
               'default': list([
@@ -373,16 +377,22 @@
               'type': 'array',
             }),
             'constraints_error': dict({
-              'default': '',
+              'default': None,
               'description': 'An error message set if any constraint failed, and `error_message` field is set in config.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'constraints_passed': dict({
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': 'boolean',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -390,13 +400,16 @@
               }),
               'default': dict({
               }),
-              'description': 'Mapping of constraint name, to check name, to result.',
+              'description': 'Mapping of constraint name, to check name, to result, None if not yet checked.',
               'field_type': 'core',
-              'type': 'object',
+              'type': list([
+                'object',
+                'null',
+              ]),
             }),
             'content': dict({
               'default': '',
-              'description': 'Content of the need.',
+              'description': 'The main content of the need.',
               'field_type': 'core',
               'type': 'string',
             }),
@@ -417,15 +430,15 @@
             }),
             'doctype': dict({
               'default': '.rst',
-              'description': "Type of the document where the need is defined, e.g. '.rst'.",
+              'description': "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
               'field_type': 'core',
               'type': 'string',
             }),
             'duration': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'external_css': dict({
               'default': '',
@@ -483,21 +496,9 @@
               'field_type': 'core',
               'type': 'boolean',
             }),
-            'is_need': dict({
-              'default': True,
-              'description': 'Whether the need is a need.',
-              'field_type': 'core',
-              'type': 'boolean',
-            }),
-            'is_part': dict({
-              'default': False,
-              'description': 'Whether the need is a part.',
-              'field_type': 'core',
-              'type': 'boolean',
-            }),
             'jinja_content': dict({
               'default': False,
-              'description': 'Whether the content should be pre-processed by jinja.',
+              'description': 'Whether the content was pre-processed by jinja.',
               'field_type': 'core',
               'type': 'boolean',
             }),
@@ -564,10 +565,13 @@
               'type': 'string',
             }),
             'parent_need': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first parent id.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'parent_needs': dict({
               'default': list([
@@ -600,14 +604,17 @@
               'type': 'object',
             }),
             'post_content': dict({
-              'default': '',
-              'description': 'Post-content of the need.',
+              'default': None,
+              'description': 'Additional content after the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'post_template': dict({
               'default': None,
-              'description': 'Post-template of the need.',
+              'description': 'The template key, if the post_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -615,14 +622,17 @@
               ]),
             }),
             'pre_content': dict({
-              'default': '',
-              'description': 'Pre-content of the need.',
+              'default': None,
+              'description': 'Additional content before the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'pre_template': dict({
               'default': None,
-              'description': 'Pre-template of the need.',
+              'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -642,10 +652,13 @@
               'type': 'string',
             }),
             'section_name': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first section.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'sections': dict({
               'default': list([
@@ -664,10 +677,13 @@
               'type': 'string',
             }),
             'signature': dict({
-              'default': '',
+              'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'specific': dict({
               'default': '',
@@ -705,7 +721,7 @@
             }),
             'template': dict({
               'default': None,
-              'description': 'Template of the need.',
+              'description': 'The template key, if the content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',

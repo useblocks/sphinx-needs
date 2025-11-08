@@ -11,6 +11,8 @@ from sphinx import version_info
 from sphinx.testing.util import SphinxTestApp
 from syrupy.filters import props
 
+from sphinx_needs.data import SphinxNeedsData
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -144,10 +146,15 @@ def test_build_needs(test_app: SphinxTestApp, snapshot):
     app.build()
     assert app._warning.getvalue() == ""
 
+    schema = SphinxNeedsData(app.env).get_schema()
+    assert {s.name: s for s in schema.iter_all_fields()} == snapshot(name="schema")
+
     json_text = Path(app.outdir, "needs.json").read_text()
     needs_data = json.loads(json_text)
 
-    assert needs_data == snapshot(exclude=props("created", "project", "creator"))
+    assert needs_data == snapshot(
+        name="needs", exclude=props("created", "project", "creator")
+    )
 
 
 def test_sphinx_api_build(tmp_path: Path, make_app: type[SphinxTestApp]):

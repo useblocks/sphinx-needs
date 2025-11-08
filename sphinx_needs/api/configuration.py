@@ -6,15 +6,18 @@ All functions here are available under ``sphinx_needs.api``.
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter
 
 from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
-from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.functions.functions import DynamicFunction
+from sphinx_needs.need_item import NeedItem
+from sphinx_needs.schema.config import ExtraOptionSchemaTypes
+
+# TODO(mh) document exactly when API calls are allowed in the Sphinx event system
 
 
 def get_need_types(app: Sphinx) -> list[str]:
@@ -84,7 +87,11 @@ def add_need_type(
 
 
 def add_extra_option(
-    app: Sphinx, name: str, *, description: str = "Added by add_extra_option API"
+    app: Sphinx,
+    name: str,
+    *,
+    description: str = "Added by add_extra_option API",
+    schema: ExtraOptionSchemaTypes | None = None,
 ) -> None:
     """
     Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
@@ -98,10 +105,15 @@ def add_extra_option(
         add_extra_option(app, 'my_extra_option')
 
     :param app: Sphinx application object
-    :param name: Name as string of the extra option
+    :param name: Name of the extra option
+    :param description: Description of the extra option
+    :param schema: Schema definition for the extra option
     :return: None
     """
-    _NEEDS_CONFIG.add_extra_option(name, description)
+    _NEEDS_CONFIG.add_extra_option(name, description, schema=schema)
+
+
+# TODO(mh) add extra link api
 
 
 def add_dynamic_function(
@@ -134,7 +146,7 @@ def add_dynamic_function(
 
 
 # 'Need' is untyped, so we temporarily use 'Any' here
-WarningCheck = Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]
+WarningCheck = Callable[[NeedItem, SphinxLoggerAdapter], bool]
 
 
 def add_warning(

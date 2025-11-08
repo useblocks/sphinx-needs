@@ -51,7 +51,7 @@ def test_doc_needextend_html(test_app: Sphinx, snapshot):
     [
         {
             "buildername": "html",
-            "srcdir": "doc_test/doc_needextend_unknown_id",
+            "srcdir": "doc_test/doc_needextend_warnings",
             "no_plantuml": True,
         }
     ],
@@ -68,10 +68,16 @@ def test_doc_needextend_warnings(test_app: Sphinx):
     assert warnings == [
         "<srcdir>/index.rst:25: WARNING: Empty ID/filter argument in needextend directive. [needs.needextend]",
         "<srcdir>/index.rst:26: WARNING: Empty ID/filter argument in needextend directive. [needs.needextend]",
+        "<srcdir>/index.rst:28: WARNING: Cannot append to option '+hide' with type 'boolean'. [needs.needextend]",
+        "<srcdir>/index.rst:28: WARNING: Invalid value for 'hide' option: Cannot convert 'bad' to boolean [needs.needextend]",
+        "<srcdir>/index.rst:28: WARNING: Unknown option '-unknown' [needs.needextend]",
+        "<srcdir>/index.rst:28: WARNING: Unknown option '+unknown' [needs.needextend]",
+        "<srcdir>/index.rst:28: WARNING: Unknown option 'unknown' [needs.needextend]",
         "<srcdir>/index.rst:19: WARNING: Provided id 'unknown_id' for needextend does not exist. [needs.needextend]",
         "<srcdir>/index.rst:22: WARNING: Provided id 'id with space' for needextend does not exist. [needs.needextend]",
         "<srcdir>/index.rst:23: WARNING: Filter 'bad_filter' not valid. Error: name 'bad_filter' is not defined. [needs.filter]",
         "<srcdir>/index.rst:24: WARNING: Filter 'bad == filter' not valid. Error: name 'bad' is not defined. [needs.filter]",
+        "<srcdir>/index.rst:10: WARNING: Need 'extend_test_004' has unknown outgoing link 'unknown1' in field 'links' [needs.link_outgoing]",
     ]
 
 

@@ -208,6 +208,7 @@ Contents
    services/index
    layout_styles
    api
+   schema/index
    utils
 
 .. toctree::

@@ -12,7 +12,6 @@
             'id': 'R_12345',
             'impacts': 'component_a',
             'introduced': '1.0.0',
-            'layout': '',
             'lineno': 7,
             'section_name': 'Section 1',
             'sections': list([
@@ -35,7 +34,6 @@
             'id': 'R_12346',
             'impacts': 'component_b',
             'introduced': '1.1.1',
-            'layout': '',
             'lineno': 16,
             'section_name': 'Section 1',
             'sections': list([
@@ -80,10 +78,10 @@
               'type': 'string',
             }),
             'completion': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'constraints': dict({
               'default': list([
@@ -96,16 +94,22 @@
               'type': 'array',
             }),
             'constraints_error': dict({
-              'default': '',
+              'default': None,
               'description': 'An error message set if any constraint failed, and `error_message` field is set in config.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'constraints_passed': dict({
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': 'boolean',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -113,13 +117,16 @@
               }),
               'default': dict({
               }),
-              'description': 'Mapping of constraint name, to check name, to result.',
+              'description': 'Mapping of constraint name, to check name, to result, None if not yet checked.',
               'field_type': 'core',
-              'type': 'object',
+              'type': list([
+                'object',
+                'null',
+              ]),
             }),
             'content': dict({
               'default': '',
-              'description': 'Content of the need.',
+              'description': 'The main content of the need.',
               'field_type': 'core',
               'type': 'string',
             }),
@@ -140,15 +147,15 @@
             }),
             'doctype': dict({
               'default': '.rst',
-              'description': "Type of the document where the need is defined, e.g. '.rst'.",
+              'description': "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
               'field_type': 'core',
               'type': 'string',
             }),
             'duration': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'external_css': dict({
               'default': '',
@@ -218,21 +225,9 @@
               'field_type': 'core',
               'type': 'boolean',
             }),
-            'is_need': dict({
-              'default': True,
-              'description': 'Whether the need is a need.',
-              'field_type': 'core',
-              'type': 'boolean',
-            }),
-            'is_part': dict({
-              'default': False,
-              'description': 'Whether the need is a part.',
-              'field_type': 'core',
-              'type': 'boolean',
-            }),
             'jinja_content': dict({
               'default': False,
-              'description': 'Whether the content should be pre-processed by jinja.',
+              'description': 'Whether the content was pre-processed by jinja.',
               'field_type': 'core',
               'type': 'boolean',
             }),
@@ -305,10 +300,13 @@
               'type': 'string',
             }),
             'parent_need': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first parent id.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'parent_needs': dict({
               'default': list([
@@ -341,14 +339,17 @@
               'type': 'object',
             }),
             'post_content': dict({
-              'default': '',
-              'description': 'Post-content of the need.',
+              'default': None,
+              'description': 'Additional content after the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'post_template': dict({
               'default': None,
-              'description': 'Post-template of the need.',
+              'description': 'The template key, if the post_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -356,14 +357,17 @@
               ]),
             }),
             'pre_content': dict({
-              'default': '',
-              'description': 'Pre-content of the need.',
+              'default': None,
+              'description': 'Additional content before the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'pre_template': dict({
               'default': None,
-              'description': 'Pre-template of the need.',
+              'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -383,10 +387,13 @@
               'type': 'string',
             }),
             'section_name': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first section.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'sections': dict({
               'default': list([
@@ -405,10 +412,13 @@
               'type': 'string',
             }),
             'signature': dict({
-              'default': '',
+              'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'specific': dict({
               'default': '',
@@ -446,7 +456,7 @@
             }),
             'template': dict({
               'default': None,
-              'description': 'Template of the need.',
+              'description': 'The template key, if the content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',

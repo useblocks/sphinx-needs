@@ -1,36 +1,52 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypedDict
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
 
-from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
 from sphinx.config import Config as _SphinxConfig
 
 from sphinx_needs.data import GraphvizStyleType, NeedsCoreFields
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
 from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.schema.config import (
+    ExtraLinkSchemaType,
+    ExtraOptionBooleanSchemaType,
+    ExtraOptionIntegerSchemaType,
+    ExtraOptionMultiValueSchemaType,
+    ExtraOptionNumberSchemaType,
+    ExtraOptionSchemaTypes,
+    ExtraOptionStringSchemaType,
+    SchemasFileRootType,
+)
 
 if TYPE_CHECKING:
     from sphinx.util.logging import SphinxLoggerAdapter
     from typing_extensions import NotRequired, Required
 
-    from sphinx_needs.data import NeedsInfoType
     from sphinx_needs.functions.functions import DynamicFunction
+    from sphinx_needs.need_item import NeedItem
 
 
 LOGGER = get_logger(__name__)
 
 
-@dataclass
+@dataclass(kw_only=True, slots=True)
 class ExtraOptionParams:
     """Defines a single extra option for needs"""
 
     description: str
     """A description of the option."""
-    validator: Callable[[str | None], str]
-    """A function to validate the directive option value."""
+    schema: (
+        ExtraOptionStringSchemaType
+        | ExtraOptionBooleanSchemaType
+        | ExtraOptionIntegerSchemaType
+        | ExtraOptionNumberSchemaType
+        | ExtraOptionMultiValueSchemaType
+        | None
+    )
+    """A JSON schema for the option."""
 
 
 class FieldDefault(TypedDict):
@@ -62,15 +78,13 @@ class _Config:
 
     def __init__(self) -> None:
         self._extra_options: dict[str, ExtraOptionParams] = {}
-        self._field_defaults: dict[str, FieldDefault] = {}
         self._functions: dict[str, NeedFunctionsType] = {}
         self._warnings: dict[
-            str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]
+            str, str | Callable[[NeedItem, SphinxLoggerAdapter], bool]
         ] = {}
 
     def clear(self) -> None:
         self._extra_options = {}
-        self._field_defaults = {}
         self._functions = {}
         self._warnings = {}
 
@@ -91,10 +105,25 @@ class _Config:
         name: str,
         description: str,
         *,
-        validator: Callable[[str | None], str] | None = None,
+        schema: ExtraOptionStringSchemaType
+        | ExtraOptionBooleanSchemaType
+        | ExtraOptionIntegerSchemaType
+        | ExtraOptionNumberSchemaType
+        | ExtraOptionMultiValueSchemaType
+        | None = None,
         override: bool = False,
     ) -> None:
         """Adds an extra option to the configuration."""
+        if name in NeedsCoreFields:
+            from sphinx_needs.exceptions import (
+                NeedsApiConfigWarning,  # avoid circular import
+            )
+
+            raise NeedsApiConfigWarning(
+                f"Cannot add extra option with name {name!r}"
+                + (f" ({description!r})" if description else "")
+                + ", as it is already used as a core field name."
+            )
         if name in self._extra_options:
             if override:
                 log_warning(
@@ -110,17 +139,9 @@ class _Config:
 
                 raise NeedsApiConfigWarning(f"Option {name} already registered.")
         self._extra_options[name] = ExtraOptionParams(
-            description, directives.unchanged if validator is None else validator
+            description=description,
+            schema=schema,
         )
-
-    @property
-    def field_defaults(self) -> Mapping[str, FieldDefault]:
-        """Default values for need fields."""
-        return self._field_defaults
-
-    @field_defaults.setter
-    def field_defaults(self, value: dict[str, FieldDefault]) -> None:
-        self._field_defaults = value
 
     @property
     def functions(self) -> Mapping[str, NeedFunctionsType]:
@@ -142,7 +163,7 @@ class _Config:
     @property
     def warnings(
         self,
-    ) -> Mapping[str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]]:
+    ) -> Mapping[str, str | Callable[[NeedItem, SphinxLoggerAdapter], bool]]:
         """Warning handlers that are added by the user,
         then called at the end of the build.
         """
@@ -151,7 +172,7 @@ class _Config:
     def add_warning(
         self,
         name: str,
-        filter: str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool],
+        filter: str | Callable[[NeedItem, SphinxLoggerAdapter], bool],
     ) -> None:
         """Adds a warning handler to the configuration."""
         self._warnings[name] = filter
@@ -240,6 +261,14 @@ class LinkOptionsType(TypedDict, total=False):
     """Used for needflow. Default: '->'"""
     allow_dead_links: bool
     """If True, add a 'forbidden' class to dead links"""
+    schema: NotRequired[ExtraLinkSchemaType]
+    """
+    A JSON schema for the link option.
+    
+    If given, the schema will apply to all needs that use this link option.
+    The schema is applied locally on unresolved links, i.e. on the list of string ids.
+    For more granular control and graph traversal, use the `needs_schema_definitions` configuration.
+    """
 
 
 class NeedType(TypedDict):
@@ -263,6 +292,13 @@ class NeedExtraOption(TypedDict):
     name: str
     description: NotRequired[str]
     """A description of the option."""
+    schema: NotRequired[ExtraOptionSchemaTypes]
+    """
+    A JSON schema definition for the option.
+    
+    If given, the schema will apply to all needs that use this option.
+    For more granular control, use the `needs_schema_definitions` configuration.
+    """
 
 
 class NeedStatusesOption(TypedDict):
@@ -296,7 +332,6 @@ class NeedsSphinxConfig:
         if name.startswith("__") or name in (
             "_config",
             "extra_options",
-            "field_defaults",
             "functions",
             "warnings",
         ):
@@ -309,7 +344,6 @@ class NeedsSphinxConfig:
         if name.startswith("__") or name in (
             "_config",
             "extra_options",
-            "field_defaults",
             "functions",
             "warnings",
         ):
@@ -365,6 +399,51 @@ class NeedsSphinxConfig:
         default_factory=list, metadata={"rebuild": "env", "types": (list,)}
     )
     """Path to the root table in the toml file to load configuration from."""
+
+    schema_definitions: SchemasFileRootType = field(
+        default_factory=lambda: cast(SchemasFileRootType, {}),
+        metadata={"rebuild": "env", "types": (dict,)},
+    )
+    """Schema definitions to write complex validations based on selectors."""
+
+    schema_definitions_from_json: str | None = field(
+        default=None, metadata={"rebuild": "env", "types": (str, type(None))}
+    )
+    """Path to a JSON file to load the schemas from."""
+
+    schema_debug_active: bool = field(
+        default=False,
+        metadata={"rebuild": "env", "types": (bool,)},
+    )
+    """Activate the debug mode for schema validation to dump JSON/schema files and messages."""
+
+    schema_debug_path: str = field(
+        default="schema_debug",
+        metadata={"rebuild": "env", "types": (str,)},
+    )
+    """
+    Path to the directory where the debug files are stored.
+
+    If the path is relative, the caller needs to make sure
+    it gets converted to a use case specific absolute path, e.g.
+    with confdir for Sphinx.
+    """
+
+    schema_debug_ignore: list[str] = field(
+        default_factory=lambda: [
+            "extra_option_success",
+            "extra_link_success",
+            "select_success",
+            "select_fail",
+            "local_success",
+            "network_local_success",
+        ],
+        metadata={
+            "rebuild": "env",
+            "types": (list,),
+        },
+    )
+    """List of scenarios that are ignored for dumping debug information."""
 
     types: list[NeedType] = field(
         default_factory=lambda: [
@@ -509,11 +588,6 @@ class NeedsSphinxConfig:
     )
     """Default values given to specified fields of needs"""
 
-    @property
-    def field_defaults(self) -> Mapping[str, FieldDefault]:
-        """Default values for need fields."""
-        return _NEEDS_CONFIG.field_defaults
-
     duration_option: str = field(
         default="duration", metadata={"rebuild": "html", "types": (str,)}
     )
@@ -586,7 +660,7 @@ class NeedsSphinxConfig:
     @property
     def warnings(
         self,
-    ) -> Mapping[str, str | Callable[[NeedsInfoType, SphinxLoggerAdapter], bool]]:
+    ) -> Mapping[str, str | Callable[[NeedItem, SphinxLoggerAdapter], bool]]:
         """Defines warnings to be checked at the end of the build (name -> string filter / filter function).
 
         These handlers can be added via sphinx configuration,

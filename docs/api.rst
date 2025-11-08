@@ -10,7 +10,7 @@ The API allows the injection of extra configuration, but
 does not support manipulation of it (e.g remove need types),
 to keep the final configuration transparent for the Sphinx project authors.
 
-.. _api_configuration:
+.. _`api_configuration`:
 
 Configuration
 -------------
@@ -37,8 +37,11 @@ Exceptions
 Data
 ----
 
+.. automodule:: sphinx_needs.need_item
+   :members: NeedItem, NeedPartItem, NeedItemSourceProtocol, NeedsContent, NeedPartData, NeedModification, NeedConstraintResults
+
 .. automodule:: sphinx_needs.data
-   :members: NeedsInfoType, NeedsMutable, NeedsPartType
+   :members: NeedsInfoType, NeedsInfoComputedType, NeedsSourceInfoType, NeedsMutable, NeedsPartType
 
 Views
 -----
@@ -50,3 +53,15 @@ but should not be instantiated directly.
    :members:
    :undoc-members:
    :special-members: __iter__, __getitem__, __len__
+
+Schema
+------
+
+.. automodule:: sphinx_needs.needs_schema
+   :members: FieldsSchema, FieldSchema, FieldFunctionArray, LinksFunctionArray,
+             FieldLiteralValue, LinkSchema, LinksLiteralValue, AllowedTypes
+
+.. automodule:: sphinx_needs.schema.config
+   :members: ExtraOptionStringSchemaType, ExtraOptionBooleanSchemaType,
+             ExtraOptionIntegerSchemaType, ExtraOptionNumberSchemaType,
+             ExtraOptionMultiValueSchemaType

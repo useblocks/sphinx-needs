@@ -1,19 +1,25 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any, Callable
+from typing import Final
 
 from docutils import nodes
-from docutils.parsers.rst import directives
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs.api.need import _split_list_with_dyn_funcs
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsExtendType, NeedsMutable, SphinxNeedsData
+from sphinx_needs.data import ExtendType, NeedsExtendType, NeedsMutable, SphinxNeedsData
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs_mutable
-from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.utils import add_doc
+from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
+from sphinx_needs.need_item import NeedModification
+from sphinx_needs.needs_schema import (
+    FieldFunctionArray,
+    FieldLiteralValue,
+    LinkSchema,
+    LinksFunctionArray,
+    LinksLiteralValue,
+)
+from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
 
 logger = get_logger(__name__)
 
@@ -32,23 +38,39 @@ class NeedextendDirective(SphinxDirective):
     optional_arguments = 0
     final_argument_whitespace = True
 
-    option_spec: dict[str, Callable[[str], Any]] = {
-        "strict": directives.unchanged_required,
-    }
+    option_spec: Final[DummyOptionSpec] = DummyOptionSpec()
+
+    options: dict[str, str | None]
+
+    def _log_warning(
+        self, message: str, code: WarningSubTypes = "needextend", /
+    ) -> None:
+        """Log a warning with the given message and code."""
+        log_warning(
+            logger,
+            message,
+            code,
+            location=self.get_location(),
+        )
 
     def run(self) -> Sequence[nodes.Node]:
-        env = self.env
+        # throughout this function, we gradually pop values from self.options
+        # so that we can warn about unknown options at the end
+        options: dict[str, str | None] = self.options
 
         needs_config = NeedsSphinxConfig(self.env.app.config)
-        strict = needs_config.needextend_strict
-        strict_option: str = self.options.get("strict", "").upper()
-        if strict_option == "TRUE":
-            strict = True
-        elif strict_option == "FALSE":
-            strict = False
+        needs_schema = SphinxNeedsData(self.env).get_schema()
 
-        modifications = self.options.copy()
-        modifications.pop("strict", None)
+        try:
+            # override global needextend_strict if user set it in the directive
+            strict = (
+                coerce_to_boolean(options.pop("strict"))
+                if "strict" in options
+                else needs_config.needextend_strict
+            )
+        except ValueError as err:
+            self._log_warning(f"Invalid value for 'strict' option: {err}")
+            return []
 
         extend_filter = (self.arguments[0] if self.arguments else "").strip()
         if extend_filter.startswith("<") and extend_filter.endswith(">"):
@@ -63,30 +85,113 @@ class NeedextendDirective(SphinxDirective):
             filter_is_id = False
 
         if not extend_filter:
-            log_warning(
-                logger,
-                "Empty ID/filter argument in needextend directive.",
-                "needextend",
-                location=self.get_location(),
-            )
+            self._log_warning("Empty ID/filter argument in needextend directive.")
             return []
 
-        id = env.new_serialno("needextend")
-        targetid = f"needextend-{env.docname}-{id}"
+        modifications: list[
+            tuple[str, ExtendType, FieldLiteralValue | FieldFunctionArray | None]
+        ] = []
+        list_modifications: list[
+            tuple[str, ExtendType, LinksLiteralValue | LinksFunctionArray]
+        ] = []
+
+        while options:
+            key, value = options.popitem()
+
+            if key.startswith("-"):
+                key = key[1:]
+                etype = ExtendType.DELETE
+            elif key.startswith("+"):
+                key = key[1:]
+                etype = ExtendType.APPEND
+            else:
+                etype = ExtendType.REPLACE
+
+            if (field_schema := needs_schema.get_any_field(key)) is None:
+                self._log_warning(f"Unknown option '{etype.value}{key}'")
+                continue
+            if not field_schema.allow_extend:
+                self._log_warning(
+                    f"Option '{etype.value}{key}' does not support extend operations."
+                )
+                continue
+
+            if etype == ExtendType.DELETE:
+                if value is not None:
+                    self._log_warning(
+                        f"delete option '{etype.value}{key}' should not have a value."
+                    )
+
+                if isinstance(field_schema, LinkSchema):
+                    list_modifications.append((key, etype, LinksLiteralValue([])))
+                    continue
+                if field_schema.nullable:
+                    modifications.append((key, etype, None))
+                    continue
+                match field_schema.type:
+                    case "string":
+                        modifications.append((key, etype, FieldLiteralValue("")))
+                    case "boolean":
+                        modifications.append((key, etype, FieldLiteralValue(False)))
+                    case "number":
+                        modifications.append((key, etype, FieldLiteralValue(0.0)))
+                    case "integer":
+                        modifications.append((key, etype, FieldLiteralValue(0)))
+                    case "array":
+                        modifications.append((key, etype, FieldLiteralValue([])))
+                    case other:
+                        self._log_warning(
+                            f"Unknown field type '{other}' for option '{key}'"
+                        )
+            else:
+                if etype == ExtendType.APPEND and field_schema.type not in (
+                    "string",
+                    "array",
+                ):
+                    self._log_warning(
+                        f"Cannot append to option '{etype.value}{key}' with type '{field_schema.type}'."
+                    )
+                    continue
+                if isinstance(field_schema, LinkSchema):
+                    try:
+                        converted_link_value = field_schema.convert_directive_option(
+                            value or ""
+                        )
+                    except ValueError as err:
+                        self._log_warning(
+                            f"Invalid value for '{etype.value}{key}' option: {err}"
+                        )
+                        continue
+                    list_modifications.append((key, etype, converted_link_value))
+                else:
+                    try:
+                        converted_field_value = field_schema.convert_directive_option(
+                            value or ""
+                        )
+                    except ValueError as err:
+                        self._log_warning(
+                            f"Invalid value for '{etype.value}{key}' option: {err}"
+                        )
+                        continue
+                    modifications.append((key, etype, converted_field_value))
+
+        id = self.env.new_serialno("needextend")
+        targetid = f"needextend-{self.env.docname}-{id}"
         targetnode = nodes.target("", "", ids=[targetid])
 
-        data = SphinxNeedsData(env).get_or_create_extends()
+        data = SphinxNeedsData(self.env).get_or_create_extends()
         data[targetid] = {
-            "docname": env.docname,
+            "docname": self.env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
             "filter": extend_filter,
             "filter_is_id": filter_is_id,
             "modifications": modifications,
+            "list_modifications": list_modifications,
             "strict": strict,
         }
 
-        add_doc(env, env.docname)
+        add_doc(self.env, self.env.docname)
 
         node = Needextend("")
         self.set_source_info(node)
@@ -101,9 +206,7 @@ def extend_needs_data(
 ) -> None:
     """Use data gathered from needextend directives to modify fields of existing needs."""
 
-    list_values = ["tags", "links"] + [x["option"] for x in needs_config.extra_links]
-    link_names = [x["option"] for x in needs_config.extra_links]
-
+    current_needextend: NeedsExtendType
     for current_needextend in extends.values():
         need_filter = current_needextend["filter"]
         location = (current_needextend["docname"], current_needextend["lineno"])
@@ -138,66 +241,127 @@ def extend_needs_data(
         for found_need in found_needs:
             # Work in the stored needs, not on the search result
             need = all_needs[found_need["id"]]
-            need["is_modified"] = True
-            need["modifications"] += 1
+            need.add_modification(
+                NeedModification(
+                    docname=current_needextend["docname"],
+                    lineno=current_needextend["lineno"],
+                )
+            )
 
             location = (
                 current_needextend["docname"],
                 current_needextend["lineno"],
             )
 
-            for option, value in current_needextend["modifications"].items():
-                if option.startswith("+"):
-                    option_name = option[1:]
-                    if option_name in link_names:
-                        for item, has_function in _split_list_with_dyn_funcs(
-                            value, location
-                        ):
-                            if (not has_function) and (item not in all_needs):
-                                log_warning(
-                                    logger,
-                                    f"Provided link id {item} for needextend does not exist.",
-                                    "needextend",
-                                    location=location,
+            for option_name, etype, link_value in current_needextend[
+                "list_modifications"
+            ]:
+                match (etype, link_value):
+                    case (ExtendType.APPEND, LinksLiteralValue()):
+                        if (df := need._dynamic_fields.get(option_name)) is not None:
+                            need._dynamic_fields[option_name] = LinksFunctionArray(
+                                (*df.value, *link_value.value)
+                            )
+                            need[option_name] = []
+                        else:
+                            need[option_name] = [
+                                *need[option_name],
+                                *(  # keep unique
+                                    v
+                                    for v in link_value.value
+                                    if v not in need[option_name]
+                                ),
+                            ]
+                    case (ExtendType.APPEND, LinksFunctionArray()):
+                        if (df := need._dynamic_fields.get(option_name)) is not None:
+                            need._dynamic_fields[option_name] = LinksFunctionArray(
+                                (  # keep unique
+                                    *df.value,
+                                    *(v for v in link_value.value if v not in df.value),
                                 )
-                                continue
-                            if item not in need[option_name]:
-                                need[option_name].append(item)
-                    elif option_name in list_values:
-                        for item, _ in _split_list_with_dyn_funcs(value, location):
-                            if item not in need[option_name]:
-                                need[option_name].append(item)
-                    else:
-                        if need[option_name]:
-                            # If content is already stored, we need to add some whitespace
-                            need[option_name] += " "
-                        need[option_name] += value
+                            )
+                            need[option_name] = []
+                        else:
+                            need._dynamic_fields[option_name] = LinksFunctionArray(
+                                (
+                                    *need[option_name],
+                                    *(  # keep unique
+                                        v
+                                        for v in link_value.value
+                                        if v not in need[option_name]
+                                    ),
+                                )
+                            )
+                            need[option_name] = []
+                    case (ExtendType.REPLACE | ExtendType.DELETE, LinksLiteralValue()):
+                        need._dynamic_fields.pop(option_name, None)
+                        need[option_name] = link_value.value
+                    case (ExtendType.REPLACE | ExtendType.DELETE, LinksFunctionArray()):
+                        need._dynamic_fields[option_name] = link_value
+                        need[option_name] = []
+                    case other_link:
+                        raise RuntimeError(
+                            f"Unhandled case {other_link} for {option_name!r}"
+                        )
 
-                elif option.startswith("-"):
-                    option_name = option[1:]
-                    if option_name in link_names:
-                        need[option_name] = []
-                    if option_name in list_values:
-                        need[option_name] = []
-                    else:
-                        need[option_name] = ""
-                else:
-                    if option in link_names:
-                        need[option] = []
-                        for item, has_function in _split_list_with_dyn_funcs(
-                            value, location
-                        ):
-                            if (not has_function) and (item not in all_needs):
-                                log_warning(
-                                    logger,
-                                    f"Provided link id {item} for needextend does not exist.",
-                                    "needextend",
-                                    location=location,
+            for option_name, etype, field_value in current_needextend["modifications"]:
+                match (etype, field_value):
+                    case (ExtendType.APPEND, FieldLiteralValue()):
+                        if (df := need._dynamic_fields.get(option_name)) is not None:
+                            need._dynamic_fields[option_name] = (
+                                FieldFunctionArray((*df.value, *field_value.value))
+                                if isinstance(field_value.value, list)
+                                else FieldFunctionArray((*df.value, field_value.value))
+                            )
+                        else:
+                            if isinstance(field_value.value, list):
+                                need[option_name] = [
+                                    *need[option_name],
+                                    *field_value.value,
+                                ]
+                            elif isinstance(field_value.value, str):
+                                need[option_name] = (
+                                    need[option_name] + " " + field_value.value
+                                    if need[option_name]
+                                    else field_value.value
                                 )
-                                continue
-                            need[option].append(item)
-                    elif option in list_values:
-                        for item, _ in _split_list_with_dyn_funcs(value, location):
-                            need[option].append(item)
-                    else:
-                        need[option] = value
+                            else:
+                                raise RuntimeError(
+                                    f"Cannot append non-string/array value {field_value.value!r} to field '{option_name}'"
+                                )
+                    case (ExtendType.APPEND, FieldFunctionArray()):
+                        if (df := need._dynamic_fields.get(option_name)) is not None:
+                            need._dynamic_fields[option_name] = FieldFunctionArray(
+                                (*df.value, *field_value.value)
+                            )
+                        else:
+                            if isinstance(need[option_name], list):
+                                need._dynamic_fields[option_name] = FieldFunctionArray(
+                                    (*need[option_name], *field_value.value)
+                                )
+                            elif isinstance(need[option_name], str):
+                                need._dynamic_fields[option_name] = FieldFunctionArray(
+                                    (
+                                        need[option_name],
+                                        *field_value.value,
+                                    )
+                                )
+                            else:
+                                raise RuntimeError(
+                                    f"Cannot append non-string/array value {field_value.value!r} to field '{option_name}'"
+                                )
+                    case (ExtendType.REPLACE | ExtendType.DELETE, None):
+                        if (df := need._dynamic_fields.get(option_name)) is not None:
+                            need._dynamic_fields.pop(option_name, None)
+                        need[option_name] = None
+                    case (ExtendType.REPLACE | ExtendType.DELETE, FieldLiteralValue()):
+                        if (df := need._dynamic_fields.get(option_name)) is not None:
+                            need._dynamic_fields.pop(option_name, None)
+                        need[option_name] = field_value.value
+                    case (ExtendType.REPLACE | ExtendType.DELETE, FieldFunctionArray()):
+                        need._dynamic_fields[option_name] = field_value
+                        # TODO reset need[option_name] to something sensible?
+                    case other_field:
+                        raise RuntimeError(
+                            f"Unhandled case {other_field} for {option_name!r}"
+                        )

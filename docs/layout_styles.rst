@@ -12,9 +12,9 @@ Both features can be set directly during need-configuration or inside the sphinx
 
 **Sphinx-Needs** provides some preconfigured, ready-to-use standard layouts:
 
-   * clean
-   * complete
-   * focus
+* clean
+* complete
+* focus
 
 .. _layouts:
 
@@ -91,16 +91,16 @@ There are also some *extensions* for the layouts above available:
      * Comment
    - * clean_l
      * :ref:`grid_simple_side_left`
-     * Like `clean` but with an extra side element on left side
+     * Like ``clean`` but with an extra side element on left side
    - * clean_r
      * :ref:`grid_simple_side_right`
-     * Like `clean` but with an extra side element on right side
+     * Like ``clean`` but with an extra side element on right side
    - * clean_lp
      * :ref:`grid_simple_side_left_partial`
-     * Like `clean` but with an extra, small side element on left side
+     * Like ``clean`` but with an extra, small side element on left side
    - * clean_rp
      * :ref:`grid_simple_side_right_partial`
-     * Like `clean` but with an extra, small side element on right side
+     * Like ``clean`` but with an extra, small side element on right side
    - * focus_f
      * :ref:`grid_content_footer`
      * Adds a small footer below content with the need id.
@@ -239,7 +239,7 @@ a layout-structure. Example::
     }
 
 The ``layout-structure`` must also be a dictionary, where each key reference an area in the used grid system.
-By default these can be: `head`, `meta`, `footer` and more.
+By default these can be: ``head``, ``meta``, ``footer`` and more.
 If the layout-structure is using a not supported key by the current grid-system, the entry gets ignored.
 E.g. grid ``simple`` is not supporting ``footer`` area.
 
@@ -267,12 +267,12 @@ A layout line may look like this::
 
 This line contains:
 
-   * a rst text, which supports common inline roles (bold, italic):
-     ``**style**: _my_``
-   * a layout function, which gets executed and returns a string:
-     ``<<meta('status')>>``
-   * another rst text:
-     ``_style``
+* a rst text, which supports common inline roles (bold, italic):
+  ``**style**: _my_``
+* a layout function, which gets executed and returns a string:
+  ``<<meta('status')>>``
+* another rst text:
+  ``_style``
 
 When executed, the line will result in the following for a status like ``open``:
 

@@ -41,7 +41,13 @@ class NeedsBuilder(Builder):
         updated_docnames: Sequence[str],
         method: str = "update",
     ) -> None:
-        return
+        # we override this method, to stop any document output files from being written,
+        # however, from this method triggers the `write-started` event,
+        # which we still want for triggering schema validation.
+        # TODO since sphinx 8.1 `Builder.write` is typed as `final` and a new `Builder.write_documents` method is added,
+        # see https://github.com/sphinx-doc/sphinx/commit/d135d2eba39136941da101e7933a958362dfa999
+        # once sphinx 7 is not supported, we should remove this `write` method and override `write_documents` to "do nothing"
+        self.events.emit("write-started", self)
 
     def finish(self) -> None:
         from sphinx_needs.filter_common import filter_needs_view
@@ -50,7 +56,7 @@ class NeedsBuilder(Builder):
         needs = data.get_needs_view()
         needs_config = NeedsSphinxConfig(self.env.config)
         version = getattr(self.env.config, "version", "unset")
-        needs_list = NeedsList(self.env.config, self.outdir, self.srcdir)
+        needs_list = NeedsList(self.env, self.outdir, self.srcdir)
 
         if needs_config.file:
             needs_file = needs_config.file
@@ -168,9 +174,7 @@ class NeedsIdBuilder(Builder):
         if not os.path.exists(needs_dir):
             os.makedirs(needs_dir, exist_ok=True)
         for need in filtered_needs:
-            needs_list = NeedsList(
-                self.env.config, self.outdir, self.srcdir, add_schema=False
-            )
+            needs_list = NeedsList(self.env, self.outdir, self.srcdir, add_schema=False)
             needs_list.wipe_version(version)
             needs_list.add_need(version, need)
             id = need["id"]
@@ -257,3 +261,39 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
     needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)  # type: ignore[assignment]
 
     needs_builder.finish()
+
+
+class SchemaBuilder(Builder):
+    """Only validate needs schema, no output is generated."""
+
+    name = "schema"
+
+    def write(
+        self,
+        build_docnames: Iterable[str] | None,
+        updated_docnames: Sequence[str],
+        method: str = "update",
+    ) -> None:
+        # make sure schema validation is done
+        self.events.emit("write-started", self)
+
+    def write_doc(self, docname: str, doctree: nodes.document) -> None:
+        pass
+
+    def finish(self) -> None:
+        pass
+
+    def get_outdated_docs(self) -> Iterable[str]:
+        return []
+
+    def prepare_writing(self, _docnames: set[str]) -> None:
+        pass
+
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
+        pass
+
+    def cleanup(self) -> None:
+        pass
+
+    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:
+        return ""

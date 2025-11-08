@@ -1,11 +1,15 @@
 import sys
+import textwrap
 import types
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs.api import add_need_type, get_need_types
+from sphinx_needs.exceptions import NeedsConfigException
 
 
 @pytest.fixture()
@@ -119,3 +123,139 @@ def test_api_add_type(test_app: SphinxTestApp, snapshot):
     html = Path(app.outdir, "other_api.html").read_text()
     assert html is not None
     assert "my awesome need" in html
+
+
+def test_api_add_extra_option(
+    tmpdir: Path,
+    make_app: Callable[[], SphinxTestApp],
+    write_fixture_files: Callable[[Path, dict[str, Any]], None],
+    get_warnings_list,
+):
+    content = {
+        "conf": textwrap.dedent(
+            """
+            extensions = ['sphinx_needs']
+            
+            def setup(app):
+                from sphinx_needs.api import add_extra_option
+                add_extra_option(app, 'my_extra_option', description='My extra option')
+                return {'version': '0.1'}
+            """
+        ),
+        "rst": textwrap.dedent(
+            """
+            Title
+            =====
+
+            .. req:: a req
+                :id: REQ_1
+                :my_extra_option: extra option value
+            """
+        ),
+    }
+    write_fixture_files(tmpdir, content)
+    app: SphinxTestApp = make_app(srcdir=Path(tmpdir), freshenv=True)
+    app.build()
+
+    warnings = get_warnings_list(app)
+    assert len(warnings) == 0, "\n".join(warnings)
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert html is not None
+    assert "extra option value" in html
+
+    assert app.statuscode == 0
+
+
+def test_api_add_extra_option_schema(
+    tmpdir: Path,
+    make_app: Callable[[], SphinxTestApp],
+    write_fixture_files: Callable[[Path, dict[str, Any]], None],
+    get_warnings_list,
+):
+    content = {
+        "conf": textwrap.dedent(
+            """
+            extensions = ['sphinx_needs']
+            
+            def setup(app):
+                from sphinx_needs.api import add_extra_option
+                add_extra_option(
+                    app,
+                    'my_extra_option',
+                    description='My extra option',
+                    schema={
+                        'type': 'integer',
+                        'maximum': 10,
+                    }
+                )
+                return {'version': '0.1'}
+            """
+        ),
+        "rst": textwrap.dedent(
+            """
+            Title
+            =====
+
+            .. req:: a req
+                :id: REQ_1
+                :my_extra_option: 8
+            """
+        ),
+    }
+    write_fixture_files(tmpdir, content)
+    app: SphinxTestApp = make_app(srcdir=Path(tmpdir), freshenv=True)
+    app.build()
+
+    warnings = get_warnings_list(app)
+    assert len(warnings) == 0, "\n".join(warnings)
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert html is not None
+    assert "8" in html
+
+    assert app.statuscode == 0
+
+
+def test_api_add_extra_option_schema_wrong(
+    tmpdir: Path,
+    make_app: Callable[[], SphinxTestApp],
+    write_fixture_files: Callable[[Path, dict[str, Any]], None],
+    snapshot,
+):
+    content = {
+        "conf": textwrap.dedent(
+            """
+            extensions = ['sphinx_needs']
+            
+            def setup(app):
+                from sphinx_needs.api import add_extra_option
+                add_extra_option(
+                    app,
+                    'my_extra_option',
+                    description='My extra option',
+                    schema={
+                        'type': 'integer',
+                        'not_exist': 10,
+                    }
+                )
+                return {'version': '0.1'}
+            """
+        ),
+        "rst": textwrap.dedent(
+            """
+            Title
+            =====
+
+            .. req:: a req
+                :id: REQ_1
+                :my_extra_option: 8
+            """
+        ),
+    }
+    write_fixture_files(tmpdir, content)
+    with pytest.raises(NeedsConfigException) as excinfo:
+        app = make_app(srcdir=Path(tmpdir), freshenv=True)
+        app.build()
+
+    assert str(excinfo.value) == snapshot

@@ -1,0 +1,49 @@
+unevaluated_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    [[needs.extra_options]]
+    name = "comment"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+        :comment: This is a comment
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+
+unevaluated_allof_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    [[needs.extra_options]]
+    name = "comment"
+    [[needs.extra_options]]
+    name = "approved"
+    schema.type = "boolean"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+        :comment: This is a comment
+        :approved: true
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+            allOf:
+              - properties: {"comment": {}}

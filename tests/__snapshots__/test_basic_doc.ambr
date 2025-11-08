@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_build_needs[test_app0]
+# name: test_build_needs[test_app0][needs]
   dict({
     'current_version': '0.1.0',
     'versions': dict({
@@ -10,9 +10,10 @@
             }),
             'avatar': '',
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
+            'constraints_error': None,
             'constraints_passed': True,
             'constraints_results': dict({
             }),
@@ -20,7 +21,7 @@
             'created_at': '',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -30,10 +31,8 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 4,
             'links': list([
             ]),
@@ -43,14 +42,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
@@ -59,7 +60,7 @@
               'TEST DOCUMENT',
             ]),
             'service': '',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': 'open',
             'style': None,
@@ -79,9 +80,10 @@
             }),
             'avatar': '',
             'closed_at': '',
-            'completion': '',
+            'completion': None,
             'constraints': list([
             ]),
+            'constraints_error': None,
             'constraints_passed': True,
             'constraints_results': dict({
             }),
@@ -89,7 +91,7 @@
             'created_at': '',
             'docname': 'index',
             'doctype': '.rst',
-            'duration': '',
+            'duration': None,
             'external_css': 'external_link',
             'external_url': None,
             'has_dead_links': False,
@@ -99,10 +101,8 @@
             'is_external': False,
             'is_import': False,
             'is_modified': False,
-            'is_need': True,
-            'is_part': False,
             'jinja_content': False,
-            'layout': '',
+            'layout': None,
             'lineno': 8,
             'links': list([
             ]),
@@ -112,14 +112,16 @@
             'max_content_lines': '',
             'modifications': 0,
             'params': '',
-            'parent_need': '',
+            'parent_need': None,
             'parent_needs': list([
             ]),
             'parent_needs_back': list([
             ]),
             'parts': dict({
             }),
+            'post_content': None,
             'post_template': None,
+            'pre_content': None,
             'pre_template': None,
             'prefix': '',
             'query': '',
@@ -128,7 +130,7 @@
               'TEST DOCUMENT',
             ]),
             'service': '',
-            'signature': '',
+            'signature': None,
             'specific': '',
             'status': 'open',
             'style': None,
@@ -171,10 +173,10 @@
               'type': 'string',
             }),
             'completion': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'constraints': dict({
               'default': list([
@@ -187,16 +189,22 @@
               'type': 'array',
             }),
             'constraints_error': dict({
-              'default': '',
+              'default': None,
               'description': 'An error message set if any constraint failed, and `error_message` field is set in config.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'constraints_passed': dict({
               'default': True,
               'description': 'True if all constraints passed, False if any failed, None if not yet checked.',
               'field_type': 'core',
-              'type': 'boolean',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
             }),
             'constraints_results': dict({
               'additionalProperties': dict({
@@ -204,13 +212,16 @@
               }),
               'default': dict({
               }),
-              'description': 'Mapping of constraint name, to check name, to result.',
+              'description': 'Mapping of constraint name, to check name, to result, None if not yet checked.',
               'field_type': 'core',
-              'type': 'object',
+              'type': list([
+                'object',
+                'null',
+              ]),
             }),
             'content': dict({
               'default': '',
-              'description': 'Content of the need.',
+              'description': 'The main content of the need.',
               'field_type': 'core',
               'type': 'string',
             }),
@@ -231,15 +242,15 @@
             }),
             'doctype': dict({
               'default': '.rst',
-              'description': "Type of the document where the need is defined, e.g. '.rst'.",
+              'description': "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
               'field_type': 'core',
               'type': 'string',
             }),
             'duration': dict({
-              'default': '',
+              'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'string',
+              'type': 'integer',
             }),
             'external_css': dict({
               'default': '',
@@ -297,21 +308,9 @@
               'field_type': 'core',
               'type': 'boolean',
             }),
-            'is_need': dict({
-              'default': True,
-              'description': 'Whether the need is a need.',
-              'field_type': 'core',
-              'type': 'boolean',
-            }),
-            'is_part': dict({
-              'default': False,
-              'description': 'Whether the need is a part.',
-              'field_type': 'core',
-              'type': 'boolean',
-            }),
             'jinja_content': dict({
               'default': False,
-              'description': 'Whether the content should be pre-processed by jinja.',
+              'description': 'Whether the content was pre-processed by jinja.',
               'field_type': 'core',
               'type': 'boolean',
             }),
@@ -378,10 +377,13 @@
               'type': 'string',
             }),
             'parent_need': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first parent id.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'parent_needs': dict({
               'default': list([
@@ -414,14 +416,17 @@
               'type': 'object',
             }),
             'post_content': dict({
-              'default': '',
-              'description': 'Post-content of the need.',
+              'default': None,
+              'description': 'Additional content after the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'post_template': dict({
               'default': None,
-              'description': 'Post-template of the need.',
+              'description': 'The template key, if the post_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -429,14 +434,17 @@
               ]),
             }),
             'pre_content': dict({
-              'default': '',
-              'description': 'Pre-content of the need.',
+              'default': None,
+              'description': 'Additional content before the need.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'pre_template': dict({
               'default': None,
-              'description': 'Pre-template of the need.',
+              'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -456,10 +464,13 @@
               'type': 'string',
             }),
             'section_name': dict({
-              'default': '',
+              'default': None,
               'description': 'Simply the first section.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'sections': dict({
               'default': list([
@@ -478,10 +489,13 @@
               'type': 'string',
             }),
             'signature': dict({
-              'default': '',
+              'default': None,
               'description': 'Derived from a docutils desc_name node.',
               'field_type': 'core',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'specific': dict({
               'default': '',
@@ -519,7 +533,7 @@
             }),
             'template': dict({
               'default': None,
-              'description': 'Template of the need.',
+              'description': 'The template key, if the content was created from a jinja template.',
               'field_type': 'core',
               'type': list([
                 'string',
@@ -572,5 +586,39 @@
         }),
       }),
     }),
+  })
+# ---
+# name: test_build_needs[test_app0][schema]
+  dict({
+    'avatar': FieldSchema(name='avatar', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'closed_at': FieldSchema(name='closed_at', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'collapse': FieldSchema(name='collapse', description='Hide the meta-data information of the need.', type='boolean', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value=False)),
+    'completion': FieldSchema(name='completion', description='Added for needgantt functionality', type='integer', item_type=None, nullable=True, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
+    'constraints': FieldSchema(name='constraints', description='List of constraint names, which are defined for this need.', type='array', item_type='string', nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value=[])),
+    'created_at': FieldSchema(name='created_at', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'duration': FieldSchema(name='duration', description='Added for needgantt functionality', type='integer', item_type=None, nullable=True, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
+    'hide': FieldSchema(name='hide', description='If true, the need is not rendered.', type='boolean', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value=False)),
+    'id_prefix': FieldSchema(name='id_prefix', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'layout': FieldSchema(name='layout', description='Key of the layout, which is used to render the need.', type='string', item_type=None, nullable=True, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
+    'links': LinkSchema(name='links', description='Link field', directive_option=True, allow_extend=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, predicate_defaults=(), default=LinksLiteralValue(value=[])),
+    'max_amount': FieldSchema(name='max_amount', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'max_content_lines': FieldSchema(name='max_content_lines', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'params': FieldSchema(name='params', description='Added by service open-needs', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'parent_needs': LinkSchema(name='parent_needs', description='Link field', directive_option=True, allow_extend=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, predicate_defaults=(), default=LinksLiteralValue(value=[])),
+    'post_template': FieldSchema(name='post_template', description='The template key, if the post_content was created from a jinja template.', type='string', item_type=None, nullable=True, directive_option=True, allow_dynamic_functions=False, allow_variant_functions=False, allow_defaults=True, allow_extend=False, predicate_defaults=(), default=None),
+    'pre_template': FieldSchema(name='pre_template', description='The template key, if the pre_content was created from a jinja template.', type='string', item_type=None, nullable=True, directive_option=True, allow_dynamic_functions=False, allow_variant_functions=False, allow_defaults=True, allow_extend=False, predicate_defaults=(), default=None),
+    'prefix': FieldSchema(name='prefix', description='Added by service open-needs', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'query': FieldSchema(name='query', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'service': FieldSchema(name='service', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'specific': FieldSchema(name='specific', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'status': FieldSchema(name='status', description='Status of the need.', type='string', item_type=None, nullable=True, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
+    'style': FieldSchema(name='style', description='Comma-separated list of CSS classes (all appended by `needs_style_`).', type='string', item_type=None, nullable=True, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
+    'tags': FieldSchema(name='tags', description='List of tags.', type='array', item_type='string', nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value=[])),
+    'template': FieldSchema(name='template', description='The template key, if the content was created from a jinja template.', type='string', item_type=None, nullable=True, directive_option=True, allow_dynamic_functions=False, allow_variant_functions=False, allow_defaults=True, allow_extend=False, predicate_defaults=(), default=None),
+    'title': FieldSchema(name='title', description='Title of the need.', type='string', item_type=None, nullable=False, directive_option=False, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=False, allow_extend=False, predicate_defaults=(), default=None),
+    'updated_at': FieldSchema(name='updated_at', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'url': FieldSchema(name='url', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'url_postfix': FieldSchema(name='url_postfix', description='Added by service open-needs', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
+    'user': FieldSchema(name='user', description='Added by service github-issues', type='string', item_type=None, nullable=False, directive_option=True, allow_dynamic_functions=True, allow_variant_functions=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value='')),
   })
 # ---

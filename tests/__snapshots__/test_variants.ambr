@@ -1,0 +1,137 @@
+# serializer version: 1
+# name: test_empty_variant_options_html[test_app0]
+  dict({
+    'current_version': '',
+    'versions': dict({
+      '': dict({
+        'needs': dict({
+          'EMPTY_VAR_003': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'EMPTY_VAR_003',
+            'lineno': 4,
+            'section_name': 'Empty Variant Options Handling Test',
+            'sections': list([
+              'Empty Variant Options Handling Test',
+            ]),
+            'status': 'open',
+            'title': 'Empty Variant Options',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+        }),
+        'needs_amount': 1,
+        'needs_defaults_removed': True,
+      }),
+    }),
+  })
+# ---
+# name: test_variant_options_html[test_app0]
+  dict({
+    'current_version': '',
+    'versions': dict({
+      '': dict({
+        'needs': dict({
+          'CV_0002': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'CV_0002',
+            'lineno': 18,
+            'section_name': 'Variant Handling Test',
+            'sections': list([
+              'Variant Handling Test',
+            ]),
+            'status': 'open',
+            'tags': list([
+              'commence',
+              'start',
+              'begin',
+            ]),
+            'title': 'Custom Variant',
+            'type': 'spec',
+            'type_name': 'Specification',
+            'value': 'start',
+          }),
+          'SPEC_003': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SPEC_003',
+            'lineno': 25,
+            'section_name': 'Variant Handling Test',
+            'sections': list([
+              'Variant Handling Test',
+            ]),
+            'status': 'open',
+            'title': 'Variant Specification',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_004': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SPEC_004',
+            'lineno': 29,
+            'section_name': 'Variant Handling Test',
+            'sections': list([
+              'Variant Handling Test',
+            ]),
+            'status': 'unknown',
+            'title': 'Unknown Variant',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SP_38823': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SP_38823',
+            'lineno': 4,
+            'section_name': 'Variant Handling Test',
+            'sections': list([
+              'Variant Handling Test',
+            ]),
+            'status': 'progress',
+            'tags': list([
+              'school',
+              'extension',
+              'needs',
+            ]),
+            'title': 'No ID',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'ST_001': dict({
+            'author': 'Daniel Woste',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'ST_001',
+            'lineno': 12,
+            'section_name': 'Variant Handling Test',
+            'sections': list([
+              'Variant Handling Test',
+            ]),
+            'status': 'close',
+            'title': 'Test story',
+            'type': 'story',
+            'type_name': 'User Story',
+          }),
+          'VA_003': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'VA_003',
+            'lineno': 8,
+            'section_name': 'Variant Handling Test',
+            'sections': list([
+              'Variant Handling Test',
+            ]),
+            'status': 'tags_implemented',
+            'title': 'Tags Example',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+        }),
+        'needs_amount': 6,
+        'needs_defaults_removed': True,
+      }),
+    }),
+  })
+# ---
