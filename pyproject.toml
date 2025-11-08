@@ -41,6 +41,7 @@ dependencies = [
 [project.optional-dependencies]
 plotting = ["matplotlib>=3.3.0"] # for needpie / needbar
 test = [
+  "setuptools<81",
   "defusedxml~=0.7.1",
   "matplotlib>=3.3.0",
   "pytest~=8.0",
