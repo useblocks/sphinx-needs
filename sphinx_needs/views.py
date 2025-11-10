@@ -337,7 +337,7 @@ class NeedsAndPartsListView:
     ) -> NeedsAndPartsListView:
         """Create a new view with only the needs/parts with the given ids."""
         if self._selected_ids is None:
-            selected_ids = {n: None for n in ids}
+            selected_ids = dict.fromkeys(ids)
         else:
             selected_ids = {n: None for n in ids if n in self._selected_ids}
         return NeedsAndPartsListView(_indexes=self._indexes, _selected_ids=selected_ids)
