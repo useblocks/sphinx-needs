@@ -696,7 +696,7 @@ def validate_regex_pattern(pattern: str) -> None:
     ^                           # Start of string
     (?:                         # Non-capturing group for alternatives
         [^\\()[\]{}|+*?^$]      # Literal characters (not special)
-        |\\[\\()[\]{}|+*?^$nrtvfs]  # Basic escaped characters and whitespace
+        |\\[\\()[\]{}|+*?^$nrtvfs.]  # Basic escaped characters and whitespace
         |\[[^\]]*\]             # Character classes [abc], [a-z], [^abc]
         |\(\?:                  # Non-capturing groups (?:...)
         |\(                     # Capturing groups (...)
