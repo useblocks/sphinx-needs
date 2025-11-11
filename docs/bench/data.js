@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1762900004135,
+  "lastUpdate": 1762903922538,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15120,6 +15120,42 @@ window.BENCHMARK_DATA = {
             "value": 61.28470959900001,
             "unit": "s",
             "extra": "Commit: ed701d3b206d5b7518d40fe4a3aa86b165132ebb\nBranch: master\nTime: 2025-11-11T23:24:46+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e6802e4a3e4ac22b9a424f0a9cbfe2c9dbd68e98",
+          "message": "🐛 needs.json for nullable fields (#1571)\n\nNullable fields should reflect that property in the needs.json schemas\nsection.",
+          "timestamp": "2025-11-12T00:30:06+01:00",
+          "tree_id": "7da6184fa6c6809d16f12fa4f869d88a58a6b540",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e6802e4a3e4ac22b9a424f0a9cbfe2c9dbd68e98"
+        },
+        "date": 1762903908148,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20474294599995346,
+            "unit": "s",
+            "extra": "Commit: e6802e4a3e4ac22b9a424f0a9cbfe2c9dbd68e98\nBranch: master\nTime: 2025-11-12T00:30:06+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.15105486600004,
+            "unit": "s",
+            "extra": "Commit: e6802e4a3e4ac22b9a424f0a9cbfe2c9dbd68e98\nBranch: master\nTime: 2025-11-12T00:30:06+01:00"
           }
         ]
       }
