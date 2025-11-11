@@ -3431,6 +3431,16 @@
     }),
   })
 # ---
+# name: test_schemas[schema/fixtures/network-link_name_contains]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-link_name_contains].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-local_max_items]
   ''
 # ---

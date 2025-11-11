@@ -451,6 +451,11 @@ def populate_field_type(
                         f"Item has keys {found_keys_object}, but type is '{curr_item['type']}', "
                         f"expected 'object'."
                     )
+        # Skip array type injection if we're directly inside a 'network' context,
+        # because in that case keys like 'contains', 'items' are link field names,
+        # not JSON schema array keywords
+        is_inside_network = path.endswith(".network") or path == "validate.network"
+
         keys_indicating_array = {
             "items",
             "contains",
@@ -460,7 +465,10 @@ def populate_field_type(
             "maxContains",
         }
         found_keys_array = [key for key in keys_indicating_array if key in curr_item]
-        if any(key in curr_item for key in keys_indicating_array):
+        if (
+            any(key in curr_item for key in keys_indicating_array)
+            and not is_inside_network
+        ):
             if "type" not in curr_item:
                 curr_item["type"] = "array"
             else:
