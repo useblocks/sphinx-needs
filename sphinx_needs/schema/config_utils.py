@@ -693,22 +693,22 @@ def validate_regex_pattern(pattern: str) -> None:
 
     # Define allowed basic regex constructs using allowlist approach
     allowed_pattern = r"""
-    ^                           # Start of string
-    (?:                         # Non-capturing group for alternatives
-        [^\\()[\]{}|+*?^$]      # Literal characters (not special)
-        |\\[\\()[\]{}|+*?^$nrtvfs]  # Basic escaped characters and whitespace
-        |\[[^\]]*\]             # Character classes [abc], [a-z], [^abc]
-        |\(\?:                  # Non-capturing groups (?:...)
-        |\(                     # Capturing groups (...)
-        |\)                     # Group closing
-        |\|                     # Alternation
-        |[+*?]                  # Basic quantifiers
-        |\{[0-9]+(?:,[0-9]*)?\} # Counted quantifiers {n}, {n,}, {n,m}
-        |\^                     # Start anchor
-        |\$                     # End anchor
-        |\.                     # Any character
-    )*                          # Zero or more occurrences
-    $                           # End of string
+    ^                                # Start of string
+    (?:                              # Non-capturing group for alternatives
+        [^\\()[\]{}|+*?^$]           # Literal characters (not special)
+        |\\[\\()[\]{}|+*?^$nrtvfs.]  # Basic escaped characters and whitespace
+        |\[[^\]]*\]                  # Character classes [abc], [a-z], [^abc]
+        |\(\?:                       # Non-capturing groups (?:...)
+        |\(                          # Capturing groups (...)
+        |\)                          # Group closing
+        |\|                          # Alternation
+        |[+*?]                       # Basic quantifiers
+        |\{[0-9]+(?:,[0-9]*)?\}      # Counted quantifiers {n}, {n,}, {n,m}
+        |\^                          # Start anchor
+        |\$                          # End anchor
+        |\.                          # Any character
+    )*                               # Zero or more occurrences
+    $                                # End of string
     """
 
     # Remove whitespace and comments from the validation pattern
