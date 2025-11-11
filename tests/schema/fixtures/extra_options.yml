@@ -207,8 +207,9 @@ given_schema_with_null_field:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
+    [needs]
+    schema_definitions_from_json = "schemas.json"
     [[needs.extra_options]]
     name = "asil"
     schema.type = "string"

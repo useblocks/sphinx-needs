@@ -2807,6 +2807,16 @@
     }),
   })
 # ---
+# name: test_schemas[schema/fixtures/extra_options-given_schema_with_null_field]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-given_schema_with_null_field].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-integer_multiple_of]
   ''
 # ---
