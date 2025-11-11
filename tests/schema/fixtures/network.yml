@@ -629,3 +629,47 @@ max_network_levels:
                                                 properties:
                                                   type:
                                                     const: spec
+
+link_name_contains:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "contains"
+    outgoing = "contains"
+    incoming = "contained by"
+    [[needs.extra_links]]
+    option = "items"
+    outgoing = "items"
+    incoming = "item of"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :contains: SPEC_1
+        :items: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type:
+              const: "impl"
+        validate:
+          network:
+            contains:
+              "contains":
+                "local":
+                  "properties":
+                    "type":
+                      "const": "spec"
+            items:
+              "contains":
+                "local":
+                  "properties":
+                    "type":
+                      "const": "spec"
