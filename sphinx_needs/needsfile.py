@@ -42,7 +42,7 @@ def generate_needs_schema(
 
     for field in needs_schema.iter_extra_fields():
         properties[field.name] = {
-            "type": field.type,
+            "type": [field.type, "null"] if field.nullable else field.type,
             "description": field.description,
             "field_type": "extra",
         }
@@ -79,8 +79,7 @@ def generate_needs_schema(
         }
 
     for name in exclude_properties:
-        if name in properties:
-            del properties[name]
+        properties.pop(name, None)
 
     return {
         "$schema": "http://json-schema.org/draft-07/schema#",
