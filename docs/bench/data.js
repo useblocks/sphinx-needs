@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1761914720174,
+  "lastUpdate": 1762889410134,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15048,6 +15048,42 @@ window.BENCHMARK_DATA = {
             "value": 63.56433696199999,
             "unit": "s",
             "extra": "Commit: 07e311c0278834a0feefbbb9afd7c3e797f1d84c\nBranch: master\nTime: 2025-10-31T13:43:15+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "25eebbfc4875359999e6fa0a6b97cbbebc8e1b25",
+          "message": "👌 Allow \\. in schema regex (#1568)\n\nThe regex `\\.` is currently disallowed in schema patterns.\nIt should be considered safe.\nTest cases were added.",
+          "timestamp": "2025-11-11T20:28:18+01:00",
+          "tree_id": "b6ff5feae589c8b63a73726ed2b747ca2dad9e8d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/25eebbfc4875359999e6fa0a6b97cbbebc8e1b25"
+        },
+        "date": 1762889398189,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17399403699999993,
+            "unit": "s",
+            "extra": "Commit: 25eebbfc4875359999e6fa0a6b97cbbebc8e1b25\nBranch: master\nTime: 2025-11-11T20:28:18+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.256136776,
+            "unit": "s",
+            "extra": "Commit: 25eebbfc4875359999e6fa0a6b97cbbebc8e1b25\nBranch: master\nTime: 2025-11-11T20:28:18+01:00"
           }
         ]
       }
