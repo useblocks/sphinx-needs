@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1762889410134,
+  "lastUpdate": 1762900004135,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15084,6 +15084,42 @@ window.BENCHMARK_DATA = {
             "value": 63.256136776,
             "unit": "s",
             "extra": "Commit: 25eebbfc4875359999e6fa0a6b97cbbebc8e1b25\nBranch: master\nTime: 2025-11-11T20:28:18+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ed701d3b206d5b7518d40fe4a3aa86b165132ebb",
+          "message": "🐛 Fix schema network type injection (#1570)\n\nThe type injection mechanism fails for link types called 'contains' or\n'items' as those indicate arrays.\nFix is to constrain the injection for certain schema path structure\nlocations.\nAdded a test for this.",
+          "timestamp": "2025-11-11T23:24:46+01:00",
+          "tree_id": "569a3764a09ecd88d197c4546be6d5631c11613f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ed701d3b206d5b7518d40fe4a3aa86b165132ebb"
+        },
+        "date": 1762899990127,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16261041699999623,
+            "unit": "s",
+            "extra": "Commit: ed701d3b206d5b7518d40fe4a3aa86b165132ebb\nBranch: master\nTime: 2025-11-11T23:24:46+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.28470959900001,
+            "unit": "s",
+            "extra": "Commit: ed701d3b206d5b7518d40fe4a3aa86b165132ebb\nBranch: master\nTime: 2025-11-11T23:24:46+01:00"
           }
         ]
       }
