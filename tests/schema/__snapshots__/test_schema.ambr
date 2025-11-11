@@ -1189,7 +1189,10 @@
               'default': None,
               'description': 'Approval flag',
               'field_type': 'extra',
-              'type': 'boolean',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
             }),
             'arch': dict({
               'additionalProperties': dict({
@@ -1205,7 +1208,10 @@
               'default': None,
               'description': 'Automotive Safety Integrity Level',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'avatar': dict({
               'default': '',
@@ -1223,7 +1229,10 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'constraints': dict({
               'default': list([
@@ -1285,7 +1294,10 @@
               'items': dict({
                 'type': 'string',
               }),
-              'type': 'array',
+              'type': list([
+                'array',
+                'null',
+              ]),
             }),
             'docname': dict({
               'default': None,
@@ -1306,13 +1318,19 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'efforts': dict({
               'default': None,
               'description': 'FTE days',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'external_css': dict({
               'default': '',
@@ -1523,7 +1541,10 @@
               'default': None,
               'description': 'Priority level, 1-5 where 1 is highest and 5 is lowest',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'query': dict({
               'default': '',
@@ -1538,7 +1559,10 @@
               'items': dict({
                 'type': 'number',
               }),
-              'type': 'array',
+              'type': list([
+                'array',
+                'null',
+              ]),
             }),
             'section_name': dict({
               'default': None,
@@ -1760,7 +1784,10 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'constraints': dict({
               'default': list([
@@ -1834,7 +1861,10 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'external_css': dict({
               'default': '',
@@ -1855,25 +1885,37 @@
               'default': None,
               'description': 'String option',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'field2': dict({
               'default': None,
               'description': 'Integer option',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'field3': dict({
               'default': None,
               'description': 'Number option',
               'field_type': 'extra',
-              'type': 'number',
+              'type': list([
+                'number',
+                'null',
+              ]),
             }),
             'field4': dict({
               'default': None,
               'description': 'Boolean option',
               'field_type': 'extra',
-              'type': 'boolean',
+              'type': list([
+                'boolean',
+                'null',
+              ]),
             }),
             'field5': dict({
               'default': None,
@@ -1882,7 +1924,10 @@
               'items': dict({
                 'type': 'string',
               }),
-              'type': 'array',
+              'type': list([
+                'array',
+                'null',
+              ]),
             }),
             'field6': dict({
               'default': None,
@@ -1891,7 +1936,10 @@
               'items': dict({
                 'type': 'integer',
               }),
-              'type': 'array',
+              'type': list([
+                'array',
+                'null',
+              ]),
             }),
             'field7': dict({
               'default': None,
@@ -1900,7 +1948,10 @@
               'items': dict({
                 'type': 'number',
               }),
-              'type': 'array',
+              'type': list([
+                'array',
+                'null',
+              ]),
             }),
             'field8': dict({
               'default': None,
@@ -1909,13 +1960,19 @@
               'items': dict({
                 'type': 'boolean',
               }),
-              'type': 'array',
+              'type': list([
+                'array',
+                'null',
+              ]),
             }),
             'field9': dict({
               'default': None,
               'description': 'Number option',
               'field_type': 'extra',
-              'type': 'number',
+              'type': list([
+                'number',
+                'null',
+              ]),
             }),
             'has_dead_links': dict({
               'default': False,
