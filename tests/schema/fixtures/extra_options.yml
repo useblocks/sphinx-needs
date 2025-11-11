@@ -203,6 +203,27 @@ auto_inject_type_wrong_const:
               asil:
                 const: QM
 
+given_schema_with_null_field:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "asil"
+    schema.type = "string"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                const: QM
+
 required_based_on_select_field_missing:
   conf: |
     extensions = ["sphinx_needs"]
