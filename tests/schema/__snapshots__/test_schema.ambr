@@ -2807,16 +2807,6 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-given_schema_with_null_field]
-  ''
-# ---
-# name: test_schemas[schema/fixtures/extra_options-given_schema_with_null_field].1
-  dict({
-    'validated_needs_count': 1,
-    'validation_warnings': dict({
-    }),
-  })
-# ---
 # name: test_schemas[schema/fixtures/extra_options-integer_multiple_of]
   ''
 # ---
@@ -2865,6 +2855,16 @@
   ''
 # ---
 # name: test_schemas[schema/fixtures/extra_options-no_schema].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/extra_options-no_schema_with_empty_string_field]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-no_schema_with_empty_string_field].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3008,6 +3008,16 @@
           'type': 'sn_schema_violation',
         }),
       ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/extra_options-schema_with_null_field]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-schema_with_null_field].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
     }),
   })
 # ---
