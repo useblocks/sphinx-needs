@@ -2,7 +2,8 @@ import os
 
 import sphinx
 from packaging.version import Version
-from sphinx.util.console import brown
+from sphinx.application import Sphinx
+from sphinx.util.console import brown  # type: ignore[import-not-found]
 from sphinx.util.osutil import copyfile, ensuredir
 
 sphinx_version = sphinx.__version__
@@ -15,7 +16,7 @@ if Version(sphinx_version) >= Version("1.6"):
 STATICS_DIR_NAME = "_static"
 
 
-def safe_add_file(filename, app):
+def safe_add_file(filename: str, app: Sphinx):
     """
     Adds files to builder resources only, if the given filename was not already registered.
     Needed mainly for tests to avoid multiple registration of the same file and therefore also multiple execution
@@ -29,14 +30,13 @@ def safe_add_file(filename, app):
     static_data_file = os.path.join("_static", data_file)
 
     if data_file.split(".")[-1] == "js":
-        if (
-            hasattr(app.builder, "script_files")
-            and static_data_file not in app.builder.script_files
-        ):
-            app.add_js_file(data_file)
+        if hasattr(app.registry, "js_files"):
+            js_files = [filename for filename, _ in app.registry.js_files]
+            if static_data_file not in js_files:
+                app.add_js_file(data_file)
     elif data_file.split(".")[-1] == "css":
-        if hasattr(app.builder, "css_files"):
-            css_files = [css.filename for css in app.builder.css_files]
+        if hasattr(app.registry, "css_files"):
+            css_files = [filename for filename, _ in app.registry.css_files]
             if static_data_file not in css_files:
                 app.add_css_file(data_file)
     else:
@@ -45,7 +45,7 @@ def safe_add_file(filename, app):
         )
 
 
-def safe_remove_file(filename, app):
+def safe_remove_file(filename: str, app: Sphinx):
     """
     Removes a given resource file from builder resources.
     Needed mostly during test, if multiple sphinx-build are started.
@@ -59,19 +59,18 @@ def safe_remove_file(filename, app):
     static_data_file = os.path.join("_static", data_file)
 
     if data_file.split(".")[-1] == "js":
-        if (
-            hasattr(app.builder, "script_files")
-            and static_data_file in app.builder.script_files
-        ):
-            app.builder.script_files.remove(static_data_file)
-    elif data_file.split(".")[-1] == "css" and hasattr(app.builder, "css_files"):
-        css_files = [css.filename for css in app.builder.css_files]
+        if hasattr(app.registry, "js_files"):
+            js_files = dict(app.registry.js_files)
+            if static_data_file in js_files:
+                app.registry.js_files.remove(
+                    (static_data_file, js_files[static_data_file])
+                )
+    elif data_file.split(".")[-1] == "css" and hasattr(app.registry, "css_files"):
+        css_files = dict(app.registry.css_files)
         if static_data_file in css_files:
-            to_remove = [
-                css for css in app.builder.css_files if css.filename == static_data_file
-            ]
-            for css in to_remove:
-                app.builder.css_files.remove(css)
+            app.registry.css_files.remove(
+                (static_data_file, css_files[static_data_file])
+            )
 
 
 # Base implementation from sphinxcontrib-images
@@ -90,10 +89,12 @@ def install_styles_static_files(app, env):
         status_iterator = app.status_iterator
 
     for source_file_path in status_iterator(
-        files_to_copy,
-        "Copying static files for sphinx-test-results custom style support...",
-        brown,
-        len(files_to_copy),
+        iterable=files_to_copy,
+        summary=brown(
+            "Copying static files for sphinx-test-results custom style support..."
+        ),
+        color="brown",
+        length=len(files_to_copy),
     ):
         if not os.path.isabs(source_file_path):
             source_file_path = os.path.join(
