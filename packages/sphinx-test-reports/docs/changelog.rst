@@ -7,6 +7,18 @@ Unreleased
 ----------
 :Released: under development
 
+.. _`release:1.3.2`:
+
+1.3.2
+-----
+:Released: 13.11.2025
+
+This release improves Sphinx-Test-Reports compatibility with Sphinx and
+fixes some Sphinx related deprecation warnings.
+
+* Bugfix: Fix deprecation warnings with Sphinx 8.
+  `#128 <https://github.com/useblocks/sphinx-test-reports/pull/128>`_
+
 .. _`release:1.3.1`:
 
 1.3.1
