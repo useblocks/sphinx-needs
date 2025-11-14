@@ -47,11 +47,11 @@ RUN pip3 install --no-cache-dir \
 # Install Sphinx-Needs
 RUN \
     if [ -n "$NEEDS_VERSION" ] && [ "$NEEDS_VERSION" = "pre-release" ]; then \
-      pip3 install --no-cache-dir "sphinx-needs[plotting] @ git+https://github.com/useblocks/sphinx-needs"; \
+      pip3 install --no-cache-dir "sphinx-needs[plotting,schema] @ git+https://github.com/useblocks/sphinx-needs"; \
     elif [ -n "$NEEDS_VERSION" ]; then \
-      pip3 install --no-cache-dir "sphinx-needs[plotting] @ git+https://github.com/useblocks/sphinx-needs@$NEEDS_VERSION"; \
+      pip3 install --no-cache-dir "sphinx-needs[plotting,schema] @ git+https://github.com/useblocks/sphinx-needs@$NEEDS_VERSION"; \
     else \
-      pip3 install --no-cache-dir sphinx-needs[plotting]; \
+      pip3 install --no-cache-dir sphinx-needs[plotting,schema]; \
     fi
 
 ## Clean up
