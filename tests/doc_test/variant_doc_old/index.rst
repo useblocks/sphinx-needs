@@ -8,7 +8,6 @@ Variant Handling Test
 .. spec:: Tags Example
    :id: VA_003
    :status: <<[all(x in build_tags for x in ['tag_a', 'tag_b'])]:tags_implemented, closed>>
-   :links: <<[all(x in build_tags for x in ['tag_a', 'tag_b'])]:ST_001, unknown>>
 
 .. story:: Test story
    :id: ST_001
