@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 # TODO(Marco): error for conflicting unevaluatedProperties
 
 
-_SCHEMA_VERION: Final[str] = "https://json-schema.org/draft/2020-12/schema"
+_SCHEMA_VERSION: Final[str] = "https://json-schema.org/draft/2020-12/schema"
 """
 JSON schema metaversion to use.
 
@@ -412,7 +412,7 @@ def validate_local_need(
         Can be overridden locally for type coercion errors or schema errors.
     """
     final_schema: NeedFieldsSchemaWithVersionType = {
-        "$schema": _SCHEMA_VERION,
+        "$schema": _SCHEMA_VERSION,
         "type": "object",
     }
     if "properties" in schema:
