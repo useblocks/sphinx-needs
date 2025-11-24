@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1762903922538,
+  "lastUpdate": 1764008793608,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15156,6 +15156,42 @@ window.BENCHMARK_DATA = {
             "value": 61.15105486600004,
             "unit": "s",
             "extra": "Commit: e6802e4a3e4ac22b9a424f0a9cbfe2c9dbd68e98\nBranch: master\nTime: 2025-11-12T00:30:06+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "60b4408af0b62e9e4382edc74dda2bf56b7d9865",
+          "message": "🔧 Remove mutable global variables (#1575)\n\nThis PR removes mutable global variables from the schema validation\nmodule, improving thread safety and code maintainability by passing\nschema information explicitly through function parameters instead of\nrelying on global state.\n\n- Removes three mutable global variables (`_extra_option_schemas`,\n`_extra_link_schemas`, `_needs_schema`) and the `merge_static_schemas`\nfunction that populated them\n- Introduces `NeedFieldProperties` TypedDict to define the structure of\nfield property data\n- Refactors all validation functions to accept `field_properties`,\n`extra_option_schemas`, and `extra_link_schemas` as explicit parameters",
+          "timestamp": "2025-11-24T19:24:38+01:00",
+          "tree_id": "100122a79729b28e65e9a81467d332e899545e00",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/60b4408af0b62e9e4382edc74dda2bf56b7d9865"
+        },
+        "date": 1764008780588,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1614213320000033,
+            "unit": "s",
+            "extra": "Commit: 60b4408af0b62e9e4382edc74dda2bf56b7d9865\nBranch: master\nTime: 2025-11-24T19:24:38+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.007349043000005,
+            "unit": "s",
+            "extra": "Commit: 60b4408af0b62e9e4382edc74dda2bf56b7d9865\nBranch: master\nTime: 2025-11-24T19:24:38+01:00"
           }
         ]
       }
