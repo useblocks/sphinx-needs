@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764008793608,
+  "lastUpdate": 1764010713867,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15192,6 +15192,42 @@ window.BENCHMARK_DATA = {
             "value": 62.007349043000005,
             "unit": "s",
             "extra": "Commit: 60b4408af0b62e9e4382edc74dda2bf56b7d9865\nBranch: master\nTime: 2025-11-24T19:24:38+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4759e27e9dda6ec57b61eac1292d2740373c90cc",
+          "message": "✨ Add `needs_schema_validation_enabled` configuration (#1574)\n\nThis PR adds a new configuration option\n`needs_schema_validation_enabled` to allow users to disable schema\nvalidation for needs. The flag is set to `True` by default, maintaining\nbackward compatibility while providing an opt-out mechanism for schema\nvalidation.\n\n---------\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2025-11-24T19:56:37+01:00",
+          "tree_id": "cae6c7f2e2f701e37a7b871282dfbcdb4debd5b5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4759e27e9dda6ec57b61eac1292d2740373c90cc"
+        },
+        "date": 1764010700638,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1607655960000045,
+            "unit": "s",
+            "extra": "Commit: 4759e27e9dda6ec57b61eac1292d2740373c90cc\nBranch: master\nTime: 2025-11-24T19:56:37+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.22052295,
+            "unit": "s",
+            "extra": "Commit: 4759e27e9dda6ec57b61eac1292d2740373c90cc\nBranch: master\nTime: 2025-11-24T19:56:37+01:00"
           }
         ]
       }
