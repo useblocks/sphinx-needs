@@ -37,6 +37,9 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     # upfront work
     any_static_found = merge_static_schemas(config)
 
+    if not config.schema_validation_enabled:
+        return
+
     if not (any_static_found or (config.schema_definitions.get("schemas"))):
         # nothing to validate but always generate report file
         generate_json_schema_validation_report(

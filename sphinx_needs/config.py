@@ -400,6 +400,11 @@ class NeedsSphinxConfig:
     )
     """Path to the root table in the toml file to load configuration from."""
 
+    schema_validation_enabled: bool = field(
+        default=True,
+        metadata={"rebuild": "env", "types": (bool,)},
+    )
+    """Enable schema validation for needs."""
     schema_definitions: SchemasFileRootType = field(
         default_factory=lambda: cast(SchemasFileRootType, {}),
         metadata={"rebuild": "env", "types": (dict,)},
