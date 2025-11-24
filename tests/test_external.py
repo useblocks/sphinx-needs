@@ -143,3 +143,121 @@ def test_export_import_round_trip(tmp_path: Path, snapshot):
     json_data = json.loads(Path(str(app.outdir), "needs.json").read_text("utf8"))
 
     assert json_data == snapshot(exclude=props("created", "project", "creator"))
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                ("index.rst", "Test\n====\n"),
+                (
+                    "conf.py",
+                    """
+extensions = ["sphinx_needs"]
+needs_external_needs = [{
+    'json_path':  'needs.json',
+    'base_url': 'http://my_company.com/docs/v1/',
+    'allow_type_coercion': True,
+}]
+needs_build_json = True
+needs_builder_filter = ''
+                 """,
+                ),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_external_allow_type_coercion_true(test_app):
+    """Test allow_type_coercion option of needimport directive."""
+    # write the parametrized index.rst content
+    json_path = Path(test_app.srcdir) / "needs.json"
+    json_path.write_text(
+        json.dumps(
+            {
+                "current_version": "1",
+                "versions": {
+                    "1": {
+                        "needs": {
+                            "TEST_01": {
+                                "id": "TEST_01",
+                                "title": "TEST IMPORT TITLE",
+                                "type": "impl",
+                                "tags": "a,b,c",
+                            }
+                        },
+                    }
+                },
+            }
+        )
+    )
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert not app._warning.getvalue()
+
+    needs_json = Path(test_app.outdir, "needs.json").read_text()
+    needs = json.loads(needs_json)
+    assert needs["versions"][""]["needs"]["TEST_01"]["tags"] == ["a", "b", "c"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                ("index.rst", "Test\n====\n"),
+                (
+                    "conf.py",
+                    """
+extensions = ["sphinx_needs"]
+needs_external_needs = [{
+    'json_path':  'needs.json',
+    'base_url': 'http://my_company.com/docs/v1/',
+    'allow_type_coercion': False,
+}]
+needs_build_json = True
+needs_builder_filter = ''
+                 """,
+                ),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_external_allow_type_coercion_false(test_app):
+    """Test allow_type_coercion option of needimport directive."""
+    # write the parametrized index.rst content
+    json_path = Path(test_app.srcdir) / "needs.json"
+    json_path.write_text(
+        json.dumps(
+            {
+                "current_version": "1",
+                "versions": {
+                    "1": {
+                        "needs": {
+                            "TEST_01": {
+                                "id": "TEST_01",
+                                "title": "TEST IMPORT TITLE",
+                                "type": "impl",
+                                "tags": "a,b,c",
+                            }
+                        },
+                    }
+                },
+            }
+        )
+    )
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert strip_colors(app._warning.getvalue()).splitlines() == [
+        "WARNING: External need 'TEST_01' in 'needs.json' could not be added: 'tags' value is invalid: Invalid value for field 'tags': 'a,b,c' [needs.load_external_need]"
+    ]
