@@ -132,3 +132,44 @@ def test_schema_example(test_app: SphinxTestApp, snapshot) -> None:
     test_app.build()
     warnings = strip_colors(test_app._warning.getvalue())
     assert not warnings
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    "conf.py",
+                    """
+                 
+extensions = ["sphinx_needs"]
+needs_schema_validation_enabled = False
+needs_extra_options = [
+    {"name": "extra", "schema": {"type": "string", "enum": ["a", "b"]}}
+]
+                """,
+                ),
+                (
+                    "index.rst",
+                    """
+Test
+====
+.. req:: A requirement
+  :extra: x
+""",
+                ),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_validation_disabled(test_app):
+    """Test that disabling schema validation suppresses schema violation warnings and output."""
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert not app._warning.getvalue()
+    assert not Path(app.outdir, "schema_violations.json").exists()

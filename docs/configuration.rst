@@ -2343,6 +2343,17 @@ needs_debug_filters
 If set to ``True``, all calls to :ref:`filter processing <filter>` will be logged to a ``debug_filters.jsonl`` file in the build output directory,
 appending a single-line JSON for each filter call.
 
+.. _`needs_schema_validation_enabled`:
+
+needs_schema_validation_enabled
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 6.1.1
+
+Enable schema validation for needs, ``True`` by default.
+
+See :ref:`schema_validation` for detailed documentation.
+
 .. _`needs_schema_definitions`:
 
 needs_schema_definitions

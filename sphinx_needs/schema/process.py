@@ -28,8 +28,10 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     Warnings and errors are emitted at the end.
     """
-    needs = get_needs_view(app)
     config = NeedsSphinxConfig(app.config)
+
+    if not config.schema_validation_enabled:
+        return
 
     extra_option_schema: NeedFieldsSchemaType = {
         "type": "object",
@@ -73,6 +75,8 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     # Start timer before validation loop
     start_time = time.perf_counter()
+
+    needs = get_needs_view(app)
 
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
