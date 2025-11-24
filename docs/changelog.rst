@@ -17,7 +17,7 @@ This release focuses on schema validation improvements and bug fixes.
 - ✨ Add ``needs_schema_validation_enabled`` configuration (:pr:`1574`)
 
   New configuration option to disable schema validation entirely.
-  This set to ``True`` by default, for backward compatibility,
+  This is set to ``True`` by default, for backward compatibility,
   and provides an opt-out mechanism when schema validation is not needed.
 
   See :ref:`needs_schema_validation_enabled` for more information.
