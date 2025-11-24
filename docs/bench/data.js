@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764010713867,
+  "lastUpdate": 1764013308955,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15228,6 +15228,42 @@ window.BENCHMARK_DATA = {
             "value": 62.22052295,
             "unit": "s",
             "extra": "Commit: 4759e27e9dda6ec57b61eac1292d2740373c90cc\nBranch: master\nTime: 2025-11-24T19:56:37+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "af0f355a28f012283b52a6e2afac7ee697e1fb18",
+          "message": "✨ Add `allow_type_coercion` configuration for external/import `needs.json` reads (#1573)\n\nThis PR adds the `allow_type_coercion` configuration option for\n`needs_external_needs` and the `needimport` directive, allowing users to\ncontrol whether field values should be automatically coerced to expected\ntypes or strictly validated. For example, this enables or disables\nparsing comma-separated strings like `\"a,b,c\"` into list types like\n`[\"a\", \"b\", \"c\"]`.\n\nFor back-compatibility, this is set to `True` by default.\n\nNote, setting `allow_type_coercion` will likely also improve performance\nof these `needs.json` reads, since additional parsing for\ndynamic/variant functions does not need to be run.\n\nKey changes:\n- Added `allow_type_coercion` parameter to `needimport` directive and\nexternal needs configuration\n- Updated `generate_need` and `add_need` functions to accept and use the\n`allow_type_coercion` parameter\n- Added comprehensive test coverage for both true and false cases\n\n---------\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2025-11-24T20:39:53+01:00",
+          "tree_id": "1215df3feb1eace1194dcfc09992da2920ddb1e4",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/af0f355a28f012283b52a6e2afac7ee697e1fb18"
+        },
+        "date": 1764013293866,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16137118899996494,
+            "unit": "s",
+            "extra": "Commit: af0f355a28f012283b52a6e2afac7ee697e1fb18\nBranch: master\nTime: 2025-11-24T20:39:53+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.94832335799998,
+            "unit": "s",
+            "extra": "Commit: af0f355a28f012283b52a6e2afac7ee697e1fb18\nBranch: master\nTime: 2025-11-24T20:39:53+01:00"
           }
         ]
       }
