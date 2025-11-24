@@ -172,7 +172,7 @@ needs_builder_filter = ''
     indirect=True,
 )
 def test_external_allow_type_coercion_true(test_app):
-    """Test allow_type_coercion option of needimport directive."""
+    """Test allow_type_coercion option for external needs configuration."""
     # write the parametrized index.rst content
     json_path = Path(test_app.srcdir) / "needs.json"
     json_path.write_text(
@@ -232,7 +232,7 @@ needs_builder_filter = ''
     indirect=True,
 )
 def test_external_allow_type_coercion_false(test_app):
-    """Test allow_type_coercion option of needimport directive."""
+    """Test allow_type_coercion option for external needs configuration."""
     # write the parametrized index.rst content
     json_path = Path(test_app.srcdir) / "needs.json"
     json_path.write_text(
