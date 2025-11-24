@@ -1,4 +1,5 @@
 import time
+from collections.abc import Mapping
 
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
@@ -9,12 +10,8 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import log_error, log_warning
 from sphinx_needs.needsfile import generate_needs_schema
-from sphinx_needs.schema.config import SchemasRootType
-from sphinx_needs.schema.core import (
-    _needs_schema,
-    merge_static_schemas,
-    validate_need,
-)
+from sphinx_needs.schema.config import NeedFieldsSchemaType, SchemasRootType
+from sphinx_needs.schema.core import NeedFieldProperties, validate_need
 from sphinx_needs.schema.reporting import (
     OntologyWarning,
     clear_debug_dir,
@@ -31,13 +28,33 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     Warnings and errors are emitted at the end.
     """
-    needs = get_needs_view(app)
     config = NeedsSphinxConfig(app.config)
 
-    # upfront work
-    any_static_found = merge_static_schemas(config)
+    if not config.schema_validation_enabled:
+        return
 
-    if not (any_static_found or (config.schema_definitions.get("schemas"))):
+    extra_option_schema: NeedFieldsSchemaType = {
+        "type": "object",
+        "properties": {
+            name: option.schema
+            for name, option in config.extra_options.items()
+            if option.schema is not None
+        },
+    }
+    extra_link_schema: NeedFieldsSchemaType = {
+        "type": "object",
+        "properties": {
+            link["option"]: link["schema"]
+            for link in config.extra_links
+            if "schema" in link and link["schema"] is not None
+        },
+    }
+
+    if not (
+        extra_option_schema["properties"]
+        or extra_link_schema["properties"]
+        or (config.schema_definitions.get("schemas"))
+    ):
         # nothing to validate but always generate report file
         generate_json_schema_validation_report(
             duration=0.00,
@@ -48,16 +65,18 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
         )
         return
 
-    # store the SN generated schema in a global variable
     schema = SphinxNeedsData(app.env).get_schema()
-    needs_schema = generate_needs_schema(schema)["properties"]
-    _needs_schema.update(needs_schema)
+    field_properties: Mapping[str, NeedFieldProperties] = generate_needs_schema(schema)[
+        "properties"
+    ]
 
     if config.schema_debug_active:
         clear_debug_dir(config)
 
     # Start timer before validation loop
     start_time = time.perf_counter()
+
+    needs = get_needs_view(app)
 
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
@@ -70,6 +89,9 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
             config=config,
             need=need,
             needs=needs,
+            field_properties=field_properties,
+            extra_option_schemas=extra_option_schema,
+            extra_link_schemas=extra_link_schema,
             type_schemas=type_schemas,
         )
         if nested_warnings:
