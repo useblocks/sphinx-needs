@@ -167,7 +167,7 @@ Test
     indirect=True,
 )
 def test_validation_disabled(test_app):
-    """Test various relative and absolute import file paths."""
+    """Test that disabling schema validation suppresses schema violation warnings and output."""
     app = test_app
     app.build()
     assert app.statuscode == 0
