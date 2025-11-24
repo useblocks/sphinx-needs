@@ -184,6 +184,104 @@ def test_import_abs_paths_lin_mac(test_app):
     [
         {
             "buildername": "html",
+            "files": [
+                ("conf.py", 'extensions = ["sphinx_needs"]\nneeds_build_json = True'),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_import_allow_type_coercion_true(test_app):
+    """Test allow_type_coercion option of needimport directive."""
+    # write the parametrized index.rst content
+    index_path = Path(test_app.srcdir, "index.rst")
+    json_path = Path(test_app.srcdir) / "needs.json"
+    json_path.write_text(
+        json.dumps(
+            {
+                "current_version": "1",
+                "versions": {
+                    "1": {
+                        "needs": {
+                            "TEST_01": {
+                                "id": "TEST_01",
+                                "title": "TEST IMPORT TITLE",
+                                "type": "impl",
+                                "tags": "a,b,c",
+                            }
+                        },
+                    }
+                },
+            }
+        )
+    )
+    index_path.write_text(".. needimport:: needs.json\n   :allow_type_coercion: true")
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert not app._warning.getvalue()
+
+    needs_json = Path(test_app.outdir, "needs.json").read_text()
+    needs = json.loads(needs_json)
+    assert needs["versions"][""]["needs"]["TEST_01"]["tags"] == ["a", "b", "c"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                ("conf.py", 'extensions = ["sphinx_needs"]\nneeds_build_json = True'),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_import_allow_type_coercion_false(test_app):
+    """Test allow_type_coercion option of needimport directive."""
+    # write the parametrized index.rst content
+    index_path = Path(test_app.srcdir, "index.rst")
+    json_path = Path(test_app.srcdir) / "needs.json"
+    json_path.write_text(
+        json.dumps(
+            {
+                "current_version": "1",
+                "versions": {
+                    "1": {
+                        "needs": {
+                            "TEST_01": {
+                                "id": "TEST_01",
+                                "title": "TEST IMPORT TITLE",
+                                "type": "impl",
+                                "tags": "a,b,c",
+                            }
+                        },
+                    }
+                },
+            }
+        )
+    )
+    index_path.write_text(".. needimport:: needs.json\n   :allow_type_coercion: false")
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert strip_colors(app._warning.getvalue()).replace(
+        str(test_app.srcdir) + os.sep, "srcdir/"
+    ).splitlines() == [
+        "srcdir/index.rst:1: WARNING: Need 'TEST_01' could not be imported: 'tags' value is invalid: Invalid value for field 'tags': 'a,b,c' [needs.import_need]"
+    ]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
             "srcdir": "doc_test/import_doc_invalid",
             "no_plantuml": True,
         }

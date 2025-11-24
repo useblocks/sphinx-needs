@@ -1797,6 +1797,11 @@ keys:
 :css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
   The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
   (*optional*) (*default*: ``external_link``)
+:allow_type_coercion: 
+  Allows to enable or disable type coercion of fields for each need, and parsing of dynamic functions.
+  For example if the ``tags`` need field is provided as a string like ``"tag1,tag2,[[func()]]"``, it will be parsed only if this option is set to ``True``,
+  otherwise will fail.
+  (*optional*) (*default*: ``True``)
 
 .. _`needs_needextend_strict`:
 

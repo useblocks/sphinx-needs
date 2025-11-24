@@ -20,6 +20,7 @@ You can generate a valid file using the builder :ref:`needs_builder`, for exampl
       :template: template.rst
       :pre_template: pre_template.rst
       :post_template: post_template.rst
+      :allow_type_coercion: true
 
 The directive argument can be one of the following formats:
 
@@ -120,6 +121,17 @@ See also :ref:`need_collapse` description of :ref:`need`.
     * Imported needs may use different need types as the current project.
     * The sphinx project owner is responsible for a correct configuration for internal and external needs.
     * There is no automatic type transformation during an import.
+
+allow_type_coercion
+~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 6.1.1
+
+Allows to enable or disable type coercion of fields for each need, and parsing of dynamic functions.
+For example if the ``tags`` need field is provided as a string like ``"tag1,tag2,[[func()]]"``, it will be parsed only if this option is set to ``True``,
+otherwise will fail.
+
+This option defaults to ``True``.
 
 Customization
 -------------
