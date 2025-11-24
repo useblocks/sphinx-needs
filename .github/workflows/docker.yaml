@@ -16,7 +16,7 @@ on:
     paths: ['docker/**']
 
 env:
-  NEEDS_VERSION: 6.1.0
+  NEEDS_VERSION: 6.1.1
   DEPLOY_IMAGE: ${{ github.event_name != 'pull_request' }}
 
 jobs:

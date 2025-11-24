@@ -4,13 +4,55 @@
 Changelog
 =========
 
+.. _`release:6.1.1`:
+
+6.1.1
+-----
+
+:Released: 25.11.2025
+:Full Changelog: `v6.1.0...v6.1.1 <https://github.com/useblocks/sphinx-needs/compare/6.1.0...af0f355a28f012283b52a6e2afac7ee697e1fb18>`__
+
+This release focuses on schema validation improvements and bug fixes.
+
+- ✨ Add ``needs_schema_validation_enabled`` configuration (:pr:`1574`)
+
+  New configuration option to disable schema validation entirely.
+  This set to ``True`` by default, for backward compatibility,
+  and provides an opt-out mechanism when schema validation is not needed.
+
+  See :ref:`needs_schema_validation_enabled` for more information.
+
+- ✨ Add ``allow_type_coercion`` configuration for external/import ``needs.json`` reads (:pr:`1573`)
+
+  New configuration option for ``needs_external_needs`` and the ``needimport`` directive
+  that controls whether field values should be automatically coerced to expected types.
+  For example, enables/disables parsing comma-separated strings like ``"a,b,c"`` into
+  list types like ``["a", "b", "c"]``.
+  Set to ``True`` by default for backward compatibility.
+  Setting to ``False`` may improve performance by skipping additional parsing.
+
+  See :ref:`needs_external_needs` and :ref:`needimport` for more information.
+
+- 👌 Allow ``\.`` in schema regex patterns (:pr:`1568`)
+
+  The regex pattern ``\.`` is now allowed in schema validations.
+
+- 🐛 Fix schema network type injection (:pr:`1570`)
+
+  Fixed type injection mechanism that was failing for link types called ``contains`` or ``items``.
+  Constrained the injection to specific schema path structure locations.
+
+- 🐛 Fix ``needs.json`` schema for nullable fields (:pr:`1571`)
+
+  Nullable fields now correctly reflect that property in the ``needs.json`` schemas section.
+
 .. _`release:6.1.0`:
 
 6.1.0
 -----
 
 :Released: 31.10.2025
-:Full Changelog: `v6.0.1...v6.1.0 <https://github.com/useblocks/sphinx-needs/compare/6.0.0...1b256d9b>`__
+:Full Changelog: `v6.0.1...v6.1.0 <https://github.com/useblocks/sphinx-needs/compare/6.0.0...6.1.0>`__
 
 Main focus of this release is the improvement of the schema severity handling.
 
