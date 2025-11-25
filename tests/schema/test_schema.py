@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from sphinx import version_info as sphinx_version
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
@@ -176,6 +177,10 @@ def test_validation_disabled(test_app):
 
 
 @pytest.mark.parametrize("schema_benchmark_app", [10, 100], indirect=True)
+@pytest.mark.skipif(
+    sphinx_version < (8,),
+    reason="sphinx 7 does not emit warning code prefixes, so snapshots differ",
+)
 def test_schema_benchmark(schema_benchmark_app, snapshot):
     """Test the benchmark project works."""
     schema_benchmark_app.build()
