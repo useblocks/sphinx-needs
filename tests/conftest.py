@@ -460,7 +460,11 @@ def get_warnings_list():
 
     def _get_warnings_list(app: SphinxTestApp) -> list[str]:
         warnings_raw = strip_colors(app.warning.getvalue())
-        warnings_split = [part for part in warnings_raw.split("WARNING: ") if part]
+        warnings_split = [
+            part
+            for part in warnings_raw.replace("ERROR: ", "WARNING: ").split("WARNING: ")
+            if part
+        ]
         return warnings_split
 
     return _get_warnings_list
