@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764062420625,
+  "lastUpdate": 1764083035838,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15336,6 +15336,42 @@ window.BENCHMARK_DATA = {
             "value": 64.24571705500003,
             "unit": "s",
             "extra": "Commit: 60b15806a071df8c8f20245cf8ce23c9fc22de66\nBranch: master\nTime: 2025-11-25T18:18:20+09:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8817754d9be6a75cf09e74d5a2da5e2938c87ec9",
+          "message": "🧪 Improve schema process benchmarking (#1579)\n\nHave standard test, to make sure the build works, and separate benchmark\ntest.\n\nThe standard test runs during standard testing, e.g. running `tox`,\nand the benchmark test can be run using e.g. `tox -e py312-benchmark --\ntests/benchmarks/test_schema_benchmark.py\n--benchmark-columns=min,max,mean`\n\n---\n\nCurrent results on my MacBook:\n\n```\n--------------------------------------- benchmark: 4 tests --------------------------------------\nName (time in ms)                       Min                   Max                  Mean          \n-------------------------------------------------------------------------------------------------\ntest_schema_benchmark[10]            3.7598 (1.0)          3.8571 (1.0)          3.8040 (1.0)    \ntest_schema_benchmark[100]          34.5185 (9.18)        36.2754 (9.40)        35.2756 (9.27)   \ntest_schema_benchmark[1000]        359.5095 (95.62)      404.7844 (104.95)     375.7929 (98.79)  \ntest_schema_benchmark[10000]     3,766.5854 (>1000.0)  4,034.7065 (>1000.0)  3,875.5382 (>1000.0)\n-------------------------------------------------------------------------------------------------\n```",
+          "timestamp": "2025-11-25T16:01:55+01:00",
+          "tree_id": "6bb8650ee9177049706670da17fc7715664be0de",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8817754d9be6a75cf09e74d5a2da5e2938c87ec9"
+        },
+        "date": 1764083021698,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16885127899999475,
+            "unit": "s",
+            "extra": "Commit: 8817754d9be6a75cf09e74d5a2da5e2938c87ec9\nBranch: master\nTime: 2025-11-25T16:01:55+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.47780608600002,
+            "unit": "s",
+            "extra": "Commit: 8817754d9be6a75cf09e74d5a2da5e2938c87ec9\nBranch: master\nTime: 2025-11-25T16:01:55+01:00"
           }
         ]
       }
