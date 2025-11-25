@@ -1,3 +1,4 @@
+# @Test suite for one-line comment parser functionality, TEST_OLP_1, test, [IMPL_OLP_1]
 import pytest
 
 from sphinx_codelinks.analyse.oneline_parser import (

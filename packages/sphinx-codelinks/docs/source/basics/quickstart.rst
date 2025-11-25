@@ -27,7 +27,6 @@ Sphinx Config
    :caption: src_trace.toml
    :language: toml
 
-
 One-line comment
 ----------------
 

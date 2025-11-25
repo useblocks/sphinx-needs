@@ -1,3 +1,4 @@
+# @Test suite for source analysis configuration validation, TEST_CONF_1, test, [IMPL_OLP_1]
 import pytest
 
 from sphinx_codelinks.config import OneLineCommentStyle, SourceAnalyseConfig

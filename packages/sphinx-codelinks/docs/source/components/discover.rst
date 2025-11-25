@@ -6,7 +6,6 @@ Source Discover
 SourceDiscover is one of the modules provided in ``Codelinks``. It discovers the source files from the given directory.
 It provides users CLI and API to discover the source files.
 
-
 Usage Examples
 --------------
 

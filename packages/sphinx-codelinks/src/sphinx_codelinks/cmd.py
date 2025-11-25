@@ -90,6 +90,7 @@ def analyse(
     ] = None,
 ) -> None:
     """Analyse marked content in source code."""
+    # @CLI command to analyse source code and extract traceability markers, IMPL_CLI_ANALYZE, impl, [FE_CLI_ANALYZE]
 
     data: CodeLinksConfigType = load_config_from_toml(config)
 
@@ -183,6 +184,7 @@ def discover(
             help="Glob patterns to be included.",
         ),
     ] = [],  # noqa: B006   # to show the default value on CLI
+    # @CLI command to discover source files recursively with gitignore support, IMPL_CLI_DISCOVER, impl, [FE_CLI_DISCOVER]
     gitignore: Annotated[
         bool,
         typer.Option(
@@ -234,6 +236,7 @@ def write_rst(  # noqa: PLR0913  # for CLI, so it takes as many as it requires
             resolve_path=True,
         ),
     ],
+    # @CLI command to generate needextend RST file from extracted markers, IMPL_CLI_WRITE, impl, [FE_CLI_WRITE]
     outpath: Annotated[
         Path,
         typer.Option(

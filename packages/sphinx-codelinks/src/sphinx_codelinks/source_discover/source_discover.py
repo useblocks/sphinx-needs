@@ -13,6 +13,7 @@ from sphinx_codelinks.source_discover.config import (
 )
 
 
+# @Source code file discovery with gitignore support, IMPL_DISC_1, impl, [FE_DISCOVERY, FE_CLI_DISCOVER]
 class SourceDiscover:
     def __init__(self, src_discover_config: SourceDiscoverConfig):
         self.src_discover_config = src_discover_config

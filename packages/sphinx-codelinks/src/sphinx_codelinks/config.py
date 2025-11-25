@@ -19,7 +19,9 @@ UNIX_NEWLINE = "\n"
 
 
 COMMENT_MARKERS = {
+    # @Support C and C++ style comments, IMPL_C_1, impl, [FE_C_SUPPORT, FE_CPP]
     CommentType.cpp: ["//", "/*"],
+    # @Support Python style comments, IMPL_PY_1, impl, [FE_PY]
     CommentType.python: ["#"],
     CommentType.cs: ["//", "/*", "///"],
 }
@@ -794,6 +796,15 @@ def convert_analyse_config(
     if src_discover:
         analyse_config_dict["src_files"] = src_discover.source_paths
         analyse_config_dict["src_dir"] = src_discover.src_discover_config.src_dir
+        try:
+            analyse_config_dict["comment_type"] = CommentType(
+                src_discover.src_discover_config.comment_type
+            )
+        except ValueError:
+            # If invalid comment_type, keep the string value
+            # Validation will catch this error later
+            comment_type_str: str = src_discover.src_discover_config.comment_type
+            analyse_config_dict["comment_type"] = comment_type_str  # type: ignore[typeddict-item]
 
     return SourceAnalyseConfig(**analyse_config_dict)
 
@@ -856,4 +867,13 @@ def generate_project_configs(
         )
         analyse_config = convert_analyse_config(analyse_section_config)
         analyse_config.get_oneline_needs = True  # force to get oneline_need
+        # Copy comment_type from source_discover_config to analyse_config
+        try:
+            analyse_config.comment_type = CommentType(
+                source_discover_config.comment_type
+            )
+        except ValueError:
+            # If invalid comment_type, keep the string value
+            # Validation will catch this error later
+            analyse_config.comment_type = source_discover_config.comment_type  # type: ignore[assignment]
         project_config["analyse_config"] = analyse_config

@@ -127,6 +127,7 @@ class SourceAnalyse:
                 yield marker, need_ids, row_offset, start_column, end_column
             row_offset += 1
 
+    # @Extract need ID references from code comments, IMPL_LNK_1, impl, [FE_LNK]
     def extract_anchors(
         self,
         text: str,
@@ -211,6 +212,7 @@ class SourceAnalyse:
             yield resolved, row_offset
             row_offset += 1
 
+    # @Extract one-line traceability needs from comments, IMPL_ONE_1, impl, [FE_DEF, FE_CMT]
     def extract_oneline_needs(
         self,
         text: str,
@@ -258,6 +260,7 @@ class SourceAnalyse:
             )
         return oneline_needs
 
+    # @Extract marked reStructuredText blocks from comments, IMPL_MRST_1, impl, [FE_RST_EXTRACTION]
     def extract_marked_rst(
         self,
         text: str,

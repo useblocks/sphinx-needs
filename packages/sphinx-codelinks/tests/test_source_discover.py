@@ -1,3 +1,4 @@
+# @Test suite for source file discovery with gitignore support, TEST_DISC_1, test, [IMPL_DISC_1]
 from pathlib import Path
 
 import pytest

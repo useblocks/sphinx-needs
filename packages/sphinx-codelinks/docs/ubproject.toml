@@ -6,6 +6,41 @@ ignore = ["block.title_line"]
 [needs]
 id_required = true
 
+[[needs.types]]
+directive = "feature"
+title = "Feature"
+prefix = "FEAT_"
+color = "#Gold"
+style = "rectangle"
+
+[[needs.types]]
+directive = "usecase"
+title = "Use Case"
+prefix = "USE_"
+color = "#Thistle"
+style = "rectangle"
+
+[[needs.types]]
+directive = "fault"
+title = "Fault"
+prefix = "FAULT_"
+color = "#Pink"
+style = "rectangle"
+
+[[needs.types]]
+directive = "impl"
+title = "Implementation"
+prefix = "IMPL_"
+color = "#LightGreen"
+style = "node"
+
+[[needs.types]]
+directive = "test"
+title = "Test"
+prefix = "TEST_"
+color = "#DarkTurquoise"
+style = "node"
+
 [parse.extend_directives.src-trace]
 argument = false
 options = true

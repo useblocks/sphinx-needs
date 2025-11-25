@@ -66,6 +66,7 @@ Contents
    components/analyse
    components/discover
    components/write
+   components/features
 
 .. toctree::
    :maxdepth: 1
@@ -74,3 +75,4 @@ Contents
    development/roadmap
    development/change_log
    development/contributing
+   development/traceability

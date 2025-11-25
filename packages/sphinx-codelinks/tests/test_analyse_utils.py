@@ -1,3 +1,4 @@
+# @Test suite for tree-sitter parsing utilities and language support, TEST_LANG_1, test, [IMPL_LANG_1, IMPL_EXTR_1, IMPL_RST_1]
 from pathlib import Path
 import shutil
 import subprocess

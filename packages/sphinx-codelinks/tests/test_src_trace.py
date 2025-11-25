@@ -1,3 +1,4 @@
+# @Test suite for Sphinx extension source tracing functionality, TEST_EXT_1, test, [IMPL_LNK_1, IMPL_ONE_1, IMPL_MRST_1]
 from collections.abc import Callable
 from pathlib import Path
 import shutil

@@ -35,3 +35,61 @@ remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit
 
 [codelinks.projects.src.source_discover]
 src_dir = "../tests/doc_test/minimum_config"
+
+# Configuration for source tracing project "sphinx_codelinks"
+[codelinks.projects.sphinx_codelinks]
+remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+
+[codelinks.projects.sphinx_codelinks.source_discover]
+src_dir = "../src"
+include = ["**/*.py"]
+comment_type = "python"
+gitignore = true
+
+[codelinks.projects.sphinx_codelinks.analyse]
+get_need_id_refs = false
+get_oneline_needs = true
+comment_type = "python"
+
+[codelinks.projects.sphinx_codelinks.analyse.oneline_comment_style]
+start_sequence = "@"
+field_split_char = ","
+needs_fields = [
+  { "name" = "title", "type" = "str" },
+  { "name" = "id", "type" = "str" },
+  { "name" = "type", "type" = "str", "default" = "impl" },
+  { "name" = "links", "type" = "list[str]", "default" = [
+  ] },
+]
+
+# Configuration for tests project
+[codelinks.projects.tests]
+remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+
+[codelinks.projects.tests.source_discover]
+src_dir = "../tests"
+include = ["**/*.py"]
+exclude = [
+  "**/__pycache__/**",
+  "**/data/**",
+  "**/doc_test/**",
+  "**/__snapshots__/**",
+]
+comment_type = "python"
+gitignore = true
+
+[codelinks.projects.tests.analyse]
+get_need_id_refs = false
+get_oneline_needs = true
+comment_type = "python"
+
+[codelinks.projects.tests.analyse.oneline_comment_style]
+start_sequence = "@"
+field_split_char = ","
+needs_fields = [
+  { "name" = "title", "type" = "str" },
+  { "name" = "id", "type" = "str" },
+  { "name" = "type", "type" = "str", "default" = "test" },
+  { "name" = "links", "type" = "list[str]", "default" = [
+  ] },
+]

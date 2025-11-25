@@ -31,6 +31,7 @@ class OnelineParserInvalidWarning:
     msg: str
 
 
+# @One-line comment parser for traceability markers, IMPL_OLP_1, impl, [FE_DEF, FE_CMT]
 def oneline_parser(  # noqa: PLR0912, PLR0911 # handel warnings
     oneline: str, oneline_config: OneLineCommentStyle
 ) -> dict[str, str | list[str] | int] | OnelineParserInvalidWarning | None:
