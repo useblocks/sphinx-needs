@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764022229055,
+  "lastUpdate": 1764062420625,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15300,6 +15300,42 @@ window.BENCHMARK_DATA = {
             "value": 58.809802201,
             "unit": "s",
             "extra": "Commit: f66bd94c54ef64e69a7794b09ab201172251e720\nBranch: master\nTime: 2025-11-24T23:08:36+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "60b15806a071df8c8f20245cf8ce23c9fc22de66",
+          "message": "🧪 Fix schema benchmark tests (#1577)\n\nBenchmark tests were broken and this went undetected.\nBenchmark should run in a small form on each PR to make sure they are\nnot broken.",
+          "timestamp": "2025-11-25T18:18:20+09:00",
+          "tree_id": "1e23ba97fa25bbb738ce2dd6362d388c843e9e95",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/60b15806a071df8c8f20245cf8ce23c9fc22de66"
+        },
+        "date": 1764062406508,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18541491199999882,
+            "unit": "s",
+            "extra": "Commit: 60b15806a071df8c8f20245cf8ce23c9fc22de66\nBranch: master\nTime: 2025-11-25T18:18:20+09:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.24571705500003,
+            "unit": "s",
+            "extra": "Commit: 60b15806a071df8c8f20245cf8ce23c9fc22de66\nBranch: master\nTime: 2025-11-25T18:18:20+09:00"
           }
         ]
       }
