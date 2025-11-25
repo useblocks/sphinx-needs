@@ -173,3 +173,14 @@ def test_validation_disabled(test_app):
     assert app.statuscode == 0
     assert not app._warning.getvalue()
     assert not Path(app.outdir, "schema_violations.json").exists()
+
+
+@pytest.mark.parametrize("schema_benchmark_app", [10, 100], indirect=True)
+def test_schema_benchmark(schema_benchmark_app, snapshot):
+    """Test the benchmark project works."""
+    schema_benchmark_app.build()
+    assert schema_benchmark_app.statuscode == 0
+    warnings = strip_colors(schema_benchmark_app.warning.getvalue()).replace(
+        str(schema_benchmark_app.srcdir) + os.path.sep, "<srcdir>/"
+    )
+    assert warnings == snapshot
