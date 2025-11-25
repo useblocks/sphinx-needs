@@ -543,8 +543,9 @@ def get_ontology_warnings(
                 "final_schema": final_schema,
                 "schema_path": [*schema_path, *(str(item) for item in err.schema_path)],
                 "need_path": need_path,
-                "field": ".".join([str(x) for x in err.path]),
             }
+            if field := ".".join([str(x) for x in err.path]):
+                warning["field"] = field
             if user_message is not None:
                 warning["user_message"] = user_message
             warnings.append(warning)
