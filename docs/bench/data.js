@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764083035838,
+  "lastUpdate": 1764083926977,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15372,6 +15372,42 @@ window.BENCHMARK_DATA = {
             "value": 64.47780608600002,
             "unit": "s",
             "extra": "Commit: 8817754d9be6a75cf09e74d5a2da5e2938c87ec9\nBranch: master\nTime: 2025-11-25T16:01:55+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1eb8cf0a279d7547f4b9b174753f61ef04400549",
+          "message": "🔧 Reduce nested functions in `get_ontology_warnings` (#1578)\n\nThis PR refactors `get_ontology_warnings` by inlining the nested helper\nfunctions `validate_local_need` and `get_localschema_errors`,\nconsolidating the validation logic into a single function. This reduces\nthe complexity of the call stack and eliminates intermediate data\nstructures.\nIt is also a step towards reducing validator creation calls and\nimproving performance.\n\n**Key changes:**\n- Removed `validate_local_need` and `get_localschema_errors` helper\nfunctions\n- Inlined schema assembly and validation directly into\n`get_ontology_warnings`\n- Removed `ValidateNeedType` TypedDict as it's no longer needed",
+          "timestamp": "2025-11-25T16:16:44+01:00",
+          "tree_id": "5e8cb60e557637391232b7edc9236750e2bd564c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1eb8cf0a279d7547f4b9b174753f61ef04400549"
+        },
+        "date": 1764083908734,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17437980599999747,
+            "unit": "s",
+            "extra": "Commit: 1eb8cf0a279d7547f4b9b174753f61ef04400549\nBranch: master\nTime: 2025-11-25T16:16:44+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.375729229,
+            "unit": "s",
+            "extra": "Commit: 1eb8cf0a279d7547f4b9b174753f61ef04400549\nBranch: master\nTime: 2025-11-25T16:16:44+01:00"
           }
         ]
       }
