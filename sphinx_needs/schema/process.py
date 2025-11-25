@@ -11,7 +11,11 @@ from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import log_error, log_warning
 from sphinx_needs.needsfile import generate_needs_schema
 from sphinx_needs.schema.config import NeedFieldsSchemaType, SchemasRootType
-from sphinx_needs.schema.core import NeedFieldProperties, validate_need
+from sphinx_needs.schema.core import (
+    NeedFieldProperties,
+    compile_validator,
+    validate_need,
+)
 from sphinx_needs.schema.reporting import (
     OntologyWarning,
     clear_debug_dir,
@@ -84,14 +88,19 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     type_schemas: list[SchemasRootType] = []
     if config.schema_definitions and "schemas" in config.schema_definitions:
         type_schemas = config.schema_definitions["schemas"]
+
+    # pre-compile validators for extra options and extra links
+    extra_validator = compile_validator(extra_option_schema)
+    link_validator = compile_validator(extra_link_schema)
+
     for need in needs.values():
         nested_warnings = validate_need(
             config=config,
             need=need,
             needs=needs,
             field_properties=field_properties,
-            extra_option_schemas=extra_option_schema,
-            extra_link_schemas=extra_link_schema,
+            extra_option_schemas=extra_validator,
+            extra_link_schemas=link_validator,
             type_schemas=type_schemas,
         )
         if nested_warnings:
