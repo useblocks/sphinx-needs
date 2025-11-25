@@ -122,19 +122,27 @@
           "links": {
             "items": {
               "local": {
-                "properties": {
-                  "links": { "minItems": 1 }
-                },
-                "allOf": [{ "$ref": "#/$defs/safe-spec" }]
+                "allOf": [
+                  {
+                    "properties": {
+                      "links": { "minItems": 1 }
+                    }
+                  },
+                  { "$ref": "#/$defs/safe-spec" }
+                ]
               },
               "network": {
                 "links": {
                   "items": {
                     "local": {
-                      "properties": {
-                        "links": { "minItems": 1 }
-                      },
-                      "allOf": [{ "$ref": "#/$defs/safe-feat" }]
+                      "allOf": [
+                        {
+                          "properties": {
+                            "links": { "minItems": 1 }
+                          }
+                        },
+                        { "$ref": "#/$defs/safe-feat" }
+                      ]
                     }
                   }
                 }
