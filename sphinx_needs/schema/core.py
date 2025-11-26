@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, TypedDict, cast
 
@@ -42,58 +42,75 @@ The implementation requires at least draft 2019-09 as unevaluatedProperties was 
 """
 
 
-def validate_need(
+def validate_extra_options(
     config: NeedsSphinxConfig,
-    need: NeedItem,
-    needs: NeedsView,
+    schemas: NeedFieldsSchemaType,
     field_properties: Mapping[str, NeedFieldProperties],
-    extra_option_schemas: SchemaValidator,
-    extra_link_schemas: SchemaValidator,
-    type_schemas: Sequence[SchemasRootType],
-) -> list[OntologyWarning]:
-    """
-    Validate a single need against all extra option, link option and type schemas.
-
-    The loop creates reports of type ReportSingleType that follow the schema
-    definition structure. The reports are then converted to
-    NestedWarningType objects presented to the user.
-    """
-    all_warnings: list[OntologyWarning] = []
-
-    if not extra_option_schemas.is_empty():
-        # check schemas of extra options and extra links for the need
-        new_warnings_options = get_ontology_warnings(
+    needs: NeedsView,
+) -> dict[str, list[OntologyWarning]]:
+    """Validate schema originating from extra option definitions."""
+    need_2_warnings: dict[str, list[OntologyWarning]] = {}
+    validator = compile_validator(schemas)
+    for need in needs.values():
+        schema_warnings = get_ontology_warnings(
             need,
             field_properties,
-            extra_option_schemas,
+            validator,
             fail_rule=MessageRuleEnum.extra_option_fail,
             success_rule=MessageRuleEnum.extra_option_success,
             schema_path=["extra_options", "schema"],
             need_path=[need["id"]],
         )
-        save_debug_files(config, new_warnings_options)
-        all_warnings.extend(new_warnings_options)
+        save_debug_files(config, schema_warnings)
+        if schema_warnings:
+            need_2_warnings[need["id"]] = schema_warnings
+    return need_2_warnings
 
-    if not extra_link_schemas.is_empty():
-        new_warnings_links = get_ontology_warnings(
+
+def validate_link_options(
+    config: NeedsSphinxConfig,
+    extra_option_schemas: NeedFieldsSchemaType,
+    field_properties: Mapping[str, NeedFieldProperties],
+    needs: NeedsView,
+) -> dict[str, list[OntologyWarning]]:
+    """Validate schema originating from extra link definitions."""
+    need_2_warnings: dict[str, list[OntologyWarning]] = {}
+    validator = compile_validator(extra_option_schemas)
+    for need in needs.values():
+        schema_warnings = get_ontology_warnings(
             need,
             field_properties,
-            extra_link_schemas,
+            validator,
             fail_rule=MessageRuleEnum.extra_link_fail,
             success_rule=MessageRuleEnum.extra_link_success,
             schema_path=["extra_links", "schema"],
             need_path=[need["id"]],
         )
-        save_debug_files(config, new_warnings_links)
-        all_warnings.extend(new_warnings_links)
+        save_debug_files(config, schema_warnings)
+        if schema_warnings:
+            need_2_warnings[need["id"]] = schema_warnings
+    return need_2_warnings
 
-    for type_schema in type_schemas:
+
+def validate_type_schema(
+    config: NeedsSphinxConfig,
+    needs: NeedsView,
+    field_properties: Mapping[str, NeedFieldProperties],
+    type_schema: SchemasRootType,
+) -> dict[str, list[OntologyWarning]]:
+    """Validate needs against a type schema."""
+    need_2_warnings: dict[str, list[OntologyWarning]] = {}
+
+    validator = (
+        compile_validator(cast(NeedFieldsSchemaType, type_schema["select"]))
+        if type_schema.get("select")
+        else None
+    )
+
+    for need in needs.values():
         # maintain state for nested network validation
         schema_name = get_schema_name(type_schema)
-        if type_schema.get("select"):
-            validator = compile_validator(
-                cast(NeedFieldsSchemaType, type_schema["select"])
-            )
+        if validator is not None:
             new_warnings_select = get_ontology_warnings(
                 need,
                 field_properties,
@@ -129,9 +146,10 @@ def validate_need(
             need_path=[need["id"]],
             recurse_level=0,
         )
-        all_warnings.extend(new_warnings_recurse)
+        if new_warnings_recurse:
+            need_2_warnings[need["id"]] = new_warnings_recurse
 
-    return all_warnings
+    return need_2_warnings
 
 
 def recurse_validate_schemas(
