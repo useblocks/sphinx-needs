@@ -431,7 +431,7 @@ class NeedFieldProperties(TypedDict):
 def reduce_need(
     need: NeedItem,
     field_properties: Mapping[str, NeedFieldProperties],
-    json_schema: NeedFieldsSchemaWithVersionType,
+    schema_properties: set[str],
 ) -> dict[str, Any]:
     """
     Reduce a need to its relevant fields for validation in a specific schema context.
@@ -459,7 +459,6 @@ def reduce_need(
     :param json_schema: The user provided and merged JSON merge.
     """
     reduced_need: dict[str, Any] = {}
-    schema_properties = get_properties_from_schema(json_schema)
     for field, value in need.items():
         keep = False
         schema_field = field_properties[field]
@@ -517,6 +516,7 @@ def any_not_of_rule(warnings: list[OntologyWarning], rule: MessageRuleEnum) -> b
 class SchemaValidator:
     raw: NeedFieldsSchemaWithVersionType
     compiled: Draft202012Validator
+    properties: set[str]
 
 
 def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:
@@ -530,8 +530,9 @@ def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:
             if k in schema
         },
     }
+    properties = get_properties_from_schema(final_schema)
     compiled = Draft202012Validator(final_schema, format_checker=FormatChecker())
-    return SchemaValidator(raw=final_schema, compiled=compiled)
+    return SchemaValidator(raw=final_schema, compiled=compiled, properties=properties)
 
 
 def get_ontology_warnings(
@@ -545,7 +546,7 @@ def get_ontology_warnings(
     user_message: str | None = None,
     user_severity: SeverityEnum | None = None,
 ) -> list[OntologyWarning]:
-    reduced_need = reduce_need(need, field_properties, validator.raw)
+    reduced_need = reduce_need(need, field_properties, validator.properties)
     warnings: list[OntologyWarning] = []
     warning: OntologyWarning
     try:
