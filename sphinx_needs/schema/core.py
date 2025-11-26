@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, TypedDict, cast
 
-from jsonschema import Draft202012Validator, FormatChecker, ValidationError
+from jsonschema_rs import Draft202012Validator, RegexOptions, ValidationError
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.need_item import NeedItem
@@ -531,7 +531,9 @@ def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:
         },
     }
     properties = get_properties_from_schema(final_schema)
-    compiled = Draft202012Validator(final_schema, format_checker=FormatChecker())
+    compiled = Draft202012Validator(
+        dict(final_schema), validate_formats=True, pattern_options=RegexOptions()
+    )
     return SchemaValidator(raw=final_schema, compiled=compiled, properties=properties)
 
 
@@ -579,7 +581,7 @@ def get_ontology_warnings(
                 "schema_path": [*schema_path, *(str(item) for item in err.schema_path)],
                 "need_path": need_path,
             }
-            if field := ".".join([str(x) for x in err.path]):
+            if field := ".".join([str(x) for x in err.instance_path]):
                 warning["field"] = field
             if user_message is not None:
                 warning["user_message"] = user_message

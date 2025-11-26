@@ -15,7 +15,7 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Any
 
-from jsonschema import Draft7Validator
+from jsonschema_rs import Draft7Validator
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.config import NeedsSphinxConfig

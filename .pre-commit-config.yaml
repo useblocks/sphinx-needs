@@ -26,8 +26,8 @@ repos:
         additional_dependencies:
           - sphinx==7.4.7
           - docutils==0.20
+          - jsonschema-rs==0.37.1
           - types-docutils==0.20.0.20240201
-          - types-jsonschema
           - types-requests
           - typeguard
 

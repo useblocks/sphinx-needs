@@ -526,11 +526,11 @@ integer_multiple_of:
     [[needs.extra_options]]
     name = "efforts2"
     schema.type = "integer"
-    schema.multipleOf = -1
+    schema.multipleOf = 1
     [[needs.extra_options]]
     name = "efforts3"
     schema.type = "integer"
-    schema.multipleOf = -1
+    schema.multipleOf = 1
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -564,7 +564,7 @@ number_multiple_of:
     [[needs.extra_options]]
     name = "efforts2"
     schema.type = "number"
-    schema.multipleOf = -1.1
+    schema.multipleOf = 1.1
     [[needs.extra_options]]
     name = "efforts3"
     schema.type = "number"
