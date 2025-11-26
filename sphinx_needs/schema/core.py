@@ -518,10 +518,6 @@ class SchemaValidator:
     raw: NeedFieldsSchemaWithVersionType
     compiled: Draft202012Validator
 
-    def is_empty(self) -> bool:
-        """Check if the schema has no properties defined."""
-        return not self.raw.get("properties")
-
 
 def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:
     """Compile a JSON schema into a validator."""
