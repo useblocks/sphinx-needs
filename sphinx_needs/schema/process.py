@@ -104,10 +104,7 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
         type_schemas = config.schema_definitions["schemas"]
     for type_schema in type_schemas:
         type_warnings = validate_type_schema(
-            config=config,
-            needs=needs,
-            field_properties=field_properties,
-            type_schema=type_schema,
+            config, type_schema, needs, field_properties
         )
         for key, warnings in type_warnings.items():
             need_2_warnings.setdefault(key, []).extend(warnings)

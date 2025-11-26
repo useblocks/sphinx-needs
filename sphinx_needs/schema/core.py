@@ -44,13 +44,13 @@ The implementation requires at least draft 2019-09 as unevaluatedProperties was 
 
 def validate_extra_options(
     config: NeedsSphinxConfig,
-    schemas: NeedFieldsSchemaType,
+    schema: NeedFieldsSchemaType,
     field_properties: Mapping[str, NeedFieldProperties],
     needs: NeedsView,
 ) -> dict[str, list[OntologyWarning]]:
     """Validate schema originating from extra option definitions."""
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
-    validator = compile_validator(schemas)
+    validator = compile_validator(schema)
     for need in needs.values():
         schema_warnings = get_ontology_warnings(
             need,
@@ -69,13 +69,13 @@ def validate_extra_options(
 
 def validate_link_options(
     config: NeedsSphinxConfig,
-    extra_option_schemas: NeedFieldsSchemaType,
+    schema: NeedFieldsSchemaType,
     field_properties: Mapping[str, NeedFieldProperties],
     needs: NeedsView,
 ) -> dict[str, list[OntologyWarning]]:
     """Validate schema originating from extra link definitions."""
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
-    validator = compile_validator(extra_option_schemas)
+    validator = compile_validator(schema)
     for need in needs.values():
         schema_warnings = get_ontology_warnings(
             need,
@@ -94,22 +94,22 @@ def validate_link_options(
 
 def validate_type_schema(
     config: NeedsSphinxConfig,
+    schema: SchemasRootType,
     needs: NeedsView,
     field_properties: Mapping[str, NeedFieldProperties],
-    type_schema: SchemasRootType,
 ) -> dict[str, list[OntologyWarning]]:
     """Validate needs against a type schema."""
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
     validator = (
-        compile_validator(cast(NeedFieldsSchemaType, type_schema["select"]))
-        if type_schema.get("select")
+        compile_validator(cast(NeedFieldsSchemaType, schema["select"]))
+        if schema.get("select")
         else None
     )
 
     for need in needs.values():
         # maintain state for nested network validation
-        schema_name = get_schema_name(type_schema)
+        schema_name = get_schema_name(schema)
         if validator is not None:
             new_warnings_select = get_ontology_warnings(
                 need,
@@ -127,18 +127,18 @@ def validate_type_schema(
                 continue
 
         user_severity = (
-            SeverityEnum[type_schema["severity"]] if "severity" in type_schema else None
+            SeverityEnum[schema["severity"]] if "severity" in schema else None
         )
         local_network_schema: ValidateSchemaType = {}
-        if "local" in type_schema["validate"]:
-            local_network_schema["local"] = type_schema["validate"]["local"]
-        if "network" in type_schema["validate"]:
-            local_network_schema["network"] = type_schema["validate"]["network"]
+        if "local" in schema["validate"]:
+            local_network_schema["local"] = schema["validate"]["local"]
+        if "network" in schema["validate"]:
+            local_network_schema["network"] = schema["validate"]["network"]
         _, new_warnings_recurse = recurse_validate_schemas(
             config,
             need,
             needs,
-            user_message=type_schema.get("message"),
+            user_message=schema.get("message"),
             field_properties=field_properties,
             schema=local_network_schema,
             severity=user_severity,
