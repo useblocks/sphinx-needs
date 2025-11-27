@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764247760431,
+  "lastUpdate": 1764256242370,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15480,6 +15480,42 @@ window.BENCHMARK_DATA = {
             "value": 76.36335038099999,
             "unit": "s",
             "extra": "Commit: 43ee1e60806eb44e47b8b92422ac9256825c39dd\nBranch: master\nTime: 2025-11-27T13:47:00+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c6d4eb9ad6e788522613eb6be7ebbb48eb5efe32",
+          "message": "👌 Improve schema validation performance (improve reduce_needs) (#1583)",
+          "timestamp": "2025-11-27T16:08:41+01:00",
+          "tree_id": "722d48864f1bce39c16446388c4ddfd0ce9a03a2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c6d4eb9ad6e788522613eb6be7ebbb48eb5efe32"
+        },
+        "date": 1764256227358,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20881046699999217,
+            "unit": "s",
+            "extra": "Commit: c6d4eb9ad6e788522613eb6be7ebbb48eb5efe32\nBranch: master\nTime: 2025-11-27T16:08:41+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.349315175,
+            "unit": "s",
+            "extra": "Commit: c6d4eb9ad6e788522613eb6be7ebbb48eb5efe32\nBranch: master\nTime: 2025-11-27T16:08:41+01:00"
           }
         ]
       }
