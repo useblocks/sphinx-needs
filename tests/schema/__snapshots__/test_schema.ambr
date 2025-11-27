@@ -3673,36 +3673,12 @@
   })
 # ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_time]
-  '''
-  ERROR: Need 'IMPL_1' has schema violations:
-    Severity:       violation
-    Field:          time
-    Need path:      IMPL_1
-    Schema path:    extra_options > schema > properties > time > format
-    Schema message: "23:12:13" is not a "time" [sn_schema_violation.extra_option_fail]
-  
-  '''
+  ''
 # ---
 # name: test_schemas[schema/fixtures/extra_options-string_format_time].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
-      'IMPL_1': list([
-        dict({
-          'children': list([
-          ]),
-          'details': dict({
-            'field': 'time',
-            'need_path': 'IMPL_1',
-            'schema_path': 'extra_options > schema > properties > time > format',
-            'severity': 'violation',
-            'validation_msg': '"23:12:13" is not a "time"',
-          }),
-          'log_lvl': 'error',
-          'subtype': 'extra_option_fail',
-          'type': 'sn_schema_violation',
-        }),
-      ]),
     }),
   })
 # ---
@@ -3713,7 +3689,7 @@
     Field:          time
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > time > format
-    Schema message: "26:12:13" is not a "time" [sn_schema_violation.extra_option_fail]
+    Schema message: "26:12:13+00:00" is not a "time" [sn_schema_violation.extra_option_fail]
   
   '''
 # ---
@@ -3730,7 +3706,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_options > schema > properties > time > format',
             'severity': 'violation',
-            'validation_msg': '"26:12:13" is not a "time"',
+            'validation_msg': '"26:12:13+00:00" is not a "time"',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_option_fail',
