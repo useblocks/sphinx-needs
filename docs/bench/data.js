@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764256242370,
+  "lastUpdate": 1764267887987,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15516,6 +15516,42 @@ window.BENCHMARK_DATA = {
             "value": 64.349315175,
             "unit": "s",
             "extra": "Commit: c6d4eb9ad6e788522613eb6be7ebbb48eb5efe32\nBranch: master\nTime: 2025-11-27T16:08:41+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6793c963429a12c6e603d6973dc5e4cc5d405b40",
+          "message": "👌 Improve schema validation performance (cache recursive validators) (#1584)\n\nThis PR improves schema validation performance by implementing a caching\nmechanism for compiled validators during recursive validation. The\nchange addresses performance issues when validating large numbers of\nneeds by avoiding redundant compilation of the same schema validators.\n\nPart of #1580 \n\nPerformance before:\n\n```\n--------------------------------------- benchmark: 4 tests --------------------------------------\nName (time in ms)                       Min                   Max                  Mean          \n-------------------------------------------------------------------------------------------------\ntest_schema_benchmark[10]            1.6057 (1.0)          1.7409 (1.0)          1.6599 (1.0)    \ntest_schema_benchmark[100]          12.0368 (7.50)        13.0080 (7.47)        12.4502 (7.50)   \ntest_schema_benchmark[1000]        122.8352 (76.50)      146.5861 (84.20)      132.5649 (79.86)  \ntest_schema_benchmark[10000]     1,389.8434 (865.59)   1,475.3114 (847.45)   1,435.1382 (864.61) \n-------------------------------------------------------------------------------------------------\n```\n\nafter:\n\n```\n------------------------------------ benchmark: 4 tests -----------------------------------\nName (time in ms)                     Min                 Max                Mean          \n-------------------------------------------------------------------------------------------\ntest_schema_benchmark[10]          1.2655 (1.0)        1.3351 (1.0)        1.3107 (1.0)    \ntest_schema_benchmark[100]         7.6597 (6.05)       8.6209 (6.46)       7.9877 (6.09)   \ntest_schema_benchmark[1000]       75.7847 (59.88)     79.4862 (59.53)     77.0564 (58.79)  \ntest_schema_benchmark[10000]     947.2090 (748.48)   990.0806 (741.55)   963.0407 (734.73) \n-------------------------------------------------------------------------------------------\n```\n\n<img width=\"1080\" height=\"857\" alt=\"image\"\nsrc=\"https://github.com/user-attachments/assets/5a007470-1584-4376-937b-356fc19c1588\"\n/>",
+          "timestamp": "2025-11-27T19:22:54+01:00",
+          "tree_id": "3f8c184bde98e7aa9574757816bf782fe6cf1c09",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6793c963429a12c6e603d6973dc5e4cc5d405b40"
+        },
+        "date": 1764267872022,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2036225159999958,
+            "unit": "s",
+            "extra": "Commit: 6793c963429a12c6e603d6973dc5e4cc5d405b40\nBranch: master\nTime: 2025-11-27T19:22:54+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.97968628899999,
+            "unit": "s",
+            "extra": "Commit: 6793c963429a12c6e603d6973dc5e4cc5d405b40\nBranch: master\nTime: 2025-11-27T19:22:54+01:00"
           }
         ]
       }
