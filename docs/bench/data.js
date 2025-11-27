@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764242371541,
+  "lastUpdate": 1764247760431,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15444,6 +15444,42 @@ window.BENCHMARK_DATA = {
             "value": 66.78146652500001,
             "unit": "s",
             "extra": "Commit: c4abff00fec914800d17eabd443e81c1a8e87195\nBranch: master\nTime: 2025-11-27T12:17:30+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "43ee1e60806eb44e47b8b92422ac9256825c39dd",
+          "message": "👌 Improve schema validation performance (use jsonschema-rs) (#1582)\n\nThis PR replaces the current `jsonschema` dependency with\n[`jsonschema-rs`](https://pypi.org/project/jsonschema-rs/\n), a rust based validation library.\n\nThis noticeably improves performance and partially addresses #1580 \n\nMainly, the changes in the test snapshots are due to slight wording\ndifferences in the validation error reporting.\nTwo slight changes to how data is validated are:\n\n- jsonschema-rs does not allow for negative numbers in `multipleOf`,\nthis is consistent with the spec:\nhttps://json-schema.org/understanding-json-schema/reference/numeric#multiples\n- jsonschema-rs requires \"full-time\" for valid time strings, e.g.\n`23:12:13+00:00` and not `23:12:13`, again this is consistent with the\nspec:\nhttps://json-schema.org/draft/2020-12/draft-bhutton-json-schema-validation-00#rfc.section.7.3,\nhttps://datatracker.ietf.org/doc/html/rfc3339\n\nOld:\n\n```\n--------------------------------------- benchmark: 4 tests --------------------------------------\nName (time in ms)                       Min                   Max                  Mean          \n-------------------------------------------------------------------------------------------------\ntest_schema_benchmark[10]            2.3415 (1.0)          2.5922 (1.0)          2.4685 (1.0)    \ntest_schema_benchmark[100]          19.9788 (8.53)        20.8267 (8.03)        20.3502 (8.24)   \ntest_schema_benchmark[1000]        207.8503 (88.77)      221.5037 (85.45)      215.0182 (87.11)  \ntest_schema_benchmark[10000]     2,289.5046 (977.81)   2,457.2198 (909.34)   2,416.6798 (938.51) \n-------------------------------------------------------------------------------------------------\n```\n\nNew:\n\n```\n--------------------------------------- benchmark: 4 tests --------------------------------------\nName (time in ms)                       Min                   Max                  Mean          \n-------------------------------------------------------------------------------------------------\ntest_schema_benchmark[10]            1.8951 (1.0)          1.9902 (1.0)          1.9341 (1.0)    \ntest_schema_benchmark[100]          15.4466 (8.15)        16.5783 (8.33)        15.8389 (8.19)   \ntest_schema_benchmark[1000]        157.1176 (82.91)      162.1689 (81.49)      159.7026 (82.57)  \ntest_schema_benchmark[10000]     1,826.7637 (963.94)   1,863.1562 (936.18)   1,842.3514 (952.58) \n-------------------------------------------------------------------------------------------------\n```\n\n<img width=\"872\" height=\"674\" alt=\"image\"\nsrc=\"https://github.com/user-attachments/assets/bc545324-f091-48ce-b6a7-21f154df00c8\"\n/>\n\n<img width=\"745\" height=\"622\" alt=\"image\"\nsrc=\"https://github.com/user-attachments/assets/aa20f1fb-e29a-420a-aa63-958b15ba42dd\"\n/>",
+          "timestamp": "2025-11-27T13:47:00+01:00",
+          "tree_id": "30d9cc00182e67c7683912ece953f5a6a6660066",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/43ee1e60806eb44e47b8b92422ac9256825c39dd"
+        },
+        "date": 1764247745652,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23656482199999118,
+            "unit": "s",
+            "extra": "Commit: 43ee1e60806eb44e47b8b92422ac9256825c39dd\nBranch: master\nTime: 2025-11-27T13:47:00+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 76.36335038099999,
+            "unit": "s",
+            "extra": "Commit: 43ee1e60806eb44e47b8b92422ac9256825c39dd\nBranch: master\nTime: 2025-11-27T13:47:00+01:00"
           }
         ]
       }
