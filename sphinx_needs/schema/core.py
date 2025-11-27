@@ -101,6 +101,7 @@ def validate_type_schema(
     """Validate needs against a type schema."""
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
+    schema_name = get_schema_name(schema)
     validator = (
         compile_validator(cast(NeedFieldsSchemaType, schema["select"]))
         if schema.get("select")
@@ -109,7 +110,6 @@ def validate_type_schema(
 
     for need in needs.values():
         # maintain state for nested network validation
-        schema_name = get_schema_name(schema)
         if validator is not None:
             new_warnings_select = get_ontology_warnings(
                 need,
