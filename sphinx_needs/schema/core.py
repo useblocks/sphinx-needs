@@ -101,15 +101,21 @@ def validate_type_schema(
     """Validate needs against a type schema."""
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
+    schema_name = get_schema_name(schema)
     validator = (
         compile_validator(cast(NeedFieldsSchemaType, schema["select"]))
         if schema.get("select")
         else None
     )
+    user_severity = SeverityEnum[schema["severity"]] if "severity" in schema else None
+    local_network_schema: ValidateSchemaType = {}
+    if "local" in schema["validate"]:
+        local_network_schema["local"] = schema["validate"]["local"]
+    if "network" in schema["validate"]:
+        local_network_schema["network"] = schema["validate"]["network"]
 
     for need in needs.values():
         # maintain state for nested network validation
-        schema_name = get_schema_name(schema)
         if validator is not None:
             new_warnings_select = get_ontology_warnings(
                 need,
@@ -126,14 +132,6 @@ def validate_type_schema(
                 # need is not selected
                 continue
 
-        user_severity = (
-            SeverityEnum[schema["severity"]] if "severity" in schema else None
-        )
-        local_network_schema: ValidateSchemaType = {}
-        if "local" in schema["validate"]:
-            local_network_schema["local"] = schema["validate"]["local"]
-        if "network" in schema["validate"]:
-            local_network_schema["network"] = schema["validate"]["network"]
         _, new_warnings_recurse = recurse_validate_schemas(
             config,
             need,
@@ -450,43 +448,35 @@ def reduce_need(
     - if they are links and the list is not empty
     - if they are part of the user provided schema
 
-    The function coerces extra option strings to their specified JSON schema types:
-    -> integer -> int
-    -> number -> float
-    -> boolean -> bool
-
     :param need: The need to reduce.
     :param json_schema: The user provided and merged JSON merge.
     """
     reduced_need: dict[str, Any] = {}
-    for field, value in need.items():
-        keep = False
+
+    for field, value in need.iter_extra_items():
+        if value is None:
+            # value is not provided
+            continue
         schema_field = field_properties[field]
-
-        if schema_field["field_type"] == "extra" and not (
-            "default" in schema_field and value == schema_field["default"]
-        ):
+        if not ("default" in schema_field and value == schema_field["default"]):
             # keep explicitly set extra options
-            keep = True
+            reduced_need[field] = value
 
-        if schema_field["field_type"] == "links" and value:
+    for field, value in need.iter_links_items():
+        if value:
             # keep non-empty link fields
-            keep = True
+            reduced_need[field] = value
 
-        if (
-            schema_field["field_type"] == "core"
-            and field in schema_properties
-            and not ("default" in schema_field and value == schema_field["default"])
+    for field, value in need.iter_core_items():
+        if value is None:
+            # value is not provided
+            continue
+        schema_field = field_properties[field]
+        if field in schema_properties and not (
+            "default" in schema_field and value == schema_field["default"]
         ):
             # keep core field, it has no default or differs from the default and
             # is part of the user provided schema
-            keep = True
-
-        if value is None:
-            # value is not provided
-            keep = False
-
-        if keep:
             reduced_need[field] = value
 
     return reduced_need
