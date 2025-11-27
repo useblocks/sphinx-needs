@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764083926977,
+  "lastUpdate": 1764242371541,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15408,6 +15408,42 @@ window.BENCHMARK_DATA = {
             "value": 65.375729229,
             "unit": "s",
             "extra": "Commit: 1eb8cf0a279d7547f4b9b174753f61ef04400549\nBranch: master\nTime: 2025-11-25T16:16:44+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c4abff00fec914800d17eabd443e81c1a8e87195",
+          "message": "👌 Improve schema validation performance (pre-compute validators) (#1581)\n\nThis PR improves schema validation performance by pre-computing JSON\nschema validators instead of creating them repeatedly for each need. The\nchange moves validator compilation outside the per-need validation loop,\ncreating validators once per schema type and reusing them across all\nneeds.\n\nPartially addresses #1580 \n\nThis results in a reasonable performance improvement, particularly for\nextra/link option schemas only analysis:\n\nFrom: `tox -e py312-benchmark --\ntests/benchmarks/test_schema_benchmark.py\n--benchmark-columns=min,max,mean`\n\nold:\n\n```\n--------------------------------------- benchmark: 4 tests --------------------------------------\nName (time in ms)                       Min                   Max                  Mean          \n-------------------------------------------------------------------------------------------------\ntest_schema_benchmark[10]            2.7564 (1.0)          3.0168 (1.0)          2.8645 (1.0)    \ntest_schema_benchmark[100]          24.9164 (9.04)        26.0315 (8.63)        25.2987 (8.83)   \ntest_schema_benchmark[1000]        238.9974 (86.71)      246.3840 (81.67)      243.4033 (84.97)  \ntest_schema_benchmark[10000]     2,566.9278 (931.27)   2,670.7933 (885.30)   2,630.2005 (918.22) \n-------------------------------------------------------------------------------------------------\n```\n\nnew:\n\n```\n--------------------------------------- benchmark: 4 tests --------------------------------------\nName (time in ms)                       Min                   Max                  Mean          \n-------------------------------------------------------------------------------------------------\ntest_schema_benchmark[10]            2.3415 (1.0)          2.5922 (1.0)          2.4685 (1.0)    \ntest_schema_benchmark[100]          19.9788 (8.53)        20.8267 (8.03)        20.3502 (8.24)   \ntest_schema_benchmark[1000]        207.8503 (88.77)      221.5037 (85.45)      215.0182 (87.11)  \ntest_schema_benchmark[10000]     2,289.5046 (977.81)   2,357.2198 (909.34)   2,316.6798 (938.51) \n-------------------------------------------------------------------------------------------------\n```\n\nFrom: \n\n```\ntox -e py312-benchmark -- tests/benchmarks/test_schema_benchmark.py --benchmark-columns=min,max,mean -k \"10000\" --benchmark-cprofile=function_name --benchmark-cprofile-dump=schema.profile\nuv run --with=snakeviz snakeviz schema.profile-test_schema_benchmark\\[10000\\].prof\n```\n\n<img width=\"879\" height=\"663\" alt=\"image\"\nsrc=\"https://github.com/user-attachments/assets/3165411a-1406-457b-b257-72f59a4d9ad4\"\n/>",
+          "timestamp": "2025-11-27T12:17:30+01:00",
+          "tree_id": "ba5937d54f175757b48655561380d3c04b727a6f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c4abff00fec914800d17eabd443e81c1a8e87195"
+        },
+        "date": 1764242357108,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.24184955399999808,
+            "unit": "s",
+            "extra": "Commit: c4abff00fec914800d17eabd443e81c1a8e87195\nBranch: master\nTime: 2025-11-27T12:17:30+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.78146652500001,
+            "unit": "s",
+            "extra": "Commit: c4abff00fec914800d17eabd443e81c1a8e87195\nBranch: master\nTime: 2025-11-27T12:17:30+01:00"
           }
         ]
       }
