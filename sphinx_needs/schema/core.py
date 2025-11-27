@@ -532,7 +532,9 @@ def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:
     }
     properties = get_properties_from_schema(final_schema)
     compiled = Draft202012Validator(
-        dict(final_schema), validate_formats=True, pattern_options=RegexOptions()
+        cast(dict[str, Any], final_schema),
+        validate_formats=True,
+        pattern_options=RegexOptions(),
     )
     return SchemaValidator(raw=final_schema, compiled=compiled, properties=properties)
 
