@@ -459,34 +459,31 @@ def reduce_need(
     :param json_schema: The user provided and merged JSON merge.
     """
     reduced_need: dict[str, Any] = {}
-    for field, value in need.items():
-        keep = False
+
+    for field, value in need.iter_extra_items():
+        if value is None:
+            # value is not provided
+            continue
         schema_field = field_properties[field]
-
-        if schema_field["field_type"] == "extra" and not (
-            "default" in schema_field and value == schema_field["default"]
-        ):
+        if not ("default" in schema_field and value == schema_field["default"]):
             # keep explicitly set extra options
-            keep = True
+            reduced_need[field] = value
 
-        if schema_field["field_type"] == "links" and value:
+    for field, value in need.iter_links_items():
+        if value:
             # keep non-empty link fields
-            keep = True
+            reduced_need[field] = value
 
-        if (
-            schema_field["field_type"] == "core"
-            and field in schema_properties
-            and not ("default" in schema_field and value == schema_field["default"])
+    for field, value in need.iter_core_items():
+        if value is None:
+            # value is not provided
+            continue
+        schema_field = field_properties[field]
+        if field in schema_properties and not (
+            "default" in schema_field and value == schema_field["default"]
         ):
             # keep core field, it has no default or differs from the default and
             # is part of the user provided schema
-            keep = True
-
-        if value is None:
-            # value is not provided
-            keep = False
-
-        if keep:
             reduced_need[field] = value
 
     return reduced_need
