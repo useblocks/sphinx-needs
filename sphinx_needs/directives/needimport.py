@@ -115,14 +115,13 @@ class NeedimportDirective(SphinxDirective):
             except (OSError, json.JSONDecodeError) as e:
                 # TODO: Add exception handling
                 raise SphinxNeedsFileException(correct_need_import_path) from e
-
-            errors = check_needs_data(needs_import_list)
-            if errors.schema:
-                logger.info(
-                    f"Schema validation errors detected in file {correct_need_import_path}:"
-                )
-                for error in errors.schema:
-                    logger.info(f"  {error.message} -> {'.'.join(error.path)}")
+        errors = check_needs_data(needs_import_list)
+        if errors.schema:
+            logger.info(
+                f"Schema validation errors detected in file {correct_need_import_path}:"
+            )
+            for error in errors.schema:
+                logger.info(f"  {error.message} -> {'.'.join(error.path)}")
 
         if version is None:
             try:
