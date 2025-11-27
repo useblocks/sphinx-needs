@@ -107,6 +107,12 @@ def validate_type_schema(
         if schema.get("select")
         else None
     )
+    user_severity = SeverityEnum[schema["severity"]] if "severity" in schema else None
+    local_network_schema: ValidateSchemaType = {}
+    if "local" in schema["validate"]:
+        local_network_schema["local"] = schema["validate"]["local"]
+    if "network" in schema["validate"]:
+        local_network_schema["network"] = schema["validate"]["network"]
 
     for need in needs.values():
         # maintain state for nested network validation
@@ -126,14 +132,6 @@ def validate_type_schema(
                 # need is not selected
                 continue
 
-        user_severity = (
-            SeverityEnum[schema["severity"]] if "severity" in schema else None
-        )
-        local_network_schema: ValidateSchemaType = {}
-        if "local" in schema["validate"]:
-            local_network_schema["local"] = schema["validate"]["local"]
-        if "network" in schema["validate"]:
-            local_network_schema["network"] = schema["validate"]["network"]
         _, new_warnings_recurse = recurse_validate_schemas(
             config,
             need,
