@@ -450,11 +450,6 @@ def reduce_need(
     - if they are links and the list is not empty
     - if they are part of the user provided schema
 
-    The function coerces extra option strings to their specified JSON schema types:
-    -> integer -> int
-    -> number -> float
-    -> boolean -> bool
-
     :param need: The need to reduce.
     :param json_schema: The user provided and merged JSON merge.
     """
