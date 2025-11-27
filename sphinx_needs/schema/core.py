@@ -114,6 +114,8 @@ def validate_type_schema(
     if "network" in schema["validate"]:
         local_network_schema["network"] = schema["validate"]["network"]
 
+    validator_cache: dict[tuple[str, ...], SchemaValidator] = {}
+
     for need in needs.values():
         # maintain state for nested network validation
         if validator is not None:
@@ -142,6 +144,7 @@ def validate_type_schema(
             severity=user_severity,
             schema_path=[schema_name],
             need_path=[need["id"]],
+            validator_cache=validator_cache,
             recurse_level=0,
         )
         if new_warnings_recurse:
@@ -160,6 +163,7 @@ def recurse_validate_schemas(
     schema_path: list[str],
     need_path: list[str],
     recurse_level: int,
+    validator_cache: dict[tuple[str, ...], SchemaValidator],
     severity: SeverityEnum | None = None,
 ) -> tuple[bool, list[OntologyWarning]]:
     """
@@ -198,7 +202,9 @@ def recurse_validate_schemas(
             if recurse_level == 0
             else MessageRuleEnum.network_local_fail
         )
-        validator = compile_validator(cast(NeedFieldsSchemaType, schema["local"]))
+        if (validator := validator_cache.get((*schema_path, "local"))) is None:
+            validator = compile_validator(cast(NeedFieldsSchemaType, schema["local"]))
+            validator_cache[(*schema_path, "local")] = validator
         warnings_local = get_ontology_warnings(
             need,
             field_properties,
@@ -285,6 +291,7 @@ def recurse_validate_schemas(
                         schema_path=schema_path_items,
                         need_path=need_path_link,
                         recurse_level=recurse_level + 1,
+                        validator_cache=validator_cache,
                         severity=severity,
                     )
                     if new_success:
@@ -307,6 +314,7 @@ def recurse_validate_schemas(
                         schema_path=schema_path_contains,
                         need_path=need_path_link,
                         recurse_level=recurse_level + 1,
+                        validator_cache=validator_cache,
                         severity=severity,
                     )
                     if new_success:
