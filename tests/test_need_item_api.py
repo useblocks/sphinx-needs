@@ -110,7 +110,7 @@ def test_need_item_validate():
 
     with pytest.raises(
         ValueError,
-        match=r"NeedItem keys must be unique across core, computed, extras, links, and backlinks. Duplicate keys: \\['id', 'is_need', 'other'\\]",
+        match="NeedItem keys must be unique across core, computed, extras, links, and backlinks. Duplicate keys: \\['id', 'is_need', 'other'\\]",  # noqa: RUF043
     ):
         NeedItem(
             core=core(),
