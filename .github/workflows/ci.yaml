@@ -28,6 +28,8 @@ jobs:
         run: ubc check docs
       - name: Run 'ubc build index docs'
         run: ubc build index docs --show-warnings
+      - name: Run 'ubc format docs'
+        run: ubc format docs --preview --check
 
   tests-core:
     name: "Core py${{ matrix.python-version }} sphinx~=${{ matrix.sphinx-version }} ${{ matrix.os }}"

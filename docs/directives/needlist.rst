@@ -17,14 +17,14 @@ Options
 
 .. note::
 
-    **needlist** supports the full filtering possibilities of **Sphinx-Needs**.
-    Please see :ref:`filter` for more information.
+   **needlist** supports the full filtering possibilities of **Sphinx-Needs**.
+   Please see :ref:`filter` for more information.
 
-
-.. _needlist_show_status:
+.. _`needlist_show_status`:
 
 show_status
 ~~~~~~~~~~~
+
 Flag for adding status information to the needs list results filtered.
 
 If a filtered need has no status information, we write no status output for the need.
@@ -35,14 +35,14 @@ If a filtered need has no status information, we write no status output for the 
       :show_status:
       :status: done; implemented
 
-.. _needlist_show_tags:
+.. _`needlist_show_tags`:
 
 show_tags
 ~~~~~~~~~
+
 Flag for adding tag information to the needs list results filtered.
 
 If a filtered need has no tag information, we write no tag output for the need.
-
 
 .. need-example::
 
@@ -50,13 +50,12 @@ If a filtered need has no tag information, we write no tag output for the need.
       :show_tags:
       :status: done; implemented
 
-.. _needlist_show_filters:
+.. _`needlist_show_filters`:
 
 show_filters
 ~~~~~~~~~~~~
 
 If set, we add the used filter below the needlist results:
-
 
 .. need-example::
 

@@ -22,13 +22,12 @@ For instance, a supplier could get a copy of requirements but would not see all 
       :layout: clean
       :style: green_border
 
-
 .. caution::
 
    ``needextract`` supports correct rendering of most, but not all, content coming from the original need.
    Be careful when using complex content in the original need, like custom roles or directives
    that require any sphinx transforms.
-   
+
 ``needextract`` supports the full filtering possibilities of sphinx-needs.
 Please read :ref:`filter` for more information.
 
@@ -47,7 +46,7 @@ supports need ID as filter argument.
 Options
 -------
 
-.. _needextract_layout:
+.. _`needextract_layout`:
 
 layout
 ~~~~~~
@@ -62,7 +61,7 @@ See :ref:`layouts` for a list of available layouts.
    .. needextract:: EXTRACT_FEATURE_1
       :layout: focus_r
 
-.. _needextract_style:
+.. _`needextract_style`:
 
 style
 ~~~~~

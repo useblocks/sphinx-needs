@@ -2,8 +2,8 @@
 
 list2need
 =========
-.. versionadded:: 1.2.0
 
+.. versionadded:: 1.2.0
 
 ``list2need`` allows to create need objects out ouf a given list, where each list entry is used to create
 a single need.
@@ -23,7 +23,6 @@ This mechanism is the same as the one used by :ref:`need_part`.
 Options for the need-objects can be set by adding them like ``((status="open"))``.
 For details please see :ref:`list2need_meta_data`.
 
-
 .. code-block:: rst
 
    .. list2need::
@@ -38,7 +37,6 @@ For details please see :ref:`list2need_meta_data`.
           as content, the first one as title.
           * Sub-Need on level 3. With some rst-syntax support for
             the **content** by :ref:`list2need`
-
 
 .. list2need::
    :types: req, spec, test
@@ -60,6 +58,7 @@ For details please see :ref:`list2need_meta_data`.
 
 List structure
 --------------
+
 The used list structure was defined to be as small as possible.
 
 Each line starting with a ``*`` will create a new need object.
@@ -83,23 +82,21 @@ There is no default value and ``types`` must be set.
 
 .. code-block:: rst
 
-      .. list2need::
-         :types: feature, function, test
+   .. list2need::
+      :types: feature, function, test
 
-         * Login user
-           * Provide login screen
-           * Create password hash
-             * Recalculate hash and compare
-
-
+      * Login user
+        * Provide login screen
+        * Create password hash
+          * Recalculate hash and compare
 
 presentation
 ~~~~~~~~~~~~
+
 Defines how the single Sphinx-Needs objects shall be presented.
 
 :nested: Needs of level 2 are defined in the content of the parent need (level 1) and so on.
 :standalone: Each list element gets its own, independent need object. They are not nested.
-
 
 Default: **nested**
 
@@ -115,6 +112,7 @@ Default: **.**
 
 links-down
 ~~~~~~~~~~
+
 ``links-down`` set automatically links between the different levels of the list.
 
 .. code-block:: rst
@@ -148,7 +146,6 @@ The amount of given link-types must be the amount of used levels minus 1.
      * (NEED-C)Create password hash
        * (NEED-D)Recalculate hash and compare
 
-
 tags
 ~~~~
 
@@ -165,15 +162,14 @@ tags
         * (NEED-C)Create password hash
           * (NEED-D)Recalculate hash and compare
 
-
 The tags ``A`` and ``B`` are attached to all ``NEED-A``, ``NEED-B``, ``NEED-C`` and ``NEED-D``.
-
 
 List examples
 -------------
 
 List with need-ids
 ~~~~~~~~~~~~~~~~~~
+
 .. code-block:: rst
 
    .. list2need::
@@ -192,6 +188,7 @@ List with need-ids
 
 Nested lists
 ~~~~~~~~~~~~
+
 .. code-block:: rst
 
    .. list2need::
@@ -210,9 +207,9 @@ Nested lists
        * Level 3
          * Level 4
 
-
 List with newlines
 ~~~~~~~~~~~~~~~~~~
+
 .. code-block:: rst
 
    .. list2need::
@@ -241,10 +238,8 @@ Simple rst in lists
 
       * Level 1 need with rst. With **some** rst-content for :ref:`list2need`
 
-.. list2need::
+.. list2need:: * Level 1 need with rst. With **some** rst-content for :ref:`list2need`
    :types: req, spec
-
-   * Level 1 need with rst. With **some** rst-content for :ref:`list2need`
 
 rst-directives in lists
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -260,7 +255,6 @@ rst-directives in lists
         .. image:: /_images/logos/sphinx-needs-logo.png
            :align: center
            :width: 20%
-
 
 .. list2need::
    :types: req, spec
@@ -303,10 +297,11 @@ Lists with need-part support
      * And a spec need.
        Lets reference a need-part frm above: :need:`LIST2NEED-REQ-1.1`
 
-.. _list2need_meta_data:
+.. _`list2need_meta_data`:
 
 Set meta-data
 ~~~~~~~~~~~~~
+
 Meta-data can be set directly in the related line via: ``((status="open"))``.
 Or if the amount of option/values is getting too complex, in a second step
 by using :ref:`needextend`.
@@ -329,7 +324,6 @@ And instead of ``"`` also ``'`` can be used.
 
    .. needextend:: EXT-FEATURE-B
       :style: yellow
-
 
 .. list2need::
    :types: feature, req

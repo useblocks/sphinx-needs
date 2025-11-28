@@ -1,5 +1,3 @@
-
-
 .. _needarch:
 
 needarch
@@ -12,7 +10,7 @@ jinja functions :ref:`needarch_jinja_need` and :ref:`needarch_jinja_import`.
 
    .. req:: Requirement arch
       :id: req_arch_001
-         
+
       .. needarch::
          :scale: 50
          :align: center
@@ -23,10 +21,9 @@ jinja functions :ref:`needarch_jinja_need` and :ref:`needarch_jinja_import`.
 Jinja context
 -------------
 
-The following Jinja functions are **only available** for :ref:`needarch`. 
+The following Jinja functions are **only available** for :ref:`needarch`.
 
-
-.. _needarch_jinja_need:
+.. _`needarch_jinja_need`:
 
 need()
 ~~~~~~
@@ -54,8 +51,7 @@ The ``need()`` function provides you the need information the :ref:`needarch` is
          {% endfor %}
          }
 
-
-.. _needarch_jinja_import:
+.. _`needarch_jinja_import`:
 
 import(need_links_option_name)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -89,7 +85,7 @@ Then it executes :ref:`needuml_jinja_uml` automatically for all links/need_ids d
 
          {{import("checks", "tests")}}
 
-.. _needarch_ex_loop:
+.. _`needarch_ex_loop`:
 
 NeedArch Loop Example
 ---------------------

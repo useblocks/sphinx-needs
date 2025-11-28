@@ -1,4 +1,4 @@
-.. _github_service:
+.. _`github_service`:
 
 GitHub services
 ===============
@@ -10,7 +10,6 @@ for each information type:
 + ``github-prs``
 + ``github-commits``
 
-
 They all have common configuration options and are using the same way of querying their data.
 Therefore the below configuration is valid for all three services.
 
@@ -20,10 +19,10 @@ Each services creates normally multiple need objects for each element found by q
 
 .. code-block:: rst
 
-    .. needservice:: github-issues
-       :query: repo:useblocks/sphinx-needs node latexpdf
-       :max_amount: 1
-       :max_content_lines: 4
+   .. needservice:: github-issues
+      :query: repo:useblocks/sphinx-needs node latexpdf
+      :max_amount: 1
+      :max_content_lines: 4
 
 .. figure:: /_images/github_issue_1.png
    :scale: 80%
@@ -37,18 +36,18 @@ Also the content part of ``needservice`` is added as extra data to the end of th
 
 .. code-block:: rst
 
-    .. needservice:: github-issues
-       :query: repo:useblocks/sphinx-needs node latexpdf
-       :id_prefix: GH_
-       :max_amount: 1
-       :max_content_lines: 4
-       :type: spec
-       :author: Me
-       :tags: github, awesome, issue, open
-       :layout: clean
-       :style: discreet
+   .. needservice:: github-issues
+      :query: repo:useblocks/sphinx-needs node latexpdf
+      :id_prefix: GH_
+      :max_amount: 1
+      :max_content_lines: 4
+      :type: spec
+      :author: Me
+      :tags: github, awesome, issue, open
+      :layout: clean
+      :style: discreet
 
-       Extra content for each new need
+      Extra content for each new need
 
 .. figure:: /_images/github_issue_2.png
    :scale: 80%
@@ -57,6 +56,7 @@ Also the content part of ``needservice`` is added as extra data to the end of th
 
 Querying objects
 ----------------
+
 There are two options for querying objects for GitHub:
 
 :``query``: Performs a Github search
@@ -75,6 +75,7 @@ Setting ``query`` or ``specific`` option is mandatory for services ``github-issu
 
 query
 +++++
+
 The imported objects are based on a query-string, which must be valid to the
 `Github search syntax for issues and pull requests <https://docs.github.com/en/free-pro-team@latest/github/searching-for-information-on-github/searching-issues-and-pull-requests>`_.
 
@@ -87,17 +88,16 @@ This loads all open issues, which have the strings *needtable* and *viewports* i
 
 .. code-block:: rst
 
-    .. needservice:: github-issues
-       :query: repo:useblocks/sphinx-needs state:open needtable viewports
-
+   .. needservice:: github-issues
+      :query: repo:useblocks/sphinx-needs state:open needtable viewports
 
 specific
 ++++++++
+
 If only a single, specific object shall be documented, using ``query`` will not work, as the GitHub Search API
 does not support query-options for getting a specific element.
 Instead use ``specific`` and provide the unique reference in the syntax ``owner/repo/number``, for example
 ``useblocks/sphinx-needs/155``
-
 
 **Example**:
 
@@ -105,18 +105,19 @@ This query fetches a specific pull request with the id 161.
 
 .. code-block:: rst
 
-    .. needservice:: github-prs
-       :specific: useblocks/sphinx-needs/161
+   .. needservice:: github-prs
+      :specific: useblocks/sphinx-needs/161
 
 .. figure:: /_images/github_issue_3.png
    :scale: 80%
 
    Example of a github Issue collected with Sphinx-Needs.
 
-.. _service_github_config:
+.. _`service_github_config`:
 
 Common Configuration
 --------------------
+
 All GitHub related services have a common set of configuration options
 and their configuration must be done in :ref:`needs_services` inside the project's **conf.py** file.
 
@@ -128,7 +129,7 @@ The following key-value configuration parameters are known by all GitHub service
 :username: Username if access to private repositories is needed.
 :token: Personal GitHub token for login. Can be created in your `User profile page <https://github.com/settings/tokens>`_.
 :download_avatars: ``True/False``, if avatars shall be downloaded. If ``False`` a default avatar is used.
-                   Needed mostly for ``GitHub Enterprise``, as authentication for avatars may make some trouble.
+  Needed mostly for ``GitHub Enterprise``, as authentication for avatars may make some trouble.
 :download_folder: Folder path for avatar downloads. Default: ``github_images``.
 :need_type: Default need type to use, if no type got specified in directive options
 :max_amount: The maximum amount of issues to report
@@ -140,26 +141,26 @@ All options can be overwritten by setting them directly in the need service dire
 
 .. code-block:: rst
 
-    .. needservice:: github-issues
-       :query: repo:useblocks/sphinx-needs
-       :type: test
-       :max_amount: 10
-       :max_content_lines: 2
-       :id_prefix: GITHUB_UB_
+   .. needservice:: github-issues
+      :query: repo:useblocks/sphinx-needs
+      :type: test
+      :max_amount: 10
+      :max_content_lines: 2
+      :id_prefix: GITHUB_UB_
 
 **Example configuration for conf.py**:
 
 .. code-block:: python
 
-    needs_services = {
-        'github-issues': {
-            'url': 'https://api.github.com/',
-            'need_type': 'spec',
-            'max_amount': 2,
-            'max_content_lines': 20,
-            'id_prefix': 'GH_ISSUE_'
-        }
-    }
+   needs_services = {
+       'github-issues': {
+           'url': 'https://api.github.com/',
+           'need_type': 'spec',
+           'max_amount': 2,
+           'max_content_lines': 20,
+           'id_prefix': 'GH_ISSUE_'
+       }
+   }
 
 Layout
 ++++++
@@ -172,11 +173,11 @@ directive :ref:`needservice`.
 
 .. code-block:: rst
 
-    .. needservice:: github-issues
-       :query: repo:useblocks/sphinx-needs node latexpdf
-       :max_content_lines: 4
-       :layout: focus_l
-       :style: blue_border
+   .. needservice:: github-issues
+      :query: repo:useblocks/sphinx-needs node latexpdf
+      :max_content_lines: 4
+      :layout: focus_l
+      :style: blue_border
 
 .. figure:: /_images/github_issue_4.png
    :scale: 80%
@@ -185,6 +186,7 @@ directive :ref:`needservice`.
 
 Need type
 +++++++++
+
 The GitHub services create 3 new need types: ``issue``, ``pr`` and ``commit``.
 These types are used by default by the related service, but its usage can be overwritten in the service configuration
 by setting ``need_type`` or in the directive directly by setting ``type``.
@@ -192,10 +194,11 @@ by setting ``need_type`` or in the directive directly by setting ``type``.
 The configuration (names, colors, diagram representation) can also be overwritten by configuring your own need
 type in the configuration. Simply use :ref:`needs_types` for this.
 
-.. _service_github_custom:
+.. _`service_github_custom`:
 
 Custom service
 --------------
+
 The preconfigured services ``github_issues``, ``github_prs`` and ``github_commits`` support the cloud instance of
 GitHub by default.
 
@@ -206,29 +209,29 @@ Please see the this example for a ``Github Enterprise`` configuration in your **
 
 .. code-block:: python
 
-    from sphinx_needs.services.github import GithubService
+   from sphinx_needs.services.github import GithubService
 
-    needs_services = {
-        # Cloud GitHub configuration
-        'github-issues': {
-            'max_content_lines': 20,
-            'id_prefix': 'GH_ISSUE_',
-        },
-        # GitHub Enterprise configuration
-        'my-company-issues': {
-            'class': GithubService,
-            'class_init': {
-                'gh_type': 'issue'
-            },
-            'url': 'https://github.my-company.com/api/v3/',
-            'username': 'my_username',
-            'token':  'my_github_token',
-            'download_avatars': True,
-            'download_folder': 'company-avatars',
-            'max_content_lines': 20,
-            'id_prefix': 'COMPANY_ISSUE_',
-        }
-    }
+   needs_services = {
+       # Cloud GitHub configuration
+       'github-issues': {
+           'max_content_lines': 20,
+           'id_prefix': 'GH_ISSUE_',
+       },
+       # GitHub Enterprise configuration
+       'my-company-issues': {
+           'class': GithubService,
+           'class_init': {
+               'gh_type': 'issue'
+           },
+           'url': 'https://github.my-company.com/api/v3/',
+           'username': 'my_username',
+           'token':  'my_github_token',
+           'download_avatars': True,
+           'download_folder': 'company-avatars',
+           'max_content_lines': 20,
+           'id_prefix': 'COMPANY_ISSUE_',
+       }
+   }
 
 ``class`` needs to reference the service-class object and ``class_init`` contains service specific
 initialisation options. In this case you must tell the generic ``GitHubService`` class which kind of information
@@ -236,7 +239,6 @@ it shall deal with. Allowed are ``issue``, ``pr`` and ``commit``.
 
 All other options are normal configuration options for the service, which are also available for the GitHub cloud
 instance.
-
 
 Examples
 --------
@@ -259,19 +261,19 @@ Document commit ``a4a596`` of **Sphinx-Needs**.
 
 .. code-block:: rst
 
-    .. needservice:: github-commits
-       :specific: useblocks/sphinx-needs/a4a596
-
+   .. needservice:: github-commits
+      :specific: useblocks/sphinx-needs/a4a596
 
 Filtering
 +++++++++
+
 Show all needs, which have ``github`` as part of their ``service`` value.
 
 .. code-block:: rst
 
-    .. needtable::
-       :filter: 'github' in service
-       :columns: id, title, type, service, user
+   .. needtable::
+      :filter: 'github' in service
+      :columns: id, title, type, service, user
 
 .. needtable::
    :filter: 'github' in service

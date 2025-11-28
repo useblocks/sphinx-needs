@@ -1,4 +1,4 @@
-.. _performance_script:
+.. _`performance_script`:
 
 Performance & Profiling script
 ==============================
@@ -23,12 +23,14 @@ Test series
 To start a series of test with some predefined values, run ``python performance_test.py series``
 
 .. .. program-output:: python ../performance/performance_test.py series
+
 .. literalinclude:: series_output.txt
 
 But you can modify the details and set some static values by setting various parameters.
 Just run ``python performance_test.py series --help`` to get an overview
 
 .. .. program-output:: python ../performance/performance_test.py series --help
+
 .. literalinclude:: help.txt
 
 Also if ``--needs``, ``--pages`` or ``parallel`` is set multiple times, one performance test is executed per it.
@@ -37,12 +39,13 @@ Example:: ``python performance_test.py series --needs 1 --needs 10 --pages 1 --p
 This will set 2 values for ``needs``, 2 for ``pages`` and 2 for parallel. So in the end it will run **8** test
 configurations (2 needs x 2 pages x 2 parallel = 8).
 
-
 .. .. program-output:: python ../performance/performance_test.py series --needs 1 --needs 10 --pages 1 --pages 10 --parallel 1 --parallel 4 --needtables 0 --dummies 0
+
 .. literalinclude:: complex.txt
 
 Parallel execution
 ------------------
+
 :versionadded: 0.7.1
 
 You may have noticed, the parallel execution on multiple cores can lower the needed runtime.
@@ -59,33 +62,36 @@ are used.
 
 .. code-block:: text
 
-      runtime s    pages #    needs per page    needs #    needtables #    dummies #    parallel cores
-    -----------  ---------  ----------------  ---------  --------------  -----------  ----------------
-         169.46        500                10       5000               0         5000                 1
-         103.08        500                10       5000               0         5000                 8
+     runtime s    pages #    needs per page    needs #    needtables #    dummies #    parallel cores
+   -----------  ---------  ----------------  ---------  --------------  -----------  ----------------
+        169.46        500                10       5000               0         5000                 1
+        103.08        500                10       5000               0         5000                 8
 
 Used command: ``python performance_test.py series --needs 10 --pages 500 --dummies 10 --needtables 0 --parallel 1 --parallel 8``
 
 The parallel execution can used by any documentation build , just use ``-j`` option.
 Example, which uses 4 processes in parallel: ``sphinx-build -j 4 -b html . _build/html``
 
-
 Used rst template
 -----------------
+
 For all performance tests the same rst-template is used:
 
 index
 ~~~~~
+
 .. literalinclude:: /../performance/project/index.template
 
 pages
 ~~~~~
+
 .. literalinclude:: /../performance/project/page.template
 
 .. _profiling:
 
 Profiling
 ---------
+
 With option ``--profile NAME`` a code-area specific profile can be activated.
 
 Currently supported are:
@@ -105,10 +111,9 @@ Simply set a environment variable called ``NEEDS_PROFILING`` and set the value t
 
 Example for Linux: ``export NEEDS_PROFILING=NEEDTABLE,NEED_PRINT``.
 
-
-
 Analysing profile
 ~~~~~~~~~~~~~~~~~
+
 Use ``snakeviz`` together with ``--profile <NAME>`` to open automatically a graphical analysis of the generated
 profile file.
 
@@ -116,7 +121,7 @@ For this ``snakeviz`` must be installed: ``pip install snakeviz``.
 
 Example::
 
-    python performance_test.py series --needs 10 --pages 10 --profile NEEDTABLE --profile NEED_PROCESS --snakeviz
+  python performance_test.py series --needs 10 --pages 10 --profile NEEDTABLE --profile NEED_PROCESS --snakeviz
 
 .. image:: /_images/snakeviz_needtable.png
    :width: 80%
@@ -124,12 +129,12 @@ Example::
 
 Measurements
 ------------
+
 The measurements were performed with the following setup:
 
 * Sphinx-Needs **0.7.0** on **1** core as parallel build is not supported by version.
 * Sphinx-Needs **0.7.1**, with **1** core.
 * Sphinx-Needs **0.7.1**, with **4** cores.
-
 
 .. list-table::
    :header-rows: 1

@@ -2,6 +2,7 @@
 
 needimport
 ==========
+
 .. versionadded:: 0.1.33
 
 ``needimport`` allows the import of needs from a JSON file.
@@ -67,8 +68,8 @@ This may be useful to avoid duplicated ids.
 
 .. note::
 
-    When using ``:id_prefix:``, we replace all ids used for links and inside descriptions,
-    if the id belongs to an imported need.
+   When using ``:id_prefix:``, we replace all ids used for links and inside descriptions,
+   if the id belongs to an imported need.
 
 version
 ~~~~~~~
@@ -118,9 +119,9 @@ See also :ref:`need_collapse` description of :ref:`need`.
 
 .. warning::
 
-    * Imported needs may use different need types as the current project.
-    * The sphinx project owner is responsible for a correct configuration for internal and external needs.
-    * There is no automatic type transformation during an import.
+   * Imported needs may use different need types as the current project.
+   * The sphinx project owner is responsible for a correct configuration for internal and external needs.
+   * There is no automatic type transformation during an import.
 
 allow_type_coercion
 ~~~~~~~~~~~~~~~~~~~
@@ -149,6 +150,7 @@ So you can decide what kind of layout or style to use during import.
 
 Global keys
 -----------
+
 .. versionadded:: 4.2.0
 
 The :ref:`needs_import_keys` configuration can be used to set global keys for use as the directive arguments.
@@ -157,10 +159,10 @@ For example:
 
 .. code-block:: python
 
-    needs_import_keys = {"my_key": "path/to/needs.json"}
+   needs_import_keys = {"my_key": "path/to/needs.json"}
 
 Allows for the use of:
 
 .. code-block:: restructuredtext
 
-    .. needimport:: my_key
+   .. needimport:: my_key

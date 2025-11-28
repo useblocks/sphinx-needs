@@ -20,20 +20,19 @@ Options
 
 .. note::
 
-    **needtable** supports the full filtering possibilities of **Sphinx-Needs**.
-    Please see :ref:`filter` for more information.
+   **needtable** supports the full filtering possibilities of **Sphinx-Needs**.
+   Please see :ref:`filter` for more information.
 
-
-.. _needtable_columns:
+.. _`needtable_columns`:
 
 columns
 ~~~~~~~
+
 A comma/semicolon separated string used to define the position of specific columns.
 For instance::
 
-    .. needtable::
-       :columns: id;title;tags
-
+  .. needtable::
+     :columns: id;title;tags
 
 This will show the columns *id*, *title* and *tags* in the order given.
 
@@ -66,7 +65,7 @@ Tables with a lot of columns will get a horizontal scrollbar in HTML output.
       :style: table
       :columns: id;title;tags;status;docname;lineno,is_external,is_need;is_part;content
 
-.. _needtable_colwidths:
+.. _`needtable_colwidths`:
 
 colwidths
 ~~~~~~~~~
@@ -80,16 +79,17 @@ It has the same meaning as the ``width options`` of
 
 .. need-example::
 
-  .. needtable::
-     :tags: test
-     :columns: id,title,status
-     :colwidths: 50,40,10
-     :style: table
+   .. needtable::
+      :tags: test
+      :columns: id,title,status
+      :colwidths: 50,40,10
+      :style: table
 
-.. _needtable_custom_titles:
+.. _`needtable_custom_titles`:
 
 Custom column titles
 ....................
+
 You can customize each column title by following this syntax for its definition: ``OPTION as "My custom title"``.
 The characters ``,`` or ``;`` are not allowed.
 
@@ -100,7 +100,7 @@ The characters ``,`` or ``;`` are not allowed.
       :columns: id;title as "Headline"; tags as "Labels"
       :style: table
 
-.. _needtable_show_filters:
+.. _`needtable_show_filters`:
 
 show_filters
 ~~~~~~~~~~~~
@@ -115,10 +115,11 @@ If set, we add the used filter above the table:
       :show_filters:
       :style: table
 
-.. _needtable_style:
+.. _`needtable_style`:
 
 style
 ~~~~~
+
 Allows you to set a specific style for the current table.
 
 Supported values are:
@@ -138,7 +139,7 @@ Overrides config parameter :ref:`needs_table_style` if set.
       .. needtable::
          :style: datatables
 
-.. _needtable_show_parts:
+.. _`needtable_show_parts`:
 
 show_parts
 ~~~~~~~~~~
@@ -181,7 +182,7 @@ To change the prefix please read :ref:`needs_part_prefix`.
          :id: table_003
          :links: table_001.2
 
-.. _needtable_style_row:
+.. _`needtable_style_row`:
 
 style_row
 ~~~~~~~~~
@@ -194,10 +195,9 @@ Also, you can set specific layout for the row.
 
 .. need-example::
 
-  .. needtable::
-     :tags: ex_row_color
-     :style_row: needs_blue_border
-
+   .. needtable::
+      :tags: ex_row_color
+      :style_row: needs_blue_border
 
 Row style based on specific need value
 ......................................
@@ -275,11 +275,11 @@ part of the row style.
           color: #ffffff;
       }
 
-
-.. _needtable_sort:
+.. _`needtable_sort`:
 
 sort
 ~~~~
+
 .. versionadded:: 0.4.3
 
 Option to sort the filtered-results based on a key.
@@ -322,11 +322,11 @@ In this case, we set the sort option to ``status``. So *EX_ROW_3* is above of *E
    Sorting only works if you use the standard sphinx-table for output: ``:style: table``.
    By default, tables generated with DatabTables uses Javascript to sort results.
 
-
-.. _needtable_class:
+.. _`needtable_class`:
 
 class
 ~~~~~
+
 .. versionadded:: 0.7.4
 
 You can set additional class-names for a ``needtable`` using the ``class`` option. Mostly used for HTML output.
@@ -338,7 +338,6 @@ It supports comma separated values and will add classes to the already set class
     table.class_red_border {
         border: 3px solid red;
     }
-
 
 .. need-example::
 
