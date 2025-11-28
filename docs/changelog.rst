@@ -10,7 +10,7 @@ Changelog
 -----
 
 :Released: 28.11.2025
-:Full Changelog: `v6.1.1...v6.2.0 <https://github.com/useblocks/sphinx-needs/compare/6.1.1...af0f355a28f012283b52a6e2afac7ee697e1fb18>`__
+:Full Changelog: `v6.1.1...v6.2.0 <https://github.com/useblocks/sphinx-needs/compare/6.1.1...92462bbc0a9559e01e1fa6b874a1031472dec1bf>`__
 
 This release introduces performance improvements for schema validation, to make it ~3 times faster (:pr:`1581`, :pr:`1582`, :pr:`1583`, :pr:`1584`).
 
