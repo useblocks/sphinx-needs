@@ -42,33 +42,33 @@ def content(content: str = "content") -> NeedsContent:
 
 
 def test_need_item_validate():
-    with pytest.raises(TypeError, match="NeedItem core must be a dictionary."):
+    with pytest.raises(TypeError, match=r"NeedItem core must be a dictionary."):
         NeedItem(core=1, content=content(), extras={}, links={}, source=None)
 
     with pytest.raises(
-        TypeError, match="NeedItem content must be a NeedsContent instance."
+        TypeError, match=r"NeedItem content must be a NeedsContent instance."
     ):
         NeedItem(core=core(), content=1, extras={}, links={}, source=None)
 
     with pytest.raises(
-        TypeError, match="NeedItem source must obey the NeeItemSourceProtocol."
+        TypeError, match=r"NeedItem source must obey the NeeItemSourceProtocol."
     ):
         NeedItem(core=core(), content=content(), extras={}, links={}, source=1)
 
-    with pytest.raises(TypeError, match="NeedItem extras must be a dictionary."):
+    with pytest.raises(TypeError, match=r"NeedItem extras must be a dictionary."):
         NeedItem(core=core(), content=content(), extras=1, links={}, source=None)
 
-    with pytest.raises(TypeError, match="NeedItem links must be a dictionary."):
+    with pytest.raises(TypeError, match=r"NeedItem links must be a dictionary."):
         NeedItem(core=core(), content=content(), extras={}, links=1, source=None)
 
     with pytest.raises(
-        TypeError, match="NeedItem links must be a dictionary of lists of strings."
+        TypeError, match=r"NeedItem links must be a dictionary of lists of strings."
     ):
         NeedItem(
             core=core(), content=content(), extras={}, links={"a": [1]}, source=None
         )
 
-    with pytest.raises(TypeError, match="NeedItem backlinks must be a dictionary."):
+    with pytest.raises(TypeError, match=r"NeedItem backlinks must be a dictionary."):
         NeedItem(
             core=core(),
             content=content(),
@@ -79,7 +79,7 @@ def test_need_item_validate():
         )
 
     with pytest.raises(
-        TypeError, match="NeedItem backlinks must be a dictionary of lists of strings."
+        TypeError, match=r"NeedItem backlinks must be a dictionary of lists of strings."
     ):
         NeedItem(
             core=core(),
@@ -110,7 +110,7 @@ def test_need_item_validate():
 
     with pytest.raises(
         ValueError,
-        match="NeedItem keys must be unique across core, computed, extras, links, and backlinks. Duplicate keys: \\['id', 'is_need', 'other'\\]",
+        match=r"NeedItem keys must be unique across core, computed, extras, links, and backlinks. Duplicate keys: \\['id', 'is_need', 'other'\\]",
     ):
         NeedItem(
             core=core(),
@@ -253,7 +253,7 @@ def test_need_mutations():
     assert item["is_modified"] is True
 
     with pytest.raises(
-        TypeError, match="modification must be a NeedModification instance."
+        TypeError, match=r"modification must be a NeedModification instance."
     ):
         item.add_modification("not a modification")
 
@@ -283,13 +283,13 @@ def test_need_constraints_results():
 
     with pytest.raises(
         TypeError,
-        match="constraint_results must be a NeedConstraintResults instance or None.",
+        match=r"constraint_results must be a NeedConstraintResults instance or None.",
     ):
         item.set_constraint_results("not a NeedConstraintResults")
 
     with pytest.raises(
         ValueError,
-        match="constraint_results keys must match the constraints defined in the need.",
+        match=r"constraint_results keys must match the constraints defined in the need.",
     ):
         item.set_constraint_results(NeedConstraintResults({}))
 

@@ -351,16 +351,16 @@ def _analyze_and_apply_expr(
 
             if field == "id":
                 # id == value
-                return needs.filter_ids([value]), False
+                return needs.filter_ids([value]), False  # type: ignore[list-item]
             elif field == "type":
                 # type == value
-                return needs.filter_types([value]), False
+                return needs.filter_types([value]), False  # type: ignore[list-item]
             elif field == "status":
                 # status == value
-                return needs.filter_statuses([value]), False
+                return needs.filter_statuses([value]), False  # type: ignore[list-item]
             elif field == "is_external":
                 # is_external == value
-                return needs.filter_is_external(value), False
+                return needs.filter_is_external(value), False  # type: ignore[arg-type]
 
         elif len(expr.ops) == 1 and isinstance(expr.ops[0], ast.In):
             # <expr1> in <expr2>
@@ -390,7 +390,7 @@ def _analyze_and_apply_expr(
                 and expr.comparators[0].id == "tags"
             ):
                 # "value" in tags
-                return needs.filter_has_tag([expr.left.s]), False
+                return needs.filter_has_tag([expr.left.s]), False  # type: ignore[list-item]
 
     elif isinstance((and_op := expr), ast.BoolOp) and isinstance(and_op.op, ast.And):
         # x and y and ...

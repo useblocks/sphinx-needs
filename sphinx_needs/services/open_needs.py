@@ -190,7 +190,7 @@ class OpenNeedsService(BaseService):
                         if name == "links":
                             # Add a prefix to the referenced link if it is an ID of a need object in
                             # the data retrieved from the Open Needs Server or don't add prefix
-                            value = [
+                            value = [  # type: ignore[assignment]
                                 (prefix + link if link in ids_of_needs_data else link)
                                 for link in value
                             ]
