@@ -77,7 +77,13 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
                     if warning_filter(need, logger):
                         result.append(need)
             else:
-                log_warning(logger, f"Unknown needs warnings filter {warning_filter}!")
+                result = []
+                log_warning(
+                    logger,
+                    f"Unknown needs warnings filter {warning_filter}!",
+                    "warnings",
+                    None,
+                )
 
             if len(result) == 0:
                 logger.info(f"{warning_name}: passed")
