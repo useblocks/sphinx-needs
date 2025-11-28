@@ -4,13 +4,25 @@
 Changelog
 =========
 
+.. _`release:6.2.0`:
+
+6.2.0
+-----
+
+:Released: 28.11.2025
+:Full Changelog: `v6.1.1...v6.2.0 <https://github.com/useblocks/sphinx-needs/compare/6.1.1...af0f355a28f012283b52a6e2afac7ee697e1fb18>`__
+
+This release introduces performance improvements for schema validation, to make it ~3 times faster (:pr:`1581`, :pr:`1582`, :pr:`1583`, :pr:`1584`).
+
+This includes a change in dependencies, from ``jsonschema`` to ``jsonschema-rs`` for the core validation engine.
+
 .. _`release:6.1.1`:
 
 6.1.1
 -----
 
 :Released: 25.11.2025
-:Full Changelog: `v6.1.0...v6.1.1 <https://github.com/useblocks/sphinx-needs/compare/6.1.0...af0f355a28f012283b52a6e2afac7ee697e1fb18>`__
+:Full Changelog: `v6.1.0...v6.1.1 <https://github.com/useblocks/sphinx-needs/compare/6.1.0...6.1.1>`__
 
 This release focuses on schema validation improvements and bug fixes.
 
