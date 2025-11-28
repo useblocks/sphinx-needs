@@ -15,7 +15,7 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Any
 
-from jsonschema import Draft7Validator
+from jsonschema_rs import Draft7Validator, ValidationError
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.config import NeedsSphinxConfig
@@ -212,7 +212,9 @@ class NeedsList:
             if errors.schema:
                 self.log.info(f"Schema validation errors detected in file {file}:")
                 for error in errors.schema:
-                    self.log.info(f"  {error.message} -> {'.'.join(error.path)}")
+                    self.log.info(
+                        f"  {error.message} -> {'.'.join(str(p) for p in error.instance_path)}"
+                    )
 
             with open(file) as needs_file:
                 try:
@@ -231,7 +233,7 @@ class NeedsList:
 
 
 class Errors:
-    def __init__(self, schema_errors: list[Any]):
+    def __init__(self, schema_errors: list[ValidationError]):
         self.schema = schema_errors
 
 

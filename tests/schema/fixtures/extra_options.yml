@@ -365,7 +365,7 @@ string_format_time:
   rst: |
     .. impl:: title
         :id: IMPL_1
-        :time: 23:12:13
+        :time: 23:12:13+00:00
 
 string_format_time_error:
   conf: |
@@ -379,7 +379,7 @@ string_format_time_error:
   rst: |
     .. impl:: title
         :id: IMPL_1
-        :time: 26:12:13
+        :time: 26:12:13+00:00
 
 string_format_duration:
   conf: |
@@ -526,11 +526,11 @@ integer_multiple_of:
     [[needs.extra_options]]
     name = "efforts2"
     schema.type = "integer"
-    schema.multipleOf = -1
+    schema.multipleOf = 1
     [[needs.extra_options]]
     name = "efforts3"
     schema.type = "integer"
-    schema.multipleOf = -1
+    schema.multipleOf = 1
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -564,7 +564,7 @@ number_multiple_of:
     [[needs.extra_options]]
     name = "efforts2"
     schema.type = "number"
-    schema.multipleOf = -1.1
+    schema.multipleOf = 1.1
     [[needs.extra_options]]
     name = "efforts3"
     schema.type = "number"

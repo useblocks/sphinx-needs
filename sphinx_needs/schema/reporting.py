@@ -52,21 +52,6 @@ class ValidateNeedMessageType(TypedDict):
     """Nested path in the single schema where the error occurred."""
 
 
-class ValidateNeedType(TypedDict):
-    """
-    Return structure for validate_local_need.
-
-    Specifically made for this as it misses the outer validation context.
-    """
-
-    messages: list[ValidateNeedMessageType]
-    """List of validation messages or empty if successful."""
-    final_schema: NeedFieldsSchemaWithVersionType
-    """The assembled final schema that was used for validation."""
-    reduced_need: dict[str, Any]
-    """The need as it was validated (reduced form)."""
-
-
 _field_sep = "."
 """Separator between nested parts of field names in debug output file names."""
 _sep = "__"

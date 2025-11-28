@@ -223,6 +223,9 @@ class ExternalSource(TypedDict, total=False):
     css_class: str
     """Added as the `external_css` field for each need item (optional)"""
 
+    allow_type_coercion: bool
+    """If true, values will be coerced to the expected type where possible (optional, default: True)."""
+
 
 GlobalOptionsType = dict[str, Any]
 """Default values given to specified fields of needs
@@ -400,6 +403,11 @@ class NeedsSphinxConfig:
     )
     """Path to the root table in the toml file to load configuration from."""
 
+    schema_validation_enabled: bool = field(
+        default=True,
+        metadata={"rebuild": "env", "types": (bool,)},
+    )
+    """Enable schema validation for needs."""
     schema_definitions: SchemasFileRootType = field(
         default_factory=lambda: cast(SchemasFileRootType, {}),
         metadata={"rebuild": "env", "types": (dict,)},
@@ -624,7 +632,7 @@ class NeedsSphinxConfig:
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )
     """DEPRECATED: Use ``suppress_warnings = ["needs.link_outgoing"]`` instead."""
-    filter_data: dict[str, Any] = field(
+    filter_data: dict[str, str] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
     """Additional context data for filters."""

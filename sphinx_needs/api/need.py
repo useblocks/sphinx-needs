@@ -100,6 +100,7 @@ def generate_need(
     external_url: str | None = None,
     external_css: str = "external_link",
     full_title: str | None = None,
+    allow_type_coercion: bool = True,
     **kwargs: Any,
 ) -> NeedItem:
     """Creates a validated need data entry, without adding it to the project.
@@ -153,6 +154,7 @@ def generate_need(
     :param template: Template name to use for the content of this need
     :param pre_template: Template name to use for content added before need
     :param post_template: Template name to use for the content added after need
+    :param allow_type_coercion: If true, values will be coerced to the expected type where possible.
     """
     source = (
         NeedItemSourceUnknown(
@@ -215,33 +217,34 @@ def generate_need(
             f"Given ID {need_id!r} does not match configured regex {needs_config.id_regex!r}",
         )
 
-    # TODO allow this to be configurable, for if external/import source
-    allow_coercion = True
-
-    title_converted = _convert_type_core("title", title, needs_schema, allow_coercion)
-    status_converted = _convert_type_core(
-        "status", status, needs_schema, allow_coercion
+    title_converted = _convert_type_core(
+        "title", title, needs_schema, allow_type_coercion
     )
-    tags_converted = _convert_type_core("tags", tags, needs_schema, allow_coercion)
+    status_converted = _convert_type_core(
+        "status", status, needs_schema, allow_type_coercion
+    )
+    tags_converted = _convert_type_core("tags", tags, needs_schema, allow_type_coercion)
     constraints_converted = _convert_type_core(
-        "constraints", constraints, needs_schema, allow_coercion
+        "constraints", constraints, needs_schema, allow_type_coercion
     )
     layout_converted = _convert_type_core(
-        "layout", layout, needs_schema, allow_coercion
+        "layout", layout, needs_schema, allow_type_coercion
     )
-    style_converted = _convert_type_core("style", style, needs_schema, allow_coercion)
-    hide_converted = _convert_type_core("hide", hide, needs_schema, allow_coercion)
+    style_converted = _convert_type_core(
+        "style", style, needs_schema, allow_type_coercion
+    )
+    hide_converted = _convert_type_core("hide", hide, needs_schema, allow_type_coercion)
     collapse_converted = _convert_type_core(
-        "collapse", collapse, needs_schema, allow_coercion
+        "collapse", collapse, needs_schema, allow_type_coercion
     )
     template_converted = _convert_type_core(
-        "template", template, needs_schema, allow_coercion
+        "template", template, needs_schema, allow_type_coercion
     )
     pre_template_converted = _convert_type_core(
-        "pre_template", pre_template, needs_schema, allow_coercion
+        "pre_template", pre_template, needs_schema, allow_type_coercion
     )
     post_template_converted = _convert_type_core(
-        "post_template", post_template, needs_schema, allow_coercion
+        "post_template", post_template, needs_schema, allow_type_coercion
     )
 
     if (
@@ -294,7 +297,7 @@ def generate_need(
                     None
                     if kwargs[extra_field.name] is None
                     else extra_field.convert_or_type_check(
-                        kwargs[extra_field.name], allow_coercion=allow_coercion
+                        kwargs[extra_field.name], allow_coercion=allow_type_coercion
                     )
                 )
             except Exception as err:
@@ -313,7 +316,7 @@ def generate_need(
                     None
                     if kwargs[link_field.name] is None
                     else link_field.convert_or_type_check(
-                        kwargs[link_field.name], allow_coercion=allow_coercion
+                        kwargs[link_field.name], allow_coercion=allow_type_coercion
                     )
                 )
             except Exception as err:
@@ -763,6 +766,7 @@ def add_need(
     external_url: str | None = None,
     external_css: str = "external_link",
     full_title: str | None = None,
+    allow_type_coercion: bool = True,
     **kwargs: Any,
 ) -> list[nodes.Node]:
     """
@@ -818,6 +822,7 @@ def add_need(
     :param template: Template name to use for the content of this need
     :param pre_template: Template name to use for content added before need
     :param post_template: Template name to use for the content added after need
+    :param allow_type_coercion: If true, values will be coerced to the expected type where possible.
 
     :return: list of nodes
     """
@@ -868,6 +873,7 @@ def add_need(
         is_external=is_external,
         external_url=external_url,
         external_css=external_css,
+        allow_type_coercion=allow_type_coercion,
         **kwargs,
     )
 

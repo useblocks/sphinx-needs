@@ -18,6 +18,7 @@ import pytest
 import yaml
 from _pytest.mark import ParameterSet
 from docutils.nodes import document
+from jinja2 import Template
 from sphinx import version_info
 from sphinx.application import Sphinx
 from sphinx.testing.path import path
@@ -460,7 +461,67 @@ def get_warnings_list():
 
     def _get_warnings_list(app: SphinxTestApp) -> list[str]:
         warnings_raw = strip_colors(app.warning.getvalue())
-        warnings_split = [part for part in warnings_raw.split("WARNING: ") if part]
+        warnings_split = [
+            part
+            for part in warnings_raw.replace("ERROR: ", "WARNING: ").split("WARNING: ")
+            if part
+        ]
         return warnings_split
 
     return _get_warnings_list
+
+
+@pytest.fixture
+def schema_benchmark_app(tmpdir: Path, request: pytest.SubRequest, make_app):
+    """Fixture to create a schema benchmark Sphinx project."""
+    need_cnt: int = request.param
+
+    assert need_cnt % 10 == 0, "need_cnt must be a multiple of 10"
+    page_cnt = int(need_cnt / 10)
+
+    this_file_dir = Path(__file__).parent
+
+    src_dir = this_file_dir / "doc_test" / "doc_schema_benchmark"
+    page_template_path = src_dir / "page.rst.j2"
+    with page_template_path.open() as fp:
+        template_content = fp.read()
+
+    template = Template(template_content)
+    pages_dir = Path(tmpdir) / "pages"
+    pages_dir.mkdir(exist_ok=True)
+    toctree_content = """
+.. toctree::
+    :maxdepth: 2
+
+"""
+    width = len(str(page_cnt))
+    for i in range(1, page_cnt + 1):
+        i_fmt = f"{i:0{width}d}"
+        page_rst_content = template.render(page_nr=i_fmt)
+
+        page_name = f"page_{i_fmt}"
+        page_file = f"{page_name}.rst"
+        page_rst_path = pages_dir / page_file
+        page_rst_path.write_text(page_rst_content, encoding="utf-8")
+        toctree_content += f"   pages/{page_name}\n"
+
+    index_file = tmpdir / "index.rst"
+    index_file.write_text(toctree_content, encoding="utf-8")
+
+    copy_files = [
+        src_dir / "conf.py",
+        src_dir / "schemas.json",
+        src_dir / "ubproject.toml",
+    ]
+    for copy_file in copy_files:
+        dst_file = tmpdir / copy_file.name
+        dst_file.write_text(copy_file.read_text(), encoding="utf-8")
+
+    app: SphinxTestApp = make_app(
+        # the schema builder does only validate, no output
+        buildername="schema",
+        srcdir=Path(tmpdir),
+        freshenv=True,
+    )
+    yield app
+    app.cleanup()

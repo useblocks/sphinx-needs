@@ -52,6 +52,7 @@ class NeedimportDirective(SphinxDirective):
         "template": directives.unchanged_required,
         "pre_template": directives.unchanged_required,
         "post_template": directives.unchanged_required,
+        "allow_type_coercion": coerce_to_boolean,
     }
 
     final_argument_whitespace = True
@@ -63,6 +64,7 @@ class NeedimportDirective(SphinxDirective):
         version = self.options.get("version")
         filter_string = self.options.get("filter")
         id_prefix = self.options.get("id_prefix", "")
+        allow_type_coercion = self.options.get("allow_type_coercion", True)
 
         need_import_path = needs_config.import_keys.get(
             self.arguments[0], self.arguments[0]
@@ -120,7 +122,9 @@ class NeedimportDirective(SphinxDirective):
                     f"Schema validation errors detected in file {correct_need_import_path}:"
                 )
                 for error in errors.schema:
-                    logger.info(f"  {error.message} -> {'.'.join(error.path)}")
+                    logger.info(
+                        f"  {error.message} -> {'.'.join(str(p) for p in error.instance_path)}"
+                    )
 
         if version is None:
             try:
@@ -259,6 +263,7 @@ class NeedimportDirective(SphinxDirective):
                     app=self.env.app,
                     state=self.state,
                     need_source=need_source,
+                    allow_type_coercion=allow_type_coercion,
                     **need_params,
                 )
             except InvalidNeedException as err:

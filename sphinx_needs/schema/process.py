@@ -11,7 +11,12 @@ from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import log_error, log_warning
 from sphinx_needs.needsfile import generate_needs_schema
 from sphinx_needs.schema.config import NeedFieldsSchemaType, SchemasRootType
-from sphinx_needs.schema.core import NeedFieldProperties, validate_need
+from sphinx_needs.schema.core import (
+    NeedFieldProperties,
+    validate_extra_options,
+    validate_link_options,
+    validate_type_schema,
+)
 from sphinx_needs.schema.reporting import (
     OntologyWarning,
     clear_debug_dir,
@@ -28,8 +33,10 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     Warnings and errors are emitted at the end.
     """
-    needs = get_needs_view(app)
     config = NeedsSphinxConfig(app.config)
+
+    if not config.schema_validation_enabled:
+        return
 
     extra_option_schema: NeedFieldsSchemaType = {
         "type": "object",
@@ -74,24 +81,33 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     # Start timer before validation loop
     start_time = time.perf_counter()
 
+    needs = get_needs_view(app)
+
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
-    # validate needs
+    if extra_option_schema["properties"]:
+        extra_warnings = validate_extra_options(
+            config, extra_option_schema, field_properties, needs
+        )
+        for key, warnings in extra_warnings.items():
+            need_2_warnings.setdefault(key, []).extend(warnings)
+
+    if extra_link_schema["properties"]:
+        link_warnings = validate_link_options(
+            config, extra_link_schema, field_properties, needs
+        )
+        for key, warnings in link_warnings.items():
+            need_2_warnings.setdefault(key, []).extend(warnings)
+
     type_schemas: list[SchemasRootType] = []
     if config.schema_definitions and "schemas" in config.schema_definitions:
         type_schemas = config.schema_definitions["schemas"]
-    for need in needs.values():
-        nested_warnings = validate_need(
-            config=config,
-            need=need,
-            needs=needs,
-            field_properties=field_properties,
-            extra_option_schemas=extra_option_schema,
-            extra_link_schemas=extra_link_schema,
-            type_schemas=type_schemas,
+    for type_schema in type_schemas:
+        type_warnings = validate_type_schema(
+            config, type_schema, needs, field_properties
         )
-        if nested_warnings:
-            need_2_warnings[need["id"]] = nested_warnings
+        for key, warnings in type_warnings.items():
+            need_2_warnings.setdefault(key, []).extend(warnings)
 
     # Stop timer after validation loop
     end_time = time.perf_counter()

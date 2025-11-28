@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from sphinx import version_info as sphinx_version
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 from syrupy.filters import props
@@ -132,3 +133,59 @@ def test_schema_example(test_app: SphinxTestApp, snapshot) -> None:
     test_app.build()
     warnings = strip_colors(test_app._warning.getvalue())
     assert not warnings
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    "conf.py",
+                    """
+                 
+extensions = ["sphinx_needs"]
+needs_schema_validation_enabled = False
+needs_extra_options = [
+    {"name": "extra", "schema": {"type": "string", "enum": ["a", "b"]}}
+]
+                """,
+                ),
+                (
+                    "index.rst",
+                    """
+Test
+====
+.. req:: A requirement
+  :extra: x
+""",
+                ),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_validation_disabled(test_app):
+    """Test that disabling schema validation suppresses schema violation warnings and output."""
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert not app._warning.getvalue()
+    assert not Path(app.outdir, "schema_violations.json").exists()
+
+
+@pytest.mark.parametrize("schema_benchmark_app", [10, 100], indirect=True)
+@pytest.mark.skipif(
+    sphinx_version < (8,),
+    reason="sphinx 7 does not emit warning code prefixes, so snapshots differ",
+)
+def test_schema_benchmark(schema_benchmark_app, snapshot):
+    """Test the benchmark project works."""
+    schema_benchmark_app.build()
+    assert schema_benchmark_app.statuscode == 0
+    warnings = strip_colors(schema_benchmark_app.warning.getvalue()).replace(
+        str(schema_benchmark_app.srcdir) + os.path.sep, "<srcdir>/"
+    )
+    assert warnings == snapshot

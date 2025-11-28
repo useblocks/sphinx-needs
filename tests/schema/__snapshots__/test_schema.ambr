@@ -1,4 +1,489 @@
 # serializer version: 1
+# name: test_schema_benchmark[100]
+  '''
+  <srcdir>/index.rst:2: WARNING: toctree contains reference to nonexisting document ' :maxdepth: 2' [toc.not_readable]
+  WARNING: Need 'FEAt_P01' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P01
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P01" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P01' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P01
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P01" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P01' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P01
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P01' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P01
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P01" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P01' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P01
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P01" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P01' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P01
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P01" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P01' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P01 > links > SPEC_SAFE_UNSAFE_FEAT_P01 > links > FEAT_P01
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P02' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P02
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P02" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P02' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P02
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P02" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P02' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P02
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P02' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P02
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P02" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P02' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P02
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P02" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P02' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P02
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P02" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P02' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P02 > links > SPEC_SAFE_UNSAFE_FEAT_P02 > links > FEAT_P02
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P03' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P03
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P03" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P03' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P03
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P03" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P03' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P03
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P03' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P03
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P03" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P03' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P03
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P03" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P03' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P03
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P03" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P03' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P03 > links > SPEC_SAFE_UNSAFE_FEAT_P03 > links > FEAT_P03
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P04' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P04
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P04" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P04' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P04
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P04" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P04' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P04
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P04' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P04
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P04" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P04' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P04
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P04" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P04' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P04
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P04" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P04' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P04 > links > SPEC_SAFE_UNSAFE_FEAT_P04 > links > FEAT_P04
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P05' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P05
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P05" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P05' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P05
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P05" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P05' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P05
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P05' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P05
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P05" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P05' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P05
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P05" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P05' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P05
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P05" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P05' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P05 > links > SPEC_SAFE_UNSAFE_FEAT_P05 > links > FEAT_P05
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P06' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P06
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P06" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P06' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P06
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P06" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P06' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P06
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P06' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P06
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P06" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P06' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P06
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P06" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P06' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P06
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P06" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P06' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P06 > links > SPEC_SAFE_UNSAFE_FEAT_P06 > links > FEAT_P06
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P07' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P07
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P07" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P07' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P07
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P07" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P07' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P07
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P07' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P07
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P07" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P07' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P07
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P07" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P07' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P07
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P07" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P07' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P07 > links > SPEC_SAFE_UNSAFE_FEAT_P07 > links > FEAT_P07
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P08' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P08
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P08" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P08' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P08
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P08" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P08' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P08
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P08' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P08
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P08" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P08' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P08
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P08" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P08' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P08
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P08" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P08' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P08 > links > SPEC_SAFE_UNSAFE_FEAT_P08 > links > FEAT_P08
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P09' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P09
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P09" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P09' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P09
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P09" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P09' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P09
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P09' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P09
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P09" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P09' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P09
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P09" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P09' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P09
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P09" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P09' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P09 > links > SPEC_SAFE_UNSAFE_FEAT_P09 > links > FEAT_P09
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  WARNING: Need 'FEAt_P10' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P10
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P10" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P10' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P10
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P10" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P10' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P10
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P10' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P10
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P10" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P10' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P10
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P10" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P10' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P10
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P10" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P10' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P10 > links > SPEC_SAFE_UNSAFE_FEAT_P10 > links > FEAT_P10
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  
+  '''
+# ---
+# name: test_schema_benchmark[10]
+  '''
+  <srcdir>/index.rst:2: WARNING: toctree contains reference to nonexisting document ' :maxdepth: 2' [toc.not_readable]
+  WARNING: Need 'FEAt_P1' has schema warnings:
+    Severity:       warning
+    Field:          id
+    Need path:      FEAt_P1
+    Schema path:    [0] > local > properties > id > pattern
+    User message:   id must be uppercase
+    Schema message: "FEAt_P1" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
+  ERROR: Need 'SPEC_MISSING_APPROVAL_P1' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_MISSING_APPROVAL_P1
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_MISSING_APPROVAL_P1" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  WARNING: Need 'SPEC_MISSING_APPROVAL_P1' has schema infos:
+    Severity:       info
+    Need path:      SPEC_MISSING_APPROVAL_P1
+    Schema path:    spec-approved[2] > local > required
+    User message:   Approval required due to high efforts
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
+  ERROR: Need 'SPEC_P1' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_P1
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_P1" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT_P1' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_UNSAFE_FEAT_P1
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_UNSAFE_FEAT_P1" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC_SAFE_P1' has schema violations:
+    Severity:       violation
+    Field:          id
+    Need path:      SPEC_SAFE_P1
+    Schema path:    spec[1] > local > properties > id > pattern
+    Schema message: "SPEC_SAFE_P1" does not match "^REQ[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'FEAT_P1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_SAFE_P1 > links > SPEC_SAFE_UNSAFE_FEAT_P1 > links > FEAT_P1
+    Schema path:    safe-impl-[links]->safe-spec-[links]->safe-feat[4] > validate > network > links > items > validate > network > links > items > local > allOf > 1 > allOf > 0 > properties > asil > enum
+    Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_local_fail]
+  
+  '''
+# ---
 # name: test_schema_config[both_definitions_and_json_given]
   "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
 # ---
@@ -175,7 +660,7 @@
     Need path:      FEAt
     Schema path:    [0] > local > properties > id > pattern
     User message:   id must be uppercase with numbers and underscores
-    Schema message: 'FEAt' does not match '^[A-Z0-9_]+$' [sn_schema_warning.local_fail]
+    Schema message: "FEAt" does not match "^[A-Z0-9_]+$" [sn_schema_warning.local_fail]
   ERROR: Need 'SPEC_MISSING_APPROVAL' has schema violations:
     Severity:       violation
     Need path:      SPEC_MISSING_APPROVAL
@@ -186,19 +671,19 @@
     Need path:      SPEC_MISSING_APPROVAL
     Schema path:    spec-approved-required[2] > local > required
     User message:   Approval required due to high efforts
-    Schema message: 'approved' is a required property [sn_schema_violation.local_fail]
+    Schema message: "approved" is a required property [sn_schema_violation.local_fail]
   WARNING: Need 'SPEC_MISSING_APPROVAL' has schema infos:
     Severity:       info
     Need path:      SPEC_MISSING_APPROVAL
     Schema path:    spec-approved-not-given[3] > local > required
     User message:   Approval not given
-    Schema message: 'approved' is a required property [sn_schema_info.local_fail]
+    Schema message: "approved" is a required property [sn_schema_info.local_fail]
   ERROR: Need 'SPEC' has schema violations:
     Severity:       violation
     Field:          id
     Need path:      SPEC
     Schema path:    spec[1] > local > properties > id > pattern
-    Schema message: 'SPEC' does not match '^SPEC_[a-zA-Z0-9_-]*$' [sn_schema_violation.local_fail]
+    Schema message: "SPEC" does not match "^SPEC_[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
   ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT' has schema violations:
     Severity:       violation
     Need path:      SPEC_SAFE_UNSAFE_FEAT
@@ -214,7 +699,7 @@
       Field:          asil
       Need path:      SPEC_SAFE_UNSAFE_FEAT > links > FEAT
       Schema path:    safe-spec-[links]->safe-feat[4] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
-      Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema_violation.network_contains_too_few]
+      Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_contains_too_few]
   ERROR: Need 'SPEC_SAFE_ADD_UNSAFE_FEAT' has schema violations:
     Severity:       violation
     Need path:      SPEC_SAFE_ADD_UNSAFE_FEAT
@@ -2312,7 +2797,7 @@
     Field:          links
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > contains
-    Schema message: ['SPEC_1'] does not contain items matching the given schema [sn_schema_violation.extra_link_fail]
+    Schema message: None of ["SPEC_1"] are valid under the given schema [sn_schema_violation.extra_link_fail]
   
   '''
 # ---
@@ -2329,7 +2814,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_links > schema > properties > links > contains',
             'severity': 'violation',
-            'validation_msg': "['SPEC_1'] does not contain items matching the given schema",
+            'validation_msg': 'None of ["SPEC_1"] are valid under the given schema',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_link_fail',
@@ -2346,7 +2831,7 @@
     Field:          links
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > minItems
-    Schema message: ['SPEC_1'] is too short [sn_schema_violation.extra_link_fail]
+    Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.extra_link_fail]
   
   '''
 # ---
@@ -2363,7 +2848,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_links > schema > properties > links > minItems',
             'severity': 'violation',
-            'validation_msg': "['SPEC_1'] is too short",
+            'validation_msg': '["SPEC_1"] has less than 2 items',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_link_fail',
@@ -2390,7 +2875,7 @@
     Field:          links.0
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > items > pattern
-    Schema message: 'SPEC_1' does not match '^[A-Z0-9_]{10,}' [sn_schema_violation.extra_link_fail]
+    Schema message: "SPEC_1" does not match "^[A-Z0-9_]{10,}" [sn_schema_violation.extra_link_fail]
   
   '''
 # ---
@@ -2407,7 +2892,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_links > schema > properties > links > items > pattern',
             'severity': 'violation',
-            'validation_msg': "'SPEC_1' does not match '^[A-Z0-9_]{10,}'",
+            'validation_msg': '"SPEC_1" does not match "^[A-Z0-9_]{10,}"',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_link_fail',
@@ -2433,8 +2918,8 @@
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
-    Schema path:    extra_links > schema > properties > links > contains
-    Schema message: Too many items match the given schema (expected at most 1) [sn_schema_violation.extra_link_fail]
+    Schema path:    extra_links > schema > properties > links > maxContains
+    Schema message: None of ["SPEC_1","SPEC_2"] are valid under the given schema [sn_schema_violation.extra_link_fail]
   
   '''
 # ---
@@ -2449,9 +2934,9 @@
           'details': dict({
             'field': 'links',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_links > schema > properties > links > contains',
+            'schema_path': 'extra_links > schema > properties > links > maxContains',
             'severity': 'violation',
-            'validation_msg': 'Too many items match the given schema (expected at most 1)',
+            'validation_msg': 'None of ["SPEC_1","SPEC_2"] are valid under the given schema',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_link_fail',
@@ -2478,7 +2963,7 @@
     Field:          links
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > maxItems
-    Schema message: ['SPEC_1', 'SPEC_2'] is too long [sn_schema_violation.extra_link_fail]
+    Schema message: ["SPEC_1","SPEC_2"] has more than 1 item [sn_schema_violation.extra_link_fail]
   
   '''
 # ---
@@ -2495,7 +2980,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_links > schema > properties > links > maxItems',
             'severity': 'violation',
-            'validation_msg': "['SPEC_1', 'SPEC_2'] is too long",
+            'validation_msg': '["SPEC_1","SPEC_2"] has more than 1 item',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_link_fail',
@@ -2521,8 +3006,8 @@
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
-    Schema path:    extra_links > schema > properties > links > contains
-    Schema message: Too few items match the given schema (expected at least 2 but only 1 matched) [sn_schema_violation.extra_link_fail]
+    Schema path:    extra_links > schema > properties > links > minContains
+    Schema message: None of ["SPEC_1"] are valid under the given schema [sn_schema_violation.extra_link_fail]
   
   '''
 # ---
@@ -2537,9 +3022,9 @@
           'details': dict({
             'field': 'links',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_links > schema > properties > links > contains',
+            'schema_path': 'extra_links > schema > properties > links > minContains',
             'severity': 'violation',
-            'validation_msg': 'Too few items match the given schema (expected at least 2 but only 1 matched)',
+            'validation_msg': 'None of ["SPEC_1"] are valid under the given schema',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_link_fail',
@@ -2566,7 +3051,7 @@
     Field:          links
     Need path:      IMPL_1
     Schema path:    extra_links > schema > properties > links > minItems
-    Schema message: ['SPEC_1'] is too short [sn_schema_violation.extra_link_fail]
+    Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.extra_link_fail]
   
   '''
 # ---
@@ -2583,7 +3068,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_links > schema > properties > links > minItems',
             'severity': 'violation',
-            'validation_msg': "['SPEC_1'] is too short",
+            'validation_msg': '["SPEC_1"] has less than 2 items',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_link_fail',
@@ -2610,7 +3095,7 @@
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
-    Schema message: 'QM' was expected [sn_schema_violation.local_fail]
+    Schema message: "QM" was expected [sn_schema_violation.local_fail]
   
   '''
 # ---
@@ -2627,7 +3112,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > asil > const',
             'severity': 'violation',
-            'validation_msg': "'QM' was expected",
+            'validation_msg': '"QM" was expected',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
@@ -2736,7 +3221,7 @@
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
-    Schema message: 'QM' was expected [sn_schema_violation.local_fail]
+    Schema message: "QM" was expected [sn_schema_violation.local_fail]
   
   '''
 # ---
@@ -2753,7 +3238,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > asil > const',
             'severity': 'violation',
-            'validation_msg': "'QM' was expected",
+            'validation_msg': '"QM" was expected',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
@@ -2780,7 +3265,7 @@
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > enum
-    Schema message: 'E' is not one of ['QM', 'A', 'B', 'C', 'D'] [sn_schema_violation.local_fail]
+    Schema message: "E" is not one of "QM", "A" or 3 other candidates [sn_schema_violation.local_fail]
   
   '''
 # ---
@@ -2797,7 +3282,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > asil > enum',
             'severity': 'violation',
-            'validation_msg': "'E' is not one of ['QM', 'A', 'B', 'C', 'D']",
+            'validation_msg': '"E" is not one of "QM", "A" or 3 other candidates',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
@@ -2942,7 +3427,7 @@
     Need path:      IMPL_1
     Schema path:    [0] > local > required
     User message:   Required due to high efforts
-    Schema message: 'asil' is a required property [sn_schema_violation.local_fail]
+    Schema message: "asil" is a required property [sn_schema_violation.local_fail]
   
   '''
 # ---
@@ -2959,7 +3444,7 @@
             'schema_path': '[0] > local > required',
             'severity': 'violation',
             'user_msg': 'Required due to high efforts',
-            'validation_msg': "'asil' is a required property",
+            'validation_msg': '"asil" is a required property',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
@@ -2975,7 +3460,7 @@
     Severity:       violation
     Need path:      IMPL_1
     Schema path:    [0] > local > required
-    Schema message: 'asil' is a required property [sn_schema_violation.local_fail]
+    Schema message: "asil" is a required property [sn_schema_violation.local_fail]
   
   '''
 # ---
@@ -2991,7 +3476,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > required',
             'severity': 'violation',
-            'validation_msg': "'asil' is a required property",
+            'validation_msg': '"asil" is a required property',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
@@ -3028,7 +3513,7 @@
     Field:          start_date
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > start_date > format
-    Schema message: 'not-a-date' is not a 'date' [sn_schema_violation.extra_option_fail]
+    Schema message: "not-a-date" is not a "date" [sn_schema_violation.extra_option_fail]
   
   '''
 # ---
@@ -3045,7 +3530,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_options > schema > properties > start_date > format',
             'severity': 'violation',
-            'validation_msg': "'not-a-date' is not a 'date'",
+            'validation_msg': '"not-a-date" is not a "date"',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_option_fail',
@@ -3072,7 +3557,7 @@
     Field:          start_date
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > start_date > format
-    Schema message: '2025-07-1099:99:99Z' is not a 'date-time' [sn_schema_violation.extra_option_fail]
+    Schema message: "2025-07-1099:99:99Z" is not a "date-time" [sn_schema_violation.extra_option_fail]
   
   '''
 # ---
@@ -3089,7 +3574,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_options > schema > properties > start_date > format',
             'severity': 'violation',
-            'validation_msg': "'2025-07-1099:99:99Z' is not a 'date-time'",
+            'validation_msg': '"2025-07-1099:99:99Z" is not a "date-time"',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_option_fail',
@@ -3116,7 +3601,7 @@
     Field:          _duration
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > _duration > format
-    Schema message: 'P1Q2Q10DT2H30M' is not a 'duration' [sn_schema_violation.extra_option_fail]
+    Schema message: "P1Q2Q10DT2H30M" is not a "duration" [sn_schema_violation.extra_option_fail]
   
   '''
 # ---
@@ -3133,7 +3618,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_options > schema > properties > _duration > format',
             'severity': 'violation',
-            'validation_msg': "'P1Q2Q10DT2H30M' is not a 'duration'",
+            'validation_msg': '"P1Q2Q10DT2H30M" is not a "duration"',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_option_fail',
@@ -3160,7 +3645,7 @@
     Field:          email
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > email > format
-    Schema message: 'not-a-mail' is not a 'email' [sn_schema_violation.extra_option_fail]
+    Schema message: "not-a-mail" is not a "email" [sn_schema_violation.extra_option_fail]
   
   '''
 # ---
@@ -3177,7 +3662,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_options > schema > properties > email > format',
             'severity': 'violation',
-            'validation_msg': "'not-a-mail' is not a 'email'",
+            'validation_msg': '"not-a-mail" is not a "email"',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_option_fail',
@@ -3204,7 +3689,7 @@
     Field:          time
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > time > format
-    Schema message: '26:12:13' is not a 'time' [sn_schema_violation.extra_option_fail]
+    Schema message: "26:12:13+00:00" is not a "time" [sn_schema_violation.extra_option_fail]
   
   '''
 # ---
@@ -3221,7 +3706,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_options > schema > properties > time > format',
             'severity': 'violation',
-            'validation_msg': "'26:12:13' is not a 'time'",
+            'validation_msg': '"26:12:13+00:00" is not a "time"',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_option_fail',
@@ -3248,7 +3733,7 @@
     Field:          uri
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > uri > format
-    Schema message: 'examplecom' is not a 'uri' [sn_schema_violation.extra_option_fail]
+    Schema message: "examplecom" is not a "uri" [sn_schema_violation.extra_option_fail]
   
   '''
 # ---
@@ -3265,7 +3750,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_options > schema > properties > uri > format',
             'severity': 'violation',
-            'validation_msg': "'examplecom' is not a 'uri'",
+            'validation_msg': '"examplecom" is not a "uri"',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_option_fail',
@@ -3292,7 +3777,7 @@
     Field:          uuid
     Need path:      IMPL_1
     Schema path:    extra_options > schema > properties > uuid > format
-    Schema message: 'deadbeef-deadbeef-deadbeef-deadbeef' is not a 'uuid' [sn_schema_violation.extra_option_fail]
+    Schema message: "deadbeef-deadbeef-deadbeef-deadbeef" is not a "uuid" [sn_schema_violation.extra_option_fail]
   
   '''
 # ---
@@ -3309,7 +3794,7 @@
             'need_path': 'IMPL_1',
             'schema_path': 'extra_options > schema > properties > uuid > format',
             'severity': 'violation',
-            'validation_msg': "'deadbeef-deadbeef-deadbeef-deadbeef' is not a 'uuid'",
+            'validation_msg': '"deadbeef-deadbeef-deadbeef-deadbeef" is not a "uuid"',
           }),
           'log_lvl': 'error',
           'subtype': 'extra_option_fail',
@@ -3354,7 +3839,7 @@
       Field:          asil
       Need path:      IMPL_SAFE > links > SPEC_UNSAFE
       Schema path:    safe-impl-[links]->safe-spec[0] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
-      Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema_violation.network_contains_too_few]
+      Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_contains_too_few]
   
   '''
 # ---
@@ -3374,7 +3859,7 @@
                   'field': 'asil',
                   'need_path': 'IMPL_SAFE > links > SPEC_UNSAFE',
                   'schema_path': 'safe-impl-[links]->safe-spec[0] > validate > network > links > contains > local > allOf > 0 > properties > asil > enum',
-                  'validation_msg': "'QM' is not one of ['A', 'B', 'C', 'D']",
+                  'validation_msg': '"QM" is not one of "A", "B" or 2 other candidates',
                 }),
                 'subtype': 'network_local_fail',
               }),
@@ -3412,7 +3897,7 @@
         Field:          asil
         Need path:      IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE
         Schema path:    safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains > local > allOf > 0 > properties > asil > enum
-        Schema message: 'QM' is not one of ['A', 'B', 'C', 'D'] [sn_schema_violation.network_contains_too_few]
+        Schema message: "QM" is not one of "A", "B" or 2 other candidates [sn_schema_violation.network_contains_too_few]
   
   '''
 # ---
@@ -3448,7 +3933,7 @@
                         'field': 'asil',
                         'need_path': 'IMPL_SAFE > links > SPEC_SAFE > links > REQ_UNSAFE',
                         'schema_path': 'safe-impl-[links]->safe-spec-[links]->safe-req[0] > validate > network > links > contains > validate > network > links > contains > local > allOf > 0 > properties > asil > enum',
-                        'validation_msg': "'QM' is not one of ['A', 'B', 'C', 'D']",
+                        'validation_msg': '"QM" is not one of "A", "B" or 2 other candidates',
                       }),
                       'subtype': 'network_local_fail',
                     }),
@@ -3515,7 +4000,7 @@
     Field:          links
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > links > maxItems
-    Schema message: ['SPEC_1', 'SPEC_2'] is too long [sn_schema_violation.local_fail]
+    Schema message: ["SPEC_1","SPEC_2"] has more than 1 item [sn_schema_violation.local_fail]
   
   '''
 # ---
@@ -3532,7 +4017,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > links > maxItems',
             'severity': 'violation',
-            'validation_msg': "['SPEC_1', 'SPEC_2'] is too long",
+            'validation_msg': '["SPEC_1","SPEC_2"] has more than 1 item',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
@@ -3559,7 +4044,7 @@
     Field:          links
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > links > minItems
-    Schema message: ['SPEC_1'] is too short [sn_schema_violation.local_fail]
+    Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.local_fail]
   
   '''
 # ---
@@ -3576,7 +4061,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > links > minItems',
             'severity': 'violation',
-            'validation_msg': "['SPEC_1'] is too short",
+            'validation_msg': '["SPEC_1"] has less than 2 items',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
@@ -3756,7 +4241,7 @@
       Field:          type
       Need path:      IMPL_1 > links > SPEC_1
       Schema path:    [0] > validate > network > links > contains > local > properties > type > const
-      Schema message: 'req' was expected [sn_schema_violation.network_contains_too_few]
+      Schema message: "req" was expected [sn_schema_violation.network_contains_too_few]
   
   '''
 # ---
@@ -3776,7 +4261,7 @@
                   'field': 'type',
                   'need_path': 'IMPL_1 > links > SPEC_1',
                   'schema_path': '[0] > validate > network > links > contains > local > properties > type > const',
-                  'validation_msg': "'req' was expected",
+                  'validation_msg': '"req" was expected',
                 }),
                 'subtype': 'network_local_fail',
               }),
@@ -3803,7 +4288,7 @@
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [1] > local > properties > asil > const
-    Schema message: 'B' was expected [sn_schema_info.local_fail]
+    Schema message: "B" was expected [sn_schema_info.local_fail]
   
   '''
 # ---
@@ -3820,7 +4305,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > asil > const',
             'severity': 'violation',
-            'validation_msg': "'A' was expected",
+            'validation_msg': '"A" was expected',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
@@ -3834,7 +4319,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[1] > local > properties > asil > const',
             'severity': 'info',
-            'validation_msg': "'B' was expected",
+            'validation_msg': '"B" was expected',
           }),
           'log_lvl': 'warning',
           'subtype': 'local_fail',
@@ -3851,7 +4336,7 @@
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [1] > local > properties > asil > const
-    Schema message: 'B' was expected [sn_schema_info.local_fail]
+    Schema message: "B" was expected [sn_schema_info.local_fail]
   
   '''
 # ---
@@ -3868,7 +4353,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > asil > const',
             'severity': 'violation',
-            'validation_msg': "'A' was expected",
+            'validation_msg': '"A" was expected',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
@@ -3882,7 +4367,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[1] > local > properties > asil > const',
             'severity': 'info',
-            'validation_msg': "'B' was expected",
+            'validation_msg': '"B" was expected',
           }),
           'log_lvl': 'warning',
           'subtype': 'local_fail',
@@ -3899,7 +4384,7 @@
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema_violation.local_fail]
+    Schema message: "A" was expected [sn_schema_violation.local_fail]
   
   '''
 # ---
@@ -3916,7 +4401,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > asil > const',
             'severity': 'violation',
-            'validation_msg': "'A' was expected",
+            'validation_msg': '"A" was expected',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
@@ -3933,7 +4418,7 @@
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema_info.local_fail]
+    Schema message: "A" was expected [sn_schema_info.local_fail]
   
   '''
 # ---
@@ -3950,7 +4435,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > asil > const',
             'severity': 'info',
-            'validation_msg': "'A' was expected",
+            'validation_msg': '"A" was expected',
           }),
           'log_lvl': 'warning',
           'subtype': 'local_fail',
@@ -3967,7 +4452,7 @@
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema_violation.local_fail]
+    Schema message: "A" was expected [sn_schema_violation.local_fail]
   
   '''
 # ---
@@ -3984,7 +4469,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > asil > const',
             'severity': 'violation',
-            'validation_msg': "'A' was expected",
+            'validation_msg': '"A" was expected',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
@@ -4001,7 +4486,7 @@
     Field:          asil
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > asil > const
-    Schema message: 'A' was expected [sn_schema_warning.local_fail]
+    Schema message: "A" was expected [sn_schema_warning.local_fail]
   
   '''
 # ---
@@ -4018,7 +4503,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > asil > const',
             'severity': 'warning',
-            'validation_msg': "'A' was expected",
+            'validation_msg': '"A" was expected',
           }),
           'log_lvl': 'warning',
           'subtype': 'local_fail',

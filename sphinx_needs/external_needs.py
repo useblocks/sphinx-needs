@@ -35,7 +35,12 @@ def load_external_needs(
 ) -> None:
     """Load needs from configured external sources."""
     needs_config = NeedsSphinxConfig(app.config)
-    for source in needs_config.external_needs:
+    for idx, source in enumerate(needs_config.external_needs):
+        if "base_url" not in source:
+            raise NeedsExternalException(
+                f"base_url must be configured in external_needs item {idx}."
+            )
+
         if source["base_url"].endswith("/"):
             source["base_url"] = source["base_url"][:-1]
 
@@ -187,6 +192,7 @@ def load_external_needs(
                 add_external_need(
                     app,
                     need_source=NeedItemSourceExternal(url=external_url),
+                    allow_type_coercion=source.get("allow_type_coercion", True),
                     **need_params,
                 )
             except InvalidNeedException as err:
