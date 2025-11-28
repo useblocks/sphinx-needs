@@ -137,7 +137,7 @@ def test_server(xprocess, sphinx_test_tempdir):
 
     if not check_server_connection(log_path=xprocess.getinfo("http_server").logpath):
         # Start the process and ensure it is running
-        _, logfile = xprocess.ensure("http_server", Starter, persist_logs=False)
+        xprocess.ensure("http_server", Starter, persist_logs=False)
 
     http_server_process = xprocess.getinfo("http_server")
     server_url = f"http://{addr}:{port}"

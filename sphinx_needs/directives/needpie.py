@@ -323,5 +323,5 @@ def process_needpie(
 
 
 def label_calc(pct: float, allvals: Iterable[float]) -> str:
-    absolute = int(round(pct / 100.0 * sum(allvals)))
+    absolute = int(round(pct / 100.0 * sum(allvals)))  # noqa: RUF046
     return f"{pct:.1f}%\n({absolute:d})"

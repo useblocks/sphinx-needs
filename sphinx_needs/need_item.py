@@ -896,7 +896,7 @@ class NeedPartItem:
         self._need = need.copy()
         self._part = part
 
-        self._overrides = {
+        self._overrides: dict[str, Any] = {
             "id": part.id,
             "id_complete": f"{need.id}.{part.id}",
             "id_parent": need.id,

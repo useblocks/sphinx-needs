@@ -236,13 +236,13 @@ def process_needsequence(
             len(c_string) == 0 and p_string.count("participant") == 1
         ):  # no connections and just one (start) participant
             content = [
-                (no_needs_found_paragraph(current_needsequence.get("filter_warning")))
+                (no_needs_found_paragraph(current_needsequence.get("filter_warning")))  # type: ignore[list-item]
             ]
         if current_needsequence["show_filters"]:
-            content.append(get_filter_para(current_needsequence))
+            content.append(get_filter_para(current_needsequence))  # type: ignore[arg-type]
 
         if current_needsequence["debug"]:
-            content += get_debug_container(puml_node)
+            content += get_debug_container(puml_node)  # type: ignore[arg-type]
 
         node.replace_self(content)
 
