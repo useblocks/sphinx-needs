@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764267887987,
+  "lastUpdate": 1764321527328,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15552,6 +15552,42 @@ window.BENCHMARK_DATA = {
             "value": 61.97968628899999,
             "unit": "s",
             "extra": "Commit: 6793c963429a12c6e603d6973dc5e4cc5d405b40\nBranch: master\nTime: 2025-11-27T19:22:54+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "66853113+pre-commit-ci[bot]@users.noreply.github.com",
+            "name": "pre-commit-ci[bot]",
+            "username": "pre-commit-ci[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "92462bbc0a9559e01e1fa6b874a1031472dec1bf",
+          "message": "[pre-commit.ci] pre-commit autoupdate (#1421)\n\n<!--pre-commit.ci start-->\nupdates:\n- [github.com/astral-sh/ruff-pre-commit: v0.9.9 →\nv0.14.6](https://github.com/astral-sh/ruff-pre-commit/compare/v0.9.9...v0.14.6)\n- [github.com/google/yamlfmt: v0.16.0 →\nv0.20.0](https://github.com/google/yamlfmt/compare/v0.16.0...v0.20.0)\n- [github.com/pre-commit/mirrors-mypy: v1.15.0 →\nv1.18.2](https://github.com/pre-commit/mirrors-mypy/compare/v1.15.0...v1.18.2)\n<!--pre-commit.ci end-->\n\n---------\n\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2025-11-28T10:17:00+01:00",
+          "tree_id": "8bc2e0276d9c90598f74b6cf53f4493d8bed80a1",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/92462bbc0a9559e01e1fa6b874a1031472dec1bf"
+        },
+        "date": 1764321510902,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14874572300000466,
+            "unit": "s",
+            "extra": "Commit: 92462bbc0a9559e01e1fa6b874a1031472dec1bf\nBranch: master\nTime: 2025-11-28T10:17:00+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.660852647,
+            "unit": "s",
+            "extra": "Commit: 92462bbc0a9559e01e1fa6b874a1031472dec1bf\nBranch: master\nTime: 2025-11-28T10:17:00+01:00"
           }
         ]
       }
