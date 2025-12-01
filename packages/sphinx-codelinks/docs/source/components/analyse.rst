@@ -47,7 +47,7 @@ Limitations
 
 **Current Limitations:**
 
-- **Language Support**: C/C++ (``//``, ``/* */``), C# (``//``, ``/* */``, ``///``), Python (``#``) and YAML (``#``) comment styles are supported
+- **Language Support**: C/C++ (``//``, ``/* */``), C# (``//``, ``/* */``, ``///``), Python (``#``), YAML (``#``) and Rust (``//``, ``/* */``, ``///``) comment styles are supported
 - **Single Comment Style**: Each analysis run processes only one comment style at a time
 
 Extraction Examples

@@ -134,6 +134,30 @@ Features
    .. fault:: Sphinx-codelinks halucinates traceability objects in YAML
       :id: FAULT_YAML_2
 
+.. feature:: Rust Language Support
+   :id: FE_RUST
+
+   Support for defining traceability objects in Rust source code.
+
+   The Rust language parser leverages tree-sitter to accurately identify and extract
+   comments from Rust source files, including single-line (``//``, ``///``) and multi-line
+   (``/* */``) comment styles. This ensures that traceability markers are correctly
+   associated with the appropriate code structures such as functions, structs, enums,
+   and traits.
+
+   Key capabilities:
+
+   * Detection of inline and block comments
+   * Association of comments with function and method definitions
+   * Support for standard Rust comment conventions
+   * Accurate scope detection for nested structures
+
+   .. fault:: Traceability objects are not detected in Rust language
+      :id: FAULT_RUST_1
+
+   .. fault:: Sphinx-codelinks halucinates traceability objects in Rust
+      :id: FAULT_RUST_2
+
 .. feature:: Customized comment styles
    :id: FE_CMT
 

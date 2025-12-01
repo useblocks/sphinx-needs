@@ -29,6 +29,7 @@ dependencies = [
   "tree-sitter~=0.25.1",
   "tree-sitter-c-sharp>=0.23.1",
   "tree-sitter-yaml>=0.7.1",
+  "tree-sitter-rust>=0.23.0",
 ]
 
 [build-system]

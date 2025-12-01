@@ -9,6 +9,7 @@ from tree_sitter import Node as TreeSitterNode
 import tree_sitter_c_sharp
 import tree_sitter_cpp
 import tree_sitter_python
+import tree_sitter_rust
 import tree_sitter_yaml
 
 from sphinx_codelinks.analyse import utils
@@ -44,6 +45,14 @@ def init_csharp_tree_sitter() -> tuple[Parser, Query]:
 def init_yaml_tree_sitter() -> tuple[Parser, Query]:
     parsed_language = Language(tree_sitter_yaml.language())
     query = Query(parsed_language, utils.YAML_QUERY)
+    parser = Parser(parsed_language)
+    return parser, query
+
+
+@pytest.fixture(scope="session")
+def init_rust_tree_sitter() -> tuple[Parser, Query]:
+    parsed_language = Language(tree_sitter_rust.language())
+    query = Query(parsed_language, utils.RUST_QUERY)
     parser = Parser(parsed_language)
     return parser, query
 
@@ -282,6 +291,78 @@ def test_find_associated_scope_yaml(code, result, init_yaml_tree_sitter):
     assert node.text
     yaml_structure = node.text.decode("utf-8")
     assert result in yaml_structure
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        (
+            b"""
+                // @req-id: need_001
+                fn dummy_func1() {
+                }
+            """,
+            "fn dummy_func1()",
+        ),
+        (
+            b"""
+                fn dummy_func2() {
+                }
+                // @req-id: need_001
+                fn dummy_func1() {
+                }
+            """,
+            "fn dummy_func1()",
+        ),
+        (
+            b"""
+                fn dummy_func1() {
+                    let a = 1;
+                    /* @req-id: need_001 */
+                }
+            """,
+            "fn dummy_func1()",
+        ),
+        (
+            b"""
+                fn dummy_func1() {
+                    // @req-id: need_001
+                    let a = 1;
+                }
+                fn dummy_func2() {
+                }
+            """,
+            "fn dummy_func1()",
+        ),
+        (
+            b"""
+                /// @req-id: need_001
+                fn dummy_func1() {
+                }
+            """,
+            "fn dummy_func1()",
+        ),
+        (
+            b"""
+                struct MyStruct {
+                    // @req-id: need_001
+                    field: i32,
+                }
+            """,
+            "struct MyStruct",
+        ),
+    ],
+)
+def test_find_associated_scope_rust(code, result, init_rust_tree_sitter):
+    parser, query = init_rust_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    node: TreeSitterNode | None = utils.find_associated_scope(
+        comments[0], CommentType.rust
+    )
+    assert node
+    assert node.text
+    rust_def = node.text.decode("utf-8")
+    assert result in rust_def
 
 
 @pytest.mark.parametrize(

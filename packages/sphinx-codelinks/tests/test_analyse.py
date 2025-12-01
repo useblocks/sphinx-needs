@@ -104,6 +104,20 @@ def test_analyse(src_dir, src_paths, tmp_path, snapshot_marks):
                 "warnings_path_exists": True,
             },
         ),
+        (
+            TEST_DIR / "data" / "rust",
+            [
+                TEST_DIR / "data" / "rust" / "demo.rs",
+            ],
+            ONELINE_COMMENT_STYLE_DEFAULT,
+            {
+                "num_src_files": 1,
+                "num_uncached_files": 1,
+                "num_cached_files": 0,
+                "num_comments": 6,
+                "num_oneline_warnings": 0,
+            },
+        ),
     ],
 )
 def test_analyse_oneline_needs(

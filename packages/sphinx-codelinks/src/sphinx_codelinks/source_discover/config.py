@@ -10,6 +10,7 @@ COMMENT_FILETYPE = {
     "python": ["py"],
     "cs": ["cs"],
     "yaml": ["yml", "yaml"],
+    "rust": ["rs"],
 }
 
 
@@ -18,6 +19,8 @@ class CommentType(str, Enum):
     cpp = "cpp"
     cs = "cs"
     yaml = "yaml"
+    # @Support Rust style comments, IMPL_RUST_1, impl, [FE_RUST];
+    rust = "rust"
 
 
 class SourceDiscoverSectionConfigType(TypedDict, total=False):

@@ -267,7 +267,7 @@ Specifies the comment syntax style used in the source code files. This determine
 
 **Type:** ``str``
 **Default:** ``"cpp"``
-**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"yaml"``
+**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"yaml"``, ``"rust"``
 
 .. code-block:: toml
 
@@ -304,8 +304,15 @@ Specifies the comment syntax style used in the source code files. This determine
      - ``"yaml"``
      - ``#`` (single-line)
      - ``.yaml``, ``.yml``
+   * - Rust
+     - ``"rust"``
+     - ``//`` (single-line),
+       ``/* */`` (multi-line),
+       ``///`` (doc comments),
+       ``//!`` (inner doc comments)
+     - ``.rs``
 
-.. note:: Future versions may support additional programming languages. Currently, only C/C++ and Python comment styles are supported.
+.. note:: Future versions may support additional programming languages.
 
 gitignore
 ^^^^^^^^^
