@@ -181,7 +181,24 @@ def load_schemas_config_from_json(app: Sphinx, config: _SphinxConfig) -> None:
         raise NeedsConfigException(
             "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
         )
-    json_file = Path(app.confdir, needs_config.schema_definitions_from_json).resolve()
+
+    if needs_config.from_toml is None:
+        json_file = Path(
+            app.confdir, needs_config.schema_definitions_from_json
+        ).resolve()
+    else:
+        # Now we get toml file first
+        # and from there we get the json file path
+        toml_file = Path(app.confdir, needs_config.from_toml).resolve()
+
+        # resolve relative to confdir
+        toml_file = Path(app.confdir, needs_config.from_toml).resolve()
+
+        if not toml_file.exists():
+            raise NeedsConfigException(f"'toml_file' file does not exist: {toml_file}")
+        json_file = Path(
+            toml_file.parent, needs_config.schema_definitions_from_json
+        ).resolve()
 
     if not json_file.exists():
         raise NeedsConfigException(
