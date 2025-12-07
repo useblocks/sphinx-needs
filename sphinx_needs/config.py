@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, field, fields
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
 
 from sphinx.application import Sphinx
@@ -314,6 +315,33 @@ class NeedTagsOption(TypedDict):
     description: NotRequired[str]
 
 
+def _abs_path(value: Any, base: Path) -> str:
+    """Convert a possibly relative path to an absolute path,
+    based on the given base path.
+    """
+    if isinstance(value, str | Path):
+        path = Path(value)
+        if not path.is_absolute():
+            path = base / path
+        return str(path.resolve())
+    return str(base)
+
+
+def _abs_path_external_sources(
+    value: list[ExternalSource], base: Path
+) -> list[ExternalSource]:
+    """Convert possibly relative paths in external sources to absolute paths,
+    based on the given base path.
+    """
+    new_sources: list[ExternalSource] = []
+    for source in value:
+        new_source = source.copy()
+        if "json_path" in source:
+            new_source["json_path"] = _abs_path(source["json_path"], base)
+        new_sources.append(new_source)
+    return new_sources
+
+
 @dataclass
 class NeedsSphinxConfig:
     """A wrapper around the Sphinx configuration,
@@ -384,6 +412,21 @@ class NeedsSphinxConfig:
         return {name[1:] if name.startswith("_") else name for name in names}
 
     @classmethod
+    def convert_field_value(
+        cls, name: str, value: Any, base_path: Path, prefix: str = ""
+    ) -> Any:
+        """Convert a config field value from toml, if a converter is defined."""
+        _field = next(
+            field
+            for field in fields(cls)
+            if field.name in (f"{prefix}{name}", f"_{prefix}{name}")
+        )
+        converter = _field.metadata.get("toml_convert")
+        if converter:
+            return converter(value, base_path)
+        return value
+
+    @classmethod
     def get_default(cls, name: str) -> Any:
         """Get the default value for a config item."""
         _field = next(
@@ -415,7 +458,12 @@ class NeedsSphinxConfig:
     """Schema definitions to write complex validations based on selectors."""
 
     schema_definitions_from_json: str | None = field(
-        default=None, metadata={"rebuild": "env", "types": (str, type(None))}
+        default=None,
+        metadata={
+            "rebuild": "env",
+            "types": (str, type(None)),
+            "toml_convert": _abs_path,
+        },
     )
     """Path to a JSON file to load the schemas from."""
 
@@ -427,7 +475,7 @@ class NeedsSphinxConfig:
 
     schema_debug_path: str = field(
         default="schema_debug",
-        metadata={"rebuild": "env", "types": (str,)},
+        metadata={"rebuild": "env", "types": (str,), "toml_convert": _abs_path},
     )
     """
     Path to the directory where the debug files are stored.
@@ -524,7 +572,10 @@ class NeedsSphinxConfig:
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )
     """Show the link ID in the need incoming/outgoing roles."""
-    file: None | str = field(default=None, metadata={"rebuild": "html", "types": ()})
+    file: None | str = field(
+        default=None,
+        metadata={"rebuild": "html", "types": (), "toml_convert": _abs_path},
+    )
     """Path to the needs builder input file."""
     table_columns: str = field(
         default="ID;TITLE;STATUS;TYPE;OUTGOING;TAGS",
@@ -617,7 +668,8 @@ class NeedsSphinxConfig:
     )
     """If given, only the defined tags are allowed."""
     css: str = field(
-        default="modern.css", metadata={"rebuild": "html", "types": (str,)}
+        default="modern.css",
+        metadata={"rebuild": "html", "types": (str,), "toml_convert": _abs_path},
     )
     """Path of css file, which shall be used for need style"""
     part_prefix: str = field(
@@ -701,7 +753,8 @@ class NeedsSphinxConfig:
     )
     """Additional configuration for needflow diagrams (graphviz engine)."""
     template_folder: str = field(
-        default="needs_templates/", metadata={"rebuild": "html", "types": (str,)}
+        default="needs_templates/",
+        metadata={"rebuild": "html", "types": (str,), "toml_convert": _abs_path},
     )
     """Path to the template folder for needs rendering templates."""
     services: dict[str, dict[str, Any]] = field(
@@ -717,7 +770,12 @@ class NeedsSphinxConfig:
     )
     """Mapping of keys that can be used as needimport arguments and replaced by the value."""
     external_needs: list[ExternalSource] = field(
-        default_factory=list, metadata={"rebuild": "html", "types": (list,)}
+        default_factory=list,
+        metadata={
+            "rebuild": "html",
+            "types": (list,),
+            "toml_convert": _abs_path_external_sources,
+        },
     )
     """List of external sources to load needs from."""
     builder_filter: str = field(

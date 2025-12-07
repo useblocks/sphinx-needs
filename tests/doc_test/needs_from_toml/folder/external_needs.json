@@ -1,0 +1,17 @@
+{
+    "current_version": "1",
+    "versions": {
+        "1": {
+            "needs": {
+                "NEED_1": {
+                    "id": "NEED_1",
+                    "type": "other",
+                    "title": "First Need",
+                    "status": "open",
+                    "tags": [],
+                    "content": "This is the first need."
+                }
+            }
+        }
+    }
+}
