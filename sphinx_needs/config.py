@@ -416,11 +416,14 @@ class NeedsSphinxConfig:
         cls, name: str, value: Any, base_path: Path, prefix: str = ""
     ) -> Any:
         """Convert a config field value from toml, if a converter is defined."""
-        _field = next(
-            field
-            for field in fields(cls)
-            if field.name in (f"{prefix}{name}", f"_{prefix}{name}")
-        )
+        try:
+            _field = next(
+                field
+                for field in fields(cls)
+                if field.name in (f"{prefix}{name}", f"_{prefix}{name}")
+            )
+        except StopIteration:
+            raise ValueError(f"Unknown config field: {name!r}")
         converter = _field.metadata.get("toml_convert")
         if converter:
             return converter(value, base_path)
