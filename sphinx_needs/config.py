@@ -315,7 +315,7 @@ class NeedTagsOption(TypedDict):
     description: NotRequired[str]
 
 
-def _abs_path(value: Any, base: Path) -> str:
+def _abs_path(value: Any, base: Path) -> Any:
     """Convert a possibly relative path to an absolute path,
     based on the given base path.
     """
@@ -323,8 +323,8 @@ def _abs_path(value: Any, base: Path) -> str:
         path = Path(value)
         if not path.is_absolute():
             path = base / path
-        return str(path.resolve())
-    return str(base)
+            return str(path.resolve())
+    return value
 
 
 def _abs_path_external_sources(
