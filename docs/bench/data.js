@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1764322172699,
+  "lastUpdate": 1765145125209,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15624,6 +15624,42 @@ window.BENCHMARK_DATA = {
             "value": 63.760447142000004,
             "unit": "s",
             "extra": "Commit: cd2024fe2f4eb3e1c28616a47493e3e8728ea8a9\nBranch: master\nTime: 2025-11-28T10:27:37+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "94be2b14336e670505959f047c4f57ed721b1438",
+          "message": "👌 Relative paths from toml configuration (#1589)",
+          "timestamp": "2025-12-07T23:03:31+01:00",
+          "tree_id": "4ecd5a2cfaf8321fac7aa410233d56dbe5c90211",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/94be2b14336e670505959f047c4f57ed721b1438"
+        },
+        "date": 1765145108250,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16423579100001007,
+            "unit": "s",
+            "extra": "Commit: 94be2b14336e670505959f047c4f57ed721b1438\nBranch: master\nTime: 2025-12-07T23:03:31+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.219960455999995,
+            "unit": "s",
+            "extra": "Commit: 94be2b14336e670505959f047c4f57ed721b1438\nBranch: master\nTime: 2025-12-07T23:03:31+01:00"
           }
         ]
       }
