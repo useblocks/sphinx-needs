@@ -4,4 +4,4 @@ copyright = "2024"
 
 extensions = ["sphinx_needs"]
 
-needs_from_toml = "a.toml"
+needs_from_toml = "folder/a.toml"

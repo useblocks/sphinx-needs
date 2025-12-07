@@ -5,6 +5,18 @@
     'versions': dict({
       '0.1.0': dict({
         'needs': dict({
+          'NEED_1': dict({
+            'content': 'This is the first need.',
+            'doctype': '',
+            'external_css': 'external_link',
+            'external_url': 'http://example.com/docs/__error__.html#NEED_1',
+            'id': 'NEED_1',
+            'is_external': True,
+            'status': 'open',
+            'title': 'First Need',
+            'type': 'other',
+            'type_name': 'Another need type',
+          }),
           'O_001': dict({
             'custom': 'custom value',
             'docname': 'index',
@@ -21,7 +33,7 @@
             'type_name': 'Another need type',
           }),
         }),
-        'needs_amount': 1,
+        'needs_amount': 2,
         'needs_defaults_removed': True,
       }),
     }),

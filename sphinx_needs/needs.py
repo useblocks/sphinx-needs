@@ -469,12 +469,16 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
     for key, value in toml_data.items():
         if key not in allowed_keys:
             continue
-        config["needs_" + key] = value
+        config["needs_" + key] = NeedsSphinxConfig.convert_field_value(
+            key, value, toml_file.parent
+        )
 
     for key, value in toml_data.get("schema", {}).items():
         if key not in allowed_keys:
             continue
-        config["needs_schema_"][key] = value
+        config["needs_schema_"][key] = NeedsSphinxConfig.convert_field_value(
+            key, value, toml_file.parent, "schema_"
+        )
 
 
 def load_config(app: Sphinx, *_args: Any) -> None:
