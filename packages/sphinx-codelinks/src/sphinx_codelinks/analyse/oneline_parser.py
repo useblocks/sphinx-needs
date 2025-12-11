@@ -54,7 +54,7 @@ def oneline_parser(  # noqa: PLR0912, PLR0911 # handel warnings
 
     # extract the string wrapped by start and end
     start_idx = start_idx + len(oneline_config.start_sequence)
-    string = oneline[start_idx:end_idx]
+    string = oneline[start_idx:end_idx].strip()
 
     # numbers of needs_fields which are required
     cnt_required_fields = oneline_config.get_cnt_required_fields()
