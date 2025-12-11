@@ -67,6 +67,43 @@ def test_analyse(config_path: Path, tmp_path: Path) -> None:
     assert marked_content
 
 
+def test_analyse_outputs_warnings(tmp_path: Path) -> None:
+    """Test that the analyse CLI command outputs warnings to console."""
+    # Create a config file that will produce warnings
+    src_dir = TEST_DIR / "data" / "oneline_comment_default"
+    config_dict = {
+        "codelinks": {
+            "outdir": str(tmp_path),
+            "projects": {
+                "test_project": {
+                    "source_discover": {
+                        "src_dir": str(src_dir),
+                        "include": ["*.c"],
+                        "comment_type": "cpp",
+                    },
+                    "analyse": {
+                        "get_oneline_needs": True,
+                        # Use default oneline_comment_style which will cause warnings
+                        # for the test file with too many fields
+                    },
+                }
+            },
+        }
+    }
+
+    config_file = tmp_path / "test_config.toml"
+    with config_file.open("w", encoding="utf-8") as f:
+        toml.dump(config_dict, f)
+
+    options: list[str] = ["analyse", str(config_file)]
+    result = runner.invoke(app, options)
+
+    assert result.exit_code == 0
+    # Verify that warnings are output to console
+    assert "Oneline parser warning" in result.output
+    assert "too_many_fields" in result.output
+
+
 @pytest.mark.parametrize(
     ("options", "stdout"),
     [

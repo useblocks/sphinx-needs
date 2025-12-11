@@ -56,7 +56,7 @@ OptQuiet: TypeAlias = Annotated[  # noqa: UP040 # has to be TypeAlias
 
 
 @app.command(no_args_is_help=True)
-def analyse(
+def analyse(  # noqa: PLR0912
     config: Annotated[
         Path,
         typer.Argument(
@@ -151,6 +151,15 @@ def analyse(
     codelinks_config.projects = specifed_project_configs
     analyse_projects = AnalyseProjects(codelinks_config)
     analyse_projects.run()
+
+    # Output warnings to console for CLI users
+    for src_analyse in analyse_projects.projects_analyse.values():
+        for warning in src_analyse.oneline_warnings:
+            logger.warning(
+                f"Oneline parser warning in {warning.file_path}:{warning.lineno} "
+                f"- {warning.sub_type}: {warning.msg}",
+            )
+
     analyse_projects.dump_markers()
 
 
