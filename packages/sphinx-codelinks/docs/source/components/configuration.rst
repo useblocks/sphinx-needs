@@ -361,6 +361,8 @@ Configures how **Sphinx-CodeLinks** analyse source files to extract markers from
    get_need_id_refs = true
    get_oneline_needs = true
    get_rst = true
+   # Optional: Explicit Git root for Bazel or deeply nested configs
+   # git_root = "/path/to/repo"
 
    [codelinks.projects.my_project.analyse.oneline_comment_style]
    start_sequence = "@"
@@ -419,6 +421,29 @@ Enables the extraction of marked RST text from source code comments. When enable
 
    [codelinks.projects.my_project.analyse]
    get_rst = false
+
+.. _`git_root`:
+
+git_root
+^^^^^^^^
+
+Specifies an explicit path to the Git repository root directory. This option is particularly useful in environments where the standard Git root auto-detection fails, such as:
+
+- **Bazel builds**: Where the execution path differs from the standard repository layout
+- **Deeply nested configurations**: Where ``conf.py`` is located in a deep subdirectory far from the repository root
+- **Custom build systems**: Where the working directory is different from the source repository
+
+When not set, **Sphinx-CodeLinks** will automatically traverse parent directories to locate the ``.git`` folder.
+
+**Type:** ``str`` (path)
+**Default:** Not set (auto-detection)
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.analyse]
+   git_root = "/absolute/path/to/repo"
+
+.. note:: When ``git_root`` is explicitly set, **Sphinx-CodeLinks** will use this path directly without attempting auto-detection. Ensure the path points to a valid Git repository containing a ``.git`` directory.
 
 .. _`oneline_comment_style`:
 

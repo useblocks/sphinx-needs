@@ -56,7 +56,7 @@ OptQuiet: TypeAlias = Annotated[  # noqa: UP040 # has to be TypeAlias
 
 
 @app.command(no_args_is_help=True)
-def analyse(  # noqa: PLR0912
+def analyse(  # noqa: PLR0912   # for CLI, so it needs the branches
     config: Annotated[
         Path,
         typer.Argument(
@@ -140,6 +140,12 @@ def analyse(  # noqa: PLR0912
         analyse_config = _config["analyse_config"]
         analyse_config.src_files = src_discover.source_paths
         analyse_config.src_dir = Path(src_discover.src_discover_config.src_dir)
+
+        # git_root shall be relative to the config file's location (like src_dir)
+        if analyse_config.git_root is not None:
+            analyse_config.git_root = (
+                config.parent / analyse_config.git_root
+            ).resolve()
 
         analyse_errors = analyse_config.check_fields_configuration()
         errors.extend(analyse_errors)

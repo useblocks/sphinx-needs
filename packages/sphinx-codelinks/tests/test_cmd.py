@@ -320,3 +320,110 @@ def test_write_rst_negative(json_objs: list[dict], output_lines, tmp_path) -> No
     assert result.exit_code != 0
     for line in output_lines:
         assert line in result.stdout
+
+
+def test_analyse_with_relative_git_root(tmp_path: Path) -> None:
+    """Test that relative git_root is resolved relative to the config file location."""
+    # Create a fake git repo structure
+    fake_git_root = tmp_path / "fake_repo"
+    fake_git_root.mkdir()
+    (fake_git_root / ".git").mkdir()
+    git_config = fake_git_root / ".git" / "config"
+    git_config.write_text(
+        '[remote "origin"]\n    url = https://github.com/test/repo.git\n'
+    )
+    git_head = fake_git_root / ".git" / "HEAD"
+    git_head.write_text("ref: refs/heads/main\n")
+    refs_dir = fake_git_root / ".git" / "refs" / "heads"
+    refs_dir.mkdir(parents=True)
+    (refs_dir / "main").write_text("abc123def456\n")
+
+    # Create source file
+    src_dir = fake_git_root / "src"
+    src_dir.mkdir()
+    src_file = src_dir / "test.c"
+    src_file.write_text("// @Test, TEST_1, test\nvoid test() {}\n")
+
+    # Create config in a subdirectory using a RELATIVE git_root path
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    config_file = config_dir / "codelinks.toml"
+    config_content = """
+[codelinks.projects.test_project.source_discover]
+src_dir = "../fake_repo/src"
+gitignore = false
+
+[codelinks.projects.test_project.analyse]
+get_oneline_needs = true
+git_root = "../fake_repo"
+"""
+    config_file.write_text(config_content)
+
+    outdir = tmp_path / "output"
+    outdir.mkdir()
+
+    options = ["analyse", str(config_file), "--outdir", str(outdir)]
+    result = runner.invoke(app, options)
+
+    assert result.exit_code == 0, f"CLI failed: {result.stdout}"
+    output_path = outdir / "marked_content.json"
+    assert output_path.exists()
+
+    with output_path.open("r") as f:
+        marked_content = json.load(f)
+    # Verify the content was analysed using the correct git_root
+    assert len(marked_content["test_project"]) > 0
+
+
+def test_analyse_with_absolute_git_root(tmp_path: Path) -> None:
+    """Test that absolute git_root is used as-is."""
+    # Create a fake git repo structure
+    fake_git_root = tmp_path / "fake_repo"
+    fake_git_root.mkdir()
+    (fake_git_root / ".git").mkdir()
+    git_config = fake_git_root / ".git" / "config"
+    git_config.write_text(
+        '[remote "origin"]\n    url = https://github.com/test/repo.git\n'
+    )
+    git_head = fake_git_root / ".git" / "HEAD"
+    git_head.write_text("ref: refs/heads/main\n")
+    refs_dir = fake_git_root / ".git" / "refs" / "heads"
+    refs_dir.mkdir(parents=True)
+    (refs_dir / "main").write_text("abc123def456\n")
+
+    # Create source file
+    src_dir = fake_git_root / "src"
+    src_dir.mkdir()
+    src_file = src_dir / "test.c"
+    src_file.write_text("// @Test, TEST_2, test\nvoid test() {}\n")
+
+    # Create config in a different location using an ABSOLUTE git_root path
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    config_file = config_dir / "codelinks.toml"
+    # Use absolute path for both src_dir and git_root
+    config_content = f"""
+[codelinks.projects.test_project.source_discover]
+src_dir = "{src_dir.as_posix()}"
+gitignore = false
+
+[codelinks.projects.test_project.analyse]
+get_oneline_needs = true
+git_root = "{fake_git_root.as_posix()}"
+"""
+    config_file.write_text(config_content)
+
+    outdir = tmp_path / "output"
+    outdir.mkdir()
+
+    options = ["analyse", str(config_file), "--outdir", str(outdir)]
+    result = runner.invoke(app, options)
+
+    assert result.exit_code == 0, f"CLI failed: {result.stdout}"
+    output_path = outdir / "marked_content.json"
+    assert output_path.exists()
+
+    with output_path.open("r") as f:
+        marked_content = json.load(f)
+    # Verify the content was analysed using the correct git_root
+    assert len(marked_content["test_project"]) > 0

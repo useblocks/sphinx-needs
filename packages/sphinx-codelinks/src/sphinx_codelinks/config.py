@@ -305,6 +305,7 @@ class AnalyseSectionConfigType(TypedDict, total=False):
     get_oneline_needs: bool
     get_rst: bool
     outdir: str
+    git_root: str
     need_id_refs: NeedIdRefsConfigType
     marked_rst: MarkedRstConfigType
     oneline_comment_style: OneLineCommentStyleType
@@ -319,6 +320,7 @@ class SourceAnalyseConfigType(TypedDict, total=False):
     get_need_id_refs: bool
     get_oneline_needs: bool
     get_rst: bool
+    git_root: Path | None
     need_id_refs_config: NeedIdRefsConfig
     marked_rst_config: MarkedRstConfig
     oneline_comment_style: OneLineCommentStyle
@@ -360,6 +362,12 @@ class SourceAnalyseConfig:
 
     get_rst: bool = field(default=False, metadata={"schema": {"type": "boolean"}})
     """Whether to extract rst texts from comments"""
+
+    git_root: Path | None = field(
+        default=None, metadata={"schema": {"type": ["string", "null"]}}
+    )
+    """Explicit path to the Git repository root. If not set, it will be auto-detected
+    by traversing parent directories. Useful for Bazel builds or deeply nested configs."""
 
     need_id_refs_config: NeedIdRefsConfig = field(default_factory=NeedIdRefsConfig)
     """Configuration for extracting need id references from comments."""
@@ -765,9 +773,11 @@ def convert_analyse_config(
     if config_dict:
         for k, v in config_dict.items():
             if k not in {"online_comment_style", "need_id_refs", "marked_rst"}:
-                analyse_config_dict[k] = (  # type: ignore[literal-required]  # dynamical assignment
-                    Path(v) if k == "src_dic" and isinstance(v, str) else v
-                )
+                # Convert string paths to Path objects
+                if k in {"src_dir", "git_root"} and isinstance(v, str):
+                    analyse_config_dict[k] = Path(v)  # type: ignore[literal-required]
+                else:
+                    analyse_config_dict[k] = v  # type: ignore[literal-required]  # dynamical assignment
 
         # Get oneline_comment_style configuration
         oneline_comment_style_dict: OneLineCommentStyleType | None = config_dict.get(

@@ -65,7 +65,11 @@ class SourceAnalyse:
         self.oneline_needs: list[OneLineNeed] = []
         self.marked_rst: list[MarkedRst] = []
         self.all_marked_content: list[NeedIdRefs | OneLineNeed | MarkedRst] = []
-        self.git_root: Path | None = utils.locate_git_root(self.analyse_config.src_dir)
+        # Use explicitly configured git_root if provided, otherwise auto-detect
+        if self.analyse_config.git_root is not None:
+            self.git_root: Path | None = self.analyse_config.git_root.resolve()
+        else:
+            self.git_root = utils.locate_git_root(self.analyse_config.src_dir)
         self.git_remote_url: str | None = (
             utils.get_remote_url(self.git_root) if self.git_root else None
         )

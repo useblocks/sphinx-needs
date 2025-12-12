@@ -116,6 +116,13 @@ class SourceTracingDirective(SphinxDirective):
         analyse_config = src_trace_conf["analyse_config"]
         analyse_config.src_dir = src_dir
         analyse_config.src_files = source_files
+        # git_root shall be relative to the config file's location (if provided)
+        if analyse_config.git_root:
+            conf_dir = Path(self.env.app.confdir)
+            if src_trace_sphinx_config.config_from_toml:
+                src_trace_toml_path = Path(src_trace_sphinx_config.config_from_toml)
+                conf_dir = conf_dir / src_trace_toml_path.parent
+            analyse_config.git_root = (conf_dir / analyse_config.git_root).resolve()
         src_analyse = SourceAnalyse(analyse_config)
         src_analyse.run()
 
