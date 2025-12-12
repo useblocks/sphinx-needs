@@ -6,12 +6,9 @@ without needing to manually write the schema or have pydantic as a runtime depen
 
 from pathlib import Path
 from sys import version_info
-from types import UnionType
 from typing import (
-    Annotated,
     Any,
     TypedDict,
-    Union,
     get_args,
     get_origin,
     get_type_hints,
@@ -78,53 +75,6 @@ def _typed_dict_to_model(name: str, td: type):
             return schema
 
     return create_model(name, **fields, __base__=BaseClass)
-
-
-def _resolve_typeddict_types(tp, cache):
-    """Recursively map type hints so that nested TypedDicts become Pydantic models."""
-    origin = get_origin(tp)
-    args = get_args(tp)
-
-    # case: Annotated[T, ...]
-    if origin is Annotated:
-        # inner = args[0]
-        # TODO the * syntax is not supported in python 3.10
-        raise NotImplementedError("Annotated types are not yet supported")
-        # return Annotated[resolve_typeddict_types(inner, cache), *args[1:]]
-
-    # case: nested TypedDict
-    if (
-        isinstance(tp, type)
-        and issubclass(tp, dict)
-        and hasattr(tp, "__required_keys__")
-    ):
-        return _typed_dict_to_model(tp.__name__ + "Model", tp)
-
-    # case: list[T]
-    if origin is list:
-        return list[_resolve_typeddict_types(args[0], cache)]
-
-    # case: dict[K, V]
-    if origin is dict:
-        return dict[
-            _resolve_typeddict_types(args[0], cache),
-            _resolve_typeddict_types(args[1], cache),
-        ]
-
-    # case: Union, Optional, etc.
-    if (
-        origin is UnionType or origin is None
-    ):  # Python 3.10-3.11 feature; ensure correct import
-        origin = get_origin(tp)
-
-    if origin is None:
-        # simple type
-        return tp
-
-    if origin is Union:
-        return Union[tuple(_resolve_typeddict_types(a, cache) for a in args)]  # noqa: UP007
-
-    return tp
 
 
 def typed_dict_to_json_schema(td: type[TypedDict]) -> dict[str, Any]:
