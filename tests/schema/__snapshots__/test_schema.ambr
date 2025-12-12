@@ -588,8 +588,13 @@
 # ---
 # name: test_schema_config[schemas_validate_pattern_atomic_groups_error]
   '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^(?>test)$' at 'schemas.[0].validate.local.properties.id': contains special groups (other than non-capturing)
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^(?>test)$" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["id"]:
+      "^(?>test)$"
   '''
 # ---
 # name: test_schema_config[schemas_validate_pattern_backref_error]
@@ -625,30 +630,6 @@
       "^(?(1)yes|no)$"
   '''
 # ---
-# name: test_schema_config[schemas_validate_pattern_named_groups_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^(?P<name>test)$' at 'schemas.[0].validate.local.properties.id': contains special groups (other than non-capturing)
-  '''
-# ---
-# name: test_schema_config[schemas_validate_pattern_nested_quantifiers_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^(a+)+$' at 'schemas.[0].validate.local.properties.id': contains nested quantifiers that may cause backtracking
-  '''
-# ---
-# name: test_schema_config[schemas_validate_pattern_possessive_quantifiers_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^test*+$' at 'schemas.[0].validate.local.properties.id': contains possessive quantifiers
-  '''
-# ---
-# name: test_schema_config[schemas_validate_pattern_recursive_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^test(?R)$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: unknown extension ?R at position 6
-  '''
-# ---
 # name: test_schema_config[schemas_validate_pattern_relative_subroutine_error]
   '''
   schema for 'needs_schema_definitions.0.validate.local' is not valid:
@@ -669,18 +650,6 @@
   
   On instance["properties"]["id"]:
       "^test(?&name)$"
-  '''
-# ---
-# name: test_schema_config[schemas_validate_pattern_unicode_escapes_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^\u0041$' at 'schemas.[0].validate.local.properties.id': contains Unicode and control character escapes
-  '''
-# ---
-# name: test_schema_config[schemas_validate_pattern_unicode_property_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^\p{L}+$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: bad escape \p at position 1
   '''
 # ---
 # name: test_schema_config[schemas_validate_pattern_unnamed_groups_error]
