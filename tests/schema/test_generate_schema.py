@@ -98,7 +98,7 @@ def _resolve_typeddict_types(tp, cache):
         and issubclass(tp, dict)
         and hasattr(tp, "__required_keys__")
     ):
-        return _typed_dict_to_model(tp.__name__ + "Model", tp, cache)
+        return _typed_dict_to_model(tp.__name__ + "Model", tp)
 
     # case: list[T]
     if origin is list:
