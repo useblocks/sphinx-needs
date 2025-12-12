@@ -124,7 +124,7 @@ class ExtraOptionNumberSchemaType(TypedDict):
 def validate_extra_option_number_schema(data: Any) -> ExtraOptionNumberSchemaType:
     """Validate that the given data is an ExtraOptionNumberSchemaType.
 
-    raises TypeError: if the data is not valid.
+    :raises TypeError: if the data is not valid.
     """
     schema = _get_schema(ExtraOptionNumberSchemaType)
     try:
@@ -158,7 +158,7 @@ class ExtraOptionIntegerSchemaType(TypedDict):
 def validate_extra_option_integer_schema(data: Any) -> ExtraOptionIntegerSchemaType:
     """Validate that the given data is an ExtraOptionIntegerSchemaType.
 
-    raises TypeError: if the data is not valid.
+    :raises TypeError: if the data is not valid.
     """
     schema = _get_schema(ExtraOptionIntegerSchemaType)
     try:
@@ -189,7 +189,7 @@ class ExtraOptionBooleanSchemaType(TypedDict):
 def validate_extra_option_boolean_schema(data: Any) -> ExtraOptionBooleanSchemaType:
     """Validate that the given data is an ExtraOptionBooleanSchemaType.
 
-    raises TypeError: if the data is not valid.
+    :raises TypeError: if the data is not valid.
     """
     schema = _get_schema(ExtraOptionBooleanSchemaType)
     try:
@@ -255,7 +255,7 @@ def validate_extra_option_multi_value_schema(
 ) -> ExtraOptionMultiValueSchemaType:
     """Validate that the given data is an ExtraOptionMultiValueSchemaType.
 
-    raises TypeError: if the data is not valid.
+    :raises TypeError: if the data is not valid.
     """
     schema = _get_schema(ExtraOptionMultiValueSchemaType)
     try:
@@ -312,7 +312,7 @@ class ExtraLinkSchemaType(TypedDict):
 def validate_extra_link_schema_type(data: Any) -> ExtraLinkSchemaType:
     """Validate that the given data is an ExtraLinkSchemaType.
 
-    raises TypeError: if the data is not valid.
+    :raises TypeError: if the data is not valid.
     """
     schema = _get_schema(ExtraLinkSchemaType)
     try:
@@ -534,7 +534,7 @@ class SchemasRootType(TypedDict):
 def validate_schemas_root_type(data: Any) -> SchemasRootType:
     """Validate that the given data is a SchemasRootType.
 
-    raises TypeError: if the data is not valid.
+    :raises TypeError: if the data is not valid.
     """
     schema = _get_schema(SchemasRootType)
     try:
