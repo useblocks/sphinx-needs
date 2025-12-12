@@ -31,7 +31,7 @@ from sphinx_needs.schema.config import (
 
 def _unwrap_pep655(annotation):
     """Unwrap NotRequired[T] and Required[T] annotations."""
-    from typing_extensions import NotRequired, Required
+    from typing import NotRequired, Required
 
     origin = get_origin(annotation)
     if origin is NotRequired:
