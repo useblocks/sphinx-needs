@@ -487,11 +487,11 @@
 # name: test_schema_config[both_definitions_and_json_given]
   "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
 # ---
+# name: test_schema_config[extra_link_array_wrong_item_type]
+  "Schema for extra link 'links' has invalid 'items.type' value: other, expected 'string'."
+# ---
 # name: test_schema_config[extra_link_array_wrong_type]
-  '''
-  Schema for extra link 'links' is not valid:
-  value of key 'type' of dict is not any of ('array')
-  '''
+  "Schema for extra link 'links' has invalid type: object, expected 'array'."
 # ---
 # name: test_schema_config[extra_link_pattern_unsafe_error]
   "Unsafe pattern '^IMPL_(?!SAFE)' at 'extra_links.links.schema.items': contains lookahead/lookbehind assertions"
