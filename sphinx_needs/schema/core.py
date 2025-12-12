@@ -6,7 +6,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final, TypedDict, cast
 
-from jsonschema_rs import Draft202012Validator, RegexOptions, ValidationError
+import jsonschema_rs
+from jsonschema_rs import RegexOptions, ValidationError, Validator
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.need_item import NeedItem
@@ -19,8 +20,8 @@ from sphinx_needs.schema.config import (
     SchemasRootType,
     SeverityEnum,
     ValidateSchemaType,
+    get_schema_name,
 )
-from sphinx_needs.schema.config_utils import get_schema_name
 from sphinx_needs.schema.reporting import (
     OntologyWarning,
     save_debug_files,
@@ -32,7 +33,6 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
 # TODO(Marco): error for conflicting unevaluatedProperties
-
 
 _SCHEMA_VERSION: Final[str] = "https://json-schema.org/draft/2020-12/schema"
 """
@@ -510,10 +510,27 @@ def any_not_of_rule(warnings: list[OntologyWarning], rule: MessageRuleEnum) -> b
     return any(warning["rule"] != rule for warning in warnings)
 
 
+def validate_object_schema_compiles(schema: Any) -> None:
+    """Validate schema properties by trying to compile them."""
+    jsonschema_rs.validator_for(
+        {
+            "$schema": _SCHEMA_VERSION,
+            "type": "object",
+            **{
+                k: schema[k]
+                for k in ("properties", "allOf", "required", "unevaluatedProperties")
+                if k in schema
+            },
+        },
+        validate_formats=True,
+        pattern_options=jsonschema_rs.RegexOptions(),
+    )
+
+
 @dataclass(slots=True, frozen=True)
 class SchemaValidator:
     raw: NeedFieldsSchemaWithVersionType
-    compiled: Draft202012Validator
+    compiled: Validator
     properties: set[str]
 
 
@@ -529,7 +546,7 @@ def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:
         },
     }
     properties = get_properties_from_schema(final_schema)
-    compiled = Draft202012Validator(
+    compiled = jsonschema_rs.validator_for(
         cast(dict[str, Any], final_schema),
         validate_formats=True,
         pattern_options=RegexOptions(),

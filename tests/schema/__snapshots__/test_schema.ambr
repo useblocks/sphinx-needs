@@ -494,13 +494,41 @@
   "Schema for extra link 'links' has invalid type: object, expected 'array'."
 # ---
 # name: test_schema_config[extra_link_pattern_unsafe_error]
-  "Unsafe pattern '^IMPL_(?!SAFE)' at 'extra_links.links.schema.items': contains lookahead/lookbehind assertions"
+  '''
+  Schema for extra link 'links' is not valid:
+  "^IMPL_(?!SAFE)" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["links"]["items"]:
+      "^IMPL_(?!SAFE)"
+  '''
+# ---
+# name: test_schema_config[extra_link_unknown_keys]
+  '''
+  Schema for extra link 'links' is not valid:
+  Unknown keys not allowed: ['unknown']
+  '''
 # ---
 # name: test_schema_config[extra_option_empty_schema]
   "Schema for extra option 'efforts' does not define a type."
 # ---
 # name: test_schema_config[extra_option_pattern_unsafe_error]
-  "Unsafe pattern '^IMPL_(?!SAFE)' at 'extra_options.efforts.schema': contains lookahead/lookbehind assertions"
+  '''
+  Schema for extra option 'efforts' is not valid:
+  "^IMPL_(?!SAFE)" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["efforts"]:
+      "^IMPL_(?!SAFE)"
+  '''
+# ---
+# name: test_schema_config[extra_option_unknown_keys]
+  '''
+  Schema for extra option 'efforts' is not valid:
+  Unknown keys not allowed: ['unknown']
+  '''
 # ---
 # name: test_schema_config[local_error]
   "Config error in schema '[0]' at path 'validate.local.properties.efforts': Field 'efforts' has type 'unknown', but expected 'string'."
@@ -549,92 +577,101 @@
 # ---
 # name: test_schema_config[schemas_select_pattern_unsafe_error]
   '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^IMPL_(?!SAFE)' at 'schemas.[0].select.properties.id': contains lookahead/lookbehind assertions
+  schema for 'needs_schema_definitions.0.select' is not valid:
+  "^IMPL_(?!SAFE)" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["id"]:
+      "^IMPL_(?!SAFE)"
   '''
 # ---
 # name: test_schema_config[schemas_validate_pattern_atomic_groups_error]
   '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^(?>test)$' at 'schemas.[0].validate.local.properties.id': contains special groups (other than non-capturing)
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^(?>test)$" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["id"]:
+      "^(?>test)$"
   '''
 # ---
 # name: test_schema_config[schemas_validate_pattern_backref_error]
   '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^IMPL_(SAFE)_\1' at 'schemas.[0].validate.local.properties.id': contains backreferences
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^IMPL_(SAFE)_\\1" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["id"]:
+      "^IMPL_(SAFE)_\\1"
   '''
 # ---
 # name: test_schema_config[schemas_validate_pattern_comment_groups_error]
   '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^test(?#comment)$' at 'schemas.[0].validate.local.properties.id': contains special groups (other than non-capturing)
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^test(?#comment)$" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["id"]:
+      "^test(?#comment)$"
   '''
 # ---
 # name: test_schema_config[schemas_validate_pattern_conditional_error]
   '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^(?(1)yes|no)$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: invalid group reference 1 at position 4
-  '''
-# ---
-# name: test_schema_config[schemas_validate_pattern_named_groups_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^(?P<name>test)$' at 'schemas.[0].validate.local.properties.id': contains special groups (other than non-capturing)
-  '''
-# ---
-# name: test_schema_config[schemas_validate_pattern_nested_quantifiers_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^(a+)+$' at 'schemas.[0].validate.local.properties.id': contains nested quantifiers that may cause backtracking
-  '''
-# ---
-# name: test_schema_config[schemas_validate_pattern_possessive_quantifiers_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^test*+$' at 'schemas.[0].validate.local.properties.id': contains possessive quantifiers
-  '''
-# ---
-# name: test_schema_config[schemas_validate_pattern_recursive_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^test(?R)$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: unknown extension ?R at position 6
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^(?(1)yes|no)$" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["id"]:
+      "^(?(1)yes|no)$"
   '''
 # ---
 # name: test_schema_config[schemas_validate_pattern_relative_subroutine_error]
   '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^test(?+1)$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: unknown extension ?+ at position 6
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^test(?+1)$" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["id"]:
+      "^test(?+1)$"
   '''
 # ---
 # name: test_schema_config[schemas_validate_pattern_subroutine_calls_error]
   '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^test(?&name)$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: unknown extension ?& at position 6
-  '''
-# ---
-# name: test_schema_config[schemas_validate_pattern_unicode_escapes_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^\u0041$' at 'schemas.[0].validate.local.properties.id': contains Unicode and control character escapes
-  '''
-# ---
-# name: test_schema_config[schemas_validate_pattern_unicode_property_error]
-  '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^\p{L}+$' at 'schemas.[0].validate.local.properties.id': invalid regex syntax: bad escape \p at position 1
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^test(?&name)$" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["id"]:
+      "^test(?&name)$"
   '''
 # ---
 # name: test_schema_config[schemas_validate_pattern_unnamed_groups_error]
   '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^(test)?(?(1)yes|no)$' at 'schemas.[0].validate.local.properties.id': contains special groups (other than non-capturing)
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^(test)?(?(1)yes|no)$" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["id"]:
+      "^(test)?(?(1)yes|no)$"
   '''
 # ---
 # name: test_schema_config[schemas_validate_pattern_unsafe_error]
   '''
-  Schemas entry '[0]' is not valid:
-  Unsafe pattern '^IMPL_(?!SAFE)' at 'schemas.[0].validate.local.properties.id': contains lookahead/lookbehind assertions
+  schema for 'needs_schema_definitions.0.validate.local' is not valid:
+  "^IMPL_(?!SAFE)" is not a "regex"
+  
+  Failed validating in schema
+  
+  On instance["properties"]["id"]:
+      "^IMPL_(?!SAFE)"
   '''
 # ---
 # name: test_schema_config[select_error]
