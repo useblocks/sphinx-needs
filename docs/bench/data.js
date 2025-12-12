@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1765552283847,
+  "lastUpdate": 1765556021436,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15696,6 +15696,42 @@ window.BENCHMARK_DATA = {
             "value": 58.840010402999994,
             "unit": "s",
             "extra": "Commit: 4d7e4e132f6ce4044201dab51dde838ec2183136\nBranch: master\nTime: 2025-12-12T16:09:34+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f09fe6e7cfd4058c9aa8df36bd9eb796138d6d76",
+          "message": "👌 Validate all schemas compile during config resolution (#1596)\n\nDuring resolution of schemas, coming from config `needs_extra_links`,\n`needs_extra_options` and `needs_schema_definitions`,\ncheck that these schemas actually compile.\nThis ensures that the later schema validations do not fail due to this,\nand also removes the need for \"bespoke\" regex checking; in-turn this\nactually allows more regex syntaxes than previously (but still not\nlookahead/lookbehind).\n\nAdditionally, do not use the `typeguard` dependency, to check schemas\ncoming from `need_extra_options` and `need_extra_links` and instead.\nThe replacement checks are \"simpler\", but we need to remove `typeguard`,\nbecause it is not compatible with python 3.14, and I believe these\nsimpler checks, together with the schema validation, will suffice.\nNote, validation of `SchemasRootType` is still using `typeguard` for\nnow, so we can not remove the dependency, but this can be done in a\nfollow-up PR.",
+          "timestamp": "2025-12-12T17:11:39+01:00",
+          "tree_id": "a3a108d3c428cabf199d359ec9d25fcd5814dc11",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f09fe6e7cfd4058c9aa8df36bd9eb796138d6d76"
+        },
+        "date": 1765556002882,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.179035705000004,
+            "unit": "s",
+            "extra": "Commit: f09fe6e7cfd4058c9aa8df36bd9eb796138d6d76\nBranch: master\nTime: 2025-12-12T17:11:39+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 66.76143269300002,
+            "unit": "s",
+            "extra": "Commit: f09fe6e7cfd4058c9aa8df36bd9eb796138d6d76\nBranch: master\nTime: 2025-12-12T17:11:39+01:00"
           }
         ]
       }
