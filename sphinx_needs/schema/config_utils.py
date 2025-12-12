@@ -225,14 +225,28 @@ def inject_type_extra_link_schemas(needs_config: NeedsSphinxConfig) -> None:
             continue
         if "type" not in extra_link["schema"]:
             extra_link["schema"]["type"] = "array"
-        type_inject_fields = ["contains", "items"]
+        elif extra_link["schema"]["type"] != "array":
+            raise NeedsConfigException(
+                f"Schema for extra link '{extra_link['option']}' has invalid type: "
+                f"{extra_link['schema']['type']}, expected 'array'."
+            )
+        if "items" not in extra_link["schema"]:
+            extra_link["schema"]["items"] = {"type": "string"}
+        elif not isinstance(extra_link["schema"]["items"], dict):
+            raise NeedsConfigException(
+                f"Schema for extra link '{extra_link['option']}' has invalid 'items' value: "
+                f"{extra_link['schema']['items']}, expected a dict."
+            )
+        type_inject_fields: list[Literal["contains", "items"]] = ["contains", "items"]
         for field in type_inject_fields:
-            if (
-                field in extra_link["schema"]
-                and "type" not in extra_link["schema"][field]  # type: ignore[literal-required]
-            ):
-                # set string as default
-                extra_link["schema"][field]["type"] = "string"  # type: ignore[literal-required]
+            if field in extra_link["schema"]:
+                if "type" not in extra_link["schema"][field]:
+                    extra_link["schema"][field]["type"] = "string"
+                elif extra_link["schema"][field]["type"] != "string":
+                    raise NeedsConfigException(
+                        f"Schema for extra link '{extra_link['option']}' has invalid '{field}.type' value: "
+                        f"{extra_link['schema'][field]['type']}, expected 'string'."
+                    )
 
 
 def validate_extra_link_schemas(needs_config: NeedsSphinxConfig) -> None:

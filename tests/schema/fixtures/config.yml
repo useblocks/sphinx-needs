@@ -8,14 +8,20 @@ extra_link_array_wrong_type:
     outgoing = "links"
     incoming = "linked by"
     schema.type = "object"
-    schema.minItems = 2
-  rst: |
-    .. spec:: title
-        :id: SPEC_1
+  rst: ""
 
-    .. impl:: title
-        :id: IMPL_1
-        :links: SPEC_1
+extra_link_array_wrong_item_type:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.type = "array"
+    schema.items = { type = "other" }
+  rst: ""
 
 extra_option_empty_schema:
   conf: |
