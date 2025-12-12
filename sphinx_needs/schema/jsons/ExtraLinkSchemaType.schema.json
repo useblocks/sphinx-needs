@@ -1,0 +1,68 @@
+{
+  "$defs": {
+    "ExtraLinkItemSchemaType": {
+      "additionalProperties": false,
+      "description": "Items in array of link string ids",
+      "properties": {
+        "maxLength": {
+          "title": "Maxlength",
+          "type": "integer"
+        },
+        "minLength": {
+          "title": "Minlength",
+          "type": "integer"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        },
+        "type": {
+          "const": "string",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExtraLinkItemSchemaType",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contains": {
+      "$ref": "#/$defs/ExtraLinkItemSchemaType"
+    },
+    "items": {
+      "$ref": "#/$defs/ExtraLinkItemSchemaType"
+    },
+    "maxContains": {
+      "title": "Maxcontains",
+      "type": "integer"
+    },
+    "maxItems": {
+      "title": "Maxitems",
+      "type": "integer"
+    },
+    "minContains": {
+      "title": "Mincontains",
+      "type": "integer"
+    },
+    "minItems": {
+      "title": "Minitems",
+      "type": "integer"
+    },
+    "type": {
+      "const": "array",
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "title": "ExtraLinkSchemaTypeModel",
+  "type": "object"
+}

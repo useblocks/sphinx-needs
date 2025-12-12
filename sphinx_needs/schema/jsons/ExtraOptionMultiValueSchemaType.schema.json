@@ -1,0 +1,235 @@
+{
+  "$defs": {
+    "ExtraOptionBooleanSchemaType": {
+      "additionalProperties": false,
+      "description": "Boolean extra option schema.\n\nA predefined set of truthy/falsy strings are accepted:\n- truthy = {\"true\", \"yes\", \"y\", \"on\", \"1\"}\n- falsy = {\"false\", \"no\", \"n\", \"off\", \"0\"}\n\nFor fixed values, the const field can be used.\nenum is not supported as const is functionally equivalent and less verbose.",
+      "properties": {
+        "const": {
+          "title": "Const",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "boolean",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExtraOptionBooleanSchemaType",
+      "type": "object"
+    },
+    "ExtraOptionIntegerSchemaType": {
+      "additionalProperties": false,
+      "description": "Integer extra option schema.",
+      "properties": {
+        "const": {
+          "title": "Const",
+          "type": "integer"
+        },
+        "enum": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Enum",
+          "type": "array"
+        },
+        "exclusiveMaximum": {
+          "title": "Exclusivemaximum",
+          "type": "integer"
+        },
+        "exclusiveMinimum": {
+          "title": "Exclusiveminimum",
+          "type": "integer"
+        },
+        "maximum": {
+          "title": "Maximum",
+          "type": "integer"
+        },
+        "minimum": {
+          "title": "Minimum",
+          "type": "integer"
+        },
+        "multipleOf": {
+          "title": "Multipleof",
+          "type": "integer"
+        },
+        "type": {
+          "const": "integer",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExtraOptionIntegerSchemaType",
+      "type": "object"
+    },
+    "ExtraOptionNumberSchemaType": {
+      "additionalProperties": false,
+      "description": "Float extra option schema.\n\nPython reads in JSON numbers as floats. The jsonschema library\nhandles precision issues with floats using a tolerance-based approach.",
+      "properties": {
+        "const": {
+          "title": "Const",
+          "type": "number"
+        },
+        "enum": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Enum",
+          "type": "array"
+        },
+        "exclusiveMaximum": {
+          "title": "Exclusivemaximum",
+          "type": "number"
+        },
+        "exclusiveMinimum": {
+          "title": "Exclusiveminimum",
+          "type": "number"
+        },
+        "maximum": {
+          "title": "Maximum",
+          "type": "number"
+        },
+        "minimum": {
+          "title": "Minimum",
+          "type": "number"
+        },
+        "multipleOf": {
+          "title": "Multipleof",
+          "type": "number"
+        },
+        "type": {
+          "const": "number",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExtraOptionNumberSchemaType",
+      "type": "object"
+    },
+    "ExtraOptionStringSchemaType": {
+      "additionalProperties": false,
+      "description": "String extra option schema.",
+      "properties": {
+        "const": {
+          "title": "Const",
+          "type": "string"
+        },
+        "enum": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Enum",
+          "type": "array"
+        },
+        "format": {
+          "enum": [
+            "date-time",
+            "date",
+            "time",
+            "duration",
+            "email",
+            "uri",
+            "uuid"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "maxLength": {
+          "title": "Maxlength",
+          "type": "integer"
+        },
+        "minLength": {
+          "title": "Minlength",
+          "type": "integer"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        },
+        "type": {
+          "const": "string",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExtraOptionStringSchemaType",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contains": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExtraOptionStringSchemaType"
+        },
+        {
+          "$ref": "#/$defs/ExtraOptionBooleanSchemaType"
+        },
+        {
+          "$ref": "#/$defs/ExtraOptionIntegerSchemaType"
+        },
+        {
+          "$ref": "#/$defs/ExtraOptionNumberSchemaType"
+        }
+      ],
+      "title": "Contains"
+    },
+    "items": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExtraOptionStringSchemaType"
+        },
+        {
+          "$ref": "#/$defs/ExtraOptionBooleanSchemaType"
+        },
+        {
+          "$ref": "#/$defs/ExtraOptionIntegerSchemaType"
+        },
+        {
+          "$ref": "#/$defs/ExtraOptionNumberSchemaType"
+        }
+      ],
+      "title": "Items"
+    },
+    "maxContains": {
+      "title": "Maxcontains",
+      "type": "integer"
+    },
+    "maxItems": {
+      "title": "Maxitems",
+      "type": "integer"
+    },
+    "minContains": {
+      "title": "Mincontains",
+      "type": "integer"
+    },
+    "minItems": {
+      "title": "Minitems",
+      "type": "integer"
+    },
+    "type": {
+      "const": "array",
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "type",
+    "items"
+  ],
+  "title": "ExtraOptionMultiValueSchemaTypeModel",
+  "type": "object"
+}

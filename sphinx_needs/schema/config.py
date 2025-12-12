@@ -4,20 +4,24 @@ Types and violations for schema validation.
 There are 3 places the types are used:
 1. In the extra option and extra links definition.
 2. For the JSON schema coming from schema_definitions and schema_definitions_from_json configs.
-3. For typeguard runtime type checking of the loaded JSON schema config.
+3. For runtime type checking of the loaded JSON schema config.
 
 All below types have the field 'type' set as required field.
 For case 1. this is important, as it is the primar type information source and users *have* to
 provide it.
-For 2. and 3. it is not required. If it is not given, it is injected before the typeguard check
+For 2. and 3. it is not required. If it is not given, it is injected before the type check
 occurs. If it is given, the types have to match what is provided in 1.
 """
 
 from __future__ import annotations
 
+import json
 from enum import Enum, IntEnum
+from functools import cache
+from pathlib import Path
 from typing import Any, Final, Literal, TypedDict, cast
 
+import jsonschema_rs
 from typing_extensions import NotRequired
 
 EXTRA_OPTION_BASE_TYPES_STR: Final[set[str]] = {
@@ -36,6 +40,17 @@ EXTRA_OPTION_BASE_TYPES_TYPE = Literal[
 
 MAX_NESTED_NETWORK_VALIDATION_LEVELS: Final[int] = 4
 """Maximum number of nested network validation levels."""
+
+
+@cache
+def _get_schema(klass: type) -> jsonschema_rs.Validator:
+    """Get the JSON schema for the given TypedDict class."""
+    content = json.loads(
+        Path(__file__)
+        .parent.joinpath("jsons", f"{klass.__name__}.schema.json")
+        .read_text()
+    )
+    return jsonschema_rs.validator_for(content)
 
 
 class ExtraOptionStringSchemaType(TypedDict):
@@ -70,34 +85,13 @@ class ExtraOptionStringSchemaType(TypedDict):
 def validate_extra_option_string_schema(data: Any) -> ExtraOptionStringSchemaType:
     """Validate that the given data is an ExtraOptionStringSchemaType.
 
-    Note this only validates the keys not the values, except "type",
-    as that is done by validating the full schema.
+    :raises TypeError: if the data is not valid.
     """
-    klass = ExtraOptionStringSchemaType
-    if not isinstance(data, dict):
-        raise TypeError("Must be a dict")
-    if "type" not in data:
-        raise TypeError("Missing required key: 'type'")
-    if data["type"] != "string":
-        raise TypeError(f"'type' must be 'string', not '{data['type']}'")
-    if additional_keys := (
-        data.keys() - klass.__required_keys__ - klass.__optional_keys__
-    ):
-        raise TypeError(f"Unknown keys not allowed: {sorted(additional_keys)}")
-    if "format" in data:
-        allowed_formats = {
-            "date-time",
-            "date",
-            "time",
-            "duration",
-            "email",
-            "uri",
-            "uuid",
-        }
-        if data["format"] not in allowed_formats:
-            raise TypeError(
-                f"'format' must be one of {sorted(allowed_formats)}, not '{data['format']}'"
-            )
+    schema = _get_schema(ExtraOptionStringSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
     return cast(ExtraOptionStringSchemaType, data)
 
 
@@ -130,20 +124,13 @@ class ExtraOptionNumberSchemaType(TypedDict):
 def validate_extra_option_number_schema(data: Any) -> ExtraOptionNumberSchemaType:
     """Validate that the given data is an ExtraOptionNumberSchemaType.
 
-    Note this only validates the keys not the values, except "type",
-    as that is done by validating the full schema.
+    raises TypeError: if the data is not valid.
     """
-    klass = ExtraOptionNumberSchemaType
-    if not isinstance(data, dict):
-        raise TypeError("Must be a dict")
-    if "type" not in data:
-        raise TypeError("Missing required key: 'type'")
-    if data["type"] != "number":
-        raise TypeError(f"'type' must be 'number', not '{data['type']}'")
-    if additional_keys := (
-        data.keys() - klass.__required_keys__ - klass.__optional_keys__
-    ):
-        raise TypeError(f"Unknown keys not allowed: {sorted(additional_keys)}")
+    schema = _get_schema(ExtraOptionNumberSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
     return cast(ExtraOptionNumberSchemaType, data)
 
 
@@ -171,20 +158,13 @@ class ExtraOptionIntegerSchemaType(TypedDict):
 def validate_extra_option_integer_schema(data: Any) -> ExtraOptionIntegerSchemaType:
     """Validate that the given data is an ExtraOptionIntegerSchemaType.
 
-    Note this only validates the keys not the values, except "type",
-    as that is done by validating the full schema.
+    raises TypeError: if the data is not valid.
     """
-    klass = ExtraOptionIntegerSchemaType
-    if not isinstance(data, dict):
-        raise TypeError("Must be a dict")
-    if "type" not in data:
-        raise TypeError("Missing required key: 'type'")
-    if data["type"] != "integer":
-        raise TypeError(f"'type' must be 'integer', not '{data['type']}'")
-    if additional_keys := (
-        data.keys() - klass.__required_keys__ - klass.__optional_keys__
-    ):
-        raise TypeError(f"Unknown keys not allowed: {sorted(additional_keys)}")
+    schema = _get_schema(ExtraOptionIntegerSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
     return cast(ExtraOptionIntegerSchemaType, data)
 
 
@@ -209,20 +189,13 @@ class ExtraOptionBooleanSchemaType(TypedDict):
 def validate_extra_option_boolean_schema(data: Any) -> ExtraOptionBooleanSchemaType:
     """Validate that the given data is an ExtraOptionBooleanSchemaType.
 
-    Note this only validates the keys not the values, except "type",
-    as that is done by validating the full schema.
+    raises TypeError: if the data is not valid.
     """
-    klass = ExtraOptionBooleanSchemaType
-    if not isinstance(data, dict):
-        raise TypeError("Must be a dict")
-    if "type" not in data:
-        raise TypeError("Missing required key: 'type'")
-    if data["type"] != "boolean":
-        raise TypeError(f"'type' must be 'boolean', not '{data['type']}'")
-    if additional_keys := (
-        data.keys() - klass.__required_keys__ - klass.__optional_keys__
-    ):
-        raise TypeError(f"Unknown keys not allowed: {sorted(additional_keys)}")
+    schema = _get_schema(ExtraOptionBooleanSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
     return cast(ExtraOptionBooleanSchemaType, data)
 
 
@@ -254,29 +227,6 @@ ExtraOptionBaseSchemaTypes = (
 """Union type for all single value extra option schemas."""
 
 
-def validate_extra_options_base_schema(data: Any) -> ExtraOptionBaseSchemaTypes:
-    """Validate that the given data is an ExtraOptionBaseSchemaTypes.
-
-    Note this only validates the keys not the values, except "type",
-    as that is done by validating the full schema.
-    """
-    if not isinstance(data, dict):
-        raise TypeError("Must be a dict")
-    if "type" not in data:
-        raise TypeError("Missing required key: 'type'")
-    option_type = data["type"]
-    if option_type == "string":
-        return validate_extra_option_string_schema(data)
-    elif option_type == "boolean":
-        return validate_extra_option_boolean_schema(data)
-    elif option_type == "integer":
-        return validate_extra_option_integer_schema(data)
-    elif option_type == "number":
-        return validate_extra_option_number_schema(data)
-    else:
-        raise TypeError(f"Unsupported type: '{option_type}'.")
-
-
 class ExtraOptionMultiValueSchemaType(TypedDict):
     """
     Multi value extra option such as a list of strings, integers, numbers, or booleans.
@@ -305,21 +255,14 @@ def validate_extra_option_multi_value_schema(
 ) -> ExtraOptionMultiValueSchemaType:
     """Validate that the given data is an ExtraOptionMultiValueSchemaType.
 
-    Note this only validates the keys not the values, except "type",
-    as that is done by validating the full schema.
+    raises TypeError: if the data is not valid.
     """
-    klass = ExtraOptionMultiValueSchemaType
-    if not isinstance(data, dict):
-        raise TypeError("Must be a dict")
-    if "type" not in data:
-        raise TypeError("Missing required key: 'type'")
-    if "items" not in data:
-        raise TypeError("Missing required key: 'items'")
-    if data["type"] != "array":
-        raise TypeError(f"'type' must be 'array', not '{data['type']}'")
-    validate_extra_options_base_schema(data["items"])
-    if "contains" in data:
-        validate_extra_options_base_schema(data["contains"])
+    schema = _get_schema(ExtraOptionMultiValueSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
+    if "contains" in data and "items" in data:
         # if the option contains both items and contains, the types must be identical
         items_type = data["items"]["type"]
         contains_type = data["contains"]["type"]
@@ -327,10 +270,6 @@ def validate_extra_option_multi_value_schema(
             raise TypeError(
                 f"'items' type '{items_type}' and 'contains' type '{contains_type}' must be identical."
             )
-    if additional_keys := (
-        data.keys() - klass.__required_keys__ - klass.__optional_keys__
-    ):
-        raise TypeError(f"Unknown keys not allowed: {sorted(additional_keys)}")
     return cast(ExtraOptionMultiValueSchemaType, data)
 
 
@@ -349,26 +288,6 @@ class ExtraLinkItemSchemaType(TypedDict):
     """Maximum string length of each outgoing link id."""
     pattern: NotRequired[str]
     """A regex pattern to validate against."""
-
-
-def validate_extra_link_items_schema(data: Any) -> ExtraLinkItemSchemaType:
-    """Validate that the given data is an ExtraLinkItemSchemaType.
-
-    Note this only validates the keys not the values, except "type",
-    as that is done by validating the full schema.
-    """
-    klass = ExtraLinkItemSchemaType
-    if not isinstance(data, dict):
-        raise TypeError("Must be a dict")
-    if "type" not in data:
-        raise TypeError("Missing required key: 'type'")
-    if data["type"] != "string":
-        raise TypeError(f"'type' must be 'string', not '{data['type']}'")
-    if additional_keys := (
-        data.keys() - klass.__required_keys__ - klass.__optional_keys__
-    ):
-        raise TypeError(f"Unknown keys not allowed: {sorted(additional_keys)}")
-    return cast(ExtraLinkItemSchemaType, data)
 
 
 class ExtraLinkSchemaType(TypedDict):
@@ -393,31 +312,14 @@ class ExtraLinkSchemaType(TypedDict):
 def validate_extra_link_schema_type(data: Any) -> ExtraLinkSchemaType:
     """Validate that the given data is an ExtraLinkSchemaType.
 
-    Note this only validates the keys not the values, except "type",
-    as that is done by validating the schema itself.
+    raises TypeError: if the data is not valid.
     """
-    klass = ExtraLinkSchemaType
-    if not isinstance(data, dict):
-        raise TypeError("Must be a dict")
-    if "type" not in data:
-        raise TypeError("Missing required key: 'type'")
-    if data["type"] != "array":
-        raise TypeError(f"'type' must be 'array', not '{data['type']}'")
-    if additional_keys := (
-        data.keys() - klass.__required_keys__ - klass.__optional_keys__
-    ):
-        raise TypeError(f"Unknown keys not allowed: {sorted(additional_keys)}")
-    if "items" in data:
-        try:
-            validate_extra_link_items_schema(data["items"])
-        except TypeError as e:
-            raise TypeError(f"Invalid 'items' schema: {e}") from e
-    if "contains" in data:
-        try:
-            validate_extra_link_items_schema(data["contains"])
-        except TypeError as e:
-            raise TypeError(f"Invalid 'contains' schema: {e}") from e
-    else:
+    schema = _get_schema(ExtraLinkSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
+    if "contains" not in data:
         for field in ("minContains", "maxContains"):
             if field in data:
                 raise TypeError(f"'{field}' defined, but 'contains' is missing.")
@@ -438,7 +340,7 @@ class NeedFieldsSchemaType(AllOfSchemaType):
     Intented to validate multiple fields on a need type.
     """
 
-    type: Literal["object"]
+    type: NotRequired[Literal["object"]]
     """All fields of a need stored in a dict (not required because it's the default)."""
     properties: NotRequired[dict[str, ExtraOptionAndLinkSchemaTypes]]
     required: NotRequired[list[str]]
@@ -627,6 +529,19 @@ class SchemasRootType(TypedDict):
     Can be either a need-local schema or a network schema that requires resolving all need links
     before validating.
     """
+
+
+def validate_schemas_root_type(data: Any) -> SchemasRootType:
+    """Validate that the given data is a SchemasRootType.
+
+    raises TypeError: if the data is not valid.
+    """
+    schema = _get_schema(SchemasRootType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
+    return cast(SchemasRootType, data)
 
 
 def get_schema_name(schema: SchemasRootType) -> str:
