@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1765794015466,
+  "lastUpdate": 1765804291515,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15768,6 +15768,42 @@ window.BENCHMARK_DATA = {
             "value": 63.342787249000025,
             "unit": "s",
             "extra": "Commit: 339b358a42f99572f297aa9923b80093679304f2\nBranch: master\nTime: 2025-12-15T11:18:13+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2783b84169f0c2caffe1ded27c9b8d6993b18d4b",
+          "message": "⬆️ Support Python 3.14 (#1598)\n\nNote, the only code change in this PR is removing `ast.Str` which is\nremoved in Python 3.14 (replaced by `ast.Constant`),\nthen we also update the `lxml` test dependency to the latest version,\nsince the old version has no wheel available on PyPI for Python 3.14.",
+          "timestamp": "2025-12-15T14:09:32+01:00",
+          "tree_id": "91d0a82fc08adbb82cd7a6e58feb23ceccec8a34",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2783b84169f0c2caffe1ded27c9b8d6993b18d4b"
+        },
+        "date": 1765804274378,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17159685999999397,
+            "unit": "s",
+            "extra": "Commit: 2783b84169f0c2caffe1ded27c9b8d6993b18d4b\nBranch: master\nTime: 2025-12-15T14:09:32+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.87666833499998,
+            "unit": "s",
+            "extra": "Commit: 2783b84169f0c2caffe1ded27c9b8d6993b18d4b\nBranch: master\nTime: 2025-12-15T14:09:32+01:00"
           }
         ]
       }
