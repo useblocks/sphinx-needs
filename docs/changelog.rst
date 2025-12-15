@@ -4,13 +4,27 @@
 Changelog
 =========
 
+.. _`release:6.3.0`:
+
+6.3.0
+-----
+
+:Released: 15.12.2025
+:Full Changelog: `v6.2.0...v6.3.0 <https://github.com/useblocks/sphinx-needs/compare/6.2.0...f567c1fafb4e1ba1a7dabb3bd6afc5f17ded84cd>`__
+
+- ⬆️ Support Python 3.14 (:pr:`1598`)
+- ♻️ Remove ``typeguard`` dependency (:pr:`1597`)
+- 👌 Relative paths from toml configuration (:pr:`1589`)
+
+  Ensure that file paths originating from a :ref:`needs_from_toml` file are relative to that file, rather than the :file:`conf.py` file
+
 .. _`release:6.2.0`:
 
 6.2.0
 -----
 
 :Released: 28.11.2025
-:Full Changelog: `v6.1.1...v6.2.0 <https://github.com/useblocks/sphinx-needs/compare/6.1.1...92462bbc0a9559e01e1fa6b874a1031472dec1bf>`__
+:Full Changelog: `v6.1.1...v6.2.0 <https://github.com/useblocks/sphinx-needs/compare/6.1.1...6.2.0>`__
 
 This release introduces performance improvements for schema validation, to make it ~3 times faster (:pr:`1581`, :pr:`1582`, :pr:`1583`, :pr:`1584`).
 
