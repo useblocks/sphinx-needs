@@ -96,6 +96,10 @@ def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> Non
 
     # set idx for logging purposes, it's part of the schema name
     for idx, schema in enumerate(needs_config.schema_definitions["schemas"]):
+        if not isinstance(schema, dict):
+            raise NeedsConfigException(
+                f"Schema entry at index {idx} in needs_schema_definitions.schemas is not a dict."
+            )
         schema["idx"] = idx
 
     # check severity and inject default if not set
