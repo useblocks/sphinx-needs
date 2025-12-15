@@ -21,6 +21,7 @@ classifiers = [
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
   'Programming Language :: Python :: 3.13',
+  'Programming Language :: Python :: 3.14',
   'Topic :: Documentation',
   'Topic :: Utilities',
   'Framework :: Sphinx :: Extension',
@@ -46,7 +47,7 @@ test = [
   "pytest-cov~=6.0",
   "syrupy~=4.0",
   "sphinxcontrib-plantuml~=0.0",
-  "lxml>=4.6.5,<6.0",
+  "lxml~=6.0",
   "responses~=0.22.0",
   "pydantic~=2.12",
   "pytest-xprocess~=1.0",
@@ -154,14 +155,14 @@ envlist = py310
 [testenv]
 usedevelop = true
 
-[testenv:py{310,311,312,313}]
+[testenv:py{310,311,312,313,314}]
 extras =
   test
   test-parallel
 commands =
   pytest --ignore tests/benchmarks {posargs:tests}
 
-[testenv:py{310,311,312,313}-benchmark]
+[testenv:py{310,311,312,313,314}-benchmark]
 extras =
   test
   benchmark

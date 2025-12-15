@@ -316,10 +316,10 @@ def _analyze_and_apply_expr(
     :returns: the needs (potentially filtered),
         and a boolean denoting if it still requires python eval filtering
     """
-    if isinstance(expr, ast.Str | ast.Constant):
-        if isinstance(expr.s, str | bool):
+    if isinstance(expr, ast.Constant):
+        if isinstance(expr.value, str | bool):
             # "value" / True / False
-            return needs if expr.s else needs.filter_ids([]), False
+            return needs if expr.value else needs.filter_ids([]), False
 
     elif isinstance(expr, ast.Name):
         # x
@@ -333,19 +333,19 @@ def _analyze_and_apply_expr(
             if (
                 isinstance(expr.left, ast.Name)
                 and len(expr.comparators) == 1
-                and isinstance(expr.comparators[0], ast.Str | ast.Constant)
+                and isinstance(expr.comparators[0], ast.Constant)
             ):
                 # x == "value"
                 field = expr.left.id
-                value = expr.comparators[0].s
+                value = expr.comparators[0].value
             elif (
-                isinstance(expr.left, ast.Str | ast.Constant)
+                isinstance(expr.left, ast.Constant)
                 and len(expr.comparators) == 1
                 and isinstance(expr.comparators[0], ast.Name)
             ):
                 # "value" == x
                 field = expr.comparators[0].id
-                value = expr.left.s
+                value = expr.left.value
             else:
                 return needs, True
 
@@ -369,11 +369,14 @@ def _analyze_and_apply_expr(
                 and len(expr.comparators) == 1
                 and isinstance(expr.comparators[0], ast.List | ast.Tuple | ast.Set)
                 and all(
-                    isinstance(elt, ast.Str | ast.Constant)
-                    for elt in expr.comparators[0].elts
+                    isinstance(elt, ast.Constant) for elt in expr.comparators[0].elts
                 )
             ):
-                values = [elt.s for elt in expr.comparators[0].elts]  # type: ignore[attr-defined]
+                values = [
+                    elt.value
+                    for elt in expr.comparators[0].elts
+                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str)
+                ]
                 if expr.left.id == "id":
                     # id in ["a", "b", ...]
                     return needs.filter_ids(values), False
@@ -384,13 +387,14 @@ def _analyze_and_apply_expr(
                     # type in ["a", "b", ...]
                     return needs.filter_types(values), False
             elif (
-                isinstance(expr.left, ast.Str | ast.Constant)
+                isinstance(expr.left, ast.Constant)
                 and len(expr.comparators) == 1
                 and isinstance(expr.comparators[0], ast.Name)
                 and expr.comparators[0].id == "tags"
+                and isinstance(expr.left.value, str)
             ):
                 # "value" in tags
-                return needs.filter_has_tag([expr.left.s]), False  # type: ignore[list-item]
+                return needs.filter_has_tag([expr.left.value]), False
 
     elif isinstance((and_op := expr), ast.BoolOp) and isinstance(and_op.op, ast.And):
         # x and y and ...
