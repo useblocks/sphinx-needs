@@ -210,6 +210,26 @@ def test_doc_df_linked_values(test_app):
     [
         {
             "buildername": "html",
+            "srcdir": "doc_test/doc_df_links_from_content",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_doc_df_links_from_content_values(test_app):
+    app = test_app
+    app.build()
+    warnings = strip_colors(app._warning.getvalue()).splitlines()
+    assert warnings == []
+    html = Path(app.outdir, "index.html").read_text()
+    assert "links outgoing: N_REF_1, N_REF_1.1, N_REF_1.2, N_REF_2, N_REF_2.1, N_REF_2.2" in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
             "srcdir": "doc_test/doc_df_user_functions",
             "no_plantuml": True,
         }
