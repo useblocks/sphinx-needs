@@ -45,7 +45,7 @@ Each item must have at least:
 - a title, and
 - a description.
 
-A need item is a generic object which can become anything you you require for your project: a requirement, a test case, a user story, a bug, an employee, a product...
+A need item is a generic object which can become anything you require for your project: a requirement, a test case, a user story, a bug, an employee, a product...
 
 sphinx-needs comes with some default types: ``req``, ``spec``, ``impl``, and ``test``, which can be used as directives:
 
