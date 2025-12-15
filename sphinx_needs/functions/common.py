@@ -472,7 +472,10 @@ def links_from_content(
         raise ValueError("No need found for links_from_content")
 
     pattern = r":need:`(\w+(?:\.\w+)?)`|:need:`[^<]*<([^>]+)>`"
-    links = re.findall(pattern, source_need["content"])
+    list_of_tuple = re.findall(pattern, source_need["content"])
+
+    links = [m[0] or m[1] for m in list_of_tuple]
+
     raw_links = list(dict.fromkeys(links))
 
     if filter:
