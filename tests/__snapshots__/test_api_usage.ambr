@@ -2,7 +2,12 @@
 # name: test_api_add_extra_option_schema_wrong
   '''
   Schema for extra option 'my_extra_option' is not valid:
-  Unknown keys not allowed: ['not_exist']
+  Additional properties are not allowed ('not_exist' was unexpected)
+  
+  Failed validating "additionalProperties" in schema
+  
+  On instance:
+      {"not_exist":10,"type":"integer"}
   '''
 # ---
 # name: test_api_add_type[test_app0]

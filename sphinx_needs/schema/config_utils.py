@@ -8,7 +8,6 @@ from typing import Any, Literal, cast
 import jsonschema_rs
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
-from typeguard import TypeCheckError, check_type
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
@@ -30,6 +29,7 @@ from sphinx_needs.schema.config import (
     validate_extra_option_multi_value_schema,
     validate_extra_option_number_schema,
     validate_extra_option_string_schema,
+    validate_schemas_root_type,
 )
 from sphinx_needs.schema.core import validate_object_schema_compiles
 
@@ -88,7 +88,7 @@ def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> Non
         # nothing to validate
         return
 
-    # resolve $ref entries in schema; this is done before the typeguard check
+    # resolve $ref entries in schema; this is done before the type check
     # to check the final schema structure and give feedback based on it
     if "$defs" in needs_config.schema_definitions:
         defs = needs_config.schema_definitions["$defs"]
@@ -96,6 +96,10 @@ def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> Non
 
     # set idx for logging purposes, it's part of the schema name
     for idx, schema in enumerate(needs_config.schema_definitions["schemas"]):
+        if not isinstance(schema, dict):
+            raise NeedsConfigException(
+                f"Schema entry at index {idx} in needs_schema_definitions.schemas is not a dict."
+            )
         schema["idx"] = idx
 
     # check severity and inject default if not set
@@ -105,12 +109,7 @@ def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> Non
 def resolve_schemas_config(
     app: Sphinx, env: BuildEnvironment, _docnames: list[str]
 ) -> None:
-    """
-    Validates schema definitions and inject type information.
-
-    Invokes the typeguard library to re-use existing type hints.
-    Mostly checking for TypedDicts.
-    """
+    """Validates schema definitions and inject type information."""
     needs_config = NeedsSphinxConfig(app.config)
 
     if not (
@@ -123,7 +122,7 @@ def resolve_schemas_config(
     fields_schema = SphinxNeedsData(env).get_schema()
 
     # inject extra/link/core option types to each nested schema, to avoid silent json schema
-    # failures; this must happens before the typeguard check because it requires type fields
+    # failures; this must happens before the type check, because it requires type fields
     for schema in needs_config.schema_definitions["schemas"]:
         schema_name = get_schema_name(schema)
         populate_field_type(
@@ -135,14 +134,14 @@ def resolve_schemas_config(
     # validate schemas against type hints at runtime
     for schema in needs_config.schema_definitions["schemas"]:
         try:
-            check_type(schema, SchemasRootType)
-        except TypeCheckError as exc:
+            validate_schemas_root_type(schema)
+        except TypeError as exc:
             schema_name = get_schema_name(schema)
             raise NeedsConfigException(
                 f"Schemas entry '{schema_name}' is not valid:\n{exc}"
             ) from exc
 
-    # after typeguard check, we can safely walk the schema for nested checks;
+    # after type check, we can safely walk the schema for nested checks;
     # check if network links are defined as extra links
     check_network_links_against_extra_links(
         needs_config.schema_definitions["schemas"],
@@ -415,7 +414,7 @@ def populate_field_type(
     """
     # TODO(Marco): this function could be improved to run on defined types, not on Any;
     #              this would make the detection of 'array' or 'object' safer;
-    #              however, typeguard looks over the final schema anyway
+    #              however, type check looks over the final schema anyway
     if isinstance(curr_item, dict):
         # set 'object' type
         keys_indicating_object = {"properties", "required", "unevaluatedProperties"}

@@ -35,7 +35,6 @@ dependencies = [
   "sphinxcontrib-jquery~=4.0",      # needed for datatables in sphinx>=6
   "tomli; python_version < '3.11'", # for needs_from_toml configuration
   "typing-extensions>=4.14.0",      # for dict NotRequired type indication
-  "typeguard>=4.4.4",               # for type checking complex schema configs
 ]
 
 [project.optional-dependencies]
@@ -49,6 +48,7 @@ test = [
   "sphinxcontrib-plantuml~=0.0",
   "lxml>=4.6.5,<6.0",
   "responses~=0.22.0",
+  "pydantic~=2.12",
   "pytest-xprocess~=1.0",
   "pyyaml ~= 6.0",
 ]
