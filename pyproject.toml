@@ -21,6 +21,7 @@ classifiers = [
   'Programming Language :: Python :: 3.11',
   'Programming Language :: Python :: 3.12',
   'Programming Language :: Python :: 3.13',
+  'Programming Language :: Python :: 3.14',
   'Topic :: Documentation',
   'Topic :: Utilities',
   'Framework :: Sphinx :: Extension',
@@ -35,7 +36,6 @@ dependencies = [
   "sphinxcontrib-jquery~=4.0",      # needed for datatables in sphinx>=6
   "tomli; python_version < '3.11'", # for needs_from_toml configuration
   "typing-extensions>=4.14.0",      # for dict NotRequired type indication
-  "typeguard>=4.4.4",               # for type checking complex schema configs
 ]
 
 [project.optional-dependencies]
@@ -47,8 +47,9 @@ test = [
   "pytest-cov~=6.0",
   "syrupy~=4.0",
   "sphinxcontrib-plantuml~=0.0",
-  "lxml>=4.6.5,<6.0",
+  "lxml~=6.0",
   "responses~=0.22.0",
+  "pydantic~=2.12",
   "pytest-xprocess~=1.0",
   "pyyaml ~= 6.0",
 ]
@@ -154,14 +155,14 @@ envlist = py310
 [testenv]
 usedevelop = true
 
-[testenv:py{310,311,312,313}]
+[testenv:py{310,311,312,313,314}]
 extras =
   test
   test-parallel
 commands =
   pytest --ignore tests/benchmarks {posargs:tests}
 
-[testenv:py{310,311,312,313}-benchmark]
+[testenv:py{310,311,312,313,314}-benchmark]
 extras =
   test
   benchmark

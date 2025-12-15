@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 from typing import Any, Literal, cast
 
+import jsonschema_rs
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
-from typeguard import TypeCheckError, check_type
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
@@ -19,17 +18,20 @@ from sphinx_needs.schema.config import (
     EXTRA_OPTION_BASE_TYPES_STR,
     USER_CONFIG_SCHEMA_SEVERITIES,
     AllOfSchemaType,
-    ExtraLinkSchemaType,
     ExtraOptionAndLinkSchemaTypes,
-    ExtraOptionBooleanSchemaType,
-    ExtraOptionIntegerSchemaType,
-    ExtraOptionMultiValueSchemaType,
-    ExtraOptionNumberSchemaType,
-    ExtraOptionStringSchemaType,
     NeedFieldsSchemaType,
     SchemasRootType,
     ValidateSchemaType,
+    get_schema_name,
+    validate_extra_link_schema_type,
+    validate_extra_option_boolean_schema,
+    validate_extra_option_integer_schema,
+    validate_extra_option_multi_value_schema,
+    validate_extra_option_number_schema,
+    validate_extra_option_string_schema,
+    validate_schemas_root_type,
 )
+from sphinx_needs.schema.core import validate_object_schema_compiles
 
 log = get_logger(__name__)
 
@@ -64,13 +66,7 @@ def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> Non
         )
 
     validate_extra_option_schemas(needs_config)
-
-    inject_type_extra_link_schemas(needs_config)
     validate_extra_link_schemas(needs_config)
-
-    # check for disallowed regex patterns
-    validate_regex_patterns_extra_options(needs_config)
-    validate_regex_patterns_extra_links(needs_config)
 
     if not needs_config.schema_definitions:
         # nothing to validate, resolve or inject
@@ -92,7 +88,7 @@ def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> Non
         # nothing to validate
         return
 
-    # resolve $ref entries in schema; this is done before the typeguard check
+    # resolve $ref entries in schema; this is done before the type check
     # to check the final schema structure and give feedback based on it
     if "$defs" in needs_config.schema_definitions:
         defs = needs_config.schema_definitions["$defs"]
@@ -100,6 +96,10 @@ def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> Non
 
     # set idx for logging purposes, it's part of the schema name
     for idx, schema in enumerate(needs_config.schema_definitions["schemas"]):
+        if not isinstance(schema, dict):
+            raise NeedsConfigException(
+                f"Schema entry at index {idx} in needs_schema_definitions.schemas is not a dict."
+            )
         schema["idx"] = idx
 
     # check severity and inject default if not set
@@ -109,12 +109,7 @@ def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> Non
 def resolve_schemas_config(
     app: Sphinx, env: BuildEnvironment, _docnames: list[str]
 ) -> None:
-    """
-    Validates schema definitions and inject type information.
-
-    Invokes the typeguard library to re-use existing type hints.
-    Mostly checking for TypedDicts.
-    """
+    """Validates schema definitions and inject type information."""
     needs_config = NeedsSphinxConfig(app.config)
 
     if not (
@@ -127,7 +122,7 @@ def resolve_schemas_config(
     fields_schema = SphinxNeedsData(env).get_schema()
 
     # inject extra/link/core option types to each nested schema, to avoid silent json schema
-    # failures; this must happens before the typeguard check because it requires type fields
+    # failures; this must happens before the type check, because it requires type fields
     for schema in needs_config.schema_definitions["schemas"]:
         schema_name = get_schema_name(schema)
         populate_field_type(
@@ -139,30 +134,49 @@ def resolve_schemas_config(
     # validate schemas against type hints at runtime
     for schema in needs_config.schema_definitions["schemas"]:
         try:
-            check_type(schema, SchemasRootType)
-        except TypeCheckError as exc:
+            validate_schemas_root_type(schema)
+        except TypeError as exc:
             schema_name = get_schema_name(schema)
             raise NeedsConfigException(
                 f"Schemas entry '{schema_name}' is not valid:\n{exc}"
             ) from exc
 
-    # after typeguard check, we can safely walk the schema for nested checks;
+    # after type check, we can safely walk the schema for nested checks;
     # check if network links are defined as extra links
     check_network_links_against_extra_links(
         needs_config.schema_definitions["schemas"],
         fields_schema,
     )
 
-    # check safe regex patterns of schemas
-    validate_regex_patterns_schemas(needs_config)
+    # check recursively all internal schemas compile
+    for idx, schema in enumerate(needs_config.schema_definitions["schemas"]):
+        if "select" in schema:
+            try:
+                validate_object_schema_compiles(schema["select"])
+            except jsonschema_rs.ValidationError as exc:
+                raise NeedsConfigException(
+                    f"schema for 'needs_schema_definitions.{idx}.select' is not valid:\n{exc}"
+                ) from exc
+        _recursive_validate(
+            schema["validate"], ("needs_schema_definitions", str(idx), "validate")
+        )
 
 
-def get_schema_name(schema: SchemasRootType) -> str:
-    """Get a human-readable name for the schema considering its optional id and list index."""
-    schema_id = schema.get("id")
-    idx = schema["idx"]
-    schema_name = f"{schema_id}[{idx}]" if schema_id else f"[{idx}]"
-    return schema_name
+def _recursive_validate(validate: ValidateSchemaType, path: tuple[str, ...]) -> None:
+    """Recursively validate nested schemas in validate."""
+    if "local" in validate:
+        try:
+            validate_object_schema_compiles(validate["local"])
+        except jsonschema_rs.ValidationError as exc:
+            path_str = ".".join((*path, "local"))
+            raise NeedsConfigException(
+                f"schema for '{path_str}' is not valid:\n{exc}"
+            ) from exc
+    for key, value in validate.get("network", {}).items():
+        if "items" in value:
+            _recursive_validate(value["items"], (*path, "network", key, "items"))
+        if "contains" in value:
+            _recursive_validate(value["contains"], (*path, "network", key, "contains"))
 
 
 def validate_severity(schemas: list[SchemasRootType]) -> None:
@@ -183,77 +197,53 @@ def validate_severity(schemas: list[SchemasRootType]) -> None:
                 )
 
 
-def validate_regex_patterns_extra_options(needs_config: NeedsSphinxConfig) -> None:
-    """Validate regex patterns of extra options."""
-    for option_name, option in needs_config.extra_options.items():
-        if option.schema is None or option.schema["type"] != "string":
-            continue
-        validate_schema_patterns(option.schema, f"extra_options.{option_name}.schema")
-
-
-def validate_regex_patterns_extra_links(needs_config: NeedsSphinxConfig) -> None:
-    """Validate regex patterns of extra links."""
-
-    for extra_link in needs_config.extra_links:
-        if "schema" not in extra_link or extra_link["schema"] is None:
-            continue
-
-        validate_schema_patterns(
-            extra_link["schema"], f"extra_links.{extra_link['option']}.schema"
-        )
-
-
-def validate_regex_patterns_schemas(needs_config: NeedsSphinxConfig) -> None:
-    """Validate regex patterns of schemas."""
-    if "schemas" not in needs_config.schema_definitions:
-        return
-    for schema in needs_config.schema_definitions["schemas"]:
-        schema_name = get_schema_name(schema)
-        try:
-            validate_schema_patterns(schema, f"schemas.{schema_name}")
-        except NeedsConfigException as exc:
-            raise NeedsConfigException(
-                f"Schemas entry '{schema_name}' is not valid:\n{exc}"
-            ) from exc
-
-
-def inject_type_extra_link_schemas(needs_config: NeedsSphinxConfig) -> None:
-    """Inject the optional type field to extra link schemas."""
-
-    for extra_link in needs_config.extra_links:
-        if "schema" not in extra_link or extra_link["schema"] is None:
-            continue
-        if "type" not in extra_link["schema"]:
-            extra_link["schema"]["type"] = "array"
-        type_inject_fields = ["contains", "items"]
-        for field in type_inject_fields:
-            if (
-                field in extra_link["schema"]
-                and "type" not in extra_link["schema"][field]  # type: ignore[literal-required]
-            ):
-                # set string as default
-                extra_link["schema"][field]["type"] = "string"  # type: ignore[literal-required]
-
-
 def validate_extra_link_schemas(needs_config: NeedsSphinxConfig) -> None:
     """Validate types of extra links in needs_config and set default."""
+
     for extra_link in needs_config.extra_links:
         if "schema" not in extra_link or extra_link["schema"] is None:
             continue
+
+        if "type" not in extra_link["schema"]:
+            extra_link["schema"]["type"] = "array"
+        elif extra_link["schema"]["type"] != "array":
+            raise NeedsConfigException(
+                f"Schema for extra link '{extra_link['option']}' has invalid type: "
+                f"{extra_link['schema']['type']}, expected 'array'."
+            )
+        if "items" not in extra_link["schema"]:
+            extra_link["schema"]["items"] = {"type": "string"}
+        elif not isinstance(extra_link["schema"]["items"], dict):
+            raise NeedsConfigException(
+                f"Schema for extra link '{extra_link['option']}' has invalid 'items' value: "
+                f"{extra_link['schema']['items']}, expected a dict."
+            )
+        type_inject_fields: list[Literal["contains", "items"]] = ["contains", "items"]
+        for field in type_inject_fields:
+            if field in extra_link["schema"]:
+                if "type" not in extra_link["schema"][field]:
+                    extra_link["schema"][field]["type"] = "string"
+                elif extra_link["schema"][field]["type"] != "string":
+                    raise NeedsConfigException(
+                        f"Schema for extra link '{extra_link['option']}' has invalid '{field}.type' value: "
+                        f"{extra_link['schema'][field]['type']}, expected 'string'."
+                    )
+
         try:
-            check_type(extra_link["schema"], ExtraLinkSchemaType)
-        except TypeCheckError as exc:
+            validate_extra_link_schema_type(extra_link["schema"])
+        except TypeError as exc:
             raise NeedsConfigException(
                 f"Schema for extra link '{extra_link['option']}' is not valid:\n{exc}"
             ) from exc
-        if "contains" not in extra_link["schema"]:
-            contains_deps = {"minContains", "maxContains"}
-            for field in contains_deps:
-                if field in extra_link["schema"]:
-                    raise NeedsConfigException(
-                        f"Schema for extra link '{extra_link['option']}' has '{field}' defined, "
-                        "but 'contains' is missing."
-                    )
+
+        try:
+            validate_object_schema_compiles(
+                {"properties": {extra_link["option"]: extra_link["schema"]}}
+            )
+        except jsonschema_rs.ValidationError as exc:
+            raise NeedsConfigException(
+                f"Schema for extra link '{extra_link['option']}' is not valid:\n{exc}"
+            ) from exc
 
 
 def validate_extra_option_schemas(
@@ -264,12 +254,12 @@ def validate_extra_option_schemas(
 
     :return: Map of extra option names to their types as strings.
     """
-    string_type_to_typeddict_map = {
-        "string": ExtraOptionStringSchemaType,
-        "boolean": ExtraOptionBooleanSchemaType,
-        "integer": ExtraOptionIntegerSchemaType,
-        "number": ExtraOptionNumberSchemaType,
-        "array": ExtraOptionMultiValueSchemaType,
+    validators = {
+        "string": validate_extra_option_string_schema,
+        "boolean": validate_extra_option_boolean_schema,
+        "integer": validate_extra_option_integer_schema,
+        "number": validate_extra_option_number_schema,
+        "array": validate_extra_option_multi_value_schema,
     }
     # iterate over all extra options from config and API;
     # API needs to make sure to run earlier (see priority) if options are added
@@ -282,37 +272,25 @@ def validate_extra_option_schemas(
                 f"Schema for extra option '{option}' does not define a type."
             )
         option_type_ = value.schema["type"]
-        if option_type_ not in string_type_to_typeddict_map:
+        if option_type_ not in validators:
             raise NeedsConfigException(
                 f"Schema for extra option '{option}' has invalid type: {option_type_}. "
-                f"Allowed types are: {', '.join(string_type_to_typeddict_map.keys())}"
+                f"Allowed types are: {', '.join(validators)}"
             )
 
         try:
-            # this also checks array items / contains types
-            check_type(
-                value.schema,
-                string_type_to_typeddict_map[option_type_],
-            )
-        except TypeCheckError as exc:
+            validators[option_type_](value.schema)
+        except TypeError as exc:
             raise NeedsConfigException(
                 f"Schema for extra option '{option}' is not valid:\n{exc}"
             ) from exc
 
-        if (
-            option_type_ == "array"
-            and "items" in value.schema
-            and "contains" in value.schema
-        ):
-            # if the option contains both items and contains, the types must be identical
-            # the type field must exist after the typeguard check
-            items_type = value.schema["items"]["type"]  # type: ignore[typeddict-item]
-            contains_type = value.schema["contains"]["type"]  # type: ignore[typeddict-item]
-            if items_type != contains_type:
-                raise NeedsConfigException(
-                    f"Schema for extra option '{option}' has both 'items' and 'contains' defined, "
-                    f"but their types do not match: items.type={items_type}, contains.type={contains_type}."
-                )
+        try:
+            validate_object_schema_compiles({"properties": {option: value.schema}})
+        except jsonschema_rs.ValidationError as exc:
+            raise NeedsConfigException(
+                f"Schema for extra option '{option}' is not valid:\n{exc}"
+            ) from exc
 
 
 def check_network_links_against_extra_links(
@@ -436,7 +414,7 @@ def populate_field_type(
     """
     # TODO(Marco): this function could be improved to run on defined types, not on Any;
     #              this would make the detection of 'array' or 'object' safer;
-    #              however, typeguard looks over the final schema anyway
+    #              however, type check looks over the final schema anyway
     if isinstance(curr_item, dict):
         # set 'object' type
         keys_indicating_object = {"properties", "required", "unevaluatedProperties"}
@@ -646,113 +624,3 @@ def get_core_field_type(
             # array without items type is unexpected
             return None
     return core_type, None
-
-
-class UnsafePatternError(ValueError):
-    """Raised when a regex pattern contains unsafe constructs."""
-
-    def __init__(self, pattern: str, reason: str) -> None:
-        super().__init__(f"Unsafe regex pattern '{pattern}': {reason}")
-        self.pattern: str = pattern
-        self.reason: str = reason
-
-
-def validate_regex_pattern(pattern: str) -> None:
-    """
-    Validate that a regex pattern uses only basic features for cross-platform use.
-
-    Only allows basic regex constructs that work consistently across
-    various regex engines (e.g. Python, Rust, SQLite, Kuzu).
-
-    :param pattern: The regex pattern to validate
-    :raises UnsafePatternError: If the pattern contains unsupported constructs
-    """
-    # First check if the pattern compiles in Python
-    try:
-        re.compile(pattern)
-    except re.error as exc:
-        raise UnsafePatternError(pattern, f"invalid regex syntax: {exc}") from exc
-
-    # Check for specific unsafe constructs first (more precise detection)
-    unsafe_constructs = {
-        r"\(\?[=!<]": "lookahead/lookbehind assertions",
-        r"\\[1-9]": "backreferences",
-        r"\(\?[^:]": "special groups (other than non-capturing)",
-        r"\\[pPdDsSwWbBAZ]": "character class shortcuts and word boundaries",
-        r"\(\?\#": "comments",
-        r"\\[uUxc]": "Unicode and control character escapes",
-        r"\(\?\&": "subroutine calls",
-        r"\(\?\+": "relative subroutine calls",
-        r"\(\?\(": "conditional patterns",
-        r"\(\?>": "atomic groups",
-        r"[+*?]\+": "possessive quantifiers",
-        r"\(\?R\)": "recursive patterns",
-    }
-
-    for construct_pattern, description in unsafe_constructs.items():
-        if re.search(construct_pattern, pattern):
-            raise UnsafePatternError(pattern, f"contains {description}")
-
-    # Additional validation for nested quantifiers that could cause backtracking
-    if re.search(r"\([^)]*[+*?][^)]*\)[+*?]", pattern):
-        raise UnsafePatternError(
-            pattern, "contains nested quantifiers that may cause backtracking"
-        )
-
-    # Define allowed basic regex constructs using allowlist approach
-    allowed_pattern = r"""
-    ^                                # Start of string
-    (?:                              # Non-capturing group for alternatives
-        [^\\()[\]{}|+*?^$]           # Literal characters (not special)
-        |\\[\\()[\]{}|+*?^$nrtvfs.]  # Basic escaped characters and whitespace
-        |\[[^\]]*\]                  # Character classes [abc], [a-z], [^abc]
-        |\(\?:                       # Non-capturing groups (?:...)
-        |\(                          # Capturing groups (...)
-        |\)                          # Group closing
-        |\|                          # Alternation
-        |[+*?]                       # Basic quantifiers
-        |\{[0-9]+(?:,[0-9]*)?\}      # Counted quantifiers {n}, {n,}, {n,m}
-        |\^                          # Start anchor
-        |\$                          # End anchor
-        |\.                          # Any character
-    )*                               # Zero or more occurrences
-    $                                # End of string
-    """
-
-    # Remove whitespace and comments from the validation pattern
-    validation_regex = re.sub(r"\s+|#.*", "", allowed_pattern)
-
-    if not re.match(validation_regex, pattern):
-        raise UnsafePatternError(pattern, "contains unsupported regex construct")
-
-
-def validate_schema_patterns(schema: Any, path: str = "") -> None:
-    """
-    Recursively validate all regex patterns in a schema.
-
-    :param schema: The schema dictionary to validate
-    :param path: Current path in the schema (for error reporting)
-    :raises UnsafePatternError: If any pattern is unsafe
-    """
-    if isinstance(schema, dict):
-        if "type" in schema and schema["type"] == "string" and "pattern" in schema:
-            try:
-                validate_regex_pattern(schema["pattern"])
-            except UnsafePatternError as exc:
-                raise NeedsConfigException(
-                    f"Unsafe pattern '{exc.pattern}' at '{path}': {exc.reason}"
-                ) from exc
-        for key, value in schema.items():
-            current_path = f"{path}.{key}" if path else key
-            if isinstance(value, dict):
-                validate_schema_patterns(value, current_path)
-            elif isinstance(value, list):
-                for i, item in enumerate(value):
-                    item_path = f"{current_path}[{i}]"
-                    if isinstance(item, dict):
-                        validate_schema_patterns(item, item_path)
-    elif isinstance(schema, list):
-        for i, item in enumerate(schema):
-            current_path = f"{path}[{i}]" if path else f"[{i}]"
-            if isinstance(item, dict | list):
-                validate_schema_patterns(item, current_path)

@@ -36,7 +36,7 @@ jobs:
       fail-fast: false # Set on "false" to get the results of ALL builds
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.10", "3.12", "3.13"]
+        python-version: ["3.10", "3.12", "3.13", "3.14"]
         sphinx-version: ["7.4", "8.2"]
         include:
           # corner cases for Windows
@@ -47,7 +47,7 @@ jobs:
             python-version: "3.12"
             sphinx-version: "8.2"
           - os: "windows-latest"
-            python-version: "3.13"
+            python-version: "3.14"
             sphinx-version: "8.2"
         exclude:
           # Sphinx 8.2 only supports py3.11+
