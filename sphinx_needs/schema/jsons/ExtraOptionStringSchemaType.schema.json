@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "const": {
+      "title": "Const",
+      "type": "string"
+    },
+    "enum": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Enum",
+      "type": "array"
+    },
+    "format": {
+      "enum": [
+        "date-time",
+        "date",
+        "time",
+        "duration",
+        "email",
+        "uri",
+        "uuid"
+      ],
+      "title": "Format",
+      "type": "string"
+    },
+    "maxLength": {
+      "title": "Maxlength",
+      "type": "integer"
+    },
+    "minLength": {
+      "title": "Minlength",
+      "type": "integer"
+    },
+    "pattern": {
+      "title": "Pattern",
+      "type": "string"
+    },
+    "type": {
+      "const": "string",
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "title": "ExtraOptionStringSchemaTypeModel",
+  "type": "object"
+}

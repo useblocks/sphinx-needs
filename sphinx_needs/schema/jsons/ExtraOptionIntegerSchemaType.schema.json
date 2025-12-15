@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "const": {
+      "title": "Const",
+      "type": "integer"
+    },
+    "enum": {
+      "items": {
+        "type": "integer"
+      },
+      "title": "Enum",
+      "type": "array"
+    },
+    "exclusiveMaximum": {
+      "title": "Exclusivemaximum",
+      "type": "integer"
+    },
+    "exclusiveMinimum": {
+      "title": "Exclusiveminimum",
+      "type": "integer"
+    },
+    "maximum": {
+      "title": "Maximum",
+      "type": "integer"
+    },
+    "minimum": {
+      "title": "Minimum",
+      "type": "integer"
+    },
+    "multipleOf": {
+      "title": "Multipleof",
+      "type": "integer"
+    },
+    "type": {
+      "const": "integer",
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "title": "ExtraOptionIntegerSchemaTypeModel",
+  "type": "object"
+}

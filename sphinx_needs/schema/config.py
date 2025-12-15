@@ -4,20 +4,24 @@ Types and violations for schema validation.
 There are 3 places the types are used:
 1. In the extra option and extra links definition.
 2. For the JSON schema coming from schema_definitions and schema_definitions_from_json configs.
-3. For typeguard runtime type checking of the loaded JSON schema config.
+3. For runtime type checking of the loaded JSON schema config.
 
 All below types have the field 'type' set as required field.
 For case 1. this is important, as it is the primar type information source and users *have* to
 provide it.
-For 2. and 3. it is not required. If it is not given, it is injected before the typeguard check
+For 2. and 3. it is not required. If it is not given, it is injected before the type check
 occurs. If it is given, the types have to match what is provided in 1.
 """
 
 from __future__ import annotations
 
+import json
 from enum import Enum, IntEnum
-from typing import Final, Literal, TypedDict
+from functools import cache
+from pathlib import Path
+from typing import Any, Final, Literal, TypedDict, cast
 
+import jsonschema_rs
 from typing_extensions import NotRequired
 
 EXTRA_OPTION_BASE_TYPES_STR: Final[set[str]] = {
@@ -36,6 +40,17 @@ EXTRA_OPTION_BASE_TYPES_TYPE = Literal[
 
 MAX_NESTED_NETWORK_VALIDATION_LEVELS: Final[int] = 4
 """Maximum number of nested network validation levels."""
+
+
+@cache
+def _get_schema(klass: type) -> jsonschema_rs.Validator:
+    """Get the JSON schema for the given TypedDict class."""
+    content = json.loads(
+        Path(__file__)
+        .parent.joinpath("jsons", f"{klass.__name__}.schema.json")
+        .read_text()
+    )
+    return jsonschema_rs.validator_for(content)
 
 
 class ExtraOptionStringSchemaType(TypedDict):
@@ -67,6 +82,19 @@ class ExtraOptionStringSchemaType(TypedDict):
     """A constant value that the string must match."""
 
 
+def validate_extra_option_string_schema(data: Any) -> ExtraOptionStringSchemaType:
+    """Validate that the given data is an ExtraOptionStringSchemaType.
+
+    :raises TypeError: if the data is not valid.
+    """
+    schema = _get_schema(ExtraOptionStringSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
+    return cast(ExtraOptionStringSchemaType, data)
+
+
 class ExtraOptionNumberSchemaType(TypedDict):
     """
     Float extra option schema.
@@ -93,6 +121,19 @@ class ExtraOptionNumberSchemaType(TypedDict):
     """A constant value that the number must match."""
 
 
+def validate_extra_option_number_schema(data: Any) -> ExtraOptionNumberSchemaType:
+    """Validate that the given data is an ExtraOptionNumberSchemaType.
+
+    :raises TypeError: if the data is not valid.
+    """
+    schema = _get_schema(ExtraOptionNumberSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
+    return cast(ExtraOptionNumberSchemaType, data)
+
+
 class ExtraOptionIntegerSchemaType(TypedDict):
     """Integer extra option schema."""
 
@@ -114,6 +155,19 @@ class ExtraOptionIntegerSchemaType(TypedDict):
     """A constant value that the integer must match."""
 
 
+def validate_extra_option_integer_schema(data: Any) -> ExtraOptionIntegerSchemaType:
+    """Validate that the given data is an ExtraOptionIntegerSchemaType.
+
+    :raises TypeError: if the data is not valid.
+    """
+    schema = _get_schema(ExtraOptionIntegerSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
+    return cast(ExtraOptionIntegerSchemaType, data)
+
+
 class ExtraOptionBooleanSchemaType(TypedDict):
     """
     Boolean extra option schema.
@@ -130,6 +184,19 @@ class ExtraOptionBooleanSchemaType(TypedDict):
     """Extra option boolean type."""
     const: NotRequired[bool]
     """A constant value that the integer must match."""
+
+
+def validate_extra_option_boolean_schema(data: Any) -> ExtraOptionBooleanSchemaType:
+    """Validate that the given data is an ExtraOptionBooleanSchemaType.
+
+    :raises TypeError: if the data is not valid.
+    """
+    schema = _get_schema(ExtraOptionBooleanSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
+    return cast(ExtraOptionBooleanSchemaType, data)
 
 
 RefItemType = TypedDict(
@@ -183,6 +250,29 @@ class ExtraOptionMultiValueSchemaType(TypedDict):
     """Maximum number of contains items in the array."""
 
 
+def validate_extra_option_multi_value_schema(
+    data: Any,
+) -> ExtraOptionMultiValueSchemaType:
+    """Validate that the given data is an ExtraOptionMultiValueSchemaType.
+
+    :raises TypeError: if the data is not valid.
+    """
+    schema = _get_schema(ExtraOptionMultiValueSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
+    if "contains" in data and "items" in data:
+        # if the option contains both items and contains, the types must be identical
+        items_type = data["items"]["type"]
+        contains_type = data["contains"]["type"]
+        if items_type != contains_type:
+            raise TypeError(
+                f"'items' type '{items_type}' and 'contains' type '{contains_type}' must be identical."
+            )
+    return cast(ExtraOptionMultiValueSchemaType, data)
+
+
 ExtraOptionSchemaTypes = ExtraOptionBaseSchemaTypes | ExtraOptionMultiValueSchemaType
 """Union type for all extra option schemas, including multi-value options."""
 
@@ -219,6 +309,23 @@ class ExtraLinkSchemaType(TypedDict):
     """Maximum number of contains items in the array (outgoing link ids)."""
 
 
+def validate_extra_link_schema_type(data: Any) -> ExtraLinkSchemaType:
+    """Validate that the given data is an ExtraLinkSchemaType.
+
+    :raises TypeError: if the data is not valid.
+    """
+    schema = _get_schema(ExtraLinkSchemaType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
+    if "contains" not in data:
+        for field in ("minContains", "maxContains"):
+            if field in data:
+                raise TypeError(f"'{field}' defined, but 'contains' is missing.")
+    return cast(ExtraLinkSchemaType, data)
+
+
 ExtraOptionAndLinkSchemaTypes = ExtraOptionSchemaTypes | ExtraLinkSchemaType
 """Union type for all extra option and link schemas."""
 
@@ -233,7 +340,7 @@ class NeedFieldsSchemaType(AllOfSchemaType):
     Intented to validate multiple fields on a need type.
     """
 
-    type: Literal["object"]
+    type: NotRequired[Literal["object"]]
     """All fields of a need stored in a dict (not required because it's the default)."""
     properties: NotRequired[dict[str, ExtraOptionAndLinkSchemaTypes]]
     required: NotRequired[list[str]]
@@ -422,6 +529,27 @@ class SchemasRootType(TypedDict):
     Can be either a need-local schema or a network schema that requires resolving all need links
     before validating.
     """
+
+
+def validate_schemas_root_type(data: Any) -> SchemasRootType:
+    """Validate that the given data is a SchemasRootType.
+
+    :raises TypeError: if the data is not valid.
+    """
+    schema = _get_schema(SchemasRootType)
+    try:
+        schema.validate(data)
+    except jsonschema_rs.ValidationError as e:
+        raise TypeError(str(e)) from e
+    return cast(SchemasRootType, data)
+
+
+def get_schema_name(schema: SchemasRootType) -> str:
+    """Get a human-readable name for the schema considering its optional id and list index."""
+    schema_id = schema.get("id")
+    idx = schema["idx"]
+    schema_name = f"{schema_id}[{idx}]" if schema_id else f"[{idx}]"
+    return schema_name
 
 
 SchemasFileRootType = TypedDict(
