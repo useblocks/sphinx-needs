@@ -222,7 +222,10 @@ def test_doc_df_links_from_content_values(test_app):
     warnings = strip_colors(app._warning.getvalue()).splitlines()
     assert warnings == []
     html = Path(app.outdir, "index.html").read_text()
-    assert "links outgoing: N_REF_1, N_REF_1.1, N_REF_1.2, N_REF_2, N_REF_2.1, N_REF_2.2" in html
+    assert (
+        "links outgoing: N_REF_1, N_REF_1.1, N_REF_1.2, N_REF_2, N_REF_2.1, N_REF_2.2"
+        in html
+    )
 
 
 @pytest.mark.parametrize(
