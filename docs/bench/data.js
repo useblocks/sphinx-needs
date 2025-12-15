@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1765806483733,
+  "lastUpdate": 1765807134326,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15840,6 +15840,42 @@ window.BENCHMARK_DATA = {
             "value": 63.97681104199998,
             "unit": "s",
             "extra": "Commit: a60a104cf2ae878a438ff718bc95b729f41276da\nBranch: master\nTime: 2025-12-15T14:45:53+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "66853113+pre-commit-ci[bot]@users.noreply.github.com",
+            "name": "pre-commit-ci[bot]",
+            "username": "pre-commit-ci[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f567c1fafb4e1ba1a7dabb3bd6afc5f17ded84cd",
+          "message": "[pre-commit.ci] pre-commit autoupdate (#1586)",
+          "timestamp": "2025-12-15T14:57:02+01:00",
+          "tree_id": "49b401c33923c15fccc6616a3aebd8d9da9799d0",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f567c1fafb4e1ba1a7dabb3bd6afc5f17ded84cd"
+        },
+        "date": 1765807116446,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1556579780000007,
+            "unit": "s",
+            "extra": "Commit: f567c1fafb4e1ba1a7dabb3bd6afc5f17ded84cd\nBranch: master\nTime: 2025-12-15T14:57:02+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.632563059000006,
+            "unit": "s",
+            "extra": "Commit: f567c1fafb4e1ba1a7dabb3bd6afc5f17ded84cd\nBranch: master\nTime: 2025-12-15T14:57:02+01:00"
           }
         ]
       }
