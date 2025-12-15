@@ -223,7 +223,12 @@ def test_doc_df_links_from_content_values(test_app):
     assert warnings == []
     html = Path(app.outdir, "index.html").read_text()
     assert (
-        "links outgoing: N_REF_1, N_REF_1.1, N_REF_1.2, N_REF_2, N_REF_2.1, N_REF_2.2"
+        'links outgoing: <span class="links"><span><a class="reference internal" href="#N_REF_1" title="N_MAIN">N_REF_1</a>,'+
+        ' <a class="reference internal" href="#N_REF_1.1" title="N_MAIN">N_REF_1.1</a>,'+
+        ' <a class="reference internal" href="#N_REF_1.2" title="N_MAIN">N_REF_1.2</a>,'+
+        ' <a class="reference internal" href="#N_REF_2" title="N_MAIN">N_REF_2</a>,'+
+        ' <a class="reference internal" href="#N_REF_2.1" title="N_MAIN">N_REF_2.1</a>,'+
+        ' <a class="reference internal" href="#N_REF_2.2" title="N_MAIN">N_REF_2.2</a>'
         in html
     )
 
