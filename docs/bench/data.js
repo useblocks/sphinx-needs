@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1765804291515,
+  "lastUpdate": 1765806483733,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15804,6 +15804,42 @@ window.BENCHMARK_DATA = {
             "value": 61.87666833499998,
             "unit": "s",
             "extra": "Commit: 2783b84169f0c2caffe1ded27c9b8d6993b18d4b\nBranch: master\nTime: 2025-12-15T14:09:32+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kato.daisuke429@gmail.com",
+            "name": "Daisuke Kato",
+            "username": "dskkato"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a60a104cf2ae878a438ff718bc95b729f41276da",
+          "message": "📚 Fix typo in tutorial documentation (#1591)",
+          "timestamp": "2025-12-15T14:45:53+01:00",
+          "tree_id": "9c8b555ad6edde5fda9f16e3657622af6d67f34f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a60a104cf2ae878a438ff718bc95b729f41276da"
+        },
+        "date": 1765806467771,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1971924210000111,
+            "unit": "s",
+            "extra": "Commit: a60a104cf2ae878a438ff718bc95b729f41276da\nBranch: master\nTime: 2025-12-15T14:45:53+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.97681104199998,
+            "unit": "s",
+            "extra": "Commit: a60a104cf2ae878a438ff718bc95b729f41276da\nBranch: master\nTime: 2025-12-15T14:45:53+01:00"
           }
         ]
       }
