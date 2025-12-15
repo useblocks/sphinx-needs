@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1765556021436,
+  "lastUpdate": 1765794015466,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15732,6 +15732,42 @@ window.BENCHMARK_DATA = {
             "value": 66.76143269300002,
             "unit": "s",
             "extra": "Commit: f09fe6e7cfd4058c9aa8df36bd9eb796138d6d76\nBranch: master\nTime: 2025-12-12T17:11:39+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "339b358a42f99572f297aa9923b80093679304f2",
+          "message": "♻️ Remove typeguard dependency (#1597)\n\nThe `typeguard` dependency is a blocker to supporting Python 3.14\n[#1566](https://github.com/useblocks/sphinx-needs/issues/1566#issuecomment-3626096968)\nCurrently, its only use is to validate configuration for need schemas\n\nIn this PR, we replace this functionality with validating the\nconfiguration against JSON schemas, using the existing `jsonschema-rs`\ndependency.\nWe generate these schemas via converting the `TypedDict` configuration\nto `pydantic` models first.\nNote that we only use `pydantic` as a test dependency, to auto-generate\nthe schemas and ensure they are up-to-date, rather than as a runtime\ndependency, since we don't want to introduce an additional dependency\n(with version constraints) that would make it more difficult for\nsphinx-needs to integrate into people's existing Python environments.",
+          "timestamp": "2025-12-15T11:18:13+01:00",
+          "tree_id": "b1e5fe72090df903abe84289cbeb5a45b8996f97",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/339b358a42f99572f297aa9923b80093679304f2"
+        },
+        "date": 1765793998721,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16611822600003734,
+            "unit": "s",
+            "extra": "Commit: 339b358a42f99572f297aa9923b80093679304f2\nBranch: master\nTime: 2025-12-15T11:18:13+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.342787249000025,
+            "unit": "s",
+            "extra": "Commit: 339b358a42f99572f297aa9923b80093679304f2\nBranch: master\nTime: 2025-12-15T11:18:13+01:00"
           }
         ]
       }
