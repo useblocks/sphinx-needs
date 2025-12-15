@@ -416,11 +416,14 @@ def links_from_content(
     All need-links set by using ``:need:`NEED_ID``` get extracted.
 
     Same links are only added once.
+    need_part shall be supported.
 
     Example:
 
     .. req:: Requirement 1
        :id: CON_REQ_1
+
+       * :np:`(speed) An acceleration of 200 m/s² or much much more`
 
     .. req:: Requirement 2
        :id: CON_REQ_2
@@ -432,7 +435,9 @@ def links_from_content(
        This specification cares about the realisation of:
 
        * :need:`CON_REQ_1`
+       * :need:`My speed <CON_REQ_1.speed>`
        * :need:`My need <CON_REQ_2>`
+       * :need:`My need secound time <CON_REQ_2>`
 
     .. spec:: Test spec 2
        :id: CON_SPEC_2
@@ -466,13 +471,9 @@ def links_from_content(
     if source_need is None:
         raise ValueError("No need found for links_from_content")
 
-    links = re.findall(r":need:`(\w+)`|:need:`.+\<(.+)\>`", source_need["content"])
-    raw_links = []
-    for link in links:
-        if link[0] and link[0] not in raw_links:
-            raw_links.append(link[0])
-        elif link[1] and link[0] not in raw_links:
-            raw_links.append(link[1])
+    pattern = r":need:`(\w+(?:\.\w+)?)`|:need:`[^<]*<([^>]+)>`"
+    links = re.findall(pattern, source_need["content"])
+    raw_links = list(dict.fromkeys(links))
 
     if filter:
         needs_config = NeedsSphinxConfig(app.config)
