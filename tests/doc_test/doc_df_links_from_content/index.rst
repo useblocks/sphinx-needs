@@ -22,7 +22,7 @@ DYNAMIC FUNCTION: links_from_content
    - :need:`N_REF_1`
    - :need:`N_REF_1`
    - :need:`N_REF_1.1`
-   - :need:`_REF_1.1`
+   - :need:`N_REF_1.1`
    - :need:`N_REF_1.2`
    - :need:`N_REF_1.2`
    - :need:`n2 <N_REF_2>`
