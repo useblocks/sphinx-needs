@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1765811258955,
+  "lastUpdate": 1765898102859,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15912,6 +15912,42 @@ window.BENCHMARK_DATA = {
             "value": 59.798737121000016,
             "unit": "s",
             "extra": "Commit: 0a059cecd1ac10ade89a9ba6ed28842053241ae5\nBranch: master\nTime: 2025-12-15T16:05:34+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "34d60cb6c4657d4171363c53ac8916df0b561eb7",
+          "message": "🔧 Add `validate_extra_option_schema` (#1602)\n\nThis PR consolidates configuration validation for extra option schemas\nby introducing a new `validate_extra_option_schema` function. This\nchange simplifies the validation logic and improves error messages.",
+          "timestamp": "2025-12-16T16:13:05+01:00",
+          "tree_id": "d581eefc647b1873604af8978f16449cd246d7bb",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/34d60cb6c4657d4171363c53ac8916df0b561eb7"
+        },
+        "date": 1765898083436,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.20020567000000256,
+            "unit": "s",
+            "extra": "Commit: 34d60cb6c4657d4171363c53ac8916df0b561eb7\nBranch: master\nTime: 2025-12-16T16:13:05+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.205110703,
+            "unit": "s",
+            "extra": "Commit: 34d60cb6c4657d4171363c53ac8916df0b561eb7\nBranch: master\nTime: 2025-12-16T16:13:05+01:00"
           }
         ]
       }
