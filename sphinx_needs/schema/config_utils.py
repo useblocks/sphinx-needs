@@ -24,11 +24,7 @@ from sphinx_needs.schema.config import (
     ValidateSchemaType,
     get_schema_name,
     validate_extra_link_schema_type,
-    validate_extra_option_boolean_schema,
-    validate_extra_option_integer_schema,
-    validate_extra_option_multi_value_schema,
-    validate_extra_option_number_schema,
-    validate_extra_option_string_schema,
+    validate_extra_option_schema,
     validate_schemas_root_type,
 )
 from sphinx_needs.schema.core import validate_object_schema_compiles
@@ -254,39 +250,22 @@ def validate_extra_option_schemas(
 
     :return: Map of extra option names to their types as strings.
     """
-    validators = {
-        "string": validate_extra_option_string_schema,
-        "boolean": validate_extra_option_boolean_schema,
-        "integer": validate_extra_option_integer_schema,
-        "number": validate_extra_option_number_schema,
-        "array": validate_extra_option_multi_value_schema,
-    }
     # iterate over all extra options from config and API;
     # API needs to make sure to run earlier (see priority) if options are added
     for option, value in needs_config.extra_options.items():
         if value.schema is None:
             # nothing to check, leave it at None so it is explicitly unset
             continue
-        if "type" not in value.schema:
-            raise NeedsConfigException(
-                f"Schema for extra option '{option}' does not define a type."
-            )
-        option_type_ = value.schema["type"]
-        if option_type_ not in validators:
-            raise NeedsConfigException(
-                f"Schema for extra option '{option}' has invalid type: {option_type_}. "
-                f"Allowed types are: {', '.join(validators)}"
-            )
 
         try:
-            validators[option_type_](value.schema)
+            schema = validate_extra_option_schema(value.schema)
         except TypeError as exc:
             raise NeedsConfigException(
                 f"Schema for extra option '{option}' is not valid:\n{exc}"
             ) from exc
 
         try:
-            validate_object_schema_compiles({"properties": {option: value.schema}})
+            validate_object_schema_compiles({"properties": {option: schema}})
         except jsonschema_rs.ValidationError as exc:
             raise NeedsConfigException(
                 f"Schema for extra option '{option}' is not valid:\n{exc}"
