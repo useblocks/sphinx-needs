@@ -6,11 +6,16 @@ from dataclasses import dataclass
 from functools import lru_cache, partial
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeVar
 
+import jsonschema_rs
+
 from sphinx_needs.exceptions import VariantParsingException
+from sphinx_needs.schema.config import validate_extra_option_schema
+from sphinx_needs.schema.core import validate_object_schema_compiles
 from sphinx_needs.variants import VariantFunctionParsed
 
 if TYPE_CHECKING:
     from sphinx_needs.functions.functions import DynamicFunctionParsed
+    from sphinx_needs.schema.config import ExtraOptionSchemaTypes
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -22,8 +27,7 @@ class FieldSchema:
 
     name: str
     description: str = ""
-    type: Literal["string", "boolean", "integer", "number", "array"]
-    item_type: None | Literal["string", "boolean", "integer", "number"] = None
+    schema: ExtraOptionSchemaTypes
     nullable: bool = False
     directive_option: bool = False
     allow_dynamic_functions: bool = False
@@ -51,19 +55,14 @@ class FieldSchema:
             raise ValueError("name must be a non-empty string.")
         if not isinstance(self.description, str):
             raise ValueError("description must be a string.")
-        if self.type not in ("string", "boolean", "integer", "number", "array"):
-            raise ValueError(
-                "type must be one of 'string', 'boolean', 'integer', 'number', 'array'."
-            )
-        if self.item_type is not None and self.item_type not in (
-            "string",
-            "boolean",
-            "integer",
-            "number",
-        ):
-            raise ValueError(
-                "item_type must be one of 'string', 'boolean', 'integer', 'number'."
-            )
+        try:
+            validate_extra_option_schema(self.schema)
+        except TypeError as exc:
+            raise ValueError(f"Invalid schema: {exc}") from exc
+        try:
+            validate_object_schema_compiles({"properties": {self.name: self.schema}})
+        except jsonschema_rs.ValidationError as exc:
+            raise ValueError(f"Invalid schema: {exc}") from exc
         if not isinstance(self.nullable, bool):
             raise ValueError("nullable must be a boolean.")
         if not isinstance(self.allow_dynamic_functions, bool):
@@ -74,10 +73,6 @@ class FieldSchema:
             raise ValueError("allow_variant must be a boolean.")
         if not isinstance(self.allow_defaults, bool):
             raise ValueError("allow_defaults must be a boolean.")
-        if self.type != "array" and self.item_type is not None:
-            raise ValueError("item_type can only be set for array fields.")
-        if self.type == "array" and self.item_type is None:
-            raise ValueError("item_type must be set for array fields.")
         if not isinstance(self.directive_option, bool):
             raise ValueError("directive_option must be a boolean.")
         if not isinstance(self.predicate_defaults, tuple) or not all(
@@ -98,6 +93,16 @@ class FieldSchema:
             )
         if self.default is not None and not self.allow_defaults:
             raise ValueError("Defaults are not allowed for this field.")
+
+    @property
+    def type(self) -> Literal["string", "boolean", "integer", "number", "array"]:
+        return self.schema["type"]
+
+    @property
+    def item_type(self) -> None | Literal["string", "boolean", "integer", "number"]:
+        if self.schema["type"] == "array":
+            return self.schema["items"]["type"]
+        return None
 
     def _set_default(self, value: Any, *, allow_coercion: bool) -> None:
         """Set the default value for this field.
