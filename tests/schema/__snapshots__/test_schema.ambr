@@ -516,7 +516,10 @@
   '''
 # ---
 # name: test_schema_config[extra_option_empty_schema]
-  "Schema for extra option 'efforts' does not define a type."
+  '''
+  Schema for extra option 'efforts' is not valid:
+  Must have a 'type' field.
+  '''
 # ---
 # name: test_schema_config[extra_option_pattern_unsafe_error]
   '''
@@ -680,7 +683,10 @@
   "Config error in schema '[0]' at path 'select.properties.efforts': Field 'efforts' has type 'unknown', but expected 'string'."
 # ---
 # name: test_schema_config[type_error]
-  "Schema for extra option 'efforts' has invalid type: unknown. Allowed types are: string, boolean, integer, number, array"
+  '''
+  Schema for extra option 'efforts' is not valid:
+  Extra option schema has invalid type 'unknown'. Must be one of ['array', 'boolean', 'integer', 'number', 'string'].
+  '''
 # ---
 # name: test_schema_config[type_mismatch_array_error]
   "Config error in schema '[0]' at path 'validate.local': Item has keys ['items'], but type is 'object', expected 'array'."

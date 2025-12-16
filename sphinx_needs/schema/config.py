@@ -16,6 +16,7 @@ occurs. If it is given, the types have to match what is provided in 1.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Mapping
 from enum import Enum, IntEnum
 from functools import cache
 from pathlib import Path
@@ -275,6 +276,34 @@ def validate_extra_option_multi_value_schema(
 
 ExtraOptionSchemaTypes = ExtraOptionBaseSchemaTypes | ExtraOptionMultiValueSchemaType
 """Union type for all extra option schemas, including multi-value options."""
+
+
+_OPTION_VALIDATORS: Final[Mapping[str, Callable[[Any], ExtraOptionSchemaTypes]]] = {
+    "string": validate_extra_option_string_schema,
+    "boolean": validate_extra_option_boolean_schema,
+    "integer": validate_extra_option_integer_schema,
+    "number": validate_extra_option_number_schema,
+    "array": validate_extra_option_multi_value_schema,
+}
+
+
+def validate_extra_option_schema(data: Any) -> ExtraOptionSchemaTypes:
+    """Validate that the given data is an ExtraOptionBaseSchemaTypes.
+
+    :raises TypeError: if the data is not valid.
+    """
+    if not isinstance(data, dict):
+        raise TypeError("Must be a dict.")
+    if "type" not in data:
+        raise TypeError("Must have a 'type' field.")
+    type_ = data["type"]
+    if type_ not in EXTRA_OPTION_BASE_TYPES_STR:
+        raise TypeError(
+            f"Extra option schema has invalid type '{type_}'. "
+            f"Must be one of {sorted(EXTRA_OPTION_BASE_TYPES_STR)}."
+        )
+    validator = _OPTION_VALIDATORS[type_]
+    return validator(data)
 
 
 class ExtraLinkItemSchemaType(TypedDict):
