@@ -77,7 +77,12 @@ def test_broken_links(test_app: SphinxTestApp):
 def test_broken_statuses(test_app: SphinxTestApp):
     test_app.build()
     assert get_warnings(test_app) == [
-        "<srcdir>/index.rst:11: WARNING: Need could not be created: Status 'NOT_ALLOWED' not in 'needs_statuses'. [needs.create_need]"
+        "ERROR: Need 'SP_TOO_002' has schema violations:",
+        "  Severity:       violation",
+        "  Field:          status",
+        "  Need path:      SP_TOO_002",
+        "  Schema path:    options > schema > properties > status > enum",
+        '  Schema message: "NOT_ALLOWED" is not one of "open" or "implemented" [sn_schema_violation.option_fail]',
     ]
 
 
@@ -113,5 +118,10 @@ def test_broken_syntax(test_app: SphinxTestApp):
 def test_broken_tags(test_app: SphinxTestApp):
     test_app.build()
     assert get_warnings(test_app) == [
-        "<srcdir>/index.rst:17: WARNING: Need could not be created: Tags {'BROKEN'} not in 'needs_tags'. [needs.create_need]"
+        "ERROR: Need 'SP_TOO_003' has schema violations:",
+        "  Severity:       violation",
+        "  Field:          tags.2",
+        "  Need path:      SP_TOO_003",
+        "  Schema path:    options > schema > properties > tags > items > enum",
+        '  Schema message: "BROKEN" is not one of "new" or "security" [sn_schema_violation.option_fail]',
     ]

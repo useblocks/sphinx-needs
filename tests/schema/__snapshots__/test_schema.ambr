@@ -3345,8 +3345,8 @@
     Severity:       violation
     Field:          efforts
     Need path:      IMPL_1
-    Schema path:    extra_options > schema > properties > efforts > multipleOf
-    Schema message: 8 is not a multiple of 3 [sn_schema_violation.extra_option_fail]
+    Schema path:    options > schema > properties > efforts > multipleOf
+    Schema message: 8 is not a multiple of 3 [sn_schema_violation.option_fail]
   
   '''
 # ---
@@ -3361,12 +3361,12 @@
           'details': dict({
             'field': 'efforts',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_options > schema > properties > efforts > multipleOf',
+            'schema_path': 'options > schema > properties > efforts > multipleOf',
             'severity': 'violation',
             'validation_msg': '8 is not a multiple of 3',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_option_fail',
+          'subtype': 'option_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
@@ -3399,8 +3399,8 @@
     Severity:       violation
     Field:          efforts
     Need path:      IMPL_1
-    Schema path:    extra_options > schema > properties > efforts > multipleOf
-    Schema message: 5.0 is not a multiple of 3.3 [sn_schema_violation.extra_option_fail]
+    Schema path:    options > schema > properties > efforts > multipleOf
+    Schema message: 5.0 is not a multiple of 3.3 [sn_schema_violation.option_fail]
   
   '''
 # ---
@@ -3415,12 +3415,12 @@
           'details': dict({
             'field': 'efforts',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_options > schema > properties > efforts > multipleOf',
+            'schema_path': 'options > schema > properties > efforts > multipleOf',
             'severity': 'violation',
             'validation_msg': '5.0 is not a multiple of 3.3',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_option_fail',
+          'subtype': 'option_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
@@ -3549,8 +3549,8 @@
     Severity:       violation
     Field:          start_date
     Need path:      IMPL_1
-    Schema path:    extra_options > schema > properties > start_date > format
-    Schema message: "not-a-date" is not a "date" [sn_schema_violation.extra_option_fail]
+    Schema path:    options > schema > properties > start_date > format
+    Schema message: "not-a-date" is not a "date" [sn_schema_violation.option_fail]
   
   '''
 # ---
@@ -3565,12 +3565,12 @@
           'details': dict({
             'field': 'start_date',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_options > schema > properties > start_date > format',
+            'schema_path': 'options > schema > properties > start_date > format',
             'severity': 'violation',
             'validation_msg': '"not-a-date" is not a "date"',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_option_fail',
+          'subtype': 'option_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
@@ -3593,8 +3593,8 @@
     Severity:       violation
     Field:          start_date
     Need path:      IMPL_1
-    Schema path:    extra_options > schema > properties > start_date > format
-    Schema message: "2025-07-1099:99:99Z" is not a "date-time" [sn_schema_violation.extra_option_fail]
+    Schema path:    options > schema > properties > start_date > format
+    Schema message: "2025-07-1099:99:99Z" is not a "date-time" [sn_schema_violation.option_fail]
   
   '''
 # ---
@@ -3609,12 +3609,12 @@
           'details': dict({
             'field': 'start_date',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_options > schema > properties > start_date > format',
+            'schema_path': 'options > schema > properties > start_date > format',
             'severity': 'violation',
             'validation_msg': '"2025-07-1099:99:99Z" is not a "date-time"',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_option_fail',
+          'subtype': 'option_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
@@ -3637,8 +3637,8 @@
     Severity:       violation
     Field:          _duration
     Need path:      IMPL_1
-    Schema path:    extra_options > schema > properties > _duration > format
-    Schema message: "P1Q2Q10DT2H30M" is not a "duration" [sn_schema_violation.extra_option_fail]
+    Schema path:    options > schema > properties > _duration > format
+    Schema message: "P1Q2Q10DT2H30M" is not a "duration" [sn_schema_violation.option_fail]
   
   '''
 # ---
@@ -3653,12 +3653,12 @@
           'details': dict({
             'field': '_duration',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_options > schema > properties > _duration > format',
+            'schema_path': 'options > schema > properties > _duration > format',
             'severity': 'violation',
             'validation_msg': '"P1Q2Q10DT2H30M" is not a "duration"',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_option_fail',
+          'subtype': 'option_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
@@ -3681,8 +3681,8 @@
     Severity:       violation
     Field:          email
     Need path:      IMPL_1
-    Schema path:    extra_options > schema > properties > email > format
-    Schema message: "not-a-mail" is not a "email" [sn_schema_violation.extra_option_fail]
+    Schema path:    options > schema > properties > email > format
+    Schema message: "not-a-mail" is not a "email" [sn_schema_violation.option_fail]
   
   '''
 # ---
@@ -3697,12 +3697,12 @@
           'details': dict({
             'field': 'email',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_options > schema > properties > email > format',
+            'schema_path': 'options > schema > properties > email > format',
             'severity': 'violation',
             'validation_msg': '"not-a-mail" is not a "email"',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_option_fail',
+          'subtype': 'option_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
@@ -3725,8 +3725,8 @@
     Severity:       violation
     Field:          time
     Need path:      IMPL_1
-    Schema path:    extra_options > schema > properties > time > format
-    Schema message: "26:12:13+00:00" is not a "time" [sn_schema_violation.extra_option_fail]
+    Schema path:    options > schema > properties > time > format
+    Schema message: "26:12:13+00:00" is not a "time" [sn_schema_violation.option_fail]
   
   '''
 # ---
@@ -3741,12 +3741,12 @@
           'details': dict({
             'field': 'time',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_options > schema > properties > time > format',
+            'schema_path': 'options > schema > properties > time > format',
             'severity': 'violation',
             'validation_msg': '"26:12:13+00:00" is not a "time"',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_option_fail',
+          'subtype': 'option_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
@@ -3769,8 +3769,8 @@
     Severity:       violation
     Field:          uri
     Need path:      IMPL_1
-    Schema path:    extra_options > schema > properties > uri > format
-    Schema message: "examplecom" is not a "uri" [sn_schema_violation.extra_option_fail]
+    Schema path:    options > schema > properties > uri > format
+    Schema message: "examplecom" is not a "uri" [sn_schema_violation.option_fail]
   
   '''
 # ---
@@ -3785,12 +3785,12 @@
           'details': dict({
             'field': 'uri',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_options > schema > properties > uri > format',
+            'schema_path': 'options > schema > properties > uri > format',
             'severity': 'violation',
             'validation_msg': '"examplecom" is not a "uri"',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_option_fail',
+          'subtype': 'option_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
@@ -3813,8 +3813,8 @@
     Severity:       violation
     Field:          uuid
     Need path:      IMPL_1
-    Schema path:    extra_options > schema > properties > uuid > format
-    Schema message: "deadbeef-deadbeef-deadbeef-deadbeef" is not a "uuid" [sn_schema_violation.extra_option_fail]
+    Schema path:    options > schema > properties > uuid > format
+    Schema message: "deadbeef-deadbeef-deadbeef-deadbeef" is not a "uuid" [sn_schema_violation.option_fail]
   
   '''
 # ---
@@ -3829,12 +3829,12 @@
           'details': dict({
             'field': 'uuid',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_options > schema > properties > uuid > format',
+            'schema_path': 'options > schema > properties > uuid > format',
             'severity': 'violation',
             'validation_msg': '"deadbeef-deadbeef-deadbeef-deadbeef" is not a "uuid"',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_option_fail',
+          'subtype': 'option_fail',
           'type': 'sn_schema_violation',
         }),
       ]),

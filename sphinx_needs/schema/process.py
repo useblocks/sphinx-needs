@@ -1,5 +1,6 @@
 import time
 from collections.abc import Mapping
+from itertools import chain
 
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
@@ -13,8 +14,8 @@ from sphinx_needs.needsfile import generate_needs_schema
 from sphinx_needs.schema.config import NeedFieldsSchemaType, SchemasRootType
 from sphinx_needs.schema.core import (
     NeedFieldProperties,
-    validate_extra_options,
     validate_link_options,
+    validate_option_fields,
     validate_type_schema,
 )
 from sphinx_needs.schema.reporting import (
@@ -40,10 +41,11 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     schema = SphinxNeedsData(app.env).get_schema()
 
-    extra_option_schema: NeedFieldsSchemaType = {
+    option_schema: NeedFieldsSchemaType = {
         "type": "object",
         "properties": {
-            extra.name: extra.schema for extra in schema.iter_extra_fields()
+            field.name: field.schema
+            for field in chain(schema.iter_core_fields(), schema.iter_extra_fields())
         },
     }
     extra_link_schema: NeedFieldsSchemaType = {
@@ -54,21 +56,6 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
             if "schema" in link and link["schema"] is not None
         },
     }
-
-    if not (
-        extra_option_schema["properties"]
-        or extra_link_schema["properties"]
-        or (config.schema_definitions.get("schemas"))
-    ):
-        # nothing to validate but always generate report file
-        generate_json_schema_validation_report(
-            duration=0.00,
-            need_2_warnings={},
-            report_file_path=app.outdir / "schema_violations.json",
-            validated_needs_count=0,
-            validated_rate=0,
-        )
-        return
 
     schema = SphinxNeedsData(app.env).get_schema()
     field_properties: Mapping[str, NeedFieldProperties] = generate_needs_schema(schema)[
@@ -85,9 +72,9 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
-    if extra_option_schema["properties"]:
-        extra_warnings = validate_extra_options(
-            config, extra_option_schema, field_properties, needs
+    if option_schema["properties"]:
+        extra_warnings = validate_option_fields(
+            config, option_schema, field_properties, needs
         )
         for key, warnings in extra_warnings.items():
             need_2_warnings.setdefault(key, []).extend(warnings)

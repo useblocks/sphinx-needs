@@ -386,9 +386,9 @@ class MessageRuleEnum(str, Enum):
 
     cfg_schema_error = "cfg_schema_error"
     """The user provided schema is invalid."""
-    extra_option_success = "extra_option_success"
+    option_success = "option_success"
     """Global extra option validation was successful."""
-    extra_option_fail = "extra_option_fail"
+    option_fail = "option_fail"
     """Global extra option validation failed."""
     extra_link_success = "extra_link_success"
     """Global extra link validation was successful."""
@@ -480,8 +480,8 @@ Severity levels that can be set in the user provided schemas and for the schema_
 
 MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
     MessageRuleEnum.cfg_schema_error: SeverityEnum.config_error,
-    MessageRuleEnum.extra_option_success: SeverityEnum.none,
-    MessageRuleEnum.extra_option_fail: SeverityEnum.violation,  # cannot be changed by user
+    MessageRuleEnum.option_success: SeverityEnum.none,
+    MessageRuleEnum.option_fail: SeverityEnum.violation,  # cannot be changed by user
     MessageRuleEnum.extra_link_success: SeverityEnum.none,
     MessageRuleEnum.extra_link_fail: SeverityEnum.violation,  # cannot be changed by user
     MessageRuleEnum.select_success: SeverityEnum.none,

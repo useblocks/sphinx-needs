@@ -778,6 +778,17 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         _schema = {"type": type_}
         if type_ == "array":
             _schema["items"] = data["schema"].get("items", {"type": "string"})
+
+        # merge in additional schema from needs_statuses and needs_tags config
+        # TODO eventually deprecate these two configs in favor of schema config
+        if name == "status" and needs_config.statuses:
+            _schema["enum"] = [status["name"] for status in needs_config.statuses]
+        if name == "tags" and needs_config.tags:
+            _schema["items"] = {
+                "type": "string",
+                "enum": [tag["name"] for tag in needs_config.tags],
+            }
+
         default = data["schema"].get("default", None)
         field = FieldSchema(
             name=name,

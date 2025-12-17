@@ -248,32 +248,6 @@ def generate_need(
     )
 
     if (
-        needs_config.statuses
-        and isinstance(status_converted, FieldLiteralValue)
-        and status_converted.value
-        not in [stat["name"] for stat in needs_config.statuses]
-    ):
-        # TODO this check should be later in processing, once we have resolved any dynamic functions
-        raise InvalidNeedException(
-            "invalid_status",
-            f"Status {status_converted.value!r} not in 'needs_statuses'.",
-        )
-
-    if (
-        needs_config.tags
-        and isinstance(tags_converted, FieldLiteralValue)
-        and isinstance(tags_converted.value, Iterable)
-        and (
-            unknown_tags := set(tags_converted.value)
-            - {t["name"] for t in needs_config.tags}
-        )
-    ):
-        # TODO this check should be later in processing, once we have resolved any dynamic functions
-        raise InvalidNeedException(
-            "invalid_tags", f"Tags {unknown_tags!r} not in 'needs_tags'."
-        )
-
-    if (
         isinstance(constraints_converted, FieldLiteralValue)
         and isinstance(constraints_converted.value, Iterable)
         and (

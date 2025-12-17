@@ -42,7 +42,7 @@ The implementation requires at least draft 2019-09 as unevaluatedProperties was 
 """
 
 
-def validate_extra_options(
+def validate_option_fields(
     config: NeedsSphinxConfig,
     schema: NeedFieldsSchemaType,
     field_properties: Mapping[str, NeedFieldProperties],
@@ -56,9 +56,9 @@ def validate_extra_options(
             need,
             field_properties,
             validator,
-            fail_rule=MessageRuleEnum.extra_option_fail,
-            success_rule=MessageRuleEnum.extra_option_success,
-            schema_path=["extra_options", "schema"],
+            fail_rule=MessageRuleEnum.option_fail,
+            success_rule=MessageRuleEnum.option_success,
+            schema_path=["options", "schema"],
             need_path=[need["id"]],
         )
         save_debug_files(config, schema_warnings)
