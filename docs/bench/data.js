@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1765937607901,
+  "lastUpdate": 1765967478204,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -15984,6 +15984,42 @@ window.BENCHMARK_DATA = {
             "value": 59.898278680999994,
             "unit": "s",
             "extra": "Commit: dd0fb6bd52f376dd3f5f753162828bdb90ea161e\nBranch: master\nTime: 2025-12-17T03:11:33+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8047f414268335c98e09dabb39edf5b05b77fcf6",
+          "message": "♻️ Move `needs_statuses` and `need_tags` checking to schema validation (#1605)\n\nThis PR refactors `needs_statuses` and `needs_tags` checking, from\nexplicit validation logic (at need creation time) to the new generic\nschema-based validation system.\nThe changes rename `extra_option` schema validation to `option`\nvalidation (covering both core and extra options) and automatically\ngenerate schema constraints from the `needs_statuses` and `needs_tags`\nconfiguration, for example:\n\n- `needs_statuses = [\"a\", \"b\"]` to `{\"status\": {\"type\": \"string\",\n\"enum\": [\"a\", \"b\"]}}` and\n- `needs_tags = [\"a\", \"b\"]` to `{\"tags\": {\"type\": array\", \"items\":\n{\"type\": \"string\", \"enum\": [\"a\", \"b\"]}}}`\n\nThis fixes issues with these being evaluated too early and not\naccounting for dynamic functions, needextend, etc ...\nand will also facilitate #1547",
+          "timestamp": "2025-12-17T11:29:23+01:00",
+          "tree_id": "084f54927956a6d57699aa43d366fe69ad2cc6ee",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8047f414268335c98e09dabb39edf5b05b77fcf6"
+        },
+        "date": 1765967458780,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16527480899999603,
+            "unit": "s",
+            "extra": "Commit: 8047f414268335c98e09dabb39edf5b05b77fcf6\nBranch: master\nTime: 2025-12-17T11:29:23+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.32165837400001,
+            "unit": "s",
+            "extra": "Commit: 8047f414268335c98e09dabb39edf5b05b77fcf6\nBranch: master\nTime: 2025-12-17T11:29:23+01:00"
           }
         ]
       }
