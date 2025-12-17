@@ -89,10 +89,12 @@ from sphinx_needs.variants import VariantFunctionParsed
     ],
 )
 def test_json_schema(type_, item_type, nullable, default, expected):
+    schema = {"type": type_}
+    if item_type is not None:
+        schema["items"] = {"type": item_type}
     field = FieldSchema(
         name="test_field",
-        type=type_,
-        item_type=item_type,
+        schema=schema,
         nullable=nullable,
         allow_defaults=True,
         default=FieldLiteralValue(default) if default is not None else None,
@@ -177,10 +179,12 @@ def test_json_schema(type_, item_type, nullable, default, expected):
     ],
 )
 def test_type_check(type_, item_type, nullable, input, result):
+    schema = {"type": type_}
+    if item_type is not None:
+        schema["items"] = {"type": item_type}
     field = FieldSchema(
         name="test_field",
-        type=type_,
-        item_type=item_type,
+        schema=schema,
         nullable=nullable,
     )
     assert field.type_check(input) is result
@@ -220,10 +224,12 @@ def test_type_check(type_, item_type, nullable, input, result):
     ],
 )
 def test_convert_directive_option_value(type_, item_type, allow_df, input, expected):
+    schema = {"type": type_}
+    if item_type is not None:
+        schema["items"] = {"type": item_type}
     field = FieldSchema(
         name="test_field",
-        type=type_,
-        item_type=item_type,
+        schema=schema,
         allow_dynamic_functions=allow_df,
     )
     assert field.convert_directive_option(input) == FieldLiteralValue(expected)
@@ -338,10 +344,12 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
     ],
 )
 def test_convert_directive_option_df(type_, item_type, input, expected):
+    schema = {"type": type_}
+    if item_type is not None:
+        schema["items"] = {"type": item_type}
     field = FieldSchema(
         name="test_field",
-        type=type_,
-        item_type=item_type,
+        schema=schema,
         allow_dynamic_functions=True,
     )
     assert field.convert_directive_option(input) == expected
@@ -446,10 +454,12 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
     ],
 )
 def test_convert_directive_option_vf(type_, item_type, input, expected):
+    schema = {"type": type_}
+    if item_type is not None:
+        schema["items"] = {"type": item_type}
     field = FieldSchema(
         name="test_field",
-        type=type_,
-        item_type=item_type,
+        schema=schema,
         allow_variant_functions=True,
     )
     assert field.convert_directive_option(input) == expected
@@ -484,10 +494,12 @@ def test_convert_directive_option_vf(type_, item_type, input, expected):
 def test_convert_directive_option_value_errors(
     type_, item_type, allow_df, allow_vf, input
 ):
+    schema = {"type": type_}
+    if item_type is not None:
+        schema["items"] = {"type": item_type}
     field = FieldSchema(
         name="test_field",
-        type=type_,
-        item_type=item_type,
+        schema=schema,
         allow_dynamic_functions=allow_df,
         allow_variant_functions=allow_vf,
     )
@@ -508,10 +520,12 @@ def test_convert_directive_option_value_errors(
     ],
 )
 def test_convert_directive_option_df_errors(type_, item_type, input):
+    schema = {"type": type_}
+    if item_type is not None:
+        schema["items"] = {"type": item_type}
     field = FieldSchema(
         name="test_field",
-        type=type_,
-        item_type=item_type,
+        schema=schema,
         allow_dynamic_functions=True,
     )
     with pytest.raises(FunctionParsingException):

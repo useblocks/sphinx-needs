@@ -3,9 +3,10 @@ from __future__ import annotations
 import contextlib
 import json
 from collections.abc import Callable
+from copy import deepcopy
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -774,13 +775,15 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             assert type_[1] == "null", "Only nullable types supported as list"
             type_ = type_[0]
             nullable = True
+        _schema = {"type": type_}
+        if type_ == "array":
+            _schema["items"] = data["schema"].get("items", {"type": "string"})
         default = data["schema"].get("default", None)
         field = FieldSchema(
             name=name,
             description=data["description"],
             nullable=nullable,
-            type=type_,
-            item_type=data["schema"].get("items", {}).get("type", None),
+            schema=_schema,  # type: ignore[arg-type]
             default=None if default is None else FieldLiteralValue(default),
             allow_defaults=data.get("allow_default", False),
             allow_extend=data.get("allow_extend", False),
@@ -792,27 +795,19 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         )
         try:
             schema.add_core_field(field)
-        except ValueError as exc:
-            log_warning(
-                LOGGER,
-                f"Could not add core field {field.name!r} to schema: {exc}",
-                "config",
-                None,
-            )
-            continue
+        except Exception as exc:
+            raise NeedsConfigException(f"Invalid core option {name!r}: {exc}") from exc
     for name, extra in needs_config.extra_options.items():
         try:
-            type: Literal["string", "boolean", "integer", "number", "array"] = "string"
-            item_type: None | Literal["string", "boolean", "integer", "number"] = None
-            if extra.schema:
-                type = extra.schema.get("type", "string")
-                if type == "array":
-                    item_type = extra.schema.get("items", {}).get("type", "string")  # type: ignore[attr-defined]
+            _schema = (
+                deepcopy(extra.schema)  # type: ignore[arg-type]
+                if extra.schema is not None
+                else {"type": "string"}
+            )
             field = FieldSchema(
                 name=name,
                 description=extra.description,
-                type=type,
-                item_type=item_type,
+                schema=_schema,  # type: ignore[arg-type]
                 # TODO for nullable and default, currently if there is no schema,
                 # we configure so that the behaviour follows that of legacy (pre-schema) extra option,
                 # i.e. non-nullable and default of empty string (that can be overriden by needs_global_options).
@@ -825,14 +820,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 directive_option=True,
             )
             schema.add_extra_field(field)
-        except ValueError as exc:
-            log_warning(
-                LOGGER,
-                f"Could not add extra option {name!r} to schema: {exc}",
-                "config",
-                None,
-            )
-            continue
+        except Exception as exc:
+            raise NeedsConfigException(f"Invalid extra option {name!r}: {exc}") from exc
 
     for link in needs_config.extra_links:
         name = link["option"]
@@ -848,14 +837,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 directive_option=True,
             )
             schema.add_link_field(link_field)
-        except ValueError as exc:
-            log_warning(
-                LOGGER,
-                f"Could not add extra link option {name!r} to schema: {exc}",
-                "config",
-                None,
-            )
-            continue
+        except Exception as exc:
+            raise NeedsConfigException(f"Invalid extra link {name!r}: {exc}") from exc
 
     for name, default_config in needs_config._global_options.items():
         if (field_for_default := schema.get_any_field(name)) is None:

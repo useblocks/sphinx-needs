@@ -24,31 +24,11 @@ from sphinx_needs.schema.config import (
     ValidateSchemaType,
     get_schema_name,
     validate_extra_link_schema_type,
-    validate_extra_option_schema,
     validate_schemas_root_type,
 )
 from sphinx_needs.schema.core import validate_object_schema_compiles
 
 log = get_logger(__name__)
-
-
-def has_any_global_extra_schema_defined(needs_config: NeedsSphinxConfig) -> bool:
-    """
-    Check if any extra option or extra link has a schema defined.
-
-    :return: True if any extra option or extra link has a schema set, False otherwise.
-    """
-    # Check extra options
-    for option_value in needs_config.extra_options.values():
-        if option_value.schema is not None:
-            return True
-
-    # Check extra links
-    for extra_link in needs_config.extra_links:
-        if "schema" in extra_link and extra_link["schema"] is not None:
-            return True
-
-    return False
 
 
 def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> None:
@@ -61,7 +41,6 @@ def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> Non
             (Path(app.confdir) / orig_debug_path).resolve()
         )
 
-    validate_extra_option_schemas(needs_config)
     validate_extra_link_schemas(needs_config)
 
     if not needs_config.schema_definitions:
@@ -239,36 +218,6 @@ def validate_extra_link_schemas(needs_config: NeedsSphinxConfig) -> None:
         except jsonschema_rs.ValidationError as exc:
             raise NeedsConfigException(
                 f"Schema for extra link '{extra_link['option']}' is not valid:\n{exc}"
-            ) from exc
-
-
-def validate_extra_option_schemas(
-    needs_config: NeedsSphinxConfig,
-) -> None:
-    """
-    Check user provided extra options.
-
-    :return: Map of extra option names to their types as strings.
-    """
-    # iterate over all extra options from config and API;
-    # API needs to make sure to run earlier (see priority) if options are added
-    for option, value in needs_config.extra_options.items():
-        if value.schema is None:
-            # nothing to check, leave it at None so it is explicitly unset
-            continue
-
-        try:
-            schema = validate_extra_option_schema(value.schema)
-        except TypeError as exc:
-            raise NeedsConfigException(
-                f"Schema for extra option '{option}' is not valid:\n{exc}"
-            ) from exc
-
-        try:
-            validate_object_schema_compiles({"properties": {option: schema}})
-        except jsonschema_rs.ValidationError as exc:
-            raise NeedsConfigException(
-                f"Schema for extra option '{option}' is not valid:\n{exc}"
             ) from exc
 
 

@@ -38,12 +38,12 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     if not config.schema_validation_enabled:
         return
 
+    schema = SphinxNeedsData(app.env).get_schema()
+
     extra_option_schema: NeedFieldsSchemaType = {
         "type": "object",
         "properties": {
-            name: option.schema
-            for name, option in config.extra_options.items()
-            if option.schema is not None
+            extra.name: extra.schema for extra in schema.iter_extra_fields()
         },
     }
     extra_link_schema: NeedFieldsSchemaType = {

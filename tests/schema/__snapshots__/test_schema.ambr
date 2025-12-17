@@ -516,15 +516,11 @@
   '''
 # ---
 # name: test_schema_config[extra_option_empty_schema]
-  '''
-  Schema for extra option 'efforts' is not valid:
-  Must have a 'type' field.
-  '''
+  "Invalid extra option 'efforts': Invalid schema: Must have a 'type' field."
 # ---
 # name: test_schema_config[extra_option_pattern_unsafe_error]
   '''
-  Schema for extra option 'efforts' is not valid:
-  "^IMPL_(?!SAFE)" is not a "regex"
+  Invalid extra option 'efforts': Invalid schema: "^IMPL_(?!SAFE)" is not a "regex"
   
   Failed validating in schema
   
@@ -534,8 +530,7 @@
 # ---
 # name: test_schema_config[extra_option_unknown_keys]
   '''
-  Schema for extra option 'efforts' is not valid:
-  Additional properties are not allowed ('unknown' was unexpected)
+  Invalid extra option 'efforts': Invalid schema: Additional properties are not allowed ('unknown' was unexpected)
   
   Failed validating "additionalProperties" in schema
   
@@ -683,10 +678,7 @@
   "Config error in schema '[0]' at path 'select.properties.efforts': Field 'efforts' has type 'unknown', but expected 'string'."
 # ---
 # name: test_schema_config[type_error]
-  '''
-  Schema for extra option 'efforts' is not valid:
-  Extra option schema has invalid type 'unknown'. Must be one of ['array', 'boolean', 'integer', 'number', 'string'].
-  '''
+  "Invalid extra option 'efforts': Invalid schema: Extra option schema has invalid type 'unknown'. Must be one of ['array', 'boolean', 'integer', 'number', 'string']."
 # ---
 # name: test_schema_config[type_mismatch_array_error]
   "Config error in schema '[0]' at path 'validate.local': Item has keys ['items'], but type is 'object', expected 'array'."
