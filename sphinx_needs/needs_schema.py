@@ -848,13 +848,25 @@ class FieldsSchema:
         yield from self._extra_fields.values()
         yield from self._link_fields.values()
 
+    def iter_core_field_names(self) -> Iterable[str]:
+        """Iterate over all core field names in the schema."""
+        yield from self._core_fields.keys()
+
     def iter_core_fields(self) -> Iterable[FieldSchema]:
         """Iterate over all core fields in the schema."""
         yield from self._core_fields.values()
 
+    def iter_extra_field_names(self) -> Iterable[str]:
+        """Iterate over all extra field names in the schema."""
+        yield from self._extra_fields.keys()
+
     def iter_extra_fields(self) -> Iterable[FieldSchema]:
         """Iterate over all extra fields in the schema."""
         yield from self._extra_fields.values()
+
+    def iter_link_field_names(self) -> Iterable[str]:
+        """Iterate over all link field names in the schema."""
+        yield from self._link_fields.keys()
 
     def iter_link_fields(self) -> Iterable[LinkSchema]:
         """Iterate over all link fields in the schema."""

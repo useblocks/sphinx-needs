@@ -80,6 +80,7 @@ class NeedDirective(SphinxDirective):
             return []
 
         needs_config = NeedsSphinxConfig(self.env.config)
+        needs_schema = SphinxNeedsData(self.env).get_schema()
 
         try:
             # override global title_from_content if user set it in the directive
@@ -116,7 +117,8 @@ class NeedDirective(SphinxDirective):
         extras: dict[str, str] = {}
         links: dict[str, str] = {}
 
-        link_keys = {li["option"] for li in needs_config.extra_links}
+        link_keys = set(needs_schema.iter_link_field_names())
+        extra_keys = set(needs_schema.iter_extra_field_names())
 
         while options:
             key, value = options.popitem()
@@ -147,7 +149,7 @@ class NeedDirective(SphinxDirective):
                         post_template = value or ""
                     case "constraints":
                         constraints = value or ""
-                    case key if key in needs_config.extra_options:
+                    case key if key in extra_keys:
                         extras[key] = value or ""
                     case key if key in link_keys:
                         links[key] = value or ""

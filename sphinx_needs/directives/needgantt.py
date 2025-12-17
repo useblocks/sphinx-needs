@@ -60,6 +60,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
         needs_config = NeedsSphinxConfig(env.config)
+        needs_schema = SphinxNeedsData(env).get_schema()
 
         _id, targetid, targetnode = self.create_target("needgantt")
 
@@ -102,19 +103,23 @@ class NeedganttDirective(FilterBase, DiagramBase):
         )
 
         for option_name in (duration_option, completion_option):
-            option = needs_config.extra_options[option_name]
-            if option.schema is None:
-                # TODO(mh) should we set a default schema here or rather warn?
-                option.schema = {"type": "integer"}
-            else:
-                if option.schema.get("type") not in {"integer", "number"}:
-                    log_warning(
-                        logger,
-                        f"Schema for option '{option_name}' is not 'integer' or 'number' as required by needgantt.",
-                        "config",
-                        None,
-                    )
-                    return []
+            option = needs_schema.get_extra_field(option_name)
+            if option is None:
+                log_warning(
+                    logger,
+                    f"Option '{option_name}' used in needgantt is not defined in needs options.",
+                    "config",
+                    None,
+                )
+                return []
+            if option.schema.get("type") not in {"integer", "number"}:
+                log_warning(
+                    logger,
+                    f"Schema for option '{option_name}' is not 'integer' or 'number' as required by needgantt.",
+                    "config",
+                    None,
+                )
+                return []
 
         attributes: NeedsGanttType = {
             "docname": env.docname,
