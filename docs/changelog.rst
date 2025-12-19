@@ -4,6 +4,17 @@
 Changelog
 =========
 
+.. _`release:6.3.0+1`:
+
+6.3.0+1
+-------
+
+- 👌 Allow setting ``parent_needs`` manually
+
+  Use ``:parent_needs: PARENT_ID`` to assign a parent
+  without actually nesting the needs in the source file.
+
+
 .. _`release:6.3.0`:
 
 6.3.0
