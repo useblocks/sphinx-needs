@@ -1,3 +1,31 @@
+title_wrong_type:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.options.title]
+    schema.type = "number"
+  rst: ""
+
+status_wrong_type:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.options.status]
+    schema.type = "integer"
+  rst: ""
+
+tags_wrong_items_type:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.options.tags]
+    schema.type = "array"
+    schema.items.type = "boolean"
+  rst: ""
+
 extra_link_array_wrong_type:
   conf: |
     extensions = ["sphinx_needs"]

@@ -484,6 +484,15 @@
   
   '''
 # ---
+# name: test_schema_config[title_wrong_type]
+  "Schema type for core option 'title' in needs_options does not match core definition: number != string"
+# ---
+# name: test_schema_config[status_wrong_type]
+  "Schema type for core option 'status' in needs_options does not match core definition: integer != string"
+# ---
+# name: test_schema_config[tags_wrong_items_type]
+  "Schema item type for core option 'tags' in needs_options does not match core definition: boolean != string"
+# ---
 # name: test_schema_config[both_definitions_and_json_given]
   "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
 # ---

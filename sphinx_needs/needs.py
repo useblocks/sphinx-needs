@@ -830,7 +830,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     _new_schema["type"] = type_
                 elif _new_schema["type"] != type_:
                     raise NeedsConfigException(
-                        f"Schema type for core option '{name}' in needs_options does not match core definition: {_schema['type']} != {type_}"
+                        f"Schema type for core option '{name}' in needs_options does not match core definition: {_new_schema['type']} != {type_}"
                     )
                 if type_ == "array":
                     _new_schema = cast(ExtraOptionMultiValueSchemaType, _new_schema)
@@ -841,7 +841,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                         _new_schema["items"]["type"] = _schema["items"]["type"]
                     elif _new_schema["items"]["type"] != _schema["items"]["type"]:
                         raise NeedsConfigException(
-                            f"Schema item type for core option '{name}' in needs_options does not match core definition: {_schema['items']['type']} != {_new_schema['items']['type']}"
+                            f"Schema item type for core option '{name}' in needs_options does not match core definition: {_new_schema['items']['type']} != {_schema['items']['type']}"
                         )
                 _schema = _new_schema  # type: ignore[assignment]
 
