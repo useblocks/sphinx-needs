@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1765967478204,
+  "lastUpdate": 1766157825831,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16020,6 +16020,42 @@ window.BENCHMARK_DATA = {
             "value": 60.32165837400001,
             "unit": "s",
             "extra": "Commit: 8047f414268335c98e09dabb39edf5b05b77fcf6\nBranch: master\nTime: 2025-12-17T11:29:23+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "921215e23022dd560dc8d0dbd5d415977c63d801",
+          "message": "🔧 Remove use of `extra_options` after config resolution (#1607)",
+          "timestamp": "2025-12-19T16:21:52+01:00",
+          "tree_id": "11a4233dc8520f91c3ff3d05ffce5c9133c4fdf1",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/921215e23022dd560dc8d0dbd5d415977c63d801"
+        },
+        "date": 1766157809120,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.23091176699998073,
+            "unit": "s",
+            "extra": "Commit: 921215e23022dd560dc8d0dbd5d415977c63d801\nBranch: master\nTime: 2025-12-19T16:21:52+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.34309001399998,
+            "unit": "s",
+            "extra": "Commit: 921215e23022dd560dc8d0dbd5d415977c63d801\nBranch: master\nTime: 2025-12-19T16:21:52+01:00"
           }
         ]
       }
