@@ -315,7 +315,7 @@ Here is the complete used code
    # -------
 
    # Make the author option valid
-   needs_extra_options = ["author"]
+   needs_options = {"author": {}}
 
    # Define own layout
    needs_layouts = {

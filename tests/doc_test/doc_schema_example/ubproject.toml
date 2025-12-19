@@ -8,20 +8,17 @@ schema_definitions_from_json = "schemas.json"
 schema_debug_active = true
 # schema_debug_ignore = []
 
-[[needs.extra_options]]
-name = "efforts"
+[needs.options.efforts]
 description = "FTE days"
 schema.type = "integer"
 schema.minimum = 0
 
-[[needs.extra_options]]
-name = "asil"
+[needs.options.asil]
 description = "Automotive Safety Integrity Level"
 schema.type = "string"
 schema.enum = ["QM", "A", "B", "C", "D"]
 
-[[needs.extra_options]]
-name = "approval"
+[needs.options.approval]
 description = "Approval flag"
 schema.type = "boolean"
 

@@ -521,7 +521,7 @@
             }),
             'test_func': dict({
               'default': '',
-              'description': 'Added by needs_extra_options config',
+              'description': 'Added by needs_options config',
               'field_type': 'extra',
               'type': 'string',
             }),

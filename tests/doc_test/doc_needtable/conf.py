@@ -35,20 +35,20 @@ needs_types = [
     },
 ]
 
-needs_extra_options = [
-    "my_extra_option",
-    "another_option",
-    "author",
-    "comment",
-    "amount",
-    "hours",
-    "image",
-    "config",
-    "github",
-    "value",
-    "unit",
-    "special-chars!",
-]
+needs_options = {
+    "my_extra_option": {},
+    "another_option": {},
+    "author": {},
+    "comment": {},
+    "amount": {},
+    "hours": {},
+    "image": {},
+    "config": {},
+    "github": {},
+    "value": {},
+    "unit": {},
+    "special-chars!": {},
+}
 
 needs_string_links = {
     "config_link": {

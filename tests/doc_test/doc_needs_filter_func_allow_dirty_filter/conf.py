@@ -24,7 +24,7 @@ needs_types = [
     },
 ]
 
-needs_extra_options = ["ti", "tcl"]
+needs_options = {"ti": {}, "tcl": {}}
 
 needs_extra_links = [
     {

@@ -123,7 +123,11 @@ from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, NeedPartRole, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
-from sphinx_needs.schema.config import ExtraOptionIntegerSchemaType, SchemasFileRootType
+from sphinx_needs.schema.config import (
+    ExtraOptionIntegerSchemaType,
+    ExtraOptionMultiValueSchemaType,
+    SchemasFileRootType,
+)
 from sphinx_needs.schema.config_utils import (
     resolve_schemas_config,
     validate_schemas_config,
@@ -488,12 +492,16 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     """
     needs_config = NeedsSphinxConfig(app.config)
 
-    if isinstance(needs_config._extra_options, dict):
+    if not isinstance(needs_config._extra_options, list):
+        raise NeedsConfigException(
+            "Config option 'needs_extra_options' must be a list."
+        )
+
+    if needs_config._extra_options:
         log_warning(
             LOGGER,
-            'Config option "needs_extra_options" supports list and dict. However new default type since '
-            "Sphinx-Needs 0.7.2 is list. Please see docs for details.",
-            "config",
+            'Config option "needs_extra_options" is deprecated. Please use "needs_options" instead.',
+            "deprecated",
             None,
         )
 
@@ -525,6 +533,34 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             continue
 
         _NEEDS_CONFIG.add_extra_option(name, description, schema=schema, override=True)
+
+    if not isinstance(needs_config._options, dict):
+        raise NeedsConfigException("Config option 'needs_options' must be a dict.")
+
+    for option_name, option_params in needs_config._options.items():
+        if not isinstance(option_name, str):
+            log_warning(
+                LOGGER,
+                f"needs_options key is not a string: {option_name}",
+                "config",
+                None,
+            )
+            continue
+        if not isinstance(option_params, dict):
+            log_warning(
+                LOGGER,
+                f"needs_options entry for '{option_name}' is not a dict: {option_params}",
+                "config",
+                None,
+            )
+            continue
+        if option_name in NeedsCoreFields:
+            continue
+        description = option_params.get("description", "Added by needs_options config")
+        schema = option_params.get("schema")
+        _NEEDS_CONFIG.add_extra_option(
+            option_name, description, schema=schema, override=True
+        )
 
     # ensure options for `needgantt` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
@@ -769,6 +805,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     for name, data in NeedsCoreFields.items():
         if not data.get("add_to_field_schema", False):
             continue
+        description = data["description"]
         type_ = data["schema"]["type"]
         nullable = False
         if isinstance(type_, list):
@@ -779,11 +816,51 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         if type_ == "array":
             _schema["items"] = data["schema"].get("items", {"type": "string"})
 
+        if name in needs_config._options:
+            # if the user has re-defined a core option, merge in description and schema
+            # the schema type must match the core option type, if defined (otherwise we set it)
+            # and for array types, the item type must also match, if defined (otherwise we set it)
+            core_option = needs_config._options[name]
+            if "description" in core_option:
+                description = core_option["description"]
+            if "schema" in core_option:
+                _new_schema = deepcopy(core_option["schema"])
+                # TODO validate schema type and item type are compatible with core definition
+                if "type" not in _new_schema:
+                    _new_schema["type"] = type_
+                elif _new_schema["type"] != type_:
+                    raise NeedsConfigException(
+                        f"Schema type for core option '{name}' in needs_options does not match core definition: {_schema['type']} != {type_}"
+                    )
+                if type_ == "array":
+                    _new_schema = cast(ExtraOptionMultiValueSchemaType, _new_schema)
+                    if "items" not in _new_schema:
+                        _new_schema["items"] = {}
+                        _new_schema["items"]["type"] = _schema["items"]["type"]
+                    elif "type" not in _new_schema["items"]:
+                        _new_schema["items"]["type"] = _schema["items"]["type"]
+                    elif _new_schema["items"]["type"] != _schema["items"]["type"]:
+                        raise NeedsConfigException(
+                            f"Schema item type for core option '{name}' in needs_options does not match core definition: {_schema['items']['type']} != {_new_schema['items']['type']}"
+                        )
+                _schema = _new_schema  # type: ignore[assignment]
+
         # merge in additional schema from needs_statuses and needs_tags config
-        # TODO eventually deprecate these two configs in favor of schema config
         if name == "status" and needs_config.statuses:
+            log_warning(
+                LOGGER,
+                'Config option "needs_statuses" is deprecated. Please use "needs_options.status.schema.enum" to define custom status field enum constraints.',
+                "deprecated",
+                None,
+            )
             _schema["enum"] = [status["name"] for status in needs_config.statuses]
         if name == "tags" and needs_config.tags:
+            log_warning(
+                LOGGER,
+                'Config option "needs_tags" is deprecated. Please use "needs_options.tags.schema.items.enum" to define custom tags field enum constraints.',
+                "deprecated",
+                None,
+            )
             _schema["items"] = {
                 "type": "string",
                 "enum": [tag["name"] for tag in needs_config.tags],
@@ -792,7 +869,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         default = data["schema"].get("default", None)
         field = FieldSchema(
             name=name,
-            description=data["description"],
+            description=description,
             nullable=nullable,
             schema=_schema,  # type: ignore[arg-type]
             default=None if default is None else FieldLiteralValue(default),

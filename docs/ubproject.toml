@@ -60,60 +60,47 @@ reproducible_json = true
 json_remove_defaults = true
 build_json_per_id = false
 
-[[needs.extra_options]]
-name = "my_extra_option"
+[needs.options.my_extra_option]
 description = "Custom extra option"
 
-[[needs.extra_options]]
-name = "another_option"
+[needs.options.another_option]
 description = "Another custom option"
 
-[[needs.extra_options]]
-name = "author"
+[needs.options.author]
 description = "Author of the need"
 
-[[needs.extra_options]]
-name = "comment"
+[needs.options.comment]
 description = "Additional comments"
 
-[[needs.extra_options]]
-name = "amount"
+[needs.options.ammount]
 description = "Amount value"
 schema.type = "number"
 
-[[needs.extra_options]]
-name = "hours"
+[needs.options.hours]
 description = "Time in hours"
 schema.type = "integer"
 
-[[needs.extra_options]]
-name = "duration"
+[needs.options.duration]
 description = "Time in days"
 schema.type = "integer"
 
-[[needs.extra_options]]
-name = "completion"
+[needs.options.completion]
 description = "Completion in %"
 schema.type = "integer"
 
-[[needs.extra_options]]
-name = "image"
+[needs.options.image]
 description = "Image reference"
 
-[[needs.extra_options]]
-name = "config"
+[needs.options.config]
 description = "Configuration option"
 
-[[needs.extra_options]]
-name = "github"
+[needs.options.github]
 description = "GitHub reference"
 
-[[needs.extra_options]]
-name = "value"
+[needs.options.value]
 description = "General value field"
 
-[[needs.extra_options]]
-name = "unit"
+[needs.options.unit]
 description = "Unit specification"
 
 [[needs.types]]

@@ -26,8 +26,7 @@ schemas_in_conf:
       ]
     }
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -64,8 +63,7 @@ schemas_in_conf_error:
       ]
     }
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -116,8 +114,7 @@ min_contains:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -148,8 +145,7 @@ min_contains_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -180,8 +176,7 @@ max_contains:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -212,8 +207,7 @@ max_contains_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -246,8 +240,7 @@ link_chain_w_refs:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
     schema.type = "string"
     schema.enum = ["QM", "A", "B", "C", "D"]
   rst: |
@@ -333,8 +326,7 @@ link_chain_hop_1_min_contains_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
     schema.type = "string"
     schema.enum = ["QM", "A", "B", "C", "D"]
   rst: |
@@ -389,8 +381,7 @@ link_chain_hop_2_min_contains_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
     schema.type = "string"
     schema.enum = ["QM", "A", "B", "C", "D"]
   rst: |
@@ -464,8 +455,7 @@ local_min_items:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -490,8 +480,7 @@ local_min_items_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -516,8 +505,7 @@ local_max_items:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -545,8 +533,7 @@ local_max_items_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -574,8 +561,7 @@ max_network_levels:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
+    [needs.options.asil]
   rst: |
     .. spec:: title
         :id: SPEC_1

@@ -77,6 +77,7 @@ def test_broken_links(test_app: SphinxTestApp):
 def test_broken_statuses(test_app: SphinxTestApp):
     test_app.build()
     assert get_warnings(test_app) == [
+        'WARNING: Config option "needs_statuses" is deprecated. Please use "needs_options.status.schema.enum" to define custom status field enum constraints. [needs.deprecated]',
         "ERROR: Need 'SP_TOO_002' has schema violations:",
         "  Severity:       violation",
         "  Field:          status",
@@ -118,6 +119,7 @@ def test_broken_syntax(test_app: SphinxTestApp):
 def test_broken_tags(test_app: SphinxTestApp):
     test_app.build()
     assert get_warnings(test_app) == [
+        'WARNING: Config option "needs_tags" is deprecated. Please use "needs_options.tags.schema.items.enum" to define custom tags field enum constraints. [needs.deprecated]',
         "ERROR: Need 'SP_TOO_003' has schema violations:",
         "  Severity:       violation",
         "  Field:          tags.2",

@@ -26,15 +26,15 @@ needs_extra_links = [
     },
 ]
 
-needs_extra_options = [
-    "option_1",
-    "option_2",
-    "option_3",
-    "option_4",
-    "option_5",
-    "bad_value_type",
-    "too_many_params",
-]
+needs_options = {
+    "option_1": {},
+    "option_2": {},
+    "option_3": {},
+    "option_4": {},
+    "option_5": {},
+    "bad_value_type": {},
+    "too_many_params": {},
+}
 
 needs_global_options = {
     "collapse": {"default": True},
