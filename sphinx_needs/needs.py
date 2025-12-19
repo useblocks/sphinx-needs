@@ -693,7 +693,7 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     E.g. defined need-option, which is already defined internally
     """
     needs_config = NeedsSphinxConfig(config)
-    extra_options = needs_config.extra_options
+    extra_options = _NEEDS_CONFIG.extra_options
     link_types = [x["option"] for x in needs_config.extra_links]
 
     external_filter = needs_config.filter_data
@@ -808,7 +808,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             schema.add_core_field(field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid core option {name!r}: {exc}") from exc
-    for name, extra in needs_config.extra_options.items():
+    for name, extra in _NEEDS_CONFIG.extra_options.items():
         try:
             _schema = (
                 deepcopy(extra.schema)  # type: ignore[arg-type]

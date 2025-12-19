@@ -353,31 +353,21 @@ class NeedsSphinxConfig:
     # such that we simply redirect all attribute access to the
     # Sphinx config object, but in a manner where type annotations will work
     # for static type analysis.
-    # Note also that we treat `extra_options`, `functions` and `warnings` as special-cases,
+    # Note also that we treat `functions` and `warnings` as special-cases,
     # since these configurations can also be added to dynamically via the API
 
     def __init__(self, config: _SphinxConfig) -> None:
         super().__setattr__("_config", config)
 
     def __getattribute__(self, name: str) -> Any:
-        if name.startswith("__") or name in (
-            "_config",
-            "extra_options",
-            "functions",
-            "warnings",
-        ):
+        if name.startswith("__") or name in ("_config", "functions", "warnings"):
             return super().__getattribute__(name)
         if name.startswith("_"):
             name = name[1:]
         return getattr(super().__getattribute__("_config"), f"needs_{name}")
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name.startswith("__") or name in (
-            "_config",
-            "extra_options",
-            "functions",
-            "warnings",
-        ):
+        if name.startswith("__") or name in ("_config", "functions", "warnings"):
             return super().__setattr__(name, value)
         if name.startswith("_"):
             name = name[1:]
@@ -601,18 +591,6 @@ class NeedsSphinxConfig:
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """List of extra options for needs, that get added as directive options and need fields."""
-
-    @property
-    def extra_options(self) -> Mapping[str, ExtraOptionParams]:
-        """Custom need fields.
-
-        These fields can be added via sphinx configuration,
-        but also via the `add_extra_option` API function.
-
-        They are added to the each needs data item,
-        and as directive options on `NeedDirective` and `NeedserviceDirective`.
-        """
-        return _NEEDS_CONFIG.extra_options
 
     title_optional: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}

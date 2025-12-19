@@ -15,7 +15,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import filter_import_item
 from sphinx_needs.logging import log_warning
@@ -60,6 +60,7 @@ class NeedimportDirective(SphinxDirective):
     @measure_time("needimport")
     def run(self) -> Sequence[nodes.Node]:
         needs_config = NeedsSphinxConfig(self.config)
+        needs_schema = SphinxNeedsData(self.env).get_schema()
 
         version = self.options.get("version")
         filter_string = self.options.get("filter")
@@ -200,15 +201,15 @@ class NeedimportDirective(SphinxDirective):
         known_keys = {
             "full_title",  # legacy
             *NeedsCoreFields,
-            *(x["option"] for x in needs_config.extra_links),
-            *(x["option"] + "_back" for x in needs_config.extra_links),
-            *needs_config.extra_options,
+            *(x for x in needs_schema.iter_link_field_names()),
+            *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
+            *(x for x in needs_schema.iter_extra_field_names()),
         }
         # all keys that should not be imported from external needs
         omitted_keys = {
             "full_title",  # legacy
             *(k for k, v in NeedsCoreFields.items() if v.get("exclude_import")),
-            *(x["option"] + "_back" for x in needs_config.extra_links),
+            *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
         }
 
         # collect keys for warning logs, so that we only log one warning per key

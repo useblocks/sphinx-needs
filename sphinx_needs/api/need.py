@@ -177,9 +177,10 @@ def generate_need(
     )
 
     # validate kwargs
-    allowed_kwargs = {x["option"] for x in needs_config.extra_links} | set(
-        needs_config.extra_options
-    )
+    allowed_kwargs = {
+        *needs_schema.iter_link_field_names(),
+        *needs_schema.iter_extra_field_names(),
+    }
     unknown_kwargs = set(kwargs) - allowed_kwargs
     if unknown_kwargs:
         raise InvalidNeedException(

@@ -10,6 +10,7 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import add_doc
 
@@ -29,6 +30,7 @@ class NeedReportDirective(SphinxDirective):
     def run(self) -> Sequence[nodes.raw]:
         env = self.env
         needs_config = NeedsSphinxConfig(env.config)
+        needs_schema = SphinxNeedsData(env).get_schema()
 
         if not set(self.options).intersection({"types", "links", "options", "usage"}):
             log_warning(
@@ -41,7 +43,7 @@ class NeedReportDirective(SphinxDirective):
 
         report_info = {
             "types": needs_config.types if "types" in self.options else [],
-            "options": list(needs_config.extra_options)
+            "options": list(needs_schema.iter_extra_field_names())
             if "options" in self.options
             else [],
             "links": needs_config.extra_links if "links" in self.options else [],

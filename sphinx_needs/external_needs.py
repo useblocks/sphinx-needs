@@ -35,6 +35,8 @@ def load_external_needs(
 ) -> None:
     """Load needs from configured external sources."""
     needs_config = NeedsSphinxConfig(app.config)
+    needs_schema = SphinxNeedsData(env).get_schema()
+
     for idx, source in enumerate(needs_config.external_needs):
         if "base_url" not in source:
             raise NeedsExternalException(
@@ -129,15 +131,15 @@ def load_external_needs(
         known_keys = {
             "full_title",  # legacy
             *NeedsCoreFields,
-            *(x["option"] for x in needs_config.extra_links),
-            *(x["option"] + "_back" for x in needs_config.extra_links),
-            *needs_config.extra_options,
+            *(x for x in needs_schema.iter_link_field_names()),
+            *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
+            *(x for x in needs_schema.iter_extra_field_names()),
         }
         # all keys that should not be imported from external needs
         omitted_keys = {
             "full_title",  # legacy
             *(k for k, v in NeedsCoreFields.items() if v.get("exclude_external")),
-            *(x["option"] + "_back" for x in needs_config.extra_links),
+            *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
         }
 
         # collect keys for warning logs, so that we only log one warning per key
