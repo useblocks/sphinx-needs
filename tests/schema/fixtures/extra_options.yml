@@ -727,3 +727,18 @@ coerce_to_boolean_from_string_error:
     .. impl:: title
         :id: IMPL_1
         :approved: not-a-boolean
+
+array_unique_items:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_options]]
+    name = "array_field"
+    schema.type = "array"
+    schema.items = {type = "string"}
+    schema.uniqueItems = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :array_field: a, a
