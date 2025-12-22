@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1766157825831,
+  "lastUpdate": 1766399823289,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16056,6 +16056,42 @@ window.BENCHMARK_DATA = {
             "value": 61.34309001399998,
             "unit": "s",
             "extra": "Commit: 921215e23022dd560dc8d0dbd5d415977c63d801\nBranch: master\nTime: 2025-12-19T16:21:52+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "39b6cc5cd94fab83510f582ae5be652e2c8b9ea0",
+          "message": "✨ Add `uniqueItems` to `array` schema validation (#1610)\n\nThis PR adds support for the `uniqueItems` validation constraint to\narray schema fields, enabling validation that all elements in an array\nmust be unique when this constraint is set to `true`.\n\nSeea also:\nhttps://json-schema.org/understanding-json-schema/reference/array#uniqueItems",
+          "timestamp": "2025-12-22T11:35:08+01:00",
+          "tree_id": "38261c06f7c4416113e4f1cc7a80290965463c0b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/39b6cc5cd94fab83510f582ae5be652e2c8b9ea0"
+        },
+        "date": 1766399805104,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21968468400000063,
+            "unit": "s",
+            "extra": "Commit: 39b6cc5cd94fab83510f582ae5be652e2c8b9ea0\nBranch: master\nTime: 2025-12-22T11:35:08+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.837545796,
+            "unit": "s",
+            "extra": "Commit: 39b6cc5cd94fab83510f582ae5be652e2c8b9ea0\nBranch: master\nTime: 2025-12-22T11:35:08+01:00"
           }
         ]
       }
