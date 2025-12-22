@@ -42,7 +42,7 @@ This will show the columns *id*, *title* and *tags* in the order given.
    .. needtable::
       :columns: id;title;tags
 
-You can set all options of a need (incl. :ref:`needs_extra_options`) as a column.
+You can set all options of a need (incl. :ref:`needs_options`) as a column.
 This also includes internal options like ``docname`` (Use ``:layout: debug`` on a need for a complete list)
 
 If you set **:columns:**, the current table will not use the value of config parameter :ref:`needs_table_columns`.

@@ -93,7 +93,7 @@ that can be used to add additional data to the item or further style its represe
     For full options see the reference sections for :ref:`needs_types configuration <needs_types>` and :ref:`need items directive <need>`.
 
     To add additional fields to the directive,
-    see :ref:`needs_extra_options`,
+    see :ref:`needs_options`,
     and to set default values see :ref:`needs_global_options`.
 
 Enforcing valid need items

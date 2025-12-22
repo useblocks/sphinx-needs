@@ -42,7 +42,7 @@ Dynamic functions can be used for the following directive options:
 - ``style``
 - ``layout``
 - ``constraints``
-- :ref:`needs_extra_options`
+- :ref:`extra options <needs_options>`
 - :ref:`needs_extra_links`
 - :ref:`needs_global_options`
 

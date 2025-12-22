@@ -35,7 +35,7 @@ Please take a look into the related service documentation to find out what is ne
 .. hint::
 
     ``needservice`` supports all options available for the :ref:`need` directive and
-    all custom options defined by :ref:`needs_extra_options`.
+    all custom options defined by :ref:`needs_options`.
 
 For services provided by **Sphinx-Needs** please take a look into :ref:`services`.
 

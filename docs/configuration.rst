@@ -190,12 +190,134 @@ By default it is set to:
 
    Please take a look into the  `PlantUML Manual <https://plantuml.com/>`_ for more details.
 
+.. _`needs_options`:
+
+needs_options
+~~~~~~~~~~~~~
+
+.. versionadded:: 7.0.0
+
+This setting allows you to customise the fields that can be used for each need;
+how they are defined, processed, and validated.
+
+``needs_options`` must be a dictionary, where each key is the name of the option, and the value is another dictionary defining the option.
+
+Options can either "specialize" existing core options or define completely new ones.
+
+For new options the following can be defined:
+
+- ``description``: A description of the option (optional).
+    This will be output in the schema of the :ref:`needs.json <needs_builder_format>`, and can be used by other tools.
+- ``schema``: A schema definition for the option (optional).
+    This uses the same format as :ref:`needs_schema_definitions` and :ref:`needs_schema_definitions_from_json`.
+    If specified, the option value will be validated against this schema when needs are parsed, see :ref:`schema_validation` for more details.
+    By default the option schema will be ``{"type": "string"}``.
+
+For example:
+
+.. code-block:: python
+
+   needs_options = {
+       "introduced": {
+           "description": "Date when the need was introduced",
+           "schema": {
+               "type": "string",
+               "format": "date",
+           },
+       },
+       "cost": {
+             "description": "Approximated cost in Euros",
+             "schema": {
+                "type": "number",
+                "minimum": 0,
+             },
+       },
+   }
+
+These options would then be availble to set in need directives, such as:
+
+.. code-block:: rst
+
+   .. req:: My Requirement
+      :id: REQ_001
+      :status: open
+      :introduced: 2024-01-15
+      :cost: 1500.50
+
+.. note::
+
+   To filter on these options in ``needlist``, ``needtable``, etc. you
+   must use the :ref:`filter` option.
+
+The following core options can be specialized:
+
+- ``title`` (string)
+- ``status`` (string)
+- ``tags`` (array of strings)
+- ``collapse`` (boolean)
+- ``hide`` (boolean)
+- ``layout`` (string)
+- ``style`` (string)
+
+
+Specialization allows you to redefine the description and tighten the schema of these options:
+Schemas will inherit any constraints defined in the core schema that are not redefined, and redefinitions must be not weaken the constraints of the original schema (this is intended to obey the `Liskov substitution principle <https://en.wikipedia.org/wiki/Liskov_substitution_principle>`__).
+For example, you could redefine the ``status`` and ``tags`` options to only allow certain values:
+
+.. code-block:: python
+
+   needs_options = {
+       "status": {
+           "schema": {
+               # inherits "type": "string" from core schema
+               # adds tighter constraint on allowed values
+               "enum": ["open", "in progress", "done", "closed"],
+           },
+       },
+         "tags": {
+            "schema": {
+                  # inherits "type": "array" from core schema
+                  "items": {
+                     # inherits "type": "string" from core schema
+                     # adds tighter constraint on allowed item values
+                     "enum": ["important", "complex", "external", "internal"],
+                  },
+                  # adds tighter constraint on array length
+                  "minItems": 1,
+            },
+         },
+   }
+
+The following would be invalid specializations:
+
+.. code-block:: python
+
+   needs_options = {
+       "title": {
+           "schema": {
+               # invalid: core schema allows only strings
+               "type": "number",
+           },
+       },
+       "tags": {
+           "schema": {
+               "items": {
+                   # invalid: core schema allows only string
+                   "type": "number",
+               },
+           },
+       },
+   }
+
+
 .. _`needs_extra_options`:
 
 needs_extra_options
 ~~~~~~~~~~~~~~~~~~~
 
-.. versionadded:: 0.2.2
+.. deprecated:: 7.0.0
+
+   Use :ref:`needs_options` instead.
 
 The option allows the addition of extra options that you can specify on
 needs.
@@ -296,7 +418,7 @@ And use it like:
    The same fields for the :ref:`supported_data_types` as in the :ref:`schema_validation`
    are accepted. If ``schema`` is given, ``type`` is required. All the other keys can also
    be defined via :ref:`needs_schema_definitions` or in the file passed via
-   :ref:`needs_schema_definitions_from_json`. If specified via ``needs_extra_options``,
+   :ref:`needs_schema_definitions_from_json`. If specified via :ref:`needs_options`,
    the constraints are applied to *all* usages of the option.
 
 .. _`needs_global_options`:
@@ -312,7 +434,7 @@ needs_global_options
    The format of the global options was change to be more explicit.
 
    Unknown keys are also no longer accepted,
-   these should also be set in the :ref:`needs_extra_options` list.
+   these should also be set in the :ref:`needs_options` list.
 
    .. dropdown:: Comparison to old format
 
@@ -353,7 +475,7 @@ needs_global_options
 This configuration allows for global defaults to be set for all needs,
 for any of the following fields:
 
-- any ``needs_extra_options`` field
+- any :ref:`extra options <needs_options>` field
 - any ``needs_extra_links`` field
 - ``status``
 - ``layout``
@@ -365,7 +487,7 @@ Defaults will be used if the field is not set specifically by the user and thus 
 
 .. code-block:: python
 
-   needs_extra_options = ["option1"]
+   needs_options = {"option1": {}}
    needs_global_options = {
       "tags": {"default": ["tag1", "tag2"]},
       "option1": {"default": "new value"},
@@ -384,7 +506,7 @@ A match expression is a string, using Python syntax, that will be evaluated agai
 - ``docname`` (``str | None``)
 - ``is_external`` (``bool``)
 - ``is_import`` (``bool``)
-- :ref:`needs_extra_options` (``str``)
+- :ref:`needs_options` (``str``)
 - :ref:`needs_extra_links` (``tuple[str, ...]``)
 - :ref:`needs_filter_data`
 
@@ -392,7 +514,7 @@ If no predicates match, the ``default`` value is used (if present).
 
 .. code-block:: python
 
-   needs_extra_options = ["option1"]
+   needs_options = {"option1": {}}
    needs_global_options = {
       "option1": {
       # if field is unset:
@@ -413,7 +535,7 @@ If no predicates match, the ``default`` value is used (if present).
 
    .. code-block:: python
 
-      needs_extra_options = ["option1"]
+      needs_options = {"option1": {}}
       needs_global_options = {
               "option1": {"default": '[[copy("id")]]'}
       }
@@ -632,11 +754,11 @@ The defined extra filter data can be used like this:
    .. needextend:: type == "req" and sphinx_tag in tags
       :+tags: my_external_tag
 
-or if project has :ref:`needs_extra_options` defined like:
+or if project has :ref:`needs_options` defined like:
 
 .. code-block:: python
 
-   needs_extra_options = ['variant']
+   needs_options = {'variant': {}}
 
 The defined extra filter data can also be used like:
 
@@ -937,7 +1059,7 @@ The plugin provides the following variables which you can use in your custom Jin
 
 * types - list of :ref:`need types <needs_types>`
 * links - list of :ref:`extra need links <needs_extra_links>`
-* options - list of :ref:`extra need options <needs_extra_options>`
+* options - list of :ref:`extra need options <needs_options>`
 * usage - a dictionary object containing information about the following:
     + needs_amount -> total amount of need objects in the project
     + needs_types -> number of need objects per needs type
@@ -1183,7 +1305,9 @@ Default value: *needs.json*.
 needs_statuses
 ~~~~~~~~~~~~~~
 
-.. versionadded:: 0.1.41
+.. deprecated:: 7.0.0
+
+   Use :ref:`needs_options` instead.
 
 Defines a set of valid statuses, which are allowed to be used inside documentation.
 If we detect a status not defined, an error is thrown and the build stops.
@@ -1208,7 +1332,9 @@ Default value: *[]*.
 needs_tags
 ~~~~~~~~~~
 
-.. versionadded:: 0.1.41
+.. deprecated:: 7.0.0
+
+   Use :ref:`needs_options` instead.
 
 Defines a set of valid tags, which are allowed to be used inside documentation.
 If we detect a tag not defined, an error is thrown and the build stops.
@@ -1909,7 +2035,7 @@ link name and url.
 
       Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 
-.. note:: You must define the options specified under :ref:`needs_string_links` inside :ref:`needs_extra_options` as well.
+.. note:: You must define the options specified under :ref:`needs_string_links` inside :ref:`needs_options` as well.
 
 .. _`needs_build_json`:
 
@@ -2104,7 +2230,7 @@ needs_constraints
 
    }
 
-needs_constraints needs to be enabled by adding "constraints" to :ref:`needs_extra_options`
+needs_constraints needs to be enabled by adding "constraints" to :ref:`needs_options`
 
 needs_constraints contains a dictionary which contains dictionaries describing a single constraint. A single constraint's name serves as the key for the inner dictionary.
 Inside there are (multiple) checks and a severity. Each check describes an executable constraint which allows to set conditions the specific need has to fulfill.
@@ -2268,7 +2394,7 @@ Default: ``[]``
    - ``status``
    - ``layout``
    - ``style``
-   - :ref:`extra options <needs_extra_options>`
+   - :ref:`needs_options`
 
 .. _`needs_render_context`:
 

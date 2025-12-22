@@ -112,7 +112,7 @@ There are also some *extensions* for the layouts above available:
      * Adds a small footer to the right side of content, showing the need id.
 
 The layouts ``clean_l``, ``clean_r``, ``clean_lp`` and ``clean_rp`` are using the value from the field ``image`` as
-source for the image in the side element. This field must made available via :ref:`needs_extra_options`.
+source for the image in the side element. This field must made available via :ref:`needs_options`.
 If you need another field as source, you must create your own layout.
 
 **Examples**

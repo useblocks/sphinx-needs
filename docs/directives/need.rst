@@ -553,4 +553,4 @@ Customized Options
 
 Sphinx-Needs supports the definition and filtering of customized options for needs.
 
-You can read :ref:`needs_extra_options` for detailed information and examples.
+You can read :ref:`needs_options` for detailed information and examples.
