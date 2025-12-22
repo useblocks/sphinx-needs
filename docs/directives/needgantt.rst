@@ -9,63 +9,63 @@ needgantt
 
 .. need-example::
 
-    .. needgantt:: Bug handling gantt
-       :tags: gantt_example
-       :milestone_filter: type == 'milestone'
+   .. needgantt:: Bug handling gantt
+      :tags: gantt_example
+      :milestone_filter: type == 'milestone'
 
 .. dropdown:: Show used needs for above example
 
-    .. action:: Find & Report bug
-       :id: ACT_BUG
-       :tags: gantt_example
-       :duration: 5
+   .. action:: Find & Report bug
+      :id: ACT_BUG
+      :tags: gantt_example
+      :duration: 5
 
-    .. action:: Analyse bug
-       :id: ACT_BUG_ANALYSE
-       :tags: gantt_example
-       :links: ACT_BUG
-       :duration: 7
+   .. action:: Analyse bug
+      :id: ACT_BUG_ANALYSE
+      :tags: gantt_example
+      :links: ACT_BUG
+      :duration: 7
 
-    .. action:: Create solution ticket
-       :id: ACT_TICKET
-       :tags: gantt_example
-       :links: ACT_BUG_ANALYSE
-       :duration: 3
+   .. action:: Create solution ticket
+      :id: ACT_TICKET
+      :tags: gantt_example
+      :links: ACT_BUG_ANALYSE
+      :duration: 3
 
-    .. action:: Work on solution ticket
-       :id: ACT_TICKET_WORK
-       :tags: gantt_example
-       :links:  ACT_TICKET
-       :duration: 7
+   .. action:: Work on solution ticket
+      :id: ACT_TICKET_WORK
+      :tags: gantt_example
+      :links: ACT_TICKET
+      :duration: 7
 
-    .. milestone:: Solution ticket closed
-       :id: MS_TICKET_CLOSED
-       :tags: gantt_example
-       :links:  ACT_TICKET_WORK
+   .. milestone:: Solution ticket closed
+      :id: MS_TICKET_CLOSED
+      :tags: gantt_example
+      :links: ACT_TICKET_WORK
 
-    .. action:: Add solution to release plan
-       :id: ACT_RELEASE_PLAN
-       :tags: gantt_example
-       :links:  MS_TICKET_CLOSED
-       :duration: 1
+   .. action:: Add solution to release plan
+      :id: ACT_RELEASE_PLAN
+      :tags: gantt_example
+      :links: MS_TICKET_CLOSED
+      :duration: 1
 
-    .. action:: Deploy release
-       :id: ACT_DEPLOY
-       :tags: gantt_example
-       :links: ACT_RELEASE_PLAN
-       :duration: 2
+   .. action:: Deploy release
+      :id: ACT_DEPLOY
+      :tags: gantt_example
+      :links: ACT_RELEASE_PLAN
+      :duration: 2
 
-    .. action:: Test release
-       :id: ACT_TEST
-       :tags: gantt_example
-       :links: ACT_DEPLOY
-       :duration: 12
-       :completion: 80
+   .. action:: Test release
+      :id: ACT_TEST
+      :tags: gantt_example
+      :links: ACT_DEPLOY
+      :duration: 12
+      :completion: 80
 
-    .. milestone:: Bug solved
-       :id: MS_BUG_SOLVED
-       :tags: gantt_example
-       :links: ACT_TEST
+   .. milestone:: Bug solved
+      :id: MS_BUG_SOLVED
+      :tags: gantt_example
+      :links: ACT_TEST
 
 .. hint::
 
@@ -94,7 +94,7 @@ We interpret the value as percentage and should be between 0 and 100.
 Options
 -------
 
-.. _needgantt_milestone_filter:
+.. _`needgantt_milestone_filter`:
 
 milestone_filter
 ~~~~~~~~~~~~~~~~
@@ -104,7 +104,7 @@ If it is a match, we represent the need as a milestone instead of a task in gant
 
 ``milestone_filter`` must be a valid :ref:`filter_string`.
 
-.. _needgantt_starts_with_links:
+.. _`needgantt_starts_with_links`:
 
 starts_with_links
 ~~~~~~~~~~~~~~~~~
@@ -121,24 +121,24 @@ Default: None
 
 .. dropdown:: Show used needs for above example
 
-    .. action:: Create example
-       :id: ACT_CREATE_EX_SW
-       :tags: gantt_ex_starts_with
-       :duration: 12
+   .. action:: Create example
+      :id: ACT_CREATE_EX_SW
+      :tags: gantt_ex_starts_with
+      :duration: 12
 
-    .. action:: Read example
-       :id: ACT_READ_EX_SW
-       :tags: gantt_ex_starts_with
-       :links: ACT_CREATE_EX_SW
-       :duration: 8
+   .. action:: Read example
+      :id: ACT_READ_EX_SW
+      :tags: gantt_ex_starts_with
+      :links: ACT_CREATE_EX_SW
+      :duration: 8
 
-    .. action:: Understand example
-       :id: ACT_UNDERSTAND_EX_SW
-       :tags: gantt_ex_starts_with
-       :starts_with: ACT_READ_EX_SW
-       :duration: 12
+   .. action:: Understand example
+      :id: ACT_UNDERSTAND_EX_SW
+      :tags: gantt_ex_starts_with
+      :starts_with: ACT_READ_EX_SW
+      :duration: 12
 
-.. _needgantt_starts_after_links:
+.. _`needgantt_starts_after_links`:
 
 starts_after_links
 ~~~~~~~~~~~~~~~~~~
@@ -155,18 +155,18 @@ Default: links
 
 .. dropdown:: Show the needs used in the above example
 
-    .. action:: Create example
-       :id: ACT_CREATE_EX_SA
-       :tags: gantt_ex_starts_after
-       :duration: 12
+   .. action:: Create example
+      :id: ACT_CREATE_EX_SA
+      :tags: gantt_ex_starts_after
+      :duration: 12
 
-    .. action:: Read example
-       :id: ACT_READ_EX_SA
-       :tags: gantt_ex_starts_after
-       :starts_after: ACT_CREATE_EX_SA
-       :duration: 8
+   .. action:: Read example
+      :id: ACT_READ_EX_SA
+      :tags: gantt_ex_starts_after
+      :starts_after: ACT_CREATE_EX_SA
+      :duration: 8
 
-.. _needgantt_ends_with_links:
+.. _`needgantt_ends_with_links`:
 
 ends_with_links
 ~~~~~~~~~~~~~~~
@@ -183,21 +183,21 @@ Default: None
 
 .. dropdown:: Show the needs used in the above example
 
-    .. action:: Create example
-       :id: ACT_CREATE_EX_EW
-       :tags: gantt_ex_ends_with
-       :duration: 12
+   .. action:: Create example
+      :id: ACT_CREATE_EX_EW
+      :tags: gantt_ex_ends_with
+      :duration: 12
 
-    .. action:: Read example
-       :id: ACT_READ_EX_EW
-       :tags: gantt_ex_ends_with
-       :ends_with: ACT_CREATE_EX_EW
-       :duration: 8
+   .. action:: Read example
+      :id: ACT_READ_EX_EW
+      :tags: gantt_ex_ends_with
+      :ends_with: ACT_CREATE_EX_EW
+      :duration: 8
 
-.. _needgantt_start_date:
+.. _`needgantt_start_date`:
 
 start_date
-~~~~~~~~~~~
+~~~~~~~~~~
 
 Optional start date for the gantt chart.
 We calculate all tasks and milestones dates based on the ``:start_date:`` option's value.
@@ -211,7 +211,7 @@ Date format must be ``YYYY-MM-DD``. Example: 2020-03-25
       :milestone_filter: type == 'milestone'
       :start_date: 2020-03-25
 
-.. _needgantt_timeline:
+.. _`needgantt_timeline`:
 
 timeline
 ~~~~~~~~
@@ -232,7 +232,7 @@ Works only, if you set :ref:`needgantt_start_date` option.
       :start_date: 2020-03-25
       :timeline: weekly
 
-.. _needgantt_no_color:
+.. _`needgantt_no_color`:
 
 no_color
 ~~~~~~~~
@@ -245,7 +245,7 @@ else we use the default PlantUML colors.
    :milestone_filter: type == 'milestone'
    :no_color:
 
-.. _needgantt_duration_option:
+.. _`needgantt_duration_option`:
 
 duration_option
 ~~~~~~~~~~~~~~~
@@ -265,23 +265,21 @@ Default: :ref:`need_duration`
 
 .. dropdown:: Show the needs used in the above example
 
-    .. action:: Create example
-       :id: ACT_CREATE_EX
-       :tags: gantt_ex_duration
-       :hours: 12
+   .. action:: Create example
+      :id: ACT_CREATE_EX
+      :tags: gantt_ex_duration
+      :hours: 12
 
-    .. action:: Read example
-       :id: ACT_READ_EX
-       :tags: gantt_ex_duration
-       :links: ACT_CREATE_EX
-       :hours: 3
-       :duration: 100
+   .. action:: Read example
+      :id: ACT_READ_EX
+      :tags: gantt_ex_duration
+      :links: ACT_CREATE_EX
+      :hours: 3
+      :duration: 100
 
+      ``duration`` option gets ignored in the above ``needgantt``.
 
-       ``duration`` option gets ignored in the above ``needgantt``.
-
-
-.. _needgantt_completion_option:
+.. _`needgantt_completion_option`:
 
 completion_option
 ~~~~~~~~~~~~~~~~~
@@ -301,20 +299,18 @@ Default: :ref:`need_completion`
 
 .. dropdown:: Show the needs used in the above example
 
-    .. action:: Create example
-       :id: ACT_CREATE_EX_C
-       :tags: gantt_ex_completion
-       :duration: 12
-       :amount: 90
+   .. action:: Create example
+      :id: ACT_CREATE_EX_C
+      :tags: gantt_ex_completion
+      :duration: 12
+      :amount: 90
 
-
-    .. action:: Read example
-       :id: ACT_READ_EX_C
-       :tags: gantt_ex_completion
-       :links: ACT_CREATE_EX_C
-       :duration: 12
-       :amount: 40
-
+   .. action:: Read example
+      :id: ACT_READ_EX_C
+      :tags: gantt_ex_completion
+      :links: ACT_CREATE_EX_C
+      :duration: 12
+      :amount: 40
 
 common filters
 ~~~~~~~~~~~~~~

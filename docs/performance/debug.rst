@@ -1,4 +1,4 @@
-.. _runtime_debugging:
+.. _`runtime_debugging`:
 
 Runtime debugging
 =================
@@ -14,7 +14,7 @@ supports user defined elements and internal functions.
 
 To activate it, simply add the following to the project ``conf.py`` file::
 
-   needs_debug_measurement = True
+  needs_debug_measurement = True
 
 This will perform measurements and gives some output in three formats:
 
@@ -29,7 +29,6 @@ This will perform measurements and gives some output in three formats:
 
    HTML report example of timing measurements (*Click to open complete HTML report*)
 
-
 .. warning::
 
    Do not use this function in Sphinx parallel mode, as this will result in incorrect data.
@@ -37,7 +36,7 @@ This will perform measurements and gives some output in three formats:
 
 Technical details
 -----------------
-If you need to activate the measurement for additional Sphinx-Needs functions, use the ``measure_time()`` decorator.
 
+If you need to activate the measurement for additional Sphinx-Needs functions, use the ``measure_time()`` decorator.
 
 .. autofunction:: sphinx_needs.debug.measure_time

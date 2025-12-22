@@ -1,7 +1,7 @@
 .. _needpie:
 
 needpie
-========
+=======
 
 .. versionadded:: 0.5.0
 
@@ -24,8 +24,8 @@ You can use :ref:`filter_func` with Python codes to define custom filters for ``
 
 .. note::
 
-    This generates multiple image files per ``needpie`` and allows
-    the document engine to pick the appropriate image type (vector or raster).
+   This generates multiple image files per ``needpie`` and allows
+   the document engine to pick the appropriate image type (vector or raster).
 
 Options
 -------
@@ -47,7 +47,6 @@ Options
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
 
-
 labels
 ~~~~~~
 
@@ -65,7 +64,6 @@ values/lines from content.
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
 
-
 legend
 ~~~~~~
 
@@ -82,7 +80,6 @@ The ``:legend:`` flag does not support any values.
       type == 'req' and status == 'open'
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
-
 
 explode
 ~~~~~~~
@@ -102,7 +99,6 @@ Useful values for ``:explode:`` are between ``0`` and ``0.3``
       type == 'req' and status == 'open'
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
-
 
 shadow
 ~~~~~~
@@ -178,14 +174,13 @@ Useful styles are for example:
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
 
-
 overlapping labels
 ~~~~~~~~~~~~~~~~~~
 
 In the past we had overlapping labels. See following diagram.
 
 .. image:: /_images/need_pie_overlapping_labels.png
-  :alt: Example of a needpie with overlapping labels
+   :alt: Example of a needpie with overlapping labels
 
 Now overlapping labels are removed, and we automatically add a legend with removed information.
 

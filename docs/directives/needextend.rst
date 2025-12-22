@@ -2,6 +2,7 @@
 
 needextend
 ==========
+
 .. versionadded:: 0.7.0
 
 ``needextend`` allows to modify existing needs. It doesn't provide any output, as the modifications
@@ -68,10 +69,11 @@ Also, you can add links or delete tags.
 Options
 -------
 
-.. _needextend_strict:
+.. _`needextend_strict`:
 
 strict
 ~~~~~~
+
 The purpose of the ``:strict:`` option is to handle whether an exception gets thrown or a warning log message gets written, if there is no need object to match the ``needextend's`` required argument (e.g. an ID).
 
 If you set the ``:strict:`` option value to ``true``,
@@ -89,8 +91,8 @@ Default: false
 
 .. note::
 
-    We have a configuration (conf.py) option called :ref:`needs_needextend_strict`
-    that deactivates or activates the ``:strict:`` option behaviour for all ``needextend`` directives in a project.
+   We have a configuration (conf.py) option called :ref:`needs_needextend_strict`
+   that deactivates or activates the ``:strict:`` option behaviour for all ``needextend`` directives in a project.
 
 Extending needs in current page
 -------------------------------
@@ -119,6 +121,7 @@ See also, :ref:`filter_current_page` and :ref:`needs_global_options` for setting
 
 Changing links
 --------------
+
 Options containing links get handled in two steps:
 
 1. Options for the need are set as above.
@@ -161,7 +164,6 @@ Options containing links get handled in two steps:
       :+links: extend_test_004
 
    .. Same as above, so it should not do anything.
-   
    .. But it raises the modified-counter by one.
 
    .. needextend:: extend_test_006
@@ -169,6 +171,7 @@ Options containing links get handled in two steps:
 
 Monitoring modifications
 ------------------------
+
 All needs have this two internal parameters:
 
 * ``is_modified``: A boolean value. Defaults to ``False``

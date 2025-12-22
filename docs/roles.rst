@@ -5,7 +5,7 @@ Roles
 
 You can use Roles to get short information of needs inside single sentences.
 
-.. _role_need:
+.. _`role_need`:
 .. _needref:
 
 need
@@ -15,7 +15,7 @@ The role ``:need:`` will add title, id and a link to the need.
 
 We use it to reference an existing need, without the need to keep title and link location manually in sync.
 
-With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra options <needs_extra_options>`. 
+With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra options <needs_extra_options>`.
 
 .. need-example::
 
@@ -34,8 +34,8 @@ With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra options <nee
    You can customize the string representation by using the
    configuration parameters :ref:`needs_role_need_template` and
    :ref:`needs_role_need_max_title_length`.
-   If we find a ``[[`` in the customized string, we handle it 
-   according to Python's ``{`` `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ 
+   If we find a ``[[`` in the customized string, we handle it
+   according to Python's ``{`` `.format() <https://docs.python.org/3.4/library/functions.html#format>`_
    function.
    Please see https://pyformat.info/ for more information.
    RST-attributes like ``**bold**`` are **not** supported.
@@ -45,11 +45,11 @@ With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra options <nee
    If you refer to an :ref:`external need <needs_external_needs>`, the algorithm is different
    and you will only get the need id as link text.
 
-
-.. _role_need_outgoing:
+.. _`role_need_outgoing`:
 
 need_outgoing
 -------------
+
 .. versionadded:: 0.1.25
 
 ``:need_outgoing:`` adds a list of all outgoing links of the given need.
@@ -63,10 +63,11 @@ The list contains the need IDs only, no title or any other information is printe
 
    To get butter on our bread, we need to fulfill :need_outgoing:`roles_req_2`
 
-.. _role_need_incoming:
+.. _`role_need_incoming`:
 
 need_incoming
 -------------
+
 .. versionadded:: 0.1.25
 
 ``:need_incoming:`` prints a list of IDs of needs which have set outgoing links to the given need.
@@ -76,10 +77,11 @@ need_incoming
    The realisation of **Sliced Bread** is really important because the needs :need_incoming:`roles_req_1` are based on
    it.
 
-.. _need_part:
+.. _`need_part`:
 
 need_part / np
-----------------
+--------------
+
 .. versionadded:: 0.3.0
 
 You can use ``:need_part:`` or as shortcut ``:np:`` inside needs to set a sub-id for a specific sentence/part.
@@ -101,7 +103,6 @@ The used need_part id can be freely chosen, but should not contain any whitespac
 
       And we also need --> :np:`(awesome_3) a turbo button`!
 
-
    .. spec:: Build awesome car
       :id: impl_my_car_1
       :links: my_car_1.1, my_car_1.2
@@ -110,7 +111,6 @@ The used need_part id can be freely chosen, but should not contain any whitespac
       be realised by doing rocket science.
 
       But no way to get :need:`my_car_1.awesome_3` realised.
-
 
    Reference to a part of a need from outside need scope: :need:`my_car_1.2`.
 
@@ -136,10 +136,11 @@ Please see :ref:`needtable_show_parts` of :ref:`needtable` configuration documen
       :show_parts:
       :columns: id, title, incoming, outgoing
 
-.. _need_count:
+.. _`need_count`:
 
 need_count
 ----------
+
 .. versionadded:: 0.3.1
 
 Counts found needs for a given filter and shows the final amount.
@@ -168,8 +169,7 @@ See :ref:`filter_string` for more information.
    So if you use :ref:`need_part` , the result may contain the amount of found needs *and* found need_parts.
    To avoid this, add ``is_need`` or ``is_part`` to your filter.
 
-
-.. _need_count_ratio:
+.. _`need_count_ratio`:
 
 Ratio
 ~~~~~
@@ -183,11 +183,11 @@ To calculate the ratio of one filter to another filter, you can define two filte
 
    :need_count:`status == open and type == "spec" ? type == "spec"` % of our specifications are open.
 
-
-.. _need_func:
+.. _`need_func`:
 
 need_func
 ---------
+
 .. deprecated:: 3.1.0
 
    Use :ref:`ndf` instead.
@@ -196,10 +196,11 @@ need_func
 
 ndf
 ---
+
 .. versionadded:: 3.1.0
 
 Executes a :ref:`need dynamic function <dynamic_functions>` and uses the return values as content.
 
 .. need-example::
 
-    A nice :ndf:`echo("first test")` for dynamic functions.
+   A nice :ndf:`echo("first test")` for dynamic functions.

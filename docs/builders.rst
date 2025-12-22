@@ -3,10 +3,11 @@
 Builders
 ========
 
-.. _needs_builder:
+.. _`needs_builder`:
 
 needs
 -----
+
 .. versionadded:: 0.1.30
 
 The **needs** builder exports all found needs and selected filter results to a single json file.
@@ -18,8 +19,7 @@ Usage
 
 .. code-block:: bash
 
-    sphinx-build -b needs source_dir build_dir
-
+   sphinx-build -b needs source_dir build_dir
 
 .. hint::
 
@@ -35,10 +35,11 @@ If a **needs.json** is imported (see :ref:`needs_file`) and you raise the docume
 version(s) inside the **needs.json**.
 
 .. hint::
+
    If you generate and store/archive (e.g. in git) the **needs.json** file
    every time you raise your documentation version, you will get a nice history data.
 
-.. _needs_builder_format:
+.. _`needs_builder_format`:
 
 Format
 ++++++
@@ -54,106 +55,106 @@ See also :ref:`needs_json_exclude_fields`, :ref:`needs_json_remove_defaults`, an
 
 .. code-block:: python
 
-    {
-    "created": "2017-07-03T11:54:42.433876",
-    "current_version": "1.5",
-    "project": "needs test docs",
-    "versions": {
-        "1.0": {
-            "created": "2017-07-03T11:54:42.433868",
-            "needs_schema": {
-                "$schema": "http://json-schema.org/draft-07/schema#",
-                "properties": {
-                    "id": {
-                        "description": "ID of the data.",
-                        "field_type": "core",
-                        "type": "string"
-                    },
-                    "type": {
-                        "description": "Type of the need.",
-                        "field_type": "core",
-                        "type": "string"
-                    },
-                    "links": {
-                        "description": "Link field",
-                        "field_type": "links",
-                        "items": {
-                            "type": "string"
-                        },
-                        "type": "array",
-                        "default": []
-                    },
-                    "status": {
-                        "description": "Status of the need.",
-                        "field_type": "core",
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "default": null
-                    },
-                    ...
-                }
-            },
-            "needs_defaults_removed": true,
-            "needs": {
-                "IMPL_01": {
-                    "id": "IMPL_01",
-                    "type": "impl",
-                    "links": ["OWN_ID_123"],
-                    ...
-                },
-                ...
-            }
-        },
-        "1.5": {
-            "created": "2017-07-03T16:10:31.633425",
-            "needs_schema": {
-                "id": {
-                    "description": "ID of the data.",
-                    "field_type": "core",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "Type of the need.",
-                    "field_type": "core",
-                    "type": "string"
-                },
-                "links": {
-                    "description": "Link field",
-                    "field_type": "links",
-                    "items": {
-                        "type": "string"
-                    },
-                    "type": "array",
-                    "default": []
-                },
-                "status": {
-                    "description": "Status of the need.",
-                    "field_type": "core",
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "default": null
-                },
-                ...
-            },
-            "needs_defaults_removed": true,
-            "needs": {
-                "IMPL_01": {
-                    "id": "IMPL_01",
-                    "type": "impl",
-                    "links": ["OWN_ID_123"],
-                    "status": "closed",
-                    ...
-                },
-                ...
-            }
-        }
-    }
+   {
+   "created": "2017-07-03T11:54:42.433876",
+   "current_version": "1.5",
+   "project": "needs test docs",
+   "versions": {
+       "1.0": {
+           "created": "2017-07-03T11:54:42.433868",
+           "needs_schema": {
+               "$schema": "http://json-schema.org/draft-07/schema#",
+               "properties": {
+                   "id": {
+                       "description": "ID of the data.",
+                       "field_type": "core",
+                       "type": "string"
+                   },
+                   "type": {
+                       "description": "Type of the need.",
+                       "field_type": "core",
+                       "type": "string"
+                   },
+                   "links": {
+                       "description": "Link field",
+                       "field_type": "links",
+                       "items": {
+                           "type": "string"
+                       },
+                       "type": "array",
+                       "default": []
+                   },
+                   "status": {
+                       "description": "Status of the need.",
+                       "field_type": "core",
+                       "type": [
+                           "string",
+                           "null"
+                       ],
+                       "default": null
+                   },
+                   ...
+               }
+           },
+           "needs_defaults_removed": true,
+           "needs": {
+               "IMPL_01": {
+                   "id": "IMPL_01",
+                   "type": "impl",
+                   "links": ["OWN_ID_123"],
+                   ...
+               },
+               ...
+           }
+       },
+       "1.5": {
+           "created": "2017-07-03T16:10:31.633425",
+           "needs_schema": {
+               "id": {
+                   "description": "ID of the data.",
+                   "field_type": "core",
+                   "type": "string"
+               },
+               "type": {
+                   "description": "Type of the need.",
+                   "field_type": "core",
+                   "type": "string"
+               },
+               "links": {
+                   "description": "Link field",
+                   "field_type": "links",
+                   "items": {
+                       "type": "string"
+                   },
+                   "type": "array",
+                   "default": []
+               },
+               "status": {
+                   "description": "Status of the need.",
+                   "field_type": "core",
+                   "type": [
+                       "string",
+                       "null"
+                   ],
+                   "default": null
+               },
+               ...
+           },
+           "needs_defaults_removed": true,
+           "needs": {
+               "IMPL_01": {
+                   "id": "IMPL_01",
+                   "type": "impl",
+                   "links": ["OWN_ID_123"],
+                   "status": "closed",
+                   ...
+               },
+               ...
+           }
+       }
+   }
 
-.. _needumls_builder:
+.. _`needumls_builder`:
 
 needumls
 --------
@@ -168,23 +169,21 @@ Usage
 
 .. code-block:: bash
 
-    make needumls
+   make needumls
 
 or
 
 .. code-block:: bash
 
-    sphinx-build -M needumls source_dir build_dir
+   sphinx-build -M needumls source_dir build_dir
 
-.. hint::
+.. hint:: As an alternative, you can set the config option :ref:`needs_build_needumls` to export the needumls files during each build.
 
-    As an alternative, you can set the config option :ref:`needs_build_needumls` to export the needumls files during each build.
-
-
-.. _needs_id_builder:
+.. _`needs_id_builder`:
 
 needs_id
 --------
+
 .. versionadded:: 2.0.0
 
 The **needs_id** builder exports all found needs and selected filter results to a set json files of each need with the name is ``id`` of need.
@@ -196,4 +195,4 @@ Usage
 
 .. code-block:: bash
 
-    sphinx-build -b needs_id source_dir build_dir
+   sphinx-build -b needs_id source_dir build_dir

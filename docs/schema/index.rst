@@ -1066,10 +1066,10 @@ Validation errors include detailed information:
   identifier built from the :ref:`schema rule id <schemas_json_structure>` and the 0-based index
   of the rule in the list. Examples::
 
-      [0] > local > properties > id > pattern
-      spec[1] > local > properties > id > pattern
+    [0] > local > properties > id > pattern
+    spec[1] > local > properties > id > pattern
 
-   The first example has no schema rule ID defined, so only the index is used.
+  The first example has no schema rule ID defined, so only the index is used.
 
 - **User message**: Optional user-friendly :ref:`message <schemas_json_structure>` set in the
   schema rules.
