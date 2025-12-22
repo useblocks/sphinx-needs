@@ -212,6 +212,8 @@ For new fields the following can be defined:
     This uses the same format as :ref:`needs_schema_definitions` and :ref:`needs_schema_definitions_from_json`.
     If specified, the field value will be validated against this schema when needs are parsed, see :ref:`schema_validation` for more details.
     By default the field schema will be ``{"type": "string"}``.
+- ``nullable``: If set to ``True``, the field can be set to ``None`` (optional), e.g. if no value is specifically given and no default applies,
+    If ``False``, the field must have a value (either explicitly set or via default/predicates), otherwise the need is invalid and will not be created.
 - ``predicates``: A list of ``(match expression, value)`` tuples (optional).
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default``: A default value for the field (optional).
@@ -228,6 +230,7 @@ For example:
                "type": "string",
                "format": "date",
            },
+           "nullable": False,
        },
        "cost": {
              "description": "Approximated cost in Euros",
@@ -264,14 +267,7 @@ Core field specialization
 
 The following core fields can be specialized:
 
-- ``title`` (string)
-- ``status`` (nullable string)
-- ``tags`` (array of strings)
-- ``collapse`` (boolean)
-- ``hide`` (boolean)
-- ``layout`` (nullable string)
-- ``style`` (nullable string)
-
+.. need-core-fields::
 
 Specialization allows you to redefine the description and tighten the schema of these fields:
 Schemas will inherit any constraints defined in the core schema that are not redefined, and redefinitions must be not weaken the constraints of the original schema (this is intended to obey the `Liskov substitution principle <https://en.wikipedia.org/wiki/Liskov_substitution_principle>`__).
@@ -286,6 +282,9 @@ For example, you could redefine the ``status`` and ``tags`` fields to only allow
                # adds tighter constraint on allowed values
                "enum": ["open", "in progress", "done", "closed"],
            },
+           # adds tighter constraint on nullability,
+           # i.e. the status must always be set
+           "nullable": False,
        },
          "tags": {
             "schema": {

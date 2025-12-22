@@ -34,6 +34,7 @@ from sphinx_needs.config import (
 )
 from sphinx_needs.data import (
     ENV_DATA_VERSION,
+    CoreFieldParameters,
     NeedsCoreFields,
     SphinxNeedsData,
     merge_data,
@@ -558,8 +559,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             continue
         description = option_params.get("description", "Added by needs_fields config")
         schema = option_params.get("schema")
+        nullable = option_params.get("nullable")
         _NEEDS_CONFIG.add_extra_option(
-            option_name, description, schema=schema, override=True
+            option_name, description, schema=schema, nullable=nullable, override=True
         )
 
     # ensure options for `needgantt` functionality are added to the extra options
@@ -799,6 +801,19 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     validate_schemas_config(app, needs_config)
 
 
+def _get_core_schema(data: CoreFieldParameters) -> tuple[dict[str, Any], bool]:
+    type_ = data["schema"]["type"]
+    nullable = False
+    if isinstance(type_, list):
+        assert type_[1] == "null", "Only nullable types supported as list"
+        type_ = type_[0]
+        nullable = True
+    schema = {"type": type_}
+    if type_ == "array":
+        schema["items"] = data["schema"].get("items", {"type": "string"})
+    return schema, nullable
+
+
 def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     schema = FieldsSchema()
@@ -806,15 +821,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         if not data.get("add_to_field_schema", False):
             continue
         description = data["description"]
-        type_ = data["schema"]["type"]
-        nullable = False
-        if isinstance(type_, list):
-            assert type_[1] == "null", "Only nullable types supported as list"
-            type_ = type_[0]
-            nullable = True
-        _schema = {"type": type_}
-        if type_ == "array":
-            _schema["items"] = data["schema"].get("items", {"type": "string"})
+        _schema, nullable = _get_core_schema(data)
 
         # merge in additional schema from needs_statuses and needs_tags config
         if name == "status" and needs_config.statuses:
@@ -855,9 +862,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
         if (core_override := needs_config._fields.get(name)) is not None:
             try:
-                field = create_inherited_field(
-                    field, cast(dict[str, Any], core_override)
-                )
+                field = create_inherited_field(field, core_override)
             except Exception as exc:
                 raise NeedsConfigException(
                     f"Invalid `needs_fields` core option override for {name!r}: {exc}"
@@ -875,14 +880,19 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 if extra.schema is not None
                 else {"type": "string"}
             )
+            if extra.nullable is not None:
+                nullable = extra.nullable
+            else:
+                # follows that of legacy (pre-schema) extra option,
+                # i.e. nullable if schema is defined
+                nullable = extra.schema is not None
             field = FieldSchema(
                 name=name,
                 description=extra.description,
                 schema=_schema,  # type: ignore[arg-type]
-                # TODO for nullable and default, currently if there is no schema,
-                # we configure so that the behaviour follows that of legacy (pre-schema) extra option,
-                # i.e. non-nullable and default of empty string (that can be overriden).
-                nullable=extra.schema is not None,
+                nullable=nullable,
+                # note, default follows that of legacy (pre-schema) extra option,
+                # i.e. default to "" only if no schema is defined
                 default=None if extra.schema is not None else FieldLiteralValue(""),
                 allow_defaults=True,
                 allow_extend=True,
