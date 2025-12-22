@@ -15,7 +15,7 @@ The role ``:need:`` will add title, id and a link to the need.
 
 We use it to reference an existing need, without the need to keep title and link location manually in sync.
 
-With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra options <needs_options>`. 
+With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra fields <needs_fields>`. 
 
 .. need-example::
 

@@ -2,7 +2,7 @@ extensions = ["sphinx_needs"]
 
 needs_extra_options = ["updated"]
 
-needs_options = {
+needs_fields = {
     "introduced": {},
     "impacts": {"description": "What is the impact of this need?"},
     1: {},

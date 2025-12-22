@@ -31,4 +31,4 @@ needs_types = [
     },
 ]
 
-needs_options = {"test_func": {}, "hours": {}}
+needs_fields = {"test_func": {}, "hours": {}}

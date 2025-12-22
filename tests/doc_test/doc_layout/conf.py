@@ -31,7 +31,7 @@ needs_types = [
     },
 ]
 
-needs_options = {"author": {}, "author_image": {}}
+needs_fields = {"author": {}, "author_image": {}}
 
 
 needs_layouts = {

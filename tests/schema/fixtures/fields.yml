@@ -3,7 +3,7 @@ no_schema:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -14,7 +14,7 @@ set_type_string:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
     schema.type = "string"
   rst: |
     .. impl:: title
@@ -26,7 +26,7 @@ wrong_type:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
     schema.type = "integer"
   rst: |
     .. impl:: title
@@ -39,7 +39,7 @@ const:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -60,7 +60,7 @@ const_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -81,7 +81,7 @@ enum:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -102,7 +102,7 @@ enum_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -123,7 +123,7 @@ auto_inject_type:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -143,7 +143,7 @@ required:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -161,7 +161,7 @@ required_missing:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -178,7 +178,7 @@ auto_inject_type_wrong_const:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -198,8 +198,8 @@ required_based_on_select_field_missing:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
-    [needs.options.efforts]
+    [needs.fields.asil]
+    [needs.fields.efforts]
     schema.type = "integer"
   rst: |
     .. impl:: title
@@ -222,8 +222,8 @@ required_based_on_select_field_below_threshold:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
-    [needs.options.efforts]
+    [needs.fields.asil]
+    [needs.fields.efforts]
     schema.type = "integer"
   rst: |
     .. impl:: title
@@ -247,8 +247,8 @@ required_based_on_select_field_over_threshold:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
-    [needs.options.efforts]
+    [needs.fields.asil]
+    [needs.fields.efforts]
     schema.type = "integer"
   rst: |
     .. impl:: title
@@ -272,7 +272,7 @@ string_type:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
     schema.type = "string"
   rst: |
     .. impl:: title
@@ -284,7 +284,7 @@ string_format_date:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.start_date]
+    [needs.fields.start_date]
     schema.type = "string"
     schema.format = "date"
   rst: |
@@ -297,7 +297,7 @@ string_format_date_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.start_date]
+    [needs.fields.start_date]
     schema.type = "string"
     schema.format = "date"
   rst: |
@@ -310,7 +310,7 @@ string_format_date_time:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.start_date]
+    [needs.fields.start_date]
     schema.type = "string"
     schema.format = "date-time"
   rst: |
@@ -323,7 +323,7 @@ string_format_date_time_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.start_date]
+    [needs.fields.start_date]
     schema.type = "string"
     schema.format = "date-time"
   rst: |
@@ -336,7 +336,7 @@ string_format_time:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.time]
+    [needs.fields.time]
     schema.type = "string"
     schema.format = "time"
   rst: |
@@ -349,7 +349,7 @@ string_format_time_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.time]
+    [needs.fields.time]
     schema.type = "string"
     schema.format = "time"
   rst: |
@@ -362,7 +362,7 @@ string_format_duration:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.start_date]
+    [needs.fields.start_date]
     schema.type = "string"
     schema.format = "duration"
   rst: |
@@ -375,7 +375,7 @@ string_format_duration_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options._duration]
+    [needs.fields._duration]
     schema.type = "string"
     schema.format = "duration"
   rst: |
@@ -388,7 +388,7 @@ string_format_email:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.email]
+    [needs.fields.email]
     schema.type = "string"
     schema.format = "email"
   rst: |
@@ -401,7 +401,7 @@ string_format_email_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.email]
+    [needs.fields.email]
     schema.type = "string"
     schema.format = "email"
   rst: |
@@ -414,7 +414,7 @@ string_format_uri:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.uri]
+    [needs.fields.uri]
     schema.type = "string"
     schema.format = "uri"
   rst: |
@@ -427,7 +427,7 @@ string_format_uri_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.uri]
+    [needs.fields.uri]
     schema.type = "string"
     schema.format = "uri"
   rst: |
@@ -440,7 +440,7 @@ string_format_uuid:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.uuid]
+    [needs.fields.uuid]
     schema.type = "string"
     schema.format = "uuid"
   rst: |
@@ -453,7 +453,7 @@ string_format_uuid_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.uuid]
+    [needs.fields.uuid]
     schema.type = "string"
     schema.format = "uuid"
   rst: |
@@ -466,11 +466,11 @@ coerce_to_integer:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts1]
+    [needs.fields.efforts1]
     schema.type = "integer"
-    [needs.options.efforts2]
+    [needs.fields.efforts2]
     schema.type = "integer"
-    [needs.options.efforts3]
+    [needs.fields.efforts3]
     schema.type = "integer"
   rst: |
     .. impl:: title
@@ -484,13 +484,13 @@ integer_multiple_of:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts1]
+    [needs.fields.efforts1]
     schema.type = "integer"
     schema.multipleOf = 3
-    [needs.options.efforts2]
+    [needs.fields.efforts2]
     schema.type = "integer"
     schema.multipleOf = 1
-    [needs.options.efforts3]
+    [needs.fields.efforts3]
     schema.type = "integer"
     schema.multipleOf = 1
   rst: |
@@ -505,7 +505,7 @@ integer_multiple_of_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
     schema.type = "integer"
     schema.multipleOf = 3
   rst: |
@@ -518,13 +518,13 @@ number_multiple_of:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts1]
+    [needs.fields.efforts1]
     schema.type = "number"
     schema.multipleOf = 3.3
-    [needs.options.efforts2]
+    [needs.fields.efforts2]
     schema.type = "number"
     schema.multipleOf = 1.1
-    [needs.options.efforts3]
+    [needs.fields.efforts3]
     schema.type = "number"
     schema.multipleOf = 1.2
   rst: |
@@ -539,7 +539,7 @@ number_multiple_of_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
     schema.type = "number"
     schema.multipleOf = 3.3
   rst: |
@@ -552,7 +552,7 @@ coerce_to_integer_from_string_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
     schema.type = "integer"
   rst: |
     .. impl:: title
@@ -564,11 +564,11 @@ coerce_to_number:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts1]
+    [needs.fields.efforts1]
     schema.type = "number"
-    [needs.options.efforts2]
+    [needs.fields.efforts2]
     schema.type = "number"
-    [needs.options.efforts3]
+    [needs.fields.efforts3]
     schema.type = "number"
   rst: |
     .. impl:: title
@@ -582,7 +582,7 @@ coerce_to_number_from_string_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
     schema.type = "number"
   rst: |
     .. impl:: title
@@ -594,7 +594,7 @@ coerce_to_integer_from_float_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
     schema.type = "integer"
   rst: |
     .. impl:: title
@@ -606,7 +606,7 @@ coerce_to_boolean:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.accepted]
+    [needs.fields.accepted]
     schema.type = "boolean"
   rst: |
     .. impl:: title
@@ -670,7 +670,7 @@ coerce_to_boolean_from_string_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.approved]
+    [needs.fields.approved]
     schema.type = "boolean"
   rst: |
     .. impl:: title
@@ -682,7 +682,7 @@ array_unique_items:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.array_field]
+    [needs.fields.array_field]
     schema.type = "array"
     schema.items = {type = "string"}
     schema.uniqueItems = true
@@ -696,7 +696,7 @@ title_length:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.title]
+    [needs.fields.title]
     schema.minLength = 16
     schema.maxLength = 20
   rst: |
@@ -714,7 +714,7 @@ status_enum:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.status]
+    [needs.fields.status]
     schema.enum = ["open", "in progress", "closed"]
   rst: |
     .. impl:: title
@@ -730,7 +730,7 @@ tags_enum:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.tags]
+    [needs.fields.tags]
     schema.items.enum = ["a", "c"]
   rst: |
     .. impl:: title

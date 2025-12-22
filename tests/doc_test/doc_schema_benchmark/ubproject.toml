@@ -5,23 +5,23 @@ id_required = true
 a = ["a", 3, { "a" = "b" }]
 id_regex = "^[A-Z0-9_]{3,}"
 
-[needs.options.efforts]
+[needs.fields.efforts]
 description = "FTE days"
 schema.type = "integer"
 schema.minimum = 0
 
-[needs.options.priority]
+[needs.fields.priority]
 description = "Priority level, 1-5 where 1 is highest and 5 is lowest"
 schema.type = "integer"
 schema.minimum = 1
 schema.maximum = 5
 
-[needs.options.asil]
+[needs.fields.asil]
 description = "Automotive Safety Integrity Level"
 schema.type = "string"
 schema.enum = ["QM", "A", "B", "C", "D"]
 
-[needs.options.approved]
+[needs.fields.approved]
 description = "Approval flag"
 schema.type = "boolean"
 

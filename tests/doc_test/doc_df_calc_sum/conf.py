@@ -31,7 +31,7 @@ needs_types = [
     },
 ]
 
-needs_options = {
+needs_fields = {
     "hours": {"description": "Some hours", "schema": {"type": "number"}},
     "amount": {"description": "Some amount", "schema": {"type": "number"}},
 }

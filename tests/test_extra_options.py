@@ -18,10 +18,10 @@ def test_custom_attributes_appear(test_app, snapshot):
 
     warnings = strip_colors(app._warning.getvalue()).splitlines()
     assert warnings == [
-        'WARNING: Config option "needs_extra_options" is deprecated. Please use "needs_options" instead. [needs.deprecated]',
+        'WARNING: Config option "needs_extra_options" is deprecated. Please use "needs_fields" instead. [needs.deprecated]',
         'WARNING: extra_option "introduced" already registered. [needs.config]',
-        "WARNING: needs_options key is not a string: 1 [needs.config]",
-        "WARNING: needs_options entry for 'a' is not a dict: 1 [needs.config]",
+        "WARNING: needs_fields key is not a string: 1 [needs.config]",
+        "WARNING: needs_fields entry for 'a' is not a dict: 1 [needs.config]",
     ]
 
     needs = json.loads(Path(app.outdir, "needs.json").read_text("utf8"))

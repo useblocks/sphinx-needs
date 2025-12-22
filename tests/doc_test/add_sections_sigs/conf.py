@@ -3,7 +3,7 @@ extensions = ["sphinx_needs"]
 needs_build_json = True
 needs_json_remove_defaults = True
 
-needs_options = {
+needs_fields = {
     "introduced": {},
     "updated": {},
     "impacts": {},

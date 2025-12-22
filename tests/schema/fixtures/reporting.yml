@@ -4,7 +4,7 @@ severity_rule_default:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -24,7 +24,7 @@ severity_rule_info:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -45,7 +45,7 @@ severity_rule_warning:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -66,7 +66,7 @@ severity_rule_violation:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -88,7 +88,7 @@ severity_default_suppress_severity:
     needs_schema_definitions_from_json = "schemas.json"
     suppress_warnings = ["sn_schema_violation"]
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -115,7 +115,7 @@ severity_default_suppress_severity_and_rule:
     needs_schema_definitions_from_json = "schemas.json"
     suppress_warnings = ["sn_schema_violation.local_fail"]
   ubproject: |
-    [needs.options.asil]
+    [needs.fields.asil]
   rst: |
     .. impl:: title
         :id: IMPL_1

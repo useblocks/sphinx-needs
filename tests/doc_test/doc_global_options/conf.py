@@ -26,7 +26,7 @@ needs_extra_links = [
     },
 ]
 
-needs_options = {
+needs_fields = {
     "option_1": {},
     "option_2": {},
     "option_3": {},

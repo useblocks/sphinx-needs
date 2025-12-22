@@ -35,7 +35,7 @@ needs_types = [
     },
 ]
 
-needs_options = {
+needs_fields = {
     "my_extra_option": {},
     "another_option": {},
     "author": {},

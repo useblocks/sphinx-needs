@@ -7,35 +7,35 @@ build_json = true
 schema_definitions_from_json = "schemas.json"
 schema_debug_active = true
 
-[needs.options.string_option_wo_schema]
+[needs.fields.string_option_wo_schema]
 description = "String option"
 
-[needs.options.efforts]
+[needs.fields.efforts]
 description = "FTE days"
 schema.type = "integer"
 schema.minimum = 0
 
-[needs.options.priority]
+[needs.fields.priority]
 description = "Priority level, 1-5 where 1 is highest and 5 is lowest"
 schema.type = "integer"
 schema.minimum = 1
 schema.maximum = 5
 
-[needs.options.asil]
+[needs.fields.asil]
 description = "Automotive Safety Integrity Level"
 schema.type = "string"
 schema.enum = ["QM", "A", "B", "C", "D"]
 
-[needs.options.approved]
+[needs.fields.approved]
 description = "Approval flag"
 schema.type = "boolean"
 
-[needs.options.departments]
+[needs.fields.departments]
 description = "Departments"
 schema.type = "array"
 schema.items = { "type" = "string" }
 
-[needs.options.scores]
+[needs.fields.scores]
 description = "Review scores"
 schema.type = "array"
 schema.items = { "type" = "number" }

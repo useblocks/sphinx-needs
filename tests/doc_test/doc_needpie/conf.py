@@ -38,4 +38,4 @@ needs_types = [
     },
 ]
 
-needs_options = {"author": {}}
+needs_fields = {"author": {}}

@@ -290,7 +290,7 @@ class NeedType(TypedDict):
     """The default node style to use in diagrams (default: "node")."""
 
 
-class NeedOption(TypedDict):
+class NeedFields(TypedDict):
     """Defines an extra option for needs"""
 
     description: NotRequired[str]
@@ -304,7 +304,7 @@ class NeedOption(TypedDict):
     """
 
 
-class NeedExtraOption(NeedOption):
+class NeedExtraOption(NeedFields):
     """Defines an extra option for needs"""
 
     name: str
@@ -486,7 +486,7 @@ class NeedsSphinxConfig:
 
     schema_debug_ignore: list[str] = field(
         default_factory=lambda: [
-            "extra_option_success",
+            "field_success",
             "extra_link_success",
             "select_success",
             "select_fail",
@@ -593,7 +593,7 @@ class NeedsSphinxConfig:
         default=30, metadata={"rebuild": "html", "types": (int,)}
     )
     """Maximum length of the title in the need role output."""
-    _options: dict[str, NeedOption] = field(
+    _fields: dict[str, NeedFields] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
     _extra_options: list[str | NeedExtraOption] = field(

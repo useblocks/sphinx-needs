@@ -500,7 +500,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     if needs_config._extra_options:
         log_warning(
             LOGGER,
-            'Config option "needs_extra_options" is deprecated. Please use "needs_options" instead.',
+            'Config option "needs_extra_options" is deprecated. Please use "needs_fields" instead.',
             "deprecated",
             None,
         )
@@ -534,14 +534,14 @@ def load_config(app: Sphinx, *_args: Any) -> None:
 
         _NEEDS_CONFIG.add_extra_option(name, description, schema=schema, override=True)
 
-    if not isinstance(needs_config._options, dict):
-        raise NeedsConfigException("Config option 'needs_options' must be a dict.")
+    if not isinstance(needs_config._fields, dict):
+        raise NeedsConfigException("Config option 'needs_fields' must be a dict.")
 
-    for option_name, option_params in needs_config._options.items():
+    for option_name, option_params in needs_config._fields.items():
         if not isinstance(option_name, str):
             log_warning(
                 LOGGER,
-                f"needs_options key is not a string: {option_name}",
+                f"needs_fields key is not a string: {option_name}",
                 "config",
                 None,
             )
@@ -549,14 +549,14 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         if not isinstance(option_params, dict):
             log_warning(
                 LOGGER,
-                f"needs_options entry for '{option_name}' is not a dict: {option_params}",
+                f"needs_fields entry for '{option_name}' is not a dict: {option_params}",
                 "config",
                 None,
             )
             continue
         if option_name in NeedsCoreFields:
             continue
-        description = option_params.get("description", "Added by needs_options config")
+        description = option_params.get("description", "Added by needs_fields config")
         schema = option_params.get("schema")
         _NEEDS_CONFIG.add_extra_option(
             option_name, description, schema=schema, override=True
@@ -820,7 +820,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         if name == "status" and needs_config.statuses:
             log_warning(
                 LOGGER,
-                'Config option "needs_statuses" is deprecated. Please use "needs_options.status.schema.enum" to define custom status field enum constraints.',
+                'Config option "needs_statuses" is deprecated. Please use "needs_fields.status.schema.enum" to define custom status field enum constraints.',
                 "deprecated",
                 None,
             )
@@ -828,7 +828,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         if name == "tags" and needs_config.tags:
             log_warning(
                 LOGGER,
-                'Config option "needs_tags" is deprecated. Please use "needs_options.tags.schema.items.enum" to define custom tags field enum constraints.',
+                'Config option "needs_tags" is deprecated. Please use "needs_fields.tags.schema.items.enum" to define custom tags field enum constraints.',
                 "deprecated",
                 None,
             )
@@ -853,14 +853,14 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             directive_option=name != "title",
         )
 
-        if (core_override := needs_config._options.get(name)) is not None:
+        if (core_override := needs_config._fields.get(name)) is not None:
             try:
                 field = create_inherited_field(
                     field, cast(dict[str, Any], core_override)
                 )
             except Exception as exc:
                 raise NeedsConfigException(
-                    f"Invalid `needs_options` core option override for {name!r}: {exc}"
+                    f"Invalid `needs_fields` core option override for {name!r}: {exc}"
                 ) from exc
 
         try:

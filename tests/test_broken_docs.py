@@ -77,13 +77,13 @@ def test_broken_links(test_app: SphinxTestApp):
 def test_broken_statuses(test_app: SphinxTestApp):
     test_app.build()
     assert get_warnings(test_app) == [
-        'WARNING: Config option "needs_statuses" is deprecated. Please use "needs_options.status.schema.enum" to define custom status field enum constraints. [needs.deprecated]',
+        'WARNING: Config option "needs_statuses" is deprecated. Please use "needs_fields.status.schema.enum" to define custom status field enum constraints. [needs.deprecated]',
         "ERROR: Need 'SP_TOO_002' has schema violations:",
         "  Severity:       violation",
         "  Field:          status",
         "  Need path:      SP_TOO_002",
-        "  Schema path:    options > schema > properties > status > enum",
-        '  Schema message: "NOT_ALLOWED" is not one of "open" or "implemented" [sn_schema_violation.option_fail]',
+        "  Schema path:    fields > schema > properties > status > enum",
+        '  Schema message: "NOT_ALLOWED" is not one of "open" or "implemented" [sn_schema_violation.field_fail]',
     ]
 
 
@@ -119,11 +119,11 @@ def test_broken_syntax(test_app: SphinxTestApp):
 def test_broken_tags(test_app: SphinxTestApp):
     test_app.build()
     assert get_warnings(test_app) == [
-        'WARNING: Config option "needs_tags" is deprecated. Please use "needs_options.tags.schema.items.enum" to define custom tags field enum constraints. [needs.deprecated]',
+        'WARNING: Config option "needs_tags" is deprecated. Please use "needs_fields.tags.schema.items.enum" to define custom tags field enum constraints. [needs.deprecated]',
         "ERROR: Need 'SP_TOO_003' has schema violations:",
         "  Severity:       violation",
         "  Field:          tags.2",
         "  Need path:      SP_TOO_003",
-        "  Schema path:    options > schema > properties > tags > items > enum",
-        '  Schema message: "BROKEN" is not one of "new" or "security" [sn_schema_violation.option_fail]',
+        "  Schema path:    fields > schema > properties > tags > items > enum",
+        '  Schema message: "BROKEN" is not one of "new" or "security" [sn_schema_violation.field_fail]',
     ]

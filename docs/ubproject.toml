@@ -60,47 +60,47 @@ reproducible_json = true
 json_remove_defaults = true
 build_json_per_id = false
 
-[needs.options.my_extra_option]
+[needs.fields.my_extra_option]
 description = "Custom extra option"
 
-[needs.options.another_option]
+[needs.fields.another_option]
 description = "Another custom option"
 
-[needs.options.author]
+[needs.fields.author]
 description = "Author of the need"
 
-[needs.options.comment]
+[needs.fields.comment]
 description = "Additional comments"
 
-[needs.options.amount]
+[needs.fields.amount]
 description = "Amount value"
 schema.type = "number"
 
-[needs.options.hours]
+[needs.fields.hours]
 description = "Time in hours"
 schema.type = "integer"
 
-[needs.options.duration]
+[needs.fields.duration]
 description = "Time in days"
 schema.type = "integer"
 
-[needs.options.completion]
+[needs.fields.completion]
 description = "Completion in %"
 schema.type = "integer"
 
-[needs.options.image]
+[needs.fields.image]
 description = "Image reference"
 
-[needs.options.config]
+[needs.fields.config]
 description = "Configuration option"
 
-[needs.options.github]
+[needs.fields.github]
 description = "GitHub reference"
 
-[needs.options.value]
+[needs.fields.value]
 description = "General value field"
 
-[needs.options.unit]
+[needs.fields.unit]
 description = "Unit specification"
 
 [[needs.types]]

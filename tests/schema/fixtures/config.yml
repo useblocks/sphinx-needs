@@ -3,7 +3,7 @@ title_wrong_type:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.title]
+    [needs.fields.title]
     schema.type = "number"
   rst: ""
 
@@ -12,7 +12,7 @@ status_wrong_type:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.status]
+    [needs.fields.status]
     schema.type = "integer"
   rst: ""
 
@@ -21,7 +21,7 @@ tags_wrong_items_type:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.tags]
+    [needs.fields.tags]
     schema.type = "array"
     schema.items.type = "boolean"
   rst: ""
@@ -56,7 +56,7 @@ extra_option_empty_schema:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
     schema = {}
   rst: |
     .. impl:: title
@@ -68,7 +68,7 @@ missing_type_select:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -88,7 +88,7 @@ missing_type_validate_local:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -105,7 +105,7 @@ type_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
     schema.type = "unknown"
   rst: |
     .. impl:: title
@@ -118,7 +118,7 @@ select_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -151,7 +151,7 @@ both_definitions_and_json_given:
     }
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -171,7 +171,7 @@ local_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -203,7 +203,7 @@ type_mismatch_object_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -223,7 +223,7 @@ type_mismatch_object_extra_option_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -241,7 +241,7 @@ type_mismatch_array_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -318,7 +318,7 @@ extra_option_unknown_keys:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
     schema.type = "string"
     schema.unknown = "unknown"
   rst: ""
@@ -340,7 +340,7 @@ extra_option_pattern_unsafe_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [needs.options.efforts]
+    [needs.fields.efforts]
     schema.type = "string"
     schema.pattern = "^IMPL_(?!SAFE)"
   rst: ""

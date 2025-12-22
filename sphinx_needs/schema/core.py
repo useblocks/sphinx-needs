@@ -56,9 +56,9 @@ def validate_option_fields(
             need,
             field_properties,
             validator,
-            fail_rule=MessageRuleEnum.option_fail,
-            success_rule=MessageRuleEnum.option_success,
-            schema_path=["options", "schema"],
+            fail_rule=MessageRuleEnum.field_fail,
+            success_rule=MessageRuleEnum.field_success,
+            schema_path=["fields", "schema"],
             need_path=[need["id"]],
         )
         save_debug_files(config, schema_warnings)
