@@ -679,8 +679,10 @@ coerce_to_boolean_from_string_error:
 
 array_unique_items:
   conf: |
-    [[needs.extra_options]]
-    name = "array_field"
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.options.array_field]
     schema.type = "array"
     schema.items = {type = "string"}
     schema.uniqueItems = true

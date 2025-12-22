@@ -3124,7 +3124,7 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-array_unique_items]
+# name: test_schemas[schema/fixtures/options-array_unique_items]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -3135,7 +3135,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-array_unique_items].1
+# name: test_schemas[schema/fixtures/options-array_unique_items].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3158,7 +3158,7 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-auto_inject_type]
+# name: test_schemas[schema/fixtures/options-auto_inject_type]
   ''
 # ---
 # name: test_schemas[schema/fixtures/options-auto_inject_type].1

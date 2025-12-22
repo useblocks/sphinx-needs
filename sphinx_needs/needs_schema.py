@@ -1288,14 +1288,14 @@ def _validate_array_constraints(
     if "uniqueItems" in parent_schema:
         if "uniqueItems" in child_schema:
             if (
-                parent_schema["uniqueItems"] is True  # type: ignore[typeddict-item]
+                parent_schema["uniqueItems"] is True
                 and child_schema["uniqueItems"] is False
             ):
                 raise ValueError(
                     "Child 'uniqueItems' constraint cannot be less restrictive than parent."
                 )
         else:
-            child_schema["uniqueItems"] = parent_schema["uniqueItems"]  # type: ignore[typeddict-item]
+            child_schema["uniqueItems"] = parent_schema["uniqueItems"]
 
     # Validate minItems constraint
     if "minItems" in parent_schema:
