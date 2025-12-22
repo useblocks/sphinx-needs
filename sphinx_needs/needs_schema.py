@@ -1369,13 +1369,13 @@ def _validate_array_constraints(
                     parent_items["type"] == "integer"
                     and child_items["type"] == "integer"
                 ):
-                    # type resticted to ExtraOptionIntegerSchemaType
+                    # type restricted to ExtraOptionIntegerSchemaType
                     _validate_number_or_integer_constraints(parent_items, child_items)
 
                 elif (
                     parent_items["type"] == "number" and child_items["type"] == "number"
                 ):
-                    # type resticted to ExtraOptionNumberSchemaType
+                    # type restricted to ExtraOptionNumberSchemaType
                     _validate_number_or_integer_constraints(parent_items, child_items)
 
                 elif (
