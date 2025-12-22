@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1766399823289,
+  "lastUpdate": 1766413328441,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16092,6 +16092,42 @@ window.BENCHMARK_DATA = {
             "value": 57.837545796,
             "unit": "s",
             "extra": "Commit: 39b6cc5cd94fab83510f582ae5be652e2c8b9ea0\nBranch: master\nTime: 2025-12-22T11:35:08+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fc41bf2e1db3861cf7a0ab3af6facc9aed675e41",
+          "message": "✨ Add `needs_fields`, deprecate `need_extra_options`, `need_statuses`, `need_tags` (#1611)\n\nThis pull request migrates the configuration for extra options from the\nold `needs_extra_options` list-based format to a new, more flexible\n`needs_fields` dictionary-based format throughout the codebase,\ndocumentation, and tests. It deprecates the old config, adds validation\nand warnings for deprecated usage, and updates the schema logic to allow\nfor easier extension and overriding of core fields. Additionally, it\nupdates test snapshots and documentation to reflect the new\nconfiguration system.\n\n`needs_fields` works similar to `needs_extra_options`, for defining\nadditional fields, but also allows for core fields to be\noverridden/specialized.\nIn doing so, it also provides a pathway to consolidate more\nconfiguration that encapsulate a single field schema and allow future\ncomposability of schemas\n\nCore field specialization, works analogous to\n[SysML2](https://www.omg.org/sysml/sysmlv2/), in that schemas inherit\nfrom the base schema, and any modifications must only \"narrow\" the type\nconstraints, obeying the [Liskov substitution\nprinciple](https://en.wikipedia.org/wiki/Liskov_substitution_principle).\nThe following specialization rules then apply:\n\n- General (all types):\n    - The ``type`` of the child must be the same as the parent.\n- For ``array`` type fields, the ``item_type`` of the child must be the\nsame as the parent.\n\n- String type constraints:\n    - ``const``: Child cannot change the constant value.\n- ``enum``: Child's enum values must be a subset of the parent's enum\nvalues.\n- ``pattern``: Child must have the same pattern (cannot be overridden).\n- ``format``: Child must have the same format (cannot be overridden).\n    - ``minLength``: Child's minimum length must be ≥ the parent's.\n    - ``maxLength``: Child's maximum length must be ≤ the parent's.\n\n- Boolean type constraints:\n    - ``const``: Child must have the same constant value as the parent.\n\n- Number and Integer type constraints:\n    - ``const``: Child must have the same constant value as the parent.\n- ``enum``: Child's enum values must be a subset of the parent's enum\nvalues.\n    - ``minimum``: Child's minimum must be ≥ the parent's.\n    - ``maximum``: Child's maximum must be ≤ the parent's.\n- ``exclusiveMinimum``: Child's exclusive minimum must be ≥ the\nparent's.\n- ``exclusiveMaximum``: Child's exclusive maximum must be ≤ the\nparent's.\n- ``multipleOf``: Child's multipleOf must be a multiple of the parent's.\n\n- Array type constraints:\n    - ``minItems``: Child's minimum must be ≥ the parent's.\n    - ``maxItems``: Child's maximum must be ≤ the parent's.\n    - ``minContains``: Child's minimum must be ≥ the parent's.\n    - ``maxContains``: Child's maximum must be ≤ the parent's.\n- ``contains``: Child must match the parent's constraint (cannot be\noverridden).\n    - ``items``: The above rules are applied also to the item schema.\n\nThese changes modernize the configuration system for need fields,\nimprove extensibility, and provide clear migration paths for users.\n\n- **Configuration system migration and deprecation:** Migrated all usage\nof `needs_extra_options` to the new `needs_fields` dictionary format in\ndocumentation, example configs, and tests, providing a more structured\nand extensible way to define options.\n- **Schema and core field enhancements:** Updated schema creation logic\nto allow overriding core fields via `needs_fields`, and added warnings\nfor deprecated `needs_statuses` and `needs_tags` configs, guiding users\nto use `needs_fields` for these customizations.\n- **Type and internal API updates:** Refactored type definitions:\nreplaced `NeedExtraOption` with `NeedOption` as the base type, and\nupdated related code for clarity and extensibility.\n\n- **Test and documentation updates:** Updated test snapshots and\ndocumentation to reflect the new configuration system, including\nchanging descriptions from \"Added by needs_extra_options config\" to\n\"Added by needs_fields config\".\n\n## Future improvements\n\nThe internal representation of a single field schema currently looks\nlike:\n\n```python\n@dataclass(frozen=True, kw_only=True, slots=True)\nclass FieldSchema:\n    name: str\n    description: str = \"\"\n    schema: ExtraOptionSchemaTypes\n    nullable: bool = False\n    directive_option: bool = False\n    allow_dynamic_functions: bool = False\n    allow_variant_functions: bool = False\n    allow_defaults: bool = False\n    allow_extend: bool = False\n    predicate_defaults: tuple[\n        tuple[str, FieldLiteralValue | FieldFunctionArray],\n        ...,\n    ] = ()\n    default: None | FieldLiteralValue | FieldFunctionArray = None\n```\n\nIn principle, all of these attributes could be controlled by\n`needs_options`, in particular:\n\n- Allow items of `needs_fields` to define `nullable`\n- Allow items of `needs_fields` to define defaults and predicate\ndefaults, and deprecate `needs_global_options`\n- Allow items of `needs_fields` to define `allow_dynamic_functions` and\n`allow_variant_functions`, and deprecate `needs_variants`\n\nAlso, currently only a single schema is allowed for all needs in a\nproject.\nSimilar to SysML2, in may be more \"expressive\" in the future, to allow\nmultiple schemas in a single project,\nfor instance, allowing individual need types to have their own\nspecialized schemas.\nThis though would require some thought/work on how filters work, since\nnot all needs would share the same attributes (although, needs with the\nsame parent schema would)\n\n---------\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2025-12-22T15:20:11+01:00",
+          "tree_id": "b782b0528f58bfdec76dc6e3ce02507badd8c19e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/fc41bf2e1db3861cf7a0ab3af6facc9aed675e41"
+        },
+        "date": 1766413310126,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19623416999999677,
+            "unit": "s",
+            "extra": "Commit: fc41bf2e1db3861cf7a0ab3af6facc9aed675e41\nBranch: master\nTime: 2025-12-22T15:20:11+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.40850840000002,
+            "unit": "s",
+            "extra": "Commit: fc41bf2e1db3861cf7a0ab3af6facc9aed675e41\nBranch: master\nTime: 2025-12-22T15:20:11+01:00"
           }
         ]
       }
