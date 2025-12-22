@@ -290,10 +290,9 @@ class NeedType(TypedDict):
     """The default node style to use in diagrams (default: "node")."""
 
 
-class NeedExtraOption(TypedDict):
+class NeedFields(TypedDict):
     """Defines an extra option for needs"""
 
-    name: str
     description: NotRequired[str]
     """A description of the option."""
     schema: NotRequired[ExtraOptionSchemaTypes]
@@ -303,6 +302,13 @@ class NeedExtraOption(TypedDict):
     If given, the schema will apply to all needs that use this option.
     For more granular control, use the `needs_schema_definitions` configuration.
     """
+
+
+class NeedExtraOption(NeedFields):
+    """Defines an extra option for needs"""
+
+    name: str
+    """The name of the option."""
 
 
 class NeedStatusesOption(TypedDict):
@@ -480,7 +486,7 @@ class NeedsSphinxConfig:
 
     schema_debug_ignore: list[str] = field(
         default_factory=lambda: [
-            "extra_option_success",
+            "field_success",
             "extra_link_success",
             "select_success",
             "select_fail",
@@ -587,6 +593,9 @@ class NeedsSphinxConfig:
         default=30, metadata={"rebuild": "html", "types": (int,)}
     )
     """Maximum length of the title in the need role output."""
+    _fields: dict[str, NeedFields] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+    )
     _extra_options: list[str | NeedExtraOption] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )

@@ -484,6 +484,15 @@
   
   '''
 # ---
+# name: test_schema_config[title_wrong_type]
+  "Invalid `needs_fields` core option override for 'title': Child 'type' 'number' does not match parent 'type' 'string'."
+# ---
+# name: test_schema_config[status_wrong_type]
+  "Invalid `needs_fields` core option override for 'status': Child 'type' 'integer' does not match parent 'type' 'string'."
+# ---
+# name: test_schema_config[tags_wrong_items_type]
+  "Invalid `needs_fields` core option override for 'tags': 'items' inheritance: Child 'type' 'boolean' does not match parent 'type' 'string'."
+# ---
 # name: test_schema_config[both_definitions_and_json_given]
   "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
 # ---
@@ -3115,18 +3124,18 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-array_unique_items]
+# name: test_schemas[schema/fixtures/fields-array_unique_items]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          array_field
     Need path:      IMPL_1
-    Schema path:    options > schema > properties > array_field > uniqueItems
-    Schema message: ["a","a"] has non-unique elements [sn_schema_violation.option_fail]
+    Schema path:    fields > schema > properties > array_field > uniqueItems
+    Schema message: ["a","a"] has non-unique elements [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-array_unique_items].1
+# name: test_schemas[schema/fixtures/fields-array_unique_items].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3137,29 +3146,29 @@
           'details': dict({
             'field': 'array_field',
             'need_path': 'IMPL_1',
-            'schema_path': 'options > schema > properties > array_field > uniqueItems',
+            'schema_path': 'fields > schema > properties > array_field > uniqueItems',
             'severity': 'violation',
             'validation_msg': '["a","a"] has non-unique elements',
           }),
           'log_lvl': 'error',
-          'subtype': 'option_fail',
+          'subtype': 'field_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-auto_inject_type]
+# name: test_schemas[schema/fixtures/fields-auto_inject_type]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-auto_inject_type].1
+# name: test_schemas[schema/fixtures/fields-auto_inject_type].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-auto_inject_type_wrong_const]
+# name: test_schemas[schema/fixtures/fields-auto_inject_type_wrong_const]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -3170,7 +3179,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-auto_inject_type_wrong_const].1
+# name: test_schemas[schema/fixtures/fields-auto_inject_type_wrong_const].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3193,99 +3202,99 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_boolean]
+# name: test_schemas[schema/fixtures/fields-coerce_to_boolean]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_boolean].1
+# name: test_schemas[schema/fixtures/fields-coerce_to_boolean].1
   dict({
     'validated_needs_count': 14,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_boolean_from_string_error]
+# name: test_schemas[schema/fixtures/fields-coerce_to_boolean_from_string_error]
   '''
   <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'approved' is invalid: Cannot convert 'not-a-boolean' to boolean [needs.create_need]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_boolean_from_string_error].1
+# name: test_schemas[schema/fixtures/fields-coerce_to_boolean_from_string_error].1
   dict({
     'validated_needs_count': 0,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer]
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer].1
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_float_error]
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_float_error]
   '''
   <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'efforts' is invalid: Cannot convert '1.2' to integer [needs.create_need]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_float_error].1
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_float_error].1
   dict({
     'validated_needs_count': 0,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_string_error]
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_string_error]
   '''
   <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'efforts' is invalid: Cannot convert 'QM' to integer [needs.create_need]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_integer_from_string_error].1
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_string_error].1
   dict({
     'validated_needs_count': 0,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_number]
+# name: test_schemas[schema/fixtures/fields-coerce_to_number]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_number].1
+# name: test_schemas[schema/fixtures/fields-coerce_to_number].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_number_from_string_error]
+# name: test_schemas[schema/fixtures/fields-coerce_to_number_from_string_error]
   '''
   <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'efforts' is invalid: Cannot convert 'QM' to float [needs.create_need]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-coerce_to_number_from_string_error].1
+# name: test_schemas[schema/fixtures/fields-coerce_to_number_from_string_error].1
   dict({
     'validated_needs_count': 0,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-const]
+# name: test_schemas[schema/fixtures/fields-const]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-const].1
+# name: test_schemas[schema/fixtures/fields-const].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-const_error]
+# name: test_schemas[schema/fixtures/fields-const_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -3296,7 +3305,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-const_error].1
+# name: test_schemas[schema/fixtures/fields-const_error].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3319,17 +3328,17 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-enum]
+# name: test_schemas[schema/fixtures/fields-enum]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-enum].1
+# name: test_schemas[schema/fixtures/fields-enum].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-enum_error]
+# name: test_schemas[schema/fixtures/fields-enum_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -3340,7 +3349,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-enum_error].1
+# name: test_schemas[schema/fixtures/fields-enum_error].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3363,28 +3372,28 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-integer_multiple_of]
+# name: test_schemas[schema/fixtures/fields-integer_multiple_of]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-integer_multiple_of].1
+# name: test_schemas[schema/fixtures/fields-integer_multiple_of].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-integer_multiple_of_error]
+# name: test_schemas[schema/fixtures/fields-integer_multiple_of_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          efforts
     Need path:      IMPL_1
-    Schema path:    options > schema > properties > efforts > multipleOf
-    Schema message: 8 is not a multiple of 3 [sn_schema_violation.option_fail]
+    Schema path:    fields > schema > properties > efforts > multipleOf
+    Schema message: 8 is not a multiple of 3 [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-integer_multiple_of_error].1
+# name: test_schemas[schema/fixtures/fields-integer_multiple_of_error].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3395,50 +3404,50 @@
           'details': dict({
             'field': 'efforts',
             'need_path': 'IMPL_1',
-            'schema_path': 'options > schema > properties > efforts > multipleOf',
+            'schema_path': 'fields > schema > properties > efforts > multipleOf',
             'severity': 'violation',
             'validation_msg': '8 is not a multiple of 3',
           }),
           'log_lvl': 'error',
-          'subtype': 'option_fail',
+          'subtype': 'field_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-no_schema]
+# name: test_schemas[schema/fixtures/fields-no_schema]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-no_schema].1
+# name: test_schemas[schema/fixtures/fields-no_schema].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-number_multiple_of]
+# name: test_schemas[schema/fixtures/fields-number_multiple_of]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-number_multiple_of].1
+# name: test_schemas[schema/fixtures/fields-number_multiple_of].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-number_multiple_of_error]
+# name: test_schemas[schema/fixtures/fields-number_multiple_of_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          efforts
     Need path:      IMPL_1
-    Schema path:    options > schema > properties > efforts > multipleOf
-    Schema message: 5.0 is not a multiple of 3.3 [sn_schema_violation.option_fail]
+    Schema path:    fields > schema > properties > efforts > multipleOf
+    Schema message: 5.0 is not a multiple of 3.3 [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-number_multiple_of_error].1
+# name: test_schemas[schema/fixtures/fields-number_multiple_of_error].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3449,49 +3458,49 @@
           'details': dict({
             'field': 'efforts',
             'need_path': 'IMPL_1',
-            'schema_path': 'options > schema > properties > efforts > multipleOf',
+            'schema_path': 'fields > schema > properties > efforts > multipleOf',
             'severity': 'violation',
             'validation_msg': '5.0 is not a multiple of 3.3',
           }),
           'log_lvl': 'error',
-          'subtype': 'option_fail',
+          'subtype': 'field_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-required]
+# name: test_schemas[schema/fixtures/fields-required]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-required].1
+# name: test_schemas[schema/fixtures/fields-required].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_below_threshold]
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_below_threshold]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_below_threshold].1
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_below_threshold].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_missing]
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_missing]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_missing].1
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_missing].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_over_threshold]
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_over_threshold]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -3502,7 +3511,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-required_based_on_select_field_over_threshold].1
+# name: test_schemas[schema/fixtures/fields-required_based_on_select_field_over_threshold].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3525,7 +3534,7 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-required_missing]
+# name: test_schemas[schema/fixtures/fields-required_missing]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -3535,7 +3544,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-required_missing].1
+# name: test_schemas[schema/fixtures/fields-required_missing].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3557,38 +3566,38 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-set_type_string]
+# name: test_schemas[schema/fixtures/fields-set_type_string]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-set_type_string].1
+# name: test_schemas[schema/fixtures/fields-set_type_string].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_date]
+# name: test_schemas[schema/fixtures/fields-string_format_date]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_date].1
+# name: test_schemas[schema/fixtures/fields-string_format_date].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_date_error]
+# name: test_schemas[schema/fixtures/fields-string_format_date_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          start_date
     Need path:      IMPL_1
-    Schema path:    options > schema > properties > start_date > format
-    Schema message: "not-a-date" is not a "date" [sn_schema_violation.option_fail]
+    Schema path:    fields > schema > properties > start_date > format
+    Schema message: "not-a-date" is not a "date" [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_date_error].1
+# name: test_schemas[schema/fixtures/fields-string_format_date_error].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3599,40 +3608,40 @@
           'details': dict({
             'field': 'start_date',
             'need_path': 'IMPL_1',
-            'schema_path': 'options > schema > properties > start_date > format',
+            'schema_path': 'fields > schema > properties > start_date > format',
             'severity': 'violation',
             'validation_msg': '"not-a-date" is not a "date"',
           }),
           'log_lvl': 'error',
-          'subtype': 'option_fail',
+          'subtype': 'field_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_date_time]
+# name: test_schemas[schema/fixtures/fields-string_format_date_time]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_date_time].1
+# name: test_schemas[schema/fixtures/fields-string_format_date_time].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_date_time_error]
+# name: test_schemas[schema/fixtures/fields-string_format_date_time_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          start_date
     Need path:      IMPL_1
-    Schema path:    options > schema > properties > start_date > format
-    Schema message: "2025-07-1099:99:99Z" is not a "date-time" [sn_schema_violation.option_fail]
+    Schema path:    fields > schema > properties > start_date > format
+    Schema message: "2025-07-1099:99:99Z" is not a "date-time" [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_date_time_error].1
+# name: test_schemas[schema/fixtures/fields-string_format_date_time_error].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3643,40 +3652,40 @@
           'details': dict({
             'field': 'start_date',
             'need_path': 'IMPL_1',
-            'schema_path': 'options > schema > properties > start_date > format',
+            'schema_path': 'fields > schema > properties > start_date > format',
             'severity': 'violation',
             'validation_msg': '"2025-07-1099:99:99Z" is not a "date-time"',
           }),
           'log_lvl': 'error',
-          'subtype': 'option_fail',
+          'subtype': 'field_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_duration]
+# name: test_schemas[schema/fixtures/fields-string_format_duration]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_duration].1
+# name: test_schemas[schema/fixtures/fields-string_format_duration].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_duration_error]
+# name: test_schemas[schema/fixtures/fields-string_format_duration_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          _duration
     Need path:      IMPL_1
-    Schema path:    options > schema > properties > _duration > format
-    Schema message: "P1Q2Q10DT2H30M" is not a "duration" [sn_schema_violation.option_fail]
+    Schema path:    fields > schema > properties > _duration > format
+    Schema message: "P1Q2Q10DT2H30M" is not a "duration" [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_duration_error].1
+# name: test_schemas[schema/fixtures/fields-string_format_duration_error].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3687,40 +3696,40 @@
           'details': dict({
             'field': '_duration',
             'need_path': 'IMPL_1',
-            'schema_path': 'options > schema > properties > _duration > format',
+            'schema_path': 'fields > schema > properties > _duration > format',
             'severity': 'violation',
             'validation_msg': '"P1Q2Q10DT2H30M" is not a "duration"',
           }),
           'log_lvl': 'error',
-          'subtype': 'option_fail',
+          'subtype': 'field_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_email]
+# name: test_schemas[schema/fixtures/fields-string_format_email]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_email].1
+# name: test_schemas[schema/fixtures/fields-string_format_email].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_email_error]
+# name: test_schemas[schema/fixtures/fields-string_format_email_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          email
     Need path:      IMPL_1
-    Schema path:    options > schema > properties > email > format
-    Schema message: "not-a-mail" is not a "email" [sn_schema_violation.option_fail]
+    Schema path:    fields > schema > properties > email > format
+    Schema message: "not-a-mail" is not a "email" [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_email_error].1
+# name: test_schemas[schema/fixtures/fields-string_format_email_error].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3731,40 +3740,40 @@
           'details': dict({
             'field': 'email',
             'need_path': 'IMPL_1',
-            'schema_path': 'options > schema > properties > email > format',
+            'schema_path': 'fields > schema > properties > email > format',
             'severity': 'violation',
             'validation_msg': '"not-a-mail" is not a "email"',
           }),
           'log_lvl': 'error',
-          'subtype': 'option_fail',
+          'subtype': 'field_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_time]
+# name: test_schemas[schema/fixtures/fields-string_format_time]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_time].1
+# name: test_schemas[schema/fixtures/fields-string_format_time].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_time_error]
+# name: test_schemas[schema/fixtures/fields-string_format_time_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          time
     Need path:      IMPL_1
-    Schema path:    options > schema > properties > time > format
-    Schema message: "26:12:13+00:00" is not a "time" [sn_schema_violation.option_fail]
+    Schema path:    fields > schema > properties > time > format
+    Schema message: "26:12:13+00:00" is not a "time" [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_time_error].1
+# name: test_schemas[schema/fixtures/fields-string_format_time_error].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3775,40 +3784,40 @@
           'details': dict({
             'field': 'time',
             'need_path': 'IMPL_1',
-            'schema_path': 'options > schema > properties > time > format',
+            'schema_path': 'fields > schema > properties > time > format',
             'severity': 'violation',
             'validation_msg': '"26:12:13+00:00" is not a "time"',
           }),
           'log_lvl': 'error',
-          'subtype': 'option_fail',
+          'subtype': 'field_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_uri]
+# name: test_schemas[schema/fixtures/fields-string_format_uri]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_uri].1
+# name: test_schemas[schema/fixtures/fields-string_format_uri].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_uri_error]
+# name: test_schemas[schema/fixtures/fields-string_format_uri_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          uri
     Need path:      IMPL_1
-    Schema path:    options > schema > properties > uri > format
-    Schema message: "examplecom" is not a "uri" [sn_schema_violation.option_fail]
+    Schema path:    fields > schema > properties > uri > format
+    Schema message: "examplecom" is not a "uri" [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_uri_error].1
+# name: test_schemas[schema/fixtures/fields-string_format_uri_error].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3819,40 +3828,40 @@
           'details': dict({
             'field': 'uri',
             'need_path': 'IMPL_1',
-            'schema_path': 'options > schema > properties > uri > format',
+            'schema_path': 'fields > schema > properties > uri > format',
             'severity': 'violation',
             'validation_msg': '"examplecom" is not a "uri"',
           }),
           'log_lvl': 'error',
-          'subtype': 'option_fail',
+          'subtype': 'field_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_uuid]
+# name: test_schemas[schema/fixtures/fields-string_format_uuid]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_uuid].1
+# name: test_schemas[schema/fixtures/fields-string_format_uuid].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_uuid_error]
+# name: test_schemas[schema/fixtures/fields-string_format_uuid_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          uuid
     Need path:      IMPL_1
-    Schema path:    options > schema > properties > uuid > format
-    Schema message: "deadbeef-deadbeef-deadbeef-deadbeef" is not a "uuid" [sn_schema_violation.option_fail]
+    Schema path:    fields > schema > properties > uuid > format
+    Schema message: "deadbeef-deadbeef-deadbeef-deadbeef" is not a "uuid" [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_format_uuid_error].1
+# name: test_schemas[schema/fixtures/fields-string_format_uuid_error].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -3863,38 +3872,163 @@
           'details': dict({
             'field': 'uuid',
             'need_path': 'IMPL_1',
-            'schema_path': 'options > schema > properties > uuid > format',
+            'schema_path': 'fields > schema > properties > uuid > format',
             'severity': 'violation',
             'validation_msg': '"deadbeef-deadbeef-deadbeef-deadbeef" is not a "uuid"',
           }),
           'log_lvl': 'error',
-          'subtype': 'option_fail',
+          'subtype': 'field_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_type]
+# name: test_schemas[schema/fixtures/fields-string_type]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-string_type].1
+# name: test_schemas[schema/fixtures/fields-string_type].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_options-wrong_type]
+# name: test_schemas[schema/fixtures/fields-wrong_type]
   '''
   <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'asil' is invalid: Cannot convert 'QM' to integer [needs.create_need]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_options-wrong_type].1
+# name: test_schemas[schema/fixtures/fields-wrong_type].1
   dict({
     'validated_needs_count': 0,
     'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-title_length]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          title
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > title > minLength
+    Schema message: "too short title" is shorter than 16 characters [sn_schema_violation.field_fail]
+  ERROR: Need 'IMPL_3' has schema violations:
+    Severity:       violation
+    Field:          title
+    Need path:      IMPL_3
+    Schema path:    fields > schema > properties > title > maxLength
+    Schema message: "this title is too long" is longer than 20 characters [sn_schema_violation.field_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-title_length].1
+  dict({
+    'validated_needs_count': 3,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'title',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > title > minLength',
+            'severity': 'violation',
+            'validation_msg': '"too short title" is shorter than 16 characters',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+      'IMPL_3': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'title',
+            'need_path': 'IMPL_3',
+            'schema_path': 'fields > schema > properties > title > maxLength',
+            'severity': 'violation',
+            'validation_msg': '"this title is too long" is longer than 20 characters',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+
+# ---
+# name: test_schemas[schema/fixtures/fields-status_enum]
+  '''
+  ERROR: Need 'IMPL_2' has schema violations:
+    Severity:       violation
+    Field:          status
+    Need path:      IMPL_2
+    Schema path:    fields > schema > properties > status > enum
+    Schema message: "other" is not one of "open", "in progress" or "closed" [sn_schema_violation.field_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-status_enum].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_2': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'status',
+            'need_path': 'IMPL_2',
+            'schema_path': 'fields > schema > properties > status > enum',
+            'severity': 'violation',
+            'validation_msg': '"other" is not one of "open", "in progress" or "closed"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-tags_enum]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          tags.1
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > tags > items > enum
+    Schema message: "b" is not one of "a" or "c" [sn_schema_violation.field_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-tags_enum].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'tags.1',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > tags > items > enum',
+            'severity': 'violation',
+            'validation_msg': '"b" is not one of "a" or "c"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
     }),
   })
 # ---

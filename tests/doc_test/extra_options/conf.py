@@ -1,12 +1,13 @@
 extensions = ["sphinx_needs"]
 
-needs_extra_options = [
-    "introduced",
-    "updated",
-    {"name": "impacts", "description": "What is the impact of this need?"},
-    {},
-    1,
-]
+needs_extra_options = ["updated"]
+
+needs_fields = {
+    "introduced": {},
+    "impacts": {"description": "What is the impact of this need?"},
+    1: {},
+    "a": 1,
+}
 
 needs_build_json = True
 needs_reproducible_json = True

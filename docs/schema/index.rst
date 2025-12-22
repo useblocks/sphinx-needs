@@ -60,13 +60,13 @@ Schema configuration
 
 The schema is configured in multiple places:
 
-- :ref:`needs_extra_options` is the place to add new extra options that are then available
+- :ref:`needs_fields` is the place to add new extra options that are then available
   for all need types. The type information for each field is globally set here, so it is valid
   for all the usages of that field for any need type. This is required for a coherent data
   storage, as it would be expected by a database system. If different data types are needed for the
   same option, it means creating a new extra option with a different name and type.
 
-  Further, the ``schema`` field in ``needs_extra_options`` also supports setting global
+  Further, the ``schema`` field in ``needs_fields`` also supports setting global
   schema constraints for that option, that will be checked for each need type. E.g.
   minimum/maximum for integers, enum for strings, etc.
 
@@ -93,11 +93,11 @@ The schema is configured in multiple places:
    constraint on a string field does not make sense, but, depending on the implementation,
    JSON schema might not complain about this.
 
-   Therefore, Sphinx-Needs automatically injects the type information from ``needs_extra_options``
+   Therefore, Sphinx-Needs automatically injects the type information from ``needs_fields``
    and ``needs_extra_links`` (as well as core field definitions) into the
    :ref:`needs_schema_definitions` when type information is not explicitly provided in the
    schemas.json file. If type information is provided in schemas.json, it must match the
-   definition from ``needs_extra_options`` or core fields.
+   definition from ``needs_fields`` or core fields.
 
 The next sections guides through an example and how do use the type and schema system to enforce
 constraints on need items and links between them.
@@ -173,7 +173,7 @@ Above modeling can be reached with the following ubproject.toml configuration:
 Primary type definition
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-The configuration :ref:`needs_extra_options` is used to define the **primary type information** for
+The configuration :ref:`needs_fields` is used to define the **primary type information** for
 fields. This type information is globally valid for all usages of that field across any need type.
 
 For **primitive types** (string, integer, number, boolean):
@@ -818,7 +818,7 @@ Supported data types and constraints
 ------------------------------------
 
 Sphinx-Needs supports comprehensive data type validation for need options through JSON Schema.
-The following data types are available for need options and are defined in :ref:`needs_extra_options`.
+The following data types are available for need options and are defined in :ref:`needs_fields`.
 These types must be specified for fields before they can be validated in schemas.
 
 String type
@@ -1151,8 +1151,8 @@ to indicate which validation failed.
 
 Local validation:
 
-- ``extra_option_fail``: Extra option schema validation failed
-  (local validation, defined via ``schema`` key in :ref:`needs_extra_options`)
+- ``field_fail``: Field schema validation failed
+  (local validation, defined via ``schema`` key in :ref:`needs_fields`)
 - ``extra_link_fail``: Extra link schema validation failed
   (defined via ``schema`` key in :ref:`needs_extra_links`)
 - ``local_fail``: Need-local validation failed
@@ -1207,7 +1207,7 @@ Suppress multiple specific types:
 
    suppress_warnings = [
        "sn_schema_violation.local_fail",
-       "sn_schema_warning.extra_option_fail",
+       "sn_schema_warning.field_fail",
        "sn_schema_info",  # Suppress all info messages
    ]
 

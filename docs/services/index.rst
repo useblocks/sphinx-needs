@@ -27,8 +27,8 @@ Use the directive :ref:`needservice` to execute a service and get need objects b
 Each service may have own options, which are used to configure the service itself.
 Please take a look into the related service documentation for information about them.
 
-You can always set all options, which are also available for all need objects.
-So the ones defined by :ref:`needs_extra_options` and :ref:`needs_extra_links`.
+You can always set all fields, which are also available for all need objects.
+So the ones defined by :ref:`needs_fields` and :ref:`needs_extra_links`.
 These options will then be set for all needs created by the requested service.
 
 Most services also support adding additional content to the created needs.
@@ -70,7 +70,7 @@ For available configuration options please take a look into the related service 
 needs_service_all_data
 ++++++++++++++++++++++
 If a service returns data for an option, which was not registered by the service itself or the user via
-:ref:`needs_extra_options`, this information is added to the content part.
+:ref:`needs_fields`, this information is added to the content part.
 
 Set ``needs_service_all_data`` to ``False`` to hide this kind of information.
 

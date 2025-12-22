@@ -15,7 +15,7 @@ from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.logging import get_logger
 from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs.schema.config import (
-    EXTRA_OPTION_BASE_TYPES_STR,
+    FIELD_BASE_TYPES_STR,
     USER_CONFIG_SCHEMA_SEVERITIES,
     AllOfSchemaType,
     ExtraOptionAndLinkSchemaTypes,
@@ -538,7 +538,7 @@ def get_core_field_type(
         and len(schema_type) == 2
     ):
         non_null_type = next(t for t in schema_type if t != "null")
-        if non_null_type in EXTRA_OPTION_BASE_TYPES_STR:
+        if non_null_type in FIELD_BASE_TYPES_STR:
             core_type = non_null_type
     if core_type is None:
         return None

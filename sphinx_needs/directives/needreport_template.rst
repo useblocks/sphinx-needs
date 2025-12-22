@@ -44,7 +44,7 @@
 {% endif %}
 {# Output for needs_extra_links #}
 
-{# Output for needs_options #}
+{# Output for needs_fields #}
 {% if options|length != 0 %}
 
 .. {{ report_directive }}:: Need Extra Options
@@ -53,7 +53,7 @@
    * {{ option }}
    {% endfor %}
 {% endif %}
-{# Output for needs_options #}
+{# Output for needs_fields #}
 
 {# Output for needs metrics #}
 {% if usage %}

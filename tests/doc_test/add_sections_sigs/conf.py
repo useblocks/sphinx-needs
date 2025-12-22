@@ -3,11 +3,11 @@ extensions = ["sphinx_needs"]
 needs_build_json = True
 needs_json_remove_defaults = True
 
-needs_extra_options = [
-    "introduced",
-    "updated",
-    "impacts",
-]
+needs_fields = {
+    "introduced": {},
+    "updated": {},
+    "impacts": {},
+}
 
 needs_template_collapse = """
 .. _{{id}}:

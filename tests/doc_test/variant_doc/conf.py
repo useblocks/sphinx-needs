@@ -40,19 +40,19 @@ needs_types = [
 needs_variants = {"change_author": "assignee == 'Randy Duodu'"}
 needs_variant_options = ["status", "author"]
 needs_filter_data = {"assignee": "Randy Duodu"}
-needs_extra_options = [
-    "my_extra_option",
-    "another_option",
-    "author",
-    "comment",
-    "amount",
-    "hours",
-    "image",
-    "config",
-    "github",
-    "value",
-    "unit",
-]
+needs_fields = {
+    "my_extra_option": {},
+    "another_option": {},
+    "author": {},
+    "comment": {},
+    "amount": {},
+    "hours": {},
+    "image": {},
+    "config": {},
+    "github": {},
+    "value": {},
+    "unit": {},
+}
 
 needs_build_json = True
 needs_json_remove_defaults = True
