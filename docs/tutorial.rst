@@ -94,7 +94,8 @@ that can be used to add additional data to the item or further style its represe
 
     To add additional fields to the directive,
     see :ref:`needs_fields`,
-    and to set default values see :ref:`needs_global_options`.
+    and to add additional link types,
+    see :ref:`needs_extra_links`.
 
 Enforcing valid need items
 ..........................

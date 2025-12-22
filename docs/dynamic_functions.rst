@@ -44,7 +44,6 @@ Dynamic functions can be used for the following directive options:
 - ``constraints``
 - :ref:`extra fields <needs_fields>`
 - :ref:`needs_extra_links`
-- :ref:`needs_global_options`
 
 .. deprecated:: 3.1.0
 

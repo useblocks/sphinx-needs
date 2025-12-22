@@ -273,6 +273,10 @@ class LinkOptionsType(TypedDict, total=False):
     The schema is applied locally on unresolved links, i.e. on the list of string ids.
     For more granular control and graph traversal, use the `needs_schema_definitions` configuration.
     """
+    default: NotRequired[Any]
+    """Default value for the link option."""
+    predicates: NotRequired[list[tuple[str, Any]]]
+    """List of (need filter, value) pairs for predicate default values."""
 
 
 class NeedType(TypedDict):
@@ -291,17 +295,21 @@ class NeedType(TypedDict):
 
 
 class NeedFields(TypedDict):
-    """Defines an extra option for needs"""
+    """Defines a field for needs"""
 
     description: NotRequired[str]
-    """A description of the option."""
+    """A description of the field."""
     schema: NotRequired[ExtraOptionSchemaTypes]
     """
-    A JSON schema definition for the option.
+    A JSON schema definition for the field.
     
     If given, the schema will apply to all needs that use this option.
     For more granular control, use the `needs_schema_definitions` configuration.
     """
+    default: NotRequired[Any]
+    """Default value for the field."""
+    predicates: NotRequired[list[tuple[str, Any]]]
+    """List of (need filter, value) pairs for predicate default values."""
 
 
 class NeedExtraOption(NeedFields):

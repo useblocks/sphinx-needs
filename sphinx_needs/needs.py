@@ -6,7 +6,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, cast
+from typing import Any, TypedDict, cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -881,7 +881,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 schema=_schema,  # type: ignore[arg-type]
                 # TODO for nullable and default, currently if there is no schema,
                 # we configure so that the behaviour follows that of legacy (pre-schema) extra option,
-                # i.e. non-nullable and default of empty string (that can be overriden by needs_global_options).
+                # i.e. non-nullable and default of empty string (that can be overriden).
                 nullable=extra.schema is not None,
                 default=None if extra.schema is not None else FieldLiteralValue(""),
                 allow_defaults=True,
@@ -911,64 +911,100 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         except Exception as exc:
             raise NeedsConfigException(f"Invalid extra link {name!r}: {exc}") from exc
 
+    for field_name, field_config in needs_config._fields.items():
+        _set_default(schema, "needs_fields", field_name, field_config)
+
+    for link_config in needs_config.extra_links:
+        _set_default(schema, "needs_extra_links", link_config["option"], link_config)
+
+    if needs_config._global_options:
+        log_warning(
+            LOGGER,
+            'Config option "needs_global_options" is deprecated. Please use needs_fields and needs_extra_links instead.',
+            "deprecated",
+            None,
+        )
     for name, default_config in needs_config._global_options.items():
-        if (field_for_default := schema.get_any_field(name)) is None:
+        if unknown := set(default_config).difference({"predicates", "default"}):
             log_warning(
                 LOGGER,
-                f"needs_global_options {name!r} does not match any defined need option",
+                f"needs_global_options {name!r} value contains unknown keys: {unknown}",
                 "config",
                 None,
             )
-            continue
-        if not field_for_default.allow_defaults:
-            log_warning(
-                LOGGER,
-                f"needs_global_options {name!r} cannot be set, as field does not allow defaults",
-                "config",
-                None,
-            )
-            continue
-        if not isinstance(default_config, dict):
-            log_warning(
-                LOGGER,
-                f"needs_global_options {name!r} value is not a dict",
-                "config",
-                None,
-            )
-        else:
-            if unknown := set(default_config).difference({"predicates", "default"}):
-                log_warning(
-                    LOGGER,
-                    f"needs_global_options {name!r} value contains unknown keys: {unknown}",
-                    "config",
-                    None,
-                )
-            if "default" in default_config:
-                try:
-                    field_for_default._set_default(
-                        default_config["default"], allow_coercion=True
-                    )
-                except Exception as exc:
-                    log_warning(
-                        LOGGER,
-                        f"needs_global_options {name!r} default value is incorrect: {exc}",
-                        "config",
-                        None,
-                    )
-            if "predicates" in default_config:
-                try:
-                    field_for_default._set_predicate_defaults(
-                        default_config["predicates"], allow_coercion=True
-                    )
-                except Exception as exc:
-                    log_warning(
-                        LOGGER,
-                        f"needs_global_options {name!r} predicates are incorrect: {exc}",
-                        "config",
-                        None,
-                    )
+        _set_default(
+            schema, "needs_global_options", name, default_config, warn_not_dict=True
+        )
 
     SphinxNeedsData(env)._set_schema(schema)
+
+
+class _DefaultsDictType(TypedDict, total=False):
+    predicates: list[tuple[str, Any]]
+    default: Any
+
+
+def _set_default(
+    schema: FieldsSchema,
+    config_name: str,
+    name: str,
+    values: _DefaultsDictType,
+    *,
+    warn_not_dict: bool = False,
+    allow_coercion: bool = True,
+) -> None:
+    if not isinstance(values, dict):
+        if warn_not_dict:
+            log_warning(
+                LOGGER,
+                f"{config_name}[{name!r}] value is not a dict",
+                "config",
+                None,
+            )
+        return
+    if "default" not in values and "predicates" not in values:
+        return
+
+    if (field_for_default := schema.get_any_field(name)) is None:
+        log_warning(
+            LOGGER,
+            f"{config_name}[{name!r}] does not correspond to any defined field",
+            "config",
+            None,
+        )
+        return
+    if not field_for_default.allow_defaults:
+        log_warning(
+            LOGGER,
+            f"{config_name}[{name!r}]['default'] cannot be set, as field does not allow defaults",
+            "config",
+            None,
+        )
+        return
+    if "default" in values:
+        try:
+            field_for_default._set_default(
+                values["default"], allow_coercion=allow_coercion
+            )
+        except Exception as exc:
+            log_warning(
+                LOGGER,
+                f"{config_name}[{name!r}]['default'] value is incorrect: {exc}",
+                "config",
+                None,
+            )
+    if "predicates" in values:
+        try:
+            field_for_default._set_predicate_defaults(
+                values["predicates"], allow_coercion=allow_coercion
+            )
+        except Exception as exc:
+            log_warning(
+                LOGGER,
+                f"{config_name}[{name!r}]['predicates'] value is incorrect: {exc}",
+                "config",
+                None,
+            )
 
 
 def release_data_locks(app: Sphinx, _exception: Exception) -> None:

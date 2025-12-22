@@ -67,8 +67,7 @@ class CoreFieldParameters(TypedDict):
     add_to_field_schema: NotRequired[bool]
     """Whether to add the field to the field schema (False if not present)."""
     allow_default: NotRequired[bool]
-    """Whether the field allows custom default values to be set,
-    via needs_global_options (False if not present).
+    """Whether the field allows custom default values to be set (False if not present).
     """
     allow_extend: NotRequired[bool]
     """Whether field can be modified by needextend (False if not present)."""
