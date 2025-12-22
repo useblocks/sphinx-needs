@@ -3115,6 +3115,40 @@
     }),
   })
 # ---
+# name: test_schemas[schema/fixtures/extra_options-array_unique_items]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          array_field
+    Need path:      IMPL_1
+    Schema path:    options > schema > properties > array_field > uniqueItems
+    Schema message: ["a","a"] has non-unique elements [sn_schema_violation.option_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/extra_options-array_unique_items].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'array_field',
+            'need_path': 'IMPL_1',
+            'schema_path': 'options > schema > properties > array_field > uniqueItems',
+            'severity': 'violation',
+            'validation_msg': '["a","a"] has non-unique elements',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'option_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/extra_options-auto_inject_type]
   ''
 # ---

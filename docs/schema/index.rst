@@ -1035,6 +1035,7 @@ Array fields store lists of homogeneous typed values:
 - ``items``: Schema for all array elements (required).
   The dictionary can contain any of the basic type schemas outlined above.
   The ``items.type`` field is required.
+- ``uniqueItems``: If set to ``true``, all elements in the array must be unique.
 - ``minItems`` / ``maxItems``: Array size constraints
 - ``contains`` Schema for some elements in the array.
   The dictionary can contain any of the basic type schemas outlined above.

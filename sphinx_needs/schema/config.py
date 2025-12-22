@@ -249,6 +249,8 @@ class ExtraOptionMultiValueSchemaType(TypedDict):
     """Minimum number of contains items in the array."""
     maxContains: NotRequired[int]
     """Maximum number of contains items in the array."""
+    uniqueItems: NotRequired[bool]
+    """Whether all items in the array must be unique."""
 
 
 def validate_extra_option_multi_value_schema(

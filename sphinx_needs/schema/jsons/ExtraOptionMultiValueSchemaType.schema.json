@@ -224,6 +224,10 @@
       "const": "array",
       "title": "Type",
       "type": "string"
+    },
+    "uniqueItems": {
+      "title": "Uniqueitems",
+      "type": "boolean"
     }
   },
   "required": [
