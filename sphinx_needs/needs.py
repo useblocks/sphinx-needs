@@ -114,6 +114,7 @@ from sphinx_needs.needs_schema import (
     FieldsSchema,
     LinkSchema,
     LinksLiteralValue,
+    create_inherited_field,
 )
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
@@ -125,7 +126,6 @@ from sphinx_needs.roles.need_part import NeedPart, NeedPartRole, process_need_pa
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.schema.config import (
     ExtraOptionIntegerSchemaType,
-    ExtraOptionMultiValueSchemaType,
     SchemasFileRootType,
 )
 from sphinx_needs.schema.config_utils import (
@@ -816,35 +816,6 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         if type_ == "array":
             _schema["items"] = data["schema"].get("items", {"type": "string"})
 
-        if name in needs_config._options:
-            # if the user has re-defined a core option, merge in description and schema
-            # the schema type must match the core option type, if defined (otherwise we set it)
-            # and for array types, the item type must also match, if defined (otherwise we set it)
-            core_option = needs_config._options[name]
-            if "description" in core_option:
-                description = core_option["description"]
-            if "schema" in core_option:
-                _new_schema = deepcopy(core_option["schema"])
-                # TODO validate schema type and item type are compatible with core definition
-                if "type" not in _new_schema:
-                    _new_schema["type"] = type_
-                elif _new_schema["type"] != type_:
-                    raise NeedsConfigException(
-                        f"Schema type for core option '{name}' in needs_options does not match core definition: {_new_schema['type']} != {type_}"
-                    )
-                if type_ == "array":
-                    _new_schema = cast(ExtraOptionMultiValueSchemaType, _new_schema)
-                    if "items" not in _new_schema:
-                        _new_schema["items"] = {}
-                        _new_schema["items"]["type"] = _schema["items"]["type"]
-                    elif "type" not in _new_schema["items"]:
-                        _new_schema["items"]["type"] = _schema["items"]["type"]
-                    elif _new_schema["items"]["type"] != _schema["items"]["type"]:
-                        raise NeedsConfigException(
-                            f"Schema item type for core option '{name}' in needs_options does not match core definition: {_new_schema['items']['type']} != {_schema['items']['type']}"
-                        )
-                _schema = _new_schema  # type: ignore[assignment]
-
         # merge in additional schema from needs_statuses and needs_tags config
         if name == "status" and needs_config.statuses:
             log_warning(
@@ -881,10 +852,22 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             else False,
             directive_option=name != "title",
         )
+
+        if (core_override := needs_config._options.get(name)) is not None:
+            try:
+                field = create_inherited_field(
+                    field, cast(dict[str, Any], core_override)
+                )
+            except Exception as exc:
+                raise NeedsConfigException(
+                    f"Invalid `needs_options` core option override for {name!r}: {exc}"
+                ) from exc
+
         try:
             schema.add_core_field(field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid core option {name!r}: {exc}") from exc
+
     for name, extra in _NEEDS_CONFIG.extra_options.items():
         try:
             _schema = (
