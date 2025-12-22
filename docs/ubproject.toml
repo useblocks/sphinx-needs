@@ -72,7 +72,7 @@ description = "Author of the need"
 [needs.options.comment]
 description = "Additional comments"
 
-[needs.options.ammount]
+[needs.options.amount]
 description = "Amount value"
 schema.type = "number"
 
