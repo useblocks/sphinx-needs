@@ -252,12 +252,12 @@ These options would then be availble to set in need directives, such as:
 The following core options can be specialized:
 
 - ``title`` (string)
-- ``status`` (string)
+- ``status`` (nullable string)
 - ``tags`` (array of strings)
 - ``collapse`` (boolean)
 - ``hide`` (boolean)
-- ``layout`` (string)
-- ``style`` (string)
+- ``layout`` (nullable string)
+- ``style`` (nullable string)
 
 
 Specialization allows you to redefine the description and tighten the schema of these options:
