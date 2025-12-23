@@ -115,7 +115,7 @@ To address all needs in the current document, use this syntax:
    .. needextend:: "c.this_doc()"
       :status: open
 
-See also, :ref:`filter_current_page` and :ref:`needs_global_options` for setting a default option value for all needs.
+See also, :ref:`filter_current_page` and :ref:`needs_fields` for setting a default option value for all needs.
 
 Changing links
 --------------
