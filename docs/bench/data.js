@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1766477390145,
+  "lastUpdate": 1766527495746,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16164,6 +16164,42 @@ window.BENCHMARK_DATA = {
             "value": 61.33313029,
             "unit": "s",
             "extra": "Commit: b1d6bad360afb1b42568d414adf4ff227a4d6775\nBranch: master\nTime: 2025-12-23T09:07:56+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f0b9fbd20f0156cc0c7a0417ea80d52de25371ac",
+          "message": "✨ Add `nullable` key to `needs_fields` items (#1613)",
+          "timestamp": "2025-12-23T23:03:04+01:00",
+          "tree_id": "1f6ef3cd5f522cbf0efc400d92f9d4bea3c8bd29",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f0b9fbd20f0156cc0c7a0417ea80d52de25371ac"
+        },
+        "date": 1766527478291,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17541007800002717,
+            "unit": "s",
+            "extra": "Commit: f0b9fbd20f0156cc0c7a0417ea80d52de25371ac\nBranch: master\nTime: 2025-12-23T23:03:04+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.13149207399999,
+            "unit": "s",
+            "extra": "Commit: f0b9fbd20f0156cc0c7a0417ea80d52de25371ac\nBranch: master\nTime: 2025-12-23T23:03:04+01:00"
           }
         ]
       }
