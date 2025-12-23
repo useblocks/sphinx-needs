@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1766413328441,
+  "lastUpdate": 1766477390145,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16128,6 +16128,42 @@ window.BENCHMARK_DATA = {
             "value": 64.40850840000002,
             "unit": "s",
             "extra": "Commit: fc41bf2e1db3861cf7a0ab3af6facc9aed675e41\nBranch: master\nTime: 2025-12-22T15:20:11+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b1d6bad360afb1b42568d414adf4ff227a4d6775",
+          "message": "✨ Add `default` and `predicates` keys to `needs_fields` and `needs_extra_links`, deprecates `needs_global_options` (#1612)",
+          "timestamp": "2025-12-23T09:07:56+01:00",
+          "tree_id": "a05ce02561e7da6d8a489020c3272840c2df683b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b1d6bad360afb1b42568d414adf4ff227a4d6775"
+        },
+        "date": 1766477372607,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15823242799999093,
+            "unit": "s",
+            "extra": "Commit: b1d6bad360afb1b42568d414adf4ff227a4d6775\nBranch: master\nTime: 2025-12-23T09:07:56+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.33313029,
+            "unit": "s",
+            "extra": "Commit: b1d6bad360afb1b42568d414adf4ff227a4d6775\nBranch: master\nTime: 2025-12-23T09:07:56+01:00"
           }
         ]
       }
