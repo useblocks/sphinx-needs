@@ -43,7 +43,6 @@ parse_content = false
 content_required = false
 
 [needs]
-variant_options = ["status"]
 show_link_type = false
 show_link_title = false
 title_optional = true
@@ -59,6 +58,9 @@ build_json = true
 reproducible_json = true
 json_remove_defaults = true
 build_json_per_id = false
+
+[needs.fields.status]
+parse_variants = true
 
 [needs.fields.my_extra_option]
 description = "Custom extra option"

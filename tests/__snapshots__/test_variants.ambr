@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_empty_variant_options_html[test_app0]
+# name: test_empty_variant_fields_html[test_app0]
   dict({
     'current_version': '',
     'versions': dict({
@@ -26,7 +26,7 @@
     }),
   })
 # ---
-# name: test_variant_options_html[test_app0]
+# name: test_variant_fields_html[test_app0]
   dict({
     'current_version': '',
     'versions': dict({
@@ -37,6 +37,9 @@
             'external_css': 'external_link',
             'id': 'CV_0002',
             'lineno': 18,
+            'relates': list([
+              'SPEC_003',
+            ]),
             'section_name': 'Variant Handling Test',
             'sections': list([
               'Variant Handling Test',
@@ -57,6 +60,9 @@
             'external_css': 'external_link',
             'id': 'SPEC_003',
             'lineno': 25,
+            'relates_back': list([
+              'CV_0002',
+            ]),
             'section_name': 'Variant Handling Test',
             'sections': list([
               'Variant Handling Test',
@@ -79,6 +85,26 @@
             'title': 'Unknown Variant',
             'type': 'spec',
             'type_name': 'Specification',
+          }),
+          'SPEC_005': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'has_dead_links': True,
+            'has_forbidden_dead_links': True,
+            'id': 'SPEC_005',
+            'lineno': 33,
+            'links': list([
+              "<<['tag_a' in build_tags]:SPEC_003",
+              'SPEC_004>>',
+            ]),
+            'section_name': 'Variant Handling Test',
+            'sections': list([
+              'Variant Handling Test',
+            ]),
+            'title': 'Disabled variant parsing',
+            'type': 'spec',
+            'type_name': 'Specification',
+            'value': "<<['tag_a' in build_tags]:open, close>>",
           }),
           'SP_38823': dict({
             'docname': 'index',
@@ -129,7 +155,7 @@
             'type_name': 'Specification',
           }),
         }),
-        'needs_amount': 6,
+        'needs_amount': 7,
         'needs_defaults_removed': True,
       }),
     }),

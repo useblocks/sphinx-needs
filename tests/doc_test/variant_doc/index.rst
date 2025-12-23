@@ -20,7 +20,7 @@ Variant Handling Test
    :status: <<[value in tags]:open, close>>
    :value: start
    :tags: commence, start, begin
-
+   :relates: <<[value in tags]:SPEC_003, SPEC_004>>
 
 .. spec:: Variant Specification
    :id: SPEC_003
@@ -29,6 +29,11 @@ Variant Handling Test
 .. spec:: Unknown Variant
    :id: SPEC_004
    :status: <<['tag_c' in build_tags]:open, unknown>>
+
+.. spec:: Disabled variant parsing
+   :id: SPEC_005
+   :value: <<['tag_a' in build_tags]:open, close>>
+   :links: <<['tag_a' in build_tags]:SPEC_003, SPEC_004>>
 
 .. needtable::
    :filter: status in ("open", "close", "progress")

@@ -560,8 +560,14 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         description = option_params.get("description", "Added by needs_fields config")
         schema = option_params.get("schema")
         nullable = option_params.get("nullable")
+        parse_variants = option_params.get("parse_variants")
         _NEEDS_CONFIG.add_extra_option(
-            option_name, description, schema=schema, nullable=nullable, override=True
+            option_name,
+            description,
+            schema=schema,
+            nullable=nullable,
+            parse_variants=parse_variants,
+            override=True,
         )
 
     # ensure options for `needgantt` functionality are added to the extra options
@@ -775,7 +781,6 @@ def check_configuration(app: Sphinx, config: Config) -> None:
             )
 
     external_variants = needs_config.variants
-    external_variant_options = needs_config.variant_options
     for value in external_variants.values():
         # Check if external filter values is really a string
         if not isinstance(value, str):
@@ -783,20 +788,27 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 f"Variant filter value: {value} from needs_variants {external_variants} is not a string."
             )
 
-    allowed_internal_variants = {
-        k for k, v in NeedsCoreFields.items() if v.get("allow_variants")
-    }
-    for option in external_variant_options:
-        # Check variant option is added to an allowed field
-        if option in link_types:
-            raise NeedsConfigException(
-                f"Variant option `{option}` is a link type. This is not allowed."
-            )
-        if option not in extra_options and option not in allowed_internal_variants:
-            raise NeedsConfigException(
-                f"Variant option `{option}` is not added in extra options. "
-                "This is not allowed."
-            )
+    if needs_config._variant_options:
+        log_warning(
+            LOGGER,
+            'Config option "needs_variant_options" is deprecated. Please use "needs_fields" with "parse_variants" instead.',
+            "deprecated",
+            None,
+        )
+        allowed_internal_variants = {
+            k for k, v in NeedsCoreFields.items() if v.get("allow_variants")
+        }
+        for option in needs_config._variant_options:
+            # Check variant option is added to an allowed field
+            if option in link_types:
+                raise NeedsConfigException(
+                    f"Variant option `{option}` is a link type. This is not allowed."
+                )
+            if option not in extra_options and option not in allowed_internal_variants:
+                raise NeedsConfigException(
+                    f"Variant option `{option}` is not added in needs_extra_options or needs_fields. "
+                    "This is not allowed."
+                )
 
     validate_schemas_config(app, needs_config)
 
@@ -853,8 +865,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             default=None if default is None else FieldLiteralValue(default),
             allow_defaults=data.get("allow_default", False),
             allow_extend=data.get("allow_extend", False),
-            allow_dynamic_functions=data.get("allow_df", False),
-            allow_variant_functions=name in needs_config.variant_options
+            parse_dynamic_functions=data.get("allow_df", False),
+            parse_variants=name in needs_config._variant_options
             if data.get("allow_variants", False)
             else False,
             directive_option=name != "title",
@@ -862,7 +874,11 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
         if (core_override := needs_config._fields.get(name)) is not None:
             try:
-                field = create_inherited_field(field, core_override)
+                field = create_inherited_field(
+                    field,
+                    core_override,
+                    allow_variants=data.get("allow_variants", False),
+                )
             except Exception as exc:
                 raise NeedsConfigException(
                     f"Invalid `needs_fields` core option override for {name!r}: {exc}"
@@ -886,6 +902,12 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 # follows that of legacy (pre-schema) extra option,
                 # i.e. nullable if schema is defined
                 nullable = extra.schema is not None
+            parse_variants = (
+                False if extra.parse_variants is None else extra.parse_variants
+            )
+            if name in needs_config._variant_options:
+                # for backward compatibility with deprecated config option
+                parse_variants = True
             field = FieldSchema(
                 name=name,
                 description=extra.description,
@@ -896,8 +918,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 default=None if extra.schema is not None else FieldLiteralValue(""),
                 allow_defaults=True,
                 allow_extend=True,
-                allow_dynamic_functions=True,
-                allow_variant_functions=name in needs_config.variant_options,
+                parse_dynamic_functions=True,
+                parse_variants=parse_variants,
                 directive_option=True,
             )
             schema.add_extra_field(field)
@@ -913,8 +935,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 default=LinksLiteralValue([]),
                 allow_defaults=True,
                 allow_extend=True,
-                allow_dynamic_functions=True,
-                allow_variant_functions=name in needs_config.variant_options,
+                parse_dynamic_functions=True,
+                parse_variants=link.get("parse_variants", False),
                 directive_option=True,
             )
             schema.add_link_field(link_field)

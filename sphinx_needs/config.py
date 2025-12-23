@@ -50,6 +50,8 @@ class ExtraOptionParams:
         | None
     )
     """A JSON schema for the option."""
+    parse_variants: bool | None = None
+    """Whether variants are parsed in this field."""
 
 
 class FieldDefault(TypedDict):
@@ -116,6 +118,7 @@ class _Config:
         | None = None,
         nullable: None | bool = None,
         override: bool = False,
+        parse_variants: None | bool = None,
     ) -> None:
         """Adds an extra option to the configuration."""
         if name in NeedsCoreFields:
@@ -146,6 +149,7 @@ class _Config:
             description=description,
             schema=schema,
             nullable=nullable,
+            parse_variants=parse_variants,
         )
 
     @property
@@ -281,6 +285,8 @@ class LinkOptionsType(TypedDict, total=False):
     """Default value for the link option."""
     predicates: NotRequired[list[tuple[str, Any]]]
     """List of (need filter, value) pairs for predicate default values."""
+    parse_variants: NotRequired[bool]
+    """Whether variants are parsed in this field."""
 
 
 class NeedType(TypedDict):
@@ -316,6 +322,8 @@ class NeedFields(TypedDict):
     """Default value for the field."""
     predicates: NotRequired[list[tuple[str, Any]]]
     """List of (need filter, value) pairs for predicate default values."""
+    parse_variants: NotRequired[bool]
+    """Whether variants are parsed in this field."""
 
 
 class NeedExtraOption(NeedFields):
@@ -856,7 +864,7 @@ class NeedsSphinxConfig:
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
     """Mapping of variant name to filter string."""
-    variant_options: list[str] = field(
+    _variant_options: list[str] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """List of need fields that may contain variants."""
