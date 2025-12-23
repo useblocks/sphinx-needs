@@ -39,6 +39,8 @@ class ExtraOptionParams:
 
     description: str
     """A description of the option."""
+    nullable: bool | None = None
+    """Whether the field allows unset values."""
     schema: (
         ExtraOptionStringSchemaType
         | ExtraOptionBooleanSchemaType
@@ -112,6 +114,7 @@ class _Config:
         | ExtraOptionNumberSchemaType
         | ExtraOptionMultiValueSchemaType
         | None = None,
+        nullable: None | bool = None,
         override: bool = False,
     ) -> None:
         """Adds an extra option to the configuration."""
@@ -142,6 +145,7 @@ class _Config:
         self._extra_options[name] = ExtraOptionParams(
             description=description,
             schema=schema,
+            nullable=nullable,
         )
 
     @property
@@ -306,6 +310,8 @@ class NeedFields(TypedDict):
     If given, the schema will apply to all needs that use this option.
     For more granular control, use the `needs_schema_definitions` configuration.
     """
+    nullable: NotRequired[bool]
+    """Whether the field allows unset values."""
     default: NotRequired[Any]
     """Default value for the field."""
     predicates: NotRequired[list[tuple[str, Any]]]

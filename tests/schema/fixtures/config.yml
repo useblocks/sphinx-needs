@@ -7,6 +7,16 @@ title_wrong_type:
     schema.type = "number"
   rst: ""
 
+title_nullable:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.title]
+    schema.type = "string"
+    nullable = true
+  rst: ""
+
 status_wrong_type:
   conf: |
     extensions = ["sphinx_needs"]

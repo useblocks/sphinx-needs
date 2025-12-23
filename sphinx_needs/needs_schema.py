@@ -4,10 +4,11 @@ import enum
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass, replace
 from functools import lru_cache, partial
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeVar, cast
 
 import jsonschema_rs
 
+from sphinx_needs.config import NeedFields
 from sphinx_needs.exceptions import VariantParsingException
 from sphinx_needs.schema.config import (
     ExtraOptionBooleanSchemaType,
@@ -996,7 +997,7 @@ def _split_string(
     )
 
 
-def create_inherited_field(parent: FieldSchema, child: dict[str, Any]) -> FieldSchema:
+def create_inherited_field(parent: FieldSchema, child: NeedFields) -> FieldSchema:
     """Create a new FieldSchema by inheriting from a parent FieldSchema and applying overrides from a child dictionary."""
     replacements: dict[str, Any] = {}
 
@@ -1007,10 +1008,15 @@ def create_inherited_field(parent: FieldSchema, child: dict[str, Any]) -> FieldS
 
     if "schema" in child:
         child_schema = child["schema"]
-        inherit_schema(parent.schema, child_schema)
+        inherit_schema(parent.schema, cast(dict[str, Any], child_schema))
         replacements["schema"] = child_schema
 
-    # TODO allow nullable to be inherited, only allow False -> True changes
+    if "nullable" in child:
+        if not isinstance(child["nullable"], bool):
+            raise ValueError("Child 'nullable' must be a boolean.")
+        if parent.nullable is False and child["nullable"] is True:
+            raise ValueError("Cannot change 'nullable' from False to True in child.")
+        replacements["nullable"] = child["nullable"]
 
     return replace(parent, **replacements)
 

@@ -279,6 +279,18 @@ string_type:
         :id: IMPL_1
         :asil: QM
 
+string_non_nullable:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.asil]
+    schema.type = "string"
+    nullable = false
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+
 string_format_date:
   conf: |
     extensions = ["sphinx_needs"]
@@ -708,6 +720,21 @@ title_length:
 
     .. impl:: this title is too long
         :id: IMPL_3
+
+status_non_nullable:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.status]
+    nullable = false
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :status: open
+
+    .. impl:: title
+        :id: IMPL_2
 
 status_enum:
   conf: |
