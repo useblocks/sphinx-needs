@@ -125,7 +125,7 @@ def load_external_needs(
         )
 
         id_prefix = source.get("id_prefix", "").upper()
-        import_prefix_link_edit(needs, id_prefix, needs_config.extra_links)
+        import_prefix_link_edit(needs, id_prefix, needs_schema.iter_link_field_names())
 
         # all known need fields in the project
         known_keys = {
