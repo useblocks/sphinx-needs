@@ -11,12 +11,14 @@ import jsonschema_rs
 from sphinx_needs.config import NeedFields
 from sphinx_needs.exceptions import VariantParsingException
 from sphinx_needs.schema.config import (
+    ExtraLinkSchemaType,
     ExtraOptionBooleanSchemaType,
     ExtraOptionIntegerSchemaType,
     ExtraOptionMultiValueSchemaType,
     ExtraOptionNumberSchemaType,
     ExtraOptionSchemaTypes,
     ExtraOptionStringSchemaType,
+    validate_extra_link_schema_type,
     validate_extra_option_schema,
 )
 from sphinx_needs.schema.core import validate_object_schema_compiles
@@ -521,6 +523,7 @@ class LinkSchema:
 
     name: str
     description: str = ""
+    schema: ExtraLinkSchemaType
     directive_option: bool = False
     allow_extend: bool = False
     parse_dynamic_functions: bool = False
@@ -545,6 +548,16 @@ class LinkSchema:
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
             raise ValueError("name must be a non-empty string.")
+        if not isinstance(self.description, str):
+            raise ValueError("description must be a string.")
+        try:
+            validate_extra_link_schema_type(self.schema)
+        except TypeError as exc:
+            raise ValueError(f"Invalid schema: {exc}") from exc
+        try:
+            validate_object_schema_compiles({"properties": {self.name: self.schema}})
+        except jsonschema_rs.ValidationError as exc:
+            raise ValueError(f"Invalid schema: {exc}") from exc
         if not isinstance(self.parse_dynamic_functions, bool):
             raise ValueError("parse_dynamic_functions must be a boolean.")
         if not isinstance(self.parse_variants, bool):
@@ -555,8 +568,6 @@ class LinkSchema:
             raise ValueError("allow_extend must be a boolean.")
         if not isinstance(self.directive_option, bool):
             raise ValueError("directive_option must be a boolean.")
-        if not isinstance(self.description, str):
-            raise ValueError("description must be a string.")
         if not isinstance(self.predicate_defaults, tuple) or not all(
             isinstance(pair, tuple) and len(pair) == 2
             for pair in self.predicate_defaults
