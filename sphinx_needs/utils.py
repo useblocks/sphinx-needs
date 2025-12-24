@@ -256,11 +256,12 @@ def import_prefix_link_edit(
         return
 
     needs_ids = needs.keys()
+    link_names_list = list(link_names)
 
     for need in needs.values():
         for id in needs_ids:
             # Manipulate links in all link types
-            for link_name in link_names:
+            for link_name in link_names_list:
                 if link_name in need and id in need[link_name]:
                     for n, link in enumerate(need[link_name]):
                         if id == link:
