@@ -49,6 +49,19 @@ needs_fields = {
         "parse_variants": True,
     },
     "value": {},
+    "field_bool": {
+        "schema": {
+            "type": "boolean",
+        },
+        "parse_variants": True,
+    },
+    "field_array_int": {
+        "schema": {
+            "type": "array",
+            "items": {"type": "integer"},
+        },
+        "parse_variants": True,
+    },
 }
 needs_extra_links = [
     {
