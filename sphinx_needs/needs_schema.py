@@ -1029,7 +1029,7 @@ def create_inherited_field(
         if not isinstance(child["parse_variants"], bool):
             raise ValueError("Child 'parse_variants' must be a boolean.")
         if not allow_variants and child["parse_variants"]:
-            raise ValueError("parse_variants is not allowed to be Truefor this field.")
+            raise ValueError("parse_variants is not allowed to be True for this field.")
         replacements["parse_variants"] = child["parse_variants"]
 
     return replace(parent, **replacements)
