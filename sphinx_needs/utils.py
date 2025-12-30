@@ -5,7 +5,7 @@ import importlib
 import operator
 import os
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from functools import lru_cache, reduce, wraps
 from typing import TYPE_CHECKING, Any, Protocol, TypeVar
@@ -16,7 +16,7 @@ from jinja2 import Environment, Template
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.exceptions import NeedsInvalidFilter
@@ -240,7 +240,7 @@ def row_col_maker(
 
 
 def import_prefix_link_edit(
-    needs: dict[str, Any], id_prefix: str, needs_extra_links: list[LinkOptionsType]
+    needs: dict[str, Any], id_prefix: str, link_names: Iterable[str]
 ) -> None:
     """
     Changes existing links to support given prefix.
@@ -249,23 +249,23 @@ def import_prefix_link_edit(
 
     :param needs: Dict of all needs
     :param id_prefix: Prefix as string
-    :param needs_extra_links: config var of all supported extra links.
-        Normally coming from env.config.needs_extra_links
+    :param link_names: Iterable of link field names to be prefixed
     :return:
     """
     if not id_prefix:
         return
 
     needs_ids = needs.keys()
+    link_names_list = list(link_names)
 
     for need in needs.values():
         for id in needs_ids:
             # Manipulate links in all link types
-            for extra_link in needs_extra_links:
-                if extra_link["option"] in need and id in need[extra_link["option"]]:
-                    for n, link in enumerate(need[extra_link["option"]]):
+            for link_name in link_names_list:
+                if link_name in need and id in need[link_name]:
+                    for n, link in enumerate(need[link_name]):
                         if id == link:
-                            need[extra_link["option"]][n] = f"{id_prefix}{id}"
+                            need[link_name][n] = f"{id_prefix}{id}"
             # Manipulate descriptions
             # ToDo: Use regex for better matches.
             for key in ("content", "description"):
