@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1766527495746,
+  "lastUpdate": 1767087614302,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16200,6 +16200,42 @@ window.BENCHMARK_DATA = {
             "value": 58.13149207399999,
             "unit": "s",
             "extra": "Commit: f0b9fbd20f0156cc0c7a0417ea80d52de25371ac\nBranch: master\nTime: 2025-12-23T23:03:04+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4404a932851c7c2123227d928bcef857145dbb47",
+          "message": "🔧 Simplify `import_prefix_link_edit` (#1615)",
+          "timestamp": "2025-12-30T10:38:22+01:00",
+          "tree_id": "d80739de10ada376d919ddb876afee2ea8040c22",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4404a932851c7c2123227d928bcef857145dbb47"
+        },
+        "date": 1767087597569,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15428655200000208,
+            "unit": "s",
+            "extra": "Commit: 4404a932851c7c2123227d928bcef857145dbb47\nBranch: master\nTime: 2025-12-30T10:38:22+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.16280967799999,
+            "unit": "s",
+            "extra": "Commit: 4404a932851c7c2123227d928bcef857145dbb47\nBranch: master\nTime: 2025-12-30T10:38:22+01:00"
           }
         ]
       }
