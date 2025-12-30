@@ -38,8 +38,8 @@ class FieldSchema:
     schema: ExtraOptionSchemaTypes
     nullable: bool = False
     directive_option: bool = False
-    allow_dynamic_functions: bool = False
-    allow_variant_functions: bool = False
+    parse_dynamic_functions: bool = False
+    parse_variants: bool = False
     allow_defaults: bool = False
     allow_extend: bool = False
     predicate_defaults: tuple[
@@ -73,11 +73,11 @@ class FieldSchema:
             raise ValueError(f"Invalid schema: {exc}") from exc
         if not isinstance(self.nullable, bool):
             raise ValueError("nullable must be a boolean.")
-        if not isinstance(self.allow_dynamic_functions, bool):
-            raise ValueError("allow_dynamic_functions must be a boolean.")
+        if not isinstance(self.parse_dynamic_functions, bool):
+            raise ValueError("parse_dynamic_functions must be a boolean.")
         if not isinstance(self.allow_extend, bool):
             raise ValueError("allow_extend must be a boolean.")
-        if not isinstance(self.allow_variant_functions, bool):
+        if not isinstance(self.parse_variants, bool):
             raise ValueError("allow_variant must be a boolean.")
         if not isinstance(self.allow_defaults, bool):
             raise ValueError("allow_defaults must be a boolean.")
@@ -268,7 +268,7 @@ class FieldSchema:
         match self.type:
             case "boolean" | "integer" | "number":
                 if (
-                    self.allow_dynamic_functions
+                    self.parse_dynamic_functions
                     and value.lstrip().startswith("[[")
                     and value.rstrip().endswith("]]")
                 ):
@@ -276,7 +276,7 @@ class FieldSchema:
                         (DynamicFunctionParsed.from_string(value.strip()[2:-2]),)
                     )
                 elif (
-                    self.allow_variant_functions
+                    self.parse_variants
                     and value.lstrip().startswith("<<")
                     and value.rstrip().endswith(">>")
                 ):
@@ -292,7 +292,7 @@ class FieldSchema:
                     return FieldLiteralValue(_from_string_item(value, self.type))
             case "string":
                 parsed_items = _split_string(
-                    value, self.allow_dynamic_functions, self.allow_variant_functions
+                    value, self.parse_dynamic_functions, self.parse_variants
                 )
                 if len(parsed_items) == 1 and parsed_items[0][1] == ListItemType.STD:
                     return FieldLiteralValue(parsed_items[0][0])
@@ -322,7 +322,7 @@ class FieldSchema:
                     | VariantFunctionParsed
                 ] = []
                 for parsed in _split_list(
-                    value, self.allow_dynamic_functions, self.allow_variant_functions
+                    value, self.parse_dynamic_functions, self.parse_variants
                 ):
                     if len(parsed) != 1:
                         raise ValueError(
@@ -379,7 +379,7 @@ class FieldSchema:
                 return None
             if (
                 allow_coercion
-                and (self.allow_dynamic_functions or self.allow_variant_functions)
+                and (self.parse_dynamic_functions or self.parse_variants)
                 and self.type == "array"
                 and self.item_type == "string"
             ):
@@ -393,7 +393,7 @@ class FieldSchema:
                 item: str
                 for item in value:
                     if (
-                        self.allow_dynamic_functions
+                        self.parse_dynamic_functions
                         and item.lstrip().startswith("[[")
                         and item.rstrip().endswith("]]")
                     ):
@@ -402,7 +402,7 @@ class FieldSchema:
                             DynamicFunctionParsed.from_string(item.strip()[2:-2])
                         )
                     elif (
-                        self.allow_variant_functions
+                        self.parse_variants
                         and item.lstrip().startswith("<<")
                         and item.rstrip().endswith(">>")
                     ):
@@ -523,8 +523,8 @@ class LinkSchema:
     description: str = ""
     directive_option: bool = False
     allow_extend: bool = False
-    allow_dynamic_functions: bool = False
-    allow_variant_functions: bool = False
+    parse_dynamic_functions: bool = False
+    parse_variants: bool = False
     allow_defaults: bool = False
     predicate_defaults: tuple[
         tuple[str, LinksLiteralValue | LinksFunctionArray],
@@ -545,10 +545,10 @@ class LinkSchema:
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
             raise ValueError("name must be a non-empty string.")
-        if not isinstance(self.allow_dynamic_functions, bool):
-            raise ValueError("allow_dynamic_functions must be a boolean.")
-        if not isinstance(self.allow_variant_functions, bool):
-            raise ValueError("allow_variant_functions must be a boolean.")
+        if not isinstance(self.parse_dynamic_functions, bool):
+            raise ValueError("parse_dynamic_functions must be a boolean.")
+        if not isinstance(self.parse_variants, bool):
+            raise ValueError("parse_variants must be a boolean.")
         if not isinstance(self.allow_defaults, bool):
             raise ValueError("allow_defaults must be a boolean.")
         if not isinstance(self.allow_extend, bool):
@@ -687,7 +687,7 @@ class LinkSchema:
         has_df_or_vf = False
         array: list[str | DynamicFunctionParsed | VariantFunctionParsed] = []
         for parsed in _split_list(
-            value, self.allow_dynamic_functions, self.allow_variant_functions
+            value, self.parse_dynamic_functions, self.parse_variants
         ):
             if len(parsed) != 1:
                 raise ValueError(
@@ -733,9 +733,7 @@ class LinkSchema:
         else:
             if not self.type_check(value):
                 raise ValueError(f"Invalid value for field {self.name!r}: {value!r}")
-            if allow_coercion and (
-                self.allow_dynamic_functions or self.allow_variant_functions
-            ):
+            if allow_coercion and (self.parse_dynamic_functions or self.parse_variants):
                 from sphinx_needs.functions.functions import DynamicFunctionParsed
 
                 new_value: list[
@@ -745,7 +743,7 @@ class LinkSchema:
                 item: str
                 for item in value:
                     if (
-                        self.allow_dynamic_functions
+                        self.parse_dynamic_functions
                         and item.lstrip().startswith("[[")
                         and item.rstrip().endswith("]]")
                     ):
@@ -754,7 +752,7 @@ class LinkSchema:
                             DynamicFunctionParsed.from_string(item.strip()[2:-2])
                         )
                     elif (
-                        self.allow_variant_functions
+                        self.parse_variants
                         and item.lstrip().startswith("<<")
                         and item.rstrip().endswith(">>")
                     ):
@@ -891,8 +889,8 @@ class ListItemType(enum.Enum):
 
 def _split_list(
     text: str,
-    allow_dynamic_functions: bool,
-    allow_variant_functions: bool,
+    parse_dynamic_functions: bool,
+    parse_variants: bool,
     allow_delimiters: bool = True,
 ) -> Iterator[list[tuple[str, ListItemType]]]:
     """Split a ``;|,`` delimited string that may contain ``[[...]]`` dynamic functions or ``<<...>>`` variant functions.
@@ -908,7 +906,7 @@ def _split_list(
     _current_element = ""
     _current_elements: list[tuple[str, ListItemType]] = []
     while text:
-        if allow_dynamic_functions and text.startswith("[["):
+        if parse_dynamic_functions and text.startswith("[["):
             if not _current_elements:
                 _current_element = _current_element.lstrip()
             if _current_element:
@@ -928,7 +926,7 @@ def _split_list(
             )
             _current_element = ""
             text = text[2:]
-        elif allow_variant_functions and text.startswith("<<"):
+        elif parse_variants and text.startswith("<<"):
             if not _current_elements:
                 _current_element = _current_element.lstrip()
             if _current_element:
@@ -971,7 +969,7 @@ def _split_list(
 
 
 def _split_string(
-    text: str, allow_dynamic_functions: bool, allow_variant_functions: bool
+    text: str, parse_dynamic_functions: bool, parse_variants: bool
 ) -> list[tuple[str, ListItemType]]:
     """Split a string that may contain ``[[...]]`` dynamic functions or ``<<...>>`` variant functions.
 
@@ -982,23 +980,32 @@ def _split_string(
         and only yielded if it is not empty.
     """
     if not (stripped := text.strip()) or not (
-        allow_dynamic_functions or allow_variant_functions
+        parse_dynamic_functions or parse_variants
     ):
         return [(stripped, ListItemType.STD)]
     return next(
         iter(
             _split_list(
                 text,
-                allow_dynamic_functions,
-                allow_variant_functions,
+                parse_dynamic_functions,
+                parse_variants,
                 allow_delimiters=False,
             )
         )
     )
 
 
-def create_inherited_field(parent: FieldSchema, child: NeedFields) -> FieldSchema:
-    """Create a new FieldSchema by inheriting from a parent FieldSchema and applying overrides from a child dictionary."""
+def create_inherited_field(
+    parent: FieldSchema, child: NeedFields, *, allow_variants: bool
+) -> FieldSchema:
+    """Create a new FieldSchema by inheriting from a parent FieldSchema and applying overrides from a child dictionary.
+
+    :param parent: The parent FieldSchema to inherit from.
+    :param child: A dictionary containing the child field overrides.
+    :param allow_variants: Whether to allow parse_variants to be set to True in the child.
+        This is a bit of a special case for certain core fields, and maybe should be handled differently in the future;
+        fields like ``template`` are used before variants are processed, so allowing variants there would not make sense.
+    """
     replacements: dict[str, Any] = {}
 
     if "description" in child:
@@ -1017,6 +1024,13 @@ def create_inherited_field(parent: FieldSchema, child: NeedFields) -> FieldSchem
         if parent.nullable is False and child["nullable"] is True:
             raise ValueError("Cannot change 'nullable' from False to True in child.")
         replacements["nullable"] = child["nullable"]
+
+    if "parse_variants" in child:
+        if not isinstance(child["parse_variants"], bool):
+            raise ValueError("Child 'parse_variants' must be a boolean.")
+        if not allow_variants and child["parse_variants"]:
+            raise ValueError("parse_variants is not allowed to be Truefor this field.")
+        replacements["parse_variants"] = child["parse_variants"]
 
     return replace(parent, **replacements)
 

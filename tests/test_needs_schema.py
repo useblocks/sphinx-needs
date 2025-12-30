@@ -231,7 +231,7 @@ def test_convert_directive_option_value(type_, item_type, allow_df, input, expec
     field = FieldSchema(
         name="test_field",
         schema=schema,
-        allow_dynamic_functions=allow_df,
+        parse_dynamic_functions=allow_df,
     )
     assert field.convert_directive_option(input) == FieldLiteralValue(expected)
 
@@ -351,7 +351,7 @@ def test_convert_directive_option_df(type_, item_type, input, expected):
     field = FieldSchema(
         name="test_field",
         schema=schema,
-        allow_dynamic_functions=True,
+        parse_dynamic_functions=True,
     )
     assert field.convert_directive_option(input) == expected
 
@@ -461,7 +461,7 @@ def test_convert_directive_option_vf(type_, item_type, input, expected):
     field = FieldSchema(
         name="test_field",
         schema=schema,
-        allow_variant_functions=True,
+        parse_variants=True,
     )
     assert field.convert_directive_option(input) == expected
 
@@ -501,8 +501,8 @@ def test_convert_directive_option_value_errors(
     field = FieldSchema(
         name="test_field",
         schema=schema,
-        allow_dynamic_functions=allow_df,
-        allow_variant_functions=allow_vf,
+        parse_dynamic_functions=allow_df,
+        parse_variants=allow_vf,
     )
     with pytest.raises(ValueError):
         field.convert_directive_option(input)
@@ -527,7 +527,7 @@ def test_convert_directive_option_df_errors(type_, item_type, input):
     field = FieldSchema(
         name="test_field",
         schema=schema,
-        allow_dynamic_functions=True,
+        parse_dynamic_functions=True,
     )
     with pytest.raises(FunctionParsingException):
         field.convert_directive_option(input)
