@@ -178,4 +178,4 @@ VS Code Extension
 
 The VS Code extension `ubCode <https://marketplace.visualstudio.com/items?itemName=useblocks.ubcode>`_ provides 
 support for Sphinx-Needs.
-See more details in the `Documentation <https://docs.useblocks.com/ubcode/>`_.
+See more details in the `Documentation <https://ubcode.useblocks.com>`_.
