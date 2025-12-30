@@ -195,7 +195,9 @@ class NeedimportDirective(SphinxDirective):
             for need in needs_list.values():
                 need["tags"] = need["tags"] + tags
 
-        import_prefix_link_edit(needs_list, id_prefix, needs_config.extra_links)
+        import_prefix_link_edit(
+            needs_list, id_prefix, needs_schema.iter_link_field_names()
+        )
 
         # all known need fields in the project
         known_keys = {
