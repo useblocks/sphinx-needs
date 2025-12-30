@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -60,12 +61,19 @@ def test_match_variants(option, context, variants, expected):
     [{"buildername": "html", "srcdir": "doc_test/variant_doc", "tags": ["tag_a"]}],
     indirect=True,
 )
-def test_variant_options_html(test_app, snapshot):
+def test_variant_fields_html(test_app, snapshot):
     app = test_app
     app.build()
 
-    warnings = strip_colors(app._warning.getvalue()).splitlines()
-    assert warnings == []
+    warnings = (
+        strip_colors(app._warning.getvalue())
+        .replace(str(app.srcdir) + os.path.sep, "<srcdir>/")
+        .splitlines()
+    )
+    assert warnings == [
+        "<srcdir>/index.rst:33: WARNING: Need 'SPEC_005' has unknown outgoing link '<<['tag_a' in build_tags]:SPEC_003' in field 'links' [needs.link_outgoing]",
+        "<srcdir>/index.rst:33: WARNING: Need 'SPEC_005' has unknown outgoing link 'SPEC_004>>' in field 'links' [needs.link_outgoing]",
+    ]
 
     needs = json.loads(Path(app.outdir, "needs.json").read_text())
     assert needs == snapshot(
@@ -98,12 +106,14 @@ def test_variant_options_html(test_app, snapshot):
     [{"buildername": "html", "srcdir": "doc_test/variant_options", "tags": ["tag_a"]}],
     indirect=True,
 )
-def test_empty_variant_options_html(test_app, snapshot):
+def test_empty_variant_fields_html(test_app, snapshot):
     app = test_app
     app.build()
 
     warnings = strip_colors(app._warning.getvalue()).splitlines()
-    assert warnings == []
+    assert warnings == [
+        'WARNING: Config option "needs_variant_options" is deprecated. Please use "needs_fields" with "parse_variants" instead. [needs.deprecated]'
+    ]
 
     needs = json.loads(Path(app.outdir, "needs.json").read_text())
     assert needs == snapshot(

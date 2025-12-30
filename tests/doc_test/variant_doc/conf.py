@@ -38,21 +38,37 @@ needs_types = [
     },
 ]
 needs_variants = {"change_author": "assignee == 'Randy Duodu'"}
-needs_variant_options = ["status", "author"]
 needs_filter_data = {"assignee": "Randy Duodu"}
 needs_fields = {
+    "status": {
+        "parse_variants": True,
+    },
     "my_extra_option": {},
     "another_option": {},
-    "author": {},
-    "comment": {},
-    "amount": {},
-    "hours": {},
-    "image": {},
-    "config": {},
-    "github": {},
+    "author": {
+        "parse_variants": True,
+    },
     "value": {},
-    "unit": {},
+    "field_bool": {
+        "schema": {
+            "type": "boolean",
+        },
+        "parse_variants": True,
+    },
+    "field_array_int": {
+        "schema": {
+            "type": "array",
+            "items": {"type": "integer"},
+        },
+        "parse_variants": True,
+    },
 }
+needs_extra_links = [
+    {
+        "option": "relates",
+        "parse_variants": True,
+    },
+]
 
 needs_build_json = True
 needs_json_remove_defaults = True

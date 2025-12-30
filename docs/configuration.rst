@@ -218,6 +218,8 @@ For new fields the following can be defined:
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default``: A default value for the field (optional).
     If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
+- ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
+    Default: ``False``.
 
 For example:
 
@@ -374,6 +376,8 @@ Each configured link should define:
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default`` (optional): A default value for the field.
     If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
+- ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
+    Default: ``False``.
 - ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by".
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
@@ -2154,35 +2158,6 @@ The value is a string which consists of a Python-supported "filter string".
 
 Default: ``{}``
 
-.. _`needs_variant_options`:
-
-needs_variant_options
-~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 1.0.2
-
-``needs_variant_options`` must be a list which consists of the options to apply :ref:`variants handling <needs_variant_support>`.
-You can specify the names of the options you want to check for variants.
-
-for example, in ``conf.py``:
-
-.. code-block:: python
-
-   needs_variant_options = ["author", "status"]
-
-From the example above, we apply variants handling to only the options specified.
-
-Default: ``[]``
-
-.. note::
-
-   You must ensure the options ``needs_variant_options`` are one of:
-
-   - ``status``
-   - ``layout``
-   - ``style``
-   - :ref:`needs_fields`
-
 .. _`needs_render_context`:
 
 needs_render_context
@@ -2725,6 +2700,39 @@ Activate it by setting it like this:
 If parameter is not set or set to *[]*, no checks will be performed.
 
 Default value: *[]*.
+
+.. _`needs_variant_options`:
+
+needs_variant_options
+~~~~~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 7.0.0
+
+   Use :ref:`needs_fields` instead.
+
+.. versionadded:: 1.0.2
+
+``needs_variant_options`` must be a list which consists of the options to apply :ref:`variants handling <needs_variant_support>`.
+You can specify the names of the options you want to check for variants.
+
+for example, in ``conf.py``:
+
+.. code-block:: python
+
+   needs_variant_options = ["author", "status"]
+
+From the example above, we apply variants handling to only the options specified.
+
+Default: ``[]``
+
+.. note::
+
+   You must ensure the options ``needs_variant_options`` are one of:
+
+   - ``status``
+   - ``layout``
+   - ``style``
+   - :ref:`needs_fields`
 
 .. _`needs_report_dead_links`:
 

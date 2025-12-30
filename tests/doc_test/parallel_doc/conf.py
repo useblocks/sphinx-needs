@@ -30,12 +30,18 @@ needs_types = [
         "style": "node",
     },
 ]
+
+
 needs_variants = {"change_author": "assignee == 'Randy Duodu'"}
-needs_variant_options = ["status", "author"]
 needs_filter_data = {"assignee": "Randy Duodu"}
 needs_fields = {
+    "status": {
+        "parse_variants": True,
+    },
     "my_extra_option": {},
     "another_option": {},
-    "author": {},
+    "author": {
+        "parse_variants": True,
+    },
     "comment": {},
 }
