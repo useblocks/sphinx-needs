@@ -64,4 +64,5 @@ Schema
 .. automodule:: sphinx_needs.schema.config
    :members: ExtraOptionStringSchemaType, ExtraOptionBooleanSchemaType,
              ExtraOptionIntegerSchemaType, ExtraOptionNumberSchemaType,
-             ExtraOptionMultiValueSchemaType
+             ExtraOptionMultiValueSchemaType,
+             ExtraLinkSchemaType, ExtraLinkItemSchemaType
