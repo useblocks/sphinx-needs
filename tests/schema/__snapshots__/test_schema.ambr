@@ -484,18 +484,6 @@
   
   '''
 # ---
-# name: test_schema_config[title_wrong_type]
-  "Invalid `needs_fields` core option override for 'title': Child 'type' 'number' does not match parent 'type' 'string'."
-# ---
-# name: test_schema_config[title_nullable]
-  "Invalid `needs_fields` core option override for 'title': Cannot change 'nullable' from False to True in child."
-# ---
-# name: test_schema_config[status_wrong_type]
-  "Invalid `needs_fields` core option override for 'status': Child 'type' 'integer' does not match parent 'type' 'string'."
-# ---
-# name: test_schema_config[tags_wrong_items_type]
-  "Invalid `needs_fields` core option override for 'tags': 'items' inheritance: Child 'type' 'boolean' does not match parent 'type' 'string'."
-# ---
 # name: test_schema_config[both_definitions_and_json_given]
   "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
 # ---
@@ -688,6 +676,18 @@
 # ---
 # name: test_schema_config[select_error]
   "Config error in schema '[0]' at path 'select.properties.efforts': Field 'efforts' has type 'unknown', but expected 'string'."
+# ---
+# name: test_schema_config[status_wrong_type]
+  "Invalid `needs_fields` core option override for 'status': Child 'type' 'integer' does not match parent 'type' 'string'."
+# ---
+# name: test_schema_config[tags_wrong_items_type]
+  "Invalid `needs_fields` core option override for 'tags': 'items' inheritance: Child 'type' 'boolean' does not match parent 'type' 'string'."
+# ---
+# name: test_schema_config[title_nullable]
+  "Invalid `needs_fields` core option override for 'title': Cannot change 'nullable' from False to True in child."
+# ---
+# name: test_schema_config[title_wrong_type]
+  "Invalid `needs_fields` core option override for 'title': Child 'type' 'number' does not match parent 'type' 'string'."
 # ---
 # name: test_schema_config[type_error]
   "Invalid extra option 'efforts': Invalid schema: Extra option schema has invalid type 'unknown'. Must be one of ['array', 'boolean', 'integer', 'number', 'string']."
@@ -3579,15 +3579,49 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/fields-string_non_nullable]
+# name: test_schemas[schema/fixtures/fields-status_enum]
   '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'asil' is not nullable, but no value or default was given. [needs.create_need]
+  ERROR: Need 'IMPL_2' has schema violations:
+    Severity:       violation
+    Field:          status
+    Need path:      IMPL_2
+    Schema path:    fields > schema > properties > status > enum
+    Schema message: "other" is not one of "open", "in progress" or "closed" [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/fields-string_non_nullable].1
+# name: test_schemas[schema/fixtures/fields-status_enum].1
   dict({
-    'validated_needs_count': 0,
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_2': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'status',
+            'need_path': 'IMPL_2',
+            'schema_path': 'fields > schema > properties > status > enum',
+            'severity': 'violation',
+            'validation_msg': '"other" is not one of "open", "in progress" or "closed"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-status_non_nullable]
+  '''
+  <srcdir>/index.rst:5: WARNING: Need could not be created: status is not nullable, but no value was given. [needs.create_need]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-status_non_nullable].1
+  dict({
+    'validated_needs_count': 1,
     'validation_warnings': dict({
     }),
   })
@@ -3900,6 +3934,19 @@
     }),
   })
 # ---
+# name: test_schemas[schema/fixtures/fields-string_non_nullable]
+  '''
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'asil' is not nullable, but no value or default was given. [needs.create_need]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_non_nullable].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/fields-string_type]
   ''
 # ---
@@ -3910,16 +3957,37 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/fields-wrong_type]
+# name: test_schemas[schema/fixtures/fields-tags_enum]
   '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'asil' is invalid: Cannot convert 'QM' to integer [needs.create_need]
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          tags.1
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > tags > items > enum
+    Schema message: "b" is not one of "a" or "c" [sn_schema_violation.field_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/fields-wrong_type].1
+# name: test_schemas[schema/fixtures/fields-tags_enum].1
   dict({
-    'validated_needs_count': 0,
+    'validated_needs_count': 1,
     'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'tags.1',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > tags > items > enum',
+            'severity': 'violation',
+            'validation_msg': '"b" is not one of "a" or "c"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
     }),
   })
 # ---
@@ -3978,86 +4046,17 @@
       ]),
     }),
   })
-
 # ---
-# name: test_schemas[schema/fixtures/fields-status_non_nullable]
+# name: test_schemas[schema/fixtures/fields-wrong_type]
   '''
-  <srcdir>/index.rst:5: WARNING: Need could not be created: status is not nullable, but no value was given. [needs.create_need]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'asil' is invalid: Cannot convert 'QM' to integer [needs.create_need]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/fields-status_non_nullable].1
+# name: test_schemas[schema/fixtures/fields-wrong_type].1
   dict({
-    'validated_needs_count': 1,
+    'validated_needs_count': 0,
     'validation_warnings': dict({
-    }),
-  })
-# ---
-# name: test_schemas[schema/fixtures/fields-status_enum]
-  '''
-  ERROR: Need 'IMPL_2' has schema violations:
-    Severity:       violation
-    Field:          status
-    Need path:      IMPL_2
-    Schema path:    fields > schema > properties > status > enum
-    Schema message: "other" is not one of "open", "in progress" or "closed" [sn_schema_violation.field_fail]
-  
-  '''
-# ---
-# name: test_schemas[schema/fixtures/fields-status_enum].1
-  dict({
-    'validated_needs_count': 2,
-    'validation_warnings': dict({
-      'IMPL_2': list([
-        dict({
-          'children': list([
-          ]),
-          'details': dict({
-            'field': 'status',
-            'need_path': 'IMPL_2',
-            'schema_path': 'fields > schema > properties > status > enum',
-            'severity': 'violation',
-            'validation_msg': '"other" is not one of "open", "in progress" or "closed"',
-          }),
-          'log_lvl': 'error',
-          'subtype': 'field_fail',
-          'type': 'sn_schema_violation',
-        }),
-      ]),
-    }),
-  })
-# ---
-# name: test_schemas[schema/fixtures/fields-tags_enum]
-  '''
-  ERROR: Need 'IMPL_1' has schema violations:
-    Severity:       violation
-    Field:          tags.1
-    Need path:      IMPL_1
-    Schema path:    fields > schema > properties > tags > items > enum
-    Schema message: "b" is not one of "a" or "c" [sn_schema_violation.field_fail]
-  
-  '''
-# ---
-# name: test_schemas[schema/fixtures/fields-tags_enum].1
-  dict({
-    'validated_needs_count': 1,
-    'validation_warnings': dict({
-      'IMPL_1': list([
-        dict({
-          'children': list([
-          ]),
-          'details': dict({
-            'field': 'tags.1',
-            'need_path': 'IMPL_1',
-            'schema_path': 'fields > schema > properties > tags > items > enum',
-            'severity': 'violation',
-            'validation_msg': '"b" is not one of "a" or "c"',
-          }),
-          'log_lvl': 'error',
-          'subtype': 'field_fail',
-          'type': 'sn_schema_violation',
-        }),
-      ]),
     }),
   })
 # ---
