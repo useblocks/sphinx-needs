@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1767087614302,
+  "lastUpdate": 1767112494144,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16236,6 +16236,42 @@ window.BENCHMARK_DATA = {
             "value": 61.16280967799999,
             "unit": "s",
             "extra": "Commit: 4404a932851c7c2123227d928bcef857145dbb47\nBranch: master\nTime: 2025-12-30T10:38:22+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "029cff3f8bfaa0734c7316a70a06afdce05039cc",
+          "message": "✨🎄 Add `parse_variants` to `needs_fields` / `needs_extra_link`, deprecate `needs_variant_options` (#1614)\n\nThis pull request introduces a new, more flexible way to enable variant\nsupport for need fields and links by adding a `parse_variants` option to\nthe configuration. It deprecates the old `needs_variant_options` setting\nin favor of specifying `parse_variants` directly in `needs_fields` and\n`needs_extra_links`. The documentation and codebase are updated to\nreflect this change, improving clarity and flexibility for users\nconfiguring variant handling.\n\n**Configuration and API changes:**\n\n- Added a `parse_variants` boolean option to `needs_fields` and\n`needs_extra_links`, allowing users to enable variant parsing on a\nper-field or per-link basis. This replaces the previous global\n`needs_variant_options` list.\n\n- Updated the API (`add_extra_option`) and configuration loading logic\nto accept and propagate the new `parse_variants` parameter.\n\n**Deprecation and backward compatibility:**\n\n- Deprecated the `needs_variant_options` configuration option. If used,\na warning is issued, and backward compatibility is maintained by\nenabling `parse_variants` for the specified fields.\n**Documentation updates:**\n\n- Updated documentation in `docs/configuration.rst` and\n`docs/dynamic_functions.rst` to describe the new `parse_variants` option\nand mark `needs_variant_options` as deprecated. Examples and usage\ninstructions are revised accordingly.\n\n**Schema and internal logic changes:**\n\n- Refactored schema and internal logic to use `parse_variants` instead\nof `allow_variant_functions`, and updated related variable names and\nvalidation.\n\n**Example and test configuration updates:**\n\n- Updated example project configuration (`docs/ubproject.toml`) to use\nthe new `parse_variants` option instead of the deprecated\n`variant_options` list.\n\n---------\n\nCo-authored-by: Marco Heinemann <marco.heinemann@useblocks.com>",
+          "timestamp": "2025-12-30T17:32:57+01:00",
+          "tree_id": "4a027286d08134b8b1b57af8f0353d4257aea168",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/029cff3f8bfaa0734c7316a70a06afdce05039cc"
+        },
+        "date": 1767112475768,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.237479325000038,
+            "unit": "s",
+            "extra": "Commit: 029cff3f8bfaa0734c7316a70a06afdce05039cc\nBranch: master\nTime: 2025-12-30T17:32:57+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.93256283900001,
+            "unit": "s",
+            "extra": "Commit: 029cff3f8bfaa0734c7316a70a06afdce05039cc\nBranch: master\nTime: 2025-12-30T17:32:57+01:00"
           }
         ]
       }
