@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_doc_global_option[test_app0]
+# name: field_defaults_schema
   dict({
     'avatar': dict({
       'default': FieldLiteralValue(value=''),
@@ -235,7 +235,7 @@
     }),
   })
 # ---
-# name: test_doc_global_option[test_app0].1
+# name: field_defaults_needs
   dict({
     'current_version': '',
     'versions': dict({

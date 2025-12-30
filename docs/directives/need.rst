@@ -271,17 +271,6 @@ Allowed values (case-insensitive):
 
 Default: False
 
-.. note::
-
-   You can set the **:jinja_content:** option using the :ref:`needs_global_options` configuration variable.
-   This will enable jinja-parsing for all the need objects in your documentation project.
-
-   .. code-block:: python
-
-      needs_global_options = {
-        'jinja_content': 'true'
-      }
-
 
 .. need-example::
 
@@ -475,7 +464,7 @@ You can have several templates, but can set only one for a need.
 You can find a list of need-value names in the documentation for :ref:`filter_string` or by using
 the ``debug`` :ref:`layout <layouts>`.
 
-You can automatically assign templates to specific needs by using :ref:`needs_global_options`.
+You can automatically assign templates to specific needs by using :ref:`needs_fields`.
 
 .. _need_pre_template:
 

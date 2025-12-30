@@ -335,11 +335,12 @@ from sphinx.roles import SphinxRole  # noqa: E402
 
 from sphinx_needs.api import generate_need  # noqa: E402
 from sphinx_needs.config import NeedsSphinxConfig  # noqa: E402
-from sphinx_needs.data import SphinxNeedsData  # noqa: E402
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData  # noqa: E402
 from sphinx_needs.logging import (  # noqa: E402
     WarningSubTypeDescription,
     WarningSubTypes,
 )
+from sphinx_needs.needs import _get_core_schema  # noqa: E402
 from sphinx_needs.needsfile import NeedsList  # noqa: E402
 
 
@@ -389,6 +390,54 @@ class NeedExampleDirective(SphinxDirective):
         return [root]
 
 
+class NeedCoreFieldsDirective(SphinxDirective):
+    """Directive to list all core need fields."""
+
+    def run(self):
+        table: list[list[str]] = []
+        head = ["Name", "Type", "Nullable", "Default"]
+        lengths = [len(h) for h in head]
+
+        for name, data in NeedsCoreFields.items():
+            if not data.get("add_to_field_schema", False):
+                continue
+            schema, nullable = _get_core_schema(data)
+            type_ = schema["type"]
+            item_type = (
+                schema.get("items", {}).get("type", "") if type_ == "array" else ""
+            )
+            default = data["schema"].get("default", None)
+            row = [
+                f"**{name}**",
+                type_ if not item_type else f"{type_}({item_type})",
+                str(nullable).lower(),
+                str(default) if default is not None else "",
+            ]
+            table.append(row)
+            lengths = [max(ln, len(col)) for col, ln in zip(row, lengths, strict=True)]
+
+        delimiter = " ".join(["=" * length for length in lengths]) + "\n"
+        content = delimiter
+        content += (
+            " ".join(f"{h:<{ln}}" for h, ln in zip(head, lengths, strict=True)) + "\n"
+        )
+        content += delimiter
+        for row in table:
+            content += (
+                " ".join(f"{col:<{ln}}" for col, ln in zip(row, lengths, strict=True))
+                + "\n"
+            )
+        content += delimiter
+
+        # print(content)
+
+        parsed = nodes.container(classes=["needs-core-fields"])
+        self.state.nested_parse(
+            StringList(content.splitlines()), self.content_offset, parsed
+        )
+        return [parsed]
+
+
 class NeedConfigDefaultRole(SphinxRole):
     """Role to add a default configuration value to the documentation."""
 
@@ -430,6 +479,7 @@ def suppress_linkcheck_warnings(app: Sphinx):
 def setup(app: Sphinx):
     app.add_directive("need-example", NeedExampleDirective)
     app.add_directive("need-warnings", NeedsWarningsDirective)
+    app.add_directive("need-core-fields", NeedCoreFieldsDirective)
     app.add_role("need_config_default", NeedConfigDefaultRole())
     app.connect("builder-inited", suppress_linkcheck_warnings)
     app.connect("env-before-read-docs", create_tutorial_needs, priority=600)

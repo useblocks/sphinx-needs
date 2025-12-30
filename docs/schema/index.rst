@@ -18,8 +18,8 @@ See :ref:`migration_from_warnings_constraints` for details on how to migrate.
    that extends throughout the entire application. This includes:
 
    - **Early type validation**: All need fields are validated against their defined types,
-     with support for :ref:`dynamic_functions`, :ref:`variants <needs_variant_support>`,
-     :ref:`needextend` and :ref:`global defaults <needs_global_options>`. Needs that do not
+     with support for :ref:`field defaults <needs_fields>`, :ref:`link defaults <needs_extra_links>`, :ref:`dynamic_functions`, :ref:`variants <needs_variant_support>`,
+     :ref:`needextend`. Needs that do not
      conform to their types are not created and lead to a warning.
    - **JSON export**: Generated :ref:`needs.json <needs_builder>` files honor the user provided
      types

@@ -487,6 +487,9 @@
 # name: test_schema_config[title_wrong_type]
   "Invalid `needs_fields` core option override for 'title': Child 'type' 'number' does not match parent 'type' 'string'."
 # ---
+# name: test_schema_config[title_nullable]
+  "Invalid `needs_fields` core option override for 'title': Cannot change 'nullable' from False to True in child."
+# ---
 # name: test_schema_config[status_wrong_type]
   "Invalid `needs_fields` core option override for 'status': Child 'type' 'integer' does not match parent 'type' 'string'."
 # ---
@@ -3576,6 +3579,19 @@
     }),
   })
 # ---
+# name: test_schemas[schema/fixtures/fields-string_non_nullable]
+  '''
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'asil' is not nullable, but no value or default was given. [needs.create_need]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-string_non_nullable].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/fields-string_format_date]
   ''
 # ---
@@ -3963,6 +3979,19 @@
     }),
   })
 
+# ---
+# name: test_schemas[schema/fixtures/fields-status_non_nullable]
+  '''
+  <srcdir>/index.rst:5: WARNING: Need could not be created: status is not nullable, but no value was given. [needs.create_need]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-status_non_nullable].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
 # ---
 # name: test_schemas[schema/fixtures/fields-status_enum]
   '''
