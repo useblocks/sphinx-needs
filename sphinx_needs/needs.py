@@ -929,9 +929,24 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     for link in needs_config.extra_links:
         name = link["option"]
         try:
+            # create link schema, with defaults if not defined
+            _schema = (
+                deepcopy(link["schema"])  # type: ignore[arg-type]
+                if "schema" in link
+                else {"type": "array", "items": {"type": "string"}}
+            )
+            if "type" not in _schema:
+                _schema["type"] = "array"
+            if "items" not in _schema:
+                _schema["items"] = {"type": "string"}
+            if "type" not in _schema["items"]:
+                _schema["items"]["type"] = "string"
+            if "contains" in _schema and "type" not in _schema["contains"]:
+                _schema["contains"]["type"] = "string"
             link_field = LinkSchema(
                 name=name,
                 description="Link field",
+                schema=_schema,  # type: ignore[arg-type]
                 default=LinksLiteralValue([]),
                 allow_defaults=True,
                 allow_extend=True,

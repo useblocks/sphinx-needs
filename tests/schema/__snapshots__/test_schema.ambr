@@ -488,15 +488,28 @@
   "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
 # ---
 # name: test_schema_config[extra_link_array_wrong_item_type]
-  "Schema for extra link 'links' has invalid 'items.type' value: other, expected 'string'."
+  '''
+  Invalid extra link 'links': Invalid schema: "string" was expected
+  
+  Failed validating "const" in schema["properties"]["contains"]["$ref"]["properties"]["type"]
+  
+  On instance["items"]["type"]:
+      "other"
+  '''
 # ---
 # name: test_schema_config[extra_link_array_wrong_type]
-  "Schema for extra link 'links' has invalid type: object, expected 'array'."
+  '''
+  Invalid extra link 'links': Invalid schema: "array" was expected
+  
+  Failed validating "const" in schema["properties"]["type"]
+  
+  On instance["type"]:
+      "object"
+  '''
 # ---
 # name: test_schema_config[extra_link_pattern_unsafe_error]
   '''
-  Schema for extra link 'links' is not valid:
-  "^IMPL_(?!SAFE)" is not a "regex"
+  Invalid extra link 'links': Invalid schema: "^IMPL_(?!SAFE)" is not a "regex"
   
   Failed validating in schema
   
@@ -506,8 +519,7 @@
 # ---
 # name: test_schema_config[extra_link_unknown_keys]
   '''
-  Schema for extra link 'links' is not valid:
-  Additional properties are not allowed ('unknown' was unexpected)
+  Invalid extra link 'links': Invalid schema: Additional properties are not allowed ('unknown' was unexpected)
   
   Failed validating "additionalProperties" in schema
   

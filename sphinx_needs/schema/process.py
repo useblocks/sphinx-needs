@@ -41,20 +41,16 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     schema = SphinxNeedsData(app.env).get_schema()
 
-    option_schema: NeedFieldsSchemaType = {
+    fields_schema: NeedFieldsSchemaType = {
         "type": "object",
         "properties": {
             field.name: field.schema
             for field in chain(schema.iter_core_fields(), schema.iter_extra_fields())
         },
     }
-    extra_link_schema: NeedFieldsSchemaType = {
+    links_schema: NeedFieldsSchemaType = {
         "type": "object",
-        "properties": {
-            link["option"]: link["schema"]
-            for link in config.extra_links
-            if "schema" in link and link["schema"] is not None
-        },
+        "properties": {link.name: link.schema for link in schema.iter_link_fields()},
     }
 
     schema = SphinxNeedsData(app.env).get_schema()
@@ -72,16 +68,16 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
-    if option_schema["properties"]:
+    if fields_schema["properties"]:
         extra_warnings = validate_option_fields(
-            config, option_schema, field_properties, needs
+            config, fields_schema, field_properties, needs
         )
         for key, warnings in extra_warnings.items():
             need_2_warnings.setdefault(key, []).extend(warnings)
 
-    if extra_link_schema["properties"]:
+    if links_schema["properties"]:
         link_warnings = validate_link_options(
-            config, extra_link_schema, field_properties, needs
+            config, links_schema, field_properties, needs
         )
         for key, warnings in link_warnings.items():
             need_2_warnings.setdefault(key, []).extend(warnings)
