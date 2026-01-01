@@ -85,6 +85,16 @@ def test_filter_build_html(test_app):
         'href="#CHILD_1_STORY" title="CHILD_2_STORY">CHILD_1_STORY</a></span></span></div>'
         in html_5
     )
+    assert (
+        '<div class="line">child needs: <span class="parent_needs"><span><a class="reference internal" '
+        'href="#CHILD_3_STORY" title="CHILD_2_STORY">CHILD_3_STORY</a></span></span></div>'
+        in html_5
+    )
+    assert (
+        '<div class="line">parent needs: <span class="parent_needs"><span><a class="reference internal" '
+        'href="#CHILD_2_STORY" title="CHILD_3_STORY">CHILD_2_STORY</a></span></span></div>'
+        in html_5
+    )
 
     html_6 = Path(app.outdir, "filter_no_needs.html").read_text()
     assert html_6.count("No needs passed the filters") == 6
