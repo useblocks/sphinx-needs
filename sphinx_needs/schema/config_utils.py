@@ -23,7 +23,6 @@ from sphinx_needs.schema.config import (
     SchemasRootType,
     ValidateSchemaType,
     get_schema_name,
-    validate_extra_link_schema_type,
     validate_schemas_root_type,
 )
 from sphinx_needs.schema.core import validate_object_schema_compiles
@@ -32,7 +31,7 @@ log = get_logger(__name__)
 
 
 def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> None:
-    """Check basics in extra option and extra link schemas."""
+    """Check the schema definitions in the config for basic issues."""
 
     orig_debug_path = Path(needs_config.schema_debug_path)
     if not orig_debug_path.is_absolute():
@@ -40,8 +39,6 @@ def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> Non
         needs_config.schema_debug_path = str(
             (Path(app.confdir) / orig_debug_path).resolve()
         )
-
-    validate_extra_link_schemas(needs_config)
 
     if not needs_config.schema_definitions:
         # nothing to validate, resolve or inject
@@ -170,55 +167,6 @@ def validate_severity(schemas: list[SchemasRootType]) -> None:
                 raise NeedsConfigException(
                     f"Schemas entry '{schema_name}' has unknown severity: {schema['severity']}"
                 )
-
-
-def validate_extra_link_schemas(needs_config: NeedsSphinxConfig) -> None:
-    """Validate types of extra links in needs_config and set default."""
-
-    for extra_link in needs_config.extra_links:
-        if "schema" not in extra_link or extra_link["schema"] is None:
-            continue
-
-        if "type" not in extra_link["schema"]:
-            extra_link["schema"]["type"] = "array"
-        elif extra_link["schema"]["type"] != "array":
-            raise NeedsConfigException(
-                f"Schema for extra link '{extra_link['option']}' has invalid type: "
-                f"{extra_link['schema']['type']}, expected 'array'."
-            )
-        if "items" not in extra_link["schema"]:
-            extra_link["schema"]["items"] = {"type": "string"}
-        elif not isinstance(extra_link["schema"]["items"], dict):
-            raise NeedsConfigException(
-                f"Schema for extra link '{extra_link['option']}' has invalid 'items' value: "
-                f"{extra_link['schema']['items']}, expected a dict."
-            )
-        type_inject_fields: list[Literal["contains", "items"]] = ["contains", "items"]
-        for field in type_inject_fields:
-            if field in extra_link["schema"]:
-                if "type" not in extra_link["schema"][field]:
-                    extra_link["schema"][field]["type"] = "string"
-                elif extra_link["schema"][field]["type"] != "string":
-                    raise NeedsConfigException(
-                        f"Schema for extra link '{extra_link['option']}' has invalid '{field}.type' value: "
-                        f"{extra_link['schema'][field]['type']}, expected 'string'."
-                    )
-
-        try:
-            validate_extra_link_schema_type(extra_link["schema"])
-        except TypeError as exc:
-            raise NeedsConfigException(
-                f"Schema for extra link '{extra_link['option']}' is not valid:\n{exc}"
-            ) from exc
-
-        try:
-            validate_object_schema_compiles(
-                {"properties": {extra_link["option"]: extra_link["schema"]}}
-            )
-        except jsonschema_rs.ValidationError as exc:
-            raise NeedsConfigException(
-                f"Schema for extra link '{extra_link['option']}' is not valid:\n{exc}"
-            ) from exc
 
 
 def check_network_links_against_extra_links(
