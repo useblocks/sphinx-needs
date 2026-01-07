@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1767128675573,
+  "lastUpdate": 1767776107947,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16344,6 +16344,42 @@ window.BENCHMARK_DATA = {
             "value": 65.010161674,
             "unit": "s",
             "extra": "Commit: 650cc3d3a857191475fbdbd83de463f2204f098d\nBranch: master\nTime: 2025-12-30T22:02:34+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4cf3021520eb38e095c1acf5ade8fed348870804",
+          "message": "🔧 Move link `schema` to `LinkSchema` (#1617)\n\nThis PR centralizes link schema definitions by moving them from the\n`needs_extra_links` config directly onto the `LinkSchema` class. This\nchange aligns the internal representation of link fields with how\nregular need fields are handled, improving consistency across the\ncodebase.\n\n**Key changes:**\n- Added `schema` field to `LinkSchema` with validation in\n`__post_init__`\n- Removed `validate_extra_link_schemas` function from config validation\n- Updated schema processing to use `LinkSchema.schema` instead of\nextracting from config",
+          "timestamp": "2026-01-07T09:53:07+01:00",
+          "tree_id": "b93f7776eb0526b1b05e5156aff412a909af2346",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4cf3021520eb38e095c1acf5ade8fed348870804"
+        },
+        "date": 1767776089776,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1639007630000009,
+            "unit": "s",
+            "extra": "Commit: 4cf3021520eb38e095c1acf5ade8fed348870804\nBranch: master\nTime: 2026-01-07T09:53:07+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.68108752600001,
+            "unit": "s",
+            "extra": "Commit: 4cf3021520eb38e095c1acf5ade8fed348870804\nBranch: master\nTime: 2026-01-07T09:53:07+01:00"
           }
         ]
       }
