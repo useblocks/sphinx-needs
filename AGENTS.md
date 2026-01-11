@@ -211,6 +211,29 @@ This module defines the core data structures:
 - `NeedsCoreFields` - Core field definitions (id, title, status, etc.)
 - `merge_data()` - Handles merging data from parallel builds
 
+### Schema Classes (`sphinx_needs/needs_schema.py`)
+
+This module defines the schema data structures that serve as the single source of truth for field and link definitions:
+
+- `FieldSchema` - Immutable dataclass defining a single field's schema, including:
+  - `name`, `description`, `schema` (JSON Schema type/constraints)
+  - `nullable`, `directive_option`, `parse_dynamic_functions`, `parse_variants`
+  - `allow_defaults`, `allow_extend`, `default`, `predicate_defaults`
+  - Methods: `convert_directive_option()`, `type_check()`, `json_schema()`
+
+- `LinkSchema` - Immutable dataclass for link fields with similar structure to `FieldSchema`
+
+- `FieldsSchema` - Container class holding all field schemas:
+  - `get_core_field(name: str) -> FieldSchema | None`
+  - `get_extra_field(name: str) -> FieldSchema | None`
+  - `get_link_field(name: str) -> LinkSchema | None`
+  - other iteration and access methods
+
+The schema is built during `env-before-read-docs` via the `create_schema()` function in `sphinx_needs/needs.py`.
+It creates `FieldSchema` and `LinkSchema` from information obtained from the `NeedsCoreFields` and from user defined configuration.
+Once built, the schema is immutable for the rest of the build.
+It is accessible via `SphinxNeedsData(env).get_schema()`.
+
 ## Sphinx Extension Architecture
 
 The extension integrates with Sphinx via event callbacks registered in the `setup()` function in `sphinx_needs/needs.py`. Understanding the Sphinx build flow is essential for contributing to this project.
