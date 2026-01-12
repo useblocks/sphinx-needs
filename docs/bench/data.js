@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1767776107947,
+  "lastUpdate": 1768210644797,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16380,6 +16380,42 @@ window.BENCHMARK_DATA = {
             "value": 60.68108752600001,
             "unit": "s",
             "extra": "Commit: 4cf3021520eb38e095c1acf5ade8fed348870804\nBranch: master\nTime: 2026-01-07T09:53:07+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "89664a87be1d91e2f5143e65ac07ca50cd3a50cc",
+          "message": "🔧 Add `AGENTS.md` (#1621)\n\nThis PR adds comprehensive AI agent guidance documentation and improves\ndevelopment tooling. The main purpose is to provide structured\ndocumentation for AI coding assistants working on the Sphinx-Needs\nrepository while consolidating build process documentation in a single\nsource of truth.\n\n**Changes:**\n- Added `AGENTS.md` with comprehensive project structure, development\ncommands, architecture documentation, and coding guidelines for AI\nassistants\n- Added new tox environments (`mypy`, `ruff-check`, `ruff-fmt`) for\nrunning code quality tools outside of pre-commit\n- Removed outdated \"Structure of the extension's logic\" section from\ncontributing documentation, deferring to `AGENTS.md` instead",
+          "timestamp": "2026-01-12T10:35:30+01:00",
+          "tree_id": "bf8ecf9c05e1a112529eaf44c99415a83041f3f0",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/89664a87be1d91e2f5143e65ac07ca50cd3a50cc"
+        },
+        "date": 1768210626295,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17883081800000156,
+            "unit": "s",
+            "extra": "Commit: 89664a87be1d91e2f5143e65ac07ca50cd3a50cc\nBranch: master\nTime: 2026-01-12T10:35:30+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.452591377000005,
+            "unit": "s",
+            "extra": "Commit: 89664a87be1d91e2f5143e65ac07ca50cd3a50cc\nBranch: master\nTime: 2026-01-12T10:35:30+01:00"
           }
         ]
       }
