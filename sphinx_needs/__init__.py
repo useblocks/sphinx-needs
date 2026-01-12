@@ -1,6 +1,6 @@
 """Sphinx needs extension for managing needs/requirements and specifications"""
 
-__version__ = "6.3.0"
+__version__ = "6.3.0+1"
 
 
 def setup(app):  # type: ignore[no-untyped-def]
