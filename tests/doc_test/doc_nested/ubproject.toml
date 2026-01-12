@@ -1,0 +1,3 @@
+[needs]
+build_json = true
+schema_definitions_from_json = "schemas.json"
