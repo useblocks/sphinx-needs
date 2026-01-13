@@ -320,7 +320,7 @@ In this case, we set the sort option to ``status``. So *EX_ROW_3* is above of *E
 .. note::
 
    Sorting only works if you use the standard sphinx-table for output: ``:style: table``.
-   By default, tables generated with DatabTables uses Javascript to sort results.
+   By default, tables generated with DataTables uses Javascript to sort results.
 
 
 .. _needtable_class:
