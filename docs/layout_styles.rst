@@ -357,6 +357,7 @@ Available layout functions are:
 * :func:`meta_links <sphinx_needs.layout.LayoutHandler.meta_links>`
 * :func:`meta_links_all <sphinx_needs.layout.LayoutHandler.meta_links_all>`
 * :func:`meta_id <sphinx_needs.layout.LayoutHandler.meta_id>`
+* :func:`meta_rst <sphinx_needs.layout.LayoutHandler.meta_rst>`
 * :func:`image <sphinx_needs.layout.LayoutHandler.image>`
 * :func:`link <sphinx_needs.layout.LayoutHandler.link>`
 * :func:`permalink <sphinx_needs.layout.LayoutHandler.permalink>`
@@ -371,6 +372,8 @@ Available layout functions are:
 .. autofunction:: sphinx_needs.layout.LayoutHandler.meta_links(name, incoming=False)
 
 .. autofunction:: sphinx_needs.layout.LayoutHandler.meta_links_all(prefix='', postfix='', exclude=None)
+
+.. autofunction:: sphinx_needs.layout.LayoutHandler.meta_rst(prefix='', postfix='', exclude=None)
 
 .. autofunction:: sphinx_needs.layout.LayoutHandler.image(url, height=None, width=None, align=None, no_link=False, prefix="", is_external=False, img_class="")
 
