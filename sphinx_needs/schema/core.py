@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from typing import TYPE_CHECKING, Any, Final, TypedDict, cast
 
 import jsonschema_rs
@@ -33,6 +34,71 @@ if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
 # TODO(Marco): error for conflicting unevaluatedProperties
+
+
+@dataclass(slots=True)
+class CachedLocalResult:
+    """Cached result of local validation for a need against a schema.
+
+    This stores the validation outcome without context-dependent data,
+    allowing it to be reused across different call contexts.
+    """
+
+    reduced_need: dict[str, Any]
+    """The reduced need that was validated."""
+    errors: tuple[ValidationError, ...]
+    """Validation errors (empty tuple if validation passed)."""
+    schema_error: str | None = None
+    """Schema compilation/validation error message, if any."""
+
+    @property
+    def success(self) -> bool:
+        """Return True if validation passed (no errors)."""
+        return not self.errors and self.schema_error is None
+
+
+@dataclass(slots=True)
+class LocalValidationCache:
+    """Cache for local validation results.
+
+    Stores validation results keyed by (need_id, schema_key) to avoid
+    re-validating the same need against the same schema multiple times.
+
+    The cache stores raw validation results without context-dependent data
+    (like need_path, user_message), which are added when constructing warnings.
+    """
+
+    _cache: dict[tuple[str, tuple[str, ...]], CachedLocalResult] = dataclass_field(
+        default_factory=dict
+    )
+    """Map of (need_id, schema_key) to cached validation result."""
+
+    def get(
+        self, need_id: str, schema_key: tuple[str, ...]
+    ) -> CachedLocalResult | None:
+        """Get cached result for a need and schema, or None if not cached."""
+        return self._cache.get((need_id, schema_key))
+
+    def store(
+        self, need_id: str, schema_key: tuple[str, ...], result: CachedLocalResult
+    ) -> None:
+        """Store a validation result in the cache."""
+        self._cache[(need_id, schema_key)] = result
+
+    def invalidate(self, need_id: str) -> None:
+        """Invalidate all cached results for a specific need."""
+        keys_to_remove = [key for key in self._cache if key[0] == need_id]
+        for key in keys_to_remove:
+            del self._cache[key]
+
+    def clear(self) -> None:
+        """Clear all cached results."""
+        self._cache.clear()
+
+    def __len__(self) -> int:
+        """Return number of cached entries."""
+        return len(self._cache)
+
 
 _SCHEMA_VERSION: Final[str] = "https://json-schema.org/draft/2020-12/schema"
 """
@@ -115,6 +181,7 @@ def validate_type_schema(
         local_network_schema["network"] = schema["validate"]["network"]
 
     validator_cache: dict[tuple[str, ...], SchemaValidator] = {}
+    local_cache = LocalValidationCache()
 
     for need in needs.values():
         # maintain state for nested network validation
@@ -145,6 +212,7 @@ def validate_type_schema(
             schema_path=[schema_name],
             need_path=[need["id"]],
             validator_cache=validator_cache,
+            local_cache=local_cache,
             recurse_level=0,
         )
         if new_warnings_recurse:
@@ -164,6 +232,7 @@ def recurse_validate_schemas(
     need_path: list[str],
     recurse_level: int,
     validator_cache: dict[tuple[str, ...], SchemaValidator],
+    local_cache: LocalValidationCache,
     severity: SeverityEnum | None = None,
 ) -> tuple[bool, list[OntologyWarning]]:
     """
@@ -205,17 +274,39 @@ def recurse_validate_schemas(
         if (validator := validator_cache.get((*schema_path, "local"))) is None:
             validator = compile_validator(cast(NeedFieldsSchemaType, schema["local"]))
             validator_cache[(*schema_path, "local")] = validator
-        warnings_local = get_ontology_warnings(
-            need,
-            field_properties,
-            validator,
-            rule_fail,
-            rule_success,
-            schema_path=[*schema_path, "local"],
-            need_path=need_path,
-            user_message=user_message if recurse_level == 0 else None,
-            user_severity=severity if recurse_level == 0 else None,
-        )
+
+        # Check local cache for this need + schema combination
+        schema_key = (*schema_path, "local")
+        cached_result = local_cache.get(need["id"], schema_key)
+
+        if cached_result is not None:
+            # Use cached result to construct warnings with current context
+            warnings_local = _construct_warnings_from_cache(
+                cached_result=cached_result,
+                need=need,
+                validator=validator,
+                fail_rule=rule_fail,
+                success_rule=rule_success,
+                schema_path=[*schema_path, "local"],
+                need_path=need_path,
+                user_message=user_message if recurse_level == 0 else None,
+                user_severity=severity if recurse_level == 0 else None,
+            )
+        else:
+            # Perform validation and cache the result
+            warnings_local = get_ontology_warnings(
+                need,
+                field_properties,
+                validator,
+                rule_fail,
+                rule_success,
+                schema_path=[*schema_path, "local"],
+                need_path=need_path,
+                user_message=user_message if recurse_level == 0 else None,
+                user_severity=severity if recurse_level == 0 else None,
+                local_cache=local_cache,
+                cache_key=schema_key,
+            )
         save_debug_files(config, warnings_local)
         warnings.extend(warnings_local)
         if any_not_of_rule(warnings_local, rule_success):
@@ -292,6 +383,7 @@ def recurse_validate_schemas(
                         need_path=need_path_link,
                         recurse_level=recurse_level + 1,
                         validator_cache=validator_cache,
+                        local_cache=local_cache,
                         severity=severity,
                     )
                     if new_success:
@@ -315,6 +407,7 @@ def recurse_validate_schemas(
                         need_path=need_path_link,
                         recurse_level=recurse_level + 1,
                         validator_cache=validator_cache,
+                        local_cache=local_cache,
                         severity=severity,
                     )
                     if new_success:
@@ -554,6 +647,81 @@ def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:
     return SchemaValidator(raw=final_schema, compiled=compiled, properties=properties)
 
 
+def _construct_warnings_from_cache(
+    cached_result: CachedLocalResult,
+    need: NeedItem,
+    validator: SchemaValidator,
+    fail_rule: MessageRuleEnum,
+    success_rule: MessageRuleEnum,
+    schema_path: list[str],
+    need_path: list[str],
+    user_message: str | None = None,
+    user_severity: SeverityEnum | None = None,
+) -> list[OntologyWarning]:
+    """Construct warnings from a cached validation result with current context.
+
+    :param cached_result: The cached validation result.
+    :param need: The need being validated (for reference in warnings).
+    :param validator: The schema validator (for raw schema in warnings).
+    :param fail_rule: Rule to use for validation failures.
+    :param success_rule: Rule to use for validation success.
+    :param schema_path: Current schema path for context.
+    :param need_path: Current need path for context.
+    :param user_message: Optional user message to include.
+    :param user_severity: Optional user-specified severity.
+    :return: List of OntologyWarning objects with current context.
+    """
+    warnings: list[OntologyWarning] = []
+    warning: OntologyWarning
+
+    if cached_result.schema_error is not None:
+        warning = {
+            "rule": MessageRuleEnum.cfg_schema_error,
+            "severity": get_severity(MessageRuleEnum.cfg_schema_error),
+            "validation_message": cached_result.schema_error,
+            "need": need,
+            "schema_path": schema_path,
+            "need_path": [need["id"]],
+        }
+        if user_message is not None:
+            warning["user_message"] = user_message
+        warnings.append(warning)
+        return warnings
+
+    if cached_result.errors:
+        for err in cached_result.errors:
+            warning = {
+                "rule": fail_rule,
+                "severity": get_severity(fail_rule, user_severity),
+                "validation_message": err.message,
+                "need": need,
+                "reduced_need": cached_result.reduced_need,
+                "final_schema": validator.raw,
+                "schema_path": [*schema_path, *(str(item) for item in err.schema_path)],
+                "need_path": need_path,
+            }
+            if field := ".".join([str(x) for x in err.instance_path]):
+                warning["field"] = field
+            if user_message is not None:
+                warning["user_message"] = user_message
+            warnings.append(warning)
+            return warnings
+    else:
+        warning = {
+            "rule": success_rule,
+            "severity": get_severity(success_rule),
+            "need": need,
+            "reduced_need": cached_result.reduced_need,
+            "final_schema": validator.raw,
+            "schema_path": schema_path,
+            "need_path": need_path,
+        }
+        if user_message is not None:
+            warning["user_message"] = user_message
+        warnings.append(warning)
+    return warnings
+
+
 def get_ontology_warnings(
     need: NeedItem,
     field_properties: Mapping[str, NeedFieldProperties],
@@ -564,7 +732,24 @@ def get_ontology_warnings(
     need_path: list[str],
     user_message: str | None = None,
     user_severity: SeverityEnum | None = None,
+    local_cache: LocalValidationCache | None = None,
+    cache_key: tuple[str, ...] | None = None,
 ) -> list[OntologyWarning]:
+    """Get ontology warnings for a need against a schema.
+
+    :param need: The need to validate.
+    :param field_properties: Field property mappings.
+    :param validator: The compiled schema validator.
+    :param fail_rule: Rule to use for validation failures.
+    :param success_rule: Rule to use for validation success.
+    :param schema_path: Path to the schema for error reporting.
+    :param need_path: Path to the need for error reporting.
+    :param user_message: Optional user message to include in warnings.
+    :param user_severity: Optional user-specified severity.
+    :param local_cache: Optional cache for storing validation results.
+    :param cache_key: Key for caching (required if local_cache is provided).
+    :return: List of OntologyWarning objects.
+    """
     reduced_need = reduce_need(need, field_properties, validator.properties)
     warnings: list[OntologyWarning] = []
     warning: OntologyWarning
@@ -573,6 +758,15 @@ def get_ontology_warnings(
             validator.compiled.iter_errors(instance=reduced_need)
         )
     except ValidationError as exc:
+        # Cache the schema error if caching is enabled
+        if local_cache is not None and cache_key is not None:
+            local_cache.store(
+                need["id"],
+                cache_key,
+                CachedLocalResult(
+                    reduced_need=reduced_need, errors=(), schema_error=str(exc)
+                ),
+            )
         warning = {
             "rule": MessageRuleEnum.cfg_schema_error,
             "severity": get_severity(MessageRuleEnum.cfg_schema_error),
@@ -585,6 +779,16 @@ def get_ontology_warnings(
             warning["user_message"] = user_message
         warnings.append(warning)
         return warnings
+
+    # Cache the validation result if caching is enabled
+    if local_cache is not None and cache_key is not None:
+        local_cache.store(
+            need["id"],
+            cache_key,
+            CachedLocalResult(
+                reduced_need=reduced_need, errors=tuple(validation_errors)
+            ),
+        )
 
     if validation_errors:
         for err in validation_errors:
