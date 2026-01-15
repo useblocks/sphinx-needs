@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768210644797,
+  "lastUpdate": 1768465975320,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16416,6 +16416,42 @@ window.BENCHMARK_DATA = {
             "value": 59.452591377000005,
             "unit": "s",
             "extra": "Commit: 89664a87be1d91e2f5143e65ac07ca50cd3a50cc\nBranch: master\nTime: 2026-01-12T10:35:30+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "81b20436cf5d8627f7402664499ca6668528c6ca",
+          "message": "🔧 Update Python version for Codecov (#1625)\n\nUsing 3.14 to keep this active for a long time.",
+          "timestamp": "2026-01-15T09:30:45+01:00",
+          "tree_id": "7efc3cd784a42d8c79d0b9daf55981ebe85276d9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/81b20436cf5d8627f7402664499ca6668528c6ca"
+        },
+        "date": 1768465956332,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.256414644000003,
+            "unit": "s",
+            "extra": "Commit: 81b20436cf5d8627f7402664499ca6668528c6ca\nBranch: master\nTime: 2026-01-15T09:30:45+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.31203798399999,
+            "unit": "s",
+            "extra": "Commit: 81b20436cf5d8627f7402664499ca6668528c6ca\nBranch: master\nTime: 2026-01-15T09:30:45+01:00"
           }
         ]
       }
