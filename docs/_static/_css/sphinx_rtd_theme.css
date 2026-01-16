@@ -10,9 +10,3 @@ div.wy-table-responsive {
     overflow-x: auto !important;
 }
 
-/* a lot of components, like paragraphs and header, do not have a top margin
-so the datatable does not have a gap to the subsequent element
-*/
-div.dataTables_wrapper {
-    margin-bottom: 2em;
-}
