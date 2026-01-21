@@ -24,3 +24,5 @@ uv.lock
 .coverage
 coverage.xml
 invalid_objs.json
+
+.tox

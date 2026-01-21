@@ -36,6 +36,36 @@ dependencies = [
 requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
 
+[dependency-groups]
+testing = [
+  "pytest>=8.2.2",
+  "pytest-cov>=5.0.0",
+  "pytest-docker>=3.1.2",
+  "syrupy>=4.9.1",
+  "psutil>=7.0.0",
+  "moto ~= 5.0",
+  "toml>=0.10.2",
+  "furo>=2024.5.6",
+]
+docs = [
+  "furo>=2024.5.6",
+  "myst-parser>=4.0.0",
+  "sphinx-design>=0.6.1",
+  "sphinx-code-tabs>=0.5.5",
+  "sphinxcontrib-typer>=0.5.1",
+  "sphinxcontrib-video>=0.4.1",
+]
+mypy = [
+  "mypy>=1.12.1",
+  "pydantic ~= 2.9",
+  "types-docutils",
+  "types-Pygments",
+  "types-psutil>=7.0.0.20250218",
+  "types-jsonschema>=4.23.0.20241208",
+]
+ruff = ["ruff>=0.8.0"]
+build = ["simple-build>=0.0.2", "shiv>=1.0.8"]
+
 [tool.rye]
 managed = true
 dev-dependencies = [
