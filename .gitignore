@@ -2,6 +2,7 @@
 *.iml
 .DS_Store
 .venv*
+venv/
 .pvenv
 .nox
 node_modules
