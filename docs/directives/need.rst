@@ -30,7 +30,7 @@ but you must set a title as an argument (i.e. if you do not specify :ref:`needs_
 
 Diagram support
 ---------------
-A need objects can also define it's own PlantUML representation.
+A need object can also define its own PlantUML representation.
 Therefore Sphinx-Needs looks for the :ref:`needuml` directive inside the content
 and stores its PlantUML code under given key from :ref:`needuml` directive under the option name ``arch``.
 

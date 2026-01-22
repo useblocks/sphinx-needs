@@ -1,0 +1,2 @@
+[tox]
+tox-uv = tox_uv.plugin
