@@ -93,6 +93,7 @@ class NeedserviceDirective(SphinxDirective):
                 "constraints",
                 "content",
                 *needs_schema.iter_extra_field_names(),
+                *needs_schema.iter_link_field_names(),
             }
             for datum in service_data:
                 options = {}
