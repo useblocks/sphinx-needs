@@ -11,6 +11,7 @@ from sphinx_needs.needs_schema import (
     ListItemType,
     _split_list,
     _split_string,
+    create_inherited_field,
     inherit_schema,
 )
 from sphinx_needs.variants import VariantFunctionParsed
@@ -1425,3 +1426,277 @@ def test_inherit_schema_invalid(parent_schema, child_schema, error_match):
     """Test invalid schema inheritance cases that should raise ValueError."""
     with pytest.raises(ValueError, match=error_match):
         inherit_schema(parent_schema, child_schema)
+
+
+# =============================================================================
+# Tests for create_inherited_field
+# =============================================================================
+
+
+class TestCreateInheritedField:
+    """Tests for create_inherited_field function."""
+
+    @staticmethod
+    def _base_field(
+        schema: dict | None = None,
+        nullable: bool = False,
+        parse_variants: bool = False,
+        description: str = "",
+    ) -> FieldSchema:
+        """Create a base FieldSchema for testing."""
+        return FieldSchema(
+            name="test_field",
+            schema=schema or {"type": "string"},
+            nullable=nullable,
+            directive_option=True,
+            parse_dynamic_functions=False,
+            parse_variants=parse_variants,
+            description=description,
+        )
+
+    def test_nullable_cannot_widen(self):
+        """Test that nullable cannot be changed from False to True."""
+        parent = self._base_field(nullable=False)
+        child = {"nullable": True}
+
+        with pytest.raises(
+            ValueError, match="Cannot change 'nullable' from False to True"
+        ):
+            create_inherited_field(parent, child, allow_variants=False)
+
+    def test_nullable_can_narrow(self):
+        """Test that nullable can be changed from True to False (narrowing)."""
+        parent = self._base_field(nullable=True)
+        child = {"nullable": False}
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.nullable is False
+
+    def test_nullable_false_on_already_non_nullable(self):
+        """Test that setting nullable=False on already non-nullable is a no-op."""
+        parent = self._base_field(nullable=False)
+        child = {"nullable": False}
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.nullable is False
+
+    def test_nullable_true_on_already_nullable(self):
+        """Test that setting nullable=True on already nullable is a no-op."""
+        parent = self._base_field(nullable=True)
+        child = {"nullable": True}
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.nullable is True
+
+    def test_parse_variants_not_allowed(self):
+        """Test that parse_variants=True is rejected when not allowed."""
+        parent = self._base_field()
+        child = {"parse_variants": True}
+
+        with pytest.raises(
+            ValueError, match="parse_variants is not allowed to be True"
+        ):
+            create_inherited_field(parent, child, allow_variants=False)
+
+    def test_parse_variants_allowed_when_permitted(self):
+        """Test that parse_variants=True is allowed when permitted."""
+        parent = self._base_field()
+        child = {"parse_variants": True}
+
+        result = create_inherited_field(parent, child, allow_variants=True)
+        assert result.parse_variants is True
+
+    def test_parse_variants_false_explicitly(self):
+        """Test that explicitly setting parse_variants=False is allowed."""
+        parent = self._base_field()
+        child = {"parse_variants": False}
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.parse_variants is False
+
+    def test_description_override(self):
+        """Test that child description overrides parent description."""
+        parent = self._base_field(description="Original description")
+        child = {"description": "New description"}
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.description == "New description"
+
+    def test_description_inherited_when_not_provided(self):
+        """Test that parent description is preserved when child doesn't override."""
+        parent = self._base_field(description="Original description")
+        child = {}
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.description == "Original description"
+
+    def test_empty_child_inherits_from_parent(self):
+        """Test that an empty child dict inherits everything from parent."""
+        parent = self._base_field(
+            schema={"type": "string", "minLength": 5},
+            nullable=True,
+            parse_variants=True,
+            description="Parent description",
+        )
+        child = {}
+
+        result = create_inherited_field(parent, child, allow_variants=True)
+        assert result.nullable is True
+        assert result.parse_variants is True
+        assert result.description == "Parent description"
+        assert result.schema == {"type": "string", "minLength": 5}
+
+    def test_schema_type_mismatch_at_field_level(self):
+        """Test type mismatch error when child provides different schema type."""
+        parent = self._base_field(schema={"type": "string"})
+        child = {"schema": {"type": "integer"}}
+
+        with pytest.raises(
+            ValueError, match=r"Child 'type'.*does not match parent 'type'"
+        ):
+            create_inherited_field(parent, child, allow_variants=False)
+
+    def test_schema_inheritance_valid_subset(self):
+        """Test valid schema inheritance with enum subset."""
+        parent = self._base_field(schema={"type": "string", "enum": ["a", "b", "c"]})
+        child = {"schema": {"type": "string", "enum": ["a", "b"]}}
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.schema == {"type": "string", "enum": ["a", "b"]}
+
+    def test_schema_inheritance_invalid_subset(self):
+        """Test invalid schema inheritance with enum not a subset."""
+        parent = self._base_field(schema={"type": "string", "enum": ["a", "b"]})
+        child = {"schema": {"type": "string", "enum": ["a", "c"]}}
+
+        with pytest.raises(ValueError, match="are not a subset"):
+            create_inherited_field(parent, child, allow_variants=False)
+
+    def test_child_adds_constraint_when_parent_has_none(self):
+        """Test that child can add constraints when parent doesn't have them."""
+        parent = self._base_field(schema={"type": "string"})
+        child = {"schema": {"type": "string", "minLength": 5, "pattern": "^[a-z]+$"}}
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.schema == {
+            "type": "string",
+            "minLength": 5,
+            "pattern": "^[a-z]+$",
+        }
+
+    def test_combined_enum_narrowing_and_const(self):
+        """Test child can narrow enum and set const simultaneously."""
+        parent = self._base_field(
+            schema={"type": "string", "enum": ["a", "b", "c", "d"]}
+        )
+        child = {"schema": {"type": "string", "enum": ["a", "b"], "const": "a"}}
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.schema["enum"] == ["a", "b"]
+        assert result.schema["const"] == "a"
+
+    def test_invalid_nullable_type(self):
+        """Test that non-boolean nullable value raises error."""
+        parent = self._base_field()
+        child = {"nullable": "yes"}
+
+        with pytest.raises(ValueError, match="Child 'nullable' must be a boolean"):
+            create_inherited_field(parent, child, allow_variants=False)
+
+    def test_invalid_parse_variants_type(self):
+        """Test that non-boolean parse_variants value raises error."""
+        parent = self._base_field()
+        child = {"parse_variants": "yes"}
+
+        with pytest.raises(
+            ValueError, match="Child 'parse_variants' must be a boolean"
+        ):
+            create_inherited_field(parent, child, allow_variants=False)
+
+    def test_invalid_description_type(self):
+        """Test that non-string description value raises error."""
+        parent = self._base_field()
+        child = {"description": 123}
+
+        with pytest.raises(ValueError, match="Child 'description' must be a string"):
+            create_inherited_field(parent, child, allow_variants=False)
+
+    def test_array_item_type_mismatch(self):
+        """Test type mismatch error for array item types."""
+        parent = self._base_field(schema={"type": "array", "items": {"type": "string"}})
+        child = {"schema": {"type": "array", "items": {"type": "integer"}}}
+
+        with pytest.raises(ValueError, match=r"'items' inheritance.*does not match"):
+            create_inherited_field(parent, child, allow_variants=False)
+
+    def test_array_item_constraints_inherited(self):
+        """Test that array item constraints are properly inherited."""
+        parent = self._base_field(
+            schema={"type": "array", "items": {"type": "string", "minLength": 3}}
+        )
+        child = {
+            "schema": {"type": "array", "items": {"type": "string", "minLength": 5}}
+        }
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.schema["items"]["minLength"] == 5
+
+    def test_array_item_constraint_violation(self):
+        """Test that array item constraint violations are detected."""
+        parent = self._base_field(
+            schema={"type": "array", "items": {"type": "string", "minLength": 10}}
+        )
+        child = {
+            "schema": {"type": "array", "items": {"type": "string", "minLength": 5}}
+        }
+
+        with pytest.raises(ValueError, match=r"'minLength'.*is less than parent"):
+            create_inherited_field(parent, child, allow_variants=False)
+
+    def test_multiple_properties_overridden(self):
+        """Test that multiple properties can be overridden simultaneously."""
+        parent = self._base_field(
+            schema={"type": "string", "minLength": 1},
+            nullable=True,
+            description="Original",
+        )
+        child = {
+            "schema": {"type": "string", "minLength": 5},
+            "nullable": False,
+            "description": "Updated",
+        }
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.schema["minLength"] == 5
+        assert result.nullable is False
+        assert result.description == "Updated"
+
+    def test_uniqueitems_can_become_more_restrictive(self):
+        """Test that uniqueItems can be made more restrictive (false -> true)."""
+        parent = self._base_field(
+            schema={"type": "array", "items": {"type": "string"}, "uniqueItems": False}
+        )
+        child = {
+            "schema": {
+                "type": "array",
+                "items": {"type": "string"},
+                "uniqueItems": True,
+            }
+        }
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.schema["uniqueItems"] is True
+
+    def test_contains_inherited_when_not_overridden(self):
+        """Test that contains constraint is inherited when child doesn't specify it."""
+        parent = self._base_field(
+            schema={
+                "type": "array",
+                "items": {"type": "string"},
+                "contains": {"type": "string", "pattern": "^test"},
+            }
+        )
+        child = {"schema": {"type": "array", "items": {"type": "string"}}}
+
+        result = create_inherited_field(parent, child, allow_variants=False)
+        assert result.schema["contains"] == {"type": "string", "pattern": "^test"}
