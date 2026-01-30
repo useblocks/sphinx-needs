@@ -11,3 +11,6 @@ Nested Needs
       .. story:: child 2 story
          :id: CHILD_2_STORY
 
+.. story:: child 3 story
+   :id: CHILD_3_STORY
+   :parent_needs: CHILD_2_STORY
