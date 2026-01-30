@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1768465975320,
+  "lastUpdate": 1769747837121,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16452,6 +16452,42 @@ window.BENCHMARK_DATA = {
             "value": 65.31203798399999,
             "unit": "s",
             "extra": "Commit: 81b20436cf5d8627f7402664499ca6668528c6ca\nBranch: master\nTime: 2026-01-15T09:30:45+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "alexandre.hamez@gmail.com",
+            "name": "Alexandre Hamez",
+            "username": "ahamez"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "74d1f0fc0dca34e903b7a0e4f5af3441405aaab3",
+          "message": "📚 Fix typo in documentation for GitHub service example (#1634)",
+          "timestamp": "2026-01-30T05:35:10+01:00",
+          "tree_id": "41c01a142601cedbf456c1ad06cdc4e3e69a838e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/74d1f0fc0dca34e903b7a0e4f5af3441405aaab3"
+        },
+        "date": 1769747818891,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.22120125200000018,
+            "unit": "s",
+            "extra": "Commit: 74d1f0fc0dca34e903b7a0e4f5af3441405aaab3\nBranch: master\nTime: 2026-01-30T05:35:10+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.33985279000001,
+            "unit": "s",
+            "extra": "Commit: 74d1f0fc0dca34e903b7a0e4f5af3441405aaab3\nBranch: master\nTime: 2026-01-30T05:35:10+01:00"
           }
         ]
       }
