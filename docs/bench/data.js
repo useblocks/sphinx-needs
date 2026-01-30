@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769747837121,
+  "lastUpdate": 1769791583751,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16488,6 +16488,42 @@ window.BENCHMARK_DATA = {
             "value": 67.33985279000001,
             "unit": "s",
             "extra": "Commit: 74d1f0fc0dca34e903b7a0e4f5af3441405aaab3\nBranch: master\nTime: 2026-01-30T05:35:10+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "03beb37e3d5ea121047cca8b319bb79275c4dea5",
+          "message": "👌 Minor improvements for `needs.fields` inheritance (#1635)",
+          "timestamp": "2026-01-30T17:44:26+01:00",
+          "tree_id": "7ebf15c7a0de55056171713b38117bed4f12b457",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/03beb37e3d5ea121047cca8b319bb79275c4dea5"
+        },
+        "date": 1769791565455,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1747556199999991,
+            "unit": "s",
+            "extra": "Commit: 03beb37e3d5ea121047cca8b319bb79275c4dea5\nBranch: master\nTime: 2026-01-30T17:44:26+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.10657149199999,
+            "unit": "s",
+            "extra": "Commit: 03beb37e3d5ea121047cca8b319bb79275c4dea5\nBranch: master\nTime: 2026-01-30T17:44:26+01:00"
           }
         ]
       }
