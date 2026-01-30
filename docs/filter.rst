@@ -235,7 +235,7 @@ Filter string performance
 .. versionadded:: 4.0.0
 
 The filter string is evaluated by default for each need and need part
-and, therefore, can be become a performance bottleneck for projects with large numbers of needs.
+and, therefore, can become a performance bottleneck for projects with large numbers of needs.
 
 To improve performance, certain common patterns are identified and optimized by the filter engine, and so using such patterns is recommended:
 

@@ -3,7 +3,7 @@ Contributing
 
 This page provides a guide for developers wishing to contribute to **Sphinx-Needs**.
 
-Bugs, Features and  PRs
+Bugs, Features and PRs
 -----------------------
 
 For **bug reports** and well-described **technical feature requests**, please use our issue tracker:

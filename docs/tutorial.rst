@@ -112,7 +112,7 @@ Referring to a need item
 ------------------------
 
 We can refer to the needs we create in the text using the :ref:`need role <role_need>`.
-By default this will display the title and ID of the need item, but we can also different fields to display,
+By default this will display the title and ID of the need item, but we can also display different fields,
 by using an explicit title and using ``[[field]]`` syntax:
 
 
@@ -174,7 +174,7 @@ Lets also add some more need items to our plan:
 
          The RADAR sensor software for the car must accurately detect and track surrounding objects 
          within a specified range. It should employ signal processing algorithms to filter out noise 
-         nd interference, ensuring reliable object detection in various weather and road conditions. 
+         and interference, ensuring reliable object detection in various weather and road conditions. 
          The software should integrate seamlessly with the car's control system, providing real-time 
          data on detected objects to enable collision avoidance and adaptive cruise control functionalities. 
          Additionally, it should adhere to industry standards for safety and reliability, with robust 

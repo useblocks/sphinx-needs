@@ -248,7 +248,7 @@ For example:
        },
    }
 
-These fields would then be availble to set in need directives, such as:
+These fields would then be available to set in need directives, such as:
 
 .. code-block:: rst
 
