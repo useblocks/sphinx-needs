@@ -446,17 +446,17 @@ def reduce_need(
 
     Rules:
 
-    - ``None`` values are always dropped (schema validation cannot handle null types here).
-    - Extra fields are included only if a default is configured (independent of ``schema_properties``):
+    - ``None`` values are always dropped (schema validation cannot handle null types).
+    - Extra fields are included based on their configured default (independent of
+      ``schema_properties``):
 
       - If the default is ``None``, any non-``None`` value is kept.
-      - If the default is ``""``, the value is kept only if it is not ``""``.
-      - Defaults other than ``None``/``""`` are treated as inactive and are never included by this
-          reduction step.
+      - If the default is ``""`` (SN5-style empty), the value is kept only if it is not ``""``.
+      - For any other default value, the field is kept as-is.
 
     - Link fields are included only if they are non-empty (independent of ``schema_properties``).
     - Core fields are included if they are covered by ``schema_properties``.
-        Additionally, ``status`` is kept if it is non-``None`` and ``tags`` is kept if it is non-empty.
+      Additionally, ``status`` is kept if it is non-``None`` and ``tags`` is kept if it is non-empty.
 
     SN5 vs SN6 empty-vs-missing semantics for extra options:
 
@@ -465,9 +465,9 @@ def reduce_need(
     - With a field schema (SN6), unset nullable options default to ``None``, while ``:opt:``
       results in ``""``. This allows distinguishing "unset" from "set-but-empty".
 
-      In this reduction, that distinction matters for extra fields: ``""`` is dropped if the
-      default is also ``""`` (SN5-style), while ``""`` is kept if the default is ``None``
-      (SN6-style), so set-but-empty can be treated as actively set.
+    In this reduction, that distinction matters for extra fields: ``""`` is dropped if the
+    default is also ``""`` (SN5-style), while ``""`` is kept if the default is ``None``
+    (SN6-style), so set-but-empty can be treated as actively set.
 
     For link fields, missing vs empty cannot be distinguished (both result in ``[]``).
 
