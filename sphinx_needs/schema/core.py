@@ -495,11 +495,8 @@ def reduce_need(
             reduced_need[field] = value
 
     for field, value in need.iter_links_items():
-        if field in schema_properties:
-            reduced_need[field] = value
-            continue
-
         if value:
+            # keep non-empty link fields
             reduced_need[field] = value
 
     for field, value in need.iter_core_items():
