@@ -447,28 +447,27 @@ def reduce_need(
     Rules:
 
     - ``None`` values are always dropped (schema validation cannot handle null types here).
-    - Any field/link covered by ``schema_properties`` is kept (so it gets validated).
-    - Extra fields not covered by the schema are kept only if a default is defined and either:
-        the default is ``None`` (value is non-``None``), or the default is ``""`` and the value is
-        not ``""``.
-    - Link fields not covered by the schema are kept only if the list is non-empty.
-    - Core fields are dropped unless covered by ``schema_properties``, except the core fields
-        ``status`` and ``tags`` which follow the same keep rule as extra fields.
+    - Extra fields are included only if a default is configured (independent of ``schema_properties``):
 
-    Defaults other than ``None``/``""`` are treated as "inactive" during reduction and therefore
-    only participate in validation if the field is covered by ``schema_properties``.
+      - If the default is ``None``, any non-``None`` value is kept.
+      - If the default is ``""``, the value is kept only if it is not ``""``.
+      - Defaults other than ``None``/``""`` are treated as inactive and are never included by this
+          reduction step.
+
+    - Link fields are included only if they are non-empty (independent of ``schema_properties``).
+    - Core fields are included if they are covered by ``schema_properties``.
+        Additionally, ``status`` is kept if it is non-``None`` and ``tags`` is kept if it is non-empty.
 
     SN5 vs SN6 empty-vs-missing semantics for extra options:
 
     - Without a field schema (SN5-style), unset and present-but-empty (``:opt:``) both become
-        ``""``, so "unset" and "set-but-empty" cannot be distinguished.
+      ``""``, so "unset" and "set-but-empty" cannot be distinguished.
     - With a field schema (SN6), unset nullable options default to ``None``, while ``:opt:``
-        results in ``""``. This allows distinguishing "unset" from "set-but-empty".
+      results in ``""``. This allows distinguishing "unset" from "set-but-empty".
 
-        In this reduction, that distinction matters: for fields not covered by
-        ``schema_properties``, ``""`` is dropped if the default is also ``""`` (SN5-style), while
-        ``""`` is kept if the default is ``None`` (SN6-style), so set-but-empty can be treated as
-        actively set.
+      In this reduction, that distinction matters for extra fields: ``""`` is dropped if the
+      default is also ``""`` (SN5-style), while ``""`` is kept if the default is ``None``
+      (SN6-style), so set-but-empty can be treated as actively set.
 
     For link fields, missing vs empty cannot be distinguished (both result in ``[]``).
 
@@ -508,14 +507,9 @@ def reduce_need(
             continue
 
         schema_field = field_properties[field]
-        if (
-            field in {"status", "tags"}
-            and "default" in schema_field
-            and (
-                (schema_field["default"] is None)
-                or (schema_field["default"] == "" and value != "")
-            )
-        ):
+        if field == "status" and value is not None:  # default is None
+            reduced_need[field] = value
+        if field == "tags" and len(value) > 0:  # default is []
             reduced_need[field] = value
 
     return reduced_need
