@@ -87,7 +87,7 @@ unevaluated_extra_with_schema_const_missing_in_rst:
           local:
             properties:
               asil: {}
-              comment: {"const": "must_be_checked_when_missing"}
+              comment: {"const": "expected"}
             unevaluatedProperties: false
 
 unevaluated_extra_with_schema_const_empty_in_rst:
@@ -112,7 +112,7 @@ unevaluated_extra_with_schema_const_empty_in_rst:
           local:
             properties:
               asil: {}
-              comment: {"const": "must_be_checked_when_missing"}
+              comment: {"const": "expected"}
             unevaluatedProperties: false
 
 unevaluated_extra_missing_schema_const_missing_in_rst:
@@ -136,35 +136,10 @@ unevaluated_extra_missing_schema_const_missing_in_rst:
           local:
             properties:
               asil: {}
-              comment: {"const": "must_be_checked_when_missing"}
+              comment: {"const": "expected"}
             unevaluatedProperties: false
 
-unevaluated_extra_with_schema_const_given_in_rst:
-  # should complain, because the field has a schema constraint; not providing it fails the
-  # constraint
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_from_toml = "ubproject.toml"
-    needs_schema_definitions_from_json = "schemas.json"
-  ubproject: |
-    [needs.fields.asil]
-    [needs.fields.comment]
-    schema.type = "string"
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
-        :asil: QM
-        :comment:
-  schemas:
-    schemas:
-      - validate:
-          local:
-            properties:
-              asil: {}
-              comment: {"const": "must_be_checked_when_given_empty"}
-            unevaluatedProperties: false
-
-unevaluated_error_extra_with_schema_given_in_rst:
+unevaluated_error_extra_with_schema_given_in_rst_no_constraint:
   # should complain, the comment field is set, and it has a schema, so SN detects it is actively
   # given as '', and it will appear in the unevaluatedProperties evaluation as forbidden
   # additional field
@@ -309,7 +284,6 @@ unevaluated_core_field_in_schema_and_invalid:
             unevaluatedProperties: false
 
 unevaluated_core_tags_set_not_in_schema:
-  # TODO: check impl again, it does not trigger
   # should complain, because the core field tags is treated like an extra field,
   # so it is kept when explicitly set and triggers unevaluatedProperties.
   conf: |
@@ -357,7 +331,7 @@ unevaluated_core_tags_in_schema_and_invalid:
 
 unevaluated_core_docname_in_schema_and_invalid:
   # should complain about docname, because it is part of the user schema,
-  # therefore it must be kept in the reduced need and validated
+  # therefore it is kept in the reduced need and validated
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"

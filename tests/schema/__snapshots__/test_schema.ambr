@@ -4893,12 +4893,34 @@
   })
 # ---
 # name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_tags_set_not_in_schema]
-  ''
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('tags' was unexpected) [sn_schema_violation.local_fail]
+  
+  '''
 # ---
 # name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_tags_set_not_in_schema].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('tags' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
     }),
   })
 # ---
@@ -4934,7 +4956,7 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_extra_with_schema_given_in_rst]
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_extra_with_schema_given_in_rst_no_constraint]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -4944,7 +4966,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_extra_with_schema_given_in_rst].1
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_extra_with_schema_given_in_rst_no_constraint].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -5003,7 +5025,7 @@
     Field:          comment
     Need path:      IMPL_1
     Schema path:    [0] > local > properties > comment > const
-    Schema message: "must_be_checked_when_missing" was expected [sn_schema_violation.local_fail]
+    Schema message: "expected" was expected [sn_schema_violation.local_fail]
   
   '''
 # ---
@@ -5020,41 +5042,7 @@
             'need_path': 'IMPL_1',
             'schema_path': '[0] > local > properties > comment > const',
             'severity': 'violation',
-            'validation_msg': '"must_be_checked_when_missing" was expected',
-          }),
-          'log_lvl': 'error',
-          'subtype': 'local_fail',
-          'type': 'sn_schema_violation',
-        }),
-      ]),
-    }),
-  })
-# ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_with_schema_const_given_in_rst]
-  '''
-  ERROR: Need 'IMPL_1' has schema violations:
-    Severity:       violation
-    Field:          comment
-    Need path:      IMPL_1
-    Schema path:    [0] > local > properties > comment > const
-    Schema message: "must_be_checked_when_given_empty" was expected [sn_schema_violation.local_fail]
-  
-  '''
-# ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_with_schema_const_given_in_rst].1
-  dict({
-    'validated_needs_count': 1,
-    'validation_warnings': dict({
-      'IMPL_1': list([
-        dict({
-          'children': list([
-          ]),
-          'details': dict({
-            'field': 'comment',
-            'need_path': 'IMPL_1',
-            'schema_path': '[0] > local > properties > comment > const',
-            'severity': 'violation',
-            'validation_msg': '"must_be_checked_when_given_empty" was expected',
+            'validation_msg': '"expected" was expected',
           }),
           'log_lvl': 'error',
           'subtype': 'local_fail',
