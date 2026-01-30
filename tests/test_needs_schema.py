@@ -1148,6 +1148,30 @@ def test_split_string(text, expected):
             {},
             {"type": "string", "minLength": 5},
         ),
+        # Number: multipleOf with floats (tests precision fix - 0.2 is a multiple of 0.1)
+        (
+            {"type": "number", "multipleOf": 0.1},
+            {"type": "number", "multipleOf": 0.2},
+            {"type": "number", "multipleOf": 0.2},
+        ),
+        # Number: multipleOf with floats (0.3 is a multiple of 0.1)
+        (
+            {"type": "number", "multipleOf": 0.1},
+            {"type": "number", "multipleOf": 0.3},
+            {"type": "number", "multipleOf": 0.3},
+        ),
+        # String: const in parent enum is valid
+        (
+            {"type": "string", "enum": ["a", "b", "c"]},
+            {"type": "string", "const": "b"},
+            {"type": "string", "enum": ["a", "b", "c"], "const": "b"},
+        ),
+        # String: new pattern when parent has no pattern (valid regex)
+        (
+            {"type": "string"},
+            {"type": "string", "pattern": "^[a-z]+$"},
+            {"type": "string", "pattern": "^[a-z]+$"},
+        ),
     ],
 )
 def test_inherit_schema_valid(parent_schema, child_schema, expected):
@@ -1370,6 +1394,30 @@ def test_inherit_schema_valid(parent_schema, child_schema, expected):
             {"type": "string"},
             "not a dict",
             r"Child schema must be a dictionary",
+        ),
+        # String: const not in parent enum
+        (
+            {"type": "string", "enum": ["a", "b", "c"]},
+            {"type": "string", "const": "d"},
+            r"Child 'const' value 'd' is not in parent 'enum' values",
+        ),
+        # Integer: const not in parent enum
+        (
+            {"type": "integer", "enum": [1, 2, 3]},
+            {"type": "integer", "const": 4},
+            r"Child 'const' value 4 is not in parent 'enum' values",
+        ),
+        # Number: const not in parent enum
+        (
+            {"type": "number", "enum": [1.0, 2.0, 3.0]},
+            {"type": "number", "const": 4.0},
+            r"Child 'const' value 4\.0 is not in parent 'enum' values",
+        ),
+        # Number: multipleOf not a multiple (using floats to test precision fix)
+        (
+            {"type": "number", "multipleOf": 0.1},
+            {"type": "number", "multipleOf": 0.25},
+            r"Child 'multipleOf' 0\.25 must be a multiple of parent 'multipleOf' 0\.1",
         ),
     ],
 )

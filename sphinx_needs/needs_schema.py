@@ -1172,6 +1172,16 @@ def _validate_string_constraints(
         else:
             child_schema["enum"] = parent_schema["enum"]
 
+    # Validate const is in parent's enum if both exist
+    if (
+        "const" in child_schema
+        and "enum" in parent_schema
+        and child_schema["const"] not in parent_schema["enum"]
+    ):
+        raise ValueError(
+            f"Child 'const' value {child_schema['const']!r} is not in parent 'enum' values {parent_schema['enum']}."
+        )
+
     # Inherit pattern constraint - child cannot override
     if "pattern" in parent_schema:
         if (
@@ -1182,6 +1192,12 @@ def _validate_string_constraints(
                 f"Child 'pattern' {child_schema['pattern']!r} does not match parent 'pattern' {parent_schema['pattern']!r}. Pattern constraints cannot be overridden."
             )
         child_schema["pattern"] = parent_schema["pattern"]
+    elif "pattern" in child_schema:
+        # Validate that new pattern is a string (leave compilation to jsonschema)
+        if not isinstance(child_schema["pattern"], str):
+            raise ValueError(
+                f"Child 'pattern' {child_schema['pattern']!r} is not a string."
+            )
 
     # Inherit format constraint - child cannot override
     if "format" in parent_schema:
@@ -1249,6 +1265,16 @@ def _validate_number_or_integer_constraints(
         else:
             child_schema["enum"] = parent_schema["enum"]
 
+    # Validate const is in parent's enum if both exist
+    if (
+        "const" in child_schema
+        and "enum" in parent_schema
+        and child_schema["const"] not in parent_schema["enum"]
+    ):
+        raise ValueError(
+            f"Child 'const' value {child_schema['const']!r} is not in parent 'enum' values {parent_schema['enum']}."
+        )
+
     # Validate minimum constraint
     if "minimum" in parent_schema:
         if "minimum" in child_schema:
@@ -1298,7 +1324,10 @@ def _validate_number_or_integer_constraints(
             child_multiple = child_schema["multipleOf"]
             # For proper constraint narrowing, child should be a multiple of parent
             # e.g., if parent requires multipleOf 2, child can require multipleOf 4, 6, 8, etc.
-            if child_multiple % parent_multiple != 0:
+            # Use modulo with tolerance for float precision issues
+            remainder = child_multiple % parent_multiple
+            # Check if remainder is effectively zero (accounting for float precision)
+            if not (abs(remainder) < 1e-9 or abs(remainder - parent_multiple) < 1e-9):
                 raise ValueError(
                     f"Child 'multipleOf' {child_multiple} must be a multiple of parent 'multipleOf' {parent_multiple}."
                 )
