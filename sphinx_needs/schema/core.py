@@ -484,11 +484,6 @@ def reduce_need(
             # field is unset, and schema validation cannot handle null types
             continue
 
-        if field in schema_properties:
-            # keep all fields covered by the schema as validation constraints exist
-            reduced_need[field] = value
-            continue
-
         schema_field = field_properties[field]
         if "default" in schema_field and (
             (schema_field["default"] is None)
