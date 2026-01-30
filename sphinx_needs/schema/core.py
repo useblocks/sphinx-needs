@@ -460,7 +460,6 @@ def reduce_need(
     :param json_schema: The user provided and merged JSON merge.
     """
     reduced_need: dict[str, Any] = {}
-    del schema_properties
 
     for field, value in need.iter_extra_items():
         if value is None:
@@ -481,7 +480,9 @@ def reduce_need(
             # value is not provided
             continue
         schema_field = field_properties[field]
-        if not ("default" in schema_field and value == schema_field["default"]):
+        if field in schema_properties and not (
+            "default" in schema_field and value == schema_field["default"]
+        ):
             # keep core field, it has no default or differs from the default and
             # is part of the user provided schema
             reduced_need[field] = value
