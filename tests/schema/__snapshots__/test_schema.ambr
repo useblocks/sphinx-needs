@@ -4758,7 +4758,7 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_allof_error]
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_allof]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -4768,7 +4768,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_allof_error].1
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_allof].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -4790,7 +4790,7 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error]
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_extra_with_schema_given_in_rst]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -4800,7 +4800,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error].1
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_extra_with_schema_given_in_rst].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -4819,6 +4819,56 @@
           'type': 'sn_schema_violation',
         }),
       ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_no_schema_given_in_rst]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_no_schema_given_in_rst].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_no_schema_missing_in_rst]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_no_schema_missing_in_rst].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_with_schema_missing_in_rst]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_with_schema_missing_in_rst].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_link_empty_value]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_link_empty_value].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_link_missing]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_link_missing].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
     }),
   })
 # ---

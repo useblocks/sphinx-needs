@@ -442,19 +442,47 @@ def reduce_need(
     """
     Reduce a need to its relevant fields for validation in a specific schema context.
 
-    The reduction is required to separated actively set fields from defaults.
-    Also internal fields shall be removed, if they are not actively used in the schema.
-    This is required to make unevaluatedProperties work as expected which disallows
-    additional fields.
-
-    Needs can be reduced in multiple contexts as the need can be primary target of validation
-    or it can be a link target which might mean only a single field shall be checked for a
-    specific value.
+    The reduction is done to separate actively set fields from unset fields.
+    The validation of unevaluatedProperties requires a need to only have fields that are actively
+    set, to complain about all additional fields that do not appear in the given schema.
 
     Fields are kept
-    - if they are extra fields and differ from their default value
+
+    - if they are extra fields and not None and differ from their default value
     - if they are links and the list is not empty
-    - if they are part of the user provided schema
+    - if they are core fields, part of the user provided schema and differ from their default value
+
+    Some more details, starting with extra fields:
+    The default value for unset SN5 extra options is an empty string.
+    If an option is given in RST without a value, it is set to ''. The same applies if the
+    option is not part of the RST at all. So it's not possible to
+    distinguish between an option that is unset or an option that is set but empty.
+    For unevaluatedProperties this means that '' values are *not* part of the
+    reduced need.
+
+    SN6 introduced schemas. For backwards compatibility reasons, the behavior is kept
+    the same for extra options without a schema. But if a schema is defined for an extra
+    option (it's enough to set schema.type), the field is set to nullable, and the default value
+    for unset options is None.
+    Nullable extra fields that are given in RST with an empty value are set to ''.
+    So it becomes possible to distinguish between unset (None) and set-but-empty ('') options.
+    In terms of unevaluatedProperties this means that None values are not part of the
+    reduced need, while '' values are part of it.
+
+    For link fields:
+    An empty list means that no links of that type are defined.
+    The default value for link fields is always an empty list and a given, but empty
+    list field in RST also leads to an empty list in the need.
+    So it's not possible to distinguish between unset and set-but-empty link fields.
+
+    For core fields:
+    Core fields do never lead to unevaluatedProperties warnings, as they are always
+    part of the need, and commonly users do not actively set them. An example is
+    type_name. So core fields are only kept if they are part of the user provided schema.
+    The should also meet user expectations for unevaluatedProperties,
+    as they define the metamodel of the needs using extra fields and extra links,
+    and want to disallow the appearance of other extra fields and not be bothered
+    with SN internal fields.
 
     :param need: The need to reduce.
     :param json_schema: The user provided and merged JSON merge.
