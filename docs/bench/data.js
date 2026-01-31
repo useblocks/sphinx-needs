@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769808173808,
+  "lastUpdate": 1769894992156,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16560,6 +16560,42 @@ window.BENCHMARK_DATA = {
             "value": 65.248596682,
             "unit": "s",
             "extra": "Commit: e2e811476e94f7e5fb64eef764974ca9d2689982\nBranch: master\nTime: 2026-01-30T22:20:47+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "alexandre.hamez@konboi.one",
+            "name": "Alexandre Hamez",
+            "username": "ahamez"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6371b3a0f13f25e85a2c08c568d0b1eba65e060d",
+          "message": "📚 Fix small grammatical error in need.rst (#1637)",
+          "timestamp": "2026-01-31T22:27:54+01:00",
+          "tree_id": "41c3430a440ee98d7a57fba48f6e7722d94d0251",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6371b3a0f13f25e85a2c08c568d0b1eba65e060d"
+        },
+        "date": 1769894973480,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1612499550000166,
+            "unit": "s",
+            "extra": "Commit: 6371b3a0f13f25e85a2c08c568d0b1eba65e060d\nBranch: master\nTime: 2026-01-31T22:27:54+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.426155018,
+            "unit": "s",
+            "extra": "Commit: 6371b3a0f13f25e85a2c08c568d0b1eba65e060d\nBranch: master\nTime: 2026-01-31T22:27:54+01:00"
           }
         ]
       }
