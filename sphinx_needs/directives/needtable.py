@@ -336,30 +336,21 @@ def process_needtables(
                                 "content",
                                 prefix=needs_config.part_prefix,
                             )
-                        elif option in link_type_list:
-                            link = link_type_list[option]
-                            if option in [
-                                "INCOMING",
-                                link.name.upper() + "_BACK",
-                                link.display.incoming.upper(),
-                            ]:
-                                row += row_col_maker(
-                                    app,
-                                    fromdocname,
-                                    all_needs,
-                                    temp_part,
-                                    link.name + "_back",
-                                    ref_lookup=True,
-                                )
-                            else:
-                                row += row_col_maker(
-                                    app,
-                                    fromdocname,
-                                    all_needs,
-                                    temp_part,
-                                    link.name,
-                                    ref_lookup=True,
-                                )
+                        elif (
+                            link_ := link_type_list.get(option)
+                        ) is not None and option in [
+                            "INCOMING",
+                            link_.name.upper() + "_BACK",
+                            link_.display.incoming.upper(),
+                        ]:
+                            row += row_col_maker(
+                                app,
+                                fromdocname,
+                                all_needs,
+                                temp_part,
+                                link_.name + "_back",
+                                ref_lookup=True,
+                            )
                         else:
                             row += row_col_maker(
                                 app, fromdocname, all_needs, temp_part, option.lower()
