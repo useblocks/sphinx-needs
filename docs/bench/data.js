@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1769894992156,
+  "lastUpdate": 1770053930715,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16596,6 +16596,42 @@ window.BENCHMARK_DATA = {
             "value": 61.426155018,
             "unit": "s",
             "extra": "Commit: 6371b3a0f13f25e85a2c08c568d0b1eba65e060d\nBranch: master\nTime: 2026-01-31T22:27:54+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2b9d23e4663e0d988e2a099a396a9ed466dca899",
+          "message": "♻️ Migrate use of `extra_links` to Schema-Based Access (#1638)\n\nThis PR migrates all post-config-resolution uses of\n`needs_config.extra_links` to use `needs_schema` methods, centralizing\nlink type configuration in the schema system,\nsimilar to how fields are used.\n\n## Key Changes\n\n### Schema Enhancements (`needs_schema.py`)\n\n- **Added `LinkDisplayConfig`** dataclass for link rendering\nconfiguration:\n- `incoming`, `outgoing` (required): Display titles for link directions\n- `color`, `style`, `style_part`, `style_start`, `style_end`: Diagram\nstyling with sensible defaults\n\n- **Extended `LinkSchema`** with new attributes:\n  - `display: LinkDisplayConfig` - Rendering configuration (required)\n  - `copy: bool` - Whether to copy links to common `links` field\n- `allow_dead_links: bool` - Whether to allow dead links without warning\n\n### Configuration Changes (`config.py`, `needs.py`)\n\n- Renamed `extra_links` → `_extra_links` (internal use only, for config\nresolution phase)\n- Schema creation in `needs.py` now populates `LinkDisplayConfig` from\nlink config, using dataclass defaults when values aren't explicitly set\n\n### Updated Modules\n\nMigrated from dict-based `needs_config.extra_links` access to schema\nmethods:\n\n| Module | Change |\n|--------|--------|\n| `layout.py` | Use `schema.iter_link_fields()` and `link.display.*` |\n| `api/need.py` | Use `schema.iter_link_fields()` and `link.copy` |\n| `directives/need.py` | Use schema for `allow_dead_links` lookup |\n| `directives/needtable.py` | Use `LinkSchema` objects instead of dicts\n|\n| `directives/needflow/_plantuml.py` | Use schema for link types and\ndisplay config |\n| `directives/needflow/_graphviz.py` | Use schema for link types and\ndisplay config |\n| `directives/needgantt.py` | Use schema for link type validation |\n| `directives/needsequence.py` | Use schema for link type names |\n| `directives/needreport.py` | Convert schema to dict for template\ncompatibility |\n| `directives/list2need.py` | Use schema for link type list |\n| `roles/need_outgoing.py` | Use schema for `allow_dead_links` check |\n| `utils.py` | Use schema for link field iteration |\n\n## Migration Pattern\n\n**Before:**\n```python\nfor link_type in needs_config.extra_links:\n    name = link_type[\"option\"]\n    outgoing = link_type[\"outgoing\"]\n```\n\n**After:**\n```python\nfor link in needs_schema.iter_link_fields():\n    name = link.name\n    outgoing = link.display.outgoing\n```\n\n## Benefits\n\n- **Single source of truth**: Link configuration is centralized in the\nschema after config resolution\n- **Type safety**: `LinkSchema` and `LinkDisplayConfig` provide typed\naccess to link properties\n- **Cleaner separation**: `_extra_links` is internal for config merging;\nschema is the public API\n- **Consistent defaults**: `LinkDisplayConfig` dataclass defaults are\nused consistently",
+          "timestamp": "2026-02-02T18:36:52+01:00",
+          "tree_id": "2b5c39c7b830e966f093293886b80a4093946790",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2b9d23e4663e0d988e2a099a396a9ed466dca899"
+        },
+        "date": 1770053912992,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.19448870699997656,
+            "unit": "s",
+            "extra": "Commit: 2b9d23e4663e0d988e2a099a396a9ed466dca899\nBranch: master\nTime: 2026-02-02T18:36:52+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.809676161,
+            "unit": "s",
+            "extra": "Commit: 2b9d23e4663e0d988e2a099a396a9ed466dca899\nBranch: master\nTime: 2026-02-02T18:36:52+01:00"
           }
         ]
       }
