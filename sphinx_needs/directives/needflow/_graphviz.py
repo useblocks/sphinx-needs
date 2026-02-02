@@ -460,6 +460,7 @@ def _render_edge(
 
     is_part = "." in link or "." in need["id_complete"]
     params.extend(
+        # TODO also use link_type.display.color?
         _style_params_from_link_type(
             link_type.display.style_part if is_part else link_type.display.style,
             link_type.display.style_start,

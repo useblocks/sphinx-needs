@@ -422,6 +422,7 @@ def render_connections(
                         else ""
                     )
 
+                # TODO also use link_type.display.color?
                 puml_connections += "{id} {style_start}{link_style}{style_end} {link}{comment}\n".format(
                     id=make_entity_name(need_info["id_complete"]),
                     link=make_entity_name(link),
