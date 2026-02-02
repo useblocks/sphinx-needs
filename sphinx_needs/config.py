@@ -688,10 +688,10 @@ class NeedsSphinxConfig:
         default="→\xa0", metadata={"rebuild": "html", "types": (str,)}
     )
     """Prefix for need_part output in tables"""
-    extra_links: list[LinkOptionsType] = field(
+    _extra_links: list[LinkOptionsType] = field(
         default_factory=list, metadata={"rebuild": "html", "types": ()}
     )
-    """List of additional link types between needs"""
+    """List of additional link types between needs (internal config, use schema for access after config resolution)"""
     report_dead_links: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )
