@@ -271,7 +271,7 @@ def populate_field_type(
     Inject field type into select / validate fields in schema.
 
     This is a type-directed implementation that surgically walks through the
-    typed structure of SchemasRootType, rather than using runtime keyword detection.
+    typed structure of SchemasRootType.
 
     :param schema: The root schema being processed.
         This is not yet validated, but is expected to be dereferenced already.
