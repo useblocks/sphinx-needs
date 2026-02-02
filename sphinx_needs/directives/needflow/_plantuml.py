@@ -8,7 +8,7 @@ from docutils import nodes
 from jinja2 import Template
 from sphinx.application import Sphinx
 
-from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.diagrams_common import calculate_link, create_legend
@@ -17,6 +17,7 @@ from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import filter_single_need, process_filters
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.needs_schema import LinkSchema
 from sphinx_needs.utils import remove_node_from_tree
 from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
@@ -193,8 +194,9 @@ def process_needflow_plantuml(
     needs_config = NeedsSphinxConfig(app.config)
     env_data = SphinxNeedsData(env)
     needs_view = env_data.get_needs_view()
+    needs_schema = env_data.get_schema()
 
-    link_type_names = [link["option"].upper() for link in needs_config.extra_links]
+    link_type_names = [link.name.upper() for link in needs_schema.iter_link_fields()]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
     node: NeedflowPlantuml
@@ -219,23 +221,23 @@ def process_needflow_plantuml(
                     location=node,
                 )
 
-        # compute the allowed link names
-        allowed_link_types: list[LinkOptionsType] = []
-        for link_type in needs_config.extra_links:
+        # compute the allowed link types
+        allowed_link_types: list[LinkSchema] = []
+        for link_field in needs_schema.iter_link_fields():
             # Skip link-type handling, if it is not part of a specified list of allowed link_types or
             # if not part of the overall configuration of needs_flow_link_types
             if (
                 current_needflow["link_types"]
-                and link_type["option"].upper() not in option_link_types
+                and link_field.name.upper() not in option_link_types
             ) or (
                 not current_needflow["link_types"]
-                and link_type["option"].upper() not in allowed_link_types_options
+                and link_field.name.upper() not in allowed_link_types_options
             ):
                 continue
             # skip creating links from child needs to their own parent need
-            if link_type["option"] == "parent_needs":
+            if link_field.name == "parent_needs":
                 continue
-            allowed_link_types.append(link_type)
+            allowed_link_types.append(link_field)
 
         try:
             if "sphinxcontrib.plantuml" not in app.extensions:
@@ -256,7 +258,7 @@ def process_needflow_plantuml(
             filter_by_tree(
                 needs_view,
                 root_id,
-                allowed_link_types,
+                [lt.name for lt in allowed_link_types],
                 current_needflow["root_direction"],
                 current_needflow["root_depth"],
             )
@@ -386,7 +388,7 @@ def process_needflow_plantuml(
 
 def render_connections(
     found_needs: list[NeedItem | NeedPartItem],
-    allowed_link_types: list[LinkOptionsType],
+    allowed_link_types: list[LinkSchema],
     show_links: bool,
 ) -> str:
     """
@@ -395,7 +397,7 @@ def render_connections(
     puml_connections = ""
     for need_info in found_needs:
         for link_type in allowed_link_types:
-            for link in need_info[link_type["option"]]:
+            for link in need_info[link_type.name]:
                 # Do not create an links, if the link target is not part of the search result.
                 if link not in [
                     x["id"] for x in found_needs if x["is_need"]
@@ -405,40 +407,28 @@ def render_connections(
                     continue
 
                 if show_links:
-                    desc = link_type["outgoing"] + "\\n"
+                    desc = link_type.display.outgoing + "\\n"
                     comment = f": {desc}"
                 else:
                     comment = ""
 
                 # If source or target of link is a need_part, a specific style is needed
                 if "." in link or "." in need_info["id_complete"]:
-                    if _style_part := link_type.get("style_part"):
-                        link_style = f"[{_style_part}]"
-                    else:
-                        link_style = "[dotted]"
+                    link_style = f"[{link_type.display.style_part}]"
                 else:
-                    if _style := link_type.get("style"):
-                        link_style = f"[{_style}]"
-                    else:
-                        link_style = ""
-
-                if _style_start := link_type.get("style_start"):
-                    style_start = _style_start
-                else:
-                    style_start = "-"
-
-                if _style_end := link_type.get("style_end"):
-                    style_end = _style_end
-                else:
-                    style_end = "->"
+                    link_style = (
+                        f"[{link_type.display.style}]"
+                        if link_type.display.style
+                        else ""
+                    )
 
                 puml_connections += "{id} {style_start}{link_style}{style_end} {link}{comment}\n".format(
                     id=make_entity_name(need_info["id_complete"]),
                     link=make_entity_name(link),
                     comment=comment,
                     link_style=link_style,
-                    style_start=style_start,
-                    style_end=style_end,
+                    style_start=link_type.display.style_start,
+                    style_end=link_type.display.style_end,
                 )
     return puml_connections
 

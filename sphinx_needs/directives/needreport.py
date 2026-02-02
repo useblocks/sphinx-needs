@@ -46,7 +46,18 @@ class NeedReportDirective(SphinxDirective):
             "options": list(needs_schema.iter_extra_field_names())
             if "options" in self.options
             else [],
-            "links": needs_config.extra_links if "links" in self.options else [],
+            "links": [
+                {
+                    "option": link.name,
+                    "incoming": link.display.incoming,
+                    "outgoing": link.display.outgoing,
+                    "copy": link.copy,
+                    "allow_dead_links": link.allow_dead_links,
+                }
+                for link in needs_schema.iter_link_fields()
+            ]
+            if "links" in self.options
+            else [],
             # note the usage dict format here is just to keep backwards compatibility,
             # but actually this is now post-processed so we only really need the need types
             "usage": {

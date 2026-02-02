@@ -518,6 +518,26 @@ def _from_string_item(
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
+class LinkDisplayConfig:
+    """Display/rendering configuration for a link type."""
+
+    incoming: str
+    """Title for incoming links (e.g., 'links incoming')."""
+    outgoing: str
+    """Title for outgoing links (e.g., 'links outgoing')."""
+    color: str = "#000000"
+    """Color used for needflow diagrams."""
+    style: str = ""
+    """Line style used for needflow diagrams."""
+    style_part: str = "dotted"
+    """Line style used for need parts in needflow diagrams."""
+    style_start: str = "-"
+    """Arrow start style for needflow diagrams."""
+    style_end: str = "->"
+    """Arrow end style for needflow diagrams."""
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
 class LinkSchema:
     """Schema for a single link field."""
 
@@ -544,6 +564,12 @@ class LinkSchema:
     
     Used if the field has not been specifically set, and no predicate matches.
     """
+    display: LinkDisplayConfig
+    """Display/rendering configuration for this link type."""
+    copy: bool = False
+    """If True, copy links to the common 'links' field."""
+    allow_dead_links: bool = False
+    """If True, add a 'forbidden' class to dead links instead of warning."""
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:

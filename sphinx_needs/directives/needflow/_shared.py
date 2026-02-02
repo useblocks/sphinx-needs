@@ -4,7 +4,6 @@ from typing import Literal
 
 from docutils import nodes
 
-from sphinx_needs.config import LinkOptionsType
 from sphinx_needs.data import NeedsFlowType
 from sphinx_needs.logging import get_logger
 from sphinx_needs.need_item import NeedItem, NeedPartItem
@@ -16,7 +15,7 @@ logger = get_logger(__name__)
 def filter_by_tree(
     needs_view: NeedsView,
     root_id: str,
-    link_types: list[LinkOptionsType],
+    link_names: list[str],
     direction: Literal["both", "incoming", "outgoing"],
     depth: int | None,
 ) -> NeedsView:
@@ -32,9 +31,7 @@ def filter_by_tree(
         if direction == "outgoing"
         else ("", "_back")
     )
-    links_to_process = [
-        link["option"] + d for link in link_types for d in link_prefixes
-    ]
+    links_to_process = [link + d for link in link_names for d in link_prefixes]
 
     need_ids: list[str] = []
     while roots:

@@ -13,6 +13,7 @@ from sphinx.errors import SphinxError, SphinxWarning
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import SphinxNeedsData
 
 NEED_TEMPLATE = """.. {{type}}:: {{title}}
    {% if need_id is not none %}:id: {{need_id}}{%endif%}
@@ -100,7 +101,8 @@ class List2NeedDirective(SphinxDirective):
             down_links_raw_list = []
         else:
             down_links_raw_list = [x.strip() for x in down_links_raw.split(",")]
-        link_types = [x["option"] for x in needs_config.extra_links]
+        needs_schema = SphinxNeedsData(self.env).get_schema()
+        link_types = [link.name for link in needs_schema.iter_link_fields()]
         for i, down_link_raw in enumerate(down_links_raw_list):
             down_links_types[i] = down_link_raw
             if down_link_raw not in link_types:

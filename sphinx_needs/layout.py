@@ -27,7 +27,7 @@ from sphinx.application import Sphinx
 from sphinx.util.logging import getLogger
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem
@@ -111,6 +111,7 @@ class LayoutHandler:
         self.app = app
         self.need = need
         self.needs_config = NeedsSphinxConfig(app.config)
+        self.needs_schema = SphinxNeedsData(app.env).get_schema()
 
         self.layout_name = (
             layout or self.need["layout"] or self.needs_config.default_layout
@@ -642,8 +643,9 @@ class LayoutHandler:
             exclude += default_excludes
 
         if no_links:
-            link_names = [x["option"] for x in self.needs_config.extra_links]
-            link_names += [x["option"] + "_back" for x in self.needs_config.extra_links]
+            link_names = list(self.needs_schema.iter_link_field_names()) + [
+                f"{x}_back" for x in self.needs_schema.iter_link_field_names()
+            ]
             exclude += link_names
         data_container = nodes.inline()
         for data in self.need:
@@ -674,13 +676,8 @@ class LayoutHandler:
         :return: docutils nodes
         """
         data_container = nodes.inline(classes=[name])
-        if name not in [x["option"] for x in self.needs_config.extra_links]:
+        if self.needs_schema.get_link_field(name) is None:
             raise SphinxNeedLayoutException(f"Invalid link name {name} for link-type")
-
-        # if incoming:
-        #     link_name = self.config.extra_links[name]['incoming']
-        # else:
-        #     link_name = self.config.extra_links[name]['outgoing']
 
         from sphinx_needs.roles.need_incoming import NeedIncoming
         from sphinx_needs.roles.need_outgoing import NeedOutgoing
@@ -707,25 +704,21 @@ class LayoutHandler:
         """
         exclude = exclude or []
         data_container = []
-        for link_type in self.needs_config.extra_links:
-            type_key = link_type["option"]
+        for link in self.needs_schema.iter_link_fields():
+            type_key = link.name
             if self.need[type_key] and type_key not in exclude:
                 outgoing_line = nodes.line()
-                outgoing_label = (
-                    prefix + "{}:".format(link_type["outgoing"]) + postfix + " "
-                )
+                outgoing_label = prefix + f"{link.display.outgoing}:" + postfix + " "
                 outgoing_line += self._parse(outgoing_label)
-                outgoing_line += self.meta_links(link_type["option"], incoming=False)
+                outgoing_line += self.meta_links(link.name, incoming=False)
                 data_container.append(outgoing_line)
 
-            type_key = link_type["option"] + "_back"
+            type_key = link.name + "_back"
             if self.need[type_key] and type_key not in exclude:
                 incoming_line = nodes.line()
-                incoming_label = (
-                    prefix + "{}:".format(link_type["incoming"]) + postfix + " "
-                )
+                incoming_label = prefix + f"{link.display.incoming}:" + postfix + " "
                 incoming_line += self._parse(incoming_label)
-                incoming_line += self.meta_links(link_type["option"], incoming=True)
+                incoming_line += self.meta_links(link.name, incoming=True)
                 data_container.append(incoming_line)
 
         return data_container

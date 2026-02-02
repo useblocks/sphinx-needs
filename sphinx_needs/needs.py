@@ -113,6 +113,7 @@ from sphinx_needs.needs_schema import (
     FieldLiteralValue,
     FieldSchema,
     FieldsSchema,
+    LinkDisplayConfig,
     LinkSchema,
     LinksLiteralValue,
     create_inherited_field,
@@ -691,7 +692,7 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
     # The default link name. Must exist in all configurations. Therefore we set it here
     # for the user.
     common_links: list[LinkOptionsType] = []
-    link_types = needs_config.extra_links
+    link_types = needs_config._extra_links
     basic_link_type_found = False
     parent_needs_link_type_found = False
     for link_type in link_types:
@@ -722,9 +723,9 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
             }
         )
 
-    needs_config.extra_links = common_links + needs_config.extra_links
+    needs_config._extra_links = common_links + needs_config._extra_links
 
-    for link in needs_config.extra_links:
+    for link in needs_config._extra_links:
         if "outgoing" not in link:
             link["outgoing"] = link["option"]
         if "incoming" not in link:
@@ -738,7 +739,7 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     """
     needs_config = NeedsSphinxConfig(config)
     extra_options = _NEEDS_CONFIG.extra_options
-    link_types = [x["option"] for x in needs_config.extra_links]
+    link_types = [x["option"] for x in needs_config._extra_links]
 
     external_filter = needs_config.filter_data
     for extern_filter, value in external_filter.items():
@@ -926,7 +927,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         except Exception as exc:
             raise NeedsConfigException(f"Invalid extra option {name!r}: {exc}") from exc
 
-    for link in needs_config.extra_links:
+    for link in needs_config._extra_links:
         name = link["option"]
         try:
             # create link schema, with defaults if not defined
@@ -943,9 +944,21 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 _schema["items"]["type"] = "string"
             if "contains" in _schema and "type" not in _schema["contains"]:
                 _schema["contains"]["type"] = "string"
+            # Build display config from link options
+            # Only pass explicitly set values; let LinkDisplayConfig use its defaults
+            display_kwargs: dict[str, str] = {
+                # These are required fields with no defaults in LinkDisplayConfig
+                "incoming": link.get("incoming", f"{name} incoming"),
+                "outgoing": link.get("outgoing", name),
+            }
+            # Only override optional fields if explicitly set in config
+            for key in ("color", "style", "style_part", "style_start", "style_end"):
+                if key in link:
+                    display_kwargs[key] = link[key]
+            display_config = LinkDisplayConfig(**display_kwargs)
             link_field = LinkSchema(
                 name=name,
-                description="Link field",
+                description="Link field",  # TODO allow this to be set by the user
                 schema=_schema,  # type: ignore[arg-type]
                 default=LinksLiteralValue([]),
                 allow_defaults=True,
@@ -953,6 +966,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 parse_dynamic_functions=True,
                 parse_variants=link.get("parse_variants", False),
                 directive_option=True,
+                display=display_config,
+                copy=link.get("copy", False),
+                allow_dead_links=link.get("allow_dead_links", False),
             )
             schema.add_link_field(link_field)
         except Exception as exc:
@@ -961,7 +977,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     for field_name, field_config in needs_config._fields.items():
         _set_default(schema, "needs_fields", field_name, field_config)
 
-    for link_config in needs_config.extra_links:
+    for link_config in needs_config._extra_links:
         _set_default(schema, "needs_extra_links", link_config["option"], link_config)
 
     if needs_config._global_options:

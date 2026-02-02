@@ -149,8 +149,8 @@ class NeedganttDirective(FilterBase, DiagramBase):
         link_types = [
             x.strip() for x in re.split(";|,", self.options.get(name, default))
         ]
-        conf_link_types = NeedsSphinxConfig(self.env.config).extra_links
-        conf_link_types_name = [x["option"] for x in conf_link_types]
+        needs_schema = SphinxNeedsData(self.env).get_schema()
+        conf_link_types_name = [link.name for link in needs_schema.iter_link_fields()]
 
         final_link_types = []
         for link_type in link_types:
