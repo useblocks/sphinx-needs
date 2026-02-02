@@ -339,11 +339,10 @@ def process_needtables(
                             )
                         elif option in link_type_list:
                             link = link_type_list[option]
-                            incoming_title = link.display.incoming.upper()
                             if option in [
                                 "INCOMING",
                                 link.name.upper() + "_BACK",
-                                incoming_title,
+                                link.display.incoming.upper(),
                             ]:
                                 row += row_col_maker(
                                     app,
