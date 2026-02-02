@@ -16,7 +16,7 @@ from sphinx.ext.graphviz import (
 )
 from sphinx.util.logging import getLogger
 
-from sphinx_needs.config import LinkOptionsType, NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
@@ -28,6 +28,7 @@ from sphinx_needs.filter_common import (
 )
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.needs_schema import LinkSchema
 from sphinx_needs.utils import remove_node_from_tree
 from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
@@ -50,10 +51,11 @@ def process_needflow_graphviz(
     found_nodes: list[nodes.Element],
 ) -> None:
     needs_config = NeedsSphinxConfig(app.config)
+    needs_schema = SphinxNeedsData(app.env).get_schema()
     env_data = SphinxNeedsData(app.env)
     needs_view = env_data.get_needs_view()
 
-    link_type_names = [link["option"].upper() for link in needs_config.extra_links]
+    link_type_names = [name.upper() for name in needs_schema.iter_link_field_names()]
     allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
     node: NeedflowGraphiz
@@ -93,29 +95,28 @@ def process_needflow_graphviz(
                     None,
                 )
 
-        # compute the allowed link names
-        allowed_link_types: list[LinkOptionsType] = []
-        for link_type in needs_config.extra_links:
+        # compute the allowed link types
+        allowed_link_types: list[LinkSchema] = []
+        for link in needs_schema.iter_link_fields():
             # Skip link-type handling, if it is not part of a specified list of allowed link_types or
             # if not part of the overall configuration of needs_flow_link_types
             if (
-                attributes["link_types"]
-                and link_type["option"].upper() not in option_link_types
+                attributes["link_types"] and link.name.upper() not in option_link_types
             ) or (
                 not attributes["link_types"]
-                and link_type["option"].upper() not in allowed_link_types_options
+                and link.name.upper() not in allowed_link_types_options
             ):
                 continue
             # skip creating links from child needs to their own parent need
-            if link_type["option"] == "parent_needs":
+            if link.name == "parent_needs":
                 continue
-            allowed_link_types.append(link_type)
+            allowed_link_types.append(link)
 
         init_filtered_needs = (
             filter_by_tree(
                 needs_view,
                 root_id,
-                allowed_link_types,
+                [lt.name for lt in allowed_link_types],
                 attributes["root_direction"],
                 attributes["root_depth"],
             )
@@ -169,7 +170,7 @@ def process_needflow_graphviz(
         content += "\n// edge definitions\n"
         for need in filtered_needs:
             for link_type in allowed_link_types:
-                for link in need[link_type["option"]]:
+                for link in need[link_type.name]:
                     content += _render_edge(
                         need, link, link_type, node, needs_config, rendered_nodes
                     )
@@ -440,7 +441,7 @@ def _label(
 def _render_edge(
     need: NeedItem | NeedPartItem,
     link: str,
-    link_type: LinkOptionsType,
+    link_type: LinkSchema,
     node: NeedflowGraphiz,
     config: NeedsSphinxConfig,
     rendered_nodes: dict[str, _RenderedNode],
@@ -455,16 +456,15 @@ def _render_edge(
     params: list[tuple[str, str]] = []
 
     if show_links:
-        params.append(("label", _quote(link_type["outgoing"])))
+        params.append(("label", _quote(link_type.display.outgoing)))
 
     is_part = "." in link or "." in need["id_complete"]
     params.extend(
+        # TODO also use link_type.display.color?
         _style_params_from_link_type(
-            link_type.get("style_part", "dotted")
-            if is_part
-            else link_type.get("style", ""),
-            link_type.get("style_start", "-"),
-            link_type.get("style_end", "->"),
+            link_type.display.style_part if is_part else link_type.display.style,
+            link_type.display.style_start,
+            link_type.display.style_end,
         )
     )
 

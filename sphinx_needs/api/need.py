@@ -394,7 +394,7 @@ def generate_need(
         else v
         for k, v in links_no_defaults.items()
     }
-    _copy_links(links, needs_config)
+    _copy_links(links, needs_schema)
 
     title, title_func = _convert_to_str_func("title", title_converted)
     status, status_func = _convert_to_none_str_func(
@@ -1156,15 +1156,15 @@ def _make_hashed_id(
 
 def _copy_links(
     links: dict[str, LinksLiteralValue | LinksFunctionArray | None],
-    config: NeedsSphinxConfig,
+    schema: FieldsSchema,
 ) -> None:
     """Implement 'copy' logic for links."""
     if "links" not in links:
         return  # should not happen, but be defensive
     copy_links: list[str | DynamicFunctionParsed | VariantFunctionParsed] = []
-    for link_type in config.extra_links:
-        if link_type.get("copy", False) and (name := link_type["option"]) != "links":
-            other = links[name]
+    for link_field in schema.iter_link_fields():
+        if link_field.copy and link_field.name != "links":
+            other = links[link_field.name]
             if isinstance(other, LinksLiteralValue | LinksFunctionArray):
                 copy_links.extend(other.value)
     if any(

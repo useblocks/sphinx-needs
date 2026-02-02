@@ -140,10 +140,11 @@ def row_col_maker(
             link_id = datum
             link_part = None
 
+            needs_schema = SphinxNeedsData(env).get_schema()
             link_list = []
-            for link_type in needs_config.extra_links:
-                link_list.append(link_type["option"])
-                link_list.append(link_type["option"] + "_back")
+            for link_field in needs_schema.iter_link_fields():
+                link_list.append(link_field.name)
+                link_list.append(link_field.name + "_back")
 
             # For needs_string_links
             link_string_list = {}
