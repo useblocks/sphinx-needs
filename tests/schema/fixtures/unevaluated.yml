@@ -1,3 +1,11 @@
+# 1. unevaluatedProperties: Anything not listed in 'properties' or 'required' fields
+#    of schemas has to be null.
+# 2. empty string is a value actively set
+# 3. None is used for missing values of fields
+# 4. [] is used for missing values of link fields and the `tags` field (empty fields arrays use
+#    None, this should be streamlined)
+#    TODO(Marco): streamline this behavior
+
 unevaluated_extra_no_schema_missing_in_rst:
   # should not complain, the comment field is unset
   # as there is no schema, the default is empty string, so unevaluatedProperties does not see it
@@ -23,6 +31,9 @@ unevaluated_extra_no_schema_given_in_rst:
   # should not complain, the comment field is set, but as there is no schema;
   # the default is also an empty string, so the field is removed from the need and
   # unevaluatedProperties does not see it
+
+  # in a nullable world, comment would be an empty string as it is given;
+  # so should lean to an error
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"

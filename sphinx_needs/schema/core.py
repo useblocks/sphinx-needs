@@ -479,22 +479,8 @@ def reduce_need(
     reduced_need: dict[str, Any] = {}
 
     for field, value in need.iter_extra_items():
-        if value is None:
-            # field is unset, and schema validation cannot handle null types
-            continue
-
-        schema_field = field_properties[field]
-        if "default" in schema_field:
-            if schema_field["default"] is None:
-                # keep all non-None values - they are actively set
-                reduced_need[field] = value
-            elif schema_field["default"] == "":
-                # SN5 case: only keep non-empty values
-                if value != "":
-                    reduced_need[field] = value
-            else:
-                # keep the value - there is a default that is not None/"" or a real RST value
-                reduced_need[field] = value
+        if value is not None:
+            reduced_need[field] = value
 
     for field, value in need.iter_links_items():
         if value:
@@ -506,13 +492,16 @@ def reduce_need(
             continue
 
         if field in schema_properties:
-            # actively included by schema - include to validate constraints
+            # actively included by schema - include to validate constraints such as docname
+            # useful for both 'select' and 'validate' schemas
+            # TODO(Marco): think about how to remove this dependency on schema_properties;
+            #              it's a performance issue
             reduced_need[field] = value
             continue
 
-        schema_field = field_properties[field]
-        if field == "status" and value is not None:  # default is None
+        if field == "status":  # default is None
             reduced_need[field] = value
+
         if field == "tags" and len(value) > 0:  # default is []
             reduced_need[field] = value
 
