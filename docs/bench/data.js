@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770053930715,
+  "lastUpdate": 1770102451727,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16632,6 +16632,42 @@ window.BENCHMARK_DATA = {
             "value": 61.809676161,
             "unit": "s",
             "extra": "Commit: 2b9d23e4663e0d988e2a099a396a9ed466dca899\nBranch: master\nTime: 2026-02-02T18:36:52+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e974e13bb3ba8c63ce55815e77fc631a8862c241",
+          "message": "🔧 Refactor `populate_field_type` to use type-directed schema walking (#1639)",
+          "timestamp": "2026-02-03T08:05:31+01:00",
+          "tree_id": "3f7cee2f929a89c2ce93892eed41264746b4ce52",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e974e13bb3ba8c63ce55815e77fc631a8862c241"
+        },
+        "date": 1770102432455,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21976618899999778,
+            "unit": "s",
+            "extra": "Commit: e974e13bb3ba8c63ce55815e77fc631a8862c241\nBranch: master\nTime: 2026-02-03T08:05:31+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.24527079699999,
+            "unit": "s",
+            "extra": "Commit: e974e13bb3ba8c63ce55815e77fc631a8862c241\nBranch: master\nTime: 2026-02-03T08:05:31+01:00"
           }
         ]
       }
