@@ -705,10 +705,18 @@
   "Invalid extra option 'efforts': Invalid schema: Extra option schema has invalid type 'unknown'. Must be one of ['array', 'boolean', 'integer', 'number', 'string']."
 # ---
 # name: test_schema_config[type_mismatch_array_error]
-  "Config error in schema '[0]' at path 'validate.local': Item has keys ['items'], but type is 'object', expected 'array'."
+  '''
+  Schemas entry '[0]' is not valid:
+  {"items":{},"type":"object"} is not valid under any of the schemas listed in the 'anyOf' keyword
+  
+  Failed validating "anyOf" in schema["properties"]["validate"]["$ref"]["properties"]["local"]
+  
+  On instance["validate"]["local"]:
+      {"items":{},"type":"object"}
+  '''
 # ---
 # name: test_schema_config[type_mismatch_object_error]
-  "Config error in schema '[0]' at path 'validate.local': Item has keys ['properties'], but type is 'array', expected 'object'."
+  "Config error in schema '[0]' at path 'validate.local': Schema has object keywords but type is 'array', expected 'object'."
 # ---
 # name: test_schema_config[type_mismatch_object_extra_option_error]
   "Config error in schema '[0]' at path 'validate.local.properties.efforts': Field 'efforts' has type 'integer', but expected 'string'."
