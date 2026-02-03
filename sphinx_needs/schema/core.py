@@ -439,35 +439,47 @@ def reduce_need(
     field_properties: Mapping[str, NeedFieldProperties],
     schema_properties: set[str],
 ) -> dict[str, Any]:
-    """
-    Reduce a need to its relevant fields for validation in a specific schema context.
+    """Reduce a need to the subset relevant for schema validation.
 
-    The reduction is required to separated actively set fields from defaults.
-    Also internal fields shall be removed, if they are not actively used in the schema.
-    This is required to make unevaluatedProperties work as expected which disallows
-    additional fields.
+    The returned mapping is used as the validation instance (especially for
+    ``unevaluatedProperties``) to focus on user-controlled fields.
 
-    Needs can be reduced in multiple contexts as the need can be primary target of validation
-    or it can be a link target which might mean only a single field shall be checked for a
-    specific value.
+    Rules:
 
-    Fields are kept
-    - if they are extra fields and differ from their default value
-    - if they are links and the list is not empty
-    - if they are part of the user provided schema
+    - ``None`` values are always dropped (schema validation cannot handle null types).
+    - Extra fields are included based on their configured default (independent of
+      ``schema_properties``):
 
-    :param need: The need to reduce.
-    :param json_schema: The user provided and merged JSON merge.
+      - If the default is ``None``, any non-``None`` value is kept.
+      - If the default is ``""`` (SN5-style empty), the value is kept only if it is not ``""``.
+      - For any other default value, the field is kept as-is.
+
+    - Link fields are included only if they are non-empty (independent of ``schema_properties``).
+    - Core fields are included if they are covered by ``schema_properties``.
+      Additionally, ``status`` is kept if it is non-``None`` and ``tags`` is kept if it is non-empty.
+
+    SN5 vs SN6 empty-vs-missing semantics for extra options:
+
+    - Without a field schema (SN5-style), unset and present-but-empty (``:opt:``) both become
+      ``""``, so "unset" and "set-but-empty" cannot be distinguished.
+    - With a field schema (SN6), unset nullable options default to ``None``, while ``:opt:``
+      results in ``""``. This allows distinguishing "unset" from "set-but-empty".
+
+    In this reduction, that distinction matters for extra fields: ``""`` is dropped if the
+    default is also ``""`` (SN5-style), while ``""`` is kept if the default is ``None``
+    (SN6-style), so set-but-empty can be treated as actively set.
+
+    For link fields, missing vs empty cannot be distinguished (both result in ``[]``).
+
+    :param need: Need to reduce.
+    :param field_properties: Field defaults/types used to detect default values.
+    :param schema_properties: Set of field names covered by the current schema.
+    :return: Reduced mapping used as schema validation instance.
     """
     reduced_need: dict[str, Any] = {}
 
     for field, value in need.iter_extra_items():
-        if value is None:
-            # value is not provided
-            continue
-        schema_field = field_properties[field]
-        if not ("default" in schema_field and value == schema_field["default"]):
-            # keep explicitly set extra options
+        if value is not None:
             reduced_need[field] = value
 
     for field, value in need.iter_links_items():
@@ -477,14 +489,20 @@ def reduce_need(
 
     for field, value in need.iter_core_items():
         if value is None:
-            # value is not provided
             continue
-        schema_field = field_properties[field]
-        if field in schema_properties and not (
-            "default" in schema_field and value == schema_field["default"]
-        ):
-            # keep core field, it has no default or differs from the default and
-            # is part of the user provided schema
+
+        if field in schema_properties:
+            # actively included by schema - include to validate constraints such as docname
+            # useful for both 'select' and 'validate' schemas
+            # TODO(Marco): think about how to remove this dependency on schema_properties;
+            #              it's a performance issue
+            reduced_need[field] = value
+            continue
+
+        if field == "status":  # default is None
+            reduced_need[field] = value
+
+        if field == "tags" and len(value) > 0:  # default is []
             reduced_need[field] = value
 
     return reduced_need
