@@ -9,7 +9,7 @@ jobs:
         os: [ubuntu-latest]
         python-version: ["3.10", "3.12"] # No "3.10", as nose seem to have problems with it
         sphinx-version: ["5.0", "8.1.3"]
-        sphinx_needs-version: ["2.1", "4.2", "5.1"]
+        sphinx_needs-version: ["2.1", "4.2", "5.1", "6.3.0"]
     steps:
       - uses: actions/checkout@v2
       - name: Set Up Python ${{ matrix.python-version }}

@@ -24,7 +24,7 @@ classifiers = [
   "Topic :: Documentation",
 ]
 keywords = ["sphinx", "documentation", "test-reports"]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = ["sphinx>4.0", "lxml", "sphinx-needs>=1.0.1"]
 
 [project.optional-dependencies]
@@ -40,8 +40,8 @@ docs = [
   "pillow",
   "sphinx-design",
   "sphinx-immaterial",
-  "sphinx-needs>=4",
-  "sphinx==7",
+  "sphinx-needs>=6",
+  "sphinx",
   "sphinxcontrib-plantuml",
 ]
 
