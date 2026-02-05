@@ -290,23 +290,32 @@ def test_multiple_validation_errors_per_need(test_app: SphinxTestApp) -> None:
     )
 
     # ASSERTION 2: One error must be about priority (type error)
-    priority_errors = [v for v in impl_1_violations if "priority" in v.get("message", "").lower()]
+    priority_errors = [
+        v for v in impl_1_violations if "priority" in v.get("message", "").lower()
+    ]
     assert len(priority_errors) == 1, (
         f"Expected 1 error about 'priority' field, got {len(priority_errors)}. "
         f"Errors: {[v.get('message') for v in impl_1_violations]}"
     )
-    assert "not valid under any of the given schemas" in priority_errors[0].get("message", "") or \
-           "type" in priority_errors[0].get("message", "").lower(), (
+    assert (
+        "not valid under any of the given schemas"
+        in priority_errors[0].get("message", "")
+        or "type" in priority_errors[0].get("message", "").lower()
+    ), (
         f"Expected priority error to mention type mismatch, got: {priority_errors[0].get('message')}"
     )
 
     # ASSERTION 3: One error must be about severity (enum error)
-    severity_errors = [v for v in impl_1_violations if "severity" in v.get("message", "").lower()]
+    severity_errors = [
+        v for v in impl_1_violations if "severity" in v.get("message", "").lower()
+    ]
     assert len(severity_errors) == 1, (
         f"Expected 1 error about 'severity' field, got {len(severity_errors)}. "
         f"Errors: {[v.get('message') for v in impl_1_violations]}"
     )
-    assert "'critical' is not one of" in severity_errors[0].get("message", "") or \
-           "enum" in severity_errors[0].get("message", "").lower(), (
+    assert (
+        "'critical' is not one of" in severity_errors[0].get("message", "")
+        or "enum" in severity_errors[0].get("message", "").lower()
+    ), (
         f"Expected severity error to mention enum constraint, got: {severity_errors[0].get('message')}"
     )
