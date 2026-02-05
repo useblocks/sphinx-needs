@@ -7,51 +7,42 @@ build_json = true
 json_remove_defaults = true
 
 
-[[needs.extra_options]]
-name = "field1"
+[needs.fields.field1]
 description = "String option"
 schema.type = "string"
 
-[[needs.extra_options]]
-name = "field2"
+[needs.fields.field2]
 description = "Integer option"
 schema.type = "integer"
 
-[[needs.extra_options]]
-name = "field3"
+[needs.fields.field3]
 description = "Number option"
 schema.type = "number"
 
-[[needs.extra_options]]
-name = "field4"
+[needs.fields.field4]
 description = "Boolean option"
 schema.type = "boolean"
 
-[[needs.extra_options]]
-name = "field5"
+[needs.fields.field5]
 description = "Array of strings option"
 schema.type = "array"
 schema.items.type = "string"
 
-[[needs.extra_options]]
-name = "field6"
+[needs.fields.field6]
 description = "Array of integers option"
 schema.type = "array"
 schema.items.type = "integer"
 
-[[needs.extra_options]]
-name = "field7"
+[needs.fields.field7]
 description = "Array of numbers option"
 schema.type = "array"
 schema.items.type = "number"
 
-[[needs.extra_options]]
-name = "field8"
+[needs.fields.field8]
 description = "Array of boolean option"
 schema.type = "array"
 schema.items.type = "boolean"
 
-[[needs.extra_options]]
-name = "field9"
+[needs.fields.field9]
 description = "Number option"
 schema.type = "number"

@@ -669,6 +669,15 @@ class NeedItem:
             self._computed.items(),
         )
 
+    def iter_core_items(self) -> Iterable[tuple[str, Any]]:
+        """Return the core items of the need item."""
+        return chain(
+            self._core.items(),
+            self._source.dict_repr.items(),
+            self._content.dict_repr.items(),
+            self._computed.items(),
+        )
+
     def __setitem__(self, key: str, value: Any) -> None:
         """Set an item by key."""
         if key in self._immutable_core:
@@ -887,7 +896,7 @@ class NeedPartItem:
         self._need = need.copy()
         self._part = part
 
-        self._overrides = {
+        self._overrides: dict[str, Any] = {
             "id": part.id,
             "id_complete": f"{need.id}.{part.id}",
             "id_parent": need.id,

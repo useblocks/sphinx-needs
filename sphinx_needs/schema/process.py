@@ -1,4 +1,6 @@
 import time
+from collections.abc import Mapping
+from itertools import chain
 
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
@@ -9,11 +11,12 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import log_error, log_warning
 from sphinx_needs.needsfile import generate_needs_schema
-from sphinx_needs.schema.config import SchemasRootType
+from sphinx_needs.schema.config import NeedFieldsSchemaType, SchemasRootType
 from sphinx_needs.schema.core import (
-    _needs_schema,
-    merge_static_schemas,
-    validate_need,
+    NeedFieldProperties,
+    validate_link_options,
+    validate_option_fields,
+    validate_type_schema,
 )
 from sphinx_needs.schema.reporting import (
     OntologyWarning,
@@ -31,27 +34,29 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     Warnings and errors are emitted at the end.
     """
-    needs = get_needs_view(app)
     config = NeedsSphinxConfig(app.config)
 
-    # upfront work
-    any_static_found = merge_static_schemas(config)
-
-    if not (any_static_found or (config.schema_definitions.get("schemas"))):
-        # nothing to validate but always generate report file
-        generate_json_schema_validation_report(
-            duration=0.00,
-            need_2_warnings={},
-            report_file_path=app.outdir / "schema_violations.json",
-            validated_needs_count=0,
-            validated_rate=0,
-        )
+    if not config.schema_validation_enabled:
         return
 
-    # store the SN generated schema in a global variable
     schema = SphinxNeedsData(app.env).get_schema()
-    needs_schema = generate_needs_schema(schema)["properties"]
-    _needs_schema.update(needs_schema)
+
+    fields_schema: NeedFieldsSchemaType = {
+        "type": "object",
+        "properties": {
+            field.name: field.schema
+            for field in chain(schema.iter_core_fields(), schema.iter_extra_fields())
+        },
+    }
+    links_schema: NeedFieldsSchemaType = {
+        "type": "object",
+        "properties": {link.name: link.schema for link in schema.iter_link_fields()},
+    }
+
+    schema = SphinxNeedsData(app.env).get_schema()
+    field_properties: Mapping[str, NeedFieldProperties] = generate_needs_schema(schema)[
+        "properties"
+    ]
 
     if config.schema_debug_active:
         clear_debug_dir(config)
@@ -59,21 +64,33 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     # Start timer before validation loop
     start_time = time.perf_counter()
 
+    needs = get_needs_view(app)
+
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
-    # validate needs
+    if fields_schema["properties"]:
+        extra_warnings = validate_option_fields(
+            config, fields_schema, field_properties, needs
+        )
+        for key, warnings in extra_warnings.items():
+            need_2_warnings.setdefault(key, []).extend(warnings)
+
+    if links_schema["properties"]:
+        link_warnings = validate_link_options(
+            config, links_schema, field_properties, needs
+        )
+        for key, warnings in link_warnings.items():
+            need_2_warnings.setdefault(key, []).extend(warnings)
+
     type_schemas: list[SchemasRootType] = []
     if config.schema_definitions and "schemas" in config.schema_definitions:
         type_schemas = config.schema_definitions["schemas"]
-    for need in needs.values():
-        nested_warnings = validate_need(
-            config=config,
-            need=need,
-            needs=needs,
-            type_schemas=type_schemas,
+    for type_schema in type_schemas:
+        type_warnings = validate_type_schema(
+            config, type_schema, needs, field_properties
         )
-        if nested_warnings:
-            need_2_warnings[need["id"]] = nested_warnings
+        for key, warnings in type_warnings.items():
+            need_2_warnings.setdefault(key, []).extend(warnings)
 
     # Stop timer after validation loop
     end_time = time.perf_counter()

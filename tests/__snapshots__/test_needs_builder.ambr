@@ -247,7 +247,10 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'constraints': dict({
               'default': list([
@@ -321,7 +324,10 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'external_css': dict({
               'default': '',
@@ -908,7 +914,10 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'constraints': dict({
               'default': list([
@@ -982,7 +991,10 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'external_css': dict({
               'default': '',
@@ -1734,7 +1746,10 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'constraints': dict({
               'default': list([
@@ -1808,7 +1823,10 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'external_css': dict({
               'default': '',

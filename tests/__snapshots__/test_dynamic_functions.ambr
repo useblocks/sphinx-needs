@@ -149,7 +149,10 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'constraints': dict({
               'default': list([
@@ -223,7 +226,10 @@
               'default': None,
               'description': 'Added for needgantt functionality',
               'field_type': 'extra',
-              'type': 'integer',
+              'type': list([
+                'integer',
+                'null',
+              ]),
             }),
             'external_css': dict({
               'default': '',
@@ -515,7 +521,7 @@
             }),
             'test_func': dict({
               'default': '',
-              'description': 'Added by needs_extra_options config',
+              'description': 'Added by needs_fields config',
               'field_type': 'extra',
               'type': 'string',
             }),

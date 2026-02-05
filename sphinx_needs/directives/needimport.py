@@ -15,7 +15,7 @@ from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import filter_import_item
 from sphinx_needs.logging import log_warning
@@ -52,6 +52,7 @@ class NeedimportDirective(SphinxDirective):
         "template": directives.unchanged_required,
         "pre_template": directives.unchanged_required,
         "post_template": directives.unchanged_required,
+        "allow_type_coercion": coerce_to_boolean,
     }
 
     final_argument_whitespace = True
@@ -59,10 +60,12 @@ class NeedimportDirective(SphinxDirective):
     @measure_time("needimport")
     def run(self) -> Sequence[nodes.Node]:
         needs_config = NeedsSphinxConfig(self.config)
+        needs_schema = SphinxNeedsData(self.env).get_schema()
 
         version = self.options.get("version")
         filter_string = self.options.get("filter")
         id_prefix = self.options.get("id_prefix", "")
+        allow_type_coercion = self.options.get("allow_type_coercion", True)
 
         need_import_path = needs_config.import_keys.get(
             self.arguments[0], self.arguments[0]
@@ -120,7 +123,9 @@ class NeedimportDirective(SphinxDirective):
                     f"Schema validation errors detected in file {correct_need_import_path}:"
                 )
                 for error in errors.schema:
-                    logger.info(f"  {error.message} -> {'.'.join(error.path)}")
+                    logger.info(
+                        f"  {error.message} -> {'.'.join(str(p) for p in error.instance_path)}"
+                    )
 
         if version is None:
             try:
@@ -190,21 +195,23 @@ class NeedimportDirective(SphinxDirective):
             for need in needs_list.values():
                 need["tags"] = need["tags"] + tags
 
-        import_prefix_link_edit(needs_list, id_prefix, needs_config.extra_links)
+        import_prefix_link_edit(
+            needs_list, id_prefix, needs_schema.iter_link_field_names()
+        )
 
         # all known need fields in the project
         known_keys = {
             "full_title",  # legacy
             *NeedsCoreFields,
-            *(x["option"] for x in needs_config.extra_links),
-            *(x["option"] + "_back" for x in needs_config.extra_links),
-            *needs_config.extra_options,
+            *(x for x in needs_schema.iter_link_field_names()),
+            *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
+            *(x for x in needs_schema.iter_extra_field_names()),
         }
         # all keys that should not be imported from external needs
         omitted_keys = {
             "full_title",  # legacy
             *(k for k, v in NeedsCoreFields.items() if v.get("exclude_import")),
-            *(x["option"] + "_back" for x in needs_config.extra_links),
+            *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
         }
 
         # collect keys for warning logs, so that we only log one warning per key
@@ -259,6 +266,7 @@ class NeedimportDirective(SphinxDirective):
                     app=self.env.app,
                     state=self.state,
                     need_source=need_source,
+                    allow_type_coercion=allow_type_coercion,
                     **need_params,
                 )
             except InvalidNeedException as err:

@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_empty_variant_options_html[test_app0]
+# name: test_empty_variant_fields_html[test_app0]
   dict({
     'current_version': '',
     'versions': dict({
@@ -26,7 +26,7 @@
     }),
   })
 # ---
-# name: test_variant_options_html[test_app0]
+# name: test_variant_fields_html[test_app0]
   dict({
     'current_version': '',
     'versions': dict({
@@ -37,6 +37,9 @@
             'external_css': 'external_link',
             'id': 'CV_0002',
             'lineno': 18,
+            'relates': list([
+              'SPEC_003',
+            ]),
             'section_name': 'Variant Handling Test',
             'sections': list([
               'Variant Handling Test',
@@ -57,6 +60,9 @@
             'external_css': 'external_link',
             'id': 'SPEC_003',
             'lineno': 25,
+            'relates_back': list([
+              'CV_0002',
+            ]),
             'section_name': 'Variant Handling Test',
             'sections': list([
               'Variant Handling Test',
@@ -77,6 +83,57 @@
             ]),
             'status': 'unknown',
             'title': 'Unknown Variant',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_005': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'has_dead_links': True,
+            'has_forbidden_dead_links': True,
+            'id': 'SPEC_005',
+            'lineno': 33,
+            'links': list([
+              "<<['tag_a' in build_tags]:SPEC_003",
+              'SPEC_004>>',
+            ]),
+            'section_name': 'Variant Handling Test',
+            'sections': list([
+              'Variant Handling Test',
+            ]),
+            'title': 'Disabled variant parsing',
+            'type': 'spec',
+            'type_name': 'Specification',
+            'value': "<<['tag_a' in build_tags]:open, close>>",
+          }),
+          'SPEC_006': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'field_bool': True,
+            'id': 'SPEC_006',
+            'lineno': 38,
+            'section_name': 'Variant Handling Test',
+            'sections': list([
+              'Variant Handling Test',
+            ]),
+            'title': 'Bool field with multiple variants',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_007': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'field_array_int': list([
+              1,
+              3,
+            ]),
+            'id': 'SPEC_007',
+            'lineno': 42,
+            'section_name': 'Variant Handling Test',
+            'sections': list([
+              'Variant Handling Test',
+            ]),
+            'title': 'Array of integer field with multiple variants',
             'type': 'spec',
             'type_name': 'Specification',
           }),
@@ -129,7 +186,7 @@
             'type_name': 'Specification',
           }),
         }),
-        'needs_amount': 6,
+        'needs_amount': 9,
         'needs_defaults_removed': True,
       }),
     }),

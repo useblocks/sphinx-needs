@@ -3,9 +3,10 @@ from __future__ import annotations
 import contextlib
 import json
 from collections.abc import Callable
+from copy import deepcopy
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-from typing import Any, Literal, cast
+from typing import Any, TypedDict, cast
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -33,6 +34,7 @@ from sphinx_needs.config import (
 )
 from sphinx_needs.data import (
     ENV_DATA_VERSION,
+    CoreFieldParameters,
     NeedsCoreFields,
     SphinxNeedsData,
     merge_data,
@@ -111,8 +113,10 @@ from sphinx_needs.needs_schema import (
     FieldLiteralValue,
     FieldSchema,
     FieldsSchema,
+    LinkDisplayConfig,
     LinkSchema,
     LinksLiteralValue,
+    create_inherited_field,
 )
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles import NeedsXRefRole
@@ -122,7 +126,10 @@ from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, NeedPartRole, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
-from sphinx_needs.schema.config import ExtraOptionIntegerSchemaType, SchemasFileRootType
+from sphinx_needs.schema.config import (
+    ExtraOptionIntegerSchemaType,
+    SchemasFileRootType,
+)
 from sphinx_needs.schema.config_utils import (
     resolve_schemas_config,
     validate_schemas_config,
@@ -469,12 +476,16 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
     for key, value in toml_data.items():
         if key not in allowed_keys:
             continue
-        config["needs_" + key] = value
+        config["needs_" + key] = NeedsSphinxConfig.convert_field_value(
+            key, value, toml_file.parent
+        )
 
     for key, value in toml_data.get("schema", {}).items():
         if key not in allowed_keys:
             continue
-        config["needs_schema_"][key] = value
+        config["needs_schema_"][key] = NeedsSphinxConfig.convert_field_value(
+            key, value, toml_file.parent, "schema_"
+        )
 
 
 def load_config(app: Sphinx, *_args: Any) -> None:
@@ -483,12 +494,16 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     """
     needs_config = NeedsSphinxConfig(app.config)
 
-    if isinstance(needs_config._extra_options, dict):
+    if not isinstance(needs_config._extra_options, list):
+        raise NeedsConfigException(
+            "Config option 'needs_extra_options' must be a list."
+        )
+
+    if needs_config._extra_options:
         log_warning(
             LOGGER,
-            'Config option "needs_extra_options" supports list and dict. However new default type since '
-            "Sphinx-Needs 0.7.2 is list. Please see docs for details.",
-            "config",
+            'Config option "needs_extra_options" is deprecated. Please use "needs_fields" instead.',
+            "deprecated",
             None,
         )
 
@@ -520,6 +535,41 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             continue
 
         _NEEDS_CONFIG.add_extra_option(name, description, schema=schema, override=True)
+
+    if not isinstance(needs_config._fields, dict):
+        raise NeedsConfigException("Config option 'needs_fields' must be a dict.")
+
+    for option_name, option_params in needs_config._fields.items():
+        if not isinstance(option_name, str):
+            log_warning(
+                LOGGER,
+                f"needs_fields key is not a string: {option_name}",
+                "config",
+                None,
+            )
+            continue
+        if not isinstance(option_params, dict):
+            log_warning(
+                LOGGER,
+                f"needs_fields entry for '{option_name}' is not a dict: {option_params}",
+                "config",
+                None,
+            )
+            continue
+        if option_name in NeedsCoreFields:
+            continue
+        description = option_params.get("description", "Added by needs_fields config")
+        schema = option_params.get("schema")
+        nullable = option_params.get("nullable")
+        parse_variants = option_params.get("parse_variants")
+        _NEEDS_CONFIG.add_extra_option(
+            option_name,
+            description,
+            schema=schema,
+            nullable=nullable,
+            parse_variants=parse_variants,
+            override=True,
+        )
 
     # ensure options for `needgantt` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
@@ -642,7 +692,7 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
     # The default link name. Must exist in all configurations. Therefore we set it here
     # for the user.
     common_links: list[LinkOptionsType] = []
-    link_types = needs_config.extra_links
+    link_types = needs_config._extra_links
     basic_link_type_found = False
     parent_needs_link_type_found = False
     for link_type in link_types:
@@ -673,9 +723,9 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
             }
         )
 
-    needs_config.extra_links = common_links + needs_config.extra_links
+    needs_config._extra_links = common_links + needs_config._extra_links
 
-    for link in needs_config.extra_links:
+    for link in needs_config._extra_links:
         if "outgoing" not in link:
             link["outgoing"] = link["option"]
         if "incoming" not in link:
@@ -688,8 +738,8 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     E.g. defined need-option, which is already defined internally
     """
     needs_config = NeedsSphinxConfig(config)
-    extra_options = needs_config.extra_options
-    link_types = [x["option"] for x in needs_config.extra_links]
+    extra_options = _NEEDS_CONFIG.extra_options
+    link_types = [x["option"] for x in needs_config._extra_links]
 
     external_filter = needs_config.filter_data
     for extern_filter, value in external_filter.items():
@@ -732,7 +782,6 @@ def check_configuration(app: Sphinx, config: Config) -> None:
             )
 
     external_variants = needs_config.variants
-    external_variant_options = needs_config.variant_options
     for value in external_variants.values():
         # Check if external filter values is really a string
         if not isinstance(value, str):
@@ -740,22 +789,42 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 f"Variant filter value: {value} from needs_variants {external_variants} is not a string."
             )
 
-    allowed_internal_variants = {
-        k for k, v in NeedsCoreFields.items() if v.get("allow_variants")
-    }
-    for option in external_variant_options:
-        # Check variant option is added to an allowed field
-        if option in link_types:
-            raise NeedsConfigException(
-                f"Variant option `{option}` is a link type. This is not allowed."
-            )
-        if option not in extra_options and option not in allowed_internal_variants:
-            raise NeedsConfigException(
-                f"Variant option `{option}` is not added in extra options. "
-                "This is not allowed."
-            )
+    if needs_config._variant_options:
+        log_warning(
+            LOGGER,
+            'Config option "needs_variant_options" is deprecated. Please use "needs_fields" with "parse_variants" instead.',
+            "deprecated",
+            None,
+        )
+        allowed_internal_variants = {
+            k for k, v in NeedsCoreFields.items() if v.get("allow_variants")
+        }
+        for option in needs_config._variant_options:
+            # Check variant option is added to an allowed field
+            if option in link_types:
+                raise NeedsConfigException(
+                    f"Variant option `{option}` is a link type. This is not allowed."
+                )
+            if option not in extra_options and option not in allowed_internal_variants:
+                raise NeedsConfigException(
+                    f"Variant option `{option}` is not added in needs_extra_options or needs_fields. "
+                    "This is not allowed."
+                )
 
     validate_schemas_config(app, needs_config)
+
+
+def _get_core_schema(data: CoreFieldParameters) -> tuple[dict[str, Any], bool]:
+    type_ = data["schema"]["type"]
+    nullable = False
+    if isinstance(type_, list):
+        assert type_[1] == "null", "Only nullable types supported as list"
+        type_ = type_[0]
+        nullable = True
+    schema = {"type": type_}
+    if type_ == "array":
+        schema["items"] = data["schema"].get("items", {"type": "string"})
+    return schema, nullable
 
 
 def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
@@ -764,153 +833,241 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     for name, data in NeedsCoreFields.items():
         if not data.get("add_to_field_schema", False):
             continue
-        type_ = data["schema"]["type"]
-        nullable = False
-        if isinstance(type_, list):
-            assert type_[1] == "null", "Only nullable types supported as list"
-            type_ = type_[0]
-            nullable = True
+        description = data["description"]
+        _schema, nullable = _get_core_schema(data)
+
+        # merge in additional schema from needs_statuses and needs_tags config
+        if name == "status" and needs_config.statuses:
+            log_warning(
+                LOGGER,
+                'Config option "needs_statuses" is deprecated. Please use "needs_fields.status.schema.enum" to define custom status field enum constraints.',
+                "deprecated",
+                None,
+            )
+            _schema["enum"] = [status["name"] for status in needs_config.statuses]
+        if name == "tags" and needs_config.tags:
+            log_warning(
+                LOGGER,
+                'Config option "needs_tags" is deprecated. Please use "needs_fields.tags.schema.items.enum" to define custom tags field enum constraints.',
+                "deprecated",
+                None,
+            )
+            _schema["items"] = {
+                "type": "string",
+                "enum": [tag["name"] for tag in needs_config.tags],
+            }
+
         default = data["schema"].get("default", None)
         field = FieldSchema(
             name=name,
-            description=data["description"],
+            description=description,
             nullable=nullable,
-            type=type_,
-            item_type=data["schema"].get("items", {}).get("type", None),
+            schema=_schema,  # type: ignore[arg-type]
             default=None if default is None else FieldLiteralValue(default),
             allow_defaults=data.get("allow_default", False),
             allow_extend=data.get("allow_extend", False),
-            allow_dynamic_functions=data.get("allow_df", False),
-            allow_variant_functions=name in needs_config.variant_options
+            parse_dynamic_functions=data.get("allow_df", False),
+            parse_variants=name in needs_config._variant_options
             if data.get("allow_variants", False)
             else False,
             directive_option=name != "title",
         )
+
+        if (core_override := needs_config._fields.get(name)) is not None:
+            try:
+                field = create_inherited_field(
+                    field,
+                    core_override,
+                    allow_variants=data.get("allow_variants", False),
+                )
+            except Exception as exc:
+                raise NeedsConfigException(
+                    f"Invalid `needs_fields` core option override for {name!r}: {exc}"
+                ) from exc
+
         try:
             schema.add_core_field(field)
-        except ValueError as exc:
-            log_warning(
-                LOGGER,
-                f"Could not add core field {field.name!r} to schema: {exc}",
-                "config",
-                None,
-            )
-            continue
-    for name, extra in needs_config.extra_options.items():
+        except Exception as exc:
+            raise NeedsConfigException(f"Invalid core option {name!r}: {exc}") from exc
+
+    for name, extra in _NEEDS_CONFIG.extra_options.items():
         try:
-            type: Literal["string", "boolean", "integer", "number", "array"] = "string"
-            item_type: None | Literal["string", "boolean", "integer", "number"] = None
-            if extra.schema:
-                type = extra.schema.get("type", "string")
-                if type == "array":
-                    item_type = extra.schema.get("items", {}).get("type", "string")  # type: ignore[attr-defined]
+            _schema = (
+                deepcopy(extra.schema)  # type: ignore[arg-type]
+                if extra.schema is not None
+                else {"type": "string"}
+            )
+            if extra.nullable is not None:
+                nullable = extra.nullable
+            else:
+                # follows that of legacy (pre-schema) extra option,
+                # i.e. nullable if schema is defined
+                nullable = extra.schema is not None
+            parse_variants = (
+                False if extra.parse_variants is None else extra.parse_variants
+            )
+            if name in needs_config._variant_options:
+                # for backward compatibility with deprecated config option
+                parse_variants = True
             field = FieldSchema(
                 name=name,
                 description=extra.description,
-                type=type,
-                item_type=item_type,
-                # TODO for nullable and default, currently if there is no schema,
-                # we configure so that the behaviour follows that of legacy (pre-schema) extra option,
-                # i.e. non-nullable and default of empty string (that can be overriden by needs_global_options).
-                nullable=extra.schema is not None,
+                schema=_schema,  # type: ignore[arg-type]
+                nullable=nullable,
+                # note, default follows that of legacy (pre-schema) extra option,
+                # i.e. default to "" only if no schema is defined
                 default=None if extra.schema is not None else FieldLiteralValue(""),
                 allow_defaults=True,
                 allow_extend=True,
-                allow_dynamic_functions=True,
-                allow_variant_functions=name in needs_config.variant_options,
+                parse_dynamic_functions=True,
+                parse_variants=parse_variants,
                 directive_option=True,
             )
             schema.add_extra_field(field)
-        except ValueError as exc:
-            log_warning(
-                LOGGER,
-                f"Could not add extra option {name!r} to schema: {exc}",
-                "config",
-                None,
-            )
-            continue
+        except Exception as exc:
+            raise NeedsConfigException(f"Invalid extra option {name!r}: {exc}") from exc
 
-    for link in needs_config.extra_links:
+    for link in needs_config._extra_links:
         name = link["option"]
         try:
+            # create link schema, with defaults if not defined
+            _schema = (
+                deepcopy(link["schema"])  # type: ignore[arg-type]
+                if "schema" in link
+                else {"type": "array", "items": {"type": "string"}}
+            )
+            if "type" not in _schema:
+                _schema["type"] = "array"
+            if "items" not in _schema:
+                _schema["items"] = {"type": "string"}
+            if "type" not in _schema["items"]:
+                _schema["items"]["type"] = "string"
+            if "contains" in _schema and "type" not in _schema["contains"]:
+                _schema["contains"]["type"] = "string"
+            # Build display config from link options
+            # Only pass explicitly set values; let LinkDisplayConfig use its defaults
+            display_kwargs: dict[str, str] = {
+                # These are required fields with no defaults in LinkDisplayConfig
+                "incoming": link.get("incoming", f"{name} incoming"),
+                "outgoing": link.get("outgoing", name),
+            }
+            # Only override optional fields if explicitly set in config
+            for key in ("color", "style", "style_part", "style_start", "style_end"):
+                if key in link:
+                    display_kwargs[key] = link[key]
+            display_config = LinkDisplayConfig(**display_kwargs)
             link_field = LinkSchema(
                 name=name,
-                description="Link field",
+                description="Link field",  # TODO allow this to be set by the user
+                schema=_schema,  # type: ignore[arg-type]
                 default=LinksLiteralValue([]),
                 allow_defaults=True,
                 allow_extend=True,
-                allow_dynamic_functions=True,
-                allow_variant_functions=name in needs_config.variant_options,
+                parse_dynamic_functions=True,
+                parse_variants=link.get("parse_variants", False),
                 directive_option=True,
+                display=display_config,
+                copy=link.get("copy", False),
+                allow_dead_links=link.get("allow_dead_links", False),
             )
             schema.add_link_field(link_field)
-        except ValueError as exc:
-            log_warning(
-                LOGGER,
-                f"Could not add extra link option {name!r} to schema: {exc}",
-                "config",
-                None,
-            )
-            continue
+        except Exception as exc:
+            raise NeedsConfigException(f"Invalid extra link {name!r}: {exc}") from exc
 
+    for field_name, field_config in needs_config._fields.items():
+        _set_default(schema, "needs_fields", field_name, field_config)
+
+    for link_config in needs_config._extra_links:
+        _set_default(schema, "needs_extra_links", link_config["option"], link_config)
+
+    if needs_config._global_options:
+        log_warning(
+            LOGGER,
+            'Config option "needs_global_options" is deprecated. Please use needs_fields and needs_extra_links instead.',
+            "deprecated",
+            None,
+        )
     for name, default_config in needs_config._global_options.items():
-        if (field_for_default := schema.get_any_field(name)) is None:
+        if unknown := set(default_config).difference({"predicates", "default"}):
             log_warning(
                 LOGGER,
-                f"needs_global_options {name!r} does not match any defined need option",
+                f"needs_global_options {name!r} value contains unknown keys: {unknown}",
                 "config",
                 None,
             )
-            continue
-        if not field_for_default.allow_defaults:
-            log_warning(
-                LOGGER,
-                f"needs_global_options {name!r} cannot be set, as field does not allow defaults",
-                "config",
-                None,
-            )
-            continue
-        if not isinstance(default_config, dict):
-            log_warning(
-                LOGGER,
-                f"needs_global_options {name!r} value is not a dict",
-                "config",
-                None,
-            )
-        else:
-            if unknown := set(default_config).difference({"predicates", "default"}):
-                log_warning(
-                    LOGGER,
-                    f"needs_global_options {name!r} value contains unknown keys: {unknown}",
-                    "config",
-                    None,
-                )
-            if "default" in default_config:
-                try:
-                    field_for_default._set_default(
-                        default_config["default"], allow_coercion=True
-                    )
-                except Exception as exc:
-                    log_warning(
-                        LOGGER,
-                        f"needs_global_options {name!r} default value is incorrect: {exc}",
-                        "config",
-                        None,
-                    )
-            if "predicates" in default_config:
-                try:
-                    field_for_default._set_predicate_defaults(
-                        default_config["predicates"], allow_coercion=True
-                    )
-                except Exception as exc:
-                    log_warning(
-                        LOGGER,
-                        f"needs_global_options {name!r} predicates are incorrect: {exc}",
-                        "config",
-                        None,
-                    )
+        _set_default(
+            schema, "needs_global_options", name, default_config, warn_not_dict=True
+        )
 
     SphinxNeedsData(env)._set_schema(schema)
+
+
+class _DefaultsDictType(TypedDict, total=False):
+    predicates: list[tuple[str, Any]]
+    default: Any
+
+
+def _set_default(
+    schema: FieldsSchema,
+    config_name: str,
+    name: str,
+    values: _DefaultsDictType,
+    *,
+    warn_not_dict: bool = False,
+    allow_coercion: bool = True,
+) -> None:
+    if not isinstance(values, dict):
+        if warn_not_dict:
+            log_warning(
+                LOGGER,
+                f"{config_name}[{name!r}] value is not a dict",
+                "config",
+                None,
+            )
+        return
+    if "default" not in values and "predicates" not in values:
+        return
+
+    if (field_for_default := schema.get_any_field(name)) is None:
+        log_warning(
+            LOGGER,
+            f"{config_name}[{name!r}] does not correspond to any defined field",
+            "config",
+            None,
+        )
+        return
+    if not field_for_default.allow_defaults:
+        log_warning(
+            LOGGER,
+            f"{config_name}[{name!r}]['default'] cannot be set, as field does not allow defaults",
+            "config",
+            None,
+        )
+        return
+    if "default" in values:
+        try:
+            field_for_default._set_default(
+                values["default"], allow_coercion=allow_coercion
+            )
+        except Exception as exc:
+            log_warning(
+                LOGGER,
+                f"{config_name}[{name!r}]['default'] value is incorrect: {exc}",
+                "config",
+                None,
+            )
+    if "predicates" in values:
+        try:
+            field_for_default._set_predicate_defaults(
+                values["predicates"], allow_coercion=allow_coercion
+            )
+        except Exception as exc:
+            log_warning(
+                LOGGER,
+                f"{config_name}[{name!r}]['predicates'] value is incorrect: {exc}",
+                "config",
+                None,
+            )
 
 
 def release_data_locks(app: Sphinx, _exception: Exception) -> None:

@@ -12,7 +12,7 @@
 {% endif %}
 {# Output for needs_types #}
 
-{# Output for needs_options #}
+{# Output for needs_fields #}
 {% if options|length != 0 %}
 
 .. dropdown:: Need Extra Options
@@ -21,7 +21,7 @@
    * {{ option }}
    {% endfor %}
 {% endif %}
-{# Output for needs_options #}
+{# Output for needs_fields #}
 
 {# Output for needs_extra_links #}
 {% if links|length != 0 %}

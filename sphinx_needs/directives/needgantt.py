@@ -60,6 +60,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
         needs_config = NeedsSphinxConfig(env.config)
+        needs_schema = SphinxNeedsData(env).get_schema()
 
         _id, targetid, targetnode = self.create_target("needgantt")
 
@@ -102,19 +103,23 @@ class NeedganttDirective(FilterBase, DiagramBase):
         )
 
         for option_name in (duration_option, completion_option):
-            option = needs_config.extra_options[option_name]
-            if option.schema is None:
-                # TODO(mh) should we set a default schema here or rather warn?
-                option.schema = {"type": "integer"}
-            else:
-                if option.schema.get("type") not in {"integer", "number"}:
-                    log_warning(
-                        logger,
-                        f"Schema for option '{option_name}' is not 'integer' or 'number' as required by needgantt.",
-                        "config",
-                        None,
-                    )
-                    return []
+            option = needs_schema.get_extra_field(option_name)
+            if option is None:
+                log_warning(
+                    logger,
+                    f"Option '{option_name}' used in needgantt is not defined in needs options.",
+                    "config",
+                    None,
+                )
+                return []
+            if option.schema.get("type") not in {"integer", "number"}:
+                log_warning(
+                    logger,
+                    f"Schema for option '{option_name}' is not 'integer' or 'number' as required by needgantt.",
+                    "config",
+                    None,
+                )
+                return []
 
         attributes: NeedsGanttType = {
             "docname": env.docname,
@@ -144,8 +149,8 @@ class NeedganttDirective(FilterBase, DiagramBase):
         link_types = [
             x.strip() for x in re.split(";|,", self.options.get(name, default))
         ]
-        conf_link_types = NeedsSphinxConfig(self.env.config).extra_links
-        conf_link_types_name = [x["option"] for x in conf_link_types]
+        needs_schema = SphinxNeedsData(self.env).get_schema()
+        conf_link_types_name = [link.name for link in needs_schema.iter_link_fields()]
 
         final_link_types = []
         for link_type in link_types:
@@ -387,13 +392,13 @@ def process_needgantt(
 
         if len(found_needs) == 0:
             content = [
-                no_needs_found_paragraph(current_needgantt.get("filter_warning"))
+                no_needs_found_paragraph(current_needgantt.get("filter_warning"))  # type: ignore[list-item]
             ]
         if current_needgantt["show_filters"]:
-            content.append(get_filter_para(current_needgantt))
+            content.append(get_filter_para(current_needgantt))  # type: ignore[arg-type]
 
         if current_needgantt["debug"]:
-            content += get_debug_container(puml_node)
+            content += get_debug_container(puml_node)  # type: ignore[arg-type]
 
         puml_node["class"] = ["needgantt"]
         node.replace_self(content)

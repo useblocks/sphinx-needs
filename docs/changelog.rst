@@ -4,13 +4,81 @@
 Changelog
 =========
 
+.. _`release:6.3.0`:
+
+6.3.0
+-----
+
+:Released: 15.12.2025
+:Full Changelog: `v6.2.0...v6.3.0 <https://github.com/useblocks/sphinx-needs/compare/6.2.0...f567c1fafb4e1ba1a7dabb3bd6afc5f17ded84cd>`__
+
+- ⬆️ Support Python 3.14 (:pr:`1598`)
+- ♻️ Remove ``typeguard`` dependency (:pr:`1597`)
+- 👌 Relative paths from toml configuration (:pr:`1589`)
+
+  Ensure that file paths originating from a :ref:`needs_from_toml` file are relative to that file, rather than the :file:`conf.py` file
+
+.. _`release:6.2.0`:
+
+6.2.0
+-----
+
+:Released: 28.11.2025
+:Full Changelog: `v6.1.1...v6.2.0 <https://github.com/useblocks/sphinx-needs/compare/6.1.1...6.2.0>`__
+
+This release introduces performance improvements for schema validation, to make it ~3 times faster (:pr:`1581`, :pr:`1582`, :pr:`1583`, :pr:`1584`).
+
+This includes a change in dependencies, from ``jsonschema`` to ``jsonschema-rs`` for the core validation engine.
+
+.. _`release:6.1.1`:
+
+6.1.1
+-----
+
+:Released: 25.11.2025
+:Full Changelog: `v6.1.0...v6.1.1 <https://github.com/useblocks/sphinx-needs/compare/6.1.0...6.1.1>`__
+
+This release focuses on schema validation improvements and bug fixes.
+
+- ✨ Add ``needs_schema_validation_enabled`` configuration (:pr:`1574`)
+
+  New configuration option to disable schema validation entirely.
+  This is set to ``True`` by default, for backward compatibility,
+  and provides an opt-out mechanism when schema validation is not needed.
+
+  See :ref:`needs_schema_validation_enabled` for more information.
+
+- ✨ Add ``allow_type_coercion`` configuration for external/import ``needs.json`` reads (:pr:`1573`)
+
+  New configuration option for ``needs_external_needs`` and the ``needimport`` directive
+  that controls whether field values should be automatically coerced to expected types.
+  For example, enables/disables parsing comma-separated strings like ``"a,b,c"`` into
+  list types like ``["a", "b", "c"]``.
+  Set to ``True`` by default for backward compatibility.
+  Setting to ``False`` may improve performance by skipping additional parsing.
+
+  See :ref:`needs_external_needs` and :ref:`needimport` for more information.
+
+- 👌 Allow ``\.`` in schema regex patterns (:pr:`1568`)
+
+  The regex pattern ``\.`` is now allowed in schema validations.
+
+- 🐛 Fix schema network type injection (:pr:`1570`)
+
+  Fixed type injection mechanism that was failing for link types called ``contains`` or ``items``.
+  Constrained the injection to specific schema path structure locations.
+
+- 🐛 Fix ``needs.json`` schema for nullable fields (:pr:`1571`)
+
+  Nullable fields now correctly reflect that property in the ``needs.json`` schemas section.
+
 .. _`release:6.1.0`:
 
 6.1.0
 -----
 
 :Released: 31.10.2025
-:Full Changelog: `v6.0.1...v6.1.0 <https://github.com/useblocks/sphinx-needs/compare/6.0.0...1b256d9b>`__
+:Full Changelog: `v6.0.1...v6.1.0 <https://github.com/useblocks/sphinx-needs/compare/6.0.0...6.1.0>`__
 
 Main focus of this release is the improvement of the schema severity handling.
 

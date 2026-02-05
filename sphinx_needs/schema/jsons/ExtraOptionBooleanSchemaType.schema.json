@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "const": {
+      "title": "Const",
+      "type": "boolean"
+    },
+    "type": {
+      "const": "boolean",
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "title": "ExtraOptionBooleanSchemaTypeModel",
+  "type": "object"
+}

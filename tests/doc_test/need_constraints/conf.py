@@ -76,8 +76,6 @@ def setup(app):
 # default is False
 needs_warnings_always_warn = True
 
-needs_extra_options = []
-
 needs_constraints = {
     "security": {"check_0": "'security' in tags", "severity": "CRITICAL"},
     "team": {"check_0": "'team_requirement' in links", "severity": "MEDIUM"},

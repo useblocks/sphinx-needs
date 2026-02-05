@@ -1,0 +1,17 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+[needs]
+id_regex = "^[A-Za-z0-9_]"
+types = [
+  { directive = "other", title = "Another need type", prefix = "O_", color = "#DCB239" },
+]
+fields = { "custom" = {} }
+build_json = true
+reproducible_json = true
+json_remove_defaults = true
+schema_definitions_from_json = "schema.json"
+builder_filter = ""
+
+[[needs.external_needs]]
+json_path = "external_needs.json"
+base_url = "http://example.com/docs/"

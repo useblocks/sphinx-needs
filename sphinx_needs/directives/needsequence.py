@@ -86,11 +86,12 @@ def process_needsequence(
     # Replace all needsequence nodes with a list of the collected needs.
     env = app.env
     needs_data = SphinxNeedsData(env)
+    needs_schema = needs_data.get_schema()
     all_needs_dict = needs_data.get_needs_view()
 
     needs_config = NeedsSphinxConfig(env.config)
     include_needs = needs_config.include_needs
-    link_type_names = [link["option"].upper() for link in needs_config.extra_links]
+    link_type_names = [name.upper() for name in needs_schema.iter_link_field_names()]
     needs_types = needs_config.types
 
     # NEEDSEQUENCE
@@ -236,13 +237,13 @@ def process_needsequence(
             len(c_string) == 0 and p_string.count("participant") == 1
         ):  # no connections and just one (start) participant
             content = [
-                (no_needs_found_paragraph(current_needsequence.get("filter_warning")))
+                (no_needs_found_paragraph(current_needsequence.get("filter_warning")))  # type: ignore[list-item]
             ]
         if current_needsequence["show_filters"]:
-            content.append(get_filter_para(current_needsequence))
+            content.append(get_filter_para(current_needsequence))  # type: ignore[arg-type]
 
         if current_needsequence["debug"]:
-            content += get_debug_container(puml_node)
+            content += get_debug_container(puml_node)  # type: ignore[arg-type]
 
         node.replace_self(content)
 

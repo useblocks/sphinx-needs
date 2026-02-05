@@ -1,3 +1,41 @@
+title_wrong_type:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.title]
+    schema.type = "number"
+  rst: ""
+
+title_nullable:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.title]
+    schema.type = "string"
+    nullable = true
+  rst: ""
+
+status_wrong_type:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.status]
+    schema.type = "integer"
+  rst: ""
+
+tags_wrong_items_type:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.tags]
+    schema.type = "array"
+    schema.items.type = "boolean"
+  rst: ""
+
 extra_link_array_wrong_type:
   conf: |
     extensions = ["sphinx_needs"]
@@ -8,22 +46,27 @@ extra_link_array_wrong_type:
     outgoing = "links"
     incoming = "linked by"
     schema.type = "object"
-    schema.minItems = 2
-  rst: |
-    .. spec:: title
-        :id: SPEC_1
+  rst: ""
 
-    .. impl:: title
-        :id: IMPL_1
-        :links: SPEC_1
+extra_link_array_wrong_item_type:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.type = "array"
+    schema.items = { type = "other" }
+  rst: ""
 
 extra_option_empty_schema:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_options]]
-    name = "efforts"
+    [needs.fields.efforts]
     schema = {}
   rst: |
     .. impl:: title
@@ -35,8 +78,7 @@ missing_type_select:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "efforts"
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -56,8 +98,7 @@ missing_type_validate_local:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "efforts"
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -74,8 +115,7 @@ type_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_options]]
-    name = "efforts"
+    [needs.fields.efforts]
     schema.type = "unknown"
   rst: |
     .. impl:: title
@@ -88,8 +128,7 @@ select_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "efforts"
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -122,8 +161,7 @@ both_definitions_and_json_given:
     }
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "efforts"
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -143,8 +181,7 @@ local_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "efforts"
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -176,8 +213,7 @@ type_mismatch_object_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "efforts"
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -197,8 +233,7 @@ type_mismatch_object_extra_option_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "efforts"
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -216,8 +251,7 @@ type_mismatch_array_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "efforts"
+    [needs.fields.efforts]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -289,18 +323,37 @@ ref_recursive_error:
           local:
             $ref: "#/$defs/type-impl"
 
+extra_option_unknown_keys:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.efforts]
+    schema.type = "string"
+    schema.unknown = "unknown"
+  rst: ""
+
+extra_link_unknown_keys:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [[needs.extra_links]]
+    option = "links"
+    outgoing = "links"
+    incoming = "linked by"
+    schema.unknown = "unknown"
+  rst: ""
+
 extra_option_pattern_unsafe_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_options]]
-    name = "efforts"
+    [needs.fields.efforts]
     schema.type = "string"
     schema.pattern = "^IMPL_(?!SAFE)"
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
+  rst: ""
 
 extra_link_pattern_unsafe_error:
   conf: |
@@ -312,9 +365,7 @@ extra_link_pattern_unsafe_error:
     outgoing = "links"
     incoming = "linked by"
     schema.items = { pattern = "^IMPL_(?!SAFE)" }
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
+  rst: ""
 
 schemas_select_pattern_unsafe_error:
   conf: |
@@ -362,56 +413,7 @@ schemas_validate_pattern_backref_error:
               id:
                 pattern: "^IMPL_(SAFE)_\\1"
 
-schemas_validate_pattern_nested_quantifiers_error:
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_schema_definitions_from_json = "schemas.json"
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
-  schemas:
-    schemas:
-      - validate:
-          local:
-            properties:
-              id:
-                pattern: "^(a+)+$"
-
-schemas_validate_pattern_recursive_error:
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_schema_definitions_from_json = "schemas.json"
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
-  schemas:
-    schemas:
-      - validate:
-          local:
-            properties:
-              id:
-                pattern: "^test(?R)$"
-
-schemas_validate_pattern_possessive_quantifiers_error:
-  mark:
-    min_python: [3, 11]
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_schema_definitions_from_json = "schemas.json"
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
-  schemas:
-    schemas:
-      - validate:
-          local:
-            properties:
-              id:
-                pattern: "^test*+$"
-
 schemas_validate_pattern_atomic_groups_error:
-  mark:
-    min_python: [3, 11]
   conf: |
     extensions = ["sphinx_needs"]
     needs_schema_definitions_from_json = "schemas.json"
@@ -425,36 +427,6 @@ schemas_validate_pattern_atomic_groups_error:
             properties:
               id:
                 pattern: "^(?>test)$"
-
-schemas_validate_pattern_unicode_property_error:
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_schema_definitions_from_json = "schemas.json"
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
-  schemas:
-    schemas:
-      - validate:
-          local:
-            properties:
-              id:
-                pattern: "^\\p{L}+$"
-
-schemas_validate_pattern_named_groups_error:
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_schema_definitions_from_json = "schemas.json"
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
-  schemas:
-    schemas:
-      - validate:
-          local:
-            properties:
-              id:
-                pattern: "^(?P<name>test)$"
 
 schemas_validate_pattern_unnamed_groups_error:
   conf: |
@@ -500,21 +472,6 @@ schemas_validate_pattern_conditional_error:
             properties:
               id:
                 pattern: "^(?(1)yes|no)$"
-
-schemas_validate_pattern_unicode_escapes_error:
-  conf: |
-    extensions = ["sphinx_needs"]
-    needs_schema_definitions_from_json = "schemas.json"
-  rst: |
-    .. impl:: title
-        :id: IMPL_1
-  schemas:
-    schemas:
-      - validate:
-          local:
-            properties:
-              id:
-                pattern: "^\\u0041$"
 
 schemas_validate_pattern_subroutine_calls_error:
   conf: |

@@ -50,7 +50,7 @@
 {% endif %}
 {# Output for needs_extra_links #}
 
-{# Output for needs_options #}
+{# Output for needs_fields #}
 {% if options|length != 0 %}
 .. container:: toggle needs_report_table
 
@@ -62,4 +62,4 @@
    * {{ option }}
    {% endfor %}
 {% endif %}
-{# Output for needs_options #}
+{# Output for needs_fields #}

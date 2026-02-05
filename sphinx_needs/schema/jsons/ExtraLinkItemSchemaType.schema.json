@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "maxLength": {
+      "title": "Maxlength",
+      "type": "integer"
+    },
+    "minLength": {
+      "title": "Minlength",
+      "type": "integer"
+    },
+    "pattern": {
+      "title": "Pattern",
+      "type": "string"
+    },
+    "type": {
+      "const": "string",
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "type"
+  ],
+  "title": "ExtraLinkItemSchemaTypeModel",
+  "type": "object"
+}

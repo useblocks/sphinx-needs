@@ -20,7 +20,7 @@ Variant Handling Test
    :status: <<[value in tags]:open, close>>
    :value: start
    :tags: commence, start, begin
-
+   :relates: <<[value in tags]:SPEC_003, SPEC_004>>
 
 .. spec:: Variant Specification
    :id: SPEC_003
@@ -29,6 +29,19 @@ Variant Handling Test
 .. spec:: Unknown Variant
    :id: SPEC_004
    :status: <<['tag_c' in build_tags]:open, unknown>>
+
+.. spec:: Disabled variant parsing
+   :id: SPEC_005
+   :value: <<['tag_a' in build_tags]:open, close>>
+   :links: <<['tag_a' in build_tags]:SPEC_003, SPEC_004>>
+
+.. spec:: Bool field with multiple variants
+   :id: SPEC_006
+   :field_bool: <<['tag_a' in build_tags]:1, 0>>, <<['tag_b' in build_tags]:0, 1>>
+
+.. spec:: Array of integer field with multiple variants
+   :id: SPEC_007
+   :field_array_int: <<['tag_a' in build_tags]:1, 2>>, <<['tag_b' in build_tags]:3, 4>>
 
 .. needtable::
    :filter: status in ("open", "close", "progress")

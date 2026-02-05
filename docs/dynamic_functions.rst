@@ -42,9 +42,8 @@ Dynamic functions can be used for the following directive options:
 - ``style``
 - ``layout``
 - ``constraints``
-- :ref:`needs_extra_options`
+- :ref:`extra fields <needs_fields>`
 - :ref:`needs_extra_links`
-- :ref:`needs_global_options`
 
 .. deprecated:: 3.1.0
 
@@ -149,12 +148,17 @@ Variant functions
 .. versionadded:: 1.0.2
 
 Needs variants add support for variants handling on need options. |br|
-The support for variants options introduce new ideologies on how to set values for *need options*.
+The support for variants options introduce new ideologies on how to set values for need fields.
 
-To implement variants options, you can set a *need option* to a variant definition or multiple variant definitions.
+To implement variants options, you can set a need field to a variant definition or multiple variant definitions.
 A variant definition can look like ``var_a:open`` or ``['name' in tags]:assigned``.
 
-A variant definition has two parts: the **rule or key** and the **value**. |br|
+.. important::
+
+   To use variants options, you must enable the feature for a need field by setting the
+   :ref:`needs_fields` or :ref:`needs_extra_links` configuration parameter's ``parse_variants`` option to ``True`` for the specific field.
+
+A variant definition has two parts: the **rule or key** and the **value**.
 For example, if we specify a variant definition as ``var_a:open``, then ``var_a`` is the key and ``open`` is the value.
 On the other hand, if we specify a variant definition as ``['name' in tags]:assigned``, then ``['name' in tags]`` is the rule
 and ``assigned`` is the value.
@@ -172,7 +176,7 @@ Rules for specifying variant definitions
   the ``,`` symbol, like ``var_a:open, ['name' in tags]:assigned``.|br|
   With multiple variant definitions, we set the first matching variant as the *need option's* value.
 * When you set a *need option* to multiple variant definitions, you can specify the last definition as
-  a default "variant-free" option which we can use if no variant definition matches. |br|
+  a default "variant-free" option which we can use if no variant definition matches.
   Example; In this multi-variant definitions, ``[status in tags]:added, var_a:changed, unknown``,
   *unknown* will be used if none of the other variant definitions are True.
 * If you prefer your variant definitions to use rules instead of keys, then you should put your filter string
@@ -182,8 +186,8 @@ Rules for specifying variant definitions
 
 To implement variants options, you must configure the following in your ``conf.py`` file:
 
+* :ref:`needs_fields` and/or :ref:`needs_extra_links` with the ``parse_variants`` option set to ``True`` for the specific field.
 * :ref:`needs_variants`
-* :ref:`needs_variant_options`
 
 Use Cases
 ---------
@@ -200,6 +204,12 @@ You can then use the keys in your ``needs_variants`` as references when defining
 For example, in your ``conf.py``:
 
 .. code-block:: python
+
+   needs_fields = {
+       "status": {
+           "parse_variants": True,
+       },
+   }
 
    needs_variants = {
      "var_a": "'var_a' in build_tags"  # filter_string, check for Sphinx tags

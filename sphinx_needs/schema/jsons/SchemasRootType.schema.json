@@ -1,0 +1,514 @@
+{
+  "$defs": {
+    "AllOfSchemaType": {
+      "additionalProperties": false,
+      "properties": {
+        "allOf": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/RefItemType"
+              },
+              {
+                "$ref": "#/$defs/NeedFieldsSchemaType"
+              }
+            ]
+          },
+          "title": "Allof",
+          "type": "array"
+        }
+      },
+      "title": "AllOfSchemaType",
+      "type": "object"
+    },
+    "ExtraLinkItemSchemaType": {
+      "additionalProperties": false,
+      "description": "Items in array of link string ids",
+      "properties": {
+        "maxLength": {
+          "title": "Maxlength",
+          "type": "integer"
+        },
+        "minLength": {
+          "title": "Minlength",
+          "type": "integer"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        },
+        "type": {
+          "const": "string",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExtraLinkItemSchemaType",
+      "type": "object"
+    },
+    "ExtraLinkSchemaType": {
+      "additionalProperties": false,
+      "description": "Defines a schema for unresolved need extra string links.",
+      "properties": {
+        "contains": {
+          "$ref": "#/$defs/ExtraLinkItemSchemaType"
+        },
+        "items": {
+          "$ref": "#/$defs/ExtraLinkItemSchemaType"
+        },
+        "maxContains": {
+          "title": "Maxcontains",
+          "type": "integer"
+        },
+        "maxItems": {
+          "title": "Maxitems",
+          "type": "integer"
+        },
+        "minContains": {
+          "title": "Mincontains",
+          "type": "integer"
+        },
+        "minItems": {
+          "title": "Minitems",
+          "type": "integer"
+        },
+        "type": {
+          "const": "array",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExtraLinkSchemaType",
+      "type": "object"
+    },
+    "ExtraOptionBooleanSchemaType": {
+      "additionalProperties": false,
+      "description": "Boolean extra option schema.\n\nA predefined set of truthy/falsy strings are accepted:\n- truthy = {\"true\", \"yes\", \"y\", \"on\", \"1\"}\n- falsy = {\"false\", \"no\", \"n\", \"off\", \"0\"}\n\nFor fixed values, the const field can be used.\nenum is not supported as const is functionally equivalent and less verbose.",
+      "properties": {
+        "const": {
+          "title": "Const",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "boolean",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExtraOptionBooleanSchemaType",
+      "type": "object"
+    },
+    "ExtraOptionIntegerSchemaType": {
+      "additionalProperties": false,
+      "description": "Integer extra option schema.",
+      "properties": {
+        "const": {
+          "title": "Const",
+          "type": "integer"
+        },
+        "enum": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Enum",
+          "type": "array"
+        },
+        "exclusiveMaximum": {
+          "title": "Exclusivemaximum",
+          "type": "integer"
+        },
+        "exclusiveMinimum": {
+          "title": "Exclusiveminimum",
+          "type": "integer"
+        },
+        "maximum": {
+          "title": "Maximum",
+          "type": "integer"
+        },
+        "minimum": {
+          "title": "Minimum",
+          "type": "integer"
+        },
+        "multipleOf": {
+          "title": "Multipleof",
+          "type": "integer"
+        },
+        "type": {
+          "const": "integer",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExtraOptionIntegerSchemaType",
+      "type": "object"
+    },
+    "ExtraOptionMultiValueSchemaType": {
+      "additionalProperties": false,
+      "description": "Multi value extra option such as a list of strings, integers, numbers, or booleans.\n\nCurrent SN use case are tags.",
+      "properties": {
+        "contains": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtraOptionStringSchemaType"
+            },
+            {
+              "$ref": "#/$defs/ExtraOptionBooleanSchemaType"
+            },
+            {
+              "$ref": "#/$defs/ExtraOptionIntegerSchemaType"
+            },
+            {
+              "$ref": "#/$defs/ExtraOptionNumberSchemaType"
+            }
+          ],
+          "title": "Contains"
+        },
+        "items": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExtraOptionStringSchemaType"
+            },
+            {
+              "$ref": "#/$defs/ExtraOptionBooleanSchemaType"
+            },
+            {
+              "$ref": "#/$defs/ExtraOptionIntegerSchemaType"
+            },
+            {
+              "$ref": "#/$defs/ExtraOptionNumberSchemaType"
+            }
+          ],
+          "title": "Items"
+        },
+        "maxContains": {
+          "title": "Maxcontains",
+          "type": "integer"
+        },
+        "maxItems": {
+          "title": "Maxitems",
+          "type": "integer"
+        },
+        "minContains": {
+          "title": "Mincontains",
+          "type": "integer"
+        },
+        "minItems": {
+          "title": "Minitems",
+          "type": "integer"
+        },
+        "type": {
+          "const": "array",
+          "title": "Type",
+          "type": "string"
+        },
+        "uniqueItems": {
+          "title": "Uniqueitems",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "type",
+        "items"
+      ],
+      "title": "ExtraOptionMultiValueSchemaType",
+      "type": "object"
+    },
+    "ExtraOptionNumberSchemaType": {
+      "additionalProperties": false,
+      "description": "Float extra option schema.\n\nPython reads in JSON numbers as floats. The jsonschema library\nhandles precision issues with floats using a tolerance-based approach.",
+      "properties": {
+        "const": {
+          "title": "Const",
+          "type": "number"
+        },
+        "enum": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Enum",
+          "type": "array"
+        },
+        "exclusiveMaximum": {
+          "title": "Exclusivemaximum",
+          "type": "number"
+        },
+        "exclusiveMinimum": {
+          "title": "Exclusiveminimum",
+          "type": "number"
+        },
+        "maximum": {
+          "title": "Maximum",
+          "type": "number"
+        },
+        "minimum": {
+          "title": "Minimum",
+          "type": "number"
+        },
+        "multipleOf": {
+          "title": "Multipleof",
+          "type": "number"
+        },
+        "type": {
+          "const": "number",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExtraOptionNumberSchemaType",
+      "type": "object"
+    },
+    "ExtraOptionStringSchemaType": {
+      "additionalProperties": false,
+      "description": "String extra option schema.",
+      "properties": {
+        "const": {
+          "title": "Const",
+          "type": "string"
+        },
+        "enum": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Enum",
+          "type": "array"
+        },
+        "format": {
+          "enum": [
+            "date-time",
+            "date",
+            "time",
+            "duration",
+            "email",
+            "uri",
+            "uuid"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "maxLength": {
+          "title": "Maxlength",
+          "type": "integer"
+        },
+        "minLength": {
+          "title": "Minlength",
+          "type": "integer"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        },
+        "type": {
+          "const": "string",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExtraOptionStringSchemaType",
+      "type": "object"
+    },
+    "NeedFieldsSchemaType": {
+      "additionalProperties": false,
+      "description": "Schema for a set of need fields of all schema types.\n\nThis includes single value extra options, multi-value extra options,\nand unresolved extra links.\n\nIntented to validate multiple fields on a need type.",
+      "properties": {
+        "allOf": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/RefItemType"
+              },
+              {
+                "$ref": "#/$defs/NeedFieldsSchemaType"
+              }
+            ]
+          },
+          "title": "Allof",
+          "type": "array"
+        },
+        "properties": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ExtraOptionStringSchemaType"
+              },
+              {
+                "$ref": "#/$defs/ExtraOptionBooleanSchemaType"
+              },
+              {
+                "$ref": "#/$defs/ExtraOptionIntegerSchemaType"
+              },
+              {
+                "$ref": "#/$defs/ExtraOptionNumberSchemaType"
+              },
+              {
+                "$ref": "#/$defs/ExtraOptionMultiValueSchemaType"
+              },
+              {
+                "$ref": "#/$defs/ExtraLinkSchemaType"
+              }
+            ]
+          },
+          "title": "Properties",
+          "type": "object"
+        },
+        "required": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required",
+          "type": "array"
+        },
+        "type": {
+          "const": "object",
+          "title": "Type",
+          "type": "string"
+        },
+        "unevaluatedProperties": {
+          "title": "Unevaluatedproperties",
+          "type": "boolean"
+        }
+      },
+      "title": "NeedFieldsSchemaType",
+      "type": "object"
+    },
+    "RefItemType": {
+      "additionalProperties": false,
+      "properties": {
+        "$ref": {
+          "title": "$Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "$ref"
+      ],
+      "title": "RefItemType",
+      "type": "object"
+    },
+    "ResolvedLinkSchemaType": {
+      "additionalProperties": false,
+      "description": "Schema for resolved links between needs.\n\nDoes not have a select field as the link itself is the selection.\nThere are no minItems/maxItems fields as they constrain the list length.\nThat should be done in the local schema as it does not require the resolution\nof the linked needs.",
+      "properties": {
+        "contains": {
+          "$ref": "#/$defs/ValidateSchemaType"
+        },
+        "items": {
+          "$ref": "#/$defs/ValidateSchemaType"
+        },
+        "maxContains": {
+          "title": "Maxcontains",
+          "type": "integer"
+        },
+        "minContains": {
+          "title": "Mincontains",
+          "type": "integer"
+        },
+        "type": {
+          "const": "array",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ResolvedLinkSchemaType",
+      "type": "object"
+    },
+    "ValidateSchemaType": {
+      "additionalProperties": false,
+      "description": "Validation, can either be need-local or network (requires resolving all need links).\n\nFor network, graph traversal is possible if network is selected again.",
+      "properties": {
+        "local": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RefItemType"
+            },
+            {
+              "$ref": "#/$defs/AllOfSchemaType"
+            },
+            {
+              "$ref": "#/$defs/NeedFieldsSchemaType"
+            }
+          ],
+          "title": "Local"
+        },
+        "network": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ResolvedLinkSchemaType"
+          },
+          "title": "Network",
+          "type": "object"
+        }
+      },
+      "title": "ValidateSchemaType",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "idx": {
+      "title": "Idx",
+      "type": "integer"
+    },
+    "message": {
+      "title": "Message",
+      "type": "string"
+    },
+    "select": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RefItemType"
+        },
+        {
+          "$ref": "#/$defs/AllOfSchemaType"
+        },
+        {
+          "$ref": "#/$defs/NeedFieldsSchemaType"
+        }
+      ],
+      "title": "Select"
+    },
+    "severity": {
+      "enum": [
+        "violation",
+        "warning",
+        "info"
+      ],
+      "title": "Severity",
+      "type": "string"
+    },
+    "validate": {
+      "$ref": "#/$defs/ValidateSchemaType"
+    }
+  },
+  "required": [
+    "idx",
+    "severity",
+    "validate"
+  ],
+  "title": "SchemasRootTypeModel",
+  "type": "object"
+}
