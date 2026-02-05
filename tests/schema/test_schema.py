@@ -202,7 +202,6 @@ def test_schema_benchmark(schema_benchmark_app, snapshot):
                     """
 extensions = ["sphinx_needs"]
 needs_from_toml = "ubproject.toml"
-needs_schema_definitions_from_json = "schemas.json"
                     """,
                 ),
                 (
@@ -229,32 +228,6 @@ Test Multiple Errors
     :severity: critical
                     """,
                 ),
-                (
-                    "schemas.json",
-                    """{
-  "$defs": [],
-  "schemas": [
-    {
-      "validate": {
-        "local": {
-          "properties": {
-            "priority": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 5
-            },
-            "severity": {
-              "type": "string",
-              "enum": ["low", "medium", "high"]
-            }
-          }
-        }
-      }
-    }
-  ]
-}
-                    """,
-                ),
             ],
             "no_plantuml": True,
         }
@@ -263,32 +236,32 @@ Test Multiple Errors
 )
 def test_multiple_validation_errors_per_need(test_app: SphinxTestApp) -> None:
     """Integration test for issue #1627: all validation errors per need must be collected.
-    
+
     This test verifies that when a need has multiple validation errors:
     - priority field: type error (string instead of integer)
     - severity field: enum validation error (critical not in ["low", "medium", "high"])
-    
+
     Both errors should be reported, not just the first one.
     """
     test_app.build()
     assert test_app.statuscode == 0
-    
+
     # Load schema violations report
     schema_violations: dict[str, Any] = json.loads(
         Path(test_app.outdir, "schema_violations.json").read_text("utf8")
     )
-    
+
     # Get all violations for IMPL_1
     violations = schema_violations.get("violations", [])
     impl_1_violations = [v for v in violations if v.get("need") == "IMPL_1"]
-    
+
     # ASSERTION 1: Must have exactly 2 errors (not just 1)
     assert len(impl_1_violations) == 2, (
         f"Expected exactly 2 validation errors for IMPL_1, got {len(impl_1_violations)}. "
         f"This indicates the fix for #1627 is not working. Errors: "
         f"{[v.get('message') for v in impl_1_violations]}"
     )
-    
+
     # ASSERTION 2: One error must be about priority (type error)
     priority_errors = [v for v in impl_1_violations if "priority" in v.get("message", "").lower()]
     assert len(priority_errors) == 1, (
@@ -299,7 +272,7 @@ def test_multiple_validation_errors_per_need(test_app: SphinxTestApp) -> None:
            "type" in priority_errors[0].get("message", "").lower(), (
         f"Expected priority error to mention type mismatch, got: {priority_errors[0].get('message')}"
     )
-    
+
     # ASSERTION 3: One error must be about severity (enum error)
     severity_errors = [v for v in impl_1_violations if "severity" in v.get("message", "").lower()]
     assert len(severity_errors) == 1, (
