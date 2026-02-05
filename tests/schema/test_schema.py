@@ -144,7 +144,7 @@ def test_schema_example(test_app: SphinxTestApp, snapshot) -> None:
                 (
                     "conf.py",
                     """
-                 
+
 extensions = ["sphinx_needs"]
 needs_schema_validation_enabled = False
 needs_fields = {
@@ -189,3 +189,46 @@ def test_schema_benchmark(schema_benchmark_app, snapshot):
         str(schema_benchmark_app.srcdir) + os.path.sep, "<srcdir>/"
     )
     assert warnings == snapshot
+
+@pytest.mark.fixture_file(
+    "schema/fixtures/fields.yml",
+)
+def test_multiple_errors_per_need(
+    tmpdir: Path,
+    content: dict[str, Any],
+    make_app: Callable[[], SphinxTestApp],
+    write_fixture_files: Callable[[Path, dict[str, Any]], None],
+    snapshot,
+) -> None:
+    """Test that all validation errors per need are collected and reported.
+
+    This test verifies the fix for issue #1627 where only the first error
+    was being returned instead of all errors for a given need.
+    """
+    write_fixture_files(tmpdir, content)
+
+    app: SphinxTestApp = make_app(srcdir=Path(tmpdir), freshenv=True)
+    app.build()
+
+    assert app.statuscode == 0
+    warnings = strip_colors(app._warning.getvalue()).replace(
+        str(app.srcdir) + os.path.sep, "<srcdir>/"
+    )
+    assert warnings == snapshot
+
+    schema_violations: dict[str, Any] = json.loads(
+        Path(app.outdir, "schema_violations.json").read_text("utf8")
+    )
+    exclude_keys = {"validated_needs_per_second", "validation_summary"}
+    for key in exclude_keys:
+        schema_violations.pop(key, None)
+    assert schema_violations == snapshot
+
+    # Verify that all errors for IMPL_1 are present
+    violations = schema_violations.get("violations", [])
+    impl_1_violations = [v for v in violations if v.get("need") == "IMPL_1"]
+    # Should have multiple errors (one for priority being invalid type, one for severity being invalid enum value)
+    assert len(impl_1_violations) == 2, (
+        f"Expected exactly 2 errors for IMPL_1, but got {len(impl_1_violations)}: {impl_1_violations}"
+    )
+    app.cleanup()
