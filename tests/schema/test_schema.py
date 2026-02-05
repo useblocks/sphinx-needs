@@ -190,6 +190,7 @@ def test_schema_benchmark(schema_benchmark_app, snapshot):
     )
     assert warnings == snapshot
 
+
 @pytest.mark.fixture_file(
     "schema/fixtures/fields.yml",
 )
