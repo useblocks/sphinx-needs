@@ -144,7 +144,7 @@ Additional variables for :ref:`need_part`:
 * **id_complete** as Python string. Contains the concatenated ids of parent need and need_part.
   (compare like ``id_complete != 'ABC_01.03'``)
 
-.. note:: If extra options were specified using :ref:`needs_extra_options` then
+.. note:: If extra options were specified using :ref:`needs_fields` then
           those will be available for use in filter expressions as well.
 
 Finally, the following are available:

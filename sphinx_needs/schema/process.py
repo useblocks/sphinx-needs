@@ -1,5 +1,6 @@
 import time
 from collections.abc import Mapping
+from itertools import chain
 
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
@@ -13,8 +14,8 @@ from sphinx_needs.needsfile import generate_needs_schema
 from sphinx_needs.schema.config import NeedFieldsSchemaType, SchemasRootType
 from sphinx_needs.schema.core import (
     NeedFieldProperties,
-    validate_extra_options,
     validate_link_options,
+    validate_option_fields,
     validate_type_schema,
 )
 from sphinx_needs.schema.reporting import (
@@ -38,37 +39,19 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     if not config.schema_validation_enabled:
         return
 
-    extra_option_schema: NeedFieldsSchemaType = {
-        "type": "object",
-        "properties": {
-            name: option.schema
-            for name, option in config.extra_options.items()
-            if option.schema is not None
-        },
-    }
-    extra_link_schema: NeedFieldsSchemaType = {
-        "type": "object",
-        "properties": {
-            link["option"]: link["schema"]
-            for link in config.extra_links
-            if "schema" in link and link["schema"] is not None
-        },
-    }
+    schema = SphinxNeedsData(app.env).get_schema()
 
-    if not (
-        extra_option_schema["properties"]
-        or extra_link_schema["properties"]
-        or (config.schema_definitions.get("schemas"))
-    ):
-        # nothing to validate but always generate report file
-        generate_json_schema_validation_report(
-            duration=0.00,
-            need_2_warnings={},
-            report_file_path=app.outdir / "schema_violations.json",
-            validated_needs_count=0,
-            validated_rate=0,
-        )
-        return
+    fields_schema: NeedFieldsSchemaType = {
+        "type": "object",
+        "properties": {
+            field.name: field.schema
+            for field in chain(schema.iter_core_fields(), schema.iter_extra_fields())
+        },
+    }
+    links_schema: NeedFieldsSchemaType = {
+        "type": "object",
+        "properties": {link.name: link.schema for link in schema.iter_link_fields()},
+    }
 
     schema = SphinxNeedsData(app.env).get_schema()
     field_properties: Mapping[str, NeedFieldProperties] = generate_needs_schema(schema)[
@@ -85,16 +68,16 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
-    if extra_option_schema["properties"]:
-        extra_warnings = validate_extra_options(
-            config, extra_option_schema, field_properties, needs
+    if fields_schema["properties"]:
+        extra_warnings = validate_option_fields(
+            config, fields_schema, field_properties, needs
         )
         for key, warnings in extra_warnings.items():
             need_2_warnings.setdefault(key, []).extend(warnings)
 
-    if extra_link_schema["properties"]:
+    if links_schema["properties"]:
         link_warnings = validate_link_options(
-            config, extra_link_schema, field_properties, needs
+            config, links_schema, field_properties, needs
         )
         for key, warnings in link_warnings.items():
             need_2_warnings.setdefault(key, []).extend(warnings)

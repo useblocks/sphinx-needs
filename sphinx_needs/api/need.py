@@ -177,9 +177,10 @@ def generate_need(
     )
 
     # validate kwargs
-    allowed_kwargs = {x["option"] for x in needs_config.extra_links} | set(
-        needs_config.extra_options
-    )
+    allowed_kwargs = {
+        *needs_schema.iter_link_field_names(),
+        *needs_schema.iter_extra_field_names(),
+    }
     unknown_kwargs = set(kwargs) - allowed_kwargs
     if unknown_kwargs:
         raise InvalidNeedException(
@@ -246,32 +247,6 @@ def generate_need(
     post_template_converted = _convert_type_core(
         "post_template", post_template, needs_schema, allow_type_coercion
     )
-
-    if (
-        needs_config.statuses
-        and isinstance(status_converted, FieldLiteralValue)
-        and status_converted.value
-        not in [stat["name"] for stat in needs_config.statuses]
-    ):
-        # TODO this check should be later in processing, once we have resolved any dynamic functions
-        raise InvalidNeedException(
-            "invalid_status",
-            f"Status {status_converted.value!r} not in 'needs_statuses'.",
-        )
-
-    if (
-        needs_config.tags
-        and isinstance(tags_converted, FieldLiteralValue)
-        and isinstance(tags_converted.value, Iterable)
-        and (
-            unknown_tags := set(tags_converted.value)
-            - {t["name"] for t in needs_config.tags}
-        )
-    ):
-        # TODO this check should be later in processing, once we have resolved any dynamic functions
-        raise InvalidNeedException(
-            "invalid_tags", f"Tags {unknown_tags!r} not in 'needs_tags'."
-        )
 
     if (
         isinstance(constraints_converted, FieldLiteralValue)
@@ -419,18 +394,24 @@ def generate_need(
         else v
         for k, v in links_no_defaults.items()
     }
-    _copy_links(links, needs_config)
+    _copy_links(links, needs_schema)
 
     title, title_func = _convert_to_str_func("title", title_converted)
-    status, status_func = _convert_to_none_str_func("status", status_converted)
+    status, status_func = _convert_to_none_str_func(
+        needs_schema, "status", status_converted
+    )
     tags, tags_func = _convert_to_list_str_func("tags", tags_converted)
     constraints, constraints_func = _convert_to_list_str_func(
         "constraints", constraints_converted
     )
     collapse, collapse_func = _convert_to_bool_func("collapse", collapse_converted)
     hide, hide_func = _convert_to_bool_func("hide", hide_converted)
-    layout, layout_func = _convert_to_none_str_func("layout", layout_converted)
-    style, style_func = _convert_to_none_str_func("style", style_converted)
+    layout, layout_func = _convert_to_none_str_func(
+        needs_schema, "layout", layout_converted
+    )
+    style, style_func = _convert_to_none_str_func(
+        needs_schema, "style", style_converted
+    )
 
     dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray] = {}
     if title_func:
@@ -508,7 +489,7 @@ def generate_need(
         if (extra_schema := needs_schema.get_extra_field(k)) is None:
             raise InvalidNeedException(
                 "invalid_extra_option",
-                f"Extra option {k!r} not in 'needs_extra_options'.",
+                f"Extra option {k!r} not in 'needs_fields'.",
             )
         if v is None:
             if not extra_schema.nullable:
@@ -674,9 +655,18 @@ def _convert_to_str_func(
 
 
 def _convert_to_none_str_func(
-    name: str, converted: FieldLiteralValue | FieldFunctionArray | None
+    schema: FieldsSchema,
+    name: str,
+    converted: FieldLiteralValue | FieldFunctionArray | None,
 ) -> tuple[None | str, None | FieldFunctionArray]:
+    field_schema = schema.get_core_field(name)
+    assert field_schema is not None, f"{name} field schema does not exist"
     if converted is None:
+        if not field_schema.nullable:
+            raise InvalidNeedException(
+                "invalid_value",
+                f"{name} is not nullable, but no value was given.",
+            )
         return None, None
     elif isinstance(converted, FieldLiteralValue) and isinstance(converted.value, str):
         return converted.value, None
@@ -684,7 +674,7 @@ def _convert_to_none_str_func(
         isinstance(x, str | DynamicFunctionParsed | VariantFunctionParsed)
         for x in converted
     ):
-        return None, converted
+        return None if field_schema.nullable else "", converted
     else:
         raise InvalidNeedException(
             "invalid_value",
@@ -1166,15 +1156,15 @@ def _make_hashed_id(
 
 def _copy_links(
     links: dict[str, LinksLiteralValue | LinksFunctionArray | None],
-    config: NeedsSphinxConfig,
+    schema: FieldsSchema,
 ) -> None:
     """Implement 'copy' logic for links."""
     if "links" not in links:
         return  # should not happen, but be defensive
     copy_links: list[str | DynamicFunctionParsed | VariantFunctionParsed] = []
-    for link_type in config.extra_links:
-        if link_type.get("copy", False) and (name := link_type["option"]) != "links":
-            other = links[name]
+    for link_field in schema.iter_link_fields():
+        if link_field.copy and link_field.name != "links":
+            other = links[link_field.name]
             if isinstance(other, LinksLiteralValue | LinksFunctionArray):
                 copy_links.extend(other.value)
     if any(

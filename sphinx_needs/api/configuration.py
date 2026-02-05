@@ -92,6 +92,8 @@ def add_extra_option(
     *,
     description: str = "Added by add_extra_option API",
     schema: ExtraOptionSchemaTypes | None = None,
+    nullable: bool | None = None,
+    parse_variants: bool | None = None,
 ) -> None:
     """
     Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
@@ -108,9 +110,17 @@ def add_extra_option(
     :param name: Name of the extra option
     :param description: Description of the extra option
     :param schema: Schema definition for the extra option
+    :param nullable: Whether the field allows unset values.
+    :param parse_variants: Whether variants are parsed in this field.
     :return: None
     """
-    _NEEDS_CONFIG.add_extra_option(name, description, schema=schema)
+    _NEEDS_CONFIG.add_extra_option(
+        name,
+        description,
+        schema=schema,
+        nullable=nullable,
+        parse_variants=parse_variants,
+    )
 
 
 # TODO(mh) add extra link api

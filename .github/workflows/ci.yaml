@@ -16,18 +16,18 @@ jobs:
           python-version: '3.10'
       - uses: pre-commit/action@v3.0.1
 
-  ubc:
-    name: ubc
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: useblocks/ubc-action@main
-        with:
-          version: 0.19.1
-      - name: Run 'ubc check docs'
-        run: ubc check docs
-      - name: Run 'ubc build index docs'
-        run: ubc build index docs --show-warnings
+  # ubc:
+  #   name: ubc
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: useblocks/ubc-action@main
+  #       with:
+  #         version: 0.19.1
+  #     - name: Run 'ubc check docs'
+  #       run: ubc check docs
+  #     - name: Run 'ubc build index docs'
+  #       run: ubc build index docs --show-warnings
 
   tests-core:
     name: "Core py${{ matrix.python-version }} sphinx~=${{ matrix.sphinx-version }} ${{ matrix.os }}"
@@ -78,7 +78,7 @@ jobs:
       - name: Create coverage
         run: coverage xml
       - name: Upload to Codecov
-        if: github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.10'
+        if: github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14'
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

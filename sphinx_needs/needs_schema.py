@@ -2,11 +2,26 @@ from __future__ import annotations
 
 import enum
 from collections.abc import Iterable, Iterator, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from functools import lru_cache, partial
-from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias, TypeVar, cast
 
+import jsonschema_rs
+
+from sphinx_needs.config import NeedFields
 from sphinx_needs.exceptions import VariantParsingException
+from sphinx_needs.schema.config import (
+    ExtraLinkSchemaType,
+    ExtraOptionBooleanSchemaType,
+    ExtraOptionIntegerSchemaType,
+    ExtraOptionMultiValueSchemaType,
+    ExtraOptionNumberSchemaType,
+    ExtraOptionSchemaTypes,
+    ExtraOptionStringSchemaType,
+    validate_extra_link_schema_type,
+    validate_extra_option_schema,
+)
+from sphinx_needs.schema.core import validate_object_schema_compiles
 from sphinx_needs.variants import VariantFunctionParsed
 
 if TYPE_CHECKING:
@@ -22,12 +37,11 @@ class FieldSchema:
 
     name: str
     description: str = ""
-    type: Literal["string", "boolean", "integer", "number", "array"]
-    item_type: None | Literal["string", "boolean", "integer", "number"] = None
+    schema: ExtraOptionSchemaTypes
     nullable: bool = False
     directive_option: bool = False
-    allow_dynamic_functions: bool = False
-    allow_variant_functions: bool = False
+    parse_dynamic_functions: bool = False
+    parse_variants: bool = False
     allow_defaults: bool = False
     allow_extend: bool = False
     predicate_defaults: tuple[
@@ -51,33 +65,24 @@ class FieldSchema:
             raise ValueError("name must be a non-empty string.")
         if not isinstance(self.description, str):
             raise ValueError("description must be a string.")
-        if self.type not in ("string", "boolean", "integer", "number", "array"):
-            raise ValueError(
-                "type must be one of 'string', 'boolean', 'integer', 'number', 'array'."
-            )
-        if self.item_type is not None and self.item_type not in (
-            "string",
-            "boolean",
-            "integer",
-            "number",
-        ):
-            raise ValueError(
-                "item_type must be one of 'string', 'boolean', 'integer', 'number'."
-            )
+        try:
+            validate_extra_option_schema(self.schema)
+        except TypeError as exc:
+            raise ValueError(f"Invalid schema: {exc}") from exc
+        try:
+            validate_object_schema_compiles({"properties": {self.name: self.schema}})
+        except jsonschema_rs.ValidationError as exc:
+            raise ValueError(f"Invalid schema: {exc}") from exc
         if not isinstance(self.nullable, bool):
             raise ValueError("nullable must be a boolean.")
-        if not isinstance(self.allow_dynamic_functions, bool):
-            raise ValueError("allow_dynamic_functions must be a boolean.")
+        if not isinstance(self.parse_dynamic_functions, bool):
+            raise ValueError("parse_dynamic_functions must be a boolean.")
         if not isinstance(self.allow_extend, bool):
             raise ValueError("allow_extend must be a boolean.")
-        if not isinstance(self.allow_variant_functions, bool):
+        if not isinstance(self.parse_variants, bool):
             raise ValueError("allow_variant must be a boolean.")
         if not isinstance(self.allow_defaults, bool):
             raise ValueError("allow_defaults must be a boolean.")
-        if self.type != "array" and self.item_type is not None:
-            raise ValueError("item_type can only be set for array fields.")
-        if self.type == "array" and self.item_type is None:
-            raise ValueError("item_type must be set for array fields.")
         if not isinstance(self.directive_option, bool):
             raise ValueError("directive_option must be a boolean.")
         if not isinstance(self.predicate_defaults, tuple) or not all(
@@ -98,6 +103,16 @@ class FieldSchema:
             )
         if self.default is not None and not self.allow_defaults:
             raise ValueError("Defaults are not allowed for this field.")
+
+    @property
+    def type(self) -> Literal["string", "boolean", "integer", "number", "array"]:
+        return self.schema["type"]
+
+    @property
+    def item_type(self) -> None | Literal["string", "boolean", "integer", "number"]:
+        if self.schema["type"] == "array":
+            return self.schema["items"]["type"]
+        return None
 
     def _set_default(self, value: Any, *, allow_coercion: bool) -> None:
         """Set the default value for this field.
@@ -255,7 +270,7 @@ class FieldSchema:
         match self.type:
             case "boolean" | "integer" | "number":
                 if (
-                    self.allow_dynamic_functions
+                    self.parse_dynamic_functions
                     and value.lstrip().startswith("[[")
                     and value.rstrip().endswith("]]")
                 ):
@@ -263,7 +278,7 @@ class FieldSchema:
                         (DynamicFunctionParsed.from_string(value.strip()[2:-2]),)
                     )
                 elif (
-                    self.allow_variant_functions
+                    self.parse_variants
                     and value.lstrip().startswith("<<")
                     and value.rstrip().endswith(">>")
                 ):
@@ -279,7 +294,7 @@ class FieldSchema:
                     return FieldLiteralValue(_from_string_item(value, self.type))
             case "string":
                 parsed_items = _split_string(
-                    value, self.allow_dynamic_functions, self.allow_variant_functions
+                    value, self.parse_dynamic_functions, self.parse_variants
                 )
                 if len(parsed_items) == 1 and parsed_items[0][1] == ListItemType.STD:
                     return FieldLiteralValue(parsed_items[0][0])
@@ -309,7 +324,7 @@ class FieldSchema:
                     | VariantFunctionParsed
                 ] = []
                 for parsed in _split_list(
-                    value, self.allow_dynamic_functions, self.allow_variant_functions
+                    value, self.parse_dynamic_functions, self.parse_variants
                 ):
                     if len(parsed) != 1:
                         raise ValueError(
@@ -366,7 +381,7 @@ class FieldSchema:
                 return None
             if (
                 allow_coercion
-                and (self.allow_dynamic_functions or self.allow_variant_functions)
+                and (self.parse_dynamic_functions or self.parse_variants)
                 and self.type == "array"
                 and self.item_type == "string"
             ):
@@ -380,7 +395,7 @@ class FieldSchema:
                 item: str
                 for item in value:
                     if (
-                        self.allow_dynamic_functions
+                        self.parse_dynamic_functions
                         and item.lstrip().startswith("[[")
                         and item.rstrip().endswith("]]")
                     ):
@@ -389,7 +404,7 @@ class FieldSchema:
                             DynamicFunctionParsed.from_string(item.strip()[2:-2])
                         )
                     elif (
-                        self.allow_variant_functions
+                        self.parse_variants
                         and item.lstrip().startswith("<<")
                         and item.rstrip().endswith(">>")
                     ):
@@ -503,15 +518,36 @@ def _from_string_item(
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
+class LinkDisplayConfig:
+    """Display/rendering configuration for a link type."""
+
+    incoming: str
+    """Title for incoming links (e.g., 'links incoming')."""
+    outgoing: str
+    """Title for outgoing links (e.g., 'links outgoing')."""
+    color: str = "#000000"
+    """Color used for needflow diagrams."""
+    style: str = ""
+    """Line style used for needflow diagrams."""
+    style_part: str = "dotted"
+    """Line style used for need parts in needflow diagrams."""
+    style_start: str = "-"
+    """Arrow start style for needflow diagrams."""
+    style_end: str = "->"
+    """Arrow end style for needflow diagrams."""
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
 class LinkSchema:
     """Schema for a single link field."""
 
     name: str
     description: str = ""
+    schema: ExtraLinkSchemaType
     directive_option: bool = False
     allow_extend: bool = False
-    allow_dynamic_functions: bool = False
-    allow_variant_functions: bool = False
+    parse_dynamic_functions: bool = False
+    parse_variants: bool = False
     allow_defaults: bool = False
     predicate_defaults: tuple[
         tuple[str, LinksLiteralValue | LinksFunctionArray],
@@ -528,22 +564,36 @@ class LinkSchema:
     
     Used if the field has not been specifically set, and no predicate matches.
     """
+    display: LinkDisplayConfig
+    """Display/rendering configuration for this link type."""
+    copy: bool = False
+    """If True, copy links to the common 'links' field."""
+    allow_dead_links: bool = False
+    """If True, add a 'forbidden' class to dead links instead of warning."""
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
             raise ValueError("name must be a non-empty string.")
-        if not isinstance(self.allow_dynamic_functions, bool):
-            raise ValueError("allow_dynamic_functions must be a boolean.")
-        if not isinstance(self.allow_variant_functions, bool):
-            raise ValueError("allow_variant_functions must be a boolean.")
+        if not isinstance(self.description, str):
+            raise ValueError("description must be a string.")
+        try:
+            validate_extra_link_schema_type(self.schema)
+        except TypeError as exc:
+            raise ValueError(f"Invalid schema: {exc}") from exc
+        try:
+            validate_object_schema_compiles({"properties": {self.name: self.schema}})
+        except jsonschema_rs.ValidationError as exc:
+            raise ValueError(f"Invalid schema: {exc}") from exc
+        if not isinstance(self.parse_dynamic_functions, bool):
+            raise ValueError("parse_dynamic_functions must be a boolean.")
+        if not isinstance(self.parse_variants, bool):
+            raise ValueError("parse_variants must be a boolean.")
         if not isinstance(self.allow_defaults, bool):
             raise ValueError("allow_defaults must be a boolean.")
         if not isinstance(self.allow_extend, bool):
             raise ValueError("allow_extend must be a boolean.")
         if not isinstance(self.directive_option, bool):
             raise ValueError("directive_option must be a boolean.")
-        if not isinstance(self.description, str):
-            raise ValueError("description must be a string.")
         if not isinstance(self.predicate_defaults, tuple) or not all(
             isinstance(pair, tuple) and len(pair) == 2
             for pair in self.predicate_defaults
@@ -674,7 +724,7 @@ class LinkSchema:
         has_df_or_vf = False
         array: list[str | DynamicFunctionParsed | VariantFunctionParsed] = []
         for parsed in _split_list(
-            value, self.allow_dynamic_functions, self.allow_variant_functions
+            value, self.parse_dynamic_functions, self.parse_variants
         ):
             if len(parsed) != 1:
                 raise ValueError(
@@ -720,9 +770,7 @@ class LinkSchema:
         else:
             if not self.type_check(value):
                 raise ValueError(f"Invalid value for field {self.name!r}: {value!r}")
-            if allow_coercion and (
-                self.allow_dynamic_functions or self.allow_variant_functions
-            ):
+            if allow_coercion and (self.parse_dynamic_functions or self.parse_variants):
                 from sphinx_needs.functions.functions import DynamicFunctionParsed
 
                 new_value: list[
@@ -732,7 +780,7 @@ class LinkSchema:
                 item: str
                 for item in value:
                     if (
-                        self.allow_dynamic_functions
+                        self.parse_dynamic_functions
                         and item.lstrip().startswith("[[")
                         and item.rstrip().endswith("]]")
                     ):
@@ -741,7 +789,7 @@ class LinkSchema:
                             DynamicFunctionParsed.from_string(item.strip()[2:-2])
                         )
                     elif (
-                        self.allow_variant_functions
+                        self.parse_variants
                         and item.lstrip().startswith("<<")
                         and item.rstrip().endswith(">>")
                     ):
@@ -843,13 +891,25 @@ class FieldsSchema:
         yield from self._extra_fields.values()
         yield from self._link_fields.values()
 
+    def iter_core_field_names(self) -> Iterable[str]:
+        """Iterate over all core field names in the schema."""
+        yield from self._core_fields.keys()
+
     def iter_core_fields(self) -> Iterable[FieldSchema]:
         """Iterate over all core fields in the schema."""
         yield from self._core_fields.values()
 
+    def iter_extra_field_names(self) -> Iterable[str]:
+        """Iterate over all extra field names in the schema."""
+        yield from self._extra_fields.keys()
+
     def iter_extra_fields(self) -> Iterable[FieldSchema]:
         """Iterate over all extra fields in the schema."""
         yield from self._extra_fields.values()
+
+    def iter_link_field_names(self) -> Iterable[str]:
+        """Iterate over all link field names in the schema."""
+        yield from self._link_fields.keys()
 
     def iter_link_fields(self) -> Iterable[LinkSchema]:
         """Iterate over all link fields in the schema."""
@@ -866,8 +926,8 @@ class ListItemType(enum.Enum):
 
 def _split_list(
     text: str,
-    allow_dynamic_functions: bool,
-    allow_variant_functions: bool,
+    parse_dynamic_functions: bool,
+    parse_variants: bool,
     allow_delimiters: bool = True,
 ) -> Iterator[list[tuple[str, ListItemType]]]:
     """Split a ``;|,`` delimited string that may contain ``[[...]]`` dynamic functions or ``<<...>>`` variant functions.
@@ -883,7 +943,7 @@ def _split_list(
     _current_element = ""
     _current_elements: list[tuple[str, ListItemType]] = []
     while text:
-        if allow_dynamic_functions and text.startswith("[["):
+        if parse_dynamic_functions and text.startswith("[["):
             if not _current_elements:
                 _current_element = _current_element.lstrip()
             if _current_element:
@@ -903,7 +963,7 @@ def _split_list(
             )
             _current_element = ""
             text = text[2:]
-        elif allow_variant_functions and text.startswith("<<"):
+        elif parse_variants and text.startswith("<<"):
             if not _current_elements:
                 _current_element = _current_element.lstrip()
             if _current_element:
@@ -946,7 +1006,7 @@ def _split_list(
 
 
 def _split_string(
-    text: str, allow_dynamic_functions: bool, allow_variant_functions: bool
+    text: str, parse_dynamic_functions: bool, parse_variants: bool
 ) -> list[tuple[str, ListItemType]]:
     """Split a string that may contain ``[[...]]`` dynamic functions or ``<<...>>`` variant functions.
 
@@ -957,16 +1017,462 @@ def _split_string(
         and only yielded if it is not empty.
     """
     if not (stripped := text.strip()) or not (
-        allow_dynamic_functions or allow_variant_functions
+        parse_dynamic_functions or parse_variants
     ):
         return [(stripped, ListItemType.STD)]
     return next(
         iter(
             _split_list(
                 text,
-                allow_dynamic_functions,
-                allow_variant_functions,
+                parse_dynamic_functions,
+                parse_variants,
                 allow_delimiters=False,
             )
         )
     )
+
+
+def create_inherited_field(
+    parent: FieldSchema, child: NeedFields, *, allow_variants: bool
+) -> FieldSchema:
+    """Create a new FieldSchema by inheriting from a parent FieldSchema and applying overrides from a child dictionary.
+
+    :param parent: The parent FieldSchema to inherit from.
+    :param child: A dictionary containing the child field overrides.
+    :param allow_variants: Whether to allow parse_variants to be set to True in the child.
+        This is a bit of a special case for certain core fields, and maybe should be handled differently in the future;
+        fields like ``template`` are used before variants are processed, so allowing variants there would not make sense.
+    """
+    replacements: dict[str, Any] = {}
+
+    if "description" in child:
+        if not isinstance(child["description"], str):
+            raise ValueError("Child 'description' must be a string.")
+        replacements["description"] = child["description"]
+
+    if "schema" in child:
+        child_schema = child["schema"]
+        inherit_schema(parent.schema, cast(dict[str, Any], child_schema))
+        replacements["schema"] = child_schema
+
+    if "nullable" in child:
+        if not isinstance(child["nullable"], bool):
+            raise ValueError("Child 'nullable' must be a boolean.")
+        if parent.nullable is False and child["nullable"] is True:
+            raise ValueError("Cannot change 'nullable' from False to True in child.")
+        replacements["nullable"] = child["nullable"]
+
+    if "parse_variants" in child:
+        if not isinstance(child["parse_variants"], bool):
+            raise ValueError("Child 'parse_variants' must be a boolean.")
+        if not allow_variants and child["parse_variants"]:
+            raise ValueError("parse_variants is not allowed to be True for this field.")
+        replacements["parse_variants"] = child["parse_variants"]
+
+    return replace(parent, **replacements)
+
+
+def inherit_schema(
+    parent_schema: ExtraOptionSchemaTypes, child_schema: dict[str, Any]
+) -> None:
+    """Inherit and validate constraints from parent schema to child schema.
+
+    Inheritance follows the SysML2 concept of specialization, whereby
+    subtypes must be usable wherever the supertype is expected (Liskov substitutability principle).
+    Changing the type would violate substitutability (Liskov principle).
+
+    The following override rules apply:
+
+    **General (all types):**
+
+    - The ``type`` of the child must be the same as the parent.
+    - For ``array`` type fields, the ``item_type`` of the child must be the same as the parent.
+
+    **String type constraints:**
+
+    - ``const``: Child cannot change the constant value.
+    - ``enum``: Child's enum values must be a subset of the parent's enum values.
+    - ``pattern``: Child must have the same pattern (cannot be overridden).
+    - ``format``: Child must have the same format (cannot be overridden).
+    - ``minLength``: Child's minimum length must be ≥ the parent's.
+    - ``maxLength``: Child's maximum length must be ≤ the parent's.
+
+    **Boolean type constraints:**
+
+    - ``const``: Child must have the same constant value as the parent.
+
+    **Number and Integer type constraints:**
+
+    - ``const``: Child must have the same constant value as the parent.
+    - ``enum``: Child's enum values must be a subset of the parent's enum values.
+    - ``minimum``: Child's minimum must be ≥ the parent's.
+    - ``maximum``: Child's maximum must be ≤ the parent's.
+    - ``exclusiveMinimum``: Child's exclusive minimum must be ≥ the parent's.
+    - ``exclusiveMaximum``: Child's exclusive maximum must be ≤ the parent's.
+    - ``multipleOf``: Child's multipleOf must be a multiple of the parent's.
+
+    **Array type constraints:**
+
+    - ``minItems``: Child's minimum must be ≥ the parent's.
+    - ``maxItems``: Child's maximum must be ≤ the parent's.
+    - ``minContains``: Child's minimum must be ≥ the parent's.
+    - ``maxContains``: Child's maximum must be ≤ the parent's.
+    - ``contains``: Child must match the parent's constraint (cannot be overridden).
+    - ``items``: The above rules are applied also to the item schema.
+
+    """
+    if not isinstance(child_schema, dict):
+        raise ValueError("Child schema must be a dictionary.")
+
+    if "type" not in child_schema:
+        child_schema["type"] = parent_schema["type"]
+
+    if parent_schema["type"] == "string" and child_schema["type"] == "string":
+        _validate_string_constraints(parent_schema, child_schema)
+
+    elif parent_schema["type"] == "integer" and child_schema["type"] == "integer":  # noqa: SIM114
+        _validate_number_or_integer_constraints(parent_schema, child_schema)
+
+    elif parent_schema["type"] == "number" and child_schema["type"] == "number":
+        _validate_number_or_integer_constraints(parent_schema, child_schema)
+
+    elif parent_schema["type"] == "boolean" and child_schema["type"] == "boolean":
+        _validate_boolean_constraints(parent_schema, child_schema)
+
+    elif parent_schema["type"] == "array" and child_schema["type"] == "array":
+        _validate_array_constraints(parent_schema, child_schema)
+
+    else:
+        raise ValueError(
+            f"Child 'type' {child_schema.get('type')!r} does not match parent 'type' {parent_schema.get('type')!r}."
+        )
+
+
+def _validate_boolean_constraints(
+    parent_schema: ExtraOptionBooleanSchemaType, child_schema: dict[str, Any]
+) -> None:
+    """Validate and merge boolean-specific constraints from parent to child schema.
+
+    :param parent_schema: The parent field's schema dictionary
+    :param child_schema: The child field's schema dictionary (will be modified in-place)
+    :raises ValueError: if child constraints are invalid relative to parent constraints
+    """
+    if "const" in parent_schema:
+        if "const" in child_schema:
+            if child_schema["const"] != parent_schema["const"]:
+                raise ValueError(
+                    f"Child 'const' value {child_schema['const']!r} does not match parent 'const' value {parent_schema['const']!r}."
+                )
+        else:
+            child_schema["const"] = parent_schema["const"]
+
+
+def _validate_string_constraints(
+    parent_schema: ExtraOptionStringSchemaType, child_schema: dict[str, Any]
+) -> None:
+    """Validate and merge string-specific constraints from parent to child schema.
+
+    :param parent_schema: The parent field's schema dictionary
+    :param child_schema: The child field's schema dictionary (will be modified in-place)
+    :raises ValueError: if child constraints are invalid relative to parent constraints
+    """
+    # Validate const constraint - must be identical
+    if "const" in parent_schema:
+        if "const" in child_schema:
+            if child_schema["const"] != parent_schema["const"]:
+                raise ValueError(
+                    f"Child 'const' value {child_schema['const']!r} does not match parent 'const' value {parent_schema['const']!r}."
+                )
+        else:
+            child_schema["const"] = parent_schema["const"]
+
+    # Validate enum constraints
+    if "enum" in parent_schema:
+        if "enum" in child_schema:
+            parent_str_enum_set = set(parent_schema["enum"])
+            child_str_enum_set = set(child_schema["enum"])
+            if not child_str_enum_set.issubset(parent_str_enum_set):
+                raise ValueError(
+                    f"Child 'enum' values {child_schema['enum']} are not a subset of parent 'enum' values {parent_schema['enum']}."
+                )
+        else:
+            child_schema["enum"] = parent_schema["enum"]
+
+    # Validate const is in parent's enum if both exist
+    if (
+        "const" in child_schema
+        and "enum" in parent_schema
+        and child_schema["const"] not in parent_schema["enum"]
+    ):
+        raise ValueError(
+            f"Child 'const' value {child_schema['const']!r} is not in parent 'enum' values {parent_schema['enum']}."
+        )
+
+    # Inherit pattern constraint - child cannot override
+    if "pattern" in parent_schema:
+        if (
+            "pattern" in child_schema
+            and child_schema["pattern"] != parent_schema["pattern"]
+        ):
+            raise ValueError(
+                f"Child 'pattern' {child_schema['pattern']!r} does not match parent 'pattern' {parent_schema['pattern']!r}. Pattern constraints cannot be overridden."
+            )
+        child_schema["pattern"] = parent_schema["pattern"]
+    elif "pattern" in child_schema:
+        # Validate that new pattern is a string (leave compilation to jsonschema)
+        if not isinstance(child_schema["pattern"], str):
+            raise ValueError(
+                f"Child 'pattern' {child_schema['pattern']!r} is not a string."
+            )
+
+    # Inherit format constraint - child cannot override
+    if "format" in parent_schema:
+        if (
+            "format" in child_schema
+            and child_schema["format"] != parent_schema["format"]
+        ):
+            raise ValueError(
+                f"Child 'format' {child_schema['format']!r} does not match parent 'format' {parent_schema['format']!r}. Format constraints cannot be overridden."
+            )
+        child_schema["format"] = parent_schema["format"]
+
+    # Validate minLength constraint
+    if "minLength" in parent_schema:
+        if "minLength" in child_schema:
+            if child_schema["minLength"] < parent_schema["minLength"]:
+                raise ValueError(
+                    f"Child 'minLength' {child_schema['minLength']} is less than parent 'minLength' {parent_schema['minLength']}."
+                )
+        else:
+            child_schema["minLength"] = parent_schema["minLength"]
+
+    # Validate maxLength constraint
+    if "maxLength" in parent_schema:
+        if "maxLength" in child_schema:
+            if child_schema["maxLength"] > parent_schema["maxLength"]:
+                raise ValueError(
+                    f"Child 'maxLength' {child_schema['maxLength']} is greater than parent 'maxLength' {parent_schema['maxLength']}."
+                )
+        else:
+            child_schema["maxLength"] = parent_schema["maxLength"]
+
+
+_T = TypeVar("_T", ExtraOptionNumberSchemaType, ExtraOptionIntegerSchemaType)
+
+
+def _validate_number_or_integer_constraints(
+    parent_schema: _T, child_schema: dict[str, Any]
+) -> None:
+    """Validate and merge number/integer-specific constraints from parent to child schema.
+
+    :param parent_schema: The parent field's schema dictionary
+    :param child_schema: The child field's schema dictionary (will be modified in-place)
+    :raises ValueError: if child constraints are invalid relative to parent constraints
+    """
+    # Validate const constraint - must be identical
+    if "const" in parent_schema:
+        if "const" in child_schema:
+            if child_schema["const"] != parent_schema["const"]:
+                raise ValueError(
+                    f"Child 'const' value {child_schema['const']!r} does not match parent 'const' value {parent_schema['const']!r}."
+                )
+        else:
+            child_schema["const"] = parent_schema["const"]
+
+    # Validate enum constraints
+    if "enum" in parent_schema:
+        if "enum" in child_schema:
+            parent_enum_set = set(parent_schema["enum"])
+            child_enum_set = set(child_schema["enum"])
+            if not child_enum_set.issubset(parent_enum_set):
+                raise ValueError(
+                    f"Child 'enum' values {child_schema['enum']} are not a subset of parent 'enum' values {parent_schema['enum']}."
+                )
+        else:
+            child_schema["enum"] = parent_schema["enum"]
+
+    # Validate const is in parent's enum if both exist
+    if (
+        "const" in child_schema
+        and "enum" in parent_schema
+        and child_schema["const"] not in parent_schema["enum"]
+    ):
+        raise ValueError(
+            f"Child 'const' value {child_schema['const']!r} is not in parent 'enum' values {parent_schema['enum']}."
+        )
+
+    # Validate minimum constraint
+    if "minimum" in parent_schema:
+        if "minimum" in child_schema:
+            if child_schema["minimum"] < parent_schema["minimum"]:
+                raise ValueError(
+                    f"Child 'minimum' {child_schema['minimum']} is less than parent 'minimum' {parent_schema['minimum']}."
+                )
+        else:
+            child_schema["minimum"] = parent_schema["minimum"]
+
+    # Validate maximum constraint
+    if "maximum" in parent_schema:
+        if "maximum" in child_schema:
+            if child_schema["maximum"] > parent_schema["maximum"]:
+                raise ValueError(
+                    f"Child 'maximum' {child_schema['maximum']} is greater than parent 'maximum' {parent_schema['maximum']}."
+                )
+        else:
+            child_schema["maximum"] = parent_schema["maximum"]
+
+    # Validate exclusiveMinimum constraint
+    if "exclusiveMinimum" in parent_schema:
+        if "exclusiveMinimum" in child_schema:
+            if child_schema["exclusiveMinimum"] < parent_schema["exclusiveMinimum"]:
+                raise ValueError(
+                    f"Child 'exclusiveMinimum' {child_schema['exclusiveMinimum']} is less than parent 'exclusiveMinimum' {parent_schema['exclusiveMinimum']}."
+                )
+        else:
+            child_schema["exclusiveMinimum"] = parent_schema["exclusiveMinimum"]
+
+    # Validate exclusiveMaximum constraint
+    if "exclusiveMaximum" in parent_schema:
+        if "exclusiveMaximum" in child_schema:
+            if child_schema["exclusiveMaximum"] > parent_schema["exclusiveMaximum"]:
+                raise ValueError(
+                    f"Child 'exclusiveMaximum' {child_schema['exclusiveMaximum']} is greater than parent 'exclusiveMaximum' {parent_schema['exclusiveMaximum']}."
+                )
+        else:
+            child_schema["exclusiveMaximum"] = parent_schema["exclusiveMaximum"]
+
+    # Validate multipleOf constraint
+    # The child value must be a multiple of the parent's multipleOf
+    if "multipleOf" in parent_schema:
+        if "multipleOf" in child_schema:
+            # Check if child's multipleOf is a multiple of parent's multipleOf
+            parent_multiple = parent_schema["multipleOf"]
+            child_multiple = child_schema["multipleOf"]
+            # For proper constraint narrowing, child should be a multiple of parent
+            # e.g., if parent requires multipleOf 2, child can require multipleOf 4, 6, 8, etc.
+            # Use modulo with tolerance for float precision issues
+            remainder = child_multiple % parent_multiple
+            # Check if remainder is effectively zero (accounting for float precision)
+            if not (abs(remainder) < 1e-9 or abs(remainder - parent_multiple) < 1e-9):
+                raise ValueError(
+                    f"Child 'multipleOf' {child_multiple} must be a multiple of parent 'multipleOf' {parent_multiple}."
+                )
+        else:
+            child_schema["multipleOf"] = parent_schema["multipleOf"]
+
+
+def _validate_array_constraints(
+    parent_schema: ExtraOptionMultiValueSchemaType, child_schema: dict[str, Any]
+) -> None:
+    """Validate and merge array-specific constraints from parent to child schema.
+
+    :param parent_schema: The parent field's schema dictionary
+    :param child_schema: The child field's schema dictionary (will be modified in-place)
+    :raises ValueError: if child constraints are invalid relative to parent constraints
+    """
+    # Validate uniqueItems constraint
+    if "uniqueItems" in parent_schema:
+        if "uniqueItems" in child_schema:
+            if (
+                parent_schema["uniqueItems"] is True
+                and child_schema["uniqueItems"] is False
+            ):
+                raise ValueError(
+                    "Child 'uniqueItems' constraint cannot be less restrictive than parent."
+                )
+        else:
+            child_schema["uniqueItems"] = parent_schema["uniqueItems"]
+
+    # Validate minItems constraint
+    if "minItems" in parent_schema:
+        if "minItems" in child_schema:
+            if child_schema["minItems"] < parent_schema["minItems"]:
+                raise ValueError(
+                    f"Child 'minItems' {child_schema['minItems']} is less than parent 'minItems' {parent_schema['minItems']}."
+                )
+        else:
+            child_schema["minItems"] = parent_schema["minItems"]
+
+    # Validate maxItems constraint
+    if "maxItems" in parent_schema:
+        if "maxItems" in child_schema:
+            if child_schema["maxItems"] > parent_schema["maxItems"]:
+                raise ValueError(
+                    f"Child 'maxItems' {child_schema['maxItems']} is greater than parent 'maxItems' {parent_schema['maxItems']}."
+                )
+        else:
+            child_schema["maxItems"] = parent_schema["maxItems"]
+
+    # Validate minContains constraint
+    if "minContains" in parent_schema:
+        if "minContains" in child_schema:
+            if child_schema["minContains"] < parent_schema["minContains"]:
+                raise ValueError(
+                    f"Child 'minContains' {child_schema['minContains']} is less than parent 'minContains' {parent_schema['minContains']}."
+                )
+        else:
+            child_schema["minContains"] = parent_schema["minContains"]
+
+    # Validate maxContains constraint
+    if "maxContains" in parent_schema:
+        if "maxContains" in child_schema:
+            if child_schema["maxContains"] > parent_schema["maxContains"]:
+                raise ValueError(
+                    f"Child 'maxContains' {child_schema['maxContains']} is greater than parent 'maxContains' {parent_schema['maxContains']}."
+                )
+        else:
+            child_schema["maxContains"] = parent_schema["maxContains"]
+
+    # Inherit contains constraint - child cannot override
+    if "contains" in parent_schema:
+        if (
+            "contains" in child_schema
+            and child_schema["contains"] != parent_schema["contains"]
+        ):
+            raise ValueError(
+                "Child 'contains' constraint does not match parent 'contains' constraint."
+            )
+        child_schema["contains"] = parent_schema["contains"]
+
+    if "items" in parent_schema:
+        if "items" not in child_schema:
+            child_schema["items"] = parent_schema["items"]
+        else:
+            parent_items = parent_schema["items"]
+            child_items = child_schema["items"]
+
+            if not isinstance(child_items, dict):
+                raise ValueError("Child 'items' must be a dictionary.")
+
+            if "type" not in child_items:
+                child_items["type"] = parent_items["type"]
+
+            try:
+                if parent_items["type"] == "string" and child_items["type"] == "string":
+                    _validate_string_constraints(parent_items, child_items)
+
+                elif (
+                    parent_items["type"] == "integer"
+                    and child_items["type"] == "integer"
+                ):
+                    # type restricted to ExtraOptionIntegerSchemaType
+                    _validate_number_or_integer_constraints(parent_items, child_items)
+
+                elif (
+                    parent_items["type"] == "number" and child_items["type"] == "number"
+                ):
+                    # type restricted to ExtraOptionNumberSchemaType
+                    _validate_number_or_integer_constraints(parent_items, child_items)
+
+                elif (
+                    parent_items["type"] == "boolean"
+                    and child_items["type"] == "boolean"
+                ):
+                    _validate_boolean_constraints(parent_items, child_items)
+
+                else:
+                    raise ValueError(
+                        f"Child 'type' {child_items.get('type')!r} does not match parent 'type' {parent_items.get('type')!r}."
+                    )
+            except ValueError as e:
+                raise ValueError(f"'items' inheritance: {e}")

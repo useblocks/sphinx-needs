@@ -39,6 +39,8 @@ class ExtraOptionParams:
 
     description: str
     """A description of the option."""
+    nullable: bool | None = None
+    """Whether the field allows unset values."""
     schema: (
         ExtraOptionStringSchemaType
         | ExtraOptionBooleanSchemaType
@@ -48,6 +50,8 @@ class ExtraOptionParams:
         | None
     )
     """A JSON schema for the option."""
+    parse_variants: bool | None = None
+    """Whether variants are parsed in this field."""
 
 
 class FieldDefault(TypedDict):
@@ -112,7 +116,9 @@ class _Config:
         | ExtraOptionNumberSchemaType
         | ExtraOptionMultiValueSchemaType
         | None = None,
+        nullable: None | bool = None,
         override: bool = False,
+        parse_variants: None | bool = None,
     ) -> None:
         """Adds an extra option to the configuration."""
         if name in NeedsCoreFields:
@@ -142,6 +148,8 @@ class _Config:
         self._extra_options[name] = ExtraOptionParams(
             description=description,
             schema=schema,
+            nullable=nullable,
+            parse_variants=parse_variants,
         )
 
     @property
@@ -273,6 +281,12 @@ class LinkOptionsType(TypedDict, total=False):
     The schema is applied locally on unresolved links, i.e. on the list of string ids.
     For more granular control and graph traversal, use the `needs_schema_definitions` configuration.
     """
+    default: NotRequired[Any]
+    """Default value for the link option."""
+    predicates: NotRequired[list[tuple[str, Any]]]
+    """List of (need filter, value) pairs for predicate default values."""
+    parse_variants: NotRequired[bool]
+    """Whether variants are parsed in this field."""
 
 
 class NeedType(TypedDict):
@@ -290,19 +304,33 @@ class NeedType(TypedDict):
     """The default node style to use in diagrams (default: "node")."""
 
 
-class NeedExtraOption(TypedDict):
-    """Defines an extra option for needs"""
+class NeedFields(TypedDict):
+    """Defines a field for needs"""
 
-    name: str
     description: NotRequired[str]
-    """A description of the option."""
+    """A description of the field."""
     schema: NotRequired[ExtraOptionSchemaTypes]
     """
-    A JSON schema definition for the option.
+    A JSON schema definition for the field.
     
     If given, the schema will apply to all needs that use this option.
     For more granular control, use the `needs_schema_definitions` configuration.
     """
+    nullable: NotRequired[bool]
+    """Whether the field allows unset values."""
+    default: NotRequired[Any]
+    """Default value for the field."""
+    predicates: NotRequired[list[tuple[str, Any]]]
+    """List of (need filter, value) pairs for predicate default values."""
+    parse_variants: NotRequired[bool]
+    """Whether variants are parsed in this field."""
+
+
+class NeedExtraOption(NeedFields):
+    """Defines an extra option for needs"""
+
+    name: str
+    """The name of the option."""
 
 
 class NeedStatusesOption(TypedDict):
@@ -353,31 +381,21 @@ class NeedsSphinxConfig:
     # such that we simply redirect all attribute access to the
     # Sphinx config object, but in a manner where type annotations will work
     # for static type analysis.
-    # Note also that we treat `extra_options`, `functions` and `warnings` as special-cases,
+    # Note also that we treat `functions` and `warnings` as special-cases,
     # since these configurations can also be added to dynamically via the API
 
     def __init__(self, config: _SphinxConfig) -> None:
         super().__setattr__("_config", config)
 
     def __getattribute__(self, name: str) -> Any:
-        if name.startswith("__") or name in (
-            "_config",
-            "extra_options",
-            "functions",
-            "warnings",
-        ):
+        if name.startswith("__") or name in ("_config", "functions", "warnings"):
             return super().__getattribute__(name)
         if name.startswith("_"):
             name = name[1:]
         return getattr(super().__getattribute__("_config"), f"needs_{name}")
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if name.startswith("__") or name in (
-            "_config",
-            "extra_options",
-            "functions",
-            "warnings",
-        ):
+        if name.startswith("__") or name in ("_config", "functions", "warnings"):
             return super().__setattr__(name, value)
         if name.startswith("_"):
             name = name[1:]
@@ -490,7 +508,7 @@ class NeedsSphinxConfig:
 
     schema_debug_ignore: list[str] = field(
         default_factory=lambda: [
-            "extra_option_success",
+            "field_success",
             "extra_link_success",
             "select_success",
             "select_fail",
@@ -597,22 +615,13 @@ class NeedsSphinxConfig:
         default=30, metadata={"rebuild": "html", "types": (int,)}
     )
     """Maximum length of the title in the need role output."""
+    _fields: dict[str, NeedFields] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+    )
     _extra_options: list[str | NeedExtraOption] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """List of extra options for needs, that get added as directive options and need fields."""
-
-    @property
-    def extra_options(self) -> Mapping[str, ExtraOptionParams]:
-        """Custom need fields.
-
-        These fields can be added via sphinx configuration,
-        but also via the `add_extra_option` API function.
-
-        They are added to the each needs data item,
-        and as directive options on `NeedDirective` and `NeedserviceDirective`.
-        """
-        return _NEEDS_CONFIG.extra_options
 
     title_optional: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
@@ -679,10 +688,10 @@ class NeedsSphinxConfig:
         default="→\xa0", metadata={"rebuild": "html", "types": (str,)}
     )
     """Prefix for need_part output in tables"""
-    extra_links: list[LinkOptionsType] = field(
+    _extra_links: list[LinkOptionsType] = field(
         default_factory=list, metadata={"rebuild": "html", "types": ()}
     )
-    """List of additional link types between needs"""
+    """List of additional link types between needs (internal config, use schema for access after config resolution)"""
     report_dead_links: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )
@@ -855,7 +864,7 @@ class NeedsSphinxConfig:
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
     """Mapping of variant name to filter string."""
-    variant_options: list[str] = field(
+    _variant_options: list[str] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """List of need fields that may contain variants."""

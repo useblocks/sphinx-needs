@@ -43,7 +43,6 @@ parse_content = false
 content_required = false
 
 [needs]
-variant_options = ["status"]
 show_link_type = false
 show_link_title = false
 title_optional = true
@@ -60,60 +59,50 @@ reproducible_json = true
 json_remove_defaults = true
 build_json_per_id = false
 
-[[needs.extra_options]]
-name = "my_extra_option"
+[needs.fields.status]
+parse_variants = true
+
+[needs.fields.my_extra_option]
 description = "Custom extra option"
 
-[[needs.extra_options]]
-name = "another_option"
+[needs.fields.another_option]
 description = "Another custom option"
 
-[[needs.extra_options]]
-name = "author"
+[needs.fields.author]
 description = "Author of the need"
 
-[[needs.extra_options]]
-name = "comment"
+[needs.fields.comment]
 description = "Additional comments"
 
-[[needs.extra_options]]
-name = "amount"
+[needs.fields.amount]
 description = "Amount value"
 schema.type = "number"
 
-[[needs.extra_options]]
-name = "hours"
+[needs.fields.hours]
 description = "Time in hours"
 schema.type = "integer"
 
-[[needs.extra_options]]
-name = "duration"
+[needs.fields.duration]
 description = "Time in days"
 schema.type = "integer"
 
-[[needs.extra_options]]
-name = "completion"
+[needs.fields.completion]
 description = "Completion in %"
 schema.type = "integer"
 
-[[needs.extra_options]]
-name = "image"
+[needs.fields.image]
 description = "Image reference"
 
-[[needs.extra_options]]
-name = "config"
+[needs.fields.config]
 description = "Configuration option"
 
-[[needs.extra_options]]
-name = "github"
+[needs.fields.github]
 description = "GitHub reference"
 
-[[needs.extra_options]]
-name = "value"
+[needs.fields.value]
 description = "General value field"
 
-[[needs.extra_options]]
-name = "unit"
+[needs.fields.unit]
 description = "Unit specification"
 
 [[needs.types]]

@@ -16,6 +16,7 @@ occurs. If it is given, the types have to match what is provided in 1.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Mapping
 from enum import Enum, IntEnum
 from functools import cache
 from pathlib import Path
@@ -24,19 +25,17 @@ from typing import Any, Final, Literal, TypedDict, cast
 import jsonschema_rs
 from typing_extensions import NotRequired
 
-EXTRA_OPTION_BASE_TYPES_STR: Final[set[str]] = {
+FIELD_BASE_TYPES_STR: Final[set[str]] = {
     "string",
     "integer",
     "number",
     "boolean",
     "array",
 }
-"""Extra option base types as string that are supported in the schemas."""
+"""Field base types as string that are supported in the schemas."""
 
-EXTRA_OPTION_BASE_TYPES_TYPE = Literal[
-    "string", "integer", "number", "boolean", "array"
-]
-"""Extra option base types as types that are supported in the schemas."""
+FIELD_BASE_TYPES_TYPE = Literal["string", "integer", "number", "boolean", "array"]
+"""Field base types as types that are supported in the schemas."""
 
 MAX_NESTED_NETWORK_VALIDATION_LEVELS: Final[int] = 4
 """Maximum number of nested network validation levels."""
@@ -248,6 +247,8 @@ class ExtraOptionMultiValueSchemaType(TypedDict):
     """Minimum number of contains items in the array."""
     maxContains: NotRequired[int]
     """Maximum number of contains items in the array."""
+    uniqueItems: NotRequired[bool]
+    """Whether all items in the array must be unique."""
 
 
 def validate_extra_option_multi_value_schema(
@@ -275,6 +276,34 @@ def validate_extra_option_multi_value_schema(
 
 ExtraOptionSchemaTypes = ExtraOptionBaseSchemaTypes | ExtraOptionMultiValueSchemaType
 """Union type for all extra option schemas, including multi-value options."""
+
+
+_OPTION_VALIDATORS: Final[Mapping[str, Callable[[Any], ExtraOptionSchemaTypes]]] = {
+    "string": validate_extra_option_string_schema,
+    "boolean": validate_extra_option_boolean_schema,
+    "integer": validate_extra_option_integer_schema,
+    "number": validate_extra_option_number_schema,
+    "array": validate_extra_option_multi_value_schema,
+}
+
+
+def validate_extra_option_schema(data: Any) -> ExtraOptionSchemaTypes:
+    """Validate that the given data is an ExtraOptionBaseSchemaTypes.
+
+    :raises TypeError: if the data is not valid.
+    """
+    if not isinstance(data, dict):
+        raise TypeError("Must be a dict.")
+    if "type" not in data:
+        raise TypeError("Must have a 'type' field.")
+    type_ = data["type"]
+    if type_ not in FIELD_BASE_TYPES_STR:
+        raise TypeError(
+            f"Extra option schema has invalid type '{type_}'. "
+            f"Must be one of {sorted(FIELD_BASE_TYPES_STR)}."
+        )
+    validator = _OPTION_VALIDATORS[type_]
+    return validator(data)
 
 
 class ExtraLinkItemSchemaType(TypedDict):
@@ -357,10 +386,10 @@ class MessageRuleEnum(str, Enum):
 
     cfg_schema_error = "cfg_schema_error"
     """The user provided schema is invalid."""
-    extra_option_success = "extra_option_success"
-    """Global extra option validation was successful."""
-    extra_option_fail = "extra_option_fail"
-    """Global extra option validation failed."""
+    field_success = "field_success"
+    """Global field validation was successful."""
+    field_fail = "field_fail"
+    """Global field validation failed."""
     extra_link_success = "extra_link_success"
     """Global extra link validation was successful."""
     extra_link_fail = "extra_link_fail"
@@ -451,8 +480,8 @@ Severity levels that can be set in the user provided schemas and for the schema_
 
 MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
     MessageRuleEnum.cfg_schema_error: SeverityEnum.config_error,
-    MessageRuleEnum.extra_option_success: SeverityEnum.none,
-    MessageRuleEnum.extra_option_fail: SeverityEnum.violation,  # cannot be changed by user
+    MessageRuleEnum.field_success: SeverityEnum.none,
+    MessageRuleEnum.field_fail: SeverityEnum.violation,  # cannot be changed by user
     MessageRuleEnum.extra_link_success: SeverityEnum.none,
     MessageRuleEnum.extra_link_fail: SeverityEnum.violation,  # cannot be changed by user
     MessageRuleEnum.select_success: SeverityEnum.none,
@@ -473,7 +502,7 @@ MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
 Default severity for each rule.
 
 User provided schemas can overwrite the severity of a rule.
-The rules ``extra_option_fail`` and ``extra_link_fail`` cannot be changed by the user,
+The rules ``field_fail`` and ``extra_link_fail`` cannot be changed by the user,
 but they can be suppressed specifically using suppress_warnings config.
 """
 

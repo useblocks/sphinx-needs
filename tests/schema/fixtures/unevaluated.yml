@@ -4,10 +4,8 @@ unevaluated_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
-    [[needs.extra_options]]
-    name = "comment"
+    [needs.fields.asil]
+    [needs.fields.comment]
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -26,12 +24,9 @@ unevaluated_allof_error:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_options]]
-    name = "asil"
-    [[needs.extra_options]]
-    name = "comment"
-    [[needs.extra_options]]
-    name = "approved"
+    [needs.fields.asil]
+    [needs.fields.comment]
+    [needs.fields.approved]
     schema.type = "boolean"
   rst: |
     .. impl:: title

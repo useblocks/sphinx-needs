@@ -15,6 +15,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItemSourceService
+from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs.utils import DummyOptionSpec, add_doc, coerce_to_boolean
 
 
@@ -58,8 +59,9 @@ class NeedserviceDirective(SphinxDirective):
 
     def run(self) -> Sequence[nodes.Node]:
         needs_config = NeedsSphinxConfig(self.env.config)
+        needs_schema = SphinxNeedsData(self.env).get_schema()
         try:
-            self._process_options(needs_config)
+            self._process_options(needs_schema)
         except (AssertionError, ValueError):
             return []
 
@@ -90,7 +92,7 @@ class NeedserviceDirective(SphinxDirective):
                 "post_template",
                 "constraints",
                 "content",
-                *needs_config.extra_options,
+                *needs_schema.iter_extra_field_names(),
             }
             for datum in service_data:
                 options = {}
@@ -171,11 +173,12 @@ class NeedserviceDirective(SphinxDirective):
 
         return section
 
-    def _process_options(self, needs_config: NeedsSphinxConfig) -> None:
+    def _process_options(self, needs_schema: FieldsSchema) -> None:
         """
         Process the options of the directive and coerce them to the correct value.
         """
-        link_keys = {li["option"] for li in needs_config.extra_links}
+        link_keys = set(needs_schema.iter_link_field_names())
+        extra_keys = set(needs_schema.iter_extra_field_names())
         for key in list(self.options):
             value: str | None = self.options[key]
             try:
@@ -197,7 +200,7 @@ class NeedserviceDirective(SphinxDirective):
                         assert value, f"'{key}' must not be empty"
                     case "collapse" | "hide" | "jinja_content":
                         self.options[key] = coerce_to_boolean(value)
-                    case key if key in needs_config.extra_options:
+                    case key if key in extra_keys:
                         self.options[key] = value or ""
                     case key if key in link_keys:
                         self.options[key] = value or ""

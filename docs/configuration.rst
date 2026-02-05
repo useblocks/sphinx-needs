@@ -190,191 +190,145 @@ By default it is set to:
 
    Please take a look into the  `PlantUML Manual <https://plantuml.com/>`_ for more details.
 
-.. _`needs_extra_options`:
+.. _`needs_fields`:
 
-needs_extra_options
-~~~~~~~~~~~~~~~~~~~
+needs_fields
+~~~~~~~~~~~~~
 
-.. versionadded:: 0.2.2
+.. versionadded:: 7.0.0
 
-The option allows the addition of extra options that you can specify on
-needs.
+This setting allows you to customise the fields that can be used for each need;
+how they are defined, processed, and validated.
 
-You can set ``needs_extra_options`` as a list inside **conf.py** as follows:
+``needs_fields`` must be a dictionary, where each key is the name of the field, and the value is another dictionary defining the field.
+
+Fields can either "specialize" existing core fields or define completely new ones.
+
+For new fields the following can be defined:
+
+- ``description``: A description of the field (optional).
+    This will be output in the schema of the :ref:`needs.json <needs_builder_format>`, and can be used by other tools.
+- ``schema``: A schema definition for the field (optional).
+    This uses the same format as :ref:`needs_schema_definitions` and :ref:`needs_schema_definitions_from_json`.
+    If specified, the field value will be validated against this schema when needs are parsed, see :ref:`schema_validation` for more details.
+    By default the field schema will be ``{"type": "string"}``.
+- ``nullable``: If set to ``True``, the field can be set to ``None`` (optional), e.g. if no value is specifically given and no default applies,
+    If ``False``, the field must have a value (either explicitly set or via default/predicates), otherwise the need is invalid and will not be created.
+- ``predicates``: A list of ``(match expression, value)`` tuples (optional).
+    If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
+- ``default``: A default value for the field (optional).
+    If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
+- ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
+    Default: ``False``.
+
+For example:
 
 .. code-block:: python
 
-   needs_extra_options = ['introduced', 'updated', 'impacts']
+   needs_fields = {
+       "introduced": {
+           "description": "Date when the need was introduced",
+           "schema": {
+               "type": "string",
+               "format": "date",
+           },
+           "nullable": False,
+       },
+       "cost": {
+             "description": "Approximated cost in Euros",
+             "schema": {
+                "type": "number",
+                "minimum": 0,
+             },
+             "predicates": [
+                ('"high" in tags', 10000),
+                ('"medium" in tags', 5000),
+             ],
+             "default": 0,
+       },
+   }
 
-And use it like:
+These fields would then be availble to set in need directives, such as:
 
 .. code-block:: rst
 
    .. req:: My Requirement
+      :id: REQ_001
       :status: open
-      :introduced: Yes
-      :updated: 2018/03/26
-      :tags: important;complex;
-      :impacts: really everything
+      :introduced: 2024-01-15
+      :cost: 1500.50
 
 .. note::
 
-   To filter on these options in ``needlist``, ``needtable``, etc. you
+   To filter on these fields in ``needlist``, ``needtable``, etc. you
    must use the :ref:`filter` option.
 
-.. dropdown:: Show example
 
-   **conf.py**
+Core field specialization
++++++++++++++++++++++++++
 
-   .. code-block:: python
+The following core fields can be specialized:
 
-      needs_extra_options = ["my_extra_option",  "another_option"]
+.. need-core-fields::
 
-   **index.rst**
-
-   .. code-block:: rst
-
-      .. req:: My requirement with custom options
-         :id: xyz_123
-         :status: open
-         :my_extra_option: A new option
-         :another_option: filter_me
-
-         Some content
-
-      .. needlist::
-         :filter: "filter_me" in another_option
-
-   **Result**
-
-   .. req:: My requirement with custom options
-      :id: xyz_123
-      :status: open
-      :my_extra_option: A new option
-      :another_option: filter_me
-
-      Some content
-
-   .. needlist::
-      :filter: "filter_me" in another_option
-
-.. versionadded:: 4.1.0
-
-   Values in the list can also be dictionaries, with keys:
-
-   * ``name``: The name of the option (required).
-   * ``description``: A description of the option (optional).
-       This will be output in the schema of the :ref:`needs.json <needs_builder_format>`,
-       and can be used by other tools.
-
-   For example:
-
-   .. code-block:: python
-
-      needs_extra_options = [
-          "my_extra_option",
-          {"name": "my_other_option", "description": "This is a description of the option"}
-      ]
-
-.. versionadded:: 6.0.0
-
-   The ``needs_extra_options`` can now contain schema information for each option:
-
-   .. code-block:: python
-
-      needs_extra_options = [
-          {
-              "name": "efforts",
-              "description": "Efforts in days",
-              "schema": {
-                  "type": "integer",
-                  "mininum": 0,
-              },
-          }
-      ]
-
-   The same fields for the :ref:`supported_data_types` as in the :ref:`schema_validation`
-   are accepted. If ``schema`` is given, ``type`` is required. All the other keys can also
-   be defined via :ref:`needs_schema_definitions` or in the file passed via
-   :ref:`needs_schema_definitions_from_json`. If specified via ``needs_extra_options``,
-   the constraints are applied to *all* usages of the option.
-
-.. _`needs_global_options`:
-.. _`global_option_filters`:
-
-needs_global_options
-~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 0.3.0
-
-.. versionchanged:: 5.1.0
-
-   The format of the global options was change to be more explicit.
-
-   Unknown keys are also no longer accepted,
-   these should also be set in the :ref:`needs_extra_options` list.
-
-   .. dropdown:: Comparison to old format
-
-      .. code-block:: python
-         :caption: Old format
-
-         needs_global_options = {
-             "field1": "a",
-             "field2": ("a", 'status == "done"'),
-             "field3": ("a", 'status == "done"', "b"),
-             "field4": [
-                 ("a", 'status == "done"'),
-                 ("b", 'status == "ongoing"'),
-                 ("c", 'status == "other"', "d"),
-             ],
-         }
-
-      .. code-block:: python
-         :caption: New format
-
-         needs_global_options = {
-             "field1": {"default": "a"},
-             "field2": {"predicates": [('status == "done"', "a")]},
-             "field3": {
-                 "predicates": [('status == "done"', "a")],
-                 "default": "b",
-             },
-             "field4": {
-                 "predicates": [
-                     ('status == "done"', "a"),
-                     ('status == "ongoing"', "b"),
-                     ('status == "other"', "c"),
-                 ],
-                 "default": "d",
-             },
-         }
-
-This configuration allows for global defaults to be set for all needs,
-for any of the following fields:
-
-- any ``needs_extra_options`` field
-- any ``needs_extra_links`` field
-- ``status``
-- ``layout``
-- ``style``
-- ``tags``
-- ``constraints``
-
-Defaults will be used if the field is not set specifically by the user and thus has a "empty" value.
+Specialization allows you to redefine the description and tighten the schema of these fields:
+Schemas will inherit any constraints defined in the core schema that are not redefined, and redefinitions must be not weaken the constraints of the original schema (this is intended to obey the `Liskov substitution principle <https://en.wikipedia.org/wiki/Liskov_substitution_principle>`__).
+For example, you could redefine the ``status`` and ``tags`` fields to only allow certain values:
 
 .. code-block:: python
 
-   needs_extra_options = ["option1"]
-   needs_global_options = {
-      "tags": {"default": ["tag1", "tag2"]},
-      "option1": {"default": "new value"},
+   needs_fields = {
+       "status": {
+           "schema": {
+               # inherits "type": "string" from core schema
+               # adds tighter constraint on allowed values
+               "enum": ["open", "in progress", "done", "closed"],
+           },
+           # adds tighter constraint on nullability,
+           # i.e. the status must always be set
+           "nullable": False,
+       },
+         "tags": {
+            "schema": {
+                  # inherits "type": "array" from core schema
+                  "items": {
+                     # inherits "type": "string" from core schema
+                     # adds tighter constraint on allowed item values
+                     "enum": ["important", "complex", "external", "internal"],
+                  },
+                  # adds tighter constraint on array length
+                  "minItems": 1,
+            },
+         },
    }
 
-To set a default based on a one or more predicates, use the ``predicates`` key.
-These predicates are a list of ``(match expression, value)``, evaluated in order, with the first match set as the default value.
+The following would be invalid specializations:
 
-A match expression is a string, using Python syntax, that will be evaluated against data from each need (before the resolution of defaults or dynamic functions etc):
+.. code-block:: python
+
+   needs_fields = {
+       "title": {
+           "schema": {
+               # invalid: core schema allows only strings
+               "type": "number",
+           },
+       },
+       "tags": {
+           "schema": {
+               "items": {
+                   # invalid: core schema allows only string
+                   "type": "number",
+               },
+           },
+       },
+   }
+
+Default values
+++++++++++++++
+
+Default values either must match the type defined in the schema for the field, or can be :ref:`dynamic values <dynamic_functions>`, that resolve to a value of the correct type.
+
+For ``predicates``, the match expression is a string, using Python syntax, that will be evaluated against data from each need (before the resolution of defaults or dynamic functions etc):
 
 - ``id`` (``str``)
 - ``type`` (``str``)
@@ -384,60 +338,27 @@ A match expression is a string, using Python syntax, that will be evaluated agai
 - ``docname`` (``str | None``)
 - ``is_external`` (``bool``)
 - ``is_import`` (``bool``)
-- :ref:`needs_extra_options` (``str``)
+- :ref:`needs_fields`
 - :ref:`needs_extra_links` (``tuple[str, ...]``)
 - :ref:`needs_filter_data`
 
-If no predicates match, the ``default`` value is used (if present).
+For example:
 
 .. code-block:: python
 
-   needs_extra_options = ["option1"]
-   needs_global_options = {
-      "option1": {
-      # if field is unset:
+   needs_fields = {
+       "field1": {
+         "schema": {"type": "string"},
          "predicates": [
             # if status is "done", set to "value1"
             ("status == 'done'", "value1"),
-            # else if status is "ongoing", set to "value2"
-            ("status == 'ongoing'", "value2"),
-         ]
-         # else, set to "value3"
-         "default": "value3",
-      }
+            # else if status is "ongoing", set to a dynamic value
+            ("status == 'ongoing'", '[[copy("yyy")]]'),
+         ],
+         # the base default is a dynamic value
+         "default": '[[copy("xxx")]]',
+       },
    }
-
-.. tip::
-
-   You can combine global options with :ref:`dynamic_functions` to automate data handling.
-
-   .. code-block:: python
-
-      needs_extra_options = ["option1"]
-      needs_global_options = {
-              "option1": {"default": '[[copy("id")]]'}
-      }
-
-.. _`needs_report_dead_links`:
-
-needs_report_dead_links
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. deprecated:: 2.1.0
-
-   Instead add ``needs.link_outgoing`` to the `suppress_warnings <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings>`__ list::
-
-     suppress_warnings = ["needs.link_outgoing"]
-
-Deactivate/activate log messages of disallowed outgoing dead links. If set to ``False``, then deactivate.
-
-Default value is ``True``.
-
-Configuration example:
-
-.. code-block:: python
-
-   needs_report_dead_links = False
 
 .. _`needs_extra_links`:
 
@@ -450,15 +371,21 @@ Allows the definition of additional link types.
 
 Each configured link should define:
 
-* **option**: The name of the option. Example "blocks".
-* **incoming**: Incoming text, to use for incoming links. E.g. "is blocked by".
-* **outgoing**: Outgoing text, to use for outgoing links. E.g. "blocks".
-* **copy** (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
+- ``option``: The name of the option. Example "blocks".
+- ``predicates`` (optional): A list of ``(match expression, value)`` tuples.
+    If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
+- ``default`` (optional): A default value for the field.
+    If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
+- ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
+    Default: ``False``.
+- ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by".
+- ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks".
+- ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
   Default: True
-* **allow_dead_links** (optional): True/False. If True, dead links are allowed and do not throw a warning.
+- ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
-* **style** (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
-* **style_part** (optional): Same as **style**, but get used if link is connected to a :ref:`need_part`.
+- ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
+- ``style_part`` (optional): Same as ``style``, but get used if link is connected to a :ref:`need_part`.
   See :ref:`links_style`.
 
 Configuration example:
@@ -468,11 +395,13 @@ Configuration example:
    needs_extra_links = [
       {
          "option": "checks",
-         "incoming": "is checked by",
-         "outgoing": "checks",
       },
       {
          "option": "triggers",
+         "predicates": [
+            ('"urgent" in tags', ["ID999", "ID998"]),
+         ],
+         "default": ["ID123"],
          "incoming": "is triggered by",
          "outgoing": "triggers",
          "copy": False,
@@ -496,11 +425,48 @@ The above example configuration allows the following usage:
       :checks: EXTRA_REQ_001, DEAD_LINK_NOT_ALLOWED
       :triggers: DEAD_LINK
 
-.. attention:: The used option name can not be reused in the configuration of :ref:`needs_global_options`.
-
 Link types with option-name **links** and **parent_needs** are added by default.
 You are free to overwrite the default config by defining your own type with option name **links** or **parent_needs**.
 This type will be used as default configuration for all links.
+
+Default values
+++++++++++++++
+
+.. versionadded:: 7.0.0
+
+Default values either must match the type defined in the schema for the field, or can be :ref:`dynamic values <dynamic_functions>`, that resolve to a value of the correct type.
+
+For ``predicates``, the match expression is a string, using Python syntax, that will be evaluated against data from each need (before the resolution of defaults or dynamic functions etc):
+
+- ``id`` (``str``)
+- ``type`` (``str``)
+- ``title`` (``str``)
+- ``tags`` (``tuple[str, ...]``)
+- ``status`` (``str | None``)
+- ``docname`` (``str | None``)
+- ``is_external`` (``bool``)
+- ``is_import`` (``bool``)
+- :ref:`needs_fields`
+- :ref:`needs_extra_links` (``tuple[str, ...]``)
+- :ref:`needs_filter_data`
+
+For example:
+
+.. code-block:: python
+
+   needs_extra_links = [
+      {
+         "option": "custom_link",
+         "predicates": [
+            # if status is "done", set to ["ID123"]
+            ("status == 'done'", ["ID123"]),
+            # else if status is "ongoing", set to a dynamic value
+            ("status == 'ongoing'", '[[copy("yyy")]]'),
+         ],
+         # the base default is a dynamic value
+         "default": '[[copy("xxx")]]',
+      },
+   ]
 
 .. _`allow_dead_links`:
 
@@ -632,11 +598,11 @@ The defined extra filter data can be used like this:
    .. needextend:: type == "req" and sphinx_tag in tags
       :+tags: my_external_tag
 
-or if project has :ref:`needs_extra_options` defined like:
+or if project has :ref:`needs_fields` defined like:
 
 .. code-block:: python
 
-   needs_extra_options = ['variant']
+   needs_fields = {'variant': {}}
 
 The defined extra filter data can also be used like:
 
@@ -903,16 +869,16 @@ If you do not set ``needs_report_template``, the default template used is:
    {% endif %}
    {# Output for needs_extra_links #}
 
-   {# Output for needs_options #}
-   {% if options|length != 0 %}
+   {# Output for needs_fields #}
+   {% if fields|length != 0 %}
    .. dropdown:: Need Extra Options
       :class: needs_report_table
 
-      {% for option in options %}
-      * {{ option }}
+      {% for field in fields %}
+      * {{ json_exclude_fields }}
       {% endfor %}
    {% endif %}
-   {# Output for needs_options #}
+   {# Output for needs_fields #}
 
    {# Output for needs metrics #}
    {% if usage|length != 0 %}
@@ -936,8 +902,8 @@ If you do not set ``needs_report_template``, the default template used is:
 The plugin provides the following variables which you can use in your custom Jinja template:
 
 * types - list of :ref:`need types <needs_types>`
-* links - list of :ref:`extra need links <needs_extra_links>`
-* options - list of :ref:`extra need options <needs_extra_options>`
+* links - list of :ref:`needs_extra_links`
+* fields - list of :ref:`needs_fields`
 * usage - a dictionary object containing information about the following:
     + needs_amount -> total amount of need objects in the project
     + needs_types -> number of need objects per needs type
@@ -1177,55 +1143,6 @@ needs_file
 
 Defines the location of a JSON file, which is used by the builder :ref:`needs_builder` as input source.
 Default value: *needs.json*.
-
-.. _`needs_statuses`:
-
-needs_statuses
-~~~~~~~~~~~~~~
-
-.. versionadded:: 0.1.41
-
-Defines a set of valid statuses, which are allowed to be used inside documentation.
-If we detect a status not defined, an error is thrown and the build stops.
-The checks are case sensitive.
-
-Activate it by setting it like this:
-
-.. code-block:: python
-
-   needs_statuses = [
-       dict(name="open", description="Nothing done yet"),
-       dict(name="in progress", description="Someone is working on it"),
-       dict(name="implemented", description="Work is done and implemented"),
-   ]
-
-If parameter is not set or set to *False*, no checks will be performed.
-
-Default value: *[]*.
-
-.. _`needs_tags`:
-
-needs_tags
-~~~~~~~~~~
-
-.. versionadded:: 0.1.41
-
-Defines a set of valid tags, which are allowed to be used inside documentation.
-If we detect a tag not defined, an error is thrown and the build stops.
-The checks are case sensitive.
-
-Activate it by setting it like this:
-
-.. code-block:: python
-
-   needs_tags = [
-       dict(name="new", description="new needs"),
-       dict(name="security", description="tag for security needs"),
-   ]
-
-If parameter is not set or set to *[]*, no checks will be performed.
-
-Default value: *[]*.
 
 .. _`needs_css`:
 
@@ -1909,7 +1826,7 @@ link name and url.
 
       Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 
-.. note:: You must define the options specified under :ref:`needs_string_links` inside :ref:`needs_extra_options` as well.
+.. note:: You must define the options specified under :ref:`needs_string_links` inside :ref:`needs_fields` as well.
 
 .. _`needs_build_json`:
 
@@ -2104,7 +2021,7 @@ needs_constraints
 
    }
 
-needs_constraints needs to be enabled by adding "constraints" to :ref:`needs_extra_options`
+needs_constraints needs to be enabled by adding "constraints" to :ref:`needs_fields`
 
 needs_constraints contains a dictionary which contains dictionaries describing a single constraint. A single constraint's name serves as the key for the inner dictionary.
 Inside there are (multiple) checks and a severity. Each check describes an executable constraint which allows to set conditions the specific need has to fulfill.
@@ -2240,35 +2157,6 @@ The dictionary consists of key-value pairs where the key is a string used as a r
 The value is a string which consists of a Python-supported "filter string".
 
 Default: ``{}``
-
-.. _`needs_variant_options`:
-
-needs_variant_options
-~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 1.0.2
-
-``needs_variant_options`` must be a list which consists of the options to apply :ref:`variants handling <needs_variant_support>`.
-You can specify the names of the options you want to check for variants.
-
-for example, in ``conf.py``:
-
-.. code-block:: python
-
-   needs_variant_options = ["author", "status"]
-
-From the example above, we apply variants handling to only the options specified.
-
-Default: ``[]``
-
-.. note::
-
-   You must ensure the options ``needs_variant_options`` are one of:
-
-   - ``status``
-   - ``layout``
-   - ``style``
-   - :ref:`extra options <needs_extra_options>`
 
 .. _`needs_render_context`:
 
@@ -2479,7 +2367,7 @@ noise in debug output by filtering out irrelevant validations.
 Default value::
 
   [
-     "extra_option_success",
+     "field_success",
      "extra_link_success",
      "select_success",
      "select_fail",
@@ -2490,7 +2378,7 @@ Default value::
 .. code-block:: python
 
    needs_schema_debug_ignore = [
-       "extra_option_success",
+       "field_success",
        "local_success",
        "network_local_success"
    ]
@@ -2500,8 +2388,8 @@ To write all scenarios, set it to an empty list: ``[]``.
 Available scenarios that can be ignored:
 
 - ``cfg_schema_error``: The user provided schema is invalid
-- ``extra_option_success``: Global extra option validation was successful
-- ``extra_option_fail``: Global extra option validation failed
+- ``field_success``: Global field validation was successful
+- ``field_fail``: Global field validation failed
 - ``extra_link_success``: Global extra link validations was successful
 - ``extra_link_fail``: Global extra link validation failed
 - ``select_success``: Successful select validation
@@ -2524,3 +2412,345 @@ final need and schema looks like.
 
    For large need counts, the debug output can become very large.
    Writing debug output also affects the validation performance negatively.
+
+Deprecated Options
+------------------
+
+.. _`needs_extra_options`:
+
+needs_extra_options
+~~~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 7.0.0
+
+   Use :ref:`needs_fields` instead.
+
+The option allows the addition of extra options that you can specify on
+needs.
+
+You can set ``needs_extra_options`` as a list inside **conf.py** as follows:
+
+.. code-block:: python
+
+   needs_extra_options = ['introduced', 'updated', 'impacts']
+
+And use it like:
+
+.. code-block:: rst
+
+   .. req:: My Requirement
+      :status: open
+      :introduced: Yes
+      :updated: 2018/03/26
+      :tags: important;complex;
+      :impacts: really everything
+
+.. note::
+
+   To filter on these options in ``needlist``, ``needtable``, etc. you
+   must use the :ref:`filter` option.
+
+.. dropdown:: Show example
+
+   **conf.py**
+
+   .. code-block:: python
+
+      needs_extra_options = ["my_extra_option",  "another_option"]
+
+   **index.rst**
+
+   .. code-block:: rst
+
+      .. req:: My requirement with custom options
+         :id: xyz_123
+         :status: open
+         :my_extra_option: A new option
+         :another_option: filter_me
+
+         Some content
+
+      .. needlist::
+         :filter: "filter_me" in another_option
+
+   **Result**
+
+   .. req:: My requirement with custom options
+      :id: xyz_123
+      :status: open
+      :my_extra_option: A new option
+      :another_option: filter_me
+
+      Some content
+
+   .. needlist::
+      :filter: "filter_me" in another_option
+
+.. versionadded:: 4.1.0
+
+   Values in the list can also be dictionaries, with keys:
+
+   * ``name``: The name of the option (required).
+   * ``description``: A description of the option (optional).
+       This will be output in the schema of the :ref:`needs.json <needs_builder_format>`,
+       and can be used by other tools.
+
+   For example:
+
+   .. code-block:: python
+
+      needs_extra_options = [
+          "my_extra_option",
+          {"name": "my_other_option", "description": "This is a description of the option"}
+      ]
+
+.. versionadded:: 6.0.0
+
+   The ``needs_extra_options`` can now contain schema information for each option:
+
+   .. code-block:: python
+
+      needs_extra_options = [
+          {
+              "name": "efforts",
+              "description": "Efforts in days",
+              "schema": {
+                  "type": "integer",
+                  "mininum": 0,
+              },
+          }
+      ]
+
+   The same fields for the :ref:`supported_data_types` as in the :ref:`schema_validation`
+   are accepted. If ``schema`` is given, ``type`` is required. All the other keys can also
+   be defined via :ref:`needs_schema_definitions` or in the file passed via
+   :ref:`needs_schema_definitions_from_json`. If specified via :ref:`needs_fields`,
+   the constraints are applied to *all* usages of the option.
+
+.. _`needs_global_options`:
+.. _`global_option_filters`:
+
+needs_global_options
+~~~~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 7.0.0
+
+   Use :ref:`needs_fields` and :ref:`needs_extra_links` instead.
+
+.. versionchanged:: 5.1.0
+
+   The format of the global options was change to be more explicit.
+
+   Unknown keys are also no longer accepted,
+   these should also be set in the :ref:`needs_fields` list.
+
+   .. dropdown:: Comparison to old format
+
+      .. code-block:: python
+         :caption: Old format
+
+         needs_global_options = {
+             "field1": "a",
+             "field2": ("a", 'status == "done"'),
+             "field3": ("a", 'status == "done"', "b"),
+             "field4": [
+                 ("a", 'status == "done"'),
+                 ("b", 'status == "ongoing"'),
+                 ("c", 'status == "other"', "d"),
+             ],
+         }
+
+      .. code-block:: python
+         :caption: New format
+
+         needs_global_options = {
+             "field1": {"default": "a"},
+             "field2": {"predicates": [('status == "done"', "a")]},
+             "field3": {
+                 "predicates": [('status == "done"', "a")],
+                 "default": "b",
+             },
+             "field4": {
+                 "predicates": [
+                     ('status == "done"', "a"),
+                     ('status == "ongoing"', "b"),
+                     ('status == "other"', "c"),
+                 ],
+                 "default": "d",
+             },
+         }
+
+This configuration allows for global defaults to be set for all needs,
+for any of the following fields:
+
+- any :ref:`needs_fields` key
+- any ``needs_extra_links`` field
+- ``status``
+- ``layout``
+- ``style``
+- ``tags``
+- ``constraints``
+
+Defaults will be used if the field is not set specifically by the user and thus has a "empty" value.
+
+.. code-block:: python
+
+   needs_fields = {"option1": {}}
+   needs_global_options = {
+      "tags": {"default": ["tag1", "tag2"]},
+      "option1": {"default": "new value"},
+   }
+
+To set a default based on a one or more predicates, use the ``predicates`` key.
+These predicates are a list of ``(match expression, value)``, evaluated in order, with the first match set as the default value.
+
+A match expression is a string, using Python syntax, that will be evaluated against data from each need (before the resolution of defaults or dynamic functions etc):
+
+- ``id`` (``str``)
+- ``type`` (``str``)
+- ``title`` (``str``)
+- ``tags`` (``tuple[str, ...]``)
+- ``status`` (``str | None``)
+- ``docname`` (``str | None``)
+- ``is_external`` (``bool``)
+- ``is_import`` (``bool``)
+- :ref:`needs_fields`
+- :ref:`needs_extra_links` (``tuple[str, ...]``)
+- :ref:`needs_filter_data`
+
+If no predicates match, the ``default`` value is used (if present).
+
+.. code-block:: python
+
+   needs_fields = {"option1": {}}
+   needs_global_options = {
+      "option1": {
+      # if field is unset:
+         "predicates": [
+            # if status is "done", set to "value1"
+            ("status == 'done'", "value1"),
+            # else if status is "ongoing", set to "value2"
+            ("status == 'ongoing'", "value2"),
+         ]
+         # else, set to "value3"
+         "default": "value3",
+      }
+   }
+
+.. tip::
+
+   You can combine global options with :ref:`dynamic_functions` to automate data handling.
+
+   .. code-block:: python
+
+      needs_fields = {"option1": {}}
+      needs_global_options = {
+              "option1": {"default": '[[copy("id")]]'}
+      }
+
+.. _`needs_statuses`:
+
+needs_statuses
+~~~~~~~~~~~~~~
+
+.. deprecated:: 7.0.0
+
+   Use :ref:`needs_fields` instead.
+
+Defines a set of valid statuses, which are allowed to be used inside documentation.
+If we detect a status not defined, an error is thrown and the build stops.
+The checks are case sensitive.
+
+Activate it by setting it like this:
+
+.. code-block:: python
+
+   needs_statuses = [
+       dict(name="open", description="Nothing done yet"),
+       dict(name="in progress", description="Someone is working on it"),
+       dict(name="implemented", description="Work is done and implemented"),
+   ]
+
+If parameter is not set or set to *False*, no checks will be performed.
+
+Default value: *[]*.
+
+.. _`needs_tags`:
+
+needs_tags
+~~~~~~~~~~
+
+.. deprecated:: 7.0.0
+
+   Use :ref:`needs_fields` instead.
+
+Defines a set of valid tags, which are allowed to be used inside documentation.
+If we detect a tag not defined, an error is thrown and the build stops.
+The checks are case sensitive.
+
+Activate it by setting it like this:
+
+.. code-block:: python
+
+   needs_tags = [
+       dict(name="new", description="new needs"),
+       dict(name="security", description="tag for security needs"),
+   ]
+
+If parameter is not set or set to *[]*, no checks will be performed.
+
+Default value: *[]*.
+
+.. _`needs_variant_options`:
+
+needs_variant_options
+~~~~~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 7.0.0
+
+   Use :ref:`needs_fields` instead.
+
+.. versionadded:: 1.0.2
+
+``needs_variant_options`` must be a list which consists of the options to apply :ref:`variants handling <needs_variant_support>`.
+You can specify the names of the options you want to check for variants.
+
+for example, in ``conf.py``:
+
+.. code-block:: python
+
+   needs_variant_options = ["author", "status"]
+
+From the example above, we apply variants handling to only the options specified.
+
+Default: ``[]``
+
+.. note::
+
+   You must ensure the options ``needs_variant_options`` are one of:
+
+   - ``status``
+   - ``layout``
+   - ``style``
+   - :ref:`needs_fields`
+
+.. _`needs_report_dead_links`:
+
+needs_report_dead_links
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 2.1.0
+
+   Instead add ``needs.link_outgoing`` to the `suppress_warnings <https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-suppress_warnings>`__ list::
+
+     suppress_warnings = ["needs.link_outgoing"]
+
+Deactivate/activate log messages of disallowed outgoing dead links. If set to ``False``, then deactivate.
+
+Default value is ``True``.
+
+Configuration example:
+
+.. code-block:: python
+
+   needs_report_dead_links = False
