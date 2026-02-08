@@ -16,7 +16,7 @@ from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.functions.functions import DynamicFunction
 from sphinx_needs.need_item import NeedItem
-from sphinx_needs.schema.config import ExtraOptionSchemaTypes
+from sphinx_needs.schema.config import FieldSchemaTypes
 
 # TODO(mh) document exactly when API calls are allowed in the Sphinx event system
 
@@ -92,7 +92,7 @@ def add_extra_option(
     name: str,
     *,
     description: str = "Added by add_extra_option API",
-    schema: ExtraOptionSchemaTypes | None = None,
+    schema: FieldSchemaTypes | None = None,
     nullable: bool | None = None,
     parse_variants: bool | None = None,
 ) -> None:
@@ -136,7 +136,7 @@ def add_field(
     /,
     description: str,
     *,
-    schema: ExtraOptionSchemaTypes | None = None,
+    schema: FieldSchemaTypes | None = None,
     nullable: bool | None = None,
     parse_variants: bool | None = None,
 ) -> None:
@@ -151,9 +151,9 @@ def add_field(
 
         add_field('my_field')
 
-    :param name: Name of the extra option
-    :param description: Description of the extra option
-    :param schema: Schema definition for the extra option
+    :param name: Name of the field
+    :param description: Description of the field
+    :param schema: Schema definition for the field
     :param nullable: Whether the field allows unset values.
     :param parse_variants: Whether variants are parsed in this field.
     """

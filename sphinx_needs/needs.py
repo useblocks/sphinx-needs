@@ -127,7 +127,7 @@ from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, NeedPartRole, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
 from sphinx_needs.schema.config import (
-    ExtraOptionIntegerSchemaType,
+    FieldIntegerSchemaType,
     SchemasFileRootType,
 )
 from sphinx_needs.schema.config_utils import (
@@ -313,7 +313,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", check_configuration, priority=600)  # runs late
 
     app.connect("env-before-read-docs", prepare_env)
-    # note we have to place create_schema after prepare_env, as that can add extra options,
+    # note we have to place create_schema after prepare_env, as that can add extra fields,
     # but before load_external_needs, where we start to add needs.
     app.connect("env-before-read-docs", create_schema)
     # schemas type injection uses information from create_schema
@@ -490,7 +490,7 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
 
 def load_config(app: Sphinx, *_args: Any) -> None:
     """
-    Register extra options and directive based on config from conf.py
+    Register extra fields and directive based on config from conf.py
     """
     needs_config = NeedsSphinxConfig(app.config)
 
@@ -571,9 +571,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             override=True,
         )
 
-    # ensure options for `needgantt` functionality are added to the extra options
+    # ensure fields for `needgantt` functionality are added to the fields
     for option in (needs_config.duration_option, needs_config.completion_option):
-        default_schema: ExtraOptionIntegerSchemaType = {"type": "integer"}
+        default_schema: FieldIntegerSchemaType = {"type": "integer"}
         if option not in _NEEDS_CONFIG.fields:
             _NEEDS_CONFIG.add_field(
                 option, "Added for needgantt functionality", schema=default_schema
@@ -738,7 +738,7 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     E.g. defined need-option, which is already defined internally
     """
     needs_config = NeedsSphinxConfig(config)
-    extra_options = _NEEDS_CONFIG.fields
+    fields = _NEEDS_CONFIG.fields
     link_types = [x["option"] for x in needs_config._extra_links]
 
     external_filter = needs_config.filter_data
@@ -748,19 +748,19 @@ def check_configuration(app: Sphinx, config: Config) -> None:
             raise NeedsConfigException(
                 f"External filter value: {value} from needs_filter_data {external_filter} is not a string."
             )
-        # Check if needs external filter and extra option are using the same name
-        if extern_filter in extra_options:
+        # Check if needs external filter and field are using the same name
+        if extern_filter in fields:
             raise NeedsConfigException(
-                f"Same name for external filter and extra option: {extern_filter}."
+                f"Same name for external filter and field: {extern_filter}."
                 " This is not allowed."
             )
 
     # Check for usage of internal names
     for internal in NeedsCoreFields:
-        if internal in extra_options:
+        if internal in fields:
             raise NeedsConfigException(
-                f'Extra option "{internal}" already used internally. '
-                " Please use another name in your config (needs_extra_options)."
+                f"Field {internal!r} already used internally. "
+                " Please use another name in your config (needs_fields)."
             )
         if internal in link_types:
             raise NeedsConfigException(
@@ -770,14 +770,13 @@ def check_configuration(app: Sphinx, config: Config) -> None:
 
     # Check if option and link are using the same name
     for link in link_types:
-        if link in extra_options:
+        if link in fields:
             raise NeedsConfigException(
-                f"Same name for link type and extra option: {link}."
-                " This is not allowed."
+                f"Same name for link and field: {link}. This is not allowed."
             )
-        if link + "_back" in extra_options:
+        if link + "_back" in fields:
             raise NeedsConfigException(
-                "Same name for automatically created link type and extra option: {}."
+                "Same name for automatically created link and field: {}."
                 " This is not allowed.".format(link + "_back")
             )
 
@@ -805,9 +804,9 @@ def check_configuration(app: Sphinx, config: Config) -> None:
                 raise NeedsConfigException(
                     f"Variant option `{option}` is a link type. This is not allowed."
                 )
-            if option not in extra_options and option not in allowed_internal_variants:
+            if option not in fields and option not in allowed_internal_variants:
                 raise NeedsConfigException(
-                    f"Variant option `{option}` is not added in needs_extra_options or needs_fields. "
+                    f"Variant option `{option}` is not added in needs_fields. "
                     "This is not allowed."
                 )
 
@@ -925,7 +924,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             )
             schema.add_extra_field(field)
         except Exception as exc:
-            raise NeedsConfigException(f"Invalid extra option {name!r}: {exc}") from exc
+            raise NeedsConfigException(f"Invalid field {name!r}: {exc}") from exc
 
     for link in needs_config._extra_links:
         name = link["option"]

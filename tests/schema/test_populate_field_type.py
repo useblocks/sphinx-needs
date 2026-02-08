@@ -102,7 +102,7 @@ class TestPopulateFieldTypeSuccess:
         assert schema["validate"]["local"]["type"] == "object"
 
     def test_extra_field_type_injection(self) -> None:
-        """Test type injection for extra option fields."""
+        """Test type injection for fields."""
         schema: dict[str, Any] = {
             "idx": 0,
             "validate": {
@@ -122,7 +122,7 @@ class TestPopulateFieldTypeSuccess:
         assert schema["validate"]["local"]["properties"]["priority"]["type"] == "string"
 
     def test_extra_field_array_type_injection(self) -> None:
-        """Test type injection for array extra option fields with items."""
+        """Test type injection for array fields with items."""
         schema: dict[str, Any] = {
             "idx": 0,
             "validate": {
@@ -144,7 +144,7 @@ class TestPopulateFieldTypeSuccess:
         assert props["items"]["type"] == "string"
 
     def test_extra_field_array_contains_injection(self) -> None:
-        """Test type injection for array extra option fields with contains."""
+        """Test type injection for array fields with contains."""
         schema: dict[str, Any] = {
             "idx": 0,
             "validate": {
@@ -432,9 +432,7 @@ class TestPopulateFieldTypeFailure:
             populate_field_type(schema, "[0]", fields_schema)
 
         assert "unknown_field" in str(exc_info.value)
-        assert "not a known extra option, extra link, or core field" in str(
-            exc_info.value
-        )
+        assert "not a known field or link" in str(exc_info.value)
 
     def test_type_mismatch_extra_field(self) -> None:
         """Test that type mismatch for extra field raises error."""

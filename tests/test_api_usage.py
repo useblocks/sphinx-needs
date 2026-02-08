@@ -138,7 +138,7 @@ def test_api_add_field(
             
             def setup(app):
                 from sphinx_needs.api import add_field
-                add_field('my_extra_option', description='My extra option')
+                add_field('my_extra_option', description='My extra field')
                 return {'version': '0.1'}
             """
         ),
@@ -149,7 +149,7 @@ def test_api_add_field(
 
             .. req:: a req
                 :id: REQ_1
-                :my_extra_option: extra option value
+                :my_extra_option: extra field value
             """
         ),
     }
@@ -162,7 +162,7 @@ def test_api_add_field(
 
     html = Path(app.outdir, "index.html").read_text()
     assert html is not None
-    assert "extra option value" in html
+    assert "extra field value" in html
 
     assert app.statuscode == 0
 
@@ -182,7 +182,7 @@ def test_api_add_field_schema(
                 from sphinx_needs.api import add_field
                 add_field(
                     'my_extra_option',
-                    description='My extra option',
+                    description='My extra field',
                     schema={
                         'type': 'integer',
                         'maximum': 10,
@@ -231,7 +231,7 @@ def test_api_add_field_schema_wrong(
                 from sphinx_needs.api import add_field
                 add_field(
                     'my_extra_option',
-                    description='My extra option',
+                    description='My extra field',
                     schema={
                         'type': 'integer',
                         'not_exist': 10,

@@ -51,7 +51,7 @@ nitpick_ignore = [
     ("py:class", "sphinx_needs.views._LazyIndexes"),
     ("py:class", "sphinx_needs.config.NeedsSphinxConfig"),
     ("py:class", "AllowedTypes"),
-    ("py:class", "ExtraOptionSchemaTypes"),
+    ("py:class", "FieldSchemaTypes"),
 ]
 
 rst_epilog = """

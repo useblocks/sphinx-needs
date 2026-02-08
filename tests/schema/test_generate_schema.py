@@ -20,11 +20,11 @@ from syrupy.extensions.json import JSONSnapshotExtension
 from sphinx_needs.schema.config import (
     ExtraLinkItemSchemaType,
     ExtraLinkSchemaType,
-    ExtraOptionBooleanSchemaType,
-    ExtraOptionIntegerSchemaType,
-    ExtraOptionMultiValueSchemaType,
-    ExtraOptionNumberSchemaType,
-    ExtraOptionStringSchemaType,
+    FieldBooleanSchemaType,
+    FieldIntegerSchemaType,
+    FieldMultiValueSchemaType,
+    FieldNumberSchemaType,
+    FieldStringSchemaType,
     SchemasRootType,
 )
 
@@ -112,11 +112,11 @@ def snapshot_json(snapshot):
     [
         ExtraLinkItemSchemaType,
         ExtraLinkSchemaType,
-        ExtraOptionBooleanSchemaType,
-        ExtraOptionIntegerSchemaType,
-        ExtraOptionMultiValueSchemaType,
-        ExtraOptionNumberSchemaType,
-        ExtraOptionStringSchemaType,
+        FieldBooleanSchemaType,
+        FieldIntegerSchemaType,
+        FieldMultiValueSchemaType,
+        FieldNumberSchemaType,
+        FieldStringSchemaType,
         SchemasRootType,
     ],
 )

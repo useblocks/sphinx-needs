@@ -1,8 +1,8 @@
 {
   "$defs": {
-    "ExtraOptionBooleanSchemaType": {
+    "FieldBooleanSchemaType": {
       "additionalProperties": false,
-      "description": "Boolean extra option schema.\n\nA predefined set of truthy/falsy strings are accepted:\n- truthy = {\"true\", \"yes\", \"y\", \"on\", \"1\"}\n- falsy = {\"false\", \"no\", \"n\", \"off\", \"0\"}\n\nFor fixed values, the const field can be used.\nenum is not supported as const is functionally equivalent and less verbose.",
+      "description": "Boolean field schema.\n\nA predefined set of truthy/falsy strings are accepted:\n- truthy = {\"true\", \"yes\", \"y\", \"on\", \"1\"}\n- falsy = {\"false\", \"no\", \"n\", \"off\", \"0\"}\n\nFor fixed values, the const field can be used.\nenum is not supported as const is functionally equivalent and less verbose.",
       "properties": {
         "const": {
           "title": "Const",
@@ -17,12 +17,12 @@
       "required": [
         "type"
       ],
-      "title": "ExtraOptionBooleanSchemaType",
+      "title": "FieldBooleanSchemaType",
       "type": "object"
     },
-    "ExtraOptionIntegerSchemaType": {
+    "FieldIntegerSchemaType": {
       "additionalProperties": false,
-      "description": "Integer extra option schema.",
+      "description": "Integer field schema.",
       "properties": {
         "const": {
           "title": "Const",
@@ -64,12 +64,12 @@
       "required": [
         "type"
       ],
-      "title": "ExtraOptionIntegerSchemaType",
+      "title": "FieldIntegerSchemaType",
       "type": "object"
     },
-    "ExtraOptionNumberSchemaType": {
+    "FieldNumberSchemaType": {
       "additionalProperties": false,
-      "description": "Float extra option schema.\n\nPython reads in JSON numbers as floats. The jsonschema library\nhandles precision issues with floats using a tolerance-based approach.",
+      "description": "Float field schema.\n\nPython reads in JSON numbers as floats. The jsonschema library\nhandles precision issues with floats using a tolerance-based approach.",
       "properties": {
         "const": {
           "title": "Const",
@@ -111,12 +111,12 @@
       "required": [
         "type"
       ],
-      "title": "ExtraOptionNumberSchemaType",
+      "title": "FieldNumberSchemaType",
       "type": "object"
     },
-    "ExtraOptionStringSchemaType": {
+    "FieldStringSchemaType": {
       "additionalProperties": false,
-      "description": "String extra option schema.",
+      "description": "String field schema.",
       "properties": {
         "const": {
           "title": "Const",
@@ -163,7 +163,7 @@
       "required": [
         "type"
       ],
-      "title": "ExtraOptionStringSchemaType",
+      "title": "FieldStringSchemaType",
       "type": "object"
     }
   },
@@ -173,16 +173,16 @@
     "contains": {
       "anyOf": [
         {
-          "$ref": "#/$defs/ExtraOptionStringSchemaType"
+          "$ref": "#/$defs/FieldStringSchemaType"
         },
         {
-          "$ref": "#/$defs/ExtraOptionBooleanSchemaType"
+          "$ref": "#/$defs/FieldBooleanSchemaType"
         },
         {
-          "$ref": "#/$defs/ExtraOptionIntegerSchemaType"
+          "$ref": "#/$defs/FieldIntegerSchemaType"
         },
         {
-          "$ref": "#/$defs/ExtraOptionNumberSchemaType"
+          "$ref": "#/$defs/FieldNumberSchemaType"
         }
       ],
       "title": "Contains"
@@ -190,16 +190,16 @@
     "items": {
       "anyOf": [
         {
-          "$ref": "#/$defs/ExtraOptionStringSchemaType"
+          "$ref": "#/$defs/FieldStringSchemaType"
         },
         {
-          "$ref": "#/$defs/ExtraOptionBooleanSchemaType"
+          "$ref": "#/$defs/FieldBooleanSchemaType"
         },
         {
-          "$ref": "#/$defs/ExtraOptionIntegerSchemaType"
+          "$ref": "#/$defs/FieldIntegerSchemaType"
         },
         {
-          "$ref": "#/$defs/ExtraOptionNumberSchemaType"
+          "$ref": "#/$defs/FieldNumberSchemaType"
         }
       ],
       "title": "Items"
@@ -234,6 +234,6 @@
     "type",
     "items"
   ],
-  "title": "ExtraOptionMultiValueSchemaTypeModel",
+  "title": "FieldMultiValueSchemaTypeModel",
   "type": "object"
 }
