@@ -209,7 +209,7 @@
             }),
             'introduced': dict({
               'default': '',
-              'description': 'Added by needs_fields config',
+              'description': 'When was this need introduced?',
               'field_type': 'extra',
               'type': 'string',
             }),

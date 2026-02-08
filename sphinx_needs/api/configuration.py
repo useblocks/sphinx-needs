@@ -6,6 +6,7 @@ All functions here are available under ``sphinx_needs.api``.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
 
 from sphinx.application import Sphinx
@@ -100,6 +101,9 @@ def add_extra_option(
 
     Same impact as using :ref:`needs_extra_options` manually.
 
+    .. deprecated::
+        Use :func:`add_field` instead.
+
     **Usage**::
 
         from sphinx_needs.api import add_extra_option
@@ -112,9 +116,48 @@ def add_extra_option(
     :param schema: Schema definition for the extra option
     :param nullable: Whether the field allows unset values.
     :param parse_variants: Whether variants are parsed in this field.
-    :return: None
     """
-    _NEEDS_CONFIG.add_extra_option(
+    warnings.warn(
+        "add_extra_option is deprecated, use add_field instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    add_field(
+        name,
+        description=description,
+        schema=schema,
+        nullable=nullable,
+        parse_variants=parse_variants,
+    )
+
+
+def add_field(
+    name: str,
+    /,
+    description: str,
+    *,
+    schema: ExtraOptionSchemaTypes | None = None,
+    nullable: bool | None = None,
+    parse_variants: bool | None = None,
+) -> None:
+    """
+    Adds an need field to the configured need schema.
+
+    Same impact as using :ref:`needs_fields` manually.
+
+    **Usage**::
+
+        from sphinx_needs.api import add_field
+
+        add_field('my_field')
+
+    :param name: Name of the extra option
+    :param description: Description of the extra option
+    :param schema: Schema definition for the extra option
+    :param nullable: Whether the field allows unset values.
+    :param parse_variants: Whether variants are parsed in this field.
+    """
+    _NEEDS_CONFIG.add_field(
         name,
         description,
         schema=schema,

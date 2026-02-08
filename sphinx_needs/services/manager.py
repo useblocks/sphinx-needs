@@ -31,9 +31,9 @@ class ServiceManager:
                 # TODO this should probably be done a bit more systematically;
                 # the github service adds a "type" option, but this is related to the core need field NOT an extra option
                 pass
-            elif option not in _NEEDS_CONFIG.extra_options:
+            elif option not in _NEEDS_CONFIG.fields:
                 self.log.debug(f'Register option "{option}" for service "{name}"')
-                _NEEDS_CONFIG.add_extra_option(option, f"Added by service {name}")
+                _NEEDS_CONFIG.add_field(option, f"Added by service {name}")
 
         # Init service with custom config
         self.services[name] = klass(self.app, name, config, **kwargs)

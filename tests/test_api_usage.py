@@ -125,7 +125,7 @@ def test_api_add_type(test_app: SphinxTestApp, snapshot):
     assert "my awesome need" in html
 
 
-def test_api_add_extra_option(
+def test_api_add_field(
     tmpdir: Path,
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
@@ -137,8 +137,8 @@ def test_api_add_extra_option(
             extensions = ['sphinx_needs']
             
             def setup(app):
-                from sphinx_needs.api import add_extra_option
-                add_extra_option(app, 'my_extra_option', description='My extra option')
+                from sphinx_needs.api import add_field
+                add_field('my_extra_option', description='My extra option')
                 return {'version': '0.1'}
             """
         ),
@@ -167,7 +167,7 @@ def test_api_add_extra_option(
     assert app.statuscode == 0
 
 
-def test_api_add_extra_option_schema(
+def test_api_add_field_schema(
     tmpdir: Path,
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
@@ -179,9 +179,8 @@ def test_api_add_extra_option_schema(
             extensions = ['sphinx_needs']
             
             def setup(app):
-                from sphinx_needs.api import add_extra_option
-                add_extra_option(
-                    app,
+                from sphinx_needs.api import add_field
+                add_field(
                     'my_extra_option',
                     description='My extra option',
                     schema={
@@ -217,7 +216,7 @@ def test_api_add_extra_option_schema(
     assert app.statuscode == 0
 
 
-def test_api_add_extra_option_schema_wrong(
+def test_api_add_field_schema_wrong(
     tmpdir: Path,
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
@@ -229,9 +228,8 @@ def test_api_add_extra_option_schema_wrong(
             extensions = ['sphinx_needs']
             
             def setup(app):
-                from sphinx_needs.api import add_extra_option
-                add_extra_option(
-                    app,
+                from sphinx_needs.api import add_field
+                add_field(
                     'my_extra_option',
                     description='My extra option',
                     schema={
