@@ -34,11 +34,11 @@ LOGGER = get_logger(__name__)
 
 
 @dataclass(kw_only=True, slots=True)
-class ExtraOptionParams:
-    """Defines a single extra option for needs"""
+class NewFieldParams:
+    """Defines a single new field for needs"""
 
     description: str
-    """A description of the option."""
+    """A description of the field."""
     nullable: bool | None = None
     """Whether the field allows unset values."""
     schema: (
@@ -82,30 +82,30 @@ class _Config:
     """
 
     def __init__(self) -> None:
-        self._extra_options: dict[str, ExtraOptionParams] = {}
+        self._fields: dict[str, NewFieldParams] = {}
         self._functions: dict[str, NeedFunctionsType] = {}
         self._warnings: dict[
             str, str | Callable[[NeedItem, SphinxLoggerAdapter], bool]
         ] = {}
 
     def clear(self) -> None:
-        self._extra_options = {}
+        self._fields = {}
         self._functions = {}
         self._warnings = {}
 
     @property
-    def extra_options(self) -> Mapping[str, ExtraOptionParams]:
+    def fields(self) -> Mapping[str, NewFieldParams]:
         """Custom need fields.
 
         These fields can be added via sphinx configuration,
-        and also via the `add_extra_option` API function.
+        and also via the `add_field` API function.
 
         They are added to the each needs data item,
         and as directive options on `NeedDirective` and `NeedserviceDirective`.
         """
-        return self._extra_options
+        return self._fields
 
-    def add_extra_option(
+    def add_field(
         self,
         name: str,
         description: str,
@@ -120,22 +120,22 @@ class _Config:
         override: bool = False,
         parse_variants: None | bool = None,
     ) -> None:
-        """Adds an extra option to the configuration."""
+        """Adds a need field to the configuration."""
         if name in NeedsCoreFields:
             from sphinx_needs.exceptions import (
                 NeedsApiConfigWarning,  # avoid circular import
             )
 
             raise NeedsApiConfigWarning(
-                f"Cannot add extra option with name {name!r}"
+                f"Cannot add need field with name {name!r}"
                 + (f" ({description!r})" if description else "")
                 + ", as it is already used as a core field name."
             )
-        if name in self._extra_options:
+        if (existing := self._fields.get(name)) is not None:
             if override:
                 log_warning(
                     LOGGER,
-                    f'extra_option "{name}" already registered.',
+                    f"Need field {name!r} already registered (existing description: {existing.description!r})",
                     "config",
                     None,
                 )
@@ -144,8 +144,10 @@ class _Config:
                     NeedsApiConfigWarning,  # avoid circular import
                 )
 
-                raise NeedsApiConfigWarning(f"Option {name} already registered.")
-        self._extra_options[name] = ExtraOptionParams(
+                raise NeedsApiConfigWarning(
+                    f"Need field {name!r} already registered (existing description: {existing.description!r})."
+                )
+        self._fields[name] = NewFieldParams(
             description=description,
             schema=schema,
             nullable=nullable,

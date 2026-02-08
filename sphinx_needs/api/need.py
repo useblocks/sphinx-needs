@@ -115,7 +115,7 @@ def generate_need(
 
     ``kwargs`` can contain options defined in ``needs_extra_options`` and ``needs_extra_links``.
     If an entry is found in ``kwargs``, which *is not* specified in the configuration or registered e.g. via
-    ``add_extra_option``, an exception is raised.
+    ``add_field``, an exception is raised.
 
     If the need is within the current project, i.e. not an external need,
     the following parameters are used to help provide source mapped warnings and errors:
@@ -767,7 +767,7 @@ def add_need(
 
     ``kwargs`` can contain options defined in ``needs_extra_options`` and ``needs_extra_links``.
     If an entry is found in ``kwargs``, which *is not* specified in the configuration or registered e.g. via
-    ``add_extra_option``, an exception is raised.
+    ``add_field``, an exception is raised.
 
     If ``is_external`` is set to ``True``, no node will be created.
     Instead, the need is referencing an external url.

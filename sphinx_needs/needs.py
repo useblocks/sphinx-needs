@@ -534,7 +534,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             )
             continue
 
-        _NEEDS_CONFIG.add_extra_option(name, description, schema=schema, override=True)
+        _NEEDS_CONFIG.add_field(name, description, schema=schema, override=True)
 
     if not isinstance(needs_config._fields, dict):
         raise NeedsConfigException("Config option 'needs_fields' must be a dict.")
@@ -562,7 +562,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         schema = option_params.get("schema")
         nullable = option_params.get("nullable")
         parse_variants = option_params.get("parse_variants")
-        _NEEDS_CONFIG.add_extra_option(
+        _NEEDS_CONFIG.add_field(
             option_name,
             description,
             schema=schema,
@@ -574,13 +574,13 @@ def load_config(app: Sphinx, *_args: Any) -> None:
     # ensure options for `needgantt` functionality are added to the extra options
     for option in (needs_config.duration_option, needs_config.completion_option):
         default_schema: ExtraOptionIntegerSchemaType = {"type": "integer"}
-        if option not in _NEEDS_CONFIG.extra_options:
-            _NEEDS_CONFIG.add_extra_option(
+        if option not in _NEEDS_CONFIG.fields:
+            _NEEDS_CONFIG.add_field(
                 option, "Added for needgantt functionality", schema=default_schema
             )
         else:
             # ensure schema is correct
-            existing = _NEEDS_CONFIG.extra_options[option]
+            existing = _NEEDS_CONFIG.fields[option]
             if existing.schema is None:
                 existing.schema = default_schema
             else:
@@ -738,7 +738,7 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     E.g. defined need-option, which is already defined internally
     """
     needs_config = NeedsSphinxConfig(config)
-    extra_options = _NEEDS_CONFIG.extra_options
+    extra_options = _NEEDS_CONFIG.fields
     link_types = [x["option"] for x in needs_config._extra_links]
 
     external_filter = needs_config.filter_data
@@ -890,7 +890,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         except Exception as exc:
             raise NeedsConfigException(f"Invalid core option {name!r}: {exc}") from exc
 
-    for name, extra in _NEEDS_CONFIG.extra_options.items():
+    for name, extra in _NEEDS_CONFIG.fields.items():
         try:
             _schema = (
                 deepcopy(extra.schema)  # type: ignore[arg-type]
