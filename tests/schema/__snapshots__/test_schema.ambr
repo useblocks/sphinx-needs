@@ -4766,7 +4766,173 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_allof_error]
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_docname_in_schema_and_invalid]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          docname
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > docname > enum
+    Schema message: "index" is not one of "some_other_doc" [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_docname_in_schema_and_invalid].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'docname',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > docname > enum',
+            'severity': 'violation',
+            'validation_msg': '"index" is not one of "some_other_doc"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_status_in_schema_and_invalid]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          status
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > status > enum
+    Schema message: "OPEN" is not one of "CLOSED" [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_status_in_schema_and_invalid].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'status',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > status > enum',
+            'severity': 'violation',
+            'validation_msg': '"OPEN" is not one of "CLOSED"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_status_set_not_in_schema]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('status' was unexpected) [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_status_set_not_in_schema].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('status' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_tags_in_schema_and_invalid]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          tags.0
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > tags > items > enum
+    Schema message: "tag_a" is not one of "tag_b" [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_tags_in_schema_and_invalid].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'tags.0',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > tags > items > enum',
+            'severity': 'violation',
+            'validation_msg': '"tag_a" is not one of "tag_b"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_tags_set_not_in_schema]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('tags' was unexpected) [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_core_tags_set_not_in_schema].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('tags' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_allof]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -4776,7 +4942,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_allof_error].1
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_allof].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -4798,7 +4964,71 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error]
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_core_status_with_default]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('status' was unexpected) [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_core_status_with_default].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('status' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_core_tags_with_default]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('tags' was unexpected) [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_core_tags_with_default].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('tags' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_extra_with_default]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
@@ -4808,7 +5038,7 @@
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error].1
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_extra_with_default].1
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
@@ -4827,6 +5057,142 @@
           'type': 'sn_schema_violation',
         }),
       ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_extra_with_schema_given_in_rst_no_constraint]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('comment' was unexpected) [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_error_extra_with_schema_given_in_rst_no_constraint].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('comment' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_missing_schema_const_missing_in_rst]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_missing_schema_const_missing_in_rst].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_no_schema_given_in_rst]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_no_schema_given_in_rst].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_no_schema_missing_in_rst]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_no_schema_missing_in_rst].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_with_schema_const_empty_in_rst]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          comment
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > comment > const
+    Schema message: "expected" was expected [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_with_schema_const_empty_in_rst].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'comment',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > comment > const',
+            'severity': 'violation',
+            'validation_msg': '"expected" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_with_schema_const_missing_in_rst]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_with_schema_const_missing_in_rst].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_with_schema_missing_in_rst]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_extra_with_schema_missing_in_rst].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_link_empty_value]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_link_empty_value].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_link_missing]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-unevaluated_link_missing].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
     }),
   })
 # ---

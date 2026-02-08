@@ -1,4 +1,14 @@
-unevaluated_error:
+# 1. unevaluatedProperties: Anything not listed in 'properties' or 'required' fields
+#    of schemas has to be null.
+# 2. empty string is a value actively set
+# 3. None is used for missing values of fields
+# 4. [] is used for missing values of link fields and the `tags` field (empty fields arrays use
+#    None, this should be streamlined)
+#    TODO(Marco): streamline this behavior
+
+unevaluated_extra_no_schema_missing_in_rst:
+  # should not complain, the comment field is unset
+  # as there is no schema, the default is empty string, so unevaluatedProperties does not see it
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
@@ -10,7 +20,6 @@ unevaluated_error:
     .. impl:: title
         :id: IMPL_1
         :asil: QM
-        :comment: This is a comment
   schemas:
     schemas:
       - validate:
@@ -18,7 +27,179 @@ unevaluated_error:
             properties: {"asil": {}}
             unevaluatedProperties: false
 
-unevaluated_allof_error:
+unevaluated_extra_no_schema_given_in_rst:
+  # should not complain, the comment field is set, but as there is no schema;
+  # the default is also an empty string, so the field is removed from the need and
+  # unevaluatedProperties does not see it
+
+  # in a nullable world, comment would be an empty string as it is given;
+  # so should lean to an error
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    [needs.fields.comment]
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+        :comment:
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+
+unevaluated_extra_with_schema_missing_in_rst:
+  # should not complain, the comment field is missing in the need;
+  # as it has a schema, the default is None, so the field is removed from validation
+  # and unevaluatedProperties does not see it
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    [needs.fields.comment]
+    schema.type = "string"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+
+unevaluated_extra_with_schema_const_missing_in_rst:
+  # should not complain, because the comment field has a schema; not providing a value
+  # leads to a None value which cannot be handled by schemas.json and gets removed before
+  # validation; the const validation is not triggered on a non-existing field
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    [needs.fields.comment]
+    schema.type = "string"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil: {}
+              comment: {"const": "expected"}
+            unevaluatedProperties: false
+
+unevaluated_extra_with_schema_const_empty_in_rst:
+  # should complain, because the comment field has a schema; the field is given empty
+  # which is represented as empty string, which does not match the constraint
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    [needs.fields.comment]
+    schema.type = "string"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+        :comment:
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil: {}
+              comment: {"const": "expected"}
+            unevaluatedProperties: false
+
+unevaluated_extra_missing_schema_const_missing_in_rst:
+  # should not complain, the field has no schema constraint, so the default is an empty string;
+  # the value does not differ from this, which leads to the removal of the field for validation;
+  # the behavior is identical to the behavior with field schema
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    [needs.fields.comment]
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil: {}
+              comment: {"const": "expected"}
+            unevaluatedProperties: false
+
+unevaluated_error_extra_with_schema_given_in_rst_no_constraint:
+  # should complain, the comment field is set, and it has a schema, so SN detects it is actively
+  # given as '', and it will appear in the unevaluatedProperties evaluation as forbidden
+  # additional field
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    [needs.fields.comment]
+    schema.type = "string"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+        :comment:
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+
+unevaluated_error_extra_with_default:
+  # should complain, the comment field is set via default, and it will appear in the
+  # unevaluatedProperties evaluation as forbidden additional field
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    [needs.fields.comment]
+    schema.type = "string"
+    default = "default"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+
+unevaluated_error_allof:
+  # check whether unevaluatedProperties implementation applies to combined schemas (allOf)
+  # should complain about "approved" given as additional field, but not for comment or asil
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
@@ -42,3 +223,206 @@ unevaluated_allof_error:
             unevaluatedProperties: false
             allOf:
               - properties: {"comment": {}}
+
+unevaluated_link_empty_value:
+  # should not complain, the link field is set, but empty, so it is removed from validation
+  # and unevaluatedProperties does not see it
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    [[needs.extra_links]]
+    option = "relates"
+    outgoing = "relates"
+    incoming = "related by"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+        :relates:
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+
+unevaluated_link_missing:
+  # should not complain, the link field is missing in the need;
+  # unset link fields are given as empty list [] in the model, so cannot distinguish from default
+  # which is also []; as it is not set, it is removed from validation and unevaluatedProperties
+  # does not see it
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    [[needs.extra_links]]
+    option = "relates"
+    outgoing = "relates"
+    incoming = "related by"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+
+unevaluated_core_status_set_not_in_schema:
+  # should complain, because the core field status is treated like an extra field,
+  # so it is kept when explicitly set and triggers unevaluatedProperties.
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+        :status: OPEN
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+
+unevaluated_core_status_in_schema_and_invalid:
+  # should complain about status, because it is part of the user schema and actively set,
+  # therefore it must be kept in the reduced need and validated
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+        :status: OPEN
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}, "status": {"enum": ["CLOSED"]}}
+            unevaluatedProperties: false
+
+unevaluated_error_core_status_with_default:
+  # should complain, the status field has a default, and it will appear in the
+  # unevaluatedProperties evaluation as forbidden additional field
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    [needs.fields.status]
+    default = "default"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+
+unevaluated_core_tags_set_not_in_schema:
+  # should complain, because the core field tags is treated like an extra field,
+  # so it is kept when explicitly set and triggers unevaluatedProperties.
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+        :tags: tag_a
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+
+unevaluated_core_tags_in_schema_and_invalid:
+  # should complain about tags, because it is part of the user schema and actively set,
+  # therefore it must be kept in the reduced need and validated
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+        :tags: tag_a
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil: {}
+              tags:
+                type: array
+                items: {type: string, enum: ["tag_b"]}
+            unevaluatedProperties: false
+
+unevaluated_error_core_tags_with_default:
+  # should complain, the tags field has a default, and it will appear in the
+  # unevaluatedProperties evaluation as forbidden additional field
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    [needs.fields.tags]
+    default = ["default"]
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}}
+            unevaluatedProperties: false
+
+unevaluated_core_docname_in_schema_and_invalid:
+  # should complain about docname, because it is part of the user schema,
+  # therefore it is kept in the reduced need and validated
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties: {"asil": {}, "docname": {"enum": ["some_other_doc"]}}
+            unevaluatedProperties: false
