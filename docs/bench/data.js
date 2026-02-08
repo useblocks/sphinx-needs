@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770564606409,
+  "lastUpdate": 1770573612490,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16704,6 +16704,42 @@ window.BENCHMARK_DATA = {
             "value": 60.951642146,
             "unit": "s",
             "extra": "Commit: 366201a213b0de15593c227e2bd2597086c0ffdf\nBranch: master\nTime: 2026-02-08T16:28:13+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6a600a598f5363ded9a46cb195a79dbadfd9e8c7",
+          "message": "🔧 Rename \"option\" to \"field\" (#1642)\n\nInline with moving from `needs_extra_options` to `needs_fields`.\n\nThis only changes internal naming, and wording in exception/warning\ntext, so should not be backward-incompatible in any way.",
+          "timestamp": "2026-02-08T18:58:11+01:00",
+          "tree_id": "6c08baab5ff5face1275009839e99f5b0f50ed28",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6a600a598f5363ded9a46cb195a79dbadfd9e8c7"
+        },
+        "date": 1770573593777,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16853692800000886,
+            "unit": "s",
+            "extra": "Commit: 6a600a598f5363ded9a46cb195a79dbadfd9e8c7\nBranch: master\nTime: 2026-02-08T18:58:11+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.56284248,
+            "unit": "s",
+            "extra": "Commit: 6a600a598f5363ded9a46cb195a79dbadfd9e8c7\nBranch: master\nTime: 2026-02-08T18:58:11+01:00"
           }
         ]
       }
