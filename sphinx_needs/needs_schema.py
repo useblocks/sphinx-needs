@@ -12,14 +12,14 @@ from sphinx_needs.config import NeedFields
 from sphinx_needs.exceptions import VariantParsingException
 from sphinx_needs.schema.config import (
     ExtraLinkSchemaType,
-    ExtraOptionBooleanSchemaType,
-    ExtraOptionIntegerSchemaType,
-    ExtraOptionMultiValueSchemaType,
-    ExtraOptionNumberSchemaType,
-    ExtraOptionSchemaTypes,
-    ExtraOptionStringSchemaType,
-    validate_extra_link_schema_type,
-    validate_extra_option_schema,
+    FieldBooleanSchemaType,
+    FieldIntegerSchemaType,
+    FieldMultiValueSchemaType,
+    FieldNumberSchemaType,
+    FieldSchemaTypes,
+    FieldStringSchemaType,
+    validate_field_schema,
+    validate_link_schema_type,
 )
 from sphinx_needs.schema.core import validate_object_schema_compiles
 from sphinx_needs.variants import VariantFunctionParsed
@@ -37,7 +37,7 @@ class FieldSchema:
 
     name: str
     description: str = ""
-    schema: ExtraOptionSchemaTypes
+    schema: FieldSchemaTypes
     nullable: bool = False
     directive_option: bool = False
     parse_dynamic_functions: bool = False
@@ -66,7 +66,7 @@ class FieldSchema:
         if not isinstance(self.description, str):
             raise ValueError("description must be a string.")
         try:
-            validate_extra_option_schema(self.schema)
+            validate_field_schema(self.schema)
         except TypeError as exc:
             raise ValueError(f"Invalid schema: {exc}") from exc
         try:
@@ -577,7 +577,7 @@ class LinkSchema:
         if not isinstance(self.description, str):
             raise ValueError("description must be a string.")
         try:
-            validate_extra_link_schema_type(self.schema)
+            validate_link_schema_type(self.schema)
         except TypeError as exc:
             raise ValueError(f"Invalid schema: {exc}") from exc
         try:
@@ -1073,7 +1073,7 @@ def create_inherited_field(
 
 
 def inherit_schema(
-    parent_schema: ExtraOptionSchemaTypes, child_schema: dict[str, Any]
+    parent_schema: FieldSchemaTypes, child_schema: dict[str, Any]
 ) -> None:
     """Inherit and validate constraints from parent schema to child schema.
 
@@ -1149,7 +1149,7 @@ def inherit_schema(
 
 
 def _validate_boolean_constraints(
-    parent_schema: ExtraOptionBooleanSchemaType, child_schema: dict[str, Any]
+    parent_schema: FieldBooleanSchemaType, child_schema: dict[str, Any]
 ) -> None:
     """Validate and merge boolean-specific constraints from parent to child schema.
 
@@ -1168,7 +1168,7 @@ def _validate_boolean_constraints(
 
 
 def _validate_string_constraints(
-    parent_schema: ExtraOptionStringSchemaType, child_schema: dict[str, Any]
+    parent_schema: FieldStringSchemaType, child_schema: dict[str, Any]
 ) -> None:
     """Validate and merge string-specific constraints from parent to child schema.
 
@@ -1257,7 +1257,7 @@ def _validate_string_constraints(
             child_schema["maxLength"] = parent_schema["maxLength"]
 
 
-_T = TypeVar("_T", ExtraOptionNumberSchemaType, ExtraOptionIntegerSchemaType)
+_T = TypeVar("_T", FieldNumberSchemaType, FieldIntegerSchemaType)
 
 
 def _validate_number_or_integer_constraints(
@@ -1362,7 +1362,7 @@ def _validate_number_or_integer_constraints(
 
 
 def _validate_array_constraints(
-    parent_schema: ExtraOptionMultiValueSchemaType, child_schema: dict[str, Any]
+    parent_schema: FieldMultiValueSchemaType, child_schema: dict[str, Any]
 ) -> None:
     """Validate and merge array-specific constraints from parent to child schema.
 
@@ -1455,13 +1455,13 @@ def _validate_array_constraints(
                     parent_items["type"] == "integer"
                     and child_items["type"] == "integer"
                 ):
-                    # type restricted to ExtraOptionIntegerSchemaType
+                    # type restricted to FieldIntegerSchemaType
                     _validate_number_or_integer_constraints(parent_items, child_items)
 
                 elif (
                     parent_items["type"] == "number" and child_items["type"] == "number"
                 ):
-                    # type restricted to ExtraOptionNumberSchemaType
+                    # type restricted to FieldNumberSchemaType
                     _validate_number_or_integer_constraints(parent_items, child_items)
 
                 elif (

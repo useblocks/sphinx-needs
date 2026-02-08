@@ -13,12 +13,12 @@ from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.schema.config import (
     ExtraLinkSchemaType,
-    ExtraOptionBooleanSchemaType,
-    ExtraOptionIntegerSchemaType,
-    ExtraOptionMultiValueSchemaType,
-    ExtraOptionNumberSchemaType,
-    ExtraOptionSchemaTypes,
-    ExtraOptionStringSchemaType,
+    FieldBooleanSchemaType,
+    FieldIntegerSchemaType,
+    FieldMultiValueSchemaType,
+    FieldNumberSchemaType,
+    FieldSchemaTypes,
+    FieldStringSchemaType,
     SchemasFileRootType,
 )
 
@@ -42,11 +42,11 @@ class NewFieldParams:
     nullable: bool | None = None
     """Whether the field allows unset values."""
     schema: (
-        ExtraOptionStringSchemaType
-        | ExtraOptionBooleanSchemaType
-        | ExtraOptionIntegerSchemaType
-        | ExtraOptionNumberSchemaType
-        | ExtraOptionMultiValueSchemaType
+        FieldStringSchemaType
+        | FieldBooleanSchemaType
+        | FieldIntegerSchemaType
+        | FieldNumberSchemaType
+        | FieldMultiValueSchemaType
         | None
     )
     """A JSON schema for the option."""
@@ -110,11 +110,11 @@ class _Config:
         name: str,
         description: str,
         *,
-        schema: ExtraOptionStringSchemaType
-        | ExtraOptionBooleanSchemaType
-        | ExtraOptionIntegerSchemaType
-        | ExtraOptionNumberSchemaType
-        | ExtraOptionMultiValueSchemaType
+        schema: FieldStringSchemaType
+        | FieldBooleanSchemaType
+        | FieldIntegerSchemaType
+        | FieldNumberSchemaType
+        | FieldMultiValueSchemaType
         | None = None,
         nullable: None | bool = None,
         override: bool = False,
@@ -311,7 +311,7 @@ class NeedFields(TypedDict):
 
     description: NotRequired[str]
     """A description of the field."""
-    schema: NotRequired[ExtraOptionSchemaTypes]
+    schema: NotRequired[FieldSchemaTypes]
     """
     A JSON schema definition for the field.
     
@@ -328,7 +328,7 @@ class NeedFields(TypedDict):
     """Whether variants are parsed in this field."""
 
 
-class NeedExtraOption(NeedFields):
+class NeedField(NeedFields):
     """Defines an extra option for needs"""
 
     name: str
@@ -620,7 +620,7 @@ class NeedsSphinxConfig:
     _fields: dict[str, NeedFields] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
-    _extra_options: list[str | NeedExtraOption] = field(
+    _extra_options: list[str | NeedField] = field(
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """List of extra options for needs, that get added as directive options and need fields."""

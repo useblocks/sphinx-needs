@@ -113,7 +113,7 @@ def generate_need(
 
     :raises InvalidNeedException: If the data fails any validation issue.
 
-    ``kwargs`` can contain options defined in ``needs_extra_options`` and ``needs_extra_links``.
+    ``kwargs`` can contain options defined in ``needs_fields`` and ``needs_extra_links``.
     If an entry is found in ``kwargs``, which *is not* specified in the configuration or registered e.g. via
     ``add_field``, an exception is raised.
 
@@ -185,7 +185,7 @@ def generate_need(
     if unknown_kwargs:
         raise InvalidNeedException(
             "invalid_kwargs",
-            f"Options {unknown_kwargs!r} not in 'needs_extra_options' or 'needs_extra_links.",
+            f"{unknown_kwargs!r} not in 'needs_fields' or 'needs_extra_links.",
         )
 
     # get the need type data
@@ -277,8 +277,8 @@ def generate_need(
                 )
             except Exception as err:
                 raise InvalidNeedException(
-                    "invalid_extra_option",
-                    f"Extra option {extra_field.name!r} is invalid: {err}",
+                    "invalid_field_value",
+                    f"Field {extra_field.name!r} is invalid: {err}",
                 ) from err
 
     links_no_defaults: dict[str, None | LinksLiteralValue | LinksFunctionArray] = {}
@@ -488,14 +488,14 @@ def generate_need(
     for k, v in extras.items():
         if (extra_schema := needs_schema.get_extra_field(k)) is None:
             raise InvalidNeedException(
-                "invalid_extra_option",
-                f"Extra option {k!r} not in 'needs_fields'.",
+                "invalid_field_value",
+                f"Field {k!r} not in 'needs_fields'.",
             )
         if v is None:
             if not extra_schema.nullable:
                 raise InvalidNeedException(
-                    "invalid_extra_option",
-                    f"Extra option {k!r} is not nullable, but no value or default was given.",
+                    "invalid_field_value",
+                    f"Field {k!r} is not nullable, but no value or default was given.",
                 )
             extras_pre[k] = None
         elif isinstance(v, FieldLiteralValue):
@@ -515,13 +515,13 @@ def generate_need(
                     extras_pre[k] = []
                 case other:
                     raise InvalidNeedException(
-                        "invalid_extra_option",
-                        f"Extra option {k!r} has unknown type {other!r}.",
+                        "invalid_field_value",
+                        f"Field {k!r} has unknown type {other!r}.",
                     )
         else:
             raise InvalidNeedException(
-                "invalid_extra_option",
-                f"Extra option {k!r} has unknown value {v!r}.",
+                "invalid_field_value",
+                f"Field {k!r} has unknown value {v!r}.",
             )
 
     links_pre: dict[str, list[str]] = {}
@@ -765,7 +765,7 @@ def add_need(
     ``add_need`` allows to create needs programmatically and use its returned node to be integrated in any
     docutils based structure.
 
-    ``kwargs`` can contain options defined in ``needs_extra_options`` and ``needs_extra_links``.
+    ``kwargs`` can contain options defined in ``needs_fields`` and ``needs_extra_links``.
     If an entry is found in ``kwargs``, which *is not* specified in the configuration or registered e.g. via
     ``add_field``, an exception is raised.
 

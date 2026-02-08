@@ -1,7 +1,7 @@
 # serializer version: 1
 # name: test_api_add_field_schema_wrong
   '''
-  Invalid extra option 'my_extra_option': Invalid schema: Additional properties are not allowed ('not_exist' was unexpected)
+  Invalid field 'my_extra_option': Invalid schema: Additional properties are not allowed ('not_exist' was unexpected)
   
   Failed validating "additionalProperties" in schema
   

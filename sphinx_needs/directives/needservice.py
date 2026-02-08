@@ -118,7 +118,7 @@ class NeedserviceDirective(SphinxDirective):
                     del datum["title"]
 
                 # We need to check if all given options from services are really available as configured
-                # extra_option or extra_link
+                # needs_fields or needs_extra_links
                 missing_options = {}
                 for element in datum:
                     if element not in defined_options:

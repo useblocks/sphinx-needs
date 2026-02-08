@@ -62,7 +62,7 @@ Schema
              FieldLiteralValue, LinkSchema, LinkDisplayConfig, LinksLiteralValue, AllowedTypes
 
 .. automodule:: sphinx_needs.schema.config
-   :members: ExtraOptionStringSchemaType, ExtraOptionBooleanSchemaType,
-             ExtraOptionIntegerSchemaType, ExtraOptionNumberSchemaType,
-             ExtraOptionMultiValueSchemaType,
+   :members: FieldStringSchemaType, FieldBooleanSchemaType,
+             FieldIntegerSchemaType, FieldNumberSchemaType,
+             FieldMultiValueSchemaType,
              ExtraLinkSchemaType, ExtraLinkItemSchemaType

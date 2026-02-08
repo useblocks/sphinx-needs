@@ -23,7 +23,7 @@ See :ref:`migration_from_warnings_constraints` for details on how to migrate.
      conform to their types are not created and lead to a warning.
    - **JSON export**: Generated :ref:`needs.json <needs_builder>` files honor the user provided
      types
-   - **Multi value extra options**: Array types for extra options are fully supported
+   - **Multi value extra fields**: Array types for extra fields are fully supported
    - **Gradual migration**: Existing projects can migrate step-by-step to the new system,
      with string types as default for untyped fields.
    - **Safety**: The new type system core makes it possible to configure fields individually.
@@ -60,11 +60,11 @@ Schema configuration
 
 The schema is configured in multiple places:
 
-- :ref:`needs_fields` is the place to add new extra options that are then available
+- :ref:`needs_fields` is the place to add new fields that are then available
   for all need types. The type information for each field is globally set here, so it is valid
   for all the usages of that field for any need type. This is required for a coherent data
   storage, as it would be expected by a database system. If different data types are needed for the
-  same option, it means creating a new extra option with a different name and type.
+  same option, it means creating a new field with a different name and type.
 
   Further, the ``schema`` field in ``needs_fields`` also supports setting global
   schema constraints for that option, that will be checked for each need type. E.g.
@@ -111,9 +111,9 @@ Imagine the following modeling of need items:
 
 There are a few things to note about this setup:
 
-- the extra options ``efforts``, ``approval`` and
+- the fields ``efforts``, ``approval`` and
   ``asil`` (for **A**\ utomotive **S**\ ecurity **I**\ ntegrity **L**\ evel) are typed
-- the assigned extra options differ between need types
+- the assigned fields differ between need types
 - the fields may be optional for a need type, required or even not allowed
 - some validation rules are local to the need itself, while others
   require information from other needs (network validation)
@@ -180,25 +180,21 @@ For **primitive types** (string, integer, number, boolean):
 
 .. code-block:: toml
 
-   [[needs.extra_options]]
-   name = "efforts"
+   [needs.fields.efforts]
    schema.type = "integer"
 
-   [[needs.extra_options]]
-   name = "approval"
+   [needs.fields.approval]
    schema.type = "boolean"
 
 For **array types**, both the array type and the item type must be specified:
 
 .. code-block:: toml
 
-   [[needs.extra_options]]
-   name = "tags"
+   [needs.fields.tags]
    schema.type = "array"
    schema.items.type = "string"
 
-   [[needs.extra_options]]
-   name = "priorities"
+   [needs.fields.priorities]
    schema.type = "array"
    schema.items.type = "integer"
 
@@ -209,12 +205,12 @@ Additional schema constraints can also be defined here, which will be validated 
 
 .. code-block:: toml
 
-   [[needs.extra_options]]
+   [needs.fields.asil]
    name = "asil"
    schema.type = "string"
    schema.enum = ["QM", "A", "B", "C", "D"]
 
-   [[needs.extra_options]]
+   [needs.fields.efforts]
    name = "efforts"
    schema.type = "integer"
    schema.minimum = 0
@@ -229,9 +225,9 @@ The ``schemas.json`` file (or :ref:`needs_schema_definitions`) also requires typ
 validation, but:
 
 - **If type is not specified** in schemas.json, it will be **automatically injected** from the
-  ``needs.extra_options`` definition (or from core field definitions for built-in fields)
+  ``needs.fields`` definition (or from core field definitions for built-in fields)
 - **If type is specified** in schemas.json, it **must match** the type defined in
-  ``needs.extra_options`` (or the core field definition)
+  ``needs.fields`` (or the core field definition)
 
 This ensures type consistency across your entire configuration while reducing duplication.
 The injection to the schema rules is required for safe JSON schema validation.
