@@ -140,3 +140,23 @@ severity_default_suppress_severity_and_rule:
             properties:
               asil:
                 const: B
+
+report_invalid_extra_field_default:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    default = "other"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              asil:
+                const: A

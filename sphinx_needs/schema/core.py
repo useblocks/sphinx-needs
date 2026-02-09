@@ -465,10 +465,7 @@ def reduce_need(
         if value is None:
             # value is not provided
             continue
-        schema_field = field_properties[field]
-        if not ("default" in schema_field and value == schema_field["default"]):
-            # keep explicitly set fields
-            reduced_need[field] = value
+        reduced_need[field] = value
 
     for field, value in need.iter_links_items():
         if value:
