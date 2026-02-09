@@ -152,7 +152,6 @@ report_invalid_extra_field_default:
   rst: |
     .. impl:: title
         :id: IMPL_1
-        :asil: QM
   schemas:
     $defs: []
     schemas:
