@@ -139,10 +139,13 @@
               ]),
             }),
             'bad_value_type': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by needs_fields config',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'closed_at': dict({
               'default': None,
@@ -457,30 +460,46 @@
               'default': 'test_global',
               'description': 'Added by needs_fields config',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'option_2': dict({
+              'default': None,
               'description': 'Added by needs_fields config',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'option_3': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by needs_fields config',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'option_4': dict({
               'default': 'STATUS_UNKNOWN',
               'description': 'Added by needs_fields config',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'option_5': dict({
               'default': 'final',
               'description': 'Added by needs_fields config',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'params': dict({
               'default': None,
@@ -673,10 +692,13 @@
               'type': 'string',
             }),
             'too_many_params': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by needs_fields config',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'type': dict({
               'default': '',
@@ -741,7 +763,7 @@
       ),
     }),
     'bad_value_type': dict({
-      'default': FieldLiteralValue(value=''),
+      'default': None,
       'predicate_defaults': tuple(
       ),
     }),
@@ -839,7 +861,7 @@
       ),
     }),
     'option_3': dict({
-      'default': FieldLiteralValue(value=''),
+      'default': None,
       'predicate_defaults': tuple(
         tuple(
           'status == "implemented"',
@@ -943,7 +965,7 @@
       ),
     }),
     'too_many_params': dict({
-      'default': FieldLiteralValue(value=''),
+      'default': None,
       'predicate_defaults': tuple(
       ),
     }),

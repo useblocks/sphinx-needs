@@ -67,6 +67,7 @@ description = "Custom extra option"
 
 [needs.fields.another_option]
 description = "Another custom option"
+default = ""
 
 [needs.fields.author]
 description = "Author of the need"

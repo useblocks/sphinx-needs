@@ -909,14 +909,20 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
     for name, field_data in _NEEDS_CONFIG.fields.items():
         try:
+            back_compatible = field_data.source in {
+                "needs_extra_options",
+                "add_extra_option",
+            }
+
             _schema = (
                 deepcopy(field_data.schema)  # type: ignore[arg-type]
                 if field_data.schema is not None
                 else {"type": "string"}
             )
+            nullable = True
             if field_data.nullable is not None:
                 nullable = field_data.nullable
-            else:
+            elif back_compatible:
                 # follows that of legacy (pre-schema) extra option,
                 # i.e. nullable if schema is defined
                 nullable = field_data.schema is not None
@@ -936,7 +942,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 # note, default follows that of legacy (pre-schema) extra option,
                 # i.e. default to "" only if no schema is defined
                 default=None
-                if field_data.schema is not None
+                if not back_compatible or field_data.schema is not None
                 else FieldLiteralValue(""),
                 allow_defaults=True,
                 allow_extend=True,
