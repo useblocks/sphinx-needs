@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770573612490,
+  "lastUpdate": 1770631574455,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16740,6 +16740,42 @@ window.BENCHMARK_DATA = {
             "value": 61.56284248,
             "unit": "s",
             "extra": "Commit: 6a600a598f5363ded9a46cb195a79dbadfd9e8c7\nBranch: master\nTime: 2026-02-08T18:58:11+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8457c9d16a8b3394d25d30d17a9376f7dd2e6ea9",
+          "message": "👌 Allow `add_field` API to set defaults/predicates (#1643)\n\nAlso improve error message for adding duplicate fields",
+          "timestamp": "2026-02-09T11:04:01+01:00",
+          "tree_id": "b5534e286f73a6937285f5c1b671169e8f634df7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8457c9d16a8b3394d25d30d17a9376f7dd2e6ea9"
+        },
+        "date": 1770631553205,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2901637059999871,
+            "unit": "s",
+            "extra": "Commit: 8457c9d16a8b3394d25d30d17a9376f7dd2e6ea9\nBranch: master\nTime: 2026-02-09T11:04:01+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.87867513399999,
+            "unit": "s",
+            "extra": "Commit: 8457c9d16a8b3394d25d30d17a9376f7dd2e6ea9\nBranch: master\nTime: 2026-02-09T11:04:01+01:00"
           }
         ]
       }
