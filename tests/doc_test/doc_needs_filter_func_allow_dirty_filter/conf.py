@@ -24,7 +24,7 @@ needs_types = [
     },
 ]
 
-needs_fields = {"ti": {}, "tcl": {}}
+needs_fields = {"ti": {"nullable": True}, "tcl": {"nullable": True}}
 
 needs_extra_links = [
     {

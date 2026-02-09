@@ -64,15 +64,19 @@ parse_variants = true
 
 [needs.fields.my_extra_option]
 description = "Custom extra option"
+nullable = true
 
 [needs.fields.another_option]
 description = "Another custom option"
+default = ""
 
 [needs.fields.author]
 description = "Author of the need"
+nullable = true
 
 [needs.fields.comment]
 description = "Additional comments"
+nullable = true
 
 [needs.fields.amount]
 description = "Amount value"
@@ -92,18 +96,23 @@ schema.type = "integer"
 
 [needs.fields.image]
 description = "Image reference"
+nullable = true
 
 [needs.fields.config]
 description = "Configuration option"
+nullable = true
 
 [needs.fields.github]
 description = "GitHub reference"
+nullable = true
 
 [needs.fields.value]
 description = "General value field"
+nullable = true
 
 [needs.fields.unit]
 description = "Unit specification"
+nullable = true
 
 [[needs.types]]
 directive = "int"

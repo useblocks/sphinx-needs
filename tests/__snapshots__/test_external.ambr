@@ -767,16 +767,22 @@
               ]),
             }),
             'extra1': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by needs_fields config',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'extra2': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by needs_fields config',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'has_dead_links': dict({
               'default': False,

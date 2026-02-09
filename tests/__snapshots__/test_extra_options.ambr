@@ -214,16 +214,22 @@
               ]),
             }),
             'impacts': dict({
-              'default': '',
+              'default': None,
               'description': 'What is the impact of this need?',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'introduced': dict({
-              'default': '',
+              'default': None,
               'description': 'When was this need introduced?',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'is_external': dict({
               'default': False,
@@ -312,10 +318,13 @@
               'type': 'integer',
             }),
             'modified': dict({
-              'default': '',
+              'default': None,
               'description': 'When was this need last modified?',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'params': dict({
               'default': None,

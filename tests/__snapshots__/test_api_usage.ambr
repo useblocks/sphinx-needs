@@ -286,7 +286,10 @@
               'default': 'hallo',
               'description': 'My extra field',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'params': dict({
               'default': None,

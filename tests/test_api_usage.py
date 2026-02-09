@@ -160,7 +160,11 @@ def test_api_add_field(
     app.build()
 
     warnings = get_warnings_list(app)
-    assert len(warnings) == 0, "\n".join(warnings)
+    assert warnings == [
+        "Field 'my_extra_option' (from add_field) has no 'schema', 'nullable' or 'default' defined, "
+        "which defaults to a string schema with nullable=True and no default. "
+        "To aide with backward compatibility please define at least one. [needs.config]\n"
+    ]
 
     html = Path(app.outdir, "index.html").read_text()
     assert html is not None
