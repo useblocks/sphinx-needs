@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770633487404,
+  "lastUpdate": 1770645741960,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16812,6 +16812,42 @@ window.BENCHMARK_DATA = {
             "value": 61.174322501999995,
             "unit": "s",
             "extra": "Commit: 16767e0a8ef49e2044b432f788b8a50d67fe964d\nBranch: master\nTime: 2026-02-09T11:36:04+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "17e0a750e70be526ec833c49960eb3e11de4f4f6",
+          "message": "‼️ Make `needs_fields` and `add_field` default to nullable and no default (#1645)\n\nCurrently, for all of:\n\n```python\nneeds_extra_options = [{\"name\": \"field1\"}]\nadd_extra_option(\"field1\")\nneeds_fields = {\"field1\": {}}\nadd_field(\"field1\")\n```\n\nThese create a field with:\n\n- a string type\n- a non-nullable value\n- a default value of `\"\"`\n\nwhereas for all of:\n\n```python\nneeds_extra_options = [{\"name\": \"field1\", \"schema\": {\"type\": \"string\"}}]\nadd_extra_option(\"field1\", schema={\"type\": \"string\"})\nneeds_fields = {\"field1\": {\"schema\": {\"type\": \"string\"}}}\nadd_field(\"field1\", schema={\"type\": \"string\"})\n```\n\nThese create a field with:\n\n- a string type\n- a nullable value\n- no default value (i.e. the default is null)\n\nThe former is not intuitive, and derives from wanting to be\nback-compatible, when we moved from untyped extra options.\n\n---\n\nThis PR does not change the behaviour of `needs_extra_options` /\n`add_extra_option`, which are anyhow deprecated,\nbut for:\n\n\n```python\nneeds_fields = {\"field1\": {}}\nadd_field(\"field1\")\n```\n\nThese now create a field with:\n\n- a string type\n- a nullable value\n- no default value (i.e. the default is null)\n\n---\n\nIn order to aide users in transitioning from `needs_extra_options` to\n`needs_fields`,\nwe want to clearly indicate that the behaviour is different.\n\ni.e. if they want exactly the same behaviour they should use:\n\n```python\nneeds_extra_options = [{\"name\": \"field1\"}]\nneeds_fields = {\"field1\": {\"nullable\": False, \"default\": \"\"}}\n```\n\nTherefore, if none of `schema`, `nullable` or `default` is added to an\nitem in `needs_fields` (or `add_field`),\nthen we emit a warning:\n\n```\nField 'my_field' (from add_field) has no 'schema', 'nullable' or 'default' defined,\nwhich defaults to a string schema with nullable=True and no default.\nTo aide with backward compatibility please define at least one. [needs.config]\n```\n\ni.e. this would emit a warning:\n\n```python\nneeds_fields = {\"field1\": {}}\n```\n\nbut these would not:\n\n```python\nneeds_fields = {\"field1\": {\"nullable\": True}}\nneeds_fields = {\"field1\": {\"default\": \"abc\"}}\n```",
+          "timestamp": "2026-02-09T15:00:07+01:00",
+          "tree_id": "6c0254a87c5b64319d8a9a3ca818f385646b6280",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/17e0a750e70be526ec833c49960eb3e11de4f4f6"
+        },
+        "date": 1770645723300,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3392362089999921,
+            "unit": "s",
+            "extra": "Commit: 17e0a750e70be526ec833c49960eb3e11de4f4f6\nBranch: master\nTime: 2026-02-09T15:00:07+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 70.745198826,
+            "unit": "s",
+            "extra": "Commit: 17e0a750e70be526ec833c49960eb3e11de4f4f6\nBranch: master\nTime: 2026-02-09T15:00:07+01:00"
           }
         ]
       }
