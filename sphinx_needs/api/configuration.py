@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Callable
+from typing import Any
 
 from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter
@@ -122,9 +123,10 @@ def add_extra_option(
         DeprecationWarning,
         stacklevel=2,
     )
-    add_field(
+    _NEEDS_CONFIG.add_field(
         name,
-        description=description,
+        description,
+        "add_extra_option",
         schema=schema,
         nullable=nullable,
         parse_variants=parse_variants,
@@ -138,6 +140,8 @@ def add_field(
     *,
     schema: FieldSchemaTypes | None = None,
     nullable: bool | None = None,
+    default: None | Any = None,
+    predicates: None | list[tuple[str, Any]] = None,
     parse_variants: bool | None = None,
 ) -> None:
     """
@@ -155,13 +159,18 @@ def add_field(
     :param description: Description of the field
     :param schema: Schema definition for the field
     :param nullable: Whether the field allows unset values.
+    :param default: Default value for the field, if not set in a need.
+    :param predicates: List of (need filter, value) pairs for default predicate values.
     :param parse_variants: Whether variants are parsed in this field.
     """
     _NEEDS_CONFIG.add_field(
         name,
         description,
+        "add_field",
         schema=schema,
         nullable=nullable,
+        default=default,
+        predicates=predicates,
         parse_variants=parse_variants,
     )
 

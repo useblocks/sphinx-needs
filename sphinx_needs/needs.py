@@ -534,7 +534,9 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             )
             continue
 
-        _NEEDS_CONFIG.add_field(name, description, schema=schema, override=True)
+        _NEEDS_CONFIG.add_field(
+            name, description, "needs_extra_options", schema=schema, override=True
+        )
 
     if not isinstance(needs_config._fields, dict):
         raise NeedsConfigException("Config option 'needs_fields' must be a dict.")
@@ -558,16 +560,15 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             continue
         if option_name in NeedsCoreFields:
             continue
-        description = option_params.get("description", "Added by needs_fields config")
-        schema = option_params.get("schema")
-        nullable = option_params.get("nullable")
-        parse_variants = option_params.get("parse_variants")
         _NEEDS_CONFIG.add_field(
             option_name,
-            description,
-            schema=schema,
-            nullable=nullable,
-            parse_variants=parse_variants,
+            option_params.get("description", "Added by needs_fields config"),
+            "needs_fields",
+            schema=option_params.get("schema"),
+            nullable=option_params.get("nullable"),
+            default=option_params.get("default"),
+            predicates=option_params.get("predicates"),
+            parse_variants=option_params.get("parse_variants"),
             override=True,
         )
 
@@ -576,7 +577,10 @@ def load_config(app: Sphinx, *_args: Any) -> None:
         default_schema: FieldIntegerSchemaType = {"type": "integer"}
         if option not in _NEEDS_CONFIG.fields:
             _NEEDS_CONFIG.add_field(
-                option, "Added for needgantt functionality", schema=default_schema
+                option,
+                "Added for needgantt functionality",
+                "add_field",
+                schema=default_schema,
             )
         else:
             # ensure schema is correct
@@ -879,6 +883,20 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     core_override,
                     allow_variants=data.get("allow_variants", False),
                 )
+                if "default" in core_override:
+                    _set_default_on_field(
+                        field,
+                        core_override["default"],
+                        "needs_fields",
+                        allow_coercion=True,
+                    )
+                if "predicates" in core_override:
+                    _set_predicates_on_field(
+                        field,
+                        core_override["predicates"],
+                        "needs_fields",
+                        allow_coercion=True,
+                    )
             except Exception as exc:
                 raise NeedsConfigException(
                     f"Invalid `needs_fields` core option override for {name!r}: {exc}"
@@ -889,39 +907,51 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         except Exception as exc:
             raise NeedsConfigException(f"Invalid core option {name!r}: {exc}") from exc
 
-    for name, extra in _NEEDS_CONFIG.fields.items():
+    for name, field_data in _NEEDS_CONFIG.fields.items():
         try:
             _schema = (
-                deepcopy(extra.schema)  # type: ignore[arg-type]
-                if extra.schema is not None
+                deepcopy(field_data.schema)  # type: ignore[arg-type]
+                if field_data.schema is not None
                 else {"type": "string"}
             )
-            if extra.nullable is not None:
-                nullable = extra.nullable
+            if field_data.nullable is not None:
+                nullable = field_data.nullable
             else:
                 # follows that of legacy (pre-schema) extra option,
                 # i.e. nullable if schema is defined
-                nullable = extra.schema is not None
+                nullable = field_data.schema is not None
             parse_variants = (
-                False if extra.parse_variants is None else extra.parse_variants
+                False
+                if field_data.parse_variants is None
+                else field_data.parse_variants
             )
             if name in needs_config._variant_options:
                 # for backward compatibility with deprecated config option
                 parse_variants = True
             field = FieldSchema(
                 name=name,
-                description=extra.description,
+                description=field_data.description,
                 schema=_schema,  # type: ignore[arg-type]
                 nullable=nullable,
                 # note, default follows that of legacy (pre-schema) extra option,
                 # i.e. default to "" only if no schema is defined
-                default=None if extra.schema is not None else FieldLiteralValue(""),
+                default=None
+                if field_data.schema is not None
+                else FieldLiteralValue(""),
                 allow_defaults=True,
                 allow_extend=True,
                 parse_dynamic_functions=True,
                 parse_variants=parse_variants,
                 directive_option=True,
             )
+            if field_data.default is not None:
+                _set_default_on_field(
+                    field, field_data.default, field_data.source, allow_coercion=True
+                )
+            if field_data.predicates is not None:
+                _set_predicates_on_field(
+                    field, field_data.predicates, field_data.source, allow_coercion=True
+                )
             schema.add_extra_field(field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid field {name!r}: {exc}") from exc
@@ -969,15 +999,23 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 copy=link.get("copy", False),
                 allow_dead_links=link.get("allow_dead_links", False),
             )
+            if "default" in link:
+                _set_default_on_field(
+                    link_field,
+                    link["default"],
+                    "needs_extra_links",
+                    allow_coercion=True,
+                )
+            if "predicates" in link:
+                _set_predicates_on_field(
+                    link_field,
+                    link["predicates"],
+                    "needs_extra_links",
+                    allow_coercion=True,
+                )
             schema.add_link_field(link_field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid extra link {name!r}: {exc}") from exc
-
-    for field_name, field_config in needs_config._fields.items():
-        _set_default(schema, "needs_fields", field_name, field_config)
-
-    for link_config in needs_config._extra_links:
-        _set_default(schema, "needs_extra_links", link_config["option"], link_config)
 
     if needs_config._global_options:
         log_warning(
@@ -994,8 +1032,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 "config",
                 None,
             )
-        _set_default(
-            schema, "needs_global_options", name, default_config, warn_not_dict=True
+        _set_global_default(
+            schema, "needs_global_options", name, default_config, allow_coercion=True
         )
 
     SphinxNeedsData(env)._set_schema(schema)
@@ -1006,23 +1044,21 @@ class _DefaultsDictType(TypedDict, total=False):
     default: Any
 
 
-def _set_default(
+def _set_global_default(
     schema: FieldsSchema,
     config_name: str,
     name: str,
     values: _DefaultsDictType,
     *,
-    warn_not_dict: bool = False,
-    allow_coercion: bool = True,
+    allow_coercion: bool,
 ) -> None:
     if not isinstance(values, dict):
-        if warn_not_dict:
-            log_warning(
-                LOGGER,
-                f"{config_name}[{name!r}] value is not a dict",
-                "config",
-                None,
-            )
+        log_warning(
+            LOGGER,
+            f"{config_name}[{name!r}] value is not a dict",
+            "config",
+            None,
+        )
         return
     if "default" not in values and "predicates" not in values:
         return
@@ -1044,29 +1080,46 @@ def _set_default(
         )
         return
     if "default" in values:
-        try:
-            field_for_default._set_default(
-                values["default"], allow_coercion=allow_coercion
-            )
-        except Exception as exc:
-            log_warning(
-                LOGGER,
-                f"{config_name}[{name!r}]['default'] value is incorrect: {exc}",
-                "config",
-                None,
-            )
+        _set_default_on_field(
+            field_for_default, values["default"], config_name, allow_coercion
+        )
     if "predicates" in values:
-        try:
-            field_for_default._set_predicate_defaults(
-                values["predicates"], allow_coercion=allow_coercion
-            )
-        except Exception as exc:
-            log_warning(
-                LOGGER,
-                f"{config_name}[{name!r}]['predicates'] value is incorrect: {exc}",
-                "config",
-                None,
-            )
+        _set_predicates_on_field(
+            field_for_default, values["predicates"], config_name, allow_coercion
+        )
+
+
+def _set_default_on_field(
+    field: FieldSchema | LinkSchema, value: Any, config_name: str, allow_coercion: bool
+) -> None:
+    """Set default value on field, with errors turned into warnings."""
+    try:
+        field._set_default(value, allow_coercion=allow_coercion)
+    except Exception as exc:
+        log_warning(
+            LOGGER,
+            f"{config_name}[{field.name!r}]['default'] value is incorrect: {exc}",
+            "config",
+            None,
+        )
+
+
+def _set_predicates_on_field(
+    field: FieldSchema | LinkSchema,
+    predicates: list[tuple[str, Any]],
+    config_name: str,
+    allow_coercion: bool,
+) -> None:
+    """Set predicate defaults on field, with errors turned into warnings."""
+    try:
+        field._set_predicate_defaults(predicates, allow_coercion=allow_coercion)
+    except Exception as exc:
+        log_warning(
+            LOGGER,
+            f"{config_name}[{field.name!r}]['predicates'] value is incorrect: {exc}",
+            "config",
+            None,
+        )
 
 
 def release_data_locks(app: Sphinx, _exception: Exception) -> None:
