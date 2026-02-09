@@ -27,13 +27,13 @@ needs_extra_links = [
 ]
 
 needs_fields = {
-    "option_1": {},
-    "option_2": {},
-    "option_3": {},
-    "option_4": {},
-    "option_5": {},
-    "bad_value_type": {},
-    "too_many_params": {},
+    "option_1": {"nullable": True},
+    "option_2": {"nullable": True},
+    "option_3": {"nullable": True},
+    "option_4": {"nullable": True},
+    "option_5": {"nullable": True},
+    "bad_value_type": {"nullable": True},
+    "too_many_params": {"nullable": True},
 }
 
 needs_global_options = {

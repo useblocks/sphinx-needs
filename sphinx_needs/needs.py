@@ -913,6 +913,20 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 "needs_extra_options",
                 "add_extra_option",
             }
+            if (
+                not back_compatible
+                and field_data.schema is None
+                and field_data.default is None
+                and field_data.nullable is None
+            ):
+                log_warning(
+                    LOGGER,
+                    f"Field {name!r} (from {field_data.source}) has no 'schema', 'nullable' or 'default' defined, "
+                    "which defaults to a string schema with nullable=True and no default. "
+                    "To aide with backward compatibility please define at least one.",
+                    "config",
+                    None,
+                )
 
             _schema = (
                 deepcopy(field_data.schema)  # type: ignore[arg-type]

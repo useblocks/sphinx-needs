@@ -46,7 +46,10 @@ needs_fields = {
     "layout": {"default": "clean_l"},
     "option_1": {"default": "test_global"},
     "option_2": {"default": "[[copy('id')]]"},
-    "option_3": {"predicates": [('status == "implemented"', "STATUS_IMPL")]},
+    "option_3": {
+        "nullable": True,
+        "predicates": [('status == "implemented"', "STATUS_IMPL")],
+    },
     "option_4": {
         "default": "STATUS_UNKNOWN",
         "predicates": [('status == "closed"', "STATUS_CLOSED")],
@@ -59,7 +62,7 @@ needs_fields = {
         "default": "final",
     },
     "bad_value_type": {"default": 1.27},
-    "too_many_params": {"predicates": [("a", "b", "c", "d")]},
+    "too_many_params": {"nullable": True, "predicates": [("a", "b", "c", "d")]},
 }
 
 needs_build_json = True
