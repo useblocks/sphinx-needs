@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770631574455,
+  "lastUpdate": 1770633487404,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16776,6 +16776,42 @@ window.BENCHMARK_DATA = {
             "value": 67.87867513399999,
             "unit": "s",
             "extra": "Commit: 8457c9d16a8b3394d25d30d17a9376f7dd2e6ea9\nBranch: master\nTime: 2026-02-09T11:04:01+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "16767e0a8ef49e2044b432f788b8a50d67fe964d",
+          "message": "‼️ Make need fields added by services nullable and default to null (#1644)\n\nRather than non-nullable and default to empty string.\n\nNote, this could be breaking, for need filters that assume a service\nfield value is always a string.",
+          "timestamp": "2026-02-09T11:36:04+01:00",
+          "tree_id": "9a221b449722f18adb594298f1ebda6d72820f87",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/16767e0a8ef49e2044b432f788b8a50d67fe964d"
+        },
+        "date": 1770633469282,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2208970980000089,
+            "unit": "s",
+            "extra": "Commit: 16767e0a8ef49e2044b432f788b8a50d67fe964d\nBranch: master\nTime: 2026-02-09T11:36:04+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.174322501999995,
+            "unit": "s",
+            "extra": "Commit: 16767e0a8ef49e2044b432f788b8a50d67fe964d\nBranch: master\nTime: 2026-02-09T11:36:04+01:00"
           }
         ]
       }
