@@ -4627,6 +4627,40 @@
     }),
   })
 # ---
+# name: test_schemas[schema/fixtures/reporting-report_invalid_extra_field_default]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "A" was expected [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-report_invalid_extra_field_default].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"A" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/reporting-severity_default_suppress_severity]
   '''
   WARNING: Need 'IMPL_1' has schema infos:
