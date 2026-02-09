@@ -202,7 +202,6 @@ def test_schema_benchmark(schema_benchmark_app, snapshot):
                     """
 extensions = ["sphinx_needs"]
 needs_from_toml = "ubproject.toml"
-needs_schema_definitions_from_json = "schemas.json"
                     """,
                 ),
                 (
@@ -227,32 +226,6 @@ Test Multiple Errors
     :id: IMPL_1
     :priority: invalid_priority
     :severity: critical
-                    """,
-                ),
-                (
-                    "schemas.json",
-                    """{
-  "$defs": [],
-  "schemas": [
-    {
-      "validate": {
-        "local": {
-          "properties": {
-            "priority": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 5
-            },
-            "severity": {
-              "type": "string",
-              "enum": ["low", "medium", "high"]
-            }
-          }
-        }
-      }
-    }
-  ]
-}
                     """,
                 ),
             ],
