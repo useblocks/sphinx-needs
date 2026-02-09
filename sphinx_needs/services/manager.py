@@ -33,7 +33,13 @@ class ServiceManager:
                 pass
             elif option not in _NEEDS_CONFIG.fields:
                 self.log.debug(f'Register option "{option}" for service "{name}"')
-                _NEEDS_CONFIG.add_field(option, f"Added by service {name}", "service")
+                _NEEDS_CONFIG.add_field(
+                    option,
+                    f"Added by service {name}",
+                    "service",
+                    nullable=True,
+                    schema={"type": "string"},
+                )
 
         # Init service with custom config
         self.services[name] = klass(self.app, name, config, **kwargs)
