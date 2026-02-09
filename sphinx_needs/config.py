@@ -37,6 +37,14 @@ LOGGER = get_logger(__name__)
 class NewFieldParams:
     """Defines a single new field for needs"""
 
+    source: Literal[
+        "needs_extra_options",
+        "needs_fields",
+        "add_extra_option",
+        "add_field",
+        "service",
+    ]
+    """Where the field was added from."""
     description: str
     """A description of the field."""
     nullable: bool | None = None
@@ -52,19 +60,14 @@ class NewFieldParams:
     """A JSON schema for the option."""
     parse_variants: bool | None = None
     """Whether variants are parsed in this field."""
-
-
-class FieldDefault(TypedDict):
-    """Defines a default value for a field."""
-
-    predicates: NotRequired[list[tuple[str, Any]]]
+    predicates: None | list[tuple[str, Any]] = None
     """List of (need filter, value) pairs for default predicate values.
 
     Used if the field has not been specifically set.
 
     The value from the first matching filter will be used, if any.
     """
-    default: NotRequired[Any]
+    default: None | Any = None
     """Default value for the field.
     
     Used if the field has not been specifically set, and no predicate matches.
@@ -109,6 +112,13 @@ class _Config:
         self,
         name: str,
         description: str,
+        source: Literal[
+            "needs_extra_options",
+            "needs_fields",
+            "add_extra_option",
+            "add_field",
+            "service",
+        ],
         *,
         schema: FieldStringSchemaType
         | FieldBooleanSchemaType
@@ -117,8 +127,10 @@ class _Config:
         | FieldMultiValueSchemaType
         | None = None,
         nullable: None | bool = None,
-        override: bool = False,
+        default: None | Any = None,
+        predicates: None | list[tuple[str, Any]] = None,
         parse_variants: None | bool = None,
+        override: bool = False,
     ) -> None:
         """Adds a need field to the configuration."""
         if name in NeedsCoreFields:
@@ -132,25 +144,22 @@ class _Config:
                 + ", as it is already used as a core field name."
             )
         if (existing := self._fields.get(name)) is not None:
+            message = f"Duplicate need field {name!r}, registered via {existing.source}({existing.description!r}) and {source}({description!r})."
             if override:
-                log_warning(
-                    LOGGER,
-                    f"Need field {name!r} already registered (existing description: {existing.description!r})",
-                    "config",
-                    None,
-                )
+                log_warning(LOGGER, message, "config", None)
             else:
                 from sphinx_needs.exceptions import (
                     NeedsApiConfigWarning,  # avoid circular import
                 )
 
-                raise NeedsApiConfigWarning(
-                    f"Need field {name!r} already registered (existing description: {existing.description!r})."
-                )
+                raise NeedsApiConfigWarning(message)
         self._fields[name] = NewFieldParams(
+            source=source,
             description=description,
             schema=schema,
             nullable=nullable,
+            default=default,
+            predicates=predicates,
             parse_variants=parse_variants,
         )
 
