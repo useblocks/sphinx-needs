@@ -18,7 +18,7 @@ from sphinx_needs.schema.config import (
     FIELD_BASE_TYPES_STR,
     USER_CONFIG_SCHEMA_SEVERITIES,
     AllOfSchemaType,
-    ExtraOptionAndLinkSchemaTypes,
+    FieldAndLinkSchemaTypes,
     NeedFieldsSchemaType,
     RefItemType,
     ResolvedLinkSchemaType,
@@ -210,7 +210,7 @@ def check_network_links_against_extra_links(
 def resolve_refs(
     defs: dict[
         str,
-        AllOfSchemaType | NeedFieldsSchemaType | ExtraOptionAndLinkSchemaTypes,
+        AllOfSchemaType | NeedFieldsSchemaType | FieldAndLinkSchemaTypes,
     ],
     curr_item: Any,
     circular_refs_guard: set[str],
@@ -415,7 +415,7 @@ def _process_need_fields_schema(
 
 def _inject_field_type(
     field_name: str,
-    field_schema: ExtraOptionAndLinkSchemaTypes,
+    field_schema: FieldAndLinkSchemaTypes,
     schema_name: str,
     fields_schema: FieldsSchema,
     path: str,
@@ -455,7 +455,7 @@ def _inject_field_type(
         if core_field_result is None:
             raise NeedsConfigException(
                 f"Config error in schema '{schema_name}' at path '{path}': "
-                f"Field '{field_name}' is not a known extra option, extra link, or core field."
+                f"'{field_name}' is not a known field or link."
             )
         field_type, item_type = core_field_result
         _inject_type_and_item_type(
@@ -518,7 +518,7 @@ def _get_core_field_type(
 
 
 def _inject_type_and_item_type(
-    field_schema: ExtraOptionAndLinkSchemaTypes,
+    field_schema: FieldAndLinkSchemaTypes,
     expected_type: Literal["string", "boolean", "integer", "number", "array"],
     expected_item_type: Literal["string", "boolean", "integer", "number"] | None,
     field_name: str,

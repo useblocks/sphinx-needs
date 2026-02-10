@@ -43,12 +43,13 @@ needs_fields = {
     "status": {
         "parse_variants": True,
     },
-    "my_extra_option": {},
-    "another_option": {},
+    "my_extra_option": {"nullable": True},
+    "another_option": {"nullable": True},
     "author": {
+        "nullable": True,
         "parse_variants": True,
     },
-    "value": {},
+    "value": {"nullable": True},
     "field_bool": {
         "schema": {
             "type": "boolean",

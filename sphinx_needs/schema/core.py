@@ -48,7 +48,7 @@ def validate_option_fields(
     field_properties: Mapping[str, NeedFieldProperties],
     needs: NeedsView,
 ) -> dict[str, list[OntologyWarning]]:
-    """Validate schema originating from extra option definitions."""
+    """Validate schema originating from field definitions."""
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
     validator = compile_validator(schema)
     for need in needs.values():
@@ -465,10 +465,7 @@ def reduce_need(
         if value is None:
             # value is not provided
             continue
-        schema_field = field_properties[field]
-        if not ("default" in schema_field and value == schema_field["default"]):
-            # keep explicitly set extra options
-            reduced_need[field] = value
+        reduced_need[field] = value
 
     for field, value in need.iter_links_items():
         if value:

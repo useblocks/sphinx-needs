@@ -216,7 +216,7 @@ def start(
 @click.option(
     "--basic",
     is_flag=True,
-    help="Use only default config of Sphinx-Needs (e.g. no extra options)",
+    help="Use only default config of Sphinx-Needs (e.g. no extra fields)",
 )
 def series(
     profile,

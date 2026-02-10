@@ -9,6 +9,7 @@ schema_debug_active = true
 
 [needs.fields.string_option_wo_schema]
 description = "String option"
+nullable = true
 
 [needs.fields.efforts]
 description = "FTE days"

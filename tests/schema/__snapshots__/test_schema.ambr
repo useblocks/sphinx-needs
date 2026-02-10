@@ -528,11 +528,11 @@
   '''
 # ---
 # name: test_schema_config[extra_option_empty_schema]
-  "Invalid extra option 'efforts': Invalid schema: Must have a 'type' field."
+  "Invalid field 'efforts': Invalid schema: Must have a 'type' field."
 # ---
 # name: test_schema_config[extra_option_pattern_unsafe_error]
   '''
-  Invalid extra option 'efforts': Invalid schema: "^IMPL_(?!SAFE)" is not a "regex"
+  Invalid field 'efforts': Invalid schema: "^IMPL_(?!SAFE)" is not a "regex"
   
   Failed validating in schema
   
@@ -542,7 +542,7 @@
 # ---
 # name: test_schema_config[extra_option_unknown_keys]
   '''
-  Invalid extra option 'efforts': Invalid schema: Additional properties are not allowed ('unknown' was unexpected)
+  Invalid field 'efforts': Invalid schema: Additional properties are not allowed ('unknown' was unexpected)
   
   Failed validating "additionalProperties" in schema
   
@@ -702,7 +702,7 @@
   "Invalid `needs_fields` core option override for 'title': Child 'type' 'number' does not match parent 'type' 'string'."
 # ---
 # name: test_schema_config[type_error]
-  "Invalid extra option 'efforts': Invalid schema: Extra option schema has invalid type 'unknown'. Must be one of ['array', 'boolean', 'integer', 'number', 'string']."
+  "Invalid field 'efforts': Invalid schema: Field schema has invalid type 'unknown'. Must be one of ['array', 'boolean', 'integer', 'number', 'string']."
 # ---
 # name: test_schema_config[type_mismatch_array_error]
   '''
@@ -798,8 +798,8 @@
             'arch': dict({
             }),
             'asil': 'QM',
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -808,7 +808,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': None,
             'docname': 'index',
             'doctype': '.rst',
@@ -819,7 +819,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'FEAT',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -832,10 +832,10 @@
               'SPEC_SAFE_UNSAFE_FEAT',
               'SPEC_SAFE_ADD_UNSAFE_FEAT',
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -847,19 +847,19 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': None,
-            'query': '',
+            'query': None,
             'scores': None,
             'section_name': 'basic test',
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -867,18 +867,18 @@
             'title': 'feat',
             'type': 'feat',
             'type_name': 'Feat',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
           'FEAT_SAFE': dict({
             'approved': None,
             'arch': dict({
             }),
             'asil': 'C',
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -887,7 +887,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': None,
             'docname': 'index',
             'doctype': '.rst',
@@ -898,7 +898,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'FEAT_SAFE',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -910,10 +910,10 @@
             'links_back': list([
               'SPEC_SAFE',
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -925,19 +925,19 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': None,
-            'query': '',
+            'query': None,
             'scores': None,
             'section_name': 'basic test',
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -945,18 +945,18 @@
             'title': 'feat safe',
             'type': 'feat',
             'type_name': 'Feat',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
           'FEAT_SAFE2': dict({
             'approved': None,
             'arch': dict({
             }),
             'asil': 'D',
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -965,7 +965,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': None,
             'docname': 'index',
             'doctype': '.rst',
@@ -976,7 +976,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'FEAT_SAFE2',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -989,10 +989,10 @@
               'SPEC_SAFE_ADD_UNSAFE_FEAT',
               'SPEC_SAFE',
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1004,19 +1004,19 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': None,
-            'query': '',
+            'query': None,
             'scores': None,
             'section_name': 'basic test',
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -1024,18 +1024,18 @@
             'title': 'feat safe 2',
             'type': 'feat',
             'type_name': 'Feat',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
           'FEAt': dict({
             'approved': None,
             'arch': dict({
             }),
             'asil': 'QM',
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1044,7 +1044,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': None,
             'docname': 'index',
             'doctype': '.rst',
@@ -1055,7 +1055,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'FEAt',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -1066,10 +1066,10 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1081,19 +1081,19 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': None,
-            'query': '',
+            'query': None,
             'scores': None,
             'section_name': 'basic test',
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -1101,18 +1101,18 @@
             'title': 'feat wrong id',
             'type': 'feat',
             'type_name': 'Feat',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
           'IMPL': dict({
             'approved': None,
             'arch': dict({
             }),
             'asil': None,
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1121,7 +1121,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': None,
             'docname': 'index',
             'doctype': '.rst',
@@ -1132,7 +1132,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'IMPL',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -1144,10 +1144,10 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1159,19 +1159,19 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': None,
-            'query': '',
+            'query': None,
             'scores': None,
             'section_name': 'basic test',
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -1179,18 +1179,18 @@
             'title': 'impl',
             'type': 'impl',
             'type_name': 'Implementation',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
           'IMPL_ARRAY_TEST': dict({
             'approved': None,
             'arch': dict({
             }),
             'asil': None,
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1199,7 +1199,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': list([
               'dep1',
               'dep2',
@@ -1214,7 +1214,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'IMPL_ARRAY_TEST',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -1225,10 +1225,10 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1240,9 +1240,9 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': None,
-            'query': '',
+            'query': None,
             'scores': list([
               0.8,
               0.9,
@@ -1252,11 +1252,11 @@
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -1264,18 +1264,18 @@
             'title': 'Impl for array test',
             'type': 'impl',
             'type_name': 'Implementation',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
           'IMPL_SAFE': dict({
             'approved': None,
             'arch': dict({
             }),
             'asil': 'A',
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1284,7 +1284,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': None,
             'docname': 'index',
             'doctype': '.rst',
@@ -1295,7 +1295,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'IMPL_SAFE',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -1307,10 +1307,10 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1322,19 +1322,19 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': None,
-            'query': '',
+            'query': None,
             'scores': None,
             'section_name': 'basic test',
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -1342,18 +1342,18 @@
             'title': 'safe impl',
             'type': 'impl',
             'type_name': 'Implementation',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
           'SPEC': dict({
             'approved': None,
             'arch': dict({
             }),
             'asil': 'QM',
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1362,7 +1362,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': None,
             'docname': 'index',
             'doctype': '.rst',
@@ -1373,7 +1373,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'SPEC',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -1385,10 +1385,10 @@
             'links_back': list([
               'IMPL',
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1400,19 +1400,19 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': 1,
-            'query': '',
+            'query': None,
             'scores': None,
             'section_name': 'basic test',
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -1420,18 +1420,18 @@
             'title': 'spec',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
           'SPEC_MISSING_APPROVAL': dict({
             'approved': None,
             'arch': dict({
             }),
             'asil': 'QM',
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1440,7 +1440,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': None,
             'docname': 'index',
             'doctype': '.rst',
@@ -1451,7 +1451,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'SPEC_MISSING_APPROVAL',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -1462,10 +1462,10 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1477,19 +1477,19 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': 1,
-            'query': '',
+            'query': None,
             'scores': None,
             'section_name': 'basic test',
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -1497,18 +1497,18 @@
             'title': 'spec missing approval',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
           'SPEC_SAFE': dict({
             'approved': True,
             'arch': dict({
             }),
             'asil': 'B',
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1517,7 +1517,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': None,
             'docname': 'index',
             'doctype': '.rst',
@@ -1528,7 +1528,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'SPEC_SAFE',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -1541,10 +1541,10 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1556,19 +1556,19 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': 1,
-            'query': '',
+            'query': None,
             'scores': None,
             'section_name': 'basic test',
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -1576,18 +1576,18 @@
             'title': 'safe spec',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
           'SPEC_SAFE_ADD_UNSAFE_FEAT': dict({
             'approved': True,
             'arch': dict({
             }),
             'asil': 'B',
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1596,7 +1596,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': None,
             'docname': 'index',
             'doctype': '.rst',
@@ -1607,7 +1607,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'SPEC_SAFE_ADD_UNSAFE_FEAT',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -1620,10 +1620,10 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1635,19 +1635,19 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': 1,
-            'query': '',
+            'query': None,
             'scores': None,
             'section_name': 'basic test',
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -1655,18 +1655,18 @@
             'title': 'safe spec additional items',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
           'SPEC_SAFE_UNSAFE_FEAT': dict({
             'approved': True,
             'arch': dict({
             }),
             'asil': 'B',
-            'avatar': '',
-            'closed_at': '',
+            'avatar': None,
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -1675,7 +1675,7 @@
             'constraints_results': dict({
             }),
             'content': '',
-            'created_at': '',
+            'created_at': None,
             'departments': None,
             'docname': 'index',
             'doctype': '.rst',
@@ -1686,7 +1686,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'SPEC_SAFE_UNSAFE_FEAT',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -1699,10 +1699,10 @@
             'links_back': list([
               'IMPL_SAFE',
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1714,19 +1714,19 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'priority': 1,
-            'query': '',
+            'query': None,
             'scores': None,
             'section_name': 'basic test',
             'sections': list([
               'basic test',
             ]),
-            'service': '',
+            'service': None,
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
-            'string_option_wo_schema': '',
+            'string_option_wo_schema': None,
             'style': None,
             'tags': list([
             ]),
@@ -1734,10 +1734,10 @@
             'title': 'safe spec links unsafe feat',
             'type': 'spec',
             'type_name': 'Specification',
-            'updated_at': '',
-            'url': '',
-            'url_postfix': '',
-            'user': '',
+            'updated_at': None,
+            'url': None,
+            'url_postfix': None,
+            'user': None,
           }),
         }),
         'needs_amount': 12,
@@ -1773,16 +1773,22 @@
               ]),
             }),
             'avatar': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'closed_at': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'completion': dict({
               'default': None,
@@ -1841,10 +1847,13 @@
               'type': 'string',
             }),
             'created_at': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'departments': dict({
               'default': None,
@@ -1924,10 +1933,13 @@
               'type': 'string',
             }),
             'id_prefix': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'is_external': dict({
               'default': False,
@@ -1992,16 +2004,22 @@
               'type': 'array',
             }),
             'max_amount': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'max_content_lines': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'modifications': dict({
               'default': 0,
@@ -2010,10 +2028,13 @@
               'type': 'integer',
             }),
             'params': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service open-needs',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'parent_need': dict({
               'default': None,
@@ -2091,10 +2112,13 @@
               ]),
             }),
             'prefix': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service open-needs',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'priority': dict({
               'default': None,
@@ -2106,10 +2130,13 @@
               ]),
             }),
             'query': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'scores': dict({
               'default': None,
@@ -2143,10 +2170,13 @@
               'type': 'array',
             }),
             'service': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'signature': dict({
               'default': None,
@@ -2158,10 +2188,13 @@
               ]),
             }),
             'specific': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'status': dict({
               'default': None,
@@ -2173,10 +2206,13 @@
               ]),
             }),
             'string_option_wo_schema': dict({
-              'default': '',
+              'default': None,
               'description': 'String option',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'style': dict({
               'default': None,
@@ -2224,28 +2260,40 @@
               'type': 'string',
             }),
             'updated_at': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'url': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'url_postfix': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service open-needs',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'user': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
           }),
           'type': 'object',
@@ -2328,16 +2376,22 @@
               'type': 'object',
             }),
             'avatar': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'closed_at': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'completion': dict({
               'default': None,
@@ -2396,10 +2450,13 @@
               'type': 'string',
             }),
             'created_at': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'docname': dict({
               'default': None,
@@ -2551,10 +2608,13 @@
               'type': 'string',
             }),
             'id_prefix': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'is_external': dict({
               'default': False,
@@ -2619,16 +2679,22 @@
               'type': 'array',
             }),
             'max_amount': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'max_content_lines': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'modifications': dict({
               'default': 0,
@@ -2637,10 +2703,13 @@
               'type': 'integer',
             }),
             'params': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service open-needs',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'parent_need': dict({
               'default': None,
@@ -2718,16 +2787,22 @@
               ]),
             }),
             'prefix': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service open-needs',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'query': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'section_name': dict({
               'default': None,
@@ -2749,10 +2824,13 @@
               'type': 'array',
             }),
             'service': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'signature': dict({
               'default': None,
@@ -2764,10 +2842,13 @@
               ]),
             }),
             'specific': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'status': dict({
               'default': None,
@@ -2824,28 +2905,40 @@
               'type': 'string',
             }),
             'updated_at': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'url': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'url_postfix': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service open-needs',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'user': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
           }),
           'type': 'object',
@@ -3242,7 +3335,7 @@
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_boolean_from_string_error]
   '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'approved' is invalid: Cannot convert 'not-a-boolean' to boolean [needs.create_need]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'approved' is invalid: Cannot convert 'not-a-boolean' to boolean [needs.create_need]
   
   '''
 # ---
@@ -3265,7 +3358,7 @@
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_float_error]
   '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'efforts' is invalid: Cannot convert '1.2' to integer [needs.create_need]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert '1.2' to integer [needs.create_need]
   
   '''
 # ---
@@ -3278,7 +3371,7 @@
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_integer_from_string_error]
   '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'efforts' is invalid: Cannot convert 'QM' to integer [needs.create_need]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert 'QM' to integer [needs.create_need]
   
   '''
 # ---
@@ -3301,7 +3394,7 @@
 # ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_number_from_string_error]
   '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'efforts' is invalid: Cannot convert 'QM' to float [needs.create_need]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'efforts' is invalid: Cannot convert 'QM' to float [needs.create_need]
   
   '''
 # ---
@@ -4015,7 +4108,7 @@
 # ---
 # name: test_schemas[schema/fixtures/fields-string_non_nullable]
   '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'asil' is not nullable, but no value or default was given. [needs.create_need]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'asil' is not nullable, but no value or default was given. [needs.create_need]
   
   '''
 # ---
@@ -4128,7 +4221,7 @@
 # ---
 # name: test_schemas[schema/fixtures/fields-wrong_type]
   '''
-  <srcdir>/index.rst:1: WARNING: Need could not be created: Extra option 'asil' is invalid: Cannot convert 'QM' to integer [needs.create_need]
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'asil' is invalid: Cannot convert 'QM' to integer [needs.create_need]
   
   '''
 # ---
@@ -4587,6 +4680,40 @@
           }),
           'log_lvl': 'error',
           'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/reporting-report_invalid_extra_field_default]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          asil
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > asil > const
+    Schema message: "A" was expected [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/reporting-report_invalid_extra_field_default].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'asil',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > asil > const',
+            'severity': 'violation',
+            'validation_msg': '"A" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
           'type': 'sn_schema_violation',
         }),
       ]),

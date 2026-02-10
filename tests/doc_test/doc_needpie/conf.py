@@ -38,4 +38,4 @@ needs_types = [
     },
 ]
 
-needs_fields = {"author": {}}
+needs_fields = {"author": {"nullable": True}}

@@ -27,6 +27,7 @@ schemas_in_conf:
     }
   ubproject: |
     [needs.fields.asil]
+    nullable = true
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -64,6 +65,7 @@ schemas_in_conf_error:
     }
   ubproject: |
     [needs.fields.asil]
+    nullable = true
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -115,6 +117,7 @@ min_contains:
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [needs.fields.asil]
+    nullable = true
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -146,6 +149,7 @@ min_contains_error:
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [needs.fields.asil]
+    nullable = true
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -177,6 +181,7 @@ max_contains:
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [needs.fields.asil]
+    nullable = true
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -208,6 +213,7 @@ max_contains_error:
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [needs.fields.asil]
+    nullable = true
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -456,6 +462,7 @@ local_min_items:
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [needs.fields.asil]
+    nullable = true
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -481,6 +488,7 @@ local_min_items_error:
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [needs.fields.asil]
+    nullable = true
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -506,6 +514,7 @@ local_max_items:
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [needs.fields.asil]
+    nullable = true
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -534,6 +543,7 @@ local_max_items_error:
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [needs.fields.asil]
+    nullable = true
   rst: |
     .. spec:: title
         :id: SPEC_1
@@ -562,6 +572,7 @@ max_network_levels:
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [needs.fields.asil]
+    nullable = true
   rst: |
     .. spec:: title
         :id: SPEC_1
