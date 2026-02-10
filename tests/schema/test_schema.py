@@ -144,7 +144,7 @@ def test_schema_example(test_app: SphinxTestApp, snapshot) -> None:
                 (
                     "conf.py",
                     """
-                 
+
 extensions = ["sphinx_needs"]
 needs_schema_validation_enabled = False
 needs_fields = {

@@ -753,6 +753,11 @@
     Need path:      SPEC
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC" does not match "^SPEC_[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC' has schema violations:
+    Severity:       violation
+    Need path:      SPEC
+    Schema path:    spec[1] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('asil', 'priority' were unexpected) [sn_schema_violation.local_fail]
   ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT' has schema violations:
     Severity:       violation
     Need path:      SPEC_SAFE_UNSAFE_FEAT
@@ -3523,6 +3528,60 @@
             'schema_path': 'fields > schema > properties > efforts > multipleOf',
             'severity': 'violation',
             'validation_msg': '8 is not a multiple of 3',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-multiple_errors_per_need]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          priority
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > priority > maximum
+    Schema message: 8 is greater than the maximum of 5 [sn_schema_violation.field_fail]
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          severity
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > severity > enum
+    Schema message: "critical" is not one of "low", "medium" or "high" [sn_schema_violation.field_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-multiple_errors_per_need].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'priority',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > priority > maximum',
+            'severity': 'violation',
+            'validation_msg': '8 is greater than the maximum of 5',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'severity',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > severity > enum',
+            'severity': 'violation',
+            'validation_msg': '"critical" is not one of "low", "medium" or "high"',
           }),
           'log_lvl': 'error',
           'subtype': 'field_fail',

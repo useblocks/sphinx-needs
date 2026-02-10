@@ -600,7 +600,6 @@ def get_ontology_warnings(
             if user_message is not None:
                 warning["user_message"] = user_message
             warnings.append(warning)
-            return warnings
     else:
         warning = {
             "rule": success_rule,

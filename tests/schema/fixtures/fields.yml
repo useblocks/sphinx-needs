@@ -775,3 +775,22 @@ tags_enum:
     .. impl:: title
         :id: IMPL_1
         :tags: a,b,c
+
+multiple_errors_per_need:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.priority]
+    schema.type = "integer"
+    schema.minimum = 1
+    schema.maximum = 5
+
+    [needs.fields.severity]
+    schema.type = "string"
+    schema.enum = ["low", "medium", "high"]
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :priority: 8
+        :severity: critical
