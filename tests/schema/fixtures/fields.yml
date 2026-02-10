@@ -778,9 +778,6 @@ multiple_errors_per_need:
     schema.type = "string"
     schema.enum = ["low", "medium", "high"]
   rst: |
-    Test Multiple Errors
-    ####################
-
     .. impl:: title
         :id: IMPL_1
         :priority: 8
