@@ -6,7 +6,9 @@ All functions here are available under ``sphinx_needs.api``.
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
+from typing import Any
 
 from sphinx.application import Sphinx
 from sphinx.util.logging import SphinxLoggerAdapter
@@ -15,7 +17,7 @@ from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig
 from sphinx_needs.exceptions import NeedsApiConfigException
 from sphinx_needs.functions.functions import DynamicFunction
 from sphinx_needs.need_item import NeedItem
-from sphinx_needs.schema.config import ExtraOptionSchemaTypes
+from sphinx_needs.schema.config import FieldSchemaTypes
 
 # TODO(mh) document exactly when API calls are allowed in the Sphinx event system
 
@@ -91,7 +93,7 @@ def add_extra_option(
     name: str,
     *,
     description: str = "Added by add_extra_option API",
-    schema: ExtraOptionSchemaTypes | None = None,
+    schema: FieldSchemaTypes | None = None,
     nullable: bool | None = None,
     parse_variants: bool | None = None,
 ) -> None:
@@ -99,6 +101,9 @@ def add_extra_option(
     Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
 
     Same impact as using :ref:`needs_extra_options` manually.
+
+    .. deprecated::
+        Use :func:`add_field` instead.
 
     **Usage**::
 
@@ -112,13 +117,60 @@ def add_extra_option(
     :param schema: Schema definition for the extra option
     :param nullable: Whether the field allows unset values.
     :param parse_variants: Whether variants are parsed in this field.
-    :return: None
     """
-    _NEEDS_CONFIG.add_extra_option(
+    warnings.warn(
+        "add_extra_option is deprecated, use add_field instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    _NEEDS_CONFIG.add_field(
         name,
         description,
+        "add_extra_option",
         schema=schema,
         nullable=nullable,
+        parse_variants=parse_variants,
+    )
+
+
+def add_field(
+    name: str,
+    /,
+    description: str,
+    *,
+    schema: FieldSchemaTypes | None = None,
+    nullable: bool | None = None,
+    default: None | Any = None,
+    predicates: None | list[tuple[str, Any]] = None,
+    parse_variants: bool | None = None,
+) -> None:
+    """
+    Adds an need field to the configured need schema.
+
+    Same impact as using :ref:`needs_fields` manually.
+
+    **Usage**::
+
+        from sphinx_needs.api import add_field
+
+        add_field('my_field')
+
+    :param name: Name of the field
+    :param description: Description of the field
+    :param schema: Schema definition for the field
+    :param nullable: Whether the field allows unset values.
+    :param default: Default value for the field, if not set in a need.
+    :param predicates: List of (need filter, value) pairs for default predicate values.
+    :param parse_variants: Whether variants are parsed in this field.
+    """
+    _NEEDS_CONFIG.add_field(
+        name,
+        description,
+        "add_field",
+        schema=schema,
+        nullable=nullable,
+        default=default,
+        predicates=predicates,
         parse_variants=parse_variants,
     )
 

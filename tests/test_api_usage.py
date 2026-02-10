@@ -1,3 +1,4 @@
+import json
 import sys
 import textwrap
 import types
@@ -7,6 +8,7 @@ from typing import Any
 
 import pytest
 from sphinx.testing.util import SphinxTestApp
+from syrupy.filters import props
 
 from sphinx_needs.api import add_need_type, get_need_types
 from sphinx_needs.exceptions import NeedsConfigException
@@ -125,7 +127,7 @@ def test_api_add_type(test_app: SphinxTestApp, snapshot):
     assert "my awesome need" in html
 
 
-def test_api_add_extra_option(
+def test_api_add_field(
     tmpdir: Path,
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
@@ -137,8 +139,8 @@ def test_api_add_extra_option(
             extensions = ['sphinx_needs']
             
             def setup(app):
-                from sphinx_needs.api import add_extra_option
-                add_extra_option(app, 'my_extra_option', description='My extra option')
+                from sphinx_needs.api import add_field
+                add_field('my_extra_option', description='My extra field')
                 return {'version': '0.1'}
             """
         ),
@@ -149,7 +151,7 @@ def test_api_add_extra_option(
 
             .. req:: a req
                 :id: REQ_1
-                :my_extra_option: extra option value
+                :my_extra_option: extra field value
             """
         ),
     }
@@ -158,16 +160,20 @@ def test_api_add_extra_option(
     app.build()
 
     warnings = get_warnings_list(app)
-    assert len(warnings) == 0, "\n".join(warnings)
+    assert warnings == [
+        "Field 'my_extra_option' (from add_field) has no 'schema', 'nullable' or 'default' defined, "
+        "which defaults to a string schema with nullable=True and no default. "
+        "To aide with backward compatibility please define at least one. [needs.config]\n"
+    ]
 
     html = Path(app.outdir, "index.html").read_text()
     assert html is not None
-    assert "extra option value" in html
+    assert "extra field value" in html
 
     assert app.statuscode == 0
 
 
-def test_api_add_extra_option_schema(
+def test_api_add_field_schema(
     tmpdir: Path,
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
@@ -179,11 +185,10 @@ def test_api_add_extra_option_schema(
             extensions = ['sphinx_needs']
             
             def setup(app):
-                from sphinx_needs.api import add_extra_option
-                add_extra_option(
-                    app,
+                from sphinx_needs.api import add_field
+                add_field(
                     'my_extra_option',
-                    description='My extra option',
+                    description='My extra field',
                     schema={
                         'type': 'integer',
                         'maximum': 10,
@@ -217,7 +222,7 @@ def test_api_add_extra_option_schema(
     assert app.statuscode == 0
 
 
-def test_api_add_extra_option_schema_wrong(
+def test_api_add_field_schema_wrong(
     tmpdir: Path,
     make_app: Callable[[], SphinxTestApp],
     write_fixture_files: Callable[[Path, dict[str, Any]], None],
@@ -229,11 +234,10 @@ def test_api_add_extra_option_schema_wrong(
             extensions = ['sphinx_needs']
             
             def setup(app):
-                from sphinx_needs.api import add_extra_option
-                add_extra_option(
-                    app,
+                from sphinx_needs.api import add_field
+                add_field(
                     'my_extra_option',
-                    description='My extra option',
+                    description='My extra field',
                     schema={
                         'type': 'integer',
                         'not_exist': 10,
@@ -259,3 +263,104 @@ def test_api_add_extra_option_schema_wrong(
         app.build()
 
     assert str(excinfo.value) == snapshot
+
+
+def test_api_add_field_default(
+    tmpdir: Path,
+    make_app: Callable[[], SphinxTestApp],
+    write_fixture_files: Callable[[Path, dict[str, Any]], None],
+    get_warnings_list,
+    snapshot,
+):
+    content = {
+        "conf": textwrap.dedent(
+            """
+            extensions = ['sphinx_needs']
+            needs_build_json = True
+            needs_json_remove_defaults = True
+            
+            def setup(app):
+                from sphinx_needs.api import add_field
+                add_field(
+                    'my_extra_option',
+                    description='My extra field',
+                    default="hallo",
+                    predicates=[('id == "REQ_1"', 'my predicate')]
+                )
+                return {'version': '0.1'}
+            """
+        ),
+        "rst": textwrap.dedent(
+            """
+            Title
+            =====
+
+            .. req:: a req
+                :id: REQ_1
+
+            .. req:: a req
+                :id: REQ_2
+            """
+        ),
+    }
+    write_fixture_files(tmpdir, content)
+    app: SphinxTestApp = make_app(srcdir=Path(tmpdir), freshenv=True)
+    app.build()
+
+    assert app.statuscode == 0
+
+    warnings = get_warnings_list(app)
+    assert len(warnings) == 0, "\n".join(warnings)
+
+    json_text = Path(app.outdir, "needs.json").read_text()
+    needs_data = json.loads(json_text)
+    assert needs_data == snapshot(exclude=props("created", "project", "creator"))
+
+
+def test_api_add_field_default_wrong(
+    tmpdir: Path,
+    make_app: Callable[[], SphinxTestApp],
+    write_fixture_files: Callable[[Path, dict[str, Any]], None],
+    get_warnings_list,
+    snapshot,
+):
+    content = {
+        "conf": textwrap.dedent(
+            """
+            extensions = ['sphinx_needs']
+            
+            def setup(app):
+                from sphinx_needs.api import add_field
+                add_field(
+                    'my_extra_option',
+                    description='My extra field',
+                    schema = {
+                        'type': 'integer',
+                    },
+                    default="wrong default type",
+                    predicates=[('id == "REQ_1"', 'wrong predicate type')]
+                )
+                return {'version': '0.1'}
+            """
+        ),
+        "rst": textwrap.dedent(
+            """
+            Title
+            =====
+
+            .. req:: a req
+                :id: REQ_1
+                :my_extra_option: 8
+            """
+        ),
+    }
+    write_fixture_files(tmpdir, content)
+    app: SphinxTestApp = make_app(srcdir=Path(tmpdir), freshenv=True)
+    app.build()
+    assert app.statuscode == 0
+
+    warnings = get_warnings_list(app)
+    assert warnings == [
+        "add_field['my_extra_option']['default'] value is incorrect: Cannot convert 'wrong default type' to integer [needs.config]\n",
+        "add_field['my_extra_option']['predicates'] value is incorrect: Cannot convert 'wrong predicate type' to integer [needs.config]\n",
+    ]

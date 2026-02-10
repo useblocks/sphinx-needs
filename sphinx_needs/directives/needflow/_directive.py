@@ -13,6 +13,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
     GraphvizStyleType,
     NeedsFlowType,
+    SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time
 from sphinx_needs.filter_common import FilterBase
@@ -73,7 +74,8 @@ class NeedflowDirective(FilterBase):
         id = self.env.new_serialno("needflow")
         targetid = f"needflow-{self.env.docname}-{id}"
 
-        all_link_types = ",".join(x["option"] for x in needs_config.extra_links)
+        needs_schema = SphinxNeedsData(self.env).get_schema()
+        all_link_types = ",".join(link.name for link in needs_schema.iter_link_fields())
         link_types = split_link_types(
             self.options.get("link_types", all_link_types), location
         )

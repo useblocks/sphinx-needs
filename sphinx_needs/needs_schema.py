@@ -11,13 +11,15 @@ import jsonschema_rs
 from sphinx_needs.config import NeedFields
 from sphinx_needs.exceptions import VariantParsingException
 from sphinx_needs.schema.config import (
-    ExtraOptionBooleanSchemaType,
-    ExtraOptionIntegerSchemaType,
-    ExtraOptionMultiValueSchemaType,
-    ExtraOptionNumberSchemaType,
-    ExtraOptionSchemaTypes,
-    ExtraOptionStringSchemaType,
-    validate_extra_option_schema,
+    ExtraLinkSchemaType,
+    FieldBooleanSchemaType,
+    FieldIntegerSchemaType,
+    FieldMultiValueSchemaType,
+    FieldNumberSchemaType,
+    FieldSchemaTypes,
+    FieldStringSchemaType,
+    validate_field_schema,
+    validate_link_schema_type,
 )
 from sphinx_needs.schema.core import validate_object_schema_compiles
 from sphinx_needs.variants import VariantFunctionParsed
@@ -35,7 +37,7 @@ class FieldSchema:
 
     name: str
     description: str = ""
-    schema: ExtraOptionSchemaTypes
+    schema: FieldSchemaTypes
     nullable: bool = False
     directive_option: bool = False
     parse_dynamic_functions: bool = False
@@ -64,7 +66,7 @@ class FieldSchema:
         if not isinstance(self.description, str):
             raise ValueError("description must be a string.")
         try:
-            validate_extra_option_schema(self.schema)
+            validate_field_schema(self.schema)
         except TypeError as exc:
             raise ValueError(f"Invalid schema: {exc}") from exc
         try:
@@ -516,11 +518,32 @@ def _from_string_item(
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
+class LinkDisplayConfig:
+    """Display/rendering configuration for a link type."""
+
+    incoming: str
+    """Title for incoming links (e.g., 'links incoming')."""
+    outgoing: str
+    """Title for outgoing links (e.g., 'links outgoing')."""
+    color: str = "#000000"
+    """Color used for needflow diagrams."""
+    style: str = ""
+    """Line style used for needflow diagrams."""
+    style_part: str = "dotted"
+    """Line style used for need parts in needflow diagrams."""
+    style_start: str = "-"
+    """Arrow start style for needflow diagrams."""
+    style_end: str = "->"
+    """Arrow end style for needflow diagrams."""
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
 class LinkSchema:
     """Schema for a single link field."""
 
     name: str
     description: str = ""
+    schema: ExtraLinkSchemaType
     directive_option: bool = False
     allow_extend: bool = False
     parse_dynamic_functions: bool = False
@@ -541,10 +564,26 @@ class LinkSchema:
     
     Used if the field has not been specifically set, and no predicate matches.
     """
+    display: LinkDisplayConfig
+    """Display/rendering configuration for this link type."""
+    copy: bool = False
+    """If True, copy links to the common 'links' field."""
+    allow_dead_links: bool = False
+    """If True, add a 'forbidden' class to dead links instead of warning."""
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
             raise ValueError("name must be a non-empty string.")
+        if not isinstance(self.description, str):
+            raise ValueError("description must be a string.")
+        try:
+            validate_link_schema_type(self.schema)
+        except TypeError as exc:
+            raise ValueError(f"Invalid schema: {exc}") from exc
+        try:
+            validate_object_schema_compiles({"properties": {self.name: self.schema}})
+        except jsonschema_rs.ValidationError as exc:
+            raise ValueError(f"Invalid schema: {exc}") from exc
         if not isinstance(self.parse_dynamic_functions, bool):
             raise ValueError("parse_dynamic_functions must be a boolean.")
         if not isinstance(self.parse_variants, bool):
@@ -555,8 +594,6 @@ class LinkSchema:
             raise ValueError("allow_extend must be a boolean.")
         if not isinstance(self.directive_option, bool):
             raise ValueError("directive_option must be a boolean.")
-        if not isinstance(self.description, str):
-            raise ValueError("description must be a string.")
         if not isinstance(self.predicate_defaults, tuple) or not all(
             isinstance(pair, tuple) and len(pair) == 2
             for pair in self.predicate_defaults
@@ -1036,7 +1073,7 @@ def create_inherited_field(
 
 
 def inherit_schema(
-    parent_schema: ExtraOptionSchemaTypes, child_schema: dict[str, Any]
+    parent_schema: FieldSchemaTypes, child_schema: dict[str, Any]
 ) -> None:
     """Inherit and validate constraints from parent schema to child schema.
 
@@ -1112,7 +1149,7 @@ def inherit_schema(
 
 
 def _validate_boolean_constraints(
-    parent_schema: ExtraOptionBooleanSchemaType, child_schema: dict[str, Any]
+    parent_schema: FieldBooleanSchemaType, child_schema: dict[str, Any]
 ) -> None:
     """Validate and merge boolean-specific constraints from parent to child schema.
 
@@ -1131,7 +1168,7 @@ def _validate_boolean_constraints(
 
 
 def _validate_string_constraints(
-    parent_schema: ExtraOptionStringSchemaType, child_schema: dict[str, Any]
+    parent_schema: FieldStringSchemaType, child_schema: dict[str, Any]
 ) -> None:
     """Validate and merge string-specific constraints from parent to child schema.
 
@@ -1161,6 +1198,16 @@ def _validate_string_constraints(
         else:
             child_schema["enum"] = parent_schema["enum"]
 
+    # Validate const is in parent's enum if both exist
+    if (
+        "const" in child_schema
+        and "enum" in parent_schema
+        and child_schema["const"] not in parent_schema["enum"]
+    ):
+        raise ValueError(
+            f"Child 'const' value {child_schema['const']!r} is not in parent 'enum' values {parent_schema['enum']}."
+        )
+
     # Inherit pattern constraint - child cannot override
     if "pattern" in parent_schema:
         if (
@@ -1171,6 +1218,12 @@ def _validate_string_constraints(
                 f"Child 'pattern' {child_schema['pattern']!r} does not match parent 'pattern' {parent_schema['pattern']!r}. Pattern constraints cannot be overridden."
             )
         child_schema["pattern"] = parent_schema["pattern"]
+    elif "pattern" in child_schema:
+        # Validate that new pattern is a string (leave compilation to jsonschema)
+        if not isinstance(child_schema["pattern"], str):
+            raise ValueError(
+                f"Child 'pattern' {child_schema['pattern']!r} is not a string."
+            )
 
     # Inherit format constraint - child cannot override
     if "format" in parent_schema:
@@ -1204,7 +1257,7 @@ def _validate_string_constraints(
             child_schema["maxLength"] = parent_schema["maxLength"]
 
 
-_T = TypeVar("_T", ExtraOptionNumberSchemaType, ExtraOptionIntegerSchemaType)
+_T = TypeVar("_T", FieldNumberSchemaType, FieldIntegerSchemaType)
 
 
 def _validate_number_or_integer_constraints(
@@ -1237,6 +1290,16 @@ def _validate_number_or_integer_constraints(
                 )
         else:
             child_schema["enum"] = parent_schema["enum"]
+
+    # Validate const is in parent's enum if both exist
+    if (
+        "const" in child_schema
+        and "enum" in parent_schema
+        and child_schema["const"] not in parent_schema["enum"]
+    ):
+        raise ValueError(
+            f"Child 'const' value {child_schema['const']!r} is not in parent 'enum' values {parent_schema['enum']}."
+        )
 
     # Validate minimum constraint
     if "minimum" in parent_schema:
@@ -1287,7 +1350,10 @@ def _validate_number_or_integer_constraints(
             child_multiple = child_schema["multipleOf"]
             # For proper constraint narrowing, child should be a multiple of parent
             # e.g., if parent requires multipleOf 2, child can require multipleOf 4, 6, 8, etc.
-            if child_multiple % parent_multiple != 0:
+            # Use modulo with tolerance for float precision issues
+            remainder = child_multiple % parent_multiple
+            # Check if remainder is effectively zero (accounting for float precision)
+            if not (abs(remainder) < 1e-9 or abs(remainder - parent_multiple) < 1e-9):
                 raise ValueError(
                     f"Child 'multipleOf' {child_multiple} must be a multiple of parent 'multipleOf' {parent_multiple}."
                 )
@@ -1296,7 +1362,7 @@ def _validate_number_or_integer_constraints(
 
 
 def _validate_array_constraints(
-    parent_schema: ExtraOptionMultiValueSchemaType, child_schema: dict[str, Any]
+    parent_schema: FieldMultiValueSchemaType, child_schema: dict[str, Any]
 ) -> None:
     """Validate and merge array-specific constraints from parent to child schema.
 
@@ -1389,13 +1455,13 @@ def _validate_array_constraints(
                     parent_items["type"] == "integer"
                     and child_items["type"] == "integer"
                 ):
-                    # type restricted to ExtraOptionIntegerSchemaType
+                    # type restricted to FieldIntegerSchemaType
                     _validate_number_or_integer_constraints(parent_items, child_items)
 
                 elif (
                     parent_items["type"] == "number" and child_items["type"] == "number"
                 ):
-                    # type restricted to ExtraOptionNumberSchemaType
+                    # type restricted to FieldNumberSchemaType
                     _validate_number_or_integer_constraints(parent_items, child_items)
 
                 elif (

@@ -59,9 +59,10 @@ Schema
 
 .. automodule:: sphinx_needs.needs_schema
    :members: FieldsSchema, FieldSchema, FieldFunctionArray, LinksFunctionArray,
-             FieldLiteralValue, LinkSchema, LinksLiteralValue, AllowedTypes
+             FieldLiteralValue, LinkSchema, LinkDisplayConfig, LinksLiteralValue, AllowedTypes
 
 .. automodule:: sphinx_needs.schema.config
-   :members: ExtraOptionStringSchemaType, ExtraOptionBooleanSchemaType,
-             ExtraOptionIntegerSchemaType, ExtraOptionNumberSchemaType,
-             ExtraOptionMultiValueSchemaType
+   :members: FieldStringSchemaType, FieldBooleanSchemaType,
+             FieldIntegerSchemaType, FieldNumberSchemaType,
+             FieldMultiValueSchemaType,
+             ExtraLinkSchemaType, ExtraLinkItemSchemaType
