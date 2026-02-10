@@ -790,7 +790,7 @@ integer_minimum_violation:
         :id: IMPL_1
         :complexity: 0
 
-fields-integer_maximum_violation:
+integer_maximum_violation:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
