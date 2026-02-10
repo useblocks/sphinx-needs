@@ -28,7 +28,7 @@ def test_external_html(test_app: SphinxTestApp):
     )
     # print(warnings)
     assert warnings == [
-        "WARNING: External need 'EXT_TEST_01' in 'needs_test_small.json' could not be added: Extra option 'extra2' is invalid: Invalid value for field 'extra2': 1 [needs.load_external_need]",
+        "WARNING: External need 'EXT_TEST_01' in 'needs_test_small.json' could not be added: Field 'extra2' is invalid: Invalid value for field 'extra2': 1 [needs.load_external_need]",
         "WARNING: External need 'EXT_TEST_03' in 'needs_test_small.json' could not be added: Unknown need type 'ask'. [needs.load_external_need]",
         "WARNING: Unknown keys in external need source 'needs_test_small.json': ['unknown_key'] [needs.unknown_external_keys]",
         "WARNING: http://my_company.com/docs/v1/index.html#TEST_02: Need 'EXT_TEST_02' has unknown outgoing link 'EXT_TEST_01' in field 'links' [needs.external_link_outgoing]",

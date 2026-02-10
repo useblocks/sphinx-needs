@@ -47,7 +47,7 @@ def custom_func():
 
 needs_filter_data = {"current_variant": "project_x", "sphinx_tag": custom_func()}
 
-needs_fields = {"variant": {}}
+needs_fields = {"variant": {"nullable": True}}
 
 needs_warnings = {
     "variant_not_equal_current_variant": "variant != current_variant",
