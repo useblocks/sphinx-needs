@@ -575,8 +575,30 @@
       {"properties":{"efforts":{"minimum":15,"type":"string"}},"type":"object"}
   '''
 # ---
+# name: test_schema_config[network_direct_and_links_field_merge_rejected]
+  '''
+  Schemas entry 'impl-links-schema[0]' is not valid:
+  Additional properties are not allowed ('tests' was unexpected)
+  
+  Failed validating "additionalProperties" in schema["properties"]["validate"]["$ref"]["properties"]["network"]["additionalProperties"]["$ref"]
+  
+  On instance["validate"]["network"]["links"]:
+      {"tests":{"contains":{"local":{"properties":{"type":{"const":"test"}}}},"minContains":1},"type":"array"}
+  '''
+# ---
 # name: test_schema_config[network_link_not_exist]
   "Schema '[0]' defines an unknown network link type 'links2'."
+# ---
+# name: test_schema_config[network_mixed_links_and_direct_rejected]
+  '''
+  Schemas entry 'mixed-format-schema[0]' is not valid:
+  Additional properties are not allowed ('derived_from' was unexpected)
+  
+  Failed validating "additionalProperties" in schema["properties"]["validate"]["$ref"]["properties"]["network"]["additionalProperties"]["$ref"]
+  
+  On instance["validate"]["network"]["links"]:
+      {"derived_from":{"contains":{"local":{"properties":{"type":{"const":"spec","type":"string"}}}},"minContains":99},"type":"array"}
+  '''
 # ---
 # name: test_schema_config[ref_error]
   "Reference 'not-exist' not found in definitions."
@@ -3377,6 +3399,19 @@
     }),
   })
 # ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer_invalid_chars]
+  '''
+  <srcdir>/index.rst:1: WARNING: Need could not be created: Field 'complexity' is invalid: Cannot convert '4a' to integer [needs.create_need]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-coerce_to_integer_invalid_chars].1
+  dict({
+    'validated_needs_count': 0,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/fields-coerce_to_number]
   ''
 # ---
@@ -3488,6 +3523,74 @@
     }),
   })
 # ---
+# name: test_schemas[schema/fixtures/fields-fields-integer_maximum_violation]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          complexity
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > complexity > maximum
+    Schema message: 15 is greater than the maximum of 10 [sn_schema_violation.field_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-fields-integer_maximum_violation].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'complexity',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > complexity > maximum',
+            'severity': 'violation',
+            'validation_msg': '15 is greater than the maximum of 10',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-integer_minimum_violation]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          complexity
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > complexity > minimum
+    Schema message: 0 is less than the minimum of 1 [sn_schema_violation.field_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-integer_minimum_violation].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'complexity',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > complexity > minimum',
+            'severity': 'violation',
+            'validation_msg': '0 is less than the minimum of 1',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/fields-integer_multiple_of]
   ''
 # ---
@@ -3532,6 +3635,40 @@
     }),
   })
 # ---
+# name: test_schemas[schema/fixtures/fields-integer_type_injection]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          priority
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > priority > minimum
+    Schema message: 3 is less than the minimum of 5 [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-integer_type_injection].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'priority',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > priority > minimum',
+            'severity': 'violation',
+            'validation_msg': '3 is less than the minimum of 5',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/fields-no_schema]
   ''
 # ---
@@ -3539,6 +3676,74 @@
   dict({
     'validated_needs_count': 1,
     'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-number_maximum_violation]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          completion_percentage
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > completion_percentage > maximum
+    Schema message: 890.89 is greater than the maximum of 100.0 [sn_schema_violation.field_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-number_maximum_violation].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'completion_percentage',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > completion_percentage > maximum',
+            'severity': 'violation',
+            'validation_msg': '890.89 is greater than the maximum of 100.0',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-number_minimum_violation]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          completion_percentage
+    Need path:      IMPL_1
+    Schema path:    fields > schema > properties > completion_percentage > minimum
+    Schema message: 1.3 is less than the minimum of 10.0 [sn_schema_violation.field_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-number_minimum_violation].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'completion_percentage',
+            'need_path': 'IMPL_1',
+            'schema_path': 'fields > schema > properties > completion_percentage > minimum',
+            'severity': 'violation',
+            'validation_msg': '1.3 is less than the minimum of 10.0',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'field_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
     }),
   })
 # ---
@@ -4170,6 +4375,102 @@
   dict({
     'validated_needs_count': 0,
     'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-direct_link_type_contains_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1 > derived_from
+    Schema path:    impl-derived_from-spec[0] > validate > network > derived_from > contains
+    Schema message: Too few valid links of type 'derived_from' (0 < 1) / nok: REQ_WRONG
+  
+      Details for REQ_WRONG
+      Field:          type
+      Need path:      IMPL_1 > derived_from > REQ_WRONG
+      Schema path:    impl-derived_from-spec[0] > validate > network > derived_from > contains > local > properties > type > const
+      Schema message: "spec" was expected [sn_schema_violation.network_contains_too_few]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-direct_link_type_contains_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+            dict({
+              'need_id': 'REQ_WRONG',
+              'warning': dict({
+                'children': list([
+                ]),
+                'details': dict({
+                  'field': 'type',
+                  'need_path': 'IMPL_1 > derived_from > REQ_WRONG',
+                  'schema_path': 'impl-derived_from-spec[0] > validate > network > derived_from > contains > local > properties > type > const',
+                  'validation_msg': '"spec" was expected',
+                }),
+                'subtype': 'network_local_fail',
+              }),
+            }),
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > derived_from',
+            'schema_path': 'impl-derived_from-spec[0] > validate > network > derived_from > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'derived_from' (0 < 1) / nok: REQ_WRONG",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-direct_link_type_contains_pass]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-direct_link_type_contains_pass].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-direct_link_type_items_error]
+  '''
+  ERROR: Need 'SPEC_WRONG' has schema violations:
+    Severity:       violation
+    Field:          type
+    Need path:      IMPL_1 > implements > SPEC_WRONG
+    Schema path:    impl-implements-req[0] > validate > network > implements > items > local > properties > type > const
+    Schema message: "req" was expected [sn_schema_violation.network_local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-direct_link_type_items_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'type',
+            'need_path': 'IMPL_1 > implements > SPEC_WRONG',
+            'schema_path': 'impl-implements-req[0] > validate > network > implements > items > local > properties > type > const',
+            'severity': 'violation',
+            'validation_msg': '"req" was expected',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
     }),
   })
 # ---
@@ -4890,6 +5191,120 @@
           'type': 'sn_schema_warning',
         }),
       ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-core_fields_default_values]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-core_fields_default_values].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-core_fields_non_default]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('priority' was unexpected) [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-core_fields_non_default].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('priority' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-core_fields_unevaluated]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-core_fields_unevaluated].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-empty_links_reduced]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-empty_links_reduced].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-extra_field_default_empty]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-extra_field_default_empty].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-non_empty_links_kept]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('links' was unexpected) [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-non_empty_links_kept].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('links' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-schema_properties_whitelist]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/unevaluated-schema_properties_whitelist].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
     }),
   })
 # ---

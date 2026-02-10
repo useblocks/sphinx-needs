@@ -502,3 +502,104 @@ schemas_validate_pattern_relative_subroutine_error:
             properties:
               id:
                 pattern: "^test(?+1)$"
+
+network_mixed_links_and_direct_rejected:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+
+    [[needs.extra_links]]
+    option = "derived_from"
+  schemas:
+    $defs:
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-impl:
+        properties:
+          type:
+            const: impl
+    schemas:
+      - id: "mixed-format-schema"
+        message: Schema that mixes network.links and direct network.<type> - MUST be rejected
+        select:
+          $ref: '#/$defs/type-impl'
+        validate:
+          network:
+            links:
+              derived_from:
+                contains:
+                  local:
+                    $ref: '#/$defs/type-spec'
+                minContains: 99
+            derived_from:
+              contains:
+                local:
+                  $ref: '#/$defs/type-spec'
+              minContains: 1
+  rst: |
+    .. spec:: target specification
+        :id: SPEC_1
+
+    .. impl:: implementation with one derived_from link
+        :id: IMPL_1
+        :derived_from: SPEC_1
+
+network_direct_and_links_field_merge_rejected:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+
+    [[needs.extra_links]]
+    option = "derived_from"
+
+    [[needs.extra_links]]
+    option = "tests"
+  schemas:
+    $defs:
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-test:
+        properties:
+          type:
+            const: test
+      type-impl:
+        properties:
+          type:
+            const: impl
+    schemas:
+      - id: "impl-links-schema"
+        message: impl must derive from spec and be tested
+        select:
+          $ref: '#/$defs/type-impl'
+        validate:
+          network:
+            links:
+              tests:
+                contains:
+                  local:
+                    $ref: '#/$defs/type-test'
+                minContains: 1
+            derived_from:
+              contains:
+                local:
+                  $ref: '#/$defs/type-spec'
+              minContains: 1
+  rst: |
+    .. spec:: specification
+        :id: SPEC_1
+
+    .. test:: test case
+        :id: TEST_1
+
+    .. impl:: implementation
+        :id: IMPL_1
+        :derived_from: SPEC_1
+        :tests: TEST_1

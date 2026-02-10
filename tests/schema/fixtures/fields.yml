@@ -775,3 +775,94 @@ tags_enum:
     .. impl:: title
         :id: IMPL_1
         :tags: a,b,c
+
+integer_minimum_violation:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.complexity]
+    schema.type = "integer"
+    schema.minimum = 1
+    schema.maximum = 10
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :complexity: 0
+
+fields-integer_maximum_violation:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.complexity]
+    schema.type = "integer"
+    schema.minimum = 1
+    schema.maximum = 10
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :complexity: 15
+
+number_minimum_violation:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.completion_percentage]
+    schema.type = "number"
+    schema.minimum = 10.0
+    schema.maximum = 100.0
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :completion_percentage: 1.3
+
+number_maximum_violation:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.completion_percentage]
+    schema.type = "number"
+    schema.minimum = 0.0
+    schema.maximum = 100.0
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :completion_percentage: 890.89
+
+coerce_to_integer_invalid_chars:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.complexity]
+    schema.type = "integer"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :complexity: 4a
+
+integer_type_injection:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+
+    [needs.fields.priority]
+    nullable = true
+    schema.type = "integer"
+  schemas:
+    $defs: []
+    schemas:
+      - validate:
+          local:
+            properties:
+              priority:
+                minimum: 5
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :priority: 3
