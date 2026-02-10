@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770669372928,
+  "lastUpdate": 1770718019517,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16884,6 +16884,42 @@ window.BENCHMARK_DATA = {
             "value": 64.948808912,
             "unit": "s",
             "extra": "Commit: 2f34380f8c6b7b4adbc519e01541de0a1ee0c248\nBranch: master\nTime: 2026-02-09T21:33:48+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "95444300+PhilipPartsch@users.noreply.github.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a69db0b3a5b38e714da7b59961c1011fd894e6eb",
+          "message": "🐛 Fix schema validation returning per need errors (#1640)\n\nThis pull request adds improved test coverage for schema validation,\nspecifically ensuring that multiple schema validation errors for a\nsingle need are detected and reported. It also makes a minor code\ncleanup in the core schema logic.\n\nfixes #1627\n\n**Schema validation and test improvements:**\n\n* Added a new test case (`multiple_errors_per_need`) in\n`tests/schema/fixtures/fields.yml` and corresponding snapshot in\n`tests/schema/__snapshots__/test_schema.ambr` to verify that multiple\nvalidation errors (e.g., for both `priority` and `severity` fields) are\ncorrectly captured and reported for a single need.\n[[1]](diffhunk://#diff-0c70419291304f2349644070b43176d6cedd98bd5dfcd0ab7ccf1b00c3c9db68R778-R796)\n[[2]](diffhunk://#diff-cc05b7b3cf3f43204cc6f61ef952d7233f451047eaaacac9a37673896f96926bR3540-R3593)\n* Updated existing schema validation snapshots to include unevaluated\nproperty error reporting, ensuring stricter schema enforcement.\n\n**Code cleanup:**\n\n* Removed an unnecessary `return` statement inside a loop in\n`get_ontology_warnings` in `sphinx_needs/schema/core.py`, preventing\npremature exit and ensuring all warnings are collected.\n\n---------\n\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2026-02-10T11:04:54+01:00",
+          "tree_id": "4d0005ba2591b6d9f9b4d390c96b09703bf0ea2b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a69db0b3a5b38e714da7b59961c1011fd894e6eb"
+        },
+        "date": 1770717998796,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.18046042599999623,
+            "unit": "s",
+            "extra": "Commit: a69db0b3a5b38e714da7b59961c1011fd894e6eb\nBranch: master\nTime: 2026-02-10T11:04:54+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.773307994,
+            "unit": "s",
+            "extra": "Commit: a69db0b3a5b38e714da7b59961c1011fd894e6eb\nBranch: master\nTime: 2026-02-10T11:04:54+01:00"
           }
         ]
       }
