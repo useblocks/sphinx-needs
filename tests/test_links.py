@@ -7,7 +7,7 @@ from sphinx.util.console import strip_colors
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_links", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_links", "no_plantuml": False}],
     indirect=True,
 )
 def test_links_html(test_app):
@@ -44,7 +44,7 @@ def test_links_html(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "latex", "srcdir": "doc_test/doc_links", "no_plantuml": True}],
+    [{"buildername": "latex", "srcdir": "doc_test/doc_links", "no_plantuml": False}],
     indirect=True,
 )
 def test_links_latex(test_app):
