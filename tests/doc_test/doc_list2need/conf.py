@@ -38,7 +38,7 @@ needs_types = [
     },
 ]
 
-needs_extra_links = [
-    {"option": "checks", "incoming": "is checked by", "outgoing": "checks"},
-    {"option": "triggers", "incoming": "is triggered by", "outgoing": "triggers"},
-]
+needs_links = {
+    "checks": {"incoming": "is checked by", "outgoing": "checks"},
+    "triggers": {"incoming": "is triggered by", "outgoing": "triggers"},
+}

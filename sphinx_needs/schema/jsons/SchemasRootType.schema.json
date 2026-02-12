@@ -21,7 +21,7 @@
       "title": "AllOfSchemaType",
       "type": "object"
     },
-    "ExtraLinkItemSchemaType": {
+    "LinkItemSchemaType": {
       "additionalProperties": false,
       "description": "Items in array of link string ids",
       "properties": {
@@ -46,18 +46,18 @@
       "required": [
         "type"
       ],
-      "title": "ExtraLinkItemSchemaType",
+      "title": "LinkItemSchemaType",
       "type": "object"
     },
-    "ExtraLinkSchemaType": {
+    "LinkSchemaType": {
       "additionalProperties": false,
       "description": "Defines a schema for unresolved need extra string links.",
       "properties": {
         "contains": {
-          "$ref": "#/$defs/ExtraLinkItemSchemaType"
+          "$ref": "#/$defs/LinkItemSchemaType"
         },
         "items": {
-          "$ref": "#/$defs/ExtraLinkItemSchemaType"
+          "$ref": "#/$defs/LinkItemSchemaType"
         },
         "maxContains": {
           "title": "Maxcontains",
@@ -84,7 +84,7 @@
       "required": [
         "type"
       ],
-      "title": "ExtraLinkSchemaType",
+      "title": "LinkSchemaType",
       "type": "object"
     },
     "FieldBooleanSchemaType": {
@@ -361,7 +361,7 @@
                 "$ref": "#/$defs/FieldMultiValueSchemaType"
               },
               {
-                "$ref": "#/$defs/ExtraLinkSchemaType"
+                "$ref": "#/$defs/LinkSchemaType"
               }
             ]
           },

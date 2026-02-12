@@ -81,9 +81,9 @@ def validate_link_options(
             need,
             field_properties,
             validator,
-            fail_rule=MessageRuleEnum.extra_link_fail,
-            success_rule=MessageRuleEnum.extra_link_success,
-            schema_path=["extra_links", "schema"],
+            fail_rule=MessageRuleEnum.link_fail,
+            success_rule=MessageRuleEnum.link_success,
+            schema_path=["links", "schema"],
             need_path=[need["id"]],
         )
         save_debug_files(config, schema_warnings)

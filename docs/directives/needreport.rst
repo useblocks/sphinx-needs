@@ -8,7 +8,7 @@ needreport
 **needreport** documents the following configurations from **conf.py**:
 
 * :ref:`Types <needs_types>`
-* :ref:`Links <needs_extra_links>`
+* :ref:`Links <needs_links>`
 * :ref:`Fields <needs_fields>`
 
 and it also adds some needs metrics using the `usage`_ option.
@@ -59,7 +59,7 @@ The flag does not require any values.
 links
 ~~~~~
 
-Flag for adding information about the :ref:`needs_extra_links` configuration parameter.
+Flag for adding information about the :ref:`needs_links` configuration parameter.
 The flag does not require any values.
 
 .. need-example::

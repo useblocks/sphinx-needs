@@ -633,12 +633,10 @@ link_name_contains:
     needs_from_toml = "ubproject.toml"
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
-    [[needs.extra_links]]
-    option = "contains"
+    [needs.links.contains]
     outgoing = "contains"
     incoming = "contained by"
-    [[needs.extra_links]]
-    option = "items"
+    [needs.links.items]
     outgoing = "items"
     incoming = "item of"
   rst: |

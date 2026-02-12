@@ -28,7 +28,7 @@ Each service may have own options, which are used to configure the service itsel
 Please take a look into the related service documentation for information about them.
 
 You can always set all fields, which are also available for all need objects.
-So the ones defined by :ref:`needs_fields` and :ref:`needs_extra_links`.
+So the ones defined by :ref:`needs_fields` and :ref:`needs_links`.
 These options will then be set for all needs created by the requested service.
 
 Most services also support adding additional content to the created needs.

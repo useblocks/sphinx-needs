@@ -222,8 +222,7 @@ prefix = "T_"
 color = "#f9e79f"
 style = "rectangle"
 
-[[needs.extra_links]]
-option = "blocks"
+[needs.links.blocks]
 incoming = "is blocked by"
 outgoing = "blocks"
 copy = true
@@ -233,24 +232,21 @@ style_start = "-"
 style_end = "-o"
 allow_dead_links = true
 
-[[needs.extra_links]]
-option = "tests"
+[needs.links.tests]
 incoming = "is tested by"
 outgoing = "tests"
 copy = true
 style = "#00AA00"
 style_part = "dotted,#00AA00"
 
-[[needs.extra_links]]
-option = "checks"
+[needs.links.checks]
 incoming = "is checked by"
 outgoing = "checks"
 copy = false
 style = "#00AA00"
 style_part = "dotted,#00AA00"
 
-[[needs.extra_links]]
-option = "triggers"
+[needs.links.triggers]
 incoming = "triggered by"
 outgoing = "triggers"
 copy = false
@@ -258,42 +254,37 @@ style = "#00AA00"
 style_part = "solid,#777777"
 allow_dead_links = true
 
-[[needs.extra_links]]
-option = "starts_with"
+[needs.links.starts_with]
 incoming = "triggers directly"
 outgoing = "starts with"
 copy = false
 style = "#00AA00"
 style_part = "solid,#777777"
 
-[[needs.extra_links]]
-option = "starts_after"
+[needs.links.starts_after]
 incoming = "triggers at end"
 outgoing = "starts after"
 copy = false
 style = "#00AA00"
 style_part = "solid,#777777"
 
-[[needs.extra_links]]
-option = "ends_with"
+[needs.links.ends_with]
 incoming = "triggers to end with"
 outgoing = "ends with"
 copy = false
 style = "#00AA00"
 style_part = "solid,#777777"
 
-[[needs.extra_links]]
-option = "tutorial_required_by"
+[needs.links.tutorial_required_by]
 incoming = "requires"
 outgoing = "required by"
 style = "#00AA00"
 
-[[needs.extra_links]]
-option = "tutorial_specifies"
+[needs.links.tutorial_specifies]
 incoming = "specified by"
 outgoing = "specifies"
 
-[[needs.extra_links]]
+[needs.links.tutorial_tests]
 option = "tutorial_tests"
 incoming = "tested by"
 outgoing = "tests"

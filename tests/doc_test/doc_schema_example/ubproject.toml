@@ -22,14 +22,12 @@ schema.enum = ["QM", "A", "B", "C", "D"]
 description = "Approval flag"
 schema.type = "boolean"
 
-[[needs.extra_links]]
-option = "links"
+[needs.links.links]
 outgoing = "links"
 incoming = "linked by"
 schema.maxItems = 1
 
-[[needs.extra_links]]
-option = "details"
+[needs.links.details]
 outgoing = "details"
 incoming = "detailed by by"
 schema.maxItems = 1

@@ -95,7 +95,7 @@ that can be used to add additional data to the item or further style its represe
     To add additional fields to the directive,
     see :ref:`needs_fields`,
     and to add additional link types,
-    see :ref:`needs_extra_links`.
+    see :ref:`needs_links`.
 
 Enforcing valid need items
 ..........................
@@ -130,18 +130,17 @@ Linking need items
 Now that we know how to create individual need items,
 the next thing we may want to do is to link them together.
 
-We can define custom link types in the ``conf.py`` file, using the :ref:`needs_extra_links` configuration option:
+We can define custom link types in the ``conf.py`` file, using the :ref:`needs_links` configuration option:
 
 .. code-block:: python
 
-    needs_extra_links = [
-      {
-        "option": "tutorial_required_by",
+    needs_links = {
+      "tutorial_required_by": {
         "incoming": "requires",  # text to describe incoming links
         "outgoing": "required by",  # text to describe outgoing links
         "style": "#00AA00",  # color for the link in diagrams
       },
-    ]
+    }
 
 We can now uses these links when specifying need items, notice how "back links" are automatically generated when displaying the item:
 
@@ -190,7 +189,7 @@ Lets also add some more need items to our plan:
 
 .. seealso::
     
-    For full options see the reference sections for :ref:`need_extra_links configuration <need_extra_links>` and :ref:`need items directive <need>`.
+    For full options see the reference sections for :ref:`need_links configuration <need_links>` and :ref:`need items directive <need>`.
 
 Importing need items
 --------------------
