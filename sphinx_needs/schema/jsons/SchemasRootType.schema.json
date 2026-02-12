@@ -21,72 +21,6 @@
       "title": "AllOfSchemaType",
       "type": "object"
     },
-    "ExtraLinkItemSchemaType": {
-      "additionalProperties": false,
-      "description": "Items in array of link string ids",
-      "properties": {
-        "maxLength": {
-          "title": "Maxlength",
-          "type": "integer"
-        },
-        "minLength": {
-          "title": "Minlength",
-          "type": "integer"
-        },
-        "pattern": {
-          "title": "Pattern",
-          "type": "string"
-        },
-        "type": {
-          "const": "string",
-          "title": "Type",
-          "type": "string"
-        }
-      },
-      "required": [
-        "type"
-      ],
-      "title": "ExtraLinkItemSchemaType",
-      "type": "object"
-    },
-    "ExtraLinkSchemaType": {
-      "additionalProperties": false,
-      "description": "Defines a schema for unresolved need extra string links.",
-      "properties": {
-        "contains": {
-          "$ref": "#/$defs/ExtraLinkItemSchemaType"
-        },
-        "items": {
-          "$ref": "#/$defs/ExtraLinkItemSchemaType"
-        },
-        "maxContains": {
-          "title": "Maxcontains",
-          "type": "integer"
-        },
-        "maxItems": {
-          "title": "Maxitems",
-          "type": "integer"
-        },
-        "minContains": {
-          "title": "Mincontains",
-          "type": "integer"
-        },
-        "minItems": {
-          "title": "Minitems",
-          "type": "integer"
-        },
-        "type": {
-          "const": "array",
-          "title": "Type",
-          "type": "string"
-        }
-      },
-      "required": [
-        "type"
-      ],
-      "title": "ExtraLinkSchemaType",
-      "type": "object"
-    },
     "FieldBooleanSchemaType": {
       "additionalProperties": false,
       "description": "Boolean field schema.\n\nA predefined set of truthy/falsy strings are accepted:\n- truthy = {\"true\", \"yes\", \"y\", \"on\", \"1\"}\n- falsy = {\"false\", \"no\", \"n\", \"off\", \"0\"}\n\nFor fixed values, the const field can be used.\nenum is not supported as const is functionally equivalent and less verbose.",
@@ -324,6 +258,72 @@
       "title": "FieldStringSchemaType",
       "type": "object"
     },
+    "LinkItemSchemaType": {
+      "additionalProperties": false,
+      "description": "Items in array of link string ids",
+      "properties": {
+        "maxLength": {
+          "title": "Maxlength",
+          "type": "integer"
+        },
+        "minLength": {
+          "title": "Minlength",
+          "type": "integer"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        },
+        "type": {
+          "const": "string",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "LinkItemSchemaType",
+      "type": "object"
+    },
+    "LinkSchemaType": {
+      "additionalProperties": false,
+      "description": "Defines a schema for unresolved need extra string links.",
+      "properties": {
+        "contains": {
+          "$ref": "#/$defs/LinkItemSchemaType"
+        },
+        "items": {
+          "$ref": "#/$defs/LinkItemSchemaType"
+        },
+        "maxContains": {
+          "title": "Maxcontains",
+          "type": "integer"
+        },
+        "maxItems": {
+          "title": "Maxitems",
+          "type": "integer"
+        },
+        "minContains": {
+          "title": "Mincontains",
+          "type": "integer"
+        },
+        "minItems": {
+          "title": "Minitems",
+          "type": "integer"
+        },
+        "type": {
+          "const": "array",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "LinkSchemaType",
+      "type": "object"
+    },
     "NeedFieldsSchemaType": {
       "additionalProperties": false,
       "description": "Schema for a set of need fields of all schema types.\n\nThis includes single value fields, multi-value fields,\nand unresolved extra links.\n\nIntented to validate multiple fields on a need type.",
@@ -361,7 +361,7 @@
                 "$ref": "#/$defs/FieldMultiValueSchemaType"
               },
               {
-                "$ref": "#/$defs/ExtraLinkSchemaType"
+                "$ref": "#/$defs/LinkSchemaType"
               }
             ]
           },

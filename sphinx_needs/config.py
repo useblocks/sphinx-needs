@@ -12,13 +12,13 @@ from sphinx_needs.data import GraphvizStyleType, NeedsCoreFields
 from sphinx_needs.defaults import DEFAULT_DIAGRAM_TEMPLATE
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.schema.config import (
-    ExtraLinkSchemaType,
     FieldBooleanSchemaType,
     FieldIntegerSchemaType,
     FieldMultiValueSchemaType,
     FieldNumberSchemaType,
     FieldSchemaTypes,
     FieldStringSchemaType,
+    LinkSchemaType,
     SchemasFileRootType,
 )
 
@@ -261,15 +261,15 @@ Values can be:
 """
 
 
-class LinkOptionsType(TypedDict, total=False):
-    """Options for links between needs"""
+class NeedLinksConfig(TypedDict, total=False):
+    """Defines a link type for needs (used in needs_links dict)"""
 
-    option: Required[str]
-    """The name of the link option"""
+    description: NotRequired[str]
+    """A description of the link type."""
     incoming: str
-    """The incoming link title"""
+    """The incoming link title. Default: '<name> incoming'"""
     outgoing: str
-    """The outgoing link title"""
+    """The outgoing link title. Default: '<name>'"""
     copy: bool
     """Copy to common links data. Default: False"""
     color: str
@@ -284,7 +284,7 @@ class LinkOptionsType(TypedDict, total=False):
     """Used for needflow. Default: '->'"""
     allow_dead_links: bool
     """If True, add a 'forbidden' class to dead links"""
-    schema: NotRequired[ExtraLinkSchemaType]
+    schema: NotRequired[LinkSchemaType]
     """
     A JSON schema for the link option.
     
@@ -298,6 +298,13 @@ class LinkOptionsType(TypedDict, total=False):
     """List of (need filter, value) pairs for predicate default values."""
     parse_variants: NotRequired[bool]
     """Whether variants are parsed in this field."""
+
+
+class LinkOptionsType(NeedLinksConfig):
+    """Options for links between needs (deprecated, use NeedLinksConfig instead)"""
+
+    option: Required[str]
+    """The name of the link"""
 
 
 class NeedType(TypedDict):
@@ -520,7 +527,7 @@ class NeedsSphinxConfig:
     schema_debug_ignore: list[str] = field(
         default_factory=lambda: [
             "field_success",
-            "extra_link_success",
+            "link_success",
             "select_success",
             "select_fail",
             "local_success",
@@ -699,10 +706,14 @@ class NeedsSphinxConfig:
         default="→\xa0", metadata={"rebuild": "html", "types": (str,)}
     )
     """Prefix for need_part output in tables"""
+    _links: dict[str, NeedLinksConfig] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+    )
+    """Dict of additional link types between needs (name -> config)."""
     _extra_links: list[LinkOptionsType] = field(
         default_factory=list, metadata={"rebuild": "html", "types": ()}
     )
-    """List of additional link types between needs (internal config, use schema for access after config resolution)"""
+    """DEPRECATED: List of additional link types between needs. Use needs_links instead."""
     report_dead_links: bool = field(
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )

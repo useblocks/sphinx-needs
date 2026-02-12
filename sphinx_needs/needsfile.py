@@ -36,7 +36,7 @@ def generate_needs_schema(
     * the core fields defined in NeedsCoreFields
     * the extra fields defined dynamically
     * the global options defined dynamically
-    * the extra links defined dynamically
+    * the links defined dynamically
     """
     properties: dict[str, Any] = {}
 

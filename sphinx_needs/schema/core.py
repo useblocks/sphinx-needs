@@ -57,8 +57,8 @@ def validate_field_link_schemas(
     For each need, only the properties present in the schema are included
     (excluding ``None`` values), so the validator only sees relevant fields.
 
-    Errors on link properties use :attr:`MessageRuleEnum.extra_link_fail` and
-    the ``extra_links > schema`` schema path prefix, while errors on other
+    Errors on link properties use :attr:`MessageRuleEnum.link_fail` and
+    the ``links > schema`` schema path prefix, while errors on other
     properties use :attr:`MessageRuleEnum.field_fail` and ``fields > schema``.
 
     :param config: The Sphinx-Needs configuration.
@@ -121,11 +121,11 @@ def validate_field_link_schemas(
             root_prop = str(err.instance_path[0]) if err.instance_path else None
             is_link = root_prop is not None and root_prop in link_names
             rule = (
-                MessageRuleEnum.extra_link_fail
+                MessageRuleEnum.link_fail
                 if is_link
                 else MessageRuleEnum.field_fail
             )
-            schema_prefix = "extra_links" if is_link else "fields"
+            schema_prefix = "links" if is_link else "fields"
             warning: OntologyWarning = {
                 "rule": rule,
                 "severity": get_severity(rule),

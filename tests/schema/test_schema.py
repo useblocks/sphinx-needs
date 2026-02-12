@@ -41,7 +41,7 @@ def test_schema_config(
 
 
 @pytest.mark.fixture_file(
-    "schema/fixtures/extra_links.yml",
+    "schema/fixtures/links.yml",
     "schema/fixtures/fields.yml",
     "schema/fixtures/network.yml",
     "schema/fixtures/reporting.yml",

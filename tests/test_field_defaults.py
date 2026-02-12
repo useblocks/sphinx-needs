@@ -40,7 +40,7 @@ def test_doc_global_option(test_app, snapshot):
         test_app._warning.getvalue().replace(str(test_app.srcdir) + os.sep, "srcdir/")
     ).splitlines()
     assert warnings == [
-        'WARNING: Config option "needs_global_options" is deprecated. Please use needs_fields and needs_extra_links instead. [needs.deprecated]',
+        'WARNING: Config option "needs_global_options" is deprecated. Please use needs_fields and needs_links instead. [needs.deprecated]',
         "WARNING: needs_global_options['link3']['default'] value is incorrect: Invalid value for field 'link3': 1 [needs.config]",
         "WARNING: needs_global_options['bad_value_type']['default'] value is incorrect: Invalid value for field 'bad_value_type': 1.27 [needs.config]",
         "WARNING: needs_global_options['too_many_params']['predicates'] value is incorrect: defaults must be a list of (filter, value) pairs. [needs.config]",
@@ -79,7 +79,7 @@ def test_doc_field_defaults(test_app, snapshot):
     assert warnings == [
         "WARNING: needs_fields['bad_value_type']['default'] value is incorrect: Invalid value for field 'bad_value_type': 1.27 [needs.config]",
         "WARNING: needs_fields['too_many_params']['predicates'] value is incorrect: defaults must be a list of (filter, value) pairs. [needs.config]",
-        "WARNING: needs_extra_links['link3']['default'] value is incorrect: Invalid value for field 'link3': 1 [needs.config]",
+        "WARNING: needs_links['link3']['default'] value is incorrect: Invalid value for field 'link3': 1 [needs.config]",
     ]
 
     needs_schema = SphinxNeedsData(test_app.env).get_schema()

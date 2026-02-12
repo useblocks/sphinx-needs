@@ -920,6 +920,8 @@ tags_enum:
     needs_from_toml = "ubproject.toml"
   ubproject: |
     [needs.fields.tags]
+    schema.type = "array"
+    schema.items.type = "string"
     schema.items.enum = ["a", "c"]
   rst: |
     .. impl:: title

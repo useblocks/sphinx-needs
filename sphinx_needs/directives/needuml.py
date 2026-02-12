@@ -449,7 +449,7 @@ class JinjaFunctions:
             raise NeedumlException(
                 "Jinja function 'import()' is not supported in needuml directive."
             )
-        # gets all need ids from need links/extra_links options and wrap into jinja function uml()
+        # gets all need ids from need links and wrap into jinja function uml()
         need_info = self.needs[self.parent_need_id]
         uml_ids = []
         for option_name in args:
