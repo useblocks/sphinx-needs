@@ -794,3 +794,93 @@ multiple_errors_per_need:
         :id: IMPL_1
         :priority: 8
         :severity: critical
+
+docname_select_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs: []
+    schemas:
+      - message: asil required for needs in index file
+        select:
+          properties:
+            docname:
+              pattern: "index"
+          required: ["docname"]
+        validate:
+          local:
+            required: ["asil"]
+
+docname_select_success:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs: []
+    schemas:
+      - message: asil required for needs in other file
+        select:
+          properties:
+            docname:
+              pattern: "other"
+          required: ["docname"]
+        validate:
+          local:
+            required: ["asil"]
+
+docname_validate_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs: []
+    schemas:
+      - message: all needs must be in other file
+        validate:
+          local:
+            properties:
+              docname:
+                pattern: "other"
+
+docname_validate_success:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs: []
+    schemas:
+      - message: all needs must be in index file
+        validate:
+          local:
+            properties:
+              docname:
+                pattern: "index"
