@@ -775,6 +775,11 @@
     Need path:      SPEC
     Schema path:    spec[1] > local > properties > id > pattern
     Schema message: "SPEC" does not match "^SPEC_[a-zA-Z0-9_-]*$" [sn_schema_violation.local_fail]
+  ERROR: Need 'SPEC' has schema violations:
+    Severity:       violation
+    Need path:      SPEC
+    Schema path:    spec[1] > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('asil', 'priority' were unexpected) [sn_schema_violation.local_fail]
   ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT' has schema violations:
     Severity:       violation
     Need path:      SPEC_SAFE_UNSAFE_FEAT
