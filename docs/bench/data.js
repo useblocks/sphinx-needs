@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770718019517,
+  "lastUpdate": 1770883250397,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16920,6 +16920,42 @@ window.BENCHMARK_DATA = {
             "value": 65.773307994,
             "unit": "s",
             "extra": "Commit: a69db0b3a5b38e714da7b59961c1011fd894e6eb\nBranch: master\nTime: 2026-02-10T11:04:54+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "95444300+PhilipPartsch@users.noreply.github.com",
+            "name": "PhilipPartsch",
+            "username": "PhilipPartsch"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2bb87f76d6ab7dd6e30123094eb0964d58538427",
+          "message": "📚 Fix typo in sort of needtable documentation (#1619)\n\nIn #1616, with a correct spelling the user would have found the\nrestriction by himself. Here we fix it, so a search would find this\nrestriction more easliy.",
+          "timestamp": "2026-02-12T08:58:35+01:00",
+          "tree_id": "e8ce8152d0cc627e4e58c283639f3febf93c2806",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2bb87f76d6ab7dd6e30123094eb0964d58538427"
+        },
+        "date": 1770883232197,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.3168250839999871,
+            "unit": "s",
+            "extra": "Commit: 2bb87f76d6ab7dd6e30123094eb0964d58538427\nBranch: master\nTime: 2026-02-12T08:58:35+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 67.932402696,
+            "unit": "s",
+            "extra": "Commit: 2bb87f76d6ab7dd6e30123094eb0964d58538427\nBranch: master\nTime: 2026-02-12T08:58:35+01:00"
           }
         ]
       }
