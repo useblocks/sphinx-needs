@@ -36,25 +36,23 @@ tags_wrong_items_type:
     schema.items.type = "boolean"
   rst: ""
 
-extra_link_array_wrong_type:
+link_array_wrong_type:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.type = "object"
   rst: ""
 
-extra_link_array_wrong_item_type:
+link_array_wrong_item_type:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.type = "array"
@@ -333,13 +331,12 @@ extra_option_unknown_keys:
     schema.unknown = "unknown"
   rst: ""
 
-extra_link_unknown_keys:
+link_unknown_keys:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.unknown = "unknown"
@@ -355,13 +352,12 @@ extra_option_pattern_unsafe_error:
     schema.pattern = "^IMPL_(?!SAFE)"
   rst: ""
 
-extra_link_pattern_unsafe_error:
+link_pattern_unsafe_error:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.items = { pattern = "^IMPL_(?!SAFE)" }

@@ -18,13 +18,13 @@ import pytest
 from syrupy.extensions.json import JSONSnapshotExtension
 
 from sphinx_needs.schema.config import (
-    ExtraLinkItemSchemaType,
-    ExtraLinkSchemaType,
     FieldBooleanSchemaType,
     FieldIntegerSchemaType,
     FieldMultiValueSchemaType,
     FieldNumberSchemaType,
     FieldStringSchemaType,
+    LinkItemSchemaType,
+    LinkSchemaType,
     SchemasRootType,
 )
 
@@ -110,8 +110,8 @@ def snapshot_json(snapshot):
 @pytest.mark.parametrize(
     "klass",
     [
-        ExtraLinkItemSchemaType,
-        ExtraLinkSchemaType,
+        LinkItemSchemaType,
+        LinkSchemaType,
         FieldBooleanSchemaType,
         FieldIntegerSchemaType,
         FieldMultiValueSchemaType,

@@ -43,7 +43,7 @@ Dynamic functions can be used for the following directive options:
 - ``layout``
 - ``constraints``
 - :ref:`extra fields <needs_fields>`
-- :ref:`needs_extra_links`
+- :ref:`needs_links`
 
 .. deprecated:: 3.1.0
 
@@ -156,7 +156,7 @@ A variant definition can look like ``var_a:open`` or ``['name' in tags]:assigned
 .. important::
 
    To use variants options, you must enable the feature for a need field by setting the
-   :ref:`needs_fields` or :ref:`needs_extra_links` configuration parameter's ``parse_variants`` option to ``True`` for the specific field.
+   :ref:`needs_fields` or :ref:`needs_links` configuration parameter's ``parse_variants`` option to ``True`` for the specific field.
 
 A variant definition has two parts: the **rule or key** and the **value**.
 For example, if we specify a variant definition as ``var_a:open``, then ``var_a`` is the key and ``open`` is the value.
@@ -186,7 +186,7 @@ Rules for specifying variant definitions
 
 To implement variants options, you must configure the following in your ``conf.py`` file:
 
-* :ref:`needs_fields` and/or :ref:`needs_extra_links` with the ``parse_variants`` option set to ``True`` for the specific field.
+* :ref:`needs_fields` and/or :ref:`needs_links` with the ``parse_variants`` option set to ``True`` for the specific field.
 * :ref:`needs_variants`
 
 Use Cases

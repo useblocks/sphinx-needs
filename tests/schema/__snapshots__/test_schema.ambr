@@ -487,9 +487,9 @@
 # name: test_schema_config[both_definitions_and_json_given]
   "You cannot use both 'needs_schema_definitions' and 'needs_schema_definitions_from_json' at the same time."
 # ---
-# name: test_schema_config[extra_link_array_wrong_item_type]
+# name: test_schema_config[link_array_wrong_item_type]
   '''
-  Invalid extra link 'links': Invalid schema: "string" was expected
+  Invalid link 'links': Invalid schema: "string" was expected
   
   Failed validating "const" in schema["properties"]["contains"]["$ref"]["properties"]["type"]
   
@@ -497,9 +497,9 @@
       "other"
   '''
 # ---
-# name: test_schema_config[extra_link_array_wrong_type]
+# name: test_schema_config[link_array_wrong_type]
   '''
-  Invalid extra link 'links': Invalid schema: "array" was expected
+  Invalid link 'links': Invalid schema: "array" was expected
   
   Failed validating "const" in schema["properties"]["type"]
   
@@ -507,9 +507,9 @@
       "object"
   '''
 # ---
-# name: test_schema_config[extra_link_pattern_unsafe_error]
+# name: test_schema_config[link_pattern_unsafe_error]
   '''
-  Invalid extra link 'links': Invalid schema: "^IMPL_(?!SAFE)" is not a "regex"
+  Invalid link 'links': Invalid schema: "^IMPL_(?!SAFE)" is not a "regex"
   
   Failed validating in schema
   
@@ -517,9 +517,9 @@
       "^IMPL_(?!SAFE)"
   '''
 # ---
-# name: test_schema_config[extra_link_unknown_keys]
+# name: test_schema_config[link_unknown_keys]
   '''
-  Invalid extra link 'links': Invalid schema: Additional properties are not allowed ('unknown' was unexpected)
+  Invalid link 'links': Invalid schema: Additional properties are not allowed ('unknown' was unexpected)
   
   Failed validating "additionalProperties" in schema
   
@@ -2947,28 +2947,28 @@
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-contains]
+# name: test_schemas[schema/fixtures/links-contains]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-contains].1
+# name: test_schemas[schema/fixtures/links-contains].1
   dict({
     'validated_needs_count': 2,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-contains_error]
+# name: test_schemas[schema/fixtures/links-contains_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
-    Schema path:    extra_links > schema > properties > links > contains
-    Schema message: None of ["SPEC_1"] are valid under the given schema [sn_schema_violation.extra_link_fail]
+    Schema path:    links > schema > properties > links > contains
+    Schema message: None of ["SPEC_1"] are valid under the given schema [sn_schema_violation.link_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-contains_error].1
+# name: test_schemas[schema/fixtures/links-contains_error].1
   dict({
     'validated_needs_count': 2,
     'validation_warnings': dict({
@@ -2979,30 +2979,30 @@
           'details': dict({
             'field': 'links',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_links > schema > properties > links > contains',
+            'schema_path': 'links > schema > properties > links > contains',
             'severity': 'violation',
             'validation_msg': 'None of ["SPEC_1"] are valid under the given schema',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_link_fail',
+          'subtype': 'link_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-inject_array]
+# name: test_schemas[schema/fixtures/links-inject_array]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
-    Schema path:    extra_links > schema > properties > links > minItems
-    Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.extra_link_fail]
+    Schema path:    links > schema > properties > links > minItems
+    Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.link_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-inject_array].1
+# name: test_schemas[schema/fixtures/links-inject_array].1
   dict({
     'validated_needs_count': 2,
     'validation_warnings': dict({
@@ -3013,40 +3013,40 @@
           'details': dict({
             'field': 'links',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_links > schema > properties > links > minItems',
+            'schema_path': 'links > schema > properties > links > minItems',
             'severity': 'violation',
             'validation_msg': '["SPEC_1"] has less than 2 items',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_link_fail',
+          'subtype': 'link_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-items_pattern]
+# name: test_schemas[schema/fixtures/links-items_pattern]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-items_pattern].1
+# name: test_schemas[schema/fixtures/links-items_pattern].1
   dict({
     'validated_needs_count': 2,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-items_pattern_error]
+# name: test_schemas[schema/fixtures/links-items_pattern_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links.0
     Need path:      IMPL_1
-    Schema path:    extra_links > schema > properties > links > items > pattern
-    Schema message: "SPEC_1" does not match "^[A-Z0-9_]{10,}" [sn_schema_violation.extra_link_fail]
+    Schema path:    links > schema > properties > links > items > pattern
+    Schema message: "SPEC_1" does not match "^[A-Z0-9_]{10,}" [sn_schema_violation.link_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-items_pattern_error].1
+# name: test_schemas[schema/fixtures/links-items_pattern_error].1
   dict({
     'validated_needs_count': 2,
     'validation_warnings': dict({
@@ -3057,40 +3057,40 @@
           'details': dict({
             'field': 'links.0',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_links > schema > properties > links > items > pattern',
+            'schema_path': 'links > schema > properties > links > items > pattern',
             'severity': 'violation',
             'validation_msg': '"SPEC_1" does not match "^[A-Z0-9_]{10,}"',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_link_fail',
+          'subtype': 'link_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-max_contains]
+# name: test_schemas[schema/fixtures/links-max_contains]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-max_contains].1
+# name: test_schemas[schema/fixtures/links-max_contains].1
   dict({
     'validated_needs_count': 3,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-max_contains_error]
+# name: test_schemas[schema/fixtures/links-max_contains_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
-    Schema path:    extra_links > schema > properties > links > maxContains
-    Schema message: None of ["SPEC_1","SPEC_2"] are valid under the given schema [sn_schema_violation.extra_link_fail]
+    Schema path:    links > schema > properties > links > maxContains
+    Schema message: None of ["SPEC_1","SPEC_2"] are valid under the given schema [sn_schema_violation.link_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-max_contains_error].1
+# name: test_schemas[schema/fixtures/links-max_contains_error].1
   dict({
     'validated_needs_count': 3,
     'validation_warnings': dict({
@@ -3101,40 +3101,40 @@
           'details': dict({
             'field': 'links',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_links > schema > properties > links > maxContains',
+            'schema_path': 'links > schema > properties > links > maxContains',
             'severity': 'violation',
             'validation_msg': 'None of ["SPEC_1","SPEC_2"] are valid under the given schema',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_link_fail',
+          'subtype': 'link_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-max_items]
+# name: test_schemas[schema/fixtures/links-max_items]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-max_items].1
+# name: test_schemas[schema/fixtures/links-max_items].1
   dict({
     'validated_needs_count': 2,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-max_items_error]
+# name: test_schemas[schema/fixtures/links-max_items_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
-    Schema path:    extra_links > schema > properties > links > maxItems
-    Schema message: ["SPEC_1","SPEC_2"] has more than 1 item [sn_schema_violation.extra_link_fail]
+    Schema path:    links > schema > properties > links > maxItems
+    Schema message: ["SPEC_1","SPEC_2"] has more than 1 item [sn_schema_violation.link_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-max_items_error].1
+# name: test_schemas[schema/fixtures/links-max_items_error].1
   dict({
     'validated_needs_count': 3,
     'validation_warnings': dict({
@@ -3145,40 +3145,40 @@
           'details': dict({
             'field': 'links',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_links > schema > properties > links > maxItems',
+            'schema_path': 'links > schema > properties > links > maxItems',
             'severity': 'violation',
             'validation_msg': '["SPEC_1","SPEC_2"] has more than 1 item',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_link_fail',
+          'subtype': 'link_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-min_contains]
+# name: test_schemas[schema/fixtures/links-min_contains]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-min_contains].1
+# name: test_schemas[schema/fixtures/links-min_contains].1
   dict({
     'validated_needs_count': 2,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-min_contains_error]
+# name: test_schemas[schema/fixtures/links-min_contains_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
-    Schema path:    extra_links > schema > properties > links > minContains
-    Schema message: None of ["SPEC_1"] are valid under the given schema [sn_schema_violation.extra_link_fail]
+    Schema path:    links > schema > properties > links > minContains
+    Schema message: None of ["SPEC_1"] are valid under the given schema [sn_schema_violation.link_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-min_contains_error].1
+# name: test_schemas[schema/fixtures/links-min_contains_error].1
   dict({
     'validated_needs_count': 2,
     'validation_warnings': dict({
@@ -3189,40 +3189,40 @@
           'details': dict({
             'field': 'links',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_links > schema > properties > links > minContains',
+            'schema_path': 'links > schema > properties > links > minContains',
             'severity': 'violation',
             'validation_msg': 'None of ["SPEC_1"] are valid under the given schema',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_link_fail',
+          'subtype': 'link_fail',
           'type': 'sn_schema_violation',
         }),
       ]),
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-min_items]
+# name: test_schemas[schema/fixtures/links-min_items]
   ''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-min_items].1
+# name: test_schemas[schema/fixtures/links-min_items].1
   dict({
     'validated_needs_count': 2,
     'validation_warnings': dict({
     }),
   })
 # ---
-# name: test_schemas[schema/fixtures/extra_links-min_items_error]
+# name: test_schemas[schema/fixtures/links-min_items_error]
   '''
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          links
     Need path:      IMPL_1
-    Schema path:    extra_links > schema > properties > links > minItems
-    Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.extra_link_fail]
+    Schema path:    links > schema > properties > links > minItems
+    Schema message: ["SPEC_1"] has less than 2 items [sn_schema_violation.link_fail]
   
   '''
 # ---
-# name: test_schemas[schema/fixtures/extra_links-min_items_error].1
+# name: test_schemas[schema/fixtures/links-min_items_error].1
   dict({
     'validated_needs_count': 2,
     'validation_warnings': dict({
@@ -3233,12 +3233,12 @@
           'details': dict({
             'field': 'links',
             'need_path': 'IMPL_1',
-            'schema_path': 'extra_links > schema > properties > links > minItems',
+            'schema_path': 'links > schema > properties > links > minItems',
             'severity': 'violation',
             'validation_msg': '["SPEC_1"] has less than 2 items',
           }),
           'log_lvl': 'error',
-          'subtype': 'extra_link_fail',
+          'subtype': 'link_fail',
           'type': 'sn_schema_violation',
         }),
       ]),

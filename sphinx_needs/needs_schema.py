@@ -11,13 +11,13 @@ import jsonschema_rs
 from sphinx_needs.config import NeedFields
 from sphinx_needs.exceptions import VariantParsingException
 from sphinx_needs.schema.config import (
-    ExtraLinkSchemaType,
     FieldBooleanSchemaType,
     FieldIntegerSchemaType,
     FieldMultiValueSchemaType,
     FieldNumberSchemaType,
     FieldSchemaTypes,
     FieldStringSchemaType,
+    LinkSchemaType,
     validate_field_schema,
     validate_link_schema_type,
 )
@@ -543,7 +543,7 @@ class LinkSchema:
 
     name: str
     description: str = ""
-    schema: ExtraLinkSchemaType
+    schema: LinkSchemaType
     directive_option: bool = False
     allow_extend: bool = False
     parse_dynamic_functions: bool = False

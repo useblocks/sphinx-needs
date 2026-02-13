@@ -113,7 +113,7 @@ def generate_need(
 
     :raises InvalidNeedException: If the data fails any validation issue.
 
-    ``kwargs`` can contain options defined in ``needs_fields`` and ``needs_extra_links``.
+    ``kwargs`` can contain options defined in ``needs_fields`` and ``needs_links``.
     If an entry is found in ``kwargs``, which *is not* specified in the configuration or registered e.g. via
     ``add_field``, an exception is raised.
 
@@ -185,7 +185,7 @@ def generate_need(
     if unknown_kwargs:
         raise InvalidNeedException(
             "invalid_kwargs",
-            f"{unknown_kwargs!r} not in 'needs_fields' or 'needs_extra_links.",
+            f"{unknown_kwargs!r} not in 'needs_fields' or 'needs_links'.",
         )
 
     # get the need type data
@@ -600,7 +600,7 @@ def add_need(
     ``add_need`` allows to create needs programmatically and use its returned node to be integrated in any
     docutils based structure.
 
-    ``kwargs`` can contain options defined in ``needs_fields`` and ``needs_extra_links``.
+    ``kwargs`` can contain options defined in ``needs_fields`` and ``needs_links``.
     If an entry is found in ``kwargs``, which *is not* specified in the configuration or registered e.g. via
     ``add_field``, an exception is raised.
 

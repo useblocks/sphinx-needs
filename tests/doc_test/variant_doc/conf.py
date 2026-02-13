@@ -64,12 +64,11 @@ needs_fields = {
         "parse_variants": True,
     },
 }
-needs_extra_links = [
-    {
-        "option": "relates",
+needs_links = {
+    "relates": {
         "parse_variants": True,
     },
-]
+}
 
 needs_build_json = True
 needs_json_remove_defaults = True
