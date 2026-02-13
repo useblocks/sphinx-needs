@@ -444,24 +444,34 @@ def reduce_need(
     schema_properties: set[str],
 ) -> dict[str, Any]:
     """
-    Reduce a need to its relevant fields for validation in a specific schema context.
+    Reduce a need to only actively-set fields for type-specific schema validation.
 
-    The reduction is required to separated actively set fields from defaults.
-    Also internal fields shall be removed, if they are not actively used in the schema.
-    This is required to make unevaluatedProperties work as expected which disallows
-    additional fields.
+    This is used for ``local`` and ``network`` schemas, where the validator needs to
+    distinguish between fields that were explicitly set and those at their defaults.
+    It strips out:
 
-    Needs can be reduced in multiple contexts as the need can be primary target of validation
-    or it can be a link target which might mean only a single field shall be checked for a
-    specific value.
+    - Extra fields that are ``None`` (not provided)
+    - Link fields that are empty (``[]``)
+    - Core fields that are ``None``, not referenced in the schema, or match their default
 
-    Fields are kept
-    - if they are extra fields and differ from their default value
-    - if they are links and the list is not empty
-    - if they are part of the user provided schema
+    This is required for:
+
+    - ``unevaluatedProperties``: without reduction, internal/unrelated fields would
+      cause false "additional property" failures.
+    - ``required``: without reduction, core fields at their default value would still
+      be present, so ``required`` would always pass even if the user never explicitly
+      set the field.
+
+    .. note::
+
+       This cannot distinguish "explicitly set to the default value" from "never set."
+       For example, if a user sets ``:tags:`` to ``[]`` and the schema has ``minItems: 1``,
+       the field is stripped (since ``[]`` matches the default) and the violation is silently
+       ignored.
 
     :param need: The need to reduce.
-    :param json_schema: The user provided and merged JSON merge.
+    :param field_properties: Mapping of field names to their schema properties (type, default).
+    :param schema_properties: Set of field names referenced in the user-provided schema.
     """
     reduced_need: dict[str, Any] = {}
 
