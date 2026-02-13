@@ -218,41 +218,40 @@ def generate_need(
             f"Given ID {need_id!r} does not match configured regex {needs_config.id_regex!r}",
         )
 
-    title_converted = _convert_type_core(
-        "title", title, needs_schema, allow_type_coercion
-    )
-    status_converted = _convert_type_core(
-        "status", status, needs_schema, allow_type_coercion
-    )
-    tags_converted = _convert_type_core("tags", tags, needs_schema, allow_type_coercion)
-    constraints_converted = _convert_type_core(
-        "constraints", constraints, needs_schema, allow_type_coercion
-    )
-    layout_converted = _convert_type_core(
-        "layout", layout, needs_schema, allow_type_coercion
-    )
-    style_converted = _convert_type_core(
-        "style", style, needs_schema, allow_type_coercion
-    )
-    hide_converted = _convert_type_core("hide", hide, needs_schema, allow_type_coercion)
-    collapse_converted = _convert_type_core(
-        "collapse", collapse, needs_schema, allow_type_coercion
-    )
-    template_converted = _convert_type_core(
-        "template", template, needs_schema, allow_type_coercion
-    )
-    pre_template_converted = _convert_type_core(
-        "pre_template", pre_template, needs_schema, allow_type_coercion
-    )
-    post_template_converted = _convert_type_core(
-        "post_template", post_template, needs_schema, allow_type_coercion
-    )
+    # Convert all schema-enabled core fields
+    _raw_core: dict[str, Any] = {
+        "title": title,
+        "status": status,
+        "tags": tags,
+        "constraints": constraints,
+        "layout": layout,
+        "style": style,
+        "hide": hide,
+        "collapse": collapse,
+        "template": template,
+        "pre_template": pre_template,
+        "post_template": post_template,
+    }
+    core_converted: dict[str, FieldLiteralValue | FieldFunctionArray | None] = {}
+    for _name, _raw in _raw_core.items():
+        _fs = needs_schema.get_core_field(_name)
+        assert _fs is not None, f"{_name} field schema does not exist"
+        try:
+            core_converted[_name] = (
+                None
+                if _raw is None
+                else _fs.convert_or_type_check(_raw, allow_coercion=allow_type_coercion)
+            )
+        except Exception as err:
+            raise InvalidNeedException(
+                "invalid_value", f"{_name!r} value is invalid: {err}"
+            ) from err
 
     if (
-        isinstance(constraints_converted, FieldLiteralValue)
-        and isinstance(constraints_converted.value, Iterable)
+        isinstance(core_converted["constraints"], FieldLiteralValue)
+        and isinstance(core_converted["constraints"].value, Iterable)
         and (
-            unknown_constraints := set(constraints_converted.value)
+            unknown_constraints := set(core_converted["constraints"].value)
             - set(needs_config.constraints)
         )
     ):
@@ -303,14 +302,14 @@ def generate_need(
     defaults_ctx: PredicateContextData = {
         "id": need_id,
         "type": need_type,
-        "title": title_converted.value  # type: ignore[typeddict-item]
-        if isinstance(title_converted, FieldLiteralValue)
+        "title": core_converted["title"].value  # type: ignore[typeddict-item]
+        if isinstance(core_converted["title"], FieldLiteralValue)
         else "",
-        "tags": copy(tags_converted.value)  # type: ignore[arg-type]
-        if isinstance(tags_converted, FieldLiteralValue)
+        "tags": copy(core_converted["tags"].value)  # type: ignore[arg-type]
+        if isinstance(core_converted["tags"], FieldLiteralValue)
         else [],  # TODO allow for non-df/vf values?
-        "status": status_converted.value  # type: ignore[typeddict-item]
-        if isinstance(status_converted, FieldLiteralValue)
+        "status": core_converted["status"].value  # type: ignore[typeddict-item]
+        if isinstance(core_converted["status"], FieldLiteralValue)
         else None,
         "docname": source.dict_repr["docname"],
         "is_import": source.dict_repr["is_import"],
@@ -332,56 +331,15 @@ def generate_need(
         "links": defaults_links_ctx,
     }
 
-    status_converted = (
-        status_converted
-        if status_converted is not None
-        else _get_field_default(needs_schema.get_core_field("status"), **context)
-    )
-    tags_converted = (
-        tags_converted
-        if tags_converted is not None
-        else _get_field_default(needs_schema.get_core_field("tags"), **context)
-    )
-    collapse_converted = (
-        collapse_converted
-        if collapse_converted is not None
-        else _get_field_default(needs_schema.get_core_field("collapse"), **context)
-    )
-    hide_converted = (
-        hide_converted
-        if hide_converted is not None
-        else _get_field_default(needs_schema.get_core_field("hide"), **context)
-    )
-    constraints_converted = (
-        constraints_converted
-        if constraints_converted is not None
-        else _get_field_default(needs_schema.get_core_field("constraints"), **context)
-    )
-    layout_converted = (
-        layout_converted
-        if layout_converted is not None
-        else _get_field_default(needs_schema.get_core_field("layout"), **context)
-    )
-    style_converted = (
-        style_converted
-        if style_converted is not None
-        else _get_field_default(needs_schema.get_core_field("style"), **context)
-    )
-    template_converted = (
-        template_converted
-        if template_converted is not None
-        else _get_field_default(needs_schema.get_core_field("template"), **context)
-    )
-    pre_template_converted = (
-        pre_template_converted
-        if pre_template_converted is not None
-        else _get_field_default(needs_schema.get_core_field("pre_template"), **context)
-    )
-    post_template_converted = (
-        post_template_converted
-        if post_template_converted is not None
-        else _get_field_default(needs_schema.get_core_field("post_template"), **context)
-    )
+    # Apply defaults to core fields (title excluded - always required)
+    for _name in _raw_core:
+        if _name == "title":
+            continue
+        if core_converted[_name] is None:
+            core_converted[_name] = _get_field_default(
+                needs_schema.get_core_field(_name), **context
+            )
+
     extras = {
         k: _get_field_default(needs_schema.get_extra_field(k), **context)
         if v is None
@@ -396,40 +354,15 @@ def generate_need(
     }
     _copy_links(links, needs_schema)
 
-    title, title_func = _convert_to_str_func("title", title_converted)
-    status, status_func = _convert_to_none_str_func(
-        needs_schema, "status", status_converted
-    )
-    tags, tags_func = _convert_to_list_str_func("tags", tags_converted)
-    constraints, constraints_func = _convert_to_list_str_func(
-        "constraints", constraints_converted
-    )
-    collapse, collapse_func = _convert_to_bool_func("collapse", collapse_converted)
-    hide, hide_func = _convert_to_bool_func("hide", hide_converted)
-    layout, layout_func = _convert_to_none_str_func(
-        needs_schema, "layout", layout_converted
-    )
-    style, style_func = _convert_to_none_str_func(
-        needs_schema, "style", style_converted
-    )
-
+    # Unwrap core fields: extract concrete values and dynamic functions
     dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray] = {}
-    if title_func:
-        dynamic_fields["title"] = title_func
-    if status_func:
-        dynamic_fields["status"] = status_func
-    if tags_func:
-        dynamic_fields["tags"] = tags_func
-    if constraints_func:
-        dynamic_fields["constraints"] = constraints_func
-    if collapse_func:
-        dynamic_fields["collapse"] = collapse_func
-    if hide_func:
-        dynamic_fields["hide"] = hide_func
-    if layout_func:
-        dynamic_fields["layout"] = layout_func
-    if style_func:
-        dynamic_fields["style"] = style_func
+    core_values: dict[str, Any] = {}
+    for _name in _raw_core:
+        _fs = needs_schema.get_core_field(_name)
+        assert _fs is not None
+        core_values[_name], _func = _unwrap_field_value(_fs, core_converted[_name])
+        if _func is not None:
+            dynamic_fields[_name] = _func
 
     # Add the need and all needed information
     core_data: NeedsInfoType = {
@@ -439,14 +372,14 @@ def generate_need(
         "type_prefix": need_type_data["prefix"],
         "type_color": need_type_data.get("color") or "#000000",
         "type_style": need_type_data.get("style") or "node",
-        "title": title,
-        "status": status,
-        "tags": tags,
-        "constraints": constraints,
-        "collapse": collapse,
-        "hide": hide,
-        "style": style,
-        "layout": layout,
+        "title": core_values["title"],
+        "status": core_values["status"],
+        "tags": core_values["tags"],
+        "constraints": core_values["constraints"],
+        "collapse": core_values["collapse"],
+        "hide": core_values["hide"],
+        "style": core_values["style"],
+        "layout": core_values["layout"],
         "external_css": external_css or "external_link",
         "arch": arch or {},
         "has_dead_links": False,
@@ -455,17 +388,14 @@ def generate_need(
         "signature": signature,
     }
 
-    template = _convert_to_str_none("template", template_converted)
-    pre_template = _convert_to_str_none("pre_template", pre_template_converted)
-    post_template = _convert_to_str_none("post_template", post_template_converted)
     content_info = NeedsContent(
         doctype=doctype,
         content=content,
         pre_content=None,
         post_content=None,
-        template=template,
-        pre_template=pre_template,
-        post_template=post_template,
+        template=core_values["template"],
+        pre_template=core_values["pre_template"],
+        post_template=core_values["post_template"],
         jinja_content=jinja_content or False,
     )
 
@@ -486,43 +416,15 @@ def generate_need(
 
     extras_pre: dict[str, AllowedTypes | None] = {}
     for k, v in extras.items():
-        if (extra_schema := needs_schema.get_extra_field(k)) is None:
+        extra_schema = needs_schema.get_extra_field(k)
+        if extra_schema is None:
             raise InvalidNeedException(
                 "invalid_field_value",
                 f"Field {k!r} not in 'needs_fields'.",
             )
-        if v is None:
-            if not extra_schema.nullable:
-                raise InvalidNeedException(
-                    "invalid_field_value",
-                    f"Field {k!r} is not nullable, but no value or default was given.",
-                )
-            extras_pre[k] = None
-        elif isinstance(v, FieldLiteralValue):
-            extras_pre[k] = v.value
-        elif isinstance(v, FieldFunctionArray):
-            dynamic_fields[k] = v
-            match extra_schema.type:
-                case "string":
-                    extras_pre[k] = ""
-                case "boolean":
-                    extras_pre[k] = False
-                case "integer":
-                    extras_pre[k] = 0
-                case "number":
-                    extras_pre[k] = 0.0
-                case "array":
-                    extras_pre[k] = []
-                case other:
-                    raise InvalidNeedException(
-                        "invalid_field_value",
-                        f"Field {k!r} has unknown type {other!r}.",
-                    )
-        else:
-            raise InvalidNeedException(
-                "invalid_field_value",
-                f"Field {k!r} has unknown value {v!r}.",
-            )
+        extras_pre[k], _func = _unwrap_field_value(extra_schema, v)
+        if _func is not None:
+            dynamic_fields[k] = _func
 
     links_pre: dict[str, list[str]] = {}
     for lk, lv in links.items():
@@ -557,7 +459,10 @@ def generate_need(
     except ValueError as err:
         raise InvalidNeedException("failed_init", str(err)) from err
 
-    if jinja_content or template or pre_template or post_template:
+    _template = core_values["template"]
+    _pre_template = core_values["pre_template"]
+    _post_template = core_values["post_template"]
+    if jinja_content or _template or _pre_template or _post_template:
         # TODO ideally perform all these content alterations before creating the need item
         if jinja_content:
             need_content_context: dict[str, Any] = {**needs_info}
@@ -574,28 +479,28 @@ def generate_need(
                     f"Error while rendering content: {e}",
                 )
 
-        if template:
+        if _template:
             # TODO should warn if content is not empty?
             content_info = replace(
                 content_info,
                 content=_prepare_template(
-                    needs_config, needs_info, template, template_root
+                    needs_config, needs_info, _template, template_root
                 ),
             )
 
-        if pre_template:
+        if _pre_template:
             content_info = replace(
                 content_info,
                 pre_content=_prepare_template(
-                    needs_config, needs_info, pre_template, template_root
+                    needs_config, needs_info, _pre_template, template_root
                 ),
             )
 
-        if post_template:
+        if _post_template:
             content_info = replace(
                 content_info,
                 post_content=_prepare_template(
-                    needs_config, needs_info, post_template, template_root
+                    needs_config, needs_info, _post_template, template_root
                 ),
             )
 
@@ -604,122 +509,52 @@ def generate_need(
     return needs_info
 
 
-def _convert_type_core(
-    name: str, value: Any, schema: FieldsSchema, allow_coercion: bool
-) -> FieldLiteralValue | FieldFunctionArray | None:
-    try:
-        field_schema = schema.get_core_field(name)
-        assert field_schema is not None, f"{name} field schema does not exist"
-        return (
-            None
-            if value is None
-            else field_schema.convert_or_type_check(
-                value, allow_coercion=allow_coercion
-            )
-        )
-    except Exception as err:
-        raise InvalidNeedException(
-            "invalid_value", f"{name!r} value is invalid: {err}"
-        ) from err
-
-
-def _convert_to_str_none(
-    name: str, converted: FieldLiteralValue | FieldFunctionArray | None
-) -> str | None:
-    if converted is None:
-        return None
-    elif isinstance(converted, FieldLiteralValue) and isinstance(converted.value, str):
-        return converted.value
-    else:
-        raise InvalidNeedException(
-            "invalid_template",
-            f"{name} option must be a string or None, got {converted}.",
-        )
-
-
-def _convert_to_str_func(
-    name: str, converted: FieldLiteralValue | FieldFunctionArray | None
-) -> tuple[str, None | FieldFunctionArray]:
-    if isinstance(converted, FieldLiteralValue) and isinstance(converted.value, str):
-        return converted.value, None
-    elif isinstance(converted, FieldFunctionArray) and all(
-        isinstance(x, str | DynamicFunctionParsed | VariantFunctionParsed)
-        for x in converted
-    ):
-        return "", converted
-    else:
-        raise InvalidNeedException(
-            "invalid_value",
-            f"{name} must be a string or function, got {converted}.",
-        )
-
-
-def _convert_to_none_str_func(
-    schema: FieldsSchema,
-    name: str,
+def _unwrap_field_value(
+    field_schema: FieldSchema,
     converted: FieldLiteralValue | FieldFunctionArray | None,
-) -> tuple[None | str, None | FieldFunctionArray]:
-    field_schema = schema.get_core_field(name)
-    assert field_schema is not None, f"{name} field schema does not exist"
+) -> tuple[Any, FieldFunctionArray | None]:
+    """Unwrap a converted field value into a concrete value and optional dynamic function.
+
+    :param field_schema: The schema for the field.
+    :param converted: The converted value from ``convert_or_type_check``.
+    :return: A tuple of (concrete_value, dynamic_func_or_none).
+    :raises InvalidNeedException: If the value is invalid for the field.
+    """
     if converted is None:
         if not field_schema.nullable:
             raise InvalidNeedException(
                 "invalid_value",
-                f"{name} is not nullable, but no value was given.",
+                f"Field {field_schema.name!r} is not nullable, but no value or default was given.",
             )
         return None, None
-    elif isinstance(converted, FieldLiteralValue) and isinstance(converted.value, str):
+    elif isinstance(converted, FieldLiteralValue):
         return converted.value, None
-    elif isinstance(converted, FieldFunctionArray) and all(
-        isinstance(x, str | DynamicFunctionParsed | VariantFunctionParsed)
-        for x in converted
-    ):
-        return None if field_schema.nullable else "", converted
+    elif isinstance(converted, FieldFunctionArray):
+        # Use a type-appropriate placeholder while the dynamic function is unresolved
+        if field_schema.nullable:
+            placeholder: Any = None
+        else:
+            match field_schema.type:
+                case "string":
+                    placeholder = ""
+                case "boolean":
+                    placeholder = False
+                case "integer":
+                    placeholder = 0
+                case "number":
+                    placeholder = 0.0
+                case "array":
+                    placeholder = []
+                case other:
+                    raise InvalidNeedException(
+                        "invalid_value",
+                        f"Field {field_schema.name!r} has unknown type {other!r}.",
+                    )
+        return placeholder, converted
     else:
         raise InvalidNeedException(
             "invalid_value",
-            f"{name} must be none, string or function, got {converted}.",
-        )
-
-
-def _convert_to_bool_func(
-    name: str, converted: FieldLiteralValue | FieldFunctionArray | None
-) -> tuple[bool, FieldFunctionArray | None]:
-    if isinstance(converted, FieldLiteralValue) and isinstance(converted.value, bool):
-        return converted.value, None
-    elif (
-        isinstance(converted, FieldFunctionArray)
-        and len(converted.value) == 1
-        and isinstance(
-            converted.value[0], bool | DynamicFunctionParsed | VariantFunctionParsed
-        )
-    ):
-        return False, converted
-    else:
-        raise InvalidNeedException(
-            "invalid_value",
-            f"{name} must be a boolean or function, got {converted}.",
-        )
-
-
-def _convert_to_list_str_func(
-    name: str, converted: FieldLiteralValue | FieldFunctionArray | None
-) -> tuple[list[str], None | FieldFunctionArray]:
-    if (
-        isinstance(converted, FieldLiteralValue)
-        and isinstance(converted.value, list)
-        and all(isinstance(t, str) for t in converted.value)
-    ):
-        return cast(list[str], converted.value), None
-    elif isinstance(converted, FieldFunctionArray) and all(
-        isinstance(x, str | DynamicFunctionParsed | VariantFunctionParsed)
-        for x in converted
-    ):
-        return [], converted
-    else:
-        raise InvalidNeedException(
-            "invalid_value",
-            f"{name} must be a comma separated string, list of strings or function, got {converted}.",
+            f"Field {field_schema.name!r} has unexpected value type {type(converted).__name__}.",
         )
 
 

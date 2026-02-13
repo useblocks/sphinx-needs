@@ -4037,7 +4037,7 @@
 # ---
 # name: test_schemas[schema/fixtures/fields-status_non_nullable]
   '''
-  <srcdir>/index.rst:5: WARNING: Need could not be created: status is not nullable, but no value was given. [needs.create_need]
+  <srcdir>/index.rst:5: WARNING: Need could not be created: Field 'status' is not nullable, but no value or default was given. [needs.create_need]
   
   '''
 # ---
