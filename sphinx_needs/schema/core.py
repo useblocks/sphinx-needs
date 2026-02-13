@@ -584,7 +584,7 @@ def get_ontology_warnings(
         needs_json = reduce_need(need, field_properties, validator.properties)
     else:
         # we always remove null values, since we currently do not allow for `{"string", "null"}` type definitions and so null values would cause validation errors
-        needs_json = {k: v for k, v in need.items() if v is not None}
+        needs_json = {k: v for k, v in need.iter_schema_items() if v is not None}
     warnings: list[OntologyWarning] = []
     warning: OntologyWarning
     try:

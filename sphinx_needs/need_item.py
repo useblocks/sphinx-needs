@@ -669,6 +669,25 @@ class NeedItem:
             self._computed.items(),
         )
 
+    def iter_schema_items(self) -> Iterable[tuple[str, Any]]:
+        """Return the items of the need item that are relevant for schema validation."""
+        # TODO - this should be reworked to be more robust;
+        # e.g. probably all core fields should be included
+        return chain(
+            (
+                (k, v)
+                for k, v in self._core.items()
+                if k in ("id", "type", "title", "status", "tags")
+            ),
+            (
+                (k, v)
+                for k, v in self._source.dict_repr.items()
+                if k in ("docname", "is_import", "is_external")
+            ),
+            self._extras.items(),
+            self._links.items(),
+        )
+
     def iter_core_items(self) -> Iterable[tuple[str, Any]]:
         """Return the core items of the need item."""
         return chain(
