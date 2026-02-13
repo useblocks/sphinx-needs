@@ -34,12 +34,12 @@ def test_file_registration(tmp_path: Path, make_app: type[SphinxTestApp]):
     # Only check Sphinx-Needs files
     css_files = [
         x
-        for x in sphinx_app.builder.css_files
+        for x in sphinx_app.builder._css_files
         if x.filename.startswith("_static/sphinx-needs")
     ]
     script_files = [
         x
-        for x in sphinx_app.builder.script_files
+        for x in sphinx_app.builder._js_files
         if x.filename.startswith("_static/sphinx-needs")
     ]
     css_run_1 = len(css_files)
@@ -57,12 +57,12 @@ def test_file_registration(tmp_path: Path, make_app: type[SphinxTestApp]):
     # Only check Sphinx-Needs files
     css_files = [
         x
-        for x in sphinx_app.builder.css_files
+        for x in sphinx_app.builder._css_files
         if x.filename.startswith("_static/sphinx-needs")
     ]
     script_files = [
         x
-        for x in sphinx_app.builder.script_files
+        for x in sphinx_app.builder._js_files
         if x.filename.startswith("_static/sphinx-needs")
     ]
     css_run_2 = len(css_files)

@@ -21,7 +21,6 @@ from docutils.nodes import document
 from jinja2 import Template
 from sphinx import version_info
 from sphinx.application import Sphinx
-from sphinx.testing.path import path
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
@@ -40,7 +39,7 @@ def generate_random_string() -> str:
     return "".join(secrets.choice(characters) for i in range(10))
 
 
-def copy_srcdir_to_tmpdir(srcdir: path, tmp: path) -> path:
+def copy_srcdir_to_tmpdir(srcdir: Path, tmp: Path) -> Path:
     """
     Copy Source Directory to Temporary Directory.
 
@@ -53,21 +52,21 @@ def copy_srcdir_to_tmpdir(srcdir: path, tmp: path) -> path:
 
     :return: Path to the newly created directory in the temporary directory.
     """
-    srcdir = path(__file__).parent.abspath() / srcdir
-    tmproot = tmp.joinpath(generate_random_string()) / path(srcdir).basename()
+    srcdir = Path(__file__).parent.resolve() / srcdir
+    tmproot = tmp.joinpath(generate_random_string()) / Path(srcdir).name
     shutil.copytree(srcdir, tmproot)
     return tmproot
 
 
-def create_src_files_in_tmpdir(files: list[tuple[Path, str]], tmp: path) -> path:
+def create_src_files_in_tmpdir(files: list[tuple[Path, str]], tmp: Path) -> Path:
     """Create source files in a temporary directory under the subdir src."""
-    subdir = path("src")
+    subdir = Path("src")
     tmproot = tmp.joinpath(generate_random_string()) / subdir
-    tmproot.makedirs(exist_ok=True)
+    tmproot.mkdir(exist_ok=True, parents=True)
     for file in files:
         file_path, content = file
         file_abs = tmproot.joinpath(str(file_path))
-        file_abs.parent.makedirs(exist_ok=True)
+        file_abs.parent.mkdir(exist_ok=True)
         file_abs.write_text(content)
     return tmproot
 
@@ -223,7 +222,7 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(scope="session")
-def sphinx_test_tempdir(request) -> path:
+def sphinx_test_tempdir(request) -> Path:
     """
     Fixture to provide a temporary directory for Sphinx testing.
 
@@ -239,17 +238,17 @@ def sphinx_test_tempdir(request) -> path:
         request.config.getoption("--sn-build-dir") or tempfile.gettempdir()
     )
 
-    sphinx_test_tempdir = path(temp_base).joinpath("sn_test_build_data")
+    sphinx_test_tempdir = Path(temp_base).joinpath("sn_test_build_data")
     utils_dir = sphinx_test_tempdir.joinpath("utils")
 
     # if not (sphinx_test_tempdir.exists() and sphinx_test_tempdir.isdir()):
-    sphinx_test_tempdir.makedirs(exist_ok=True)
+    sphinx_test_tempdir.mkdir(exist_ok=True)
     # if not (utils_dir.exists() and utils_dir.isdir()):
-    utils_dir.makedirs(exist_ok=True)
+    utils_dir.mkdir(exist_ok=True)
 
     # copy plantuml.jar to current test tempdir. We want to do this once
     # since the same plantuml.jar is used for each test
-    plantuml_jar_file = path(__file__).parent.abspath() / "doc_test/utils"
+    plantuml_jar_file = Path(__file__).parent.resolve() / "doc_test/utils"
     shutil.copytree(plantuml_jar_file, utils_dir, dirs_exist_ok=True)
 
     return sphinx_test_tempdir
@@ -294,10 +293,12 @@ def test_app(make_app, sphinx_test_tempdir, request):
         # create given files in tmpdir
         src_dir = create_src_files_in_tmpdir(files, sphinx_test_tempdir)
 
-    parent_path = Path(str(src_dir.parent.abspath()))
+    parent_path = src_dir.parent.resolve()
 
-    if version_info >= (7, 2):
-        src_dir = Path(str(src_dir))
+    if version_info < (7, 2):
+        from sphinx.testing.path import path
+
+        src_dir = path(str(src_dir))
 
     # return sphinx.testing fixture make_app and new srcdir which is in sphinx_test_tempdir
     app: SphinxTestApp = make_app(
