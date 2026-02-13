@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770883250397,
+  "lastUpdate": 1770990919595,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16956,6 +16956,42 @@ window.BENCHMARK_DATA = {
             "value": 67.932402696,
             "unit": "s",
             "extra": "Commit: 2bb87f76d6ab7dd6e30123094eb0964d58538427\nBranch: master\nTime: 2026-02-12T08:58:35+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1f9070a63e2c8195724f1ca74252db9ed7c0574f",
+          "message": "🔧 Simplify `generate_needs` function (#1651)\n\nReplaces four stages of repetitive per-field code in `generate_need`\nwith loops driven by the schema, matching the pattern already used for\nextra fields and link fields.\n\n## Changes\n\n**Replaced with loops:**\n\n- 11 individual `_convert_type_core()` calls → loop over `_raw_core`\ndict\n- 10 identical default-resolution ternary expressions → 3-line loop\n- 8 type-specific unwrap calls + 8 `if *_func:` checks → loop using new\n`_unwrap_field_value()`\n- 30-line `extras_pre` match/case block → reuses same\n`_unwrap_field_value()`\n\n**Deleted 6 helper functions**, replaced by 1 generic\n`_unwrap_field_value()`:\n\n- `_convert_type_core`, `_convert_to_str_none`, `_convert_to_str_func`,\n`_convert_to_none_str_func`, `_convert_to_bool_func`,\n`_convert_to_list_str_func`\n\n**Net:** ~160 fewer lines, no public API changes.\n\n## Behavioral difference\n\nThe placeholder value used for **nullable extra fields** with dynamic\nfunctions changed:\n\n| Scenario | Old | New |\n|---|---|---|\n| Nullable extra field (e.g. `str \\| None`) with a dynamic function |\nType-based placeholder (`\"\"`) | `None` |\n| Nullable **core** field (e.g. `status`) with a dynamic function |\n`None` | `None` (unchanged) |\n\nThe old code was internally inconsistent: `_convert_to_none_str_func`\n(core fields) used `None` for nullable placeholders, while the extras\n`match` block always used a type-based placeholder regardless of\nnullability. The new code is consistent — nullable fields always get\n`None` as the placeholder.\n\nThis placeholder is temporary and is replaced during\n`resolve_functions`, so the impact is limited to any code that inspects\nextra field values between `generate_need` and function resolution.\n\n## Snapshot update\n\nOne snapshot updated:\n`test_schemas[schema/fixtures/fields-status_non_nullable]` — error\nmessage changed from `status is not nullable, but no value was given.`\nto `Field 'status' is not nullable, but no value or default was given.`\nfor consistency with the extras error format.",
+          "timestamp": "2026-02-13T14:53:21+01:00",
+          "tree_id": "c4b788c06299e00d1d18b106fe58094e2ad40797",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1f9070a63e2c8195724f1ca74252db9ed7c0574f"
+        },
+        "date": 1770990900934,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17710450799999933,
+            "unit": "s",
+            "extra": "Commit: 1f9070a63e2c8195724f1ca74252db9ed7c0574f\nBranch: master\nTime: 2026-02-13T14:53:21+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.426453177,
+            "unit": "s",
+            "extra": "Commit: 1f9070a63e2c8195724f1ca74252db9ed7c0574f\nBranch: master\nTime: 2026-02-13T14:53:21+01:00"
           }
         ]
       }
