@@ -670,3 +670,119 @@ link_name_contains:
                   "properties":
                     "type":
                       "const": "spec"
+
+direct_link_type_contains_pass:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+
+    [[needs.extra_links]]
+    option = "derived_from"
+  schemas:
+    $defs:
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-impl:
+        properties:
+          type:
+            const: impl
+    schemas:
+      - id: "impl-derived_from-spec"
+        message: impl must derive from spec
+        select:
+          $ref: '#/$defs/type-impl'
+        validate:
+          network:
+            derived_from:
+              contains:
+                local:
+                  $ref: '#/$defs/type-spec'
+              minContains: 1
+  rst: |
+    .. spec:: specification
+        :id: SPEC_1
+
+    .. impl:: implementation
+        :id: IMPL_1
+        :derived_from: SPEC_1
+
+direct_link_type_contains_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+
+    [[needs.extra_links]]
+    option = "derived_from"
+  schemas:
+    $defs:
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-impl:
+        properties:
+          type:
+            const: impl
+    schemas:
+      - id: "impl-derived_from-spec"
+        message: impl must derive from spec
+        select:
+          $ref: '#/$defs/type-impl'
+        validate:
+          network:
+            derived_from:
+              contains:
+                local:
+                  $ref: '#/$defs/type-spec'
+              minContains: 1
+  rst: |
+    .. req:: wrong target type (req instead of spec)
+        :id: REQ_WRONG
+
+    .. impl:: implementation that links to wrong type
+        :id: IMPL_1
+        :derived_from: REQ_WRONG
+
+direct_link_type_items_error:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+
+    [[needs.extra_links]]
+    option = "implements"
+  schemas:
+    $defs:
+      type-req:
+        properties:
+          type:
+            const: req
+      type-impl:
+        properties:
+          type:
+            const: impl
+    schemas:
+      - id: "impl-implements-req"
+        message: impl must implement req
+        select:
+          $ref: '#/$defs/type-impl'
+        validate:
+          network:
+            implements:
+              items:
+                local:
+                  $ref: '#/$defs/type-req'
+  rst: |
+    .. spec:: wrong type for implements target
+        :id: SPEC_WRONG
+
+    .. impl:: implementation
+        :id: IMPL_1
+        :implements: SPEC_WRONG

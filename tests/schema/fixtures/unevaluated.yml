@@ -46,3 +46,177 @@ unevaluated_allof_error:
             unevaluatedProperties: false
             allOf:
               - properties: {"comment": {}}
+
+core_fields_unevaluated:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+              status:
+                type: string
+            unevaluatedProperties: false
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :status: approved
+
+# Test: Core fields with defaults should be reduced away
+# This validates that title/status/tags are reduced when they have default values
+core_fields_default_values:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+            unevaluatedProperties: false
+  rst: |
+    .. impl:: My Title
+        :id: IMPL_1
+
+# Test: Extra fields with non-default values should be kept and can cause unevaluatedProperties error
+# Extra fields are kept if they differ from default, regardless of schema_properties
+# This triggers reduce_need() because unevaluatedProperties is present
+core_fields_non_default:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+
+    [needs.fields.priority]
+    nullable = true
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+            unevaluatedProperties: false
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :priority: high
+
+# Test: Extra fields with default empty string should be reduced
+extra_field_default_empty:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+
+    [needs.fields.asil]
+    nullable = true
+    [needs.fields.comment]
+    nullable = true
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+              asil:
+                type: string
+            unevaluatedProperties: false
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+
+# Test: Empty links array should be reduced (not cause unevaluated error)
+empty_links_reduced:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+            unevaluatedProperties: false
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+
+# Test: Non-empty links should be kept and cause unevaluated error if not in schema
+non_empty_links_kept:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+            unevaluatedProperties: false
+  rst: |
+    .. spec:: target
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+
+# Test: Schema properties whitelist - keep field only if in schema
+schema_properties_whitelist:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    needs.schema_definitions_from_json = "schemas.json"
+
+    [needs.fields.priority]
+    nullable = true
+  schemas:
+    schemas:
+      - validate:
+          local:
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+              priority:
+                enum: ["low", "medium", "high"]
+            unevaluatedProperties: false
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :priority: high
