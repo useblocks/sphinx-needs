@@ -5,6 +5,7 @@ import os.path
 import sys
 from pathlib import Path
 
+import docutils
 import pytest
 from lxml import html as html_parser
 from sphinx import version_info
@@ -12,6 +13,7 @@ from sphinx.testing.util import SphinxTestApp
 from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.directives.needtable import Needtable
 
 
 @pytest.mark.parametrize(
@@ -24,8 +26,19 @@ def test_build_html(test_app: SphinxTestApp, snapshot_doctree):
     app.build()
     assert app._warning.getvalue() == ""
 
+    doctree = app.env.get_doctree("index")
+
+    # Normalize the tree for old docutils versions.
+    if docutils.__version_info__ < (0, 22):
+        for node in doctree.traverse():
+            if isinstance(node, Needtable):
+                if node.get("show_filters") is False:
+                    node["show_filters"] = 0
+                if node.get("show_parts") is False:
+                    node["show_parts"] = 0
+
     # Check if doctree is correct.
-    assert app.env.get_doctree("index") == snapshot_doctree
+    assert doctree == snapshot_doctree
 
     # Basic checks for the generated html.
     html = Path(app.outdir, "index.html").read_text()
