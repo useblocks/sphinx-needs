@@ -3449,6 +3449,96 @@
     }),
   })
 # ---
+# name: test_schemas[schema/fixtures/fields-docname_select_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1
+    Schema path:    [0] > local > required
+    User message:   asil required for needs in index file
+    Schema message: "asil" is a required property [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-docname_select_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > required',
+            'severity': 'violation',
+            'user_msg': 'asil required for needs in index file',
+            'validation_msg': '"asil" is a required property',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-docname_select_success]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-docname_select_success].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-docname_validate_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Field:          docname
+    Need path:      IMPL_1
+    Schema path:    [0] > local > properties > docname > pattern
+    User message:   all needs must be in other file
+    Schema message: "index" does not match "other" [sn_schema_violation.local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/fields-docname_validate_error].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'field': 'docname',
+            'need_path': 'IMPL_1',
+            'schema_path': '[0] > local > properties > docname > pattern',
+            'severity': 'violation',
+            'user_msg': 'all needs must be in other file',
+            'validation_msg': '"index" does not match "other"',
+          }),
+          'log_lvl': 'error',
+          'subtype': 'local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/fields-docname_validate_success]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/fields-docname_validate_success].1
+  dict({
+    'validated_needs_count': 1,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/fields-enum]
   ''
 # ---
