@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1770990919595,
+  "lastUpdate": 1771000169538,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -16992,6 +16992,42 @@ window.BENCHMARK_DATA = {
             "value": 62.426453177,
             "unit": "s",
             "extra": "Commit: 1f9070a63e2c8195724f1ca74252db9ed7c0574f\nBranch: master\nTime: 2026-02-13T14:53:21+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4ec0bc758446d0132cf56769e08d06a4679a3a5d",
+          "message": "⚠️ Separate reduced vs full need representation for schema validation (#1652)\n\n## Changes\n\n- **Rename** `validate_option_fields` → `validate_fields` and\n`validate_link_options` → `validate_links`\n- **Add `reduce` parameter** to `get_ontology_warnings()`:\n- `True` (type-specific `local`/`network` schemas): uses `reduce_need()`\n— strips empty link lists and defaulted core fields. Required for\n`unevaluatedProperties` (extra fields don't cause false failures) and\n`required` (fields at their default are absent, so `required` enforces\nexplicit setting) to work correctly.\n- `False` (global field/link constraint validation): uses\n`NeedItem.iter_schema_items()` — returns a curated subset of fields\n(core: `id`, `type`, `title`, `status`, `tags`; source: `docname`,\n`is_import`, `is_external`; all extra fields; all links), filtering only\n`None` values. This retains empty `[]` values for links and `tags`, so\nconstraints are evaluated against every need.\n\n## Behavioral change\n\nPreviously, fields with default `[]` values (link fields like `links`,\nand core fields like `tags`) were stripped before validation, silently\nbypassing constraints like `minItems`, `contains`, and `minContains`.\nNow with `reduce=False`, these fields are retained as `[]`, causing them\nto **fail** those constraints.\n\nThis applies to both:\n- **Link fields** (e.g. `links`, `implements`) — always default to `[]`\n- **Core fields** with `[]` defaults (e.g. `tags`) — previously stripped\nwhen matching the default\n\n**Example**: A schema with `schema.minItems = 1` on `links` will now\nwarn for *every* need that doesn't set any links, not just those that\nexplicitly set links but provided too few.\n\n## Decision needed\n\n**Is this the correct strictness?** Two reasonable interpretations:\n\n1. ✅ **\"All needs must satisfy field/link constraints\"** — the new\nbehavior. If you declare `minItems: 1` on a link type or `tags`, every\nneed must have at least one value. Users who want optional fields should\nnot set `minItems`.\n\n2. ❌ **\"Only needs that explicitly set a field must satisfy its\nconstraints\"** — the old behavior. Unset/default fields are treated as\nabsent, not as empty arrays.\n\nIf (1) is intended, this should be noted in the changelog as a behavior\nchange. If (2) is preferred, the fix would be to keep `reduce_need=True`\nfor field/link validation, or to conditionally skip default-valued\nfields when `reduce_need=False`.\n\n### Known limitation of `reduce_need=True`\n\nThe reduction logic strips fields whose value matches the default — but\nit cannot distinguish between \"never set (defaulted)\" and \"explicitly\nset to the default value.\" For example, if a user actively sets `:tags:`\nto `[]` and the schema has `minItems: 1`, the field is stripped because\n`[]` matches the default, and the violation is **silently ignored**.\nThis is a fundamental limitation of comparing values to defaults at\nvalidation time, since the provenance of the value (explicit vs\nimplicit) is not tracked.",
+          "timestamp": "2026-02-13T17:27:31+01:00",
+          "tree_id": "a4bdec48314111beeeef96cd39787ffe98a41c30",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4ec0bc758446d0132cf56769e08d06a4679a3a5d"
+        },
+        "date": 1771000151277,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.2241966620000042,
+            "unit": "s",
+            "extra": "Commit: 4ec0bc758446d0132cf56769e08d06a4679a3a5d\nBranch: master\nTime: 2026-02-13T17:27:31+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.360587925999994,
+            "unit": "s",
+            "extra": "Commit: 4ec0bc758446d0132cf56769e08d06a4679a3a5d\nBranch: master\nTime: 2026-02-13T17:27:31+01:00"
           }
         ]
       }
