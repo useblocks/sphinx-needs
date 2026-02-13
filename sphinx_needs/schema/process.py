@@ -14,8 +14,8 @@ from sphinx_needs.needsfile import generate_needs_schema
 from sphinx_needs.schema.config import NeedFieldsSchemaType, SchemasRootType
 from sphinx_needs.schema.core import (
     NeedFieldProperties,
-    validate_link_options,
-    validate_option_fields,
+    validate_fields,
+    validate_links,
     validate_type_schema,
 )
 from sphinx_needs.schema.reporting import (
@@ -69,16 +69,12 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
     if fields_schema["properties"]:
-        extra_warnings = validate_option_fields(
-            config, fields_schema, field_properties, needs
-        )
+        extra_warnings = validate_fields(config, fields_schema, field_properties, needs)
         for key, warnings in extra_warnings.items():
             need_2_warnings.setdefault(key, []).extend(warnings)
 
     if links_schema["properties"]:
-        link_warnings = validate_link_options(
-            config, links_schema, field_properties, needs
-        )
+        link_warnings = validate_links(config, links_schema, field_properties, needs)
         for key, warnings in link_warnings.items():
             need_2_warnings.setdefault(key, []).extend(warnings)
 

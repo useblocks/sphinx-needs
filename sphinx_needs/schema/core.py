@@ -42,7 +42,7 @@ The implementation requires at least draft 2019-09 as unevaluatedProperties was 
 """
 
 
-def validate_option_fields(
+def validate_fields(
     config: NeedsSphinxConfig,
     schema: NeedFieldsSchemaType,
     field_properties: Mapping[str, NeedFieldProperties],
@@ -56,6 +56,7 @@ def validate_option_fields(
             need,
             field_properties,
             validator,
+            reduce=False,
             fail_rule=MessageRuleEnum.field_fail,
             success_rule=MessageRuleEnum.field_success,
             schema_path=["fields", "schema"],
@@ -67,7 +68,7 @@ def validate_option_fields(
     return need_2_warnings
 
 
-def validate_link_options(
+def validate_links(
     config: NeedsSphinxConfig,
     schema: NeedFieldsSchemaType,
     field_properties: Mapping[str, NeedFieldProperties],
@@ -81,6 +82,7 @@ def validate_link_options(
             need,
             field_properties,
             validator,
+            reduce=False,
             fail_rule=MessageRuleEnum.extra_link_fail,
             success_rule=MessageRuleEnum.extra_link_success,
             schema_path=["extra_links", "schema"],
@@ -123,6 +125,7 @@ def validate_type_schema(
                 need,
                 field_properties,
                 validator,
+                reduce=False,
                 fail_rule=MessageRuleEnum.select_fail,
                 success_rule=MessageRuleEnum.select_success,
                 schema_path=[schema_name, "select"],
@@ -211,6 +214,7 @@ def recurse_validate_schemas(
             validator,
             rule_fail,
             rule_success,
+            reduce=True,
             schema_path=[*schema_path, "local"],
             need_path=need_path,
             user_message=user_message if recurse_level == 0 else None,
@@ -440,24 +444,34 @@ def reduce_need(
     schema_properties: set[str],
 ) -> dict[str, Any]:
     """
-    Reduce a need to its relevant fields for validation in a specific schema context.
+    Reduce a need to only actively-set fields for type-specific schema validation.
 
-    The reduction is required to separated actively set fields from defaults.
-    Also internal fields shall be removed, if they are not actively used in the schema.
-    This is required to make unevaluatedProperties work as expected which disallows
-    additional fields.
+    This is used for ``local`` and ``network`` schemas, where the validator needs to
+    distinguish between fields that were explicitly set and those at their defaults.
+    It strips out:
 
-    Needs can be reduced in multiple contexts as the need can be primary target of validation
-    or it can be a link target which might mean only a single field shall be checked for a
-    specific value.
+    - Extra fields that are ``None`` (not provided)
+    - Link fields that are empty (``[]``)
+    - Core fields that are ``None``, not referenced in the schema, or match their default
 
-    Fields are kept
-    - if they are extra fields and differ from their default value
-    - if they are links and the list is not empty
-    - if they are part of the user provided schema
+    This is required for:
+
+    - ``unevaluatedProperties``: without reduction, internal/unrelated fields would
+      cause false "additional property" failures.
+    - ``required``: without reduction, core fields at their default value would still
+      be present, so ``required`` would always pass even if the user never explicitly
+      set the field.
+
+    .. note::
+
+       This cannot distinguish "explicitly set to the default value" from "never set."
+       For example, if a user sets ``:tags:`` to ``[]`` and the schema has ``minItems: 1``,
+       the field is stripped (since ``[]`` matches the default) and the violation is silently
+       ignored.
 
     :param need: The need to reduce.
-    :param json_schema: The user provided and merged JSON merge.
+    :param field_properties: Mapping of field names to their schema properties (type, default).
+    :param schema_properties: Set of field names referenced in the user-provided schema.
     """
     reduced_need: dict[str, Any] = {}
 
@@ -559,15 +573,33 @@ def get_ontology_warnings(
     success_rule: MessageRuleEnum,
     schema_path: list[str],
     need_path: list[str],
+    reduce: bool,
     user_message: str | None = None,
     user_severity: SeverityEnum | None = None,
 ) -> list[OntologyWarning]:
-    reduced_need = reduce_need(need, field_properties, validator.properties)
+    """Validate a need against a compiled schema and return a list of warnings.
+
+    :param need: The need to validate.
+    :param field_properties: The properties of the need fields.
+    :param validator: The compiled schema validator to use for validation.
+    :param fail_rule: The MessageRuleEnum to use for validation failure warnings.
+    :param success_rule: The MessageRuleEnum to use for validation success warnings.
+    :param schema_path: The path to the schema in the configuration for reporting purposes.
+    :param need_path: The path to the need for reporting purposes.
+    :param reduce: Whether to reduce the need to relevant fields before validation.
+    :param user_message: An optional user message to include in the warnings.
+    :param user_severity: An optional user severity to override the default severity for the rules
+    """
+    if reduce:
+        needs_json = reduce_need(need, field_properties, validator.properties)
+    else:
+        # we always remove null values, since we currently do not allow for `{"string", "null"}` type definitions and so null values would cause validation errors
+        needs_json = {k: v for k, v in need.iter_schema_items() if v is not None}
     warnings: list[OntologyWarning] = []
     warning: OntologyWarning
     try:
         validation_errors: list[ValidationError] = list(
-            validator.compiled.iter_errors(instance=reduced_need)
+            validator.compiled.iter_errors(instance=needs_json)
         )
     except ValidationError as exc:
         warning = {
@@ -590,7 +622,7 @@ def get_ontology_warnings(
                 "severity": get_severity(fail_rule, user_severity),
                 "validation_message": err.message,
                 "need": need,
-                "reduced_need": reduced_need,
+                "reduced_need": needs_json,
                 "final_schema": validator.raw,
                 "schema_path": [*schema_path, *(str(item) for item in err.schema_path)],
                 "need_path": need_path,
@@ -605,7 +637,7 @@ def get_ontology_warnings(
             "rule": success_rule,
             "severity": get_severity(success_rule),
             "need": need,
-            "reduced_need": reduced_need,
+            "reduced_need": needs_json,
             "final_schema": validator.raw,
             "schema_path": schema_path,
             "need_path": need_path,
