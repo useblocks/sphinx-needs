@@ -201,6 +201,156 @@ auto_inject_type_wrong_const:
               asil:
                 const: QM
 
+select_by_docname:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            docname:
+              const: "index"
+        validate:
+          local:
+            properties:
+              asil:
+                const: "B"
+
+select_by_docname_no_match:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            docname:
+              const: "other_doc"
+        validate:
+          local:
+            properties:
+              asil:
+                const: "B"
+
+select_by_is_external_false:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            is_external:
+              const: false
+        validate:
+          local:
+            properties:
+              asil:
+                const: "B"
+
+select_by_is_external_true_no_match:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            is_external:
+              const: true
+        validate:
+          local:
+            properties:
+              asil:
+                const: "B"
+
+select_by_is_import_false:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            is_import:
+              const: false
+        validate:
+          local:
+            properties:
+              asil:
+                const: "B"
+
+select_by_is_import_true_no_match:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+        :asil: QM
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            is_import:
+              const: true
+        validate:
+          local:
+            properties:
+              asil:
+                const: "B"
+
 required_based_on_select_field_missing:
   conf: |
     extensions = ["sphinx_needs"]
