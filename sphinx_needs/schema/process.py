@@ -1,6 +1,5 @@
 import time
 from collections.abc import Mapping
-from itertools import chain
 
 from sphinx.application import Sphinx
 from sphinx.builders import Builder
@@ -11,11 +10,10 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import log_error, log_warning
 from sphinx_needs.needsfile import generate_needs_schema
-from sphinx_needs.schema.config import NeedFieldsSchemaType, SchemasRootType
+from sphinx_needs.schema.config import SchemasRootType
 from sphinx_needs.schema.core import (
     NeedFieldProperties,
-    validate_fields,
-    validate_links,
+    validate_field_link_schemas,
     validate_type_schema,
 )
 from sphinx_needs.schema.reporting import (
@@ -39,24 +37,7 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     if not config.schema_validation_enabled:
         return
 
-    schema = SphinxNeedsData(app.env).get_schema()
-
-    fields_schema: NeedFieldsSchemaType = {
-        "type": "object",
-        "properties": {
-            field.name: field.schema
-            for field in chain(schema.iter_core_fields(), schema.iter_extra_fields())
-        },
-    }
-    links_schema: NeedFieldsSchemaType = {
-        "type": "object",
-        "properties": {link.name: link.schema for link in schema.iter_link_fields()},
-    }
-
-    schema = SphinxNeedsData(app.env).get_schema()
-    field_properties: Mapping[str, NeedFieldProperties] = generate_needs_schema(schema)[
-        "properties"
-    ]
+    needs_schema = SphinxNeedsData(app.env).get_schema()
 
     if config.schema_debug_active:
         clear_debug_dir(config)
@@ -68,25 +49,25 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
 
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
 
-    if fields_schema["properties"]:
-        extra_warnings = validate_fields(config, fields_schema, field_properties, needs)
-        for key, warnings in extra_warnings.items():
-            need_2_warnings.setdefault(key, []).extend(warnings)
+    # Validate all needs against combined field + link schemas
+    field_link_warnings = validate_field_link_schemas(config, needs_schema, needs)
+    for key, warnings in field_link_warnings.items():
+        need_2_warnings.setdefault(key, []).extend(warnings)
 
-    if links_schema["properties"]:
-        link_warnings = validate_links(config, links_schema, field_properties, needs)
-        for key, warnings in link_warnings.items():
-            need_2_warnings.setdefault(key, []).extend(warnings)
-
+    # Validate needs against user-defined type schemas
     type_schemas: list[SchemasRootType] = []
     if config.schema_definitions and "schemas" in config.schema_definitions:
         type_schemas = config.schema_definitions["schemas"]
-    for type_schema in type_schemas:
-        type_warnings = validate_type_schema(
-            config, type_schema, needs, field_properties
-        )
-        for key, warnings in type_warnings.items():
-            need_2_warnings.setdefault(key, []).extend(warnings)
+    if type_schemas:
+        field_properties: Mapping[str, NeedFieldProperties] = generate_needs_schema(
+            needs_schema
+        )["properties"]
+        for type_schema in type_schemas:
+            type_warnings = validate_type_schema(
+                config, type_schema, needs, field_properties
+            )
+            for key, warnings in type_warnings.items():
+                need_2_warnings.setdefault(key, []).extend(warnings)
 
     # Stop timer after validation loop
     end_time = time.perf_counter()
