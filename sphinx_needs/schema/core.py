@@ -32,6 +32,8 @@ from sphinx_needs.views import NeedsView
 if TYPE_CHECKING:
     from typing_extensions import NotRequired
 
+    from sphinx_needs.needs_schema import FieldsSchema
+
 # TODO(Marco): error for conflicting unevaluatedProperties
 
 _SCHEMA_VERSION: Final[str] = "https://json-schema.org/draft/2020-12/schema"
@@ -42,55 +44,109 @@ The implementation requires at least draft 2019-09 as unevaluatedProperties was 
 """
 
 
-def validate_fields(
+def validate_field_link_schemas(
     config: NeedsSphinxConfig,
-    schema: NeedFieldsSchemaType,
-    field_properties: Mapping[str, NeedFieldProperties],
+    fields_schema: FieldsSchema,
     needs: NeedsView,
 ) -> dict[str, list[OntologyWarning]]:
-    """Validate schema originating from field definitions."""
+    """Validate all needs against the combined field and link schema.
+
+    Builds a single JSON Schema validator from all field and link schemas
+    defined in ``fields_schema``, then validates each need against it.
+    For each need, only the properties present in the schema are included
+    (excluding ``None`` values), so the validator only sees relevant fields.
+
+    Errors on link properties use :attr:`MessageRuleEnum.extra_link_fail` and
+    the ``extra_links > schema`` schema path prefix, while errors on other
+    properties use :attr:`MessageRuleEnum.field_fail` and ``fields > schema``.
+
+    :param config: The Sphinx-Needs configuration.
+    :param fields_schema: The fields schema containing core, extra, and link field definitions.
+    :param needs: The needs view to validate.
+    :return: Mapping of need ID to list of validation warnings.
+    """
+    # Build combined properties from all field and link schemas
+    combined_properties: dict[str, Any] = {}
+    link_names: set[str] = set()
+    for field in fields_schema.iter_core_fields():
+        combined_properties[field.name] = field.schema
+    for field in fields_schema.iter_extra_fields():
+        combined_properties[field.name] = field.schema
+    for link in fields_schema.iter_link_fields():
+        combined_properties[link.name] = link.schema
+        link_names.add(link.name)
+
+    if not combined_properties:
+        return {}
+
+    schema: NeedFieldsSchemaType = {
+        "type": "object",
+        "properties": combined_properties,
+    }
     need_2_warnings: dict[str, list[OntologyWarning]] = {}
     validator = compile_validator(schema)
-    for need in needs.values():
-        schema_warnings = get_ontology_warnings(
-            need,
-            field_properties,
-            validator,
-            reduce=False,
-            fail_rule=MessageRuleEnum.field_fail,
-            success_rule=MessageRuleEnum.field_success,
-            schema_path=["fields", "schema"],
-            need_path=[need["id"]],
-        )
-        save_debug_files(config, schema_warnings)
-        if schema_warnings:
-            need_2_warnings[need["id"]] = schema_warnings
-    return need_2_warnings
+    schema_properties = validator.properties
 
-
-def validate_links(
-    config: NeedsSphinxConfig,
-    schema: NeedFieldsSchemaType,
-    field_properties: Mapping[str, NeedFieldProperties],
-    needs: NeedsView,
-) -> dict[str, list[OntologyWarning]]:
-    """Validate schema originating from extra link definitions."""
-    need_2_warnings: dict[str, list[OntologyWarning]] = {}
-    validator = compile_validator(schema)
     for need in needs.values():
-        schema_warnings = get_ontology_warnings(
-            need,
-            field_properties,
-            validator,
-            reduce=False,
-            fail_rule=MessageRuleEnum.extra_link_fail,
-            success_rule=MessageRuleEnum.extra_link_success,
-            schema_path=["extra_links", "schema"],
-            need_path=[need["id"]],
-        )
-        save_debug_files(config, schema_warnings)
-        if schema_warnings:
-            need_2_warnings[need["id"]] = schema_warnings
+        # Project the need to only the properties present in the schema,
+        # excluding None values (we don't allow {"type": ["string", "null"]})
+        need_data: dict[str, Any] = {
+            key: value
+            for key, value in need.items()
+            if key in schema_properties and value is not None
+        }
+
+        warnings: list[OntologyWarning] = []
+        try:
+            validation_errors = list(validator.compiled.iter_errors(instance=need_data))
+        except ValidationError as exc:
+            warnings.append(
+                {
+                    "rule": MessageRuleEnum.cfg_schema_error,
+                    "severity": get_severity(MessageRuleEnum.cfg_schema_error),
+                    "validation_message": str(exc),
+                    "need": need,
+                    "schema_path": ["fields", "schema"],
+                    "need_path": [need["id"]],
+                }
+            )
+            save_debug_files(config, warnings)
+            need_2_warnings[need["id"]] = warnings
+            continue
+
+        for err in validation_errors:
+            # Determine if the error is on a link property by checking
+            # the root property name from the instance path
+            root_prop = str(err.instance_path[0]) if err.instance_path else None
+            is_link = root_prop is not None and root_prop in link_names
+            rule = (
+                MessageRuleEnum.extra_link_fail
+                if is_link
+                else MessageRuleEnum.field_fail
+            )
+            schema_prefix = "extra_links" if is_link else "fields"
+            warning: OntologyWarning = {
+                "rule": rule,
+                "severity": get_severity(rule),
+                "validation_message": err.message,
+                "need": need,
+                "reduced_need": need_data,
+                "final_schema": validator.raw,
+                "schema_path": [
+                    schema_prefix,
+                    "schema",
+                    *(str(item) for item in err.schema_path),
+                ],
+                "need_path": [need["id"]],
+            }
+            if err_field := ".".join([str(x) for x in err.instance_path]):
+                warning["field"] = err_field
+            warnings.append(warning)
+
+        save_debug_files(config, warnings)
+        if warnings:
+            need_2_warnings[need["id"]] = warnings
+
     return need_2_warnings
 
 
