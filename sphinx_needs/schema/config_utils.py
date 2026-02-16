@@ -116,7 +116,7 @@ def resolve_schemas_config(
             ) from exc
 
     # after type check, we can safely walk the schema for nested checks;
-    # check if network links are defined as extra links
+    # check if network links are defined as links
     check_network_links_against_links(
         needs_config.schema_definitions["schemas"],
         fields_schema,
@@ -174,7 +174,7 @@ def validate_severity(schemas: list[SchemasRootType]) -> None:
 def check_network_links_against_links(
     schemas: list[SchemasRootType], fields_schema: FieldsSchema
 ) -> None:
-    """Check if network links are defined as extra links."""
+    """Check if network links are defined as links."""
     for schema in schemas:
         validate_schemas: list[ValidateSchemaType] = [schema["validate"]]
         while validate_schemas:
