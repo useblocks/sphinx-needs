@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771250326232,
+  "lastUpdate": 1771253960905,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17100,6 +17100,42 @@ window.BENCHMARK_DATA = {
             "value": 59.377885660000004,
             "unit": "s",
             "extra": "Commit: c881e11b9e7b14a09b7d2ea6b07f4af3e2527dde\nBranch: master\nTime: 2026-02-16T14:56:36+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "mitya57@users.noreply.github.com",
+            "name": "Dmitry Shachnev",
+            "username": "mitya57"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "384f26923d0e5a68ed122148af55715410c75cef",
+          "message": "⬆️ Support Sphinx 9 and Docutils 0.22 (#1653)\n\n- `sphinx.testing.path` was deprecated in Sphinx 7.2\n(sphinx-doc/sphinx#11526) and removed in Sphinx 9.0\n(sphinx-doc/sphinx#14095).\n- `css_files` and `script_files` were deprecated in Sphinx 7.2\n(sphinx-doc/sphinx#11582) and made private. The public names cannot be\nused since Sphinx 9.0 (sphinx-doc/sphinx#14095).\n- Since Docutils 0.22, the boolean attributes are\n[normalized](https://sourceforge.net/p/docutils/code/9691/) using\n`str(int(value))`. I updated the tests expectation for the new version,\nand manually normalizing the tree to keep the tests passing with older\nversions.\n- Enabled testing with Sphinx 9.1 in the CI.",
+          "timestamp": "2026-02-16T15:57:17+01:00",
+          "tree_id": "aa875cc6b0213fce8634ea15aeb81c35dde28a26",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/384f26923d0e5a68ed122148af55715410c75cef"
+        },
+        "date": 1771253941966,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1893372979999981,
+            "unit": "s",
+            "extra": "Commit: 384f26923d0e5a68ed122148af55715410c75cef\nBranch: master\nTime: 2026-02-16T15:57:17+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.027303872,
+            "unit": "s",
+            "extra": "Commit: 384f26923d0e5a68ed122148af55715410c75cef\nBranch: master\nTime: 2026-02-16T15:57:17+01:00"
           }
         ]
       }
