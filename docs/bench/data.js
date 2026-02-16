@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771253960905,
+  "lastUpdate": 1771257800344,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17136,6 +17136,42 @@ window.BENCHMARK_DATA = {
             "value": 62.027303872,
             "unit": "s",
             "extra": "Commit: 384f26923d0e5a68ed122148af55715410c75cef\nBranch: master\nTime: 2026-02-16T15:57:17+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e01b3ad144af4ddae1a848908ee9a76c84739378",
+          "message": "⚠️ Migrate `needs_extra_links` to `needs_links` (#1649)\n\nThis PR introduces a new dict-based `needs_links` configuration and\ndeprecates the list-based `needs_extra_links`.\nThe change follows the plan in\n<https://github.com/useblocks/sphinx-needs/discussions/1646> and uses\nthe same migration pattern as `needs_extra_options` → `needs_fields`\n(commit fc41bf2e).\n\n## Motivation\n\n- Consistent API design with `needs_fields` (dict-based config)\n- Enables a `description` field for link types (output in\nschema/needs.json)\n- Cleaner configuration syntax\n\n## Changes\n\n### New Configuration Format\n\n```python\n# New (needs_links)\nneeds_links = {\n    \"blocks\": {\n        \"description\": \"Blocking relationship between needs\",\n        \"incoming\": \"is blocked by\",\n        \"outgoing\": \"blocks\",\n    },\n}\n\n# Deprecated (needs_extra_links)\nneeds_extra_links = [\n    {\n        \"option\": \"blocks\",\n        \"incoming\": \"is blocked by\",\n        \"outgoing\": \"blocks\",\n    },\n]\n```\n\n## Backward Compatibility\n\n- `needs_extra_links` continues to work but emits a deprecation warning\n- Internal processing converts both formats to the same representation\n- Error messages reference the correct config option based on source\n\n## New Features\n\n- **`description` field**: Link types can now include a description that\nappears in the JSON schema output\n- **Dict-based syntax**: Link name is the key, making configuration\ncleaner\n\n---------\n\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>",
+          "timestamp": "2026-02-16T17:01:23+01:00",
+          "tree_id": "5895d7bbab55b35398a5e7bfce4b5fffe284ed44",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e01b3ad144af4ddae1a848908ee9a76c84739378"
+        },
+        "date": 1771257781346,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16985329299999563,
+            "unit": "s",
+            "extra": "Commit: e01b3ad144af4ddae1a848908ee9a76c84739378\nBranch: master\nTime: 2026-02-16T17:01:23+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.665677,
+            "unit": "s",
+            "extra": "Commit: e01b3ad144af4ddae1a848908ee9a76c84739378\nBranch: master\nTime: 2026-02-16T17:01:23+01:00"
           }
         ]
       }
