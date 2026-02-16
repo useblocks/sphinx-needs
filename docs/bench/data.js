@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771076118634,
+  "lastUpdate": 1771250326232,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17064,6 +17064,42 @@ window.BENCHMARK_DATA = {
             "value": 62.161418795,
             "unit": "s",
             "extra": "Commit: 5d35c78d62b24d62aadb5640d5f2957353071705\nBranch: master\nTime: 2026-02-14T14:33:17+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c881e11b9e7b14a09b7d2ea6b07f4af3e2527dde",
+          "message": "🔧 Refactor schema validation: separate select filtering from local validation (#1655)",
+          "timestamp": "2026-02-16T14:56:36+01:00",
+          "tree_id": "b0865254fc68917723d9e6fba377731116cb10e7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c881e11b9e7b14a09b7d2ea6b07f4af3e2527dde"
+        },
+        "date": 1771250305454,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.29829569300000003,
+            "unit": "s",
+            "extra": "Commit: c881e11b9e7b14a09b7d2ea6b07f4af3e2527dde\nBranch: master\nTime: 2026-02-16T14:56:36+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.377885660000004,
+            "unit": "s",
+            "extra": "Commit: c881e11b9e7b14a09b7d2ea6b07f4af3e2527dde\nBranch: master\nTime: 2026-02-16T14:56:36+01:00"
           }
         ]
       }
