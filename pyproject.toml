@@ -28,7 +28,7 @@ classifiers = [
 ]
 requires-python = ">=3.10,<4"
 dependencies = [
-  "sphinx>=7.4,<9",
+  "sphinx>=7.4,<10",
   "requests-file~=2.1",             # external links
   "requests~=2.32",                 # external links
   "jsonschema-rs~=0.37.1",          # schema validation
