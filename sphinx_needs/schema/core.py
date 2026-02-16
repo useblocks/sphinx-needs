@@ -120,11 +120,7 @@ def validate_field_link_schemas(
             # the root property name from the instance path
             root_prop = str(err.instance_path[0]) if err.instance_path else None
             is_link = root_prop is not None and root_prop in link_names
-            rule = (
-                MessageRuleEnum.link_fail
-                if is_link
-                else MessageRuleEnum.field_fail
-            )
+            rule = MessageRuleEnum.link_fail if is_link else MessageRuleEnum.field_fail
             schema_prefix = "links" if is_link else "fields"
             warning: OntologyWarning = {
                 "rule": rule,
