@@ -326,7 +326,7 @@
     },
     "NeedFieldsSchemaType": {
       "additionalProperties": false,
-      "description": "Schema for a set of need fields of all schema types.\n\nThis includes single value fields, multi-value fields,\nand unresolved extra links.\n\nIntented to validate multiple fields on a need type.",
+      "description": "Schema for a set of need fields of all schema types.\n\nThis includes single value fields, multi-value fields,\nand unresolved links.\n\nIntented to validate multiple fields on a need type.",
       "properties": {
         "allOf": {
           "items": {
