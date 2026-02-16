@@ -24,6 +24,7 @@ from sphinx_needs.schema.config import (
 )
 from sphinx_needs.schema.reporting import (
     OntologyWarning,
+    save_debug_file,
     save_debug_files,
 )
 from sphinx_needs.schema.utils import get_properties_from_schema
@@ -199,7 +200,12 @@ def validate_type_schema(
     for need in needs.values():
         # maintain state for nested network validation
         if select_validator is not None and not _check_select_match(
-            need, select_validator, select_field_names=select_field_names
+            need,
+            select_validator,
+            select_field_names=select_field_names,
+            config=config,
+            schema_path=[schema_name, "select"],
+            need_path=[need["id"]],
         ):
             continue
 
@@ -635,6 +641,9 @@ def _check_select_match(
     validator: SchemaValidator,
     *,
     select_field_names: frozenset[str],
+    config: NeedsSphinxConfig,
+    schema_path: list[str],
+    need_path: list[str],
 ) -> bool:
     """Check whether a need matches a ``select`` schema.
 
@@ -642,17 +651,41 @@ def _check_select_match(
     keeping only fields whose name is in ``select_field_names`` and
     stripping ``None`` values.
 
+    When :attr:`NeedsSphinxConfig.schema_debug_active` is enabled, a
+    debug file is written for each evaluated need using the
+    ``select_success`` / ``select_fail`` rule.
+
     :param need: The need to test.
     :param validator: Compiled select schema validator.
     :param select_field_names: Field names to include in the projection
         (typically built from :class:`FieldsSchema` iterators plus
         identity and source fields).
+    :param config: Sphinx-Needs configuration (used for debug file writing).
+    :param schema_path: Schema path for debug reporting.
+    :param need_path: Need path for debug reporting.
     :return: ``True`` if the need matches the select schema.
     """
     needs_json: dict[str, Any] = {
         k: v for k, v in need.items() if k in select_field_names and v is not None
     }
-    return validator.compiled.is_valid(instance=needs_json)
+    is_match = validator.compiled.is_valid(instance=needs_json)
+
+    if config.schema_debug_active:
+        rule = (
+            MessageRuleEnum.select_success if is_match else MessageRuleEnum.select_fail
+        )
+        warning: OntologyWarning = {
+            "rule": rule,
+            "severity": get_severity(rule),
+            "need": need,
+            "reduced_need": needs_json,
+            "final_schema": validator.raw,
+            "schema_path": schema_path,
+            "need_path": need_path,
+        }
+        save_debug_file(config, warning)
+
+    return is_match
 
 
 def _validate_need_local(
