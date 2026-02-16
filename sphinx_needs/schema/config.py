@@ -306,11 +306,11 @@ def validate_field_schema(data: Any) -> FieldSchemaTypes:
     return validator(data)
 
 
-class ExtraLinkItemSchemaType(TypedDict):
+class LinkItemSchemaType(TypedDict):
     """Items in array of link string ids"""
 
     type: Literal["string"]
-    """Extra link string type, can only be string and is injected automatically."""
+    """Link string type, can only be string and is injected automatically."""
     minLength: NotRequired[int]
     """Minimum string length of each outgoing link id."""
     maxLength: NotRequired[int]
@@ -319,18 +319,18 @@ class ExtraLinkItemSchemaType(TypedDict):
     """A regex pattern to validate against."""
 
 
-class ExtraLinkSchemaType(TypedDict):
+class LinkSchemaType(TypedDict):
     """Defines a schema for unresolved need extra string links."""
 
     type: Literal["array"]
-    """Type for extra links, can only be array and is injected automatically."""
-    items: NotRequired[ExtraLinkItemSchemaType]
+    """Type for links, can only be array and is injected automatically."""
+    items: NotRequired[LinkItemSchemaType]
     """Schema constraints that applies to all items in the need id string list."""
     minItems: NotRequired[int]
     """Minimum number of items in the array (outgoing link ids)."""
     maxItems: NotRequired[int]
     """Maximum number of items in the array (outgoing link ids)."""
-    contains: NotRequired[ExtraLinkItemSchemaType]
+    contains: NotRequired[LinkItemSchemaType]
     """Schema constraints that must be contained in the need id string list."""
     minContains: NotRequired[int]
     """Minimum number of contains items in the array (outgoing link ids)."""
@@ -338,12 +338,12 @@ class ExtraLinkSchemaType(TypedDict):
     """Maximum number of contains items in the array (outgoing link ids)."""
 
 
-def validate_link_schema_type(data: Any) -> ExtraLinkSchemaType:
-    """Validate that the given data is an ExtraLinkSchemaType.
+def validate_link_schema_type(data: Any) -> LinkSchemaType:
+    """Validate that the given data is an LinkSchemaType.
 
     :raises TypeError: if the data is not valid.
     """
-    schema = _get_schema(ExtraLinkSchemaType)
+    schema = _get_schema(LinkSchemaType)
     try:
         schema.validate(data)
     except jsonschema_rs.ValidationError as e:
@@ -352,10 +352,10 @@ def validate_link_schema_type(data: Any) -> ExtraLinkSchemaType:
         for field in ("minContains", "maxContains"):
             if field in data:
                 raise TypeError(f"'{field}' defined, but 'contains' is missing.")
-    return cast(ExtraLinkSchemaType, data)
+    return cast(LinkSchemaType, data)
 
 
-FieldAndLinkSchemaTypes = FieldSchemaTypes | ExtraLinkSchemaType
+FieldAndLinkSchemaTypes = FieldSchemaTypes | LinkSchemaType
 """Union type for all field and link schemas."""
 
 
@@ -364,7 +364,7 @@ class NeedFieldsSchemaType(AllOfSchemaType):
     Schema for a set of need fields of all schema types.
 
     This includes single value fields, multi-value fields,
-    and unresolved extra links.
+    and unresolved links.
 
     Intented to validate multiple fields on a need type.
     """
@@ -390,10 +390,10 @@ class MessageRuleEnum(str, Enum):
     """Global field validation was successful."""
     field_fail = "field_fail"
     """Global field validation failed."""
-    extra_link_success = "extra_link_success"
-    """Global extra link validation was successful."""
-    extra_link_fail = "extra_link_fail"
-    """Global extra link validation failed."""
+    link_success = "link_success"
+    """Global link validation was successful."""
+    link_fail = "link_fail"
+    """Global link validation failed."""
     select_success = "select_success"
     """
     Need validates against the select schema.
@@ -482,8 +482,8 @@ MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
     MessageRuleEnum.cfg_schema_error: SeverityEnum.config_error,
     MessageRuleEnum.field_success: SeverityEnum.none,
     MessageRuleEnum.field_fail: SeverityEnum.violation,  # cannot be changed by user
-    MessageRuleEnum.extra_link_success: SeverityEnum.none,
-    MessageRuleEnum.extra_link_fail: SeverityEnum.violation,  # cannot be changed by user
+    MessageRuleEnum.link_success: SeverityEnum.none,
+    MessageRuleEnum.link_fail: SeverityEnum.violation,  # cannot be changed by user
     MessageRuleEnum.select_success: SeverityEnum.none,
     MessageRuleEnum.select_fail: SeverityEnum.none,
     MessageRuleEnum.local_success: SeverityEnum.none,
@@ -502,7 +502,7 @@ MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
 Default severity for each rule.
 
 User provided schemas can overwrite the severity of a rule.
-The rules ``field_fail`` and ``extra_link_fail`` cannot be changed by the user,
+The rules ``field_fail`` and ``link_fail`` cannot be changed by the user,
 but they can be suppressed specifically using suppress_warnings config.
 """
 

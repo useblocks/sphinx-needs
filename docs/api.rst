@@ -65,4 +65,4 @@ Schema
    :members: FieldStringSchemaType, FieldBooleanSchemaType,
              FieldIntegerSchemaType, FieldNumberSchemaType,
              FieldMultiValueSchemaType,
-             ExtraLinkSchemaType, ExtraLinkItemSchemaType
+             LinkSchemaType, LinkItemSchemaType

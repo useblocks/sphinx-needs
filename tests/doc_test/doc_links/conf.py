@@ -36,21 +36,22 @@ needs_types = [
     },
 ]
 
-needs_extra_links = [
-    {
-        "option": "links",
+needs_links = {
+    "links": {
         "copy": False,
         "style": "#black",
         "style_part": "dotted,#black",
     },
-    {
-        "option": "blocks",
+    "blocks": {
         "incoming": "is blocked by",
         "outgoing": "blocks",
         "copy": True,
         "style": "bold,#AA0000",
         "allow_dead_links": True,
     },
+}
+
+needs_extra_links = [
     {
         "option": "tests",
         "incoming": "is tested by",
@@ -58,7 +59,7 @@ needs_extra_links = [
         "copy": False,
         "style": "dashed,#00AA00",
         "style_part": "dotted,#00AA00",
-    },
+    }
 ]
 
 needs_flow_link_types = ["links", "tests"]

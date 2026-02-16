@@ -34,21 +34,19 @@ needs_types = [
     },
 ]
 
-needs_extra_links = [
-    {
-        "option": "blocks",
+needs_links = {
+    "blocks": {
         "incoming": "is blocked by",
         "outgoing": "blocks",
         "copy": False,
         "style": "bold,#AA0000",
         "allow_dead_links": True,
     },
-    {
-        "option": "tests",
+    "tests": {
         "incoming": "is tested by",
         "outgoing": "tests",
         "copy": True,
         "style": "dashed,#00AA00",
         "style_part": "dotted,#00AA00",
     },
-]
+}

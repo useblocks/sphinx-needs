@@ -8,15 +8,13 @@ needs_types = [
     }
 ]
 
-needs_extra_links = [
-    {
-        "option": "link1",
+needs_links = {
+    "link1": {
         "incoming": "is linked by",
         "outgoing": "links to",
         "default": ["SPEC_1"],
     },
-    {
-        "option": "link2",
+    "link2": {
         "incoming": "is linked by",
         "outgoing": "links to",
         "predicates": [
@@ -25,13 +23,12 @@ needs_extra_links = [
         ],
         "default": ["SPEC_1"],
     },
-    {
-        "option": "link3",
+    "link3": {
         "incoming": "is linked by",
         "outgoing": "links to",
         "default": 1,
     },
-]
+}
 
 needs_fields = {
     "tags": {

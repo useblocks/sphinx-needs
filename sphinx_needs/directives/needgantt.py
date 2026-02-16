@@ -158,8 +158,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
                 continue
             if link_type not in conf_link_types_name:
                 raise SphinxNeedsLinkTypeException(
-                    link_type
-                    + "does not exist in configuration option needs_extra_links"
+                    link_type + " does not exist in configuration option needs_links"
                 )
 
             final_link_types.append(link_type)
@@ -175,9 +174,6 @@ def process_needgantt(
     # Replace all needgantt nodes with a list of the collected needs.
     env = app.env
     needs_config = NeedsSphinxConfig(app.config)
-
-    # link_types = needs_config.extra_links
-    # allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
     # NEEDGANTT
     # for node in doctree.findall(Needgantt):
