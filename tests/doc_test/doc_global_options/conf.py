@@ -8,23 +8,20 @@ needs_types = [
     }
 ]
 
-needs_extra_links = [
-    {
-        "option": "link1",
+needs_links = {
+    "link1": {
         "incoming": "is linked by",
         "outgoing": "links to",
     },
-    {
-        "option": "link2",
+    "link2": {
         "incoming": "is linked by",
         "outgoing": "links to",
     },
-    {
-        "option": "link3",
+    "link3": {
         "incoming": "is linked by",
         "outgoing": "links to",
     },
-]
+}
 
 needs_fields = {
     "option_1": {"nullable": True},

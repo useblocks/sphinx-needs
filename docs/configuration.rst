@@ -339,7 +339,7 @@ For ``predicates``, the match expression is a string, using Python syntax, that 
 - ``is_external`` (``bool``)
 - ``is_import`` (``bool``)
 - :ref:`needs_fields`
-- :ref:`needs_extra_links` (``tuple[str, ...]``)
+- :ref:`needs_links` (``tuple[str, ...]``)
 - :ref:`needs_filter_data`
 
 For example:
@@ -360,58 +360,58 @@ For example:
        },
    }
 
-.. _`needs_extra_links`:
+.. _`needs_links`:
 
-needs_extra_links
-~~~~~~~~~~~~~~~~~
+needs_links
+~~~~~~~~~~~
 
-.. versionadded:: 0.3.11
+.. versionadded:: 7.0.0
 
-Allows the definition of additional link types.
+Allows the definition of additional link types as a dictionary mapping link name to configuration.
 
-Each configured link should define:
+Each configured link can define:
 
-- ``option``: The name of the option. Example "blocks".
+- ``description`` (optional): A description of the link type.
 - ``predicates`` (optional): A list of ``(match expression, value)`` tuples.
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default`` (optional): A default value for the field.
     If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
 - ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
     Default: ``False``.
-- ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by".
-- ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks".
+- ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by". Default: "<name> incoming".
+- ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks". Default: "<name>".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
-  Default: True
+  Default: False.
 - ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
 - ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
 - ``style_part`` (optional): Same as ``style``, but get used if link is connected to a :ref:`need_part`.
   See :ref:`links_style`.
+- ``style_start`` (optional): See :ref:`needflow_style_start`.
+- ``style_end`` (optional): See :ref:`needflow_style_start`.
 
 Configuration example:
 
 .. code-block:: python
 
-   needs_extra_links = [
-      {
-         "option": "checks",
-      },
-      {
-         "option": "triggers",
-         "predicates": [
-            ('"urgent" in tags', ["ID999", "ID998"]),
-         ],
-         "default": ["ID123"],
-         "incoming": "is triggered by",
-         "outgoing": "triggers",
-         "copy": False,
-         "allow_dead_links": True,
-         "style": "#00AA00",
-         "style_part": "#00AA00",
-         "style_start": "-",
-         "style_end": "--o",
-      }
-   ]
+   needs_links = {
+       "checks": {},
+       "triggers": {
+           "description": "Links to needs that are triggered by this need",
+           "predicates": [
+               ('"urgent" in tags', ["ID999", "ID998"]),
+           ],
+           "default": ["ID123"],
+           "incoming": "is triggered by",
+           "outgoing": "triggers",
+           "copy": False,
+           "allow_dead_links": True,
+           "style": "#00AA00",
+           "style_part": "#00AA00",
+           "style_start": "-",
+           "style_end": "--o",
+       },
+   }
 
 The above example configuration allows the following usage:
 
@@ -425,8 +425,8 @@ The above example configuration allows the following usage:
       :checks: EXTRA_REQ_001, DEAD_LINK_NOT_ALLOWED
       :triggers: DEAD_LINK
 
-Link types with option-name **links** and **parent_needs** are added by default.
-You are free to overwrite the default config by defining your own type with option name **links** or **parent_needs**.
+Link types with name **links** and **parent_needs** are added by default.
+You are free to overwrite the default config by defining your own type with name **links** or **parent_needs**.
 This type will be used as default configuration for all links.
 
 Default values
@@ -447,26 +447,25 @@ For ``predicates``, the match expression is a string, using Python syntax, that 
 - ``is_external`` (``bool``)
 - ``is_import`` (``bool``)
 - :ref:`needs_fields`
-- :ref:`needs_extra_links` (``tuple[str, ...]``)
+- :ref:`needs_links` (``tuple[str, ...]``)
 - :ref:`needs_filter_data`
 
 For example:
 
 .. code-block:: python
 
-   needs_extra_links = [
-      {
-         "option": "custom_link",
-         "predicates": [
-            # if status is "done", set to ["ID123"]
-            ("status == 'done'", ["ID123"]),
-            # else if status is "ongoing", set to a dynamic value
-            ("status == 'ongoing'", '[[copy("yyy")]]'),
-         ],
-         # the base default is a dynamic value
-         "default": '[[copy("xxx")]]',
-      },
-   ]
+   needs_links = {
+       "custom_link": {
+           "predicates": [
+               # if status is "done", set to ["ID123"]
+               ("status == 'done'", ["ID123"]),
+               # else if status is "ongoing", set to a dynamic value
+               ("status == 'ongoing'", '[[copy("yyy")]]'),
+           ],
+           # the base default is a dynamic value
+           "default": '[[copy("xxx")]]',
+       },
+   }
 
 .. _`allow_dead_links`:
 
@@ -547,18 +546,17 @@ Use ``style_start`` and ``style_end`` like this:
 
 .. code-block:: python
 
-   needs_extra_links = [
-      {
-         "option": "tests",
-         "incoming": "is tested by",
-         "outgoing": "tests",
-         "copy": False,
-         "style_start": "<-",
-         "style_end": "down-->",
-         "style": "#00AA00",
-         "style_part": "dotted,#00AA00",
-      }
-   ]
+   needs_links = {
+       "tests": {
+           "incoming": "is tested by",
+           "outgoing": "tests",
+           "copy": False,
+           "style_start": "<-",
+           "style_end": "down-->",
+           "style": "#00AA00",
+           "style_part": "dotted,#00AA00",
+       },
+   }
 
 .. note::
 
@@ -845,9 +843,9 @@ If you do not set ``needs_report_template``, the default template used is:
    {% endif %}
    {# Output for needs_types #}
 
-   {# Output for needs_extra_links #}
+   {# Output for needs_links #}
    {% if links|length != 0 %}
-   .. dropdown:: Need Extra Links
+   .. dropdown:: Need Links
       :class: needs_report_table
 
       .. list-table::
@@ -867,11 +865,11 @@ If you do not set ``needs_report_template``, the default template used is:
           - {{ link.get('allow_dead_links', False) | capitalize }}
         {% endfor %}
    {% endif %}
-   {# Output for needs_extra_links #}
+   {# Output for needs_links #}
 
    {# Output for needs_fields #}
    {% if fields|length != 0 %}
-   .. dropdown:: Need Extra Options
+   .. dropdown:: Need Fields
       :class: needs_report_table
 
       {% for field in fields %}
@@ -902,7 +900,7 @@ If you do not set ``needs_report_template``, the default template used is:
 The plugin provides the following variables which you can use in your custom Jinja template:
 
 * types - list of :ref:`need types <needs_types>`
-* links - list of :ref:`needs_extra_links`
+* links - list of :ref:`needs_links`
 * fields - list of :ref:`needs_fields`
 * usage - a dictionary object containing information about the following:
     + needs_amount -> total amount of need objects in the project
@@ -2368,7 +2366,7 @@ Default value::
 
   [
      "field_success",
-     "extra_link_success",
+     "link_success",
      "select_success",
      "select_fail",
      "local_success",
@@ -2390,8 +2388,8 @@ Available scenarios that can be ignored:
 - ``cfg_schema_error``: The user provided schema is invalid
 - ``field_success``: Global field validation was successful
 - ``field_fail``: Global field validation failed
-- ``extra_link_success``: Global extra link validations was successful
-- ``extra_link_fail``: Global extra link validation failed
+- ``link_success``: Global extra link validations was successful
+- ``link_fail``: Global extra link validation failed
 - ``select_success``: Successful select validation
 - ``select_fail``: Failed select validation
 - ``local_success``: Successful local validation
@@ -2535,7 +2533,7 @@ needs_global_options
 
 .. deprecated:: 7.0.0
 
-   Use :ref:`needs_fields` and :ref:`needs_extra_links` instead.
+   Use :ref:`needs_fields` and :ref:`needs_links` instead.
 
 .. versionchanged:: 5.1.0
 
@@ -2584,7 +2582,7 @@ This configuration allows for global defaults to be set for all needs,
 for any of the following fields:
 
 - any :ref:`needs_fields` key
-- any ``needs_extra_links`` field
+- any :ref:`needs_links` field
 - ``status``
 - ``layout``
 - ``style``
@@ -2615,7 +2613,7 @@ A match expression is a string, using Python syntax, that will be evaluated agai
 - ``is_external`` (``bool``)
 - ``is_import`` (``bool``)
 - :ref:`needs_fields`
-- :ref:`needs_extra_links` (``tuple[str, ...]``)
+- :ref:`needs_links` (``tuple[str, ...]``)
 - :ref:`needs_filter_data`
 
 If no predicates match, the ``default`` value is used (if present).
@@ -2754,3 +2752,57 @@ Configuration example:
 .. code-block:: python
 
    needs_report_dead_links = False
+
+.. _`needs_extra_links`:
+
+needs_extra_links
+~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 4.4.0
+   Use :ref:`needs_links` instead.
+
+Allows the definition of additional link types as a list.
+
+Each configured link should define:
+
+- ``option``: The name of the option. Example "blocks".
+- ``predicates`` (optional): A list of ``(match expression, value)`` tuples.
+    If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
+- ``default`` (optional): A default value for the field.
+    If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
+- ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
+    Default: ``False``.
+- ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by".
+- ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks".
+- ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
+  Default: True
+- ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
+  See :ref:`allow_dead_links` for details. Default: False.
+- ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
+- ``style_part`` (optional): Same as ``style``, but get used if link is connected to a :ref:`need_part`.
+  See :ref:`links_style`.
+
+Configuration example:
+
+.. code-block:: python
+
+   needs_extra_links = [
+      {
+         "option": "checks",
+      },
+      {
+         "option": "triggers",
+         "predicates": [
+            ('"urgent" in tags', ["ID999", "ID998"]),
+         ],
+         "default": ["ID123"],
+         "incoming": "is triggered by",
+         "outgoing": "triggers",
+         "copy": False,
+         "allow_dead_links": True,
+         "style": "#00AA00",
+         "style_part": "#00AA00",
+         "style_start": "-",
+         "style_end": "--o",
+      }
+   ]

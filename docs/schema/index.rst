@@ -18,7 +18,7 @@ See :ref:`migration_from_warnings_constraints` for details on how to migrate.
    that extends throughout the entire application. This includes:
 
    - **Early type validation**: All need fields are validated against their defined types,
-     with support for :ref:`field defaults <needs_fields>`, :ref:`link defaults <needs_extra_links>`, :ref:`dynamic_functions`, :ref:`variants <needs_variant_support>`,
+     with support for :ref:`field defaults <needs_fields>`, :ref:`link defaults <needs_links>`, :ref:`dynamic_functions`, :ref:`variants <needs_variant_support>`,
      :ref:`needextend`. Needs that do not
      conform to their types are not created and lead to a warning.
    - **JSON export**: Generated :ref:`needs.json <needs_builder>` files honor the user provided
@@ -70,9 +70,9 @@ The schema is configured in multiple places:
   schema constraints for that option, that will be checked for each need type. E.g.
   minimum/maximum for integers, enum for strings, etc.
 
-- :ref:`needs_extra_links` is the place to add new link options that are then available
+- :ref:`needs_links` is the place to add new link options that are then available
   for all need types. The type for link fields is pre-set to ``array[string]``,
-  as links are always lists of need IDs. The ``schema`` field in ``needs_extra_links``
+  as links are always lists of need IDs. The ``schema`` field in ``needs_links``
   supports setting global schema constraints for that link option, that will be checked
   for each need type. E.g. minimum/maximum number of links or need id patterns. The schema
   defined here always runs on unresolved local needs, i.e. links are a list of IDs.
@@ -94,7 +94,7 @@ The schema is configured in multiple places:
    JSON schema might not complain about this.
 
    Therefore, Sphinx-Needs automatically injects the type information from ``needs_fields``
-   and ``needs_extra_links`` (as well as core field definitions) into the
+   and ``needs_links`` (as well as core field definitions) into the
    :ref:`needs_schema_definitions` when type information is not explicitly provided in the
    schemas.json file. If type information is provided in schemas.json, it must match the
    definition from ``needs_fields`` or core fields.
@@ -1149,8 +1149,8 @@ Local validation:
 
 - ``field_fail``: Field schema validation failed
   (local validation, defined via ``schema`` key in :ref:`needs_fields`)
-- ``extra_link_fail``: Extra link schema validation failed
-  (defined via ``schema`` key in :ref:`needs_extra_links`)
+- ``link_fail``: Extra link schema validation failed
+  (defined via ``schema`` key in :ref:`needs_links`)
 - ``local_fail``: Need-local validation failed
   (defined via ``validate.local`` in schemas of :ref:`needs_schema_definitions`)
 

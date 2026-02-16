@@ -18,6 +18,13 @@ Changelog
 
   Ensure that file paths originating from a :ref:`needs_from_toml` file are relative to that file, rather than the :file:`conf.py` file
 
+- ✨ Add new ``needs_links`` configuration (dict-based) as replacement for ``needs_extra_links`` (list-based)
+
+  The new :ref:`needs_links` configuration uses a dictionary mapping link name to configuration,
+  removing the redundant ``option`` key required in :ref:`needs_extra_links`.
+  Also adds support for a ``description`` field for link types.
+  The old ``needs_extra_links`` configuration is now deprecated but remains supported for backward compatibility.
+
 .. _`release:6.2.0`:
 
 6.2.0

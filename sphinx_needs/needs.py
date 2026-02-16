@@ -4,6 +4,7 @@ import contextlib
 import json
 from collections.abc import Callable
 from copy import deepcopy
+from itertools import chain
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, TypedDict, cast
@@ -30,6 +31,7 @@ from sphinx_needs.builder import (
 from sphinx_needs.config import (
     _NEEDS_CONFIG,
     LinkOptionsType,
+    NeedLinksConfig,
     NeedsSphinxConfig,
 )
 from sphinx_needs.data import (
@@ -624,6 +626,22 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             None,
         )
 
+    # Process needs_extra_links (deprecated list-based format)
+    if not isinstance(needs_config._extra_links, list):
+        raise NeedsConfigException("Config option 'needs_extra_links' must be a list.")
+
+    if needs_config._extra_links:
+        log_warning(
+            LOGGER,
+            'Config option "needs_extra_links" is deprecated. Please use "needs_links" instead.',
+            "deprecated",
+            None,
+        )
+
+    # Process needs_links (new dict-based format)
+    if not isinstance(needs_config._links, dict):
+        raise NeedsConfigException("Config option 'needs_links' must be a dict.")
+
     load_schemas_config_from_json(app, app.config)
 
 
@@ -693,47 +711,31 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
     for needs_func in needs_config._functions:
         _NEEDS_CONFIG.add_function(needs_func)
 
-    # The default link name. Must exist in all configurations. Therefore we set it here
-    # for the user.
-    common_links: list[LinkOptionsType] = []
-    link_types = needs_config._extra_links
-    basic_link_type_found = False
-    parent_needs_link_type_found = False
-    for link_type in link_types:
-        if link_type["option"] == "links":
-            basic_link_type_found = True
-        elif link_type["option"] == "parent_needs":
-            parent_needs_link_type_found = True
+    # The default link name. Must exist in all configurations. Therefore we set it here for the user.
+    if "links" not in needs_config._links:
+        needs_config._links["links"] = {
+            "outgoing": "links outgoing",
+            "incoming": "links incoming",
+            "copy": False,
+            "color": "#000000",
+        }
+    if "parent_needs" not in needs_config._links:
+        needs_config._links["parent_needs"] = {
+            "outgoing": "parent needs",
+            "incoming": "child needs",
+            "copy": False,
+            "color": "#333333",
+        }
 
-    if not basic_link_type_found:
-        common_links.append(
-            {
-                "option": "links",
-                "outgoing": "links outgoing",
-                "incoming": "links incoming",
-                "copy": False,
-                "color": "#000000",
-            }
-        )
-
-    if not parent_needs_link_type_found:
-        common_links.append(
-            {
-                "option": "parent_needs",
-                "outgoing": "parent needs",
-                "incoming": "child needs",
-                "copy": False,
-                "color": "#333333",
-            }
-        )
-
-    needs_config._extra_links = common_links + needs_config._extra_links
-
-    for link in needs_config._extra_links:
+    # Ensure all links have outgoing and incoming defined, so that we can rely on it later on.
+    for name, link in chain(
+        needs_config._links.items(),
+        ((v["option"], v) for v in needs_config._extra_links),
+    ):
         if "outgoing" not in link:
-            link["outgoing"] = link["option"]
+            link["outgoing"] = name
         if "incoming" not in link:
-            link["incoming"] = f"{link['option']} incoming"
+            link["incoming"] = f"{name} incoming"
 
 
 def check_configuration(app: Sphinx, config: Config) -> None:
@@ -769,7 +771,7 @@ def check_configuration(app: Sphinx, config: Config) -> None:
         if internal in link_types:
             raise NeedsConfigException(
                 f'Link type name "{internal}" already used internally. '
-                " Please use another name in your config (needs_extra_links)."
+                " Please use another name in your config (needs_links)."
             )
 
     # Check if option and link are using the same name
@@ -976,8 +978,15 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         except Exception as exc:
             raise NeedsConfigException(f"Invalid field {name!r}: {exc}") from exc
 
-    for link in needs_config._extra_links:
-        name = link["option"]
+    # Get set of link names from needs_links (new config) vs needs_extra_links (deprecated)
+    links: dict[str, tuple[LinkOptionsType | NeedLinksConfig, str]] = {
+        k: (v, "needs_links") for k, v in needs_config._links.items()
+    } | {
+        link["option"]: (link, "needs_extra_links")
+        for link in needs_config._extra_links
+    }
+
+    for name, (link, config_source) in links.items():
         try:
             # create link schema, with defaults if not defined
             _schema = (
@@ -1007,7 +1016,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             display_config = LinkDisplayConfig(**display_kwargs)
             link_field = LinkSchema(
                 name=name,
-                description="Link field",  # TODO allow this to be set by the user
+                description=link.get("description", "Link field"),
                 schema=_schema,  # type: ignore[arg-type]
                 default=LinksLiteralValue([]),
                 allow_defaults=True,
@@ -1023,24 +1032,24 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 _set_default_on_field(
                     link_field,
                     link["default"],
-                    "needs_extra_links",
+                    config_source,
                     allow_coercion=True,
                 )
             if "predicates" in link:
                 _set_predicates_on_field(
                     link_field,
                     link["predicates"],
-                    "needs_extra_links",
+                    config_source,
                     allow_coercion=True,
                 )
             schema.add_link_field(link_field)
         except Exception as exc:
-            raise NeedsConfigException(f"Invalid extra link {name!r}: {exc}") from exc
+            raise NeedsConfigException(f"Invalid link {name!r}: {exc}") from exc
 
     if needs_config._global_options:
         log_warning(
             LOGGER,
-            'Config option "needs_global_options" is deprecated. Please use needs_fields and needs_extra_links instead.',
+            'Config option "needs_global_options" is deprecated. Please use needs_fields and needs_links instead.',
             "deprecated",
             None,
         )
