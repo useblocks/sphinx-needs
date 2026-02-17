@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771261247687,
+  "lastUpdate": 1771316501437,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17208,6 +17208,42 @@ window.BENCHMARK_DATA = {
             "value": 62.645398424999996,
             "unit": "s",
             "extra": "Commit: 325fd4183ecd9c1931e978b389bd6cb01ef853b3\nBranch: master\nTime: 2026-02-16T17:58:44+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f558fe71003824e0bbfdc7916029225e420ac3db",
+          "message": "🐛 Fix needextend data purging and deterministic ordering (#1657)",
+          "timestamp": "2026-02-17T09:19:53+01:00",
+          "tree_id": "0a5c4718ed6e470e0a04b18547e36ded2f394a54",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f558fe71003824e0bbfdc7916029225e420ac3db"
+        },
+        "date": 1771316481972,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1790618799999919,
+            "unit": "s",
+            "extra": "Commit: f558fe71003824e0bbfdc7916029225e420ac3db\nBranch: master\nTime: 2026-02-17T09:19:53+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.815091929000005,
+            "unit": "s",
+            "extra": "Commit: f558fe71003824e0bbfdc7916029225e420ac3db\nBranch: master\nTime: 2026-02-17T09:19:53+01:00"
           }
         ]
       }
