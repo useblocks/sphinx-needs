@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import jinja2
+from typing import Any, cast
 
+from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable
 from sphinx_needs.exceptions import NeedsConstraintFailed
@@ -22,7 +23,7 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
     """
     config_constraints = config.constraints
 
-    error_templates_cache: dict[str, jinja2.Template] = {}
+    error_templates_cache: dict[str, str] = {}
 
     for need in needs.values():
         need_id = need["id"]
@@ -51,10 +52,12 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                 if not constraint_passed:
                     if "error_message" in executable_constraints:
                         msg = str(executable_constraints["error_message"])
-                        template = error_templates_cache.setdefault(
-                            msg, jinja2.Template(msg)
+                        template = error_templates_cache.setdefault(msg, msg)
+                        error_msg = render_template_string(
+                            template,
+                            cast(dict[str, Any], need),
+                            autoescape=False,
                         )
-                        error_msg = template.render(**need)
 
                     if "severity" not in executable_constraints:
                         raise NeedsConstraintFailed(

@@ -5,10 +5,10 @@ from random import choices
 from typing import Any
 
 import requests
-from jinja2 import Template
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.utils import dict_get, jinja_parse
 
@@ -157,9 +157,8 @@ class OpenNeedsService(BaseService):
                 else:
                     extra_data[name] = dict_get(item, selector)
 
-            content_template = Template(self.content, autoescape=True)
             context = {"data": item, "options": options, **needs_config.render_context}
-            content = content_template.render(context)
+            content = render_template_string(self.content, context, autoescape=True)
             content += "\n\n| \n"  # Add enough space between content and extra_data
 
             # Add extra_data to content
