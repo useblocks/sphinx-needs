@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771316501437,
+  "lastUpdate": 1771487556077,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17244,6 +17244,42 @@ window.BENCHMARK_DATA = {
             "value": 56.815091929000005,
             "unit": "s",
             "extra": "Commit: f558fe71003824e0bbfdc7916029225e420ac3db\nBranch: master\nTime: 2026-02-17T09:19:53+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2b3897e2de4eba4a363d6c6c70279bdc81df4e3a",
+          "message": "🔧 Add GitHub Copilot setup workflow for dev environment configuration (#1628)\n\n## Overview\n\nThis PR adds a `.github/workflows/copilot-setup-steps.yml` workflow file\nto configure the development environment for GitHub Copilot coding\nagents.\n\n## Changes\n\nThe workflow file provides automated setup for the development\nenvironment with the following features:\n\n**Workflow Triggers:**\n- Manual execution via `workflow_dispatch` through the repository's\nActions tab\n- Automatic validation when the workflow file itself is modified (via\n`push` and `pull_request` triggers with path filtering)\n\n**Environment Setup:**\n- Uses Python 3.12 for consistency with the project's testing matrix\n- Installs essential development tools via pip:\n  - `tox` - for running all project commands consistently\n  - `tox-uv` - for faster tox environment creation\n  - `pre-commit` - for code quality checks\n- Configures pre-commit git hooks automatically\n\n**Security & Best Practices:**\n- Minimal permissions (`contents: read`) following the principle of\nleast privilege\n- Uses latest GitHub Actions versions (`actions/checkout@v6`,\n`actions/setup-python@v5`)\n- Includes comprehensive inline documentation explaining configuration\nchoices\n- Job name follows Copilot requirements (`copilot-setup-steps`)\n\nThe workflow aligns with the development tools documented in `AGENTS.md`\nand the dependency groups defined in `pyproject.toml`.\n\n<!-- START COPILOT ORIGINAL PROMPT -->\n\n\n\n<details>\n\n<summary>Original prompt</summary>\n\n> ## Overview\n> \n> Add a `.github/workflows/copilot-setup-steps.yml` file to configure\nthe development environment setup for GitHub Copilot coding agent.\n> \n> ## Requirements\n> \n> Based on the\n[AGENTS.md](https://github.com/useblocks/sphinx-needs/blob/master/AGENTS.md)\nfile, the workflow should install the following development tools:\n> \n> 1. **tox** - The project uses tox for running all commands\nconsistently\n> 2. **tox-uv** - Used for faster environment creation with tox\n> 3. **pre-commit** - Used for running pre-commit hooks on code\n> \n> ## Implementation Details\n> \n> Create a new file at `.github/workflows/copilot-setup-steps.yml` that:\n> \n> 1. Sets up Python (use a recent stable version like 3.12)\n> 2. Installs the required dev tools via pip:\n>    - `tox`\n>    - `tox-uv`\n>    - `pre-commit`\n> 3. Optionally runs `pre-commit install` to set up the git hooks\n> \n> The workflow should follow the standard Copilot setup steps format.\nExample structure:\n> \n> ```yaml\n> name: \"Copilot Setup Steps\"\n> \n> on: workflow_dispatch\n> \n> jobs:\n>   copilot-setup-steps:\n>     runs-on: ubuntu-latest\n>     steps:\n>       - name: Checkout repository\n>         uses: actions/checkout@v4\n> \n>       - name: Set up Python\n>         uses: actions/setup-python@v5\n>         with:\n>           python-version: \"3.12\"\n> \n>       - name: Install dev tools\n>         run: |\n>           pip install tox tox-uv pre-commit\n> \n>       - name: Install pre-commit hooks\n>         run: pre-commit install\n> ```\n> \n> ## References\n> \n> - AGENTS.md section \"Development Commands\" describes tox and tox-uv\nusage\n> - AGENTS.md section \"Code Quality\" describes pre-commit usage\n\n\n</details>\n\n\n\n<!-- START COPILOT CODING AGENT SUFFIX -->\n\n*This pull request was created from Copilot chat.*\n>\n\n<!-- START COPILOT CODING AGENT TIPS -->\n---\n\n💡 You can make Copilot smarter by setting up custom instructions,\ncustomizing its development environment and configuring Model Context\nProtocol (MCP) servers. Learn more [Copilot coding agent\ntips](https://gh.io/copilot-coding-agent-tips) in the docs.\n\n---------\n\nCo-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>\nCo-authored-by: chrisjsewell <2997570+chrisjsewell@users.noreply.github.com>\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2026-02-19T08:50:37+01:00",
+          "tree_id": "ed4991e298f848b19ccd67481cdf95c4fb805ff2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2b3897e2de4eba4a363d6c6c70279bdc81df4e3a"
+        },
+        "date": 1771487536258,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15560757800000147,
+            "unit": "s",
+            "extra": "Commit: 2b3897e2de4eba4a363d6c6c70279bdc81df4e3a\nBranch: master\nTime: 2026-02-19T08:50:37+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.79761986700001,
+            "unit": "s",
+            "extra": "Commit: 2b3897e2de4eba4a363d6c6c70279bdc81df4e3a\nBranch: master\nTime: 2026-02-19T08:50:37+01:00"
           }
         ]
       }
