@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, Any, TypedDict
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from jinja2 import BaseLoader, Environment, Template
 from sphinx.application import Sphinx
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -224,13 +224,10 @@ def jinja2uml(
     # 1. Remove @startuml and @enduml
     uml_content = uml_content.replace("@startuml", "").replace("@enduml", "")
 
-    # 2. Prepare jinja template
-    mem_template = Environment(loader=BaseLoader()).from_string(uml_content)
-
-    # 3. Get a new instance of Jinja Helper Functions
+    # 2. Get a new instance of Jinja Helper Functions
     jinja_utils = JinjaFunctions(app, fromdocname, parent_need_id, processed_need_ids)
 
-    # 4. Append need_id to processed_need_ids, so it will not been processed again
+    # 3. Append need_id to processed_need_ids, so it will not been processed again
     if parent_need_id:
         jinja_utils.append_need_to_processed_needs(
             need_id=parent_need_id, art="uml", key=key, kwargs=kwargs
@@ -242,9 +239,13 @@ def jinja2uml(
     data.update(**NeedsSphinxConfig(app.config).render_context)
     # 5.2 Set uml() kwargs to data and maybe overwrite default settings
     data.update(kwargs)
-    # 5.3 Make the helpers available during rendering and overwrite maybe wrongly default and uml() kwargs settings
-    data.update(
-        {
+
+    # 6. Render the uml content with the fetched data and custom functions
+    uml = render_template_string(
+        uml_content,
+        data,
+        autoescape=False,
+        functions={
             "needs": jinja_utils.needs,
             "need": jinja_utils.need,
             "uml": jinja_utils.uml_from_need,
@@ -252,11 +253,8 @@ def jinja2uml(
             "filter": jinja_utils.filter,
             "import": jinja_utils.imports,
             "ref": jinja_utils.ref,
-        }
+        },
     )
-
-    # 6. Render the uml content with the fetched data
-    uml = mem_template.render(**data)
 
     # 7. Get processed need ids
     processed_need_ids_return = jinja_utils.get_processed_need_ids()
@@ -389,8 +387,11 @@ class JinjaFunctions:
         link = calculate_link(self.app, need_info, self.fromdocname)
 
         needs_config = NeedsSphinxConfig(self.app.config)
-        diagram_template = Template(needs_config.diagram_template)
-        node_text = diagram_template.render(**need_info, **needs_config.render_context)
+        node_text = render_template_string(
+            needs_config.diagram_template,
+            {**need_info, **needs_config.render_context},
+            autoescape=False,
+        )
 
         need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}'.format(
             id=make_entity_name(need_id),
