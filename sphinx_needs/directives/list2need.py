@@ -8,10 +8,10 @@ from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from jinja2 import Template
 from sphinx.errors import SphinxError, SphinxWarning
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 
@@ -208,8 +208,6 @@ class List2NeedDirective(SphinxDirective):
                 else:
                     list_need["options"]["tags"] = tags
 
-            template = Template(NEED_TEMPLATE, autoescape=True)
-
             data = list_need
             need_links_down = self.get_down_needs(list_needs, index)
             if (
@@ -223,7 +221,7 @@ class List2NeedDirective(SphinxDirective):
             else:
                 data["set_links_down"] = False
 
-            text = template.render(**list_need)
+            text = render_template_string(NEED_TEMPLATE, list_need, autoescape=False)
             text_list = text.split("\n")
             if presentation == "nested":
                 indented_text_list = ["   " * list_need["level"] + x for x in text_list]

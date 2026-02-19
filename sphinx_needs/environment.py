@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx import version_info as sphinx_version
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.util.fileutil import copy_asset, copy_asset_file
 
+from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.logging import log_warning
 from sphinx_needs.utils import logger
@@ -120,19 +120,21 @@ def install_permalink_file(app: Sphinx, env: BuildEnvironment) -> None:
         return
 
     # load jinja template
-    jinja_env = Environment(
-        loader=PackageLoader("sphinx_needs"), autoescape=select_autoescape()
-    )
-    template = jinja_env.get_template("permalink.html")
+    template_path = Path(__file__).parent / "templates" / "permalink.html"
+    template_content = template_path.read_text(encoding="utf-8")
 
     # save file to build dir
     sphinx_config = NeedsSphinxConfig(env.config)
     out_file = Path(builder.outdir) / Path(sphinx_config.permalink_file).name
     with open(out_file, "w", encoding="utf-8") as f:
         f.write(
-            template.render(
-                permalink_file=sphinx_config.permalink_file,
-                needs_file=sphinx_config.permalink_data,
-                **sphinx_config.render_context,
+            render_template_string(
+                template_content,
+                {
+                    "permalink_file": sphinx_config.permalink_file,
+                    "needs_file": sphinx_config.permalink_data,
+                    **sphinx_config.render_context,
+                },
+                autoescape=True,
             )
         )

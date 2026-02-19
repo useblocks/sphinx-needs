@@ -13,8 +13,9 @@ from contextlib import suppress
 from pathlib import Path
 
 import click
-from jinja2 import Template
 from tabulate import tabulate
+
+from sphinx_needs._jinja import render_template_string
 
 
 @click.group()
@@ -45,17 +46,21 @@ def start(
     # Render conf.py
     source_tmp_path_conf = os.path.join(source_tmp_path, "conf.template")
     source_tmp_path_conf_final = os.path.join(source_tmp_path, "conf.py")
-    template = Template(Path(source_tmp_path_conf).read_text())
-    rendered = template.render(
-        pages=pages,
-        needs=needs,
-        needtables=needtables,
-        dummies=dummies,
-        parallel=parallel,
-        keep=keep,
-        browser=browser,
-        debug=debug,
-        basic=basic,
+    template_content = Path(source_tmp_path_conf).read_text()
+    rendered = render_template_string(
+        template_content,
+        {
+            "pages": pages,
+            "needs": needs,
+            "needtables": needtables,
+            "dummies": dummies,
+            "parallel": parallel,
+            "keep": keep,
+            "browser": browser,
+            "debug": debug,
+            "basic": basic,
+        },
+        autoescape=False,
     )
     with open(source_tmp_path_conf_final, "w") as file:
         file.write(rendered)
@@ -63,19 +68,23 @@ def start(
     # Render index files
     source_tmp_path_index = os.path.join(source_tmp_path, "index.template")
     source_tmp_path_index_final = os.path.join(source_tmp_path, "index.rst")
-    template = Template(Path(source_tmp_path_index).read_text())
+    template_content = Path(source_tmp_path_index).read_text()
     title = "Index"
-    rendered = template.render(
-        pages=pages,
-        title=title,
-        needs=needs,
-        needtables=needtables,
-        dummies=dummies,
-        parallel=parallel,
-        keep=keep,
-        browser=browser,
-        debug=debug,
-        basic=basic,
+    rendered = render_template_string(
+        template_content,
+        {
+            "pages": pages,
+            "title": title,
+            "needs": needs,
+            "needtables": needtables,
+            "dummies": dummies,
+            "parallel": parallel,
+            "keep": keep,
+            "browser": browser,
+            "debug": debug,
+            "basic": basic,
+        },
+        autoescape=False,
     )
     with open(source_tmp_path_index_final, "w") as file:
         file.write(rendered)
@@ -84,20 +93,24 @@ def start(
     for p in range(pages):
         source_tmp_path_page = os.path.join(source_tmp_path, "page.template")
         source_tmp_path_page_final = os.path.join(source_tmp_path, f"page_{p}.rst")
-        template = Template(Path(source_tmp_path_page).read_text())
+        template_content = Path(source_tmp_path_page).read_text()
         title = f"Page {p}"
-        rendered = template.render(
-            page=p,
-            title=title,
-            pages=pages,
-            needs=needs,
-            needtables=needtables,
-            dummies=dummies,
-            parallel=parallel,
-            keep=keep,
-            browser=browser,
-            debug=debug,
-            basic=basic,
+        rendered = render_template_string(
+            template_content,
+            {
+                "page": p,
+                "title": title,
+                "pages": pages,
+                "needs": needs,
+                "needtables": needtables,
+                "dummies": dummies,
+                "parallel": parallel,
+                "keep": keep,
+                "browser": browser,
+                "debug": debug,
+                "basic": basic,
+            },
+            autoescape=False,
         )
         with open(source_tmp_path_page_final, "w") as file:
             file.write(rendered)

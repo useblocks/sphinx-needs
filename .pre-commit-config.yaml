@@ -29,6 +29,7 @@ repos:
           - jsonschema-rs==0.37.1
           - types-docutils==0.20.0.20240201
           - types-requests
+          - minijinja~=2.15
 
   # TODO this does not work on pre-commit.ci
   # - repo: https://github.com/astral-sh/uv-pre-commit
