@@ -96,6 +96,7 @@ def add_extra_option(
     schema: FieldSchemaTypes | None = None,
     nullable: bool | None = None,
     parse_variants: bool | None = None,
+    parse_dynamic_functions: bool | None = None,
 ) -> None:
     """
     Adds an extra option to the configuration. This option can then later be used inside needs or ``add_need``.
@@ -117,6 +118,7 @@ def add_extra_option(
     :param schema: Schema definition for the extra option
     :param nullable: Whether the field allows unset values.
     :param parse_variants: Whether variants are parsed in this field.
+    :param parse_dynamic_functions: Whether dynamic functions are parsed in this field.
     """
     warnings.warn(
         "add_extra_option is deprecated, use add_field instead",
@@ -130,6 +132,7 @@ def add_extra_option(
         schema=schema,
         nullable=nullable,
         parse_variants=parse_variants,
+        parse_dynamic_functions=parse_dynamic_functions,
     )
 
 
@@ -143,6 +146,7 @@ def add_field(
     default: None | Any = None,
     predicates: None | list[tuple[str, Any]] = None,
     parse_variants: bool | None = None,
+    parse_dynamic_functions: bool | None = None,
 ) -> None:
     """
     Adds an need field to the configured need schema.
@@ -162,6 +166,7 @@ def add_field(
     :param default: Default value for the field, if not set in a need.
     :param predicates: List of (need filter, value) pairs for default predicate values.
     :param parse_variants: Whether variants are parsed in this field.
+    :param parse_dynamic_functions: Whether dynamic functions are parsed in this field.
     """
     _NEEDS_CONFIG.add_field(
         name,
@@ -172,6 +177,7 @@ def add_field(
         default=default,
         predicates=predicates,
         parse_variants=parse_variants,
+        parse_dynamic_functions=parse_dynamic_functions,
     )
 
 

@@ -25,6 +25,15 @@ Changelog
   Also adds support for a ``description`` field for link types.
   The old ``needs_extra_links`` configuration is now deprecated but remains supported for backward compatibility.
 
+- ✨ Expose ``parse_dynamic_functions`` in field and link configuration
+
+  Add per-field/link ``parse_dynamic_functions`` option to :ref:`needs_fields`, :ref:`needs_links`,
+  and the ``add_field`` / ``add_extra_option`` API functions.
+  Also add a new :ref:`needs_parse_dynamic_functions` global config option (default ``True``)
+  that sets the default for all extra fields and links when not explicitly set per-field/link.
+  This provides a migration path to eventually disable dynamic function parsing by default
+  in a future major release.
+
 .. _`release:6.2.0`:
 
 6.2.0
