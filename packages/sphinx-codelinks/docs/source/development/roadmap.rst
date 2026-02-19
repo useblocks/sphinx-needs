@@ -19,10 +19,6 @@ Source Code Parsing
 
 - Introduce a configurable option to strip leading characters (e.g., ``*``) from commented RST blocks.
 - Enrich tagged scopes with additional metadata.
-- Extend language support by adding parsers for more comment styles, including but not limited to:
-
-  - Rust
-
 - Enhance ``.gitignore`` handling to support nested ``.gitignore`` files.
 
 Defining Needs in Source Code

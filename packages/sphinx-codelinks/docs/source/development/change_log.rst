@@ -3,6 +3,40 @@
 Changelog
 =========
 
+.. _`release:1.2.0`:
+
+1.2.0
+-----
+
+:Released: 18.02.2026
+
+New and Improved
+................
+
+- ✨ Added Rust parser for the ``analyse`` module.
+
+  Need ID references and one-line need definitions can now be extracted from Rust source files.
+
+- 👌 Added explicit ``git_root`` configuration option.
+
+  Users can now explicitly specify the Git root directory instead of relying on automatic detection.
+
+- 👌 Enhanced warning logging in the oneline parser.
+
+  Warning messages now include more context to help diagnose parsing issues.
+
+- 📚 Added traceability page to the documentation.
+
+- 📚 Added ``features.rst`` page documenting the full feature set with source tracing.
+
+Fixes
+.....
+
+- 🐛 Fixed space handling in marker extraction.
+
+  Leading and trailing spaces in extracted marker content are now correctly stripped.
+
+
 .. _`release:1.1.0`:
 
 1.1.0
