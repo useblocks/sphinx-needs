@@ -5,10 +5,10 @@ from pathlib import Path
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from jinja2 import Template
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import log_warning
@@ -97,8 +97,9 @@ class NeedReportDirective(SphinxDirective):
             encoding="utf8"
         )
 
-        template = Template(needs_report_template_file_content, autoescape=True)
-        text = template.render(**report_info)
+        text = render_template_string(
+            needs_report_template_file_content, report_info, autoescape=True
+        )
         self.state_machine.insert_input(
             text.split("\n"), self.state_machine.document.attributes["source"]
         )
