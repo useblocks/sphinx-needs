@@ -239,6 +239,8 @@ def jinja2uml(
     data.update(**NeedsSphinxConfig(app.config).render_context)
     # 5.2 Set uml() kwargs to data and maybe overwrite default settings
     data.update(kwargs)
+    # 5.3 Add needs as data (dict-like mapping), not as a function
+    data["needs"] = jinja_utils.needs
 
     # 6. Render the uml content with the fetched data and custom functions
     uml = render_template_string(
@@ -246,7 +248,6 @@ def jinja2uml(
         data,
         autoescape=False,
         functions={
-            "needs": jinja_utils.needs,
             "need": jinja_utils.need,
             "uml": jinja_utils.uml_from_need,
             "flow": jinja_utils.flow,
