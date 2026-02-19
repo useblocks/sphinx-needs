@@ -7,14 +7,11 @@ centralizing all template rendering logic in one place.
 from __future__ import annotations
 
 import textwrap
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 from minijinja import Environment
-
-# Module-level cached environments for performance
-_CACHED_ENV: Environment | None = None
-_CACHED_ENV_AUTOESCAPE: Environment | None = None
 
 
 def _wordwrap_filter(value: str, width: int = 79, wrapstring: str = "\n") -> str:
@@ -65,35 +62,49 @@ def _setup_builtin_filters(env: Environment) -> None:
     env.add_filter("wordwrap", _wordwrap_filter)
 
 
+def _new_env(autoescape: bool) -> Environment:
+    """Create a new Environment with standard setup (filters, autoescape).
+
+    :param autoescape: Whether to enable autoescaping.
+    :return: A new Environment instance.
+    """
+    env = Environment()
+    if autoescape:
+        env.auto_escape_callback = lambda _name: True
+    _setup_builtin_filters(env)
+    return env
+
+
+@lru_cache(maxsize=2)
 def _get_cached_env(autoescape: bool) -> Environment:
-    """Get or create a cached Environment instance.
+    """Get or create a cached Environment instance (no custom functions).
 
-    For performance, we cache module-level Environment instances to avoid
-    recreating them on every render call. This is safe because the Environment
-    is stateless for rendering purposes.
-
-    Thread safety: Benign race condition - if multiple threads check for None
-    simultaneously, worst case is creating extra Environment instances. Sphinx
-    parallel builds use processes, not threads, so this is not a concern.
+    Cached per autoescape value. Safe because the Environment is not
+    mutated after creation. Using lru_cache ensures thread safety.
 
     :param autoescape: Whether to enable autoescaping.
     :return: A cached Environment instance.
     """
-    global _CACHED_ENV, _CACHED_ENV_AUTOESCAPE
+    return _new_env(autoescape)
 
-    if autoescape:
-        if _CACHED_ENV_AUTOESCAPE is None:
-            env = Environment()
-            env.auto_escape_callback = lambda _name: True
-            _setup_builtin_filters(env)
-            _CACHED_ENV_AUTOESCAPE = env
-        return _CACHED_ENV_AUTOESCAPE
-    else:
-        if _CACHED_ENV is None:
-            env = Environment()
-            _setup_builtin_filters(env)
-            _CACHED_ENV = env
-        return _CACHED_ENV
+
+@lru_cache(maxsize=2)
+def _get_base_env_for_functions(autoescape: bool) -> Environment:
+    """Get a cached base Environment for the functions= code path.
+
+    This env is mutated via add_global() on each call, but only with a
+    fixed set of keys (need, uml, flow, filter, import, ref) whose
+    values are overwritten each time, so no stale state leaks between calls.
+
+    This optimization is important because needuml diagrams call
+    render_template_string(functions={...}) recursively - each {{ uml("ID") }}
+    in a template triggers another render, so a diagram with N needs would
+    create N throwaway environments without this cache.
+
+    :param autoescape: Whether to enable autoescaping.
+    :return: A cached Environment instance (will be mutated).
+    """
+    return _new_env(autoescape)
 
 
 def render_template_string(
@@ -112,14 +123,13 @@ def render_template_string(
     :return: The rendered template as a string.
     """
     if functions:
-        # If custom functions are needed, create a new Environment
-        # This is only used in needuml.py and is relatively infrequent
-        env = Environment()
-        if autoescape:
-            env.auto_escape_callback = lambda _name: True
-        _setup_builtin_filters(env)
+        # Use cached base environment and overwrite globals
+        # The functions dict keys are always the same (need, uml, flow, filter, import, ref)
+        # so we can safely reuse the environment and just update the global values
+        env = _get_base_env_for_functions(autoescape)
         for name, func in functions.items():
             # Use add_global instead of add_function (same behavior, better type stubs)
+            # Overwrites any previous value for this key
             env.add_global(name, func)
     else:
         # For the common case (no custom functions), use cached Environment
