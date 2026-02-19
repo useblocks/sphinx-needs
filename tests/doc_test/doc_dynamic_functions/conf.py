@@ -31,7 +31,10 @@ needs_types = [
     },
 ]
 
-needs_fields = {"test_func": {"nullable": True}}
+needs_fields = {
+    "test_func": {"nullable": True},
+    "non_func": {"nullable": True, "parse_dynamic_functions": False},
+}
 
 needs_build_json = True
 needs_json_remove_defaults = True

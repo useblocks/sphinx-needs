@@ -1462,14 +1462,18 @@ class TestCreateInheritedField:
         with pytest.raises(
             ValueError, match="Cannot change 'nullable' from False to True"
         ):
-            create_inherited_field(parent, child, allow_variants=False)
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
 
     def test_nullable_can_narrow(self):
         """Test that nullable can be changed from True to False (narrowing)."""
         parent = self._base_field(nullable=True)
         child = {"nullable": False}
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.nullable is False
 
     def test_nullable_false_on_already_non_nullable(self):
@@ -1477,7 +1481,9 @@ class TestCreateInheritedField:
         parent = self._base_field(nullable=False)
         child = {"nullable": False}
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.nullable is False
 
     def test_nullable_true_on_already_nullable(self):
@@ -1485,7 +1491,9 @@ class TestCreateInheritedField:
         parent = self._base_field(nullable=True)
         child = {"nullable": True}
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.nullable is True
 
     def test_parse_variants_not_allowed(self):
@@ -1496,14 +1504,18 @@ class TestCreateInheritedField:
         with pytest.raises(
             ValueError, match="parse_variants is not allowed to be True"
         ):
-            create_inherited_field(parent, child, allow_variants=False)
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
 
     def test_parse_variants_allowed_when_permitted(self):
         """Test that parse_variants=True is allowed when permitted."""
         parent = self._base_field()
         child = {"parse_variants": True}
 
-        result = create_inherited_field(parent, child, allow_variants=True)
+        result = create_inherited_field(
+            parent, child, allow_variants=True, allow_dynamic_functions=False
+        )
         assert result.parse_variants is True
 
     def test_parse_variants_false_explicitly(self):
@@ -1511,15 +1523,65 @@ class TestCreateInheritedField:
         parent = self._base_field()
         child = {"parse_variants": False}
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.parse_variants is False
+
+    def test_parse_dynamic_functions_not_allowed(self):
+        """Test that parse_dynamic_functions=True is rejected when not allowed."""
+        parent = self._base_field()
+        child = {"parse_dynamic_functions": True}
+
+        with pytest.raises(
+            ValueError,
+            match="parse_dynamic_functions is not allowed to be True",
+        ):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_parse_dynamic_functions_allowed_when_permitted(self):
+        """Test that parse_dynamic_functions=True is allowed when permitted."""
+        parent = self._base_field()
+        child = {"parse_dynamic_functions": True}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=True
+        )
+        assert result.parse_dynamic_functions is True
+
+    def test_parse_dynamic_functions_false_explicitly(self):
+        """Test that explicitly setting parse_dynamic_functions=False is allowed."""
+        parent = self._base_field()
+        child = {"parse_dynamic_functions": False}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.parse_dynamic_functions is False
+
+    def test_parse_dynamic_functions_invalid_type(self):
+        """Test that non-boolean parse_dynamic_functions value raises error."""
+        parent = self._base_field()
+        child = {"parse_dynamic_functions": "yes"}
+
+        with pytest.raises(
+            ValueError,
+            match="Child 'parse_dynamic_functions' must be a boolean",
+        ):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
 
     def test_description_override(self):
         """Test that child description overrides parent description."""
         parent = self._base_field(description="Original description")
         child = {"description": "New description"}
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.description == "New description"
 
     def test_description_inherited_when_not_provided(self):
@@ -1527,7 +1589,9 @@ class TestCreateInheritedField:
         parent = self._base_field(description="Original description")
         child = {}
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.description == "Original description"
 
     def test_empty_child_inherits_from_parent(self):
@@ -1540,7 +1604,9 @@ class TestCreateInheritedField:
         )
         child = {}
 
-        result = create_inherited_field(parent, child, allow_variants=True)
+        result = create_inherited_field(
+            parent, child, allow_variants=True, allow_dynamic_functions=False
+        )
         assert result.nullable is True
         assert result.parse_variants is True
         assert result.description == "Parent description"
@@ -1554,14 +1620,18 @@ class TestCreateInheritedField:
         with pytest.raises(
             ValueError, match=r"Child 'type'.*does not match parent 'type'"
         ):
-            create_inherited_field(parent, child, allow_variants=False)
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
 
     def test_schema_inheritance_valid_subset(self):
         """Test valid schema inheritance with enum subset."""
         parent = self._base_field(schema={"type": "string", "enum": ["a", "b", "c"]})
         child = {"schema": {"type": "string", "enum": ["a", "b"]}}
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.schema == {"type": "string", "enum": ["a", "b"]}
 
     def test_schema_inheritance_invalid_subset(self):
@@ -1570,14 +1640,18 @@ class TestCreateInheritedField:
         child = {"schema": {"type": "string", "enum": ["a", "c"]}}
 
         with pytest.raises(ValueError, match="are not a subset"):
-            create_inherited_field(parent, child, allow_variants=False)
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
 
     def test_child_adds_constraint_when_parent_has_none(self):
         """Test that child can add constraints when parent doesn't have them."""
         parent = self._base_field(schema={"type": "string"})
         child = {"schema": {"type": "string", "minLength": 5, "pattern": "^[a-z]+$"}}
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.schema == {
             "type": "string",
             "minLength": 5,
@@ -1591,7 +1665,9 @@ class TestCreateInheritedField:
         )
         child = {"schema": {"type": "string", "enum": ["a", "b"], "const": "a"}}
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.schema["enum"] == ["a", "b"]
         assert result.schema["const"] == "a"
 
@@ -1601,7 +1677,9 @@ class TestCreateInheritedField:
         child = {"nullable": "yes"}
 
         with pytest.raises(ValueError, match="Child 'nullable' must be a boolean"):
-            create_inherited_field(parent, child, allow_variants=False)
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
 
     def test_invalid_parse_variants_type(self):
         """Test that non-boolean parse_variants value raises error."""
@@ -1611,7 +1689,9 @@ class TestCreateInheritedField:
         with pytest.raises(
             ValueError, match="Child 'parse_variants' must be a boolean"
         ):
-            create_inherited_field(parent, child, allow_variants=False)
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
 
     def test_invalid_description_type(self):
         """Test that non-string description value raises error."""
@@ -1619,7 +1699,9 @@ class TestCreateInheritedField:
         child = {"description": 123}
 
         with pytest.raises(ValueError, match="Child 'description' must be a string"):
-            create_inherited_field(parent, child, allow_variants=False)
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
 
     def test_array_item_type_mismatch(self):
         """Test type mismatch error for array item types."""
@@ -1627,7 +1709,9 @@ class TestCreateInheritedField:
         child = {"schema": {"type": "array", "items": {"type": "integer"}}}
 
         with pytest.raises(ValueError, match=r"'items' inheritance.*does not match"):
-            create_inherited_field(parent, child, allow_variants=False)
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
 
     def test_array_item_constraints_inherited(self):
         """Test that array item constraints are properly inherited."""
@@ -1638,7 +1722,9 @@ class TestCreateInheritedField:
             "schema": {"type": "array", "items": {"type": "string", "minLength": 5}}
         }
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.schema["items"]["minLength"] == 5
 
     def test_array_item_constraint_violation(self):
@@ -1651,7 +1737,9 @@ class TestCreateInheritedField:
         }
 
         with pytest.raises(ValueError, match=r"'minLength'.*is less than parent"):
-            create_inherited_field(parent, child, allow_variants=False)
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
 
     def test_multiple_properties_overridden(self):
         """Test that multiple properties can be overridden simultaneously."""
@@ -1666,7 +1754,9 @@ class TestCreateInheritedField:
             "description": "Updated",
         }
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.schema["minLength"] == 5
         assert result.nullable is False
         assert result.description == "Updated"
@@ -1684,7 +1774,9 @@ class TestCreateInheritedField:
             }
         }
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.schema["uniqueItems"] is True
 
     def test_contains_inherited_when_not_overridden(self):
@@ -1698,5 +1790,7 @@ class TestCreateInheritedField:
         )
         child = {"schema": {"type": "array", "items": {"type": "string"}}}
 
-        result = create_inherited_field(parent, child, allow_variants=False)
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
         assert result.schema["contains"] == {"type": "string", "pattern": "^test"}

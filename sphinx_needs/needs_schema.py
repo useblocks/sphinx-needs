@@ -1033,7 +1033,11 @@ def _split_string(
 
 
 def create_inherited_field(
-    parent: FieldSchema, child: NeedFields, *, allow_variants: bool
+    parent: FieldSchema,
+    child: NeedFields,
+    *,
+    allow_variants: bool,
+    allow_dynamic_functions: bool,
 ) -> FieldSchema:
     """Create a new FieldSchema by inheriting from a parent FieldSchema and applying overrides from a child dictionary.
 
@@ -1042,6 +1046,8 @@ def create_inherited_field(
     :param allow_variants: Whether to allow parse_variants to be set to True in the child.
         This is a bit of a special case for certain core fields, and maybe should be handled differently in the future;
         fields like ``template`` are used before variants are processed, so allowing variants there would not make sense.
+    :param allow_dynamic_functions: Whether to allow parse_dynamic_functions to be set to True in the child.
+        Core fields that do not support dynamic functions (``allow_df=False``) cannot have this overridden to True.
     """
     replacements: dict[str, Any] = {}
 
@@ -1068,6 +1074,15 @@ def create_inherited_field(
         if not allow_variants and child["parse_variants"]:
             raise ValueError("parse_variants is not allowed to be True for this field.")
         replacements["parse_variants"] = child["parse_variants"]
+
+    if "parse_dynamic_functions" in child:
+        if not isinstance(child["parse_dynamic_functions"], bool):
+            raise ValueError("Child 'parse_dynamic_functions' must be a boolean.")
+        if not allow_dynamic_functions and child["parse_dynamic_functions"]:
+            raise ValueError(
+                "parse_dynamic_functions is not allowed to be True for this field."
+            )
+        replacements["parse_dynamic_functions"] = child["parse_dynamic_functions"]
 
     return replace(parent, **replacements)
 

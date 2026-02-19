@@ -52,3 +52,7 @@ These should warn since they have no associated need: :need_func:`[[copy("id")]]
 .. spec:: TEST_8
    :id: TEST_8
    :test_func: [[test(need.unknown)]]
+
+.. spec:: TEST_9
+   :id: TEST_9
+   :non_func: [[test(need.unknown)]]

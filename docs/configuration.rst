@@ -220,6 +220,8 @@ For new fields the following can be defined:
     If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
 - ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
     Default: ``False``.
+- ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
+    Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
 
 For example:
 
@@ -378,6 +380,8 @@ Each configured link can define:
     If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
 - ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
     Default: ``False``.
+- ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
+    Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
 - ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by". Default: "<name> incoming".
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks". Default: "<name>".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
@@ -988,6 +992,34 @@ exceed the setting from :ref:`needs_id_length`.
    :ref:`needs_id_length` and :ref:`needs_id_regex`.
 
 .. _`needs_title_optional`:
+
+.. _`needs_parse_dynamic_functions`:
+
+needs_parse_dynamic_functions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 7.0.0
+
+Sets the global default for whether :ref:`dynamic_functions` (``[[...]]``) are parsed in extra fields and link fields.
+
+When ``True`` (the default), all extra fields and links will have dynamic function
+parsing enabled unless explicitly set to ``False`` per-field/link via
+:ref:`needs_fields` or :ref:`needs_links`.
+
+.. code-block:: python
+
+   # Disable dynamic function parsing globally
+   needs_parse_dynamic_functions = False
+
+   # Then opt-in per field
+   needs_fields = {
+       "my_field": {
+           "parse_dynamic_functions": True,
+       },
+   }
+
+By default this option is set to **True** for backward compatibility.
+In a future major release, the default will change to ``False``.
 
 needs_title_optional
 ~~~~~~~~~~~~~~~~~~~~
@@ -2772,6 +2804,8 @@ Each configured link should define:
     If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
 - ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
     Default: ``False``.
+- ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
+    Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
 - ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by".
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).

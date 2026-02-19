@@ -571,6 +571,7 @@ def load_config(app: Sphinx, *_args: Any) -> None:
             default=option_params.get("default"),
             predicates=option_params.get("predicates"),
             parse_variants=option_params.get("parse_variants"),
+            parse_dynamic_functions=option_params.get("parse_dynamic_functions"),
             override=True,
         )
 
@@ -884,6 +885,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     field,
                     core_override,
                     allow_variants=data.get("allow_variants", False),
+                    allow_dynamic_functions=data.get("allow_df", False),
                 )
                 if "default" in core_override:
                     _set_default_on_field(
@@ -950,6 +952,11 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             if name in needs_config._variant_options:
                 # for backward compatibility with deprecated config option
                 parse_variants = True
+            parse_dynamic_functions = (
+                needs_config._parse_dynamic_functions
+                if field_data.parse_dynamic_functions is None
+                else field_data.parse_dynamic_functions
+            )
             field = FieldSchema(
                 name=name,
                 description=field_data.description,
@@ -962,7 +969,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 else FieldLiteralValue(""),
                 allow_defaults=True,
                 allow_extend=True,
-                parse_dynamic_functions=True,
+                parse_dynamic_functions=parse_dynamic_functions,
                 parse_variants=parse_variants,
                 directive_option=True,
             )
@@ -1021,7 +1028,9 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 default=LinksLiteralValue([]),
                 allow_defaults=True,
                 allow_extend=True,
-                parse_dynamic_functions=True,
+                parse_dynamic_functions=link.get(
+                    "parse_dynamic_functions", needs_config._parse_dynamic_functions
+                ),
                 parse_variants=link.get("parse_variants", False),
                 directive_option=True,
                 display=display_config,
