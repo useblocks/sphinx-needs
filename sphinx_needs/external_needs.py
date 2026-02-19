@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-from functools import lru_cache
 
 import requests
 from requests_file import FileAdapter
@@ -18,15 +17,6 @@ from sphinx_needs.need_item import NeedItemSourceExternal
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
 log = get_logger(__name__)
-
-
-@lru_cache(maxsize=20)
-def get_target_template(target_url: str) -> str:
-    """Provides template string for target_link style.
-
-    Can be cached, as the template is always the same for a given target_url
-    """
-    return target_url
 
 
 def load_external_needs(
@@ -170,9 +160,8 @@ def load_external_needs(
 
             if target_url:
                 # render jinja content
-                mem_template = get_target_template(target_url)
                 cal_target_url = render_template_string(
-                    mem_template, {"need": need}, autoescape=False
+                    target_url, {"need": need}, autoescape=False
                 )
                 external_url = f"{source['base_url']}/{cal_target_url}"
             else:

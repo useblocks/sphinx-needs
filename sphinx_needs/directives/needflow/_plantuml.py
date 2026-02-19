@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import html
 import os
-from functools import lru_cache
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -44,10 +43,11 @@ def get_need_node_rep_for_plantuml(
 ) -> str:
     """Calculate need node representation for plantuml."""
     needs_config = NeedsSphinxConfig(app.config)
-    diagram_template = get_template(needs_config.diagram_template)
 
     node_text = render_template_string(
-        diagram_template, {**need_info, **needs_config.render_context}, autoescape=False
+        needs_config.diagram_template,
+        {**need_info, **needs_config.render_context},
+        autoescape=False,
     )
 
     node_link = calculate_link(app, need_info, fromdocname)
@@ -434,9 +434,3 @@ def render_connections(
                     style_end=link_type.display.style_end,
                 )
     return puml_connections
-
-
-@lru_cache
-def get_template(template_name: str) -> str:
-    """Return the template string for caching purposes."""
-    return template_name

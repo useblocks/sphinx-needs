@@ -13,21 +13,9 @@ from contextlib import suppress
 from pathlib import Path
 
 import click
-
-# Import from sphinx_needs if available, otherwise use minijinja directly
-try:
-    from sphinx_needs._jinja import render_template_string
-except ImportError:
-    from minijinja import Environment
-
-    def render_template_string(template_string, context, *, autoescape=True):
-        env = Environment()
-        if autoescape:
-            env.auto_escape_callback = lambda _name: True
-        return env.render_str(template_string, **context)
-
-
 from tabulate import tabulate
+
+from sphinx_needs._jinja import render_template_string
 
 
 @click.group()

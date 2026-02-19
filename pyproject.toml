@@ -36,7 +36,7 @@ dependencies = [
   "sphinxcontrib-jquery~=4.0",      # needed for datatables in sphinx>=6
   "tomli; python_version < '3.11'", # for needs_from_toml configuration
   "typing-extensions>=4.14.0",      # for dict NotRequired type indication
-  "minijinja",                      # lightweight jinja2-compatible template engine
+  "minijinja~=2.0",                 # lightweight jinja2-compatible template engine
 ]
 
 [project.optional-dependencies]

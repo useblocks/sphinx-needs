@@ -23,8 +23,6 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
     """
     config_constraints = config.constraints
 
-    error_templates_cache: dict[str, str] = {}
-
     for need in needs.values():
         need_id = need["id"]
 
@@ -52,9 +50,8 @@ def process_constraints(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
                 if not constraint_passed:
                     if "error_message" in executable_constraints:
                         msg = str(executable_constraints["error_message"])
-                        template = error_templates_cache.setdefault(msg, msg)
                         error_msg = render_template_string(
-                            template,
+                            msg,
                             cast(dict[str, Any], need),
                             autoescape=False,
                         )
