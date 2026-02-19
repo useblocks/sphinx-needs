@@ -7,7 +7,7 @@ centralizing all template rendering logic in one place.
 from __future__ import annotations
 
 import textwrap
-from typing import Any, cast
+from typing import Any
 
 from minijinja import Environment
 
@@ -21,6 +21,9 @@ def _wordwrap_filter(value: str, width: int = 79, wrapstring: str = "\n") -> str
 
     Wraps text to specified width, inserting wrapstring between wrapped lines.
     This uses Python's textwrap module to match Jinja2's wordwrap behavior.
+
+    Note: While minijinja 2.12+ includes a built-in wordwrap filter in Rust,
+    it is not currently exposed in the Python bindings (minijinja-py).
     """
     if not value:
         return value
@@ -38,7 +41,11 @@ def _wordwrap_filter(value: str, width: int = 79, wrapstring: str = "\n") -> str
 
 
 def _setup_builtin_filters(env: Environment) -> None:
-    """Add Jinja2-compatible built-in filters to the environment."""
+    """Add Jinja2-compatible built-in filters to the environment.
+
+    Note: This is needed because minijinja-py doesn't expose the Rust
+    built-in filters like wordwrap, even though they exist in minijinja 2.12+.
+    """
     env.add_filter("wordwrap", _wordwrap_filter)
 
 
@@ -96,12 +103,13 @@ def render_template_string(
             env.auto_escape_callback = lambda _name: True
         _setup_builtin_filters(env)
         for name, func in functions.items():
-            env.add_function(name, func)
+            # Use add_global instead of add_function (same behavior, better type stubs)
+            env.add_global(name, func)
     else:
         # For the common case (no custom functions), use cached Environment
         env = _get_cached_env(autoescape)
 
-    return cast(str, env.render_str(template_string, **context))
+    return env.render_str(template_string, **context)
 
 
 def render_template_file(
