@@ -25,13 +25,13 @@ def _wordwrap_filter(value: str, width: int = 79, wrapstring: str = "\n") -> str
     if not value:
         return value
 
-    # Use textwrap.wrap which matches jinja2's behavior more closely
-    # It handles long words, preserves line breaks, etc.
+    # Use textwrap.wrap which matches jinja2's behavior
+    # break_on_hyphens=True is the Python/Jinja2 default
     lines = textwrap.wrap(
         value,
         width=width,
         break_long_words=True,
-        break_on_hyphens=False,
+        break_on_hyphens=True,
     )
 
     return wrapstring.join(lines)
@@ -48,6 +48,10 @@ def _get_cached_env(autoescape: bool) -> Environment:
     For performance, we cache module-level Environment instances to avoid
     recreating them on every render call. This is safe because the Environment
     is stateless for rendering purposes.
+
+    Thread safety: Benign race condition - if multiple threads check for None
+    simultaneously, worst case is creating extra Environment instances. Sphinx
+    parallel builds use processes, not threads, so this is not a concern.
 
     :param autoescape: Whether to enable autoescaping.
     :return: A cached Environment instance.
