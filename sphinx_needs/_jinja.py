@@ -7,6 +7,7 @@ centralizing all template rendering logic in one place.
 from __future__ import annotations
 
 import textwrap
+from pathlib import Path
 from typing import Any
 
 from minijinja import Environment
@@ -22,6 +23,8 @@ def _wordwrap_filter(value: str, width: int = 79, wrapstring: str = "\n") -> str
     Wraps text to specified width, inserting wrapstring between wrapped lines.
     This uses Python's textwrap module to match Jinja2's wordwrap behavior.
 
+    Like Jinja2, this preserves existing newlines and wraps each line independently.
+
     Note: minijinja-contrib has a Rust-native wordwrap filter (since 2.12),
     but it is gated behind the optional ``wordwrap`` Cargo feature flag.
     The minijinja-py 2.15.1 wheel does not enable that feature
@@ -34,16 +37,21 @@ def _wordwrap_filter(value: str, width: int = 79, wrapstring: str = "\n") -> str
     if not value:
         return value
 
-    # Use textwrap.wrap which matches jinja2's behavior
-    # break_on_hyphens=True is the Python/Jinja2 default
-    lines = textwrap.wrap(
-        value,
-        width=width,
-        break_long_words=True,
-        break_on_hyphens=True,
-    )
+    # Preserve newlines by wrapping each line independently (matches Jinja2)
+    wrapped_lines = []
+    for line in value.splitlines():
+        # Use textwrap.wrap which matches jinja2's behavior
+        # break_on_hyphens=True is the Python/Jinja2 default
+        wrapped = textwrap.wrap(
+            line,
+            width=width,
+            break_long_words=True,
+            break_on_hyphens=True,
+        )
+        # textwrap.wrap returns empty list for empty strings, preserve empty lines
+        wrapped_lines.extend(wrapped or [""])
 
-    return wrapstring.join(lines)
+    return wrapstring.join(wrapped_lines)
 
 
 def _setup_builtin_filters(env: Environment) -> None:
@@ -125,15 +133,17 @@ def render_template_file(
     context: dict[str, Any],
     *,
     autoescape: bool = True,
+    functions: dict[str, Any] | None = None,
 ) -> str:
     """Render a Jinja template from a file path.
 
     :param template_path: Path to the template file.
     :param context: Dictionary containing template variables.
     :param autoescape: Whether to enable autoescaping (default: True).
+    :param functions: Optional dictionary of custom functions to register.
     :return: The rendered template as a string.
     """
-    from pathlib import Path
-
     content = Path(template_path).read_text(encoding="utf-8")
-    return render_template_string(content, context, autoescape=autoescape)
+    return render_template_string(
+        content, context, autoescape=autoescape, functions=functions
+    )
