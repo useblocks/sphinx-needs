@@ -21,6 +21,7 @@ from sphinx_needs.exceptions import NeedsInvalidException
 from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.needs_schema import LinkSchema
 from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, row_col_maker
 
 
@@ -133,20 +134,21 @@ def process_needtables(
     env = app.env
     needs_config = NeedsSphinxConfig(app.config)
     needs_data = SphinxNeedsData(env)
+    needs_schema = needs_data.get_schema()
 
     # Create a link_type dictionary, which keys-list can be easily used to find columns
-    link_type_list = {}
-    for link_type in needs_config.extra_links:
-        link_type_list[link_type["option"].upper()] = link_type
-        link_type_list[link_type["option"].upper() + "_BACK"] = link_type
-        link_type_list[link_type["incoming"].upper()] = link_type
-        link_type_list[link_type["outgoing"].upper()] = link_type
+    link_type_list: dict[str, LinkSchema] = {}
+    for link in needs_schema.iter_link_fields():
+        link_type_list[link.name.upper()] = link
+        link_type_list[link.name.upper() + "_BACK"] = link
+        link_type_list[link.display.incoming.upper()] = link
+        link_type_list[link.display.outgoing.upper()] = link
 
         # Extra handling for backward compatibility, as INCOMING and OUTGOING are
         # known und used column names for incoming/outgoing links
-        if link_type["option"] == "links":
-            link_type_list["OUTGOING"] = link_type
-            link_type_list["INCOMING"] = link_type
+        if link.name == "links":
+            link_type_list["OUTGOING"] = link
+            link_type_list["INCOMING"] = link
 
     all_needs = needs_data.get_needs_view()
 
@@ -276,18 +278,18 @@ def process_needtables(
                         app, fromdocname, all_needs, temp_need, "title", prefix=prefix
                     )
                 elif option in link_type_list:
-                    link_type = link_type_list[option]
+                    link = link_type_list[option]
                     if option in [
                         "INCOMING",
-                        link_type["option"].upper() + "_BACK",
-                        link_type["incoming"].upper(),
+                        link.name.upper() + "_BACK",
+                        link.display.incoming.upper(),
                     ]:
                         row += row_col_maker(
                             app,
                             fromdocname,
                             all_needs,
                             temp_need,
-                            link_type["option"] + "_back",
+                            link.name + "_back",
                             ref_lookup=True,
                         )
                     else:
@@ -296,7 +298,7 @@ def process_needtables(
                             fromdocname,
                             all_needs,
                             temp_need,
-                            link_type["option"],
+                            link.name,
                             ref_lookup=True,
                         )
                 else:
@@ -334,20 +336,19 @@ def process_needtables(
                                 "content",
                                 prefix=needs_config.part_prefix,
                             )
-                        elif option in link_type_list and (
-                            option
-                            in [
-                                "INCOMING",
-                                link_type_list[option]["option"].upper() + "_BACK",
-                                link_type_list[option]["incoming"].upper(),
-                            ]
-                        ):
+                        elif (
+                            link_ := link_type_list.get(option)
+                        ) is not None and option in [
+                            "INCOMING",
+                            link_.name.upper() + "_BACK",
+                            link_.display.incoming.upper(),
+                        ]:
                             row += row_col_maker(
                                 app,
                                 fromdocname,
                                 all_needs,
                                 temp_part,
-                                link_type_list[option]["option"] + "_back",
+                                link_.name + "_back",
                                 ref_lookup=True,
                             )
                         else:

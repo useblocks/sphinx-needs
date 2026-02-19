@@ -47,7 +47,7 @@ needs_types = [
     },
 ]
 
-needs_fields = {"extra1": {}, "extra2": {}}
+needs_fields = {"extra1": {"nullable": True}, "extra2": {"nullable": True}}
 
 test_dir = os.path.dirname(__file__)
 test_json = os.path.join(test_dir, "needs_test_small.json")

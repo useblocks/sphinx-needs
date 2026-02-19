@@ -43,12 +43,13 @@ needs_fields = {
     "status": {
         "parse_variants": True,
     },
-    "my_extra_option": {},
-    "another_option": {},
+    "my_extra_option": {"nullable": True},
+    "another_option": {"nullable": True},
     "author": {
+        "nullable": True,
         "parse_variants": True,
     },
-    "value": {},
+    "value": {"nullable": True},
     "field_bool": {
         "schema": {
             "type": "boolean",
@@ -63,12 +64,11 @@ needs_fields = {
         "parse_variants": True,
     },
 }
-needs_extra_links = [
-    {
-        "option": "relates",
+needs_links = {
+    "relates": {
         "parse_variants": True,
     },
-]
+}
 
 needs_build_json = True
 needs_json_remove_defaults = True

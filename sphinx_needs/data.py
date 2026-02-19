@@ -841,6 +841,14 @@ class SphinxNeedsData:
         docs = self.get_or_create_docs()
         for key, value in docs.items():
             docs[key] = [doc for doc in value if doc != docname]
+        extends = self.get_or_create_extends()
+        for extend_id in list(extends):
+            if extends[extend_id]["docname"] == docname:
+                del extends[extend_id]
+        umls = self.get_or_create_umls()
+        for uml_id in list(umls):
+            if umls[uml_id]["docname"] == docname:
+                del umls[uml_id]
 
     def get_needs_mutable(self) -> NeedsMutable:
         """Get all needs, mapped by ID.

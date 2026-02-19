@@ -8,15 +8,13 @@ needs_types = [
     }
 ]
 
-needs_extra_links = [
-    {
-        "option": "link1",
+needs_links = {
+    "link1": {
         "incoming": "is linked by",
         "outgoing": "links to",
         "default": ["SPEC_1"],
     },
-    {
-        "option": "link2",
+    "link2": {
         "incoming": "is linked by",
         "outgoing": "links to",
         "predicates": [
@@ -25,13 +23,12 @@ needs_extra_links = [
         ],
         "default": ["SPEC_1"],
     },
-    {
-        "option": "link3",
+    "link3": {
         "incoming": "is linked by",
         "outgoing": "links to",
         "default": 1,
     },
-]
+}
 
 needs_fields = {
     "tags": {
@@ -46,7 +43,10 @@ needs_fields = {
     "layout": {"default": "clean_l"},
     "option_1": {"default": "test_global"},
     "option_2": {"default": "[[copy('id')]]"},
-    "option_3": {"predicates": [('status == "implemented"', "STATUS_IMPL")]},
+    "option_3": {
+        "nullable": True,
+        "predicates": [('status == "implemented"', "STATUS_IMPL")],
+    },
     "option_4": {
         "default": "STATUS_UNKNOWN",
         "predicates": [('status == "closed"', "STATUS_CLOSED")],
@@ -59,7 +59,7 @@ needs_fields = {
         "default": "final",
     },
     "bad_value_type": {"default": 1.27},
-    "too_many_params": {"predicates": [("a", "b", "c", "d")]},
+    "too_many_params": {"nullable": True, "predicates": [("a", "b", "c", "d")]},
 }
 
 needs_build_json = True

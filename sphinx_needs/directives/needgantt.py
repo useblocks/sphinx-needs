@@ -149,8 +149,8 @@ class NeedganttDirective(FilterBase, DiagramBase):
         link_types = [
             x.strip() for x in re.split(";|,", self.options.get(name, default))
         ]
-        conf_link_types = NeedsSphinxConfig(self.env.config).extra_links
-        conf_link_types_name = [x["option"] for x in conf_link_types]
+        needs_schema = SphinxNeedsData(self.env).get_schema()
+        conf_link_types_name = [link.name for link in needs_schema.iter_link_fields()]
 
         final_link_types = []
         for link_type in link_types:
@@ -158,8 +158,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
                 continue
             if link_type not in conf_link_types_name:
                 raise SphinxNeedsLinkTypeException(
-                    link_type
-                    + "does not exist in configuration option needs_extra_links"
+                    link_type + " does not exist in configuration option needs_links"
                 )
 
             final_link_types.append(link_type)
@@ -175,9 +174,6 @@ def process_needgantt(
     # Replace all needgantt nodes with a list of the collected needs.
     env = app.env
     needs_config = NeedsSphinxConfig(app.config)
-
-    # link_types = needs_config.extra_links
-    # allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
     # NEEDGANTT
     # for node in doctree.findall(Needgantt):

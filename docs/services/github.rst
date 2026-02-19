@@ -267,12 +267,8 @@ Filtering
 +++++++++
 Show all needs, which have ``github`` as part of their ``service`` value.
 
-.. code-block:: rst
+.. need-example::
 
     .. needtable::
-       :filter: 'github' in service
+       :filter: service is not None and 'github' in service
        :columns: id, title, type, service, user
-
-.. needtable::
-   :filter: 'github' in service
-   :columns: id, title, type, service, user

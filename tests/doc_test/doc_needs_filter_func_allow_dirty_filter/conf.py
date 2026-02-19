@@ -24,17 +24,16 @@ needs_types = [
     },
 ]
 
-needs_fields = {"ti": {}, "tcl": {}}
+needs_fields = {"ti": {"nullable": True}, "tcl": {"nullable": True}}
 
-needs_extra_links = [
-    {
-        "option": "features",
+needs_links = {
+    "features": {
         "incoming": "featured by",
         "outgoing": "features",
         "copy": False,
         "style": "#Gold",
         "style_part": "#Gold",
     },
-]
+}
 
 needs_allow_unsafe_filters = True

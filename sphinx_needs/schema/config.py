@@ -2,7 +2,7 @@
 Types and violations for schema validation.
 
 There are 3 places the types are used:
-1. In the extra option and extra links definition.
+1. In the field and links definition.
 2. For the JSON schema coming from schema_definitions and schema_definitions_from_json configs.
 3. For runtime type checking of the loaded JSON schema config.
 
@@ -52,11 +52,11 @@ def _get_schema(klass: type) -> jsonschema_rs.Validator:
     return jsonschema_rs.validator_for(content)
 
 
-class ExtraOptionStringSchemaType(TypedDict):
-    """String extra option schema."""
+class FieldStringSchemaType(TypedDict):
+    """String field schema."""
 
     type: Literal["string"]
-    """Extra option string type."""
+    """Field string type."""
     minLength: NotRequired[int]
     """Minimum length of the string."""
     maxLength: NotRequired[int]
@@ -81,29 +81,29 @@ class ExtraOptionStringSchemaType(TypedDict):
     """A constant value that the string must match."""
 
 
-def validate_extra_option_string_schema(data: Any) -> ExtraOptionStringSchemaType:
-    """Validate that the given data is an ExtraOptionStringSchemaType.
+def validate_field_string_schema(data: Any) -> FieldStringSchemaType:
+    """Validate that the given data is an FieldStringSchemaType.
 
     :raises TypeError: if the data is not valid.
     """
-    schema = _get_schema(ExtraOptionStringSchemaType)
+    schema = _get_schema(FieldStringSchemaType)
     try:
         schema.validate(data)
     except jsonschema_rs.ValidationError as e:
         raise TypeError(str(e)) from e
-    return cast(ExtraOptionStringSchemaType, data)
+    return cast(FieldStringSchemaType, data)
 
 
-class ExtraOptionNumberSchemaType(TypedDict):
+class FieldNumberSchemaType(TypedDict):
     """
-    Float extra option schema.
+    Float field schema.
 
     Python reads in JSON numbers as floats. The jsonschema library
     handles precision issues with floats using a tolerance-based approach.
     """
 
     type: Literal["number"]
-    """Extra option integer type."""
+    """Field integer type."""
     minimum: NotRequired[float]
     """Minimum value."""
     exclusiveMinimum: NotRequired[float]
@@ -120,24 +120,24 @@ class ExtraOptionNumberSchemaType(TypedDict):
     """A constant value that the number must match."""
 
 
-def validate_extra_option_number_schema(data: Any) -> ExtraOptionNumberSchemaType:
-    """Validate that the given data is an ExtraOptionNumberSchemaType.
+def validate_field_number_schema(data: Any) -> FieldNumberSchemaType:
+    """Validate that the given data is an FieldNumberSchemaType.
 
     :raises TypeError: if the data is not valid.
     """
-    schema = _get_schema(ExtraOptionNumberSchemaType)
+    schema = _get_schema(FieldNumberSchemaType)
     try:
         schema.validate(data)
     except jsonschema_rs.ValidationError as e:
         raise TypeError(str(e)) from e
-    return cast(ExtraOptionNumberSchemaType, data)
+    return cast(FieldNumberSchemaType, data)
 
 
-class ExtraOptionIntegerSchemaType(TypedDict):
-    """Integer extra option schema."""
+class FieldIntegerSchemaType(TypedDict):
+    """Integer field schema."""
 
     type: Literal["integer"]
-    """Extra option integer type."""
+    """Field integer type."""
     minimum: NotRequired[int]
     """Minimum value."""
     exclusiveMinimum: NotRequired[int]
@@ -154,22 +154,22 @@ class ExtraOptionIntegerSchemaType(TypedDict):
     """A constant value that the integer must match."""
 
 
-def validate_extra_option_integer_schema(data: Any) -> ExtraOptionIntegerSchemaType:
-    """Validate that the given data is an ExtraOptionIntegerSchemaType.
+def validate_field_integer_schema(data: Any) -> FieldIntegerSchemaType:
+    """Validate that the given data is an FieldIntegerSchemaType.
 
     :raises TypeError: if the data is not valid.
     """
-    schema = _get_schema(ExtraOptionIntegerSchemaType)
+    schema = _get_schema(FieldIntegerSchemaType)
     try:
         schema.validate(data)
     except jsonschema_rs.ValidationError as e:
         raise TypeError(str(e)) from e
-    return cast(ExtraOptionIntegerSchemaType, data)
+    return cast(FieldIntegerSchemaType, data)
 
 
-class ExtraOptionBooleanSchemaType(TypedDict):
+class FieldBooleanSchemaType(TypedDict):
     """
-    Boolean extra option schema.
+    Boolean field schema.
 
     A predefined set of truthy/falsy strings are accepted:
     - truthy = {"true", "yes", "y", "on", "1"}
@@ -180,22 +180,22 @@ class ExtraOptionBooleanSchemaType(TypedDict):
     """
 
     type: Literal["boolean"]
-    """Extra option boolean type."""
+    """Field boolean type."""
     const: NotRequired[bool]
     """A constant value that the integer must match."""
 
 
-def validate_extra_option_boolean_schema(data: Any) -> ExtraOptionBooleanSchemaType:
-    """Validate that the given data is an ExtraOptionBooleanSchemaType.
+def validate_field_boolean_schema(data: Any) -> FieldBooleanSchemaType:
+    """Validate that the given data is an FieldBooleanSchemaType.
 
     :raises TypeError: if the data is not valid.
     """
-    schema = _get_schema(ExtraOptionBooleanSchemaType)
+    schema = _get_schema(FieldBooleanSchemaType)
     try:
         schema.validate(data)
     except jsonschema_rs.ValidationError as e:
         raise TypeError(str(e)) from e
-    return cast(ExtraOptionBooleanSchemaType, data)
+    return cast(FieldBooleanSchemaType, data)
 
 
 RefItemType = TypedDict(
@@ -217,31 +217,31 @@ class AllOfSchemaType(TypedDict):
     allOf: NotRequired[list[RefItemType | NeedFieldsSchemaType]]
 
 
-ExtraOptionBaseSchemaTypes = (
-    ExtraOptionStringSchemaType
-    | ExtraOptionBooleanSchemaType
-    | ExtraOptionIntegerSchemaType
-    | ExtraOptionNumberSchemaType
+FieldBaseSchemaTypes = (
+    FieldStringSchemaType
+    | FieldBooleanSchemaType
+    | FieldIntegerSchemaType
+    | FieldNumberSchemaType
 )
-"""Union type for all single value extra option schemas."""
+"""Union type for all single value field schemas."""
 
 
-class ExtraOptionMultiValueSchemaType(TypedDict):
+class FieldMultiValueSchemaType(TypedDict):
     """
-    Multi value extra option such as a list of strings, integers, numbers, or booleans.
+    Multi value field such as a list of strings, integers, numbers, or booleans.
 
     Current SN use case are tags.
     """
 
     type: Literal["array"]
-    """Multi value extra option such as a list of strings, integers, numbers, or booleans."""
-    items: ExtraOptionBaseSchemaTypes
+    """Multi value field such as a list of strings, integers, numbers, or booleans."""
+    items: FieldBaseSchemaTypes
     """Schema constraints for all items."""
     minItems: NotRequired[int]
     """Minimum number of items in the array."""
     maxItems: NotRequired[int]
     """Maximum number of items in the array."""
-    contains: NotRequired[ExtraOptionBaseSchemaTypes]
+    contains: NotRequired[FieldBaseSchemaTypes]
     """Schema constraints for some items."""
     minContains: NotRequired[int]
     """Minimum number of contains items in the array."""
@@ -251,14 +251,14 @@ class ExtraOptionMultiValueSchemaType(TypedDict):
     """Whether all items in the array must be unique."""
 
 
-def validate_extra_option_multi_value_schema(
+def validate_field_multi_value_schema(
     data: Any,
-) -> ExtraOptionMultiValueSchemaType:
-    """Validate that the given data is an ExtraOptionMultiValueSchemaType.
+) -> FieldMultiValueSchemaType:
+    """Validate that the given data is an FieldMultiValueSchemaType.
 
     :raises TypeError: if the data is not valid.
     """
-    schema = _get_schema(ExtraOptionMultiValueSchemaType)
+    schema = _get_schema(FieldMultiValueSchemaType)
     try:
         schema.validate(data)
     except jsonschema_rs.ValidationError as e:
@@ -271,24 +271,24 @@ def validate_extra_option_multi_value_schema(
             raise TypeError(
                 f"'items' type '{items_type}' and 'contains' type '{contains_type}' must be identical."
             )
-    return cast(ExtraOptionMultiValueSchemaType, data)
+    return cast(FieldMultiValueSchemaType, data)
 
 
-ExtraOptionSchemaTypes = ExtraOptionBaseSchemaTypes | ExtraOptionMultiValueSchemaType
-"""Union type for all extra option schemas, including multi-value options."""
+FieldSchemaTypes = FieldBaseSchemaTypes | FieldMultiValueSchemaType
+"""Union type for all field schemas, including multi-value options."""
 
 
-_OPTION_VALIDATORS: Final[Mapping[str, Callable[[Any], ExtraOptionSchemaTypes]]] = {
-    "string": validate_extra_option_string_schema,
-    "boolean": validate_extra_option_boolean_schema,
-    "integer": validate_extra_option_integer_schema,
-    "number": validate_extra_option_number_schema,
-    "array": validate_extra_option_multi_value_schema,
+_OPTION_VALIDATORS: Final[Mapping[str, Callable[[Any], FieldSchemaTypes]]] = {
+    "string": validate_field_string_schema,
+    "boolean": validate_field_boolean_schema,
+    "integer": validate_field_integer_schema,
+    "number": validate_field_number_schema,
+    "array": validate_field_multi_value_schema,
 }
 
 
-def validate_extra_option_schema(data: Any) -> ExtraOptionSchemaTypes:
-    """Validate that the given data is an ExtraOptionBaseSchemaTypes.
+def validate_field_schema(data: Any) -> FieldSchemaTypes:
+    """Validate that the given data is an FieldBaseSchemaTypes.
 
     :raises TypeError: if the data is not valid.
     """
@@ -299,18 +299,18 @@ def validate_extra_option_schema(data: Any) -> ExtraOptionSchemaTypes:
     type_ = data["type"]
     if type_ not in FIELD_BASE_TYPES_STR:
         raise TypeError(
-            f"Extra option schema has invalid type '{type_}'. "
+            f"Field schema has invalid type '{type_}'. "
             f"Must be one of {sorted(FIELD_BASE_TYPES_STR)}."
         )
     validator = _OPTION_VALIDATORS[type_]
     return validator(data)
 
 
-class ExtraLinkItemSchemaType(TypedDict):
+class LinkItemSchemaType(TypedDict):
     """Items in array of link string ids"""
 
     type: Literal["string"]
-    """Extra link string type, can only be string and is injected automatically."""
+    """Link string type, can only be string and is injected automatically."""
     minLength: NotRequired[int]
     """Minimum string length of each outgoing link id."""
     maxLength: NotRequired[int]
@@ -319,18 +319,18 @@ class ExtraLinkItemSchemaType(TypedDict):
     """A regex pattern to validate against."""
 
 
-class ExtraLinkSchemaType(TypedDict):
+class LinkSchemaType(TypedDict):
     """Defines a schema for unresolved need extra string links."""
 
     type: Literal["array"]
-    """Type for extra links, can only be array and is injected automatically."""
-    items: NotRequired[ExtraLinkItemSchemaType]
+    """Type for links, can only be array and is injected automatically."""
+    items: NotRequired[LinkItemSchemaType]
     """Schema constraints that applies to all items in the need id string list."""
     minItems: NotRequired[int]
     """Minimum number of items in the array (outgoing link ids)."""
     maxItems: NotRequired[int]
     """Maximum number of items in the array (outgoing link ids)."""
-    contains: NotRequired[ExtraLinkItemSchemaType]
+    contains: NotRequired[LinkItemSchemaType]
     """Schema constraints that must be contained in the need id string list."""
     minContains: NotRequired[int]
     """Minimum number of contains items in the array (outgoing link ids)."""
@@ -338,12 +338,12 @@ class ExtraLinkSchemaType(TypedDict):
     """Maximum number of contains items in the array (outgoing link ids)."""
 
 
-def validate_extra_link_schema_type(data: Any) -> ExtraLinkSchemaType:
-    """Validate that the given data is an ExtraLinkSchemaType.
+def validate_link_schema_type(data: Any) -> LinkSchemaType:
+    """Validate that the given data is an LinkSchemaType.
 
     :raises TypeError: if the data is not valid.
     """
-    schema = _get_schema(ExtraLinkSchemaType)
+    schema = _get_schema(LinkSchemaType)
     try:
         schema.validate(data)
     except jsonschema_rs.ValidationError as e:
@@ -352,26 +352,26 @@ def validate_extra_link_schema_type(data: Any) -> ExtraLinkSchemaType:
         for field in ("minContains", "maxContains"):
             if field in data:
                 raise TypeError(f"'{field}' defined, but 'contains' is missing.")
-    return cast(ExtraLinkSchemaType, data)
+    return cast(LinkSchemaType, data)
 
 
-ExtraOptionAndLinkSchemaTypes = ExtraOptionSchemaTypes | ExtraLinkSchemaType
-"""Union type for all extra option and link schemas."""
+FieldAndLinkSchemaTypes = FieldSchemaTypes | LinkSchemaType
+"""Union type for all field and link schemas."""
 
 
 class NeedFieldsSchemaType(AllOfSchemaType):
     """
     Schema for a set of need fields of all schema types.
 
-    This includes single value extra options, multi-value extra options,
-    and unresolved extra links.
+    This includes single value fields, multi-value fields,
+    and unresolved links.
 
     Intented to validate multiple fields on a need type.
     """
 
     type: NotRequired[Literal["object"]]
     """All fields of a need stored in a dict (not required because it's the default)."""
-    properties: NotRequired[dict[str, ExtraOptionAndLinkSchemaTypes]]
+    properties: NotRequired[dict[str, FieldAndLinkSchemaTypes]]
     required: NotRequired[list[str]]
     """List of required fields in the need."""
     unevaluatedProperties: NotRequired[bool]
@@ -390,10 +390,10 @@ class MessageRuleEnum(str, Enum):
     """Global field validation was successful."""
     field_fail = "field_fail"
     """Global field validation failed."""
-    extra_link_success = "extra_link_success"
-    """Global extra link validation was successful."""
-    extra_link_fail = "extra_link_fail"
-    """Global extra link validation failed."""
+    link_success = "link_success"
+    """Global link validation was successful."""
+    link_fail = "link_fail"
+    """Global link validation failed."""
     select_success = "select_success"
     """
     Need validates against the select schema.
@@ -482,8 +482,8 @@ MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
     MessageRuleEnum.cfg_schema_error: SeverityEnum.config_error,
     MessageRuleEnum.field_success: SeverityEnum.none,
     MessageRuleEnum.field_fail: SeverityEnum.violation,  # cannot be changed by user
-    MessageRuleEnum.extra_link_success: SeverityEnum.none,
-    MessageRuleEnum.extra_link_fail: SeverityEnum.violation,  # cannot be changed by user
+    MessageRuleEnum.link_success: SeverityEnum.none,
+    MessageRuleEnum.link_fail: SeverityEnum.violation,  # cannot be changed by user
     MessageRuleEnum.select_success: SeverityEnum.none,
     MessageRuleEnum.select_fail: SeverityEnum.none,
     MessageRuleEnum.local_success: SeverityEnum.none,
@@ -502,7 +502,7 @@ MAP_RULE_DEFAULT_SEVERITY: Final[dict[MessageRuleEnum, SeverityEnum]] = {
 Default severity for each rule.
 
 User provided schemas can overwrite the severity of a rule.
-The rules ``field_fail`` and ``extra_link_fail`` cannot be changed by the user,
+The rules ``field_fail`` and ``link_fail`` cannot be changed by the user,
 but they can be suppressed specifically using suppress_warnings config.
 """
 
@@ -587,7 +587,7 @@ SchemasFileRootType = TypedDict(
         "$defs": NotRequired[
             dict[
                 str,
-                AllOfSchemaType | NeedFieldsSchemaType | ExtraOptionAndLinkSchemaTypes,
+                AllOfSchemaType | NeedFieldsSchemaType | FieldAndLinkSchemaTypes,
             ]
         ],
         "schemas": NotRequired[list[SchemasRootType]],

@@ -5,7 +5,9 @@ unevaluated_error:
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [needs.fields.asil]
+    nullable = true
     [needs.fields.comment]
+    nullable = true
   rst: |
     .. impl:: title
         :id: IMPL_1
@@ -25,7 +27,9 @@ unevaluated_allof_error:
     needs_schema_definitions_from_json = "schemas.json"
   ubproject: |
     [needs.fields.asil]
+    nullable = true
     [needs.fields.comment]
+    nullable = true
     [needs.fields.approved]
     schema.type = "boolean"
   rst: |

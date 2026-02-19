@@ -31,7 +31,7 @@ needs_types = [
     },
 ]
 
-needs_fields = {"test_func": {}}
+needs_fields = {"test_func": {"nullable": True}}
 
 needs_build_json = True
 needs_json_remove_defaults = True

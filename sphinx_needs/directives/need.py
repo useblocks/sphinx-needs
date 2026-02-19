@@ -24,6 +24,7 @@ from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
 from sphinx_needs.need_item import NeedItem, NeedItemSourceDirective
+from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import (
     DummyOptionSpec,
@@ -356,11 +357,12 @@ def post_process_needs_data(app: Sphinx) -> None:
     needs_data = SphinxNeedsData(app.env)
     if not needs_data.needs_is_post_processed:
         needs_config = NeedsSphinxConfig(app.config)
+        needs_schema = needs_data.get_schema()
         needs = needs_data.get_needs_mutable()
         app.emit("needs-before-post-processing", needs)
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_functions(app, needs, needs_config)
-        update_back_links(needs, needs_config)
+        update_back_links(needs, needs_config, needs_schema)
         process_constraints(needs, needs_config)
         app.emit("needs-before-sealing", needs)
         # run a last check to ensure all needs are of the correct type
@@ -430,7 +432,9 @@ def format_need_nodes(
         node_need.parent.replace(node_need, rendered_node)
 
 
-def update_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
+def update_back_links(
+    needs: NeedsMutable, config: NeedsSphinxConfig, schema: FieldsSchema
+) -> None:
     """Update needs with back-links, i.e. for each need A that links to need B,"""
     for need in needs.values():
         need.reset_backlinks()
@@ -455,7 +459,7 @@ def update_back_links(needs: NeedsMutable, config: NeedsSphinxConfig) -> None:
 
         need["has_dead_links"] = bool(dead_links)
         allow_dead_links = {
-            li["option"]: li.get("allow_dead_links", False) for li in config.extra_links
+            link.name: link.allow_dead_links for link in schema.iter_link_fields()
         }
         need["has_forbidden_dead_links"] = bool(
             any(not allow_dead_links.get(lt, False) for lt, _ in dead_links)

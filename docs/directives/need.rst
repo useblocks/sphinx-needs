@@ -30,7 +30,7 @@ but you must set a title as an argument (i.e. if you do not specify :ref:`needs_
 
 Diagram support
 ---------------
-A need objects can also define it's own PlantUML representation.
+A need objects can also define its own PlantUML representation.
 Therefore Sphinx-Needs looks for the :ref:`needuml` directive inside the content
 and stores its PlantUML code under given key from :ref:`needuml` directive under the option name ``arch``.
 
@@ -126,30 +126,26 @@ You can easily set links to multiple needs by using **;** as a separator.
 
       This sets a link to id ``REQ_LINK_1``.
 
-.. _need_extra_links:
-
 extra links
 +++++++++++
 
-By using :ref:`needs_extra_links <needs_extra_links>`, you can use the configured link-types to set additional **need** options.
+By using :ref:`needs_links <needs_links>`, you can use the configured link-types to set additional **need** options.
 
 .. code-block:: python
 
    # conf.py
-   needs_extra_links = [
-      {
-         "option": "blocks",
+   needs_links = {
+      "blocks": {
          "incoming": "is blocked by",
          "outgoing": "blocks"
       },
-      {
-         "option": "tests",
+      "tests": {
          "incoming": "is tested by",
          "outgoing": "tests",
          "copy": False,
          "color": "#00AA00"
       }
-   ]
+   }
 
 .. need-example::
 

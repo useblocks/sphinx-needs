@@ -51,7 +51,7 @@ nitpick_ignore = [
     ("py:class", "sphinx_needs.views._LazyIndexes"),
     ("py:class", "sphinx_needs.config.NeedsSphinxConfig"),
     ("py:class", "AllowedTypes"),
-    ("py:class", "ExtraOptionSchemaTypes"),
+    ("py:class", "FieldSchemaTypes"),
 ]
 
 rst_epilog = """
@@ -268,6 +268,7 @@ linkcheck_ignore = [
     r"http://127.0.0.1:\d+",
     r"../.*",
     r"http://sourceforge.net/projects/plantuml.*",
+    r"http?://beta.plantuml.net/plantuml.jar",
     r"https?://useblocks.com/sphinx-needs/bench/index.html",
 ]
 
