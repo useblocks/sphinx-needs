@@ -22,10 +22,14 @@ def _wordwrap_filter(value: str, width: int = 79, wrapstring: str = "\n") -> str
     Wraps text to specified width, inserting wrapstring between wrapped lines.
     This uses Python's textwrap module to match Jinja2's wordwrap behavior.
 
-    Note: While minijinja 2.12+ includes a built-in wordwrap filter in Rust core,
-    it is NOT exposed in the Python bindings (minijinja-py 2.15.1). Testing confirms
-    Environment().render_str("{{ x | wordwrap(10) }}") raises "unknown filter" error.
-    Custom filters must be added via add_filter() in Python.
+    Note: minijinja-contrib has a Rust-native wordwrap filter (since 2.12),
+    but it is gated behind the optional ``wordwrap`` Cargo feature flag.
+    The minijinja-py 2.15.1 wheel does not enable that feature
+    (see minijinja-py/Cargo.toml — only ``pycompat`` and ``html_entities``
+    are enabled from minijinja-contrib).  Once a future minijinja-py release
+    enables the ``wordwrap`` feature, this custom filter can be removed.
+    Upstream tracking: https://github.com/mitsuhiko/minijinja — no issue
+    filed yet; consider opening one.
     """
     if not value:
         return value
@@ -43,12 +47,12 @@ def _wordwrap_filter(value: str, width: int = 79, wrapstring: str = "\n") -> str
 
 
 def _setup_builtin_filters(env: Environment) -> None:
-    """Add Jinja2-compatible built-in filters to the environment.
+    """Register filters missing from minijinja-py's compiled feature set.
 
-    Note: minijinja-py doesn't expose Rust built-in filters (like wordwrap)
-    to Python. Even though they exist in minijinja Rust core 2.12+, the Python
-    bindings only provide the add_filter() API for registering custom filters.
-    Tested on minijinja-py 2.15.1.
+    The minijinja-py wheel currently ships without the ``wordwrap`` Cargo
+    feature of minijinja-contrib, so ``|wordwrap`` is unavailable by default.
+    This registers a Python-side replacement.  This function can be removed
+    once minijinja-py enables the ``wordwrap`` feature upstream.
     """
     env.add_filter("wordwrap", _wordwrap_filter)
 
