@@ -22,8 +22,10 @@ def _wordwrap_filter(value: str, width: int = 79, wrapstring: str = "\n") -> str
     Wraps text to specified width, inserting wrapstring between wrapped lines.
     This uses Python's textwrap module to match Jinja2's wordwrap behavior.
 
-    Note: While minijinja 2.12+ includes a built-in wordwrap filter in Rust,
-    it is not currently exposed in the Python bindings (minijinja-py).
+    Note: While minijinja 2.12+ includes a built-in wordwrap filter in Rust core,
+    it is NOT exposed in the Python bindings (minijinja-py 2.15.1). Testing confirms
+    Environment().render_str("{{ x | wordwrap(10) }}") raises "unknown filter" error.
+    Custom filters must be added via add_filter() in Python.
     """
     if not value:
         return value
@@ -43,8 +45,10 @@ def _wordwrap_filter(value: str, width: int = 79, wrapstring: str = "\n") -> str
 def _setup_builtin_filters(env: Environment) -> None:
     """Add Jinja2-compatible built-in filters to the environment.
 
-    Note: This is needed because minijinja-py doesn't expose the Rust
-    built-in filters like wordwrap, even though they exist in minijinja 2.12+.
+    Note: minijinja-py doesn't expose Rust built-in filters (like wordwrap)
+    to Python. Even though they exist in minijinja Rust core 2.12+, the Python
+    bindings only provide the add_filter() API for registering custom filters.
+    Tested on minijinja-py 2.15.1.
     """
     env.add_filter("wordwrap", _wordwrap_filter)
 
