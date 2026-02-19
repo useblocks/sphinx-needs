@@ -160,6 +160,34 @@ By using :ref:`needs_links <needs_links>`, you can use the configured link-types
 
       Perform some tests
 
+.. _need_parent_needs:
+
+parent_needs
+~~~~~~~~~~~~
+
+The ``parent_needs`` option is set automatically when one need is nested within another.
+But if desired, you can set it like a normal option.
+
+.. need-example::
+
+   .. req:: Example 1 Parent
+      :id: REQ_P1
+
+      .. req:: Example 1 Child
+         :id: REQ_C1
+
+has the same parent/child relationship as
+
+.. need-example::
+
+   .. req:: Example 2 Parent
+      :id: REQ_P2
+
+   .. req:: Example 2 Child
+      :id: REQ_C2
+      :parent_needs: REQ_P2
+
+
 .. _need_delete:
 
 delete
