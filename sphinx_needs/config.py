@@ -60,6 +60,8 @@ class NewFieldParams:
     """A JSON schema for the option."""
     parse_variants: bool | None = None
     """Whether variants are parsed in this field."""
+    parse_dynamic_functions: bool | None = None
+    """Whether dynamic functions are parsed in this field."""
     predicates: None | list[tuple[str, Any]] = None
     """List of (need filter, value) pairs for default predicate values.
 
@@ -130,6 +132,7 @@ class _Config:
         default: None | Any = None,
         predicates: None | list[tuple[str, Any]] = None,
         parse_variants: None | bool = None,
+        parse_dynamic_functions: None | bool = None,
         override: bool = False,
     ) -> None:
         """Adds a need field to the configuration."""
@@ -161,6 +164,7 @@ class _Config:
             default=default,
             predicates=predicates,
             parse_variants=parse_variants,
+            parse_dynamic_functions=parse_dynamic_functions,
         )
 
     @property
@@ -298,6 +302,8 @@ class NeedLinksConfig(TypedDict, total=False):
     """List of (need filter, value) pairs for predicate default values."""
     parse_variants: NotRequired[bool]
     """Whether variants are parsed in this field."""
+    parse_dynamic_functions: NotRequired[bool]
+    """Whether dynamic functions are parsed in this field."""
 
 
 class LinkOptionsType(NeedLinksConfig):
@@ -342,6 +348,8 @@ class NeedFields(TypedDict):
     """List of (need filter, value) pairs for predicate default values."""
     parse_variants: NotRequired[bool]
     """Whether variants are parsed in this field."""
+    parse_dynamic_functions: NotRequired[bool]
+    """Whether dynamic functions are parsed in this field."""
 
 
 class NeedField(NeedFields):
@@ -890,6 +898,21 @@ class NeedsSphinxConfig:
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """List of need fields that may contain variants."""
+
+    _parse_dynamic_functions: bool = field(
+        default=True, metadata={"rebuild": "html", "types": (bool,)}
+    )
+    """Global default for whether dynamic functions (``[[...]]``) are parsed in extra fields and links.
+
+    When ``True`` (the default), all extra fields and links will have dynamic function
+    parsing enabled unless explicitly set to ``False`` per-field/link.
+
+    .. note::
+
+        This default is ``True`` for backward compatibility.
+        In a future major release, the default will change to ``False``,
+        requiring users to explicitly opt-in to dynamic function parsing per-field/link.
+    """
 
     # add render context option
     render_context: dict[str, Any] = field(
