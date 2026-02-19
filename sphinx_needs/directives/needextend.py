@@ -206,8 +206,12 @@ def extend_needs_data(
 ) -> None:
     """Use data gathered from needextend directives to modify fields of existing needs."""
 
+    # Sort by (docname, lineno) to ensure deterministic ordering,
+    # regardless of parallel build worker completion order.
+    sorted_extends = sorted(extends.values(), key=lambda x: (x["docname"], x["lineno"]))
+
     current_needextend: NeedsExtendType
-    for current_needextend in extends.values():
+    for current_needextend in sorted_extends:
         need_filter = current_needextend["filter"]
         location = (current_needextend["docname"], current_needextend["lineno"])
         if current_needextend["filter_is_id"]:
