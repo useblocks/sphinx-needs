@@ -389,7 +389,7 @@ def jinja_parse(context: dict[str, Any], jinja_string: str) -> str:
 
     """
     try:
-        content = render_template_string(jinja_string, context, autoescape=True)
+        content = render_template_string(jinja_string, context, autoescape=False)
     except Exception as e:
         raise ReferenceError(
             f'There was an error in the jinja statement: "{jinja_string}". '
@@ -492,12 +492,12 @@ def match_string_link(
             link_url = render_template_string(
                 link_conf["url_template"],
                 {**render_content, **render_context},
-                autoescape=True,
+                autoescape=False,
             )
             link_name = render_template_string(
                 link_conf["name_template"],
                 {**render_content, **render_context},
-                autoescape=True,
+                autoescape=False,
             )
 
         # if no string_link match was made, we handle it as normal string value

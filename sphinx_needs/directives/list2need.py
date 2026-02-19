@@ -221,7 +221,7 @@ class List2NeedDirective(SphinxDirective):
             else:
                 data["set_links_down"] = False
 
-            text = render_template_string(NEED_TEMPLATE, list_need, autoescape=True)
+            text = render_template_string(NEED_TEMPLATE, list_need, autoescape=False)
             text_list = text.split("\n")
             if presentation == "nested":
                 indented_text_list = ["   " * list_need["level"] + x for x in text_list]

@@ -98,7 +98,7 @@ class NeedReportDirective(SphinxDirective):
         )
 
         text = render_template_string(
-            needs_report_template_file_content, report_info, autoescape=True
+            needs_report_template_file_content, report_info, autoescape=False
         )
         self.state_machine.insert_input(
             text.split("\n"), self.state_machine.document.attributes["source"]

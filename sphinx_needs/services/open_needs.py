@@ -158,7 +158,7 @@ class OpenNeedsService(BaseService):
                     extra_data[name] = dict_get(item, selector)
 
             context = {"data": item, "options": options, **needs_config.render_context}
-            content = render_template_string(self.content, context, autoescape=True)
+            content = render_template_string(self.content, context, autoescape=False)
             content += "\n\n| \n"  # Add enough space between content and extra_data
 
             # Add extra_data to content
