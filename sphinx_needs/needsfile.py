@@ -179,6 +179,7 @@ class NeedsList:
             del self.needs_list["versions"][version]
 
     def _finalise(self) -> None:
+        self.update_or_add_version(self.current_version)
         # We need to rewrite some data, because this kind of data gets overwritten during needs.json import
         if not self.needs_config.reproducible_json:
             self.needs_list["created"] = datetime.now().isoformat()
