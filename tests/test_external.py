@@ -262,6 +262,7 @@ def test_external_allow_type_coercion_false(test_app):
         "WARNING: External need 'TEST_01' in 'needs.json' could not be added: 'tags' value is invalid: Invalid value for field 'tags': 'a,b,c' [needs.load_external_need]"
     ]
 
+
 @pytest.mark.parametrize(
     "test_app",
     [
@@ -295,7 +296,7 @@ def test_external_empty_versions(test_app):
                 "current_version": "0.1.0",
                 "project": "foo",
                 "project_url": "https://bar",
-                "versions": {}
+                "versions": {},
             }
         )
     )

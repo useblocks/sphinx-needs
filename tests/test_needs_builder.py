@@ -116,6 +116,7 @@ def test_needs_html_and_json(test_app):
             need_data_2 = needs_2["versions"]["1.0"]["needs"]
             assert need_data_1 == need_data_2
 
+
 @pytest.mark.parametrize(
     "test_app",
     [{"buildername": "needs", "srcdir": "doc_test/doc_needs_builder_empty"}],
@@ -128,7 +129,7 @@ def test_doc_needs_builder_empty(test_app):
     needs_list = json.loads(Path(app.outdir, "needs.json").read_text())
     assert "current_version" in needs_list
     assert needs_list["current_version"] == ""
-    
+
     version = needs_list["current_version"]
     assert "versions" in needs_list
     assert version in needs_list["versions"]
