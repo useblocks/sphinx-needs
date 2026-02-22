@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771527348939,
+  "lastUpdate": 1771773379899,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17352,6 +17352,42 @@ window.BENCHMARK_DATA = {
             "value": 55.022935231000005,
             "unit": "s",
             "extra": "Commit: aa1d2849bfaa09c1617f95ba36a29894ebe62e10\nBranch: master\nTime: 2026-02-19T19:53:56+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9d08d5ed50653b41475bf27ff6a5f05ae5af3ac2",
+          "message": "♻️ Replace jinja2 with minijinja for template rendering (#1659)",
+          "timestamp": "2026-02-22T16:14:19+01:00",
+          "tree_id": "016707fd8a97859f8e1ada92d1444ac9b836016e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9d08d5ed50653b41475bf27ff6a5f05ae5af3ac2"
+        },
+        "date": 1771773356858,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17063347200000578,
+            "unit": "s",
+            "extra": "Commit: 9d08d5ed50653b41475bf27ff6a5f05ae5af3ac2\nBranch: master\nTime: 2026-02-22T16:14:19+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.929337342000004,
+            "unit": "s",
+            "extra": "Commit: 9d08d5ed50653b41475bf27ff6a5f05ae5af3ac2\nBranch: master\nTime: 2026-02-22T16:14:19+01:00"
           }
         ]
       }
