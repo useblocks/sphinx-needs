@@ -219,13 +219,46 @@ def jinja2uml(
     key: None | str,
     processed_need_ids: ProcessedNeedsType,
     kwargs: dict[str, Any],
+    jinja_utils: JinjaFunctions | None = None,
 ) -> tuple[str, ProcessedNeedsType]:
-    # Let's render jinja templates with uml content template to 'plantuml syntax' uml
+    """Render Jinja template content into PlantUML syntax.
+
+    Processes ``uml_content`` by stripping ``@startuml``/``@enduml`` markers
+    and rendering the remainder as a Jinja template with access to all needs
+    data and helper functions (``uml``, ``flow``, ``filter``, ``import``,
+    ``ref``, ``need``).
+
+    A single :class:`JinjaFunctions` instance is created on the first call
+    and reused across recursive invocations (triggered by ``{{ uml("ID") }}``
+    calls in templates) to avoid redundant object creation.
+
+    :param app: The Sphinx application instance.
+    :param fromdocname: The source document name, used for link calculation.
+    :param uml_content: The raw Jinja/PlantUML template string to render.
+    :param parent_need_id: The need ID that owns this diagram content,
+        or ``None`` for top-level ``needuml`` directives.
+    :param key: The arch key name, or ``None`` for the default ``diagram`` key.
+    :param processed_need_ids: Tracks already-rendered needs to prevent
+        infinite recursion in cyclic references.
+    :param kwargs: Extra keyword arguments passed from ``{{ uml(...) }}``
+        calls, made available as template variables.
+    :param jinja_utils: An existing :class:`JinjaFunctions` instance to reuse
+        across recursion.  ``None`` on the initial call (a new instance is
+        created); passed automatically on recursive calls.
+    :return: A tuple of the rendered PlantUML string and the updated
+        processed-needs mapping.
+    """
     # 1. Remove @startuml and @enduml
     uml_content = uml_content.replace("@startuml", "").replace("@enduml", "")
 
-    # 2. Get a new instance of Jinja Helper Functions
-    jinja_utils = JinjaFunctions(app, fromdocname, parent_need_id, processed_need_ids)
+    # 2. Get or reuse a JinjaFunctions instance (reused across recursion)
+    if jinja_utils is None:
+        jinja_utils = JinjaFunctions(
+            app, fromdocname, parent_need_id, processed_need_ids
+        )
+    else:
+        # Update parent_need_id for this recursion level
+        jinja_utils.set_parent_need_id(parent_need_id)
 
     # 3. Append need_id to processed_need_ids, so it will not been processed again
     if parent_need_id:
@@ -233,31 +266,30 @@ def jinja2uml(
             need_id=parent_need_id, art="uml", key=key, kwargs=kwargs
         )
 
-    # 5. Get data for the jinja processing
+    # 4. Get data for the jinja processing
     data: dict[str, Any] = {}
-    # 5.1 Set default config to data
-    data.update(**NeedsSphinxConfig(app.config).render_context)
-    # 5.2 Set uml() kwargs to data and maybe overwrite default settings
+    # 4.1 Set default config to data
+    data.update(**jinja_utils.needs_config.render_context)
+    # 4.2 Set uml() kwargs to data and maybe overwrite default settings
     data.update(kwargs)
-    # 5.3 Add needs as data (dict-like mapping), not as a function
+    # 4.3 Add needs as data (dict-like mapping), not as a function
     data["needs"] = jinja_utils.needs
+    # 4.4 Add helper functions as callable context values
+    # (passed via context, not as registered functions, to avoid FFI overhead)
+    data["need"] = jinja_utils.need
+    data["uml"] = jinja_utils.uml_from_need
+    data["flow"] = jinja_utils.flow
+    data["filter"] = jinja_utils.filter
+    data["import"] = jinja_utils.imports
+    data["ref"] = jinja_utils.ref
 
-    # 6. Render the uml content with the fetched data and custom functions
-    uml = render_template_string(
-        uml_content,
-        data,
-        autoescape=False,
-        functions={
-            "need": jinja_utils.need,
-            "uml": jinja_utils.uml_from_need,
-            "flow": jinja_utils.flow,
-            "filter": jinja_utils.filter,
-            "import": jinja_utils.imports,
-            "ref": jinja_utils.ref,
-        },
-    )
+    # 5. Render the uml content with the fetched data.
+    # new_env=True is required because template callbacks (uml, flow, etc.)
+    # may call render_template_string again, and MiniJinja's Environment
+    # holds a non-reentrant lock during render_str.
+    uml = render_template_string(uml_content, data, autoescape=False, new_env=True)
 
-    # 7. Get processed need ids
+    # 6. Get processed need ids
     processed_need_ids_return = jinja_utils.get_processed_need_ids()
 
     return (uml, processed_need_ids_return)
@@ -286,6 +318,15 @@ class JinjaFunctions:
                 f"JinjaFunctions initialized with undefined parent_need_id: '{parent_need_id}'"
             )
         self.processed_need_ids = processed_need_ids
+        self.needs_config = NeedsSphinxConfig(app.config)
+
+    def set_parent_need_id(self, parent_need_id: None | str) -> None:
+        """Update the parent need ID for a new recursion level."""
+        if parent_need_id and parent_need_id not in self.needs:
+            raise NeedumlException(
+                f"JinjaFunctions set with undefined parent_need_id: '{parent_need_id}'"
+            )
+        self.parent_need_id = parent_need_id
 
     def need_to_processed_data(
         self, art: str, key: None | str, kwargs: dict[str, Any]
@@ -354,7 +395,9 @@ class JinjaFunctions:
                 return self.flow(need_id)
 
         # We need to re-render the fetched content, as it may contain also Jinja statements.
-        # use jinja2uml to render the current uml content
+        # Reuse this JinjaFunctions instance to avoid repeated object creation.
+        # Save and restore parent_need_id since jinja2uml will mutate it.
+        saved_parent_need_id = self.parent_need_id
         (uml, processed_need_ids_return) = jinja2uml(
             app=self.app,
             fromdocname=self.fromdocname,
@@ -363,7 +406,9 @@ class JinjaFunctions:
             key=key,
             processed_need_ids=self.processed_need_ids,
             kwargs=kwargs,
+            jinja_utils=self,
         )
+        self.parent_need_id = saved_parent_need_id
 
         # Append processed needs to current proccessing
         self.append_needs_to_processed_needs(processed_need_ids_return)
@@ -387,10 +432,9 @@ class JinjaFunctions:
         need_info = self.needs[need_id]
         link = calculate_link(self.app, need_info, self.fromdocname)
 
-        needs_config = NeedsSphinxConfig(self.app.config)
         node_text = render_template_string(
-            needs_config.diagram_template,
-            {**need_info, **needs_config.render_context},
+            self.needs_config.diagram_template,
+            {**need_info, **self.needs_config.render_context},
             autoescape=False,
         )
 
@@ -442,9 +486,9 @@ class JinjaFunctions:
         """
         Return a list of found needs that pass the given filter string.
         """
-        needs_config = NeedsSphinxConfig(self.app.config)
-
-        return filter_needs_view(self.needs, needs_config, filter_string=filter_string)
+        return filter_needs_view(
+            self.needs, self.needs_config, filter_string=filter_string
+        )
 
     def imports(self, *args: str) -> str:
         if not self.parent_need_id:

@@ -88,53 +88,27 @@ def _get_cached_env(autoescape: bool) -> Environment:
     return _new_env(autoescape)
 
 
-@lru_cache(maxsize=2)
-def _get_base_env_for_functions(autoescape: bool) -> Environment:
-    """Get a cached base Environment for the functions= code path.
-
-    This env is mutated via add_global() on each call, but only with a
-    fixed set of keys (need, uml, flow, filter, import, ref) whose
-    values are overwritten each time, so no stale state leaks between calls.
-
-    This optimization is important because needuml diagrams call
-    render_template_string(functions={...}) recursively - each {{ uml("ID") }}
-    in a template triggers another render, so a diagram with N needs would
-    create N throwaway environments without this cache.
-
-    :param autoescape: Whether to enable autoescaping.
-    :return: A cached Environment instance (will be mutated).
-    """
-    return _new_env(autoescape)
-
-
 def render_template_string(
     template_string: str,
     context: dict[str, Any],
     *,
     autoescape: bool = True,
-    functions: dict[str, Any] | None = None,
+    new_env: bool = False,
 ) -> str:
     """Render a Jinja template string with the given context.
 
     :param template_string: The Jinja template string to render.
     :param context: Dictionary containing template variables.
     :param autoescape: Whether to enable autoescaping (default: True).
-    :param functions: Optional dictionary of custom functions to register.
+    :param new_env: If True, create a fresh Environment instead of using
+        the shared cached one.  This is required when rendering happens
+        *inside* a Python callback invoked by an ongoing ``render_str`` on
+        the cached Environment (e.g. needuml's ``{{ uml() }}`` callbacks),
+        because MiniJinja's ``Environment`` holds a non-reentrant lock
+        during ``render_str``.
     :return: The rendered template as a string.
     """
-    if functions:
-        # Use cached base environment and overwrite globals
-        # The functions dict keys are always the same (need, uml, flow, filter, import, ref)
-        # so we can safely reuse the environment and just update the global values
-        env = _get_base_env_for_functions(autoescape)
-        for name, func in functions.items():
-            # Use add_global instead of add_function (same behavior, better type stubs)
-            # Overwrites any previous value for this key
-            env.add_global(name, func)
-    else:
-        # For the common case (no custom functions), use cached Environment
-        env = _get_cached_env(autoescape)
-
+    env = _new_env(autoescape) if new_env else _get_cached_env(autoescape)
     return env.render_str(template_string, **context)
 
 
@@ -143,17 +117,13 @@ def render_template_file(
     context: dict[str, Any],
     *,
     autoescape: bool = True,
-    functions: dict[str, Any] | None = None,
 ) -> str:
     """Render a Jinja template from a file path.
 
     :param template_path: Path to the template file.
     :param context: Dictionary containing template variables.
     :param autoescape: Whether to enable autoescaping (default: True).
-    :param functions: Optional dictionary of custom functions to register.
     :return: The rendered template as a string.
     """
     content = Path(template_path).read_text(encoding="utf-8")
-    return render_template_string(
-        content, context, autoescape=autoescape, functions=functions
-    )
+    return render_template_string(content, context, autoescape=autoescape)
