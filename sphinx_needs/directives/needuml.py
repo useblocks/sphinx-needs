@@ -398,17 +398,19 @@ class JinjaFunctions:
         # Reuse this JinjaFunctions instance to avoid repeated object creation.
         # Save and restore parent_need_id since jinja2uml will mutate it.
         saved_parent_need_id = self.parent_need_id
-        (uml, processed_need_ids_return) = jinja2uml(
-            app=self.app,
-            fromdocname=self.fromdocname,
-            uml_content=uml_content,
-            parent_need_id=need_id,
-            key=key,
-            processed_need_ids=self.processed_need_ids,
-            kwargs=kwargs,
-            jinja_utils=self,
-        )
-        self.parent_need_id = saved_parent_need_id
+        try:
+            (uml, processed_need_ids_return) = jinja2uml(
+                app=self.app,
+                fromdocname=self.fromdocname,
+                uml_content=uml_content,
+                parent_need_id=need_id,
+                key=key,
+                processed_need_ids=self.processed_need_ids,
+                kwargs=kwargs,
+                jinja_utils=self,
+            )
+        finally:
+            self.parent_need_id = saved_parent_need_id
 
         # Append processed needs to current proccessing
         self.append_needs_to_processed_needs(processed_need_ids_return)

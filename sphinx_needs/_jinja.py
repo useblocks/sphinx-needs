@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import textwrap
 from functools import lru_cache
-from pathlib import Path
 from typing import Any
 
 from minijinja import Environment
@@ -79,8 +78,16 @@ def _new_env(autoescape: bool) -> Environment:
 def _get_cached_env(autoescape: bool) -> Environment:
     """Get or create a cached Environment instance (no custom functions).
 
-    Cached per autoescape value. Safe because the Environment is not
-    mutated after creation. Using lru_cache ensures thread safety.
+    Cached per ``autoescape`` value.  Safe because the returned
+    ``Environment`` is not mutated after creation.  ``lru_cache`` ensures
+    that concurrent calls for the same key return the same instance
+    (Python's GIL protects the cache dict).  Note that the
+    ``Environment`` object itself is **not** thread-safe — this is
+    acceptable because Sphinx builds are single-threaded.
+
+    The cache persists for the lifetime of the process (e.g. across
+    rebuilds in ``sphinx-autobuild``).  This is fine because the
+    environments are stateless (no per-build data).
 
     :param autoescape: Whether to enable autoescaping.
     :return: A cached Environment instance.
@@ -92,14 +99,14 @@ def render_template_string(
     template_string: str,
     context: dict[str, Any],
     *,
-    autoescape: bool = True,
+    autoescape: bool,
     new_env: bool = False,
 ) -> str:
     """Render a Jinja template string with the given context.
 
     :param template_string: The Jinja template string to render.
     :param context: Dictionary containing template variables.
-    :param autoescape: Whether to enable autoescaping (default: True).
+    :param autoescape: Whether to enable autoescaping.
     :param new_env: If True, create a fresh Environment instead of using
         the shared cached one.  This is required when rendering happens
         *inside* a Python callback invoked by an ongoing ``render_str`` on
@@ -146,7 +153,7 @@ class CompiledTemplate:
 def compile_template(
     template_string: str,
     *,
-    autoescape: bool = True,
+    autoescape: bool,
 ) -> CompiledTemplate:
     """Compile a template string for efficient repeated rendering.
 
@@ -159,27 +166,14 @@ def compile_template(
     multiple call sites sharing the same template (e.g.
     ``needs_config.diagram_template``) only compile once per build.
 
+    The cache persists for the lifetime of the process.  This is safe
+    because compiled templates are keyed by their source text and are
+    stateless.
+
     :param template_string: The Jinja template string to compile.
-    :param autoescape: Whether to enable autoescaping (default: True).
+    :param autoescape: Whether to enable autoescaping.
     :return: A compiled template that can be rendered with different contexts.
     """
     env = _new_env(autoescape)
     env.add_template(CompiledTemplate._TEMPLATE_NAME, template_string)
     return CompiledTemplate(env)
-
-
-def render_template_file(
-    template_path: str,
-    context: dict[str, Any],
-    *,
-    autoescape: bool = True,
-) -> str:
-    """Render a Jinja template from a file path.
-
-    :param template_path: Path to the template file.
-    :param context: Dictionary containing template variables.
-    :param autoescape: Whether to enable autoescaping (default: True).
-    :return: The rendered template as a string.
-    """
-    content = Path(template_path).read_text(encoding="utf-8")
-    return render_template_string(content, context, autoescape=autoescape)
