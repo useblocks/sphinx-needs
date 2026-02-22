@@ -438,6 +438,13 @@ class JinjaFunctions:
             self.needs_config.diagram_template,
             {**need_info, **self.needs_config.render_context},
             autoescape=False,
+            # new_env=True because flow() is called from within a template callback
+            # (e.g. {{ flow("ID") }}) while the outer jinja2uml render holds a lock
+            # on its Environment.  Although jinja2uml uses new_env=True (so the
+            # *outer* lock is on a throwaway env, not the cached one), using new_env
+            # here as well is a defensive measure: if a user's diagram_template ever
+            # contained callback-invoking expressions, the cached env would deadlock.
+            new_env=True,
         )
 
         need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}'.format(
