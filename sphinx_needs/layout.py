@@ -25,6 +25,7 @@ from docutils.utils import new_document
 from sphinx.application import Sphinx
 from sphinx.util.logging import getLogger
 
+from sphinx_needs._jinja import compile_template
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -300,8 +301,12 @@ class LayoutHandler:
         self.string_links = {}
         for link_name, link_conf in self.needs_config.string_links.items():
             self.string_links[link_name] = {
-                "url_template": link_conf["link_url"],
-                "name_template": link_conf["link_name"],
+                "url_template": compile_template(
+                    link_conf["link_url"], autoescape=False
+                ),
+                "name_template": compile_template(
+                    link_conf["link_name"], autoescape=False
+                ),
                 "regex_compiled": re.compile(link_conf["regex"]),
                 "options": link_conf["options"],
                 "name": link_name,

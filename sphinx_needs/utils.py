@@ -15,7 +15,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs._jinja import render_template_string
+from sphinx_needs._jinja import compile_template, render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
@@ -150,8 +150,12 @@ def row_col_maker(
             link_string_list = {}
             for link_name, link_conf in needs_config.string_links.items():
                 link_string_list[link_name] = {
-                    "url_template": link_conf["link_url"],
-                    "name_template": link_conf["link_name"],
+                    "url_template": compile_template(
+                        link_conf["link_url"], autoescape=False
+                    ),
+                    "name_template": compile_template(
+                        link_conf["link_name"], autoescape=False
+                    ),
                     "regex_compiled": re.compile(link_conf["regex"]),
                     "options": link_conf["options"],
                     "name": link_name,
@@ -489,15 +493,11 @@ def match_string_link(
         match = link_conf["regex_compiled"].search(data)
         if match:
             render_content = match.groupdict()
-            link_url = render_template_string(
-                link_conf["url_template"],
-                {**render_content, **render_context},
-                autoescape=False,
+            link_url = link_conf["url_template"].render(
+                {**render_content, **render_context}
             )
-            link_name = render_template_string(
-                link_conf["name_template"],
-                {**render_content, **render_context},
-                autoescape=False,
+            link_name = link_conf["name_template"].render(
+                {**render_content, **render_context}
             )
 
         # if no string_link match was made, we handle it as normal string value
