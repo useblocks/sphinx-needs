@@ -8,7 +8,7 @@ from requests_file import FileAdapter
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs._jinja import render_template_string
+from sphinx_needs._jinja import compile_template
 from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
@@ -131,6 +131,11 @@ def load_external_needs(
             *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
         }
 
+        # Pre-compile target_url template once (avoids re-parsing per need)
+        target_tpl = (
+            compile_template(target_url, autoescape=False) if target_url else None
+        )
+
         # collect keys for warning logs, so that we only log one warning per key
         unknown_keys: set[str] = set()
 
@@ -158,11 +163,9 @@ def load_external_needs(
 
             need_params["external_css"] = source.get("css_class")
 
-            if target_url:
+            if target_tpl:
                 # render jinja content
-                cal_target_url = render_template_string(
-                    target_url, {"need": need}, autoescape=False
-                )
+                cal_target_url = target_tpl.render({"need": need})
                 external_url = f"{source['base_url']}/{cal_target_url}"
             else:
                 external_url = f"{source['base_url']}/{need.get('docname', '__error__')}.html#{need['id']}"

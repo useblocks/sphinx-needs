@@ -112,6 +112,62 @@ def render_template_string(
     return env.render_str(template_string, **context)
 
 
+class CompiledTemplate:
+    """A pre-compiled template for efficient repeated rendering.
+
+    Use :func:`compile_template` to create instances.  The template source
+    is parsed and compiled once; each :meth:`render` call only executes the
+    already-compiled template, avoiding the per-call parse overhead of
+    :func:`render_template_string` / ``Environment.render_str``.
+
+    This is useful when the same template is rendered many times in a loop
+    with different contexts (e.g. per-need in external needs loading,
+    per-cell in needtable string-link rendering, per-need in constraint
+    error messages, or per-node in PlantUML diagram generation).
+    """
+
+    __slots__ = ("_env",)
+
+    _TEMPLATE_NAME = "__compiled__"
+
+    def __init__(self, env: Environment) -> None:
+        self._env = env
+
+    def render(self, context: dict[str, Any]) -> str:
+        """Render the compiled template with the given context.
+
+        :param context: Dictionary containing template variables.
+        :return: The rendered template as a string.
+        """
+        return self._env.render_template(self._TEMPLATE_NAME, **context)
+
+
+@lru_cache(maxsize=32)
+def compile_template(
+    template_string: str,
+    *,
+    autoescape: bool = True,
+) -> CompiledTemplate:
+    """Compile a template string for efficient repeated rendering.
+
+    The returned :class:`CompiledTemplate` parses the source once;
+    subsequent :meth:`~CompiledTemplate.render` calls skip parsing entirely.
+    Use this instead of :func:`render_template_string` when the same
+    template is rendered in a tight loop with varying contexts.
+
+    Results are cached by ``(template_string, autoescape)`` so that
+    multiple call sites sharing the same template (e.g.
+    ``needs_config.diagram_template``) only compile once per build.
+
+    :param template_string: The Jinja template string to compile.
+    :param autoescape: Whether to enable autoescaping (default: True).
+    :return: A compiled template that can be rendered with different contexts.
+    """
+    env = _new_env(autoescape)
+    env.add_template(CompiledTemplate._TEMPLATE_NAME, template_string)
+    return CompiledTemplate(env)
+
+
 def render_template_file(
     template_path: str,
     context: dict[str, Any],
