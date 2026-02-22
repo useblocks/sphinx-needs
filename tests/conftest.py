@@ -18,13 +18,14 @@ import pytest
 import yaml
 from _pytest.mark import ParameterSet
 from docutils.nodes import document
-from jinja2 import Template
 from sphinx import version_info
 from sphinx.application import Sphinx
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 from xprocess import ProcessStarter
+
+from sphinx_needs._jinja import render_template_string
 
 pytest_plugins = "sphinx.testing.fixtures"
 
@@ -487,7 +488,6 @@ def schema_benchmark_app(tmpdir: Path, request: pytest.SubRequest, make_app):
     with page_template_path.open() as fp:
         template_content = fp.read()
 
-    template = Template(template_content)
     pages_dir = Path(tmpdir) / "pages"
     pages_dir.mkdir(exist_ok=True)
     toctree_content = """
@@ -498,7 +498,9 @@ def schema_benchmark_app(tmpdir: Path, request: pytest.SubRequest, make_app):
     width = len(str(page_cnt))
     for i in range(1, page_cnt + 1):
         i_fmt = f"{i:0{width}d}"
-        page_rst_content = template.render(page_nr=i_fmt)
+        page_rst_content = render_template_string(
+            template_content, {"page_nr": i_fmt}, autoescape=False
+        )
 
         page_name = f"page_{i_fmt}"
         page_file = f"{page_name}.rst"

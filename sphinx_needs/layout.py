@@ -22,10 +22,10 @@ from docutils.frontend import OptionParser
 from docutils.parsers.rst import Parser, languages
 from docutils.parsers.rst.states import Inliner, Struct
 from docutils.utils import new_document
-from jinja2 import Environment
 from sphinx.application import Sphinx
 from sphinx.util.logging import getLogger
 
+from sphinx_needs._jinja import compile_template
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -296,13 +296,17 @@ class LayoutHandler:
         # Prepare string_links dict, so that regex and templates get not recompiled too often.
         #
         # Do not set needs_string_links here and update it.
-        # This would lead to deepcopy()-errors, as needs_string_links gets some "pickled" and jinja Environment is
+        # This would lead to deepcopy()-errors, as needs_string_links gets some "pickled" and complex objects are
         # too complex for this.
         self.string_links = {}
         for link_name, link_conf in self.needs_config.string_links.items():
             self.string_links[link_name] = {
-                "url_template": Environment().from_string(link_conf["link_url"]),
-                "name_template": Environment().from_string(link_conf["link_name"]),
+                "url_template": compile_template(
+                    link_conf["link_url"], autoescape=False
+                ),
+                "name_template": compile_template(
+                    link_conf["link_name"], autoescape=False
+                ),
                 "regex_compiled": re.compile(link_conf["regex"]),
                 "options": link_conf["options"],
                 "name": link_name,

@@ -14,10 +14,10 @@ from typing import Any, TypedDict, cast
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
 from docutils.statemachine import StringList
-from jinja2 import Template
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
+from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import (
     NeedsInfoType,
@@ -967,13 +967,16 @@ def _prepare_template(
     with template_path.open() as template_file:
         template_content = "".join(template_file.readlines())
     try:
-        template_obj = Template(template_content)
-        new_content = template_obj.render(**needs_info, **needs_config.render_context)
+        new_content = render_template_string(
+            template_content,
+            {**needs_info, **needs_config.render_context},
+            autoescape=False,
+        )
     except Exception as e:
         raise InvalidNeedException(
             "invalid_template",
             f"Error while rendering template {template_path}: {e}",
-        )
+        ) from e
 
     return new_content
 

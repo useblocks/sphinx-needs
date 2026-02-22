@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import json
 import os
-from functools import lru_cache
 
 import requests
-from jinja2 import Environment, Template
 from requests_file import FileAdapter
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
+from sphinx_needs._jinja import compile_template
 from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
@@ -18,16 +17,6 @@ from sphinx_needs.need_item import NeedItemSourceExternal
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
 
 log = get_logger(__name__)
-
-
-@lru_cache(maxsize=20)
-def get_target_template(target_url: str) -> Template:
-    """
-    Provides template for target_link style
-    Can be cached, as the template is always the same for a given target_url
-    """
-    mem_template = Environment().from_string(target_url)
-    return mem_template
 
 
 def load_external_needs(
@@ -142,6 +131,11 @@ def load_external_needs(
             *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
         }
 
+        # Pre-compile target_url template once (avoids re-parsing per need)
+        target_tpl = (
+            compile_template(target_url, autoescape=False) if target_url else None
+        )
+
         # collect keys for warning logs, so that we only log one warning per key
         unknown_keys: set[str] = set()
 
@@ -169,10 +163,9 @@ def load_external_needs(
 
             need_params["external_css"] = source.get("css_class")
 
-            if target_url:
+            if target_tpl:
                 # render jinja content
-                mem_template = get_target_template(target_url)
-                cal_target_url = mem_template.render(**{"need": need})
+                cal_target_url = target_tpl.render({"need": need})
                 external_url = f"{source['base_url']}/{cal_target_url}"
             else:
                 external_url = f"{source['base_url']}/{need.get('docname', '__error__')}.html#{need['id']}"
