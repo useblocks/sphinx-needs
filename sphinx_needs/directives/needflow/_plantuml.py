@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import html
 import os
-from functools import lru_cache
 
 from docutils import nodes
-from jinja2 import Template
 from sphinx.application import Sphinx
 
+from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
@@ -44,9 +43,12 @@ def get_need_node_rep_for_plantuml(
 ) -> str:
     """Calculate need node representation for plantuml."""
     needs_config = NeedsSphinxConfig(app.config)
-    diagram_template = get_template(needs_config.diagram_template)
 
-    node_text = diagram_template.render(**need_info, **needs_config.render_context)
+    node_text = render_template_string(
+        needs_config.diagram_template,
+        {**need_info, **needs_config.render_context},
+        autoescape=False,
+    )
 
     node_link = calculate_link(app, need_info, fromdocname)
 
@@ -432,9 +434,3 @@ def render_connections(
                     style_end=link_type.display.style_end,
                 )
     return puml_connections
-
-
-@lru_cache
-def get_template(template_name: str) -> Template:
-    """Checks if a template got already rendered, if it's the case, return it"""
-    return Template(template_name)

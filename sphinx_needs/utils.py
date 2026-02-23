@@ -12,10 +12,10 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
-from jinja2 import Environment, Template
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
+from sphinx_needs._jinja import compile_template, render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
@@ -150,11 +150,11 @@ def row_col_maker(
             link_string_list = {}
             for link_name, link_conf in needs_config.string_links.items():
                 link_string_list[link_name] = {
-                    "url_template": Environment(autoescape=True).from_string(
-                        link_conf["link_url"]
+                    "url_template": compile_template(
+                        link_conf["link_url"], autoescape=False
                     ),
-                    "name_template": Environment(autoescape=True).from_string(
-                        link_conf["link_name"]
+                    "name_template": compile_template(
+                        link_conf["link_name"], autoescape=False
                     ),
                     "regex_compiled": re.compile(link_conf["regex"]),
                     "options": link_conf["options"],
@@ -393,14 +393,13 @@ def jinja_parse(context: dict[str, Any], jinja_string: str) -> str:
 
     """
     try:
-        content_template = Template(jinja_string, autoescape=True)
+        content = render_template_string(jinja_string, context, autoescape=False)
     except Exception as e:
         raise ReferenceError(
             f'There was an error in the jinja statement: "{jinja_string}". '
             f"Error Msg: {e}"
-        )
+        ) from e
 
-    content = content_template.render(**context)
     return content
 
 
@@ -495,10 +494,10 @@ def match_string_link(
         if match:
             render_content = match.groupdict()
             link_url = link_conf["url_template"].render(
-                **render_content, **render_context
+                {**render_content, **render_context}
             )
             link_name = link_conf["name_template"].render(
-                **render_content, **render_context
+                {**render_content, **render_context}
             )
 
         # if no string_link match was made, we handle it as normal string value
