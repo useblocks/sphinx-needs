@@ -4,6 +4,260 @@
 Changelog
 =========
 
+.. _`release:7.0.0`:
+
+7.0.0
+-----
+
+:Released: Unreleased
+:Full Changelog: `v6.3.0...v7.0.0 <https://github.com/useblocks/sphinx-needs/compare/6.3.0...0aea09eda386880272205cbdc8a98fde3ff3566a>`__
+
+This is a major release that consolidates field, link, and default configuration
+into a single, composable schema system — inspired by
+`SysML2 <https://github.com/Systems-Modeling/SysML-v2-Release>`__.
+See the `extensible schema proposal <https://github.com/useblocks/sphinx-needs/discussions/1646>`__
+for the full design rationale.
+
+This release completes the first two phases of the proposal:
+migrating fields (``needs_extra_options`` → :ref:`needs_fields`) and
+links (``needs_extra_links`` → :ref:`needs_links`).
+The next potential phase is **per-type schemas with type inheritance**,
+allowing individual need types to specialize fields and links
+(see `discussion comment <https://github.com/useblocks/sphinx-needs/discussions/1646#discussioncomment-15788244>`__
+for the implementation plan).
+
+All deprecated configuration options continue to work in this release but emit warnings.
+We recommend migrating to the new options as soon as possible;
+deprecated options will be removed in a future major release.
+
+Consolidated field & link configuration
+........................................
+
+The core theme of this release is moving from many scattered configuration options
+to a **unified per-field / per-link definition**.
+This makes the configuration more explicit, easier to understand, and
+lays the groundwork for future per-type schemas.
+
+- ✨ Add :ref:`needs_fields` configuration, deprecate ``needs_extra_options`` (:pr:`1611`)
+
+  The new :ref:`needs_fields` is a **dictionary** mapping field names to their full configuration.
+  It replaces the flat list ``needs_extra_options`` and also allows **specializing core fields**
+  (e.g. ``status``, ``tags``) by narrowing their type constraints
+  (following the `Liskov substitution principle <https://en.wikipedia.org/wiki/Liskov_substitution_principle>`__).
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     needs_extra_options = ["priority", "verified"]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.priority]
+     description = "Priority level"
+     schema.type = "integer"
+     schema.minimum = 1
+     schema.maximum = 5
+
+     [needs.fields.verified]
+     schema.type = "boolean"
+
+- ⚠️ Migrate ``needs_extra_links`` to :ref:`needs_links` (:pr:`1649`)
+
+  The new :ref:`needs_links` uses the same dict-based pattern as :ref:`needs_fields`,
+  replacing the list-based ``needs_extra_links``.
+  The redundant ``option`` key is no longer needed.
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     [[needs.extra_links]]
+     option = "blocks"
+     incoming = "is blocked by"
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.links.blocks]
+     incoming = "is blocked by"
+
+- ✨ Add ``default`` and ``predicates`` keys to :ref:`needs_fields` and :ref:`needs_links`,
+  deprecate ``needs_global_options`` (:pr:`1612`)
+
+  Field defaults and conditional (predicate-based) defaults can now be set
+  **directly on each field or link**, replacing the separate ``needs_global_options`` configuration.
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     [needs.global_options.status]
+     default = "draft"
+     predicates = [['status == "open"', "active"]]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.status]
+     default = "draft"
+     predicates = [['status == "open"', "active"]]
+
+- ✨ Add ``nullable`` key to :ref:`needs_fields` items (:pr:`1613`)
+
+  Individual fields can now declare whether ``null`` (``None``) is a valid value.
+
+- ✨ Add ``parse_variants`` to :ref:`needs_fields` / :ref:`needs_links`,
+  deprecate ``needs_variant_options`` (:pr:`1614`)
+
+  Variant parsing is now enabled per-field/link instead of via a separate global list.
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     needs_variant_options = ["author", "status"]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.author]
+     parse_variants = true
+
+     [needs.fields.status]
+     parse_variants = true
+
+- ♻️ Move ``needs_statuses`` and ``needs_tags`` checking to schema validation (:pr:`1605`)
+
+  ``needs_statuses`` and ``needs_tags`` are now deprecated.
+  Use schema ``enum`` constraints on the ``status`` and ``tags`` fields instead:
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     needs_statuses = [{name = "draft"}, {name = "approved"}]
+     needs_tags = [{name = "security"}, {name = "usability"}]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.status]
+     schema.enum = ["draft", "approved"]
+
+     [needs.fields.tags]
+     schema.items.enum = ["security", "usability"]
+
+API changes
+...........
+
+- ✨ Add ``add_field`` API; deprecate ``add_extra_option`` (:pr:`1641`)
+
+  Extensions that programmatically add fields should migrate from
+  :py:func:`~sphinx_needs.api.configuration.add_extra_option` to the new
+  :py:func:`~sphinx_needs.api.configuration.add_field`,
+  which accepts the same schema, default, and predicate options as :ref:`needs_fields`.
+
+- 👌 Allow ``add_field`` API to set defaults/predicates (:pr:`1643`)
+
+Breaking changes
+................
+
+- ‼️ ``needs_fields`` and ``add_field`` default to **nullable with no default** (:pr:`1645`)
+
+  When defining a field via :ref:`needs_fields` or ``add_field`` **without** an explicit ``schema``,
+  the field now defaults to ``nullable=True`` with no default value (i.e. ``null``).
+
+  Previously, fields without an explicit schema defaulted to ``nullable=False`` with a
+  default of ``""`` (empty string). This was a legacy of the untyped ``needs_extra_options`` era
+  and caused confusion when users expected unset fields to be ``null`` rather than an empty string.
+
+  The old ``needs_extra_options`` / ``add_extra_option`` APIs retain their legacy behaviour,
+  so **only** users who have already migrated to ``needs_fields`` / ``add_field`` are affected.
+
+  To restore the old behaviour explicitly:
+
+  .. code-block:: toml
+
+     [needs.fields.my_field]
+     nullable = false
+     default = ""
+
+- ‼️ Need fields added by services default to nullable and null (:pr:`1644`)
+
+  Fields registered by built-in services (e.g. GitHub) now default to nullable with no default,
+  matching the new ``needs_fields`` convention.
+
+- ⚠️ Separate reduced vs full need representation for schema validation (:pr:`1652`)
+
+  Schema validation now distinguishes between a **reduced** need representation
+  (for type-specific ``local``/``network`` schemas, where default-valued and empty fields are
+  stripped) and a **full** representation (for global field/link constraints).
+
+  Previously, fields with default ``[]`` values (link fields, ``tags``) were stripped before
+  validation, silently bypassing constraints like ``minItems``, ``contains``, and ``minContains``.
+  These fields are now retained as ``[]`` in global constraint validation, so such constraints
+  will now correctly trigger on needs that have empty link/tag lists.
+
+- ♻️ Replace ``jinja2`` with ``minijinja`` for template rendering (:pr:`1659`)
+
+  The ``jinja2`` dependency has been replaced by ``minijinja`` (``minijinja-py``),
+  a lightweight, Rust-based Jinja2-compatible template engine.
+  This provides faster template rendering and a smaller dependency footprint.
+
+  **Standard Jinja2 syntax is fully supported** — most custom templates will work without changes.
+  Notable differences:
+
+  - ``None`` renders as ``"none"`` (lowercase) instead of ``"None"``.
+    Use ``{% if field %}{{ field }}{% endif %}`` to guard against ``None`` output.
+  - A few Jinja2-only filters are not available: ``wordcount``, ``center``, ``urlize``,
+    ``xmlattr``, ``forceescape``. See the ``minijinja``
+    `documentation <https://docs.rs/minijinja/latest/minijinja/>`__ for alternatives.
+
+Compatibility changes
+.....................
+
+- ⬆️ Support Sphinx 9 and Docutils 0.22 (:pr:`1653`)
+
+  Sphinx-Needs now supports Sphinx 7.4 through 9.x and Docutils 0.22.
+
+Bug fixes
+.........
+
+- 🐛 Fix ``needs.json`` read/write when no needs are present (:pr:`1661`)
+- 🐛 Fix ``needextend`` data purging and deterministic ordering (:pr:`1657`)
+- 🐛 Fix schema validation returning per-need errors (:pr:`1640`)
+
+Improvements
+............
+
+- 👌 Default values of extra fields now checked against schema definitions (:pr:`1647`)
+- 👌 Expose ``parse_dynamic_functions`` in field and link configuration (:pr:`1660`)
+- 👌 Minor improvements for ``needs_fields`` inheritance (:pr:`1635`)
+- ✨ Add ``uniqueItems`` to ``array`` schema validation (:pr:`1610`)
+
+Internal changes
+................
+
+These changes do not affect user-facing behaviour but improve the codebase:
+
+- ♻️ Migrate use of ``extra_links`` to Schema-Based Access (:pr:`1638`)
+- 🔧 Refactor schema validation: separate select filtering from local validation (:pr:`1655`)
+- 🔧 Simplify field/link validation (:pr:`1654`)
+- 🔧 Simplify ``generate_needs`` function (:pr:`1651`)
+- 🔧 Rename "option" to "field" internally (:pr:`1642`)
+- 🔧 Refactor ``populate_field_type`` to use type-directed schema walking (:pr:`1639`)
+- 🔧 Store full schema on ``FieldSchema`` (:pr:`1603`)
+- 🔧 Add ``validate_extra_option_schema`` (:pr:`1602`)
+- 🔧 Remove use of ``extra_options`` after config resolution (:pr:`1607`)
+- 🔧 Move link ``schema`` to ``LinkSchema`` (:pr:`1617`)
+- 🔧 Simplify ``import_prefix_link_edit`` (:pr:`1615`)
+- 🔧 Add ``AGENTS.md`` (:pr:`1621`)
+- 🧪 Add tests for ``create_inherited_field`` (:pr:`1636`)
+
+Documentation fixes
+...................
+
+- 📚 Fix typo in sort of ``needtable`` documentation (:pr:`1619`)
+- 📚 Fix small grammatical error in ``need.rst`` (:pr:`1637`)
+- 📚 Fix typo in documentation for GitHub service example (:pr:`1634`)
+
 .. _`release:6.3.0`:
 
 6.3.0
