@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771773379899,
+  "lastUpdate": 1771867062568,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17388,6 +17388,42 @@ window.BENCHMARK_DATA = {
             "value": 57.929337342000004,
             "unit": "s",
             "extra": "Commit: 9d08d5ed50653b41475bf27ff6a5f05ae5af3ac2\nBranch: master\nTime: 2026-02-22T16:14:19+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "zwinkau@mailbox.org",
+            "name": "Andreas Zwinkau",
+            "username": "qznc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0aea09eda386880272205cbdc8a98fde3ff3566a",
+          "message": "🐛 Fix `needs.json` read/write when no needs are present (#1661)",
+          "timestamp": "2026-02-23T18:15:08+01:00",
+          "tree_id": "14933718cf14fed9f3e1e9f4692622eb68e32b51",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0aea09eda386880272205cbdc8a98fde3ff3566a"
+        },
+        "date": 1771867028777,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21476058099999307,
+            "unit": "s",
+            "extra": "Commit: 0aea09eda386880272205cbdc8a98fde3ff3566a\nBranch: master\nTime: 2026-02-23T18:15:08+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.90013001,
+            "unit": "s",
+            "extra": "Commit: 0aea09eda386880272205cbdc8a98fde3ff3566a\nBranch: master\nTime: 2026-02-23T18:15:08+01:00"
           }
         ]
       }
