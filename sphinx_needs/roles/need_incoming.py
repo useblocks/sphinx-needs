@@ -67,7 +67,7 @@ def process_need_incoming(
                             _docname,
                             target_need["id_parent"],
                             node_need_backref[0].deepcopy(),
-                            node_need_backref["reftarget"],
+                            target_need["title"],
                         )
                     else:
                         assert target_need["external_url"] is not None, (
