@@ -211,7 +211,7 @@ def generate_need(
     if (
         needs_config.id_regex
         and not is_external
-        and not re.match(needs_config.id_regex, need_id)
+        and not re.fullmatch(needs_config.id_regex, need_id)
     ):
         raise InvalidNeedException(
             "invalid_id",
