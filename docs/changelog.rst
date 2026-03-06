@@ -9,7 +9,7 @@ Changelog
 7.0.0
 -----
 
-:Released: Unreleased
+:Released: 24.02.2026
 :Full Changelog: `v6.3.0...v7.0.0 <https://github.com/useblocks/sphinx-needs/compare/6.3.0...0aea09eda386880272205cbdc8a98fde3ff3566a>`__
 
 This is a major release that consolidates field, link, and default configuration
