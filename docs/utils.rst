@@ -7,4 +7,3 @@ Utils
    :maxdepth: 2
 
    performance/index
-   performance/debug
