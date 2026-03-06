@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1771951910581,
+  "lastUpdate": 1772814473905,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17460,6 +17460,42 @@ window.BENCHMARK_DATA = {
             "value": 57.678026001000006,
             "unit": "s",
             "extra": "Commit: 607b98ab4f77be7682adfd50e7b85ebbc7af3bde\nBranch: master\nTime: 2026-02-24T17:49:42+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "466ad2ed988c5d183d2fdad9b737ed1a2acc3de2",
+          "message": "📚 Fix 7.0.0 release date (#1666)",
+          "timestamp": "2026-03-06T17:25:44+01:00",
+          "tree_id": "d2eac39a7686416d2b55afd8e509898011c913be",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/466ad2ed988c5d183d2fdad9b737ed1a2acc3de2"
+        },
+        "date": 1772814449707,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.25138730399999076,
+            "unit": "s",
+            "extra": "Commit: 466ad2ed988c5d183d2fdad9b737ed1a2acc3de2\nBranch: master\nTime: 2026-03-06T17:25:44+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.816596092000026,
+            "unit": "s",
+            "extra": "Commit: 466ad2ed988c5d183d2fdad9b737ed1a2acc3de2\nBranch: master\nTime: 2026-03-06T17:25:44+01:00"
           }
         ]
       }
