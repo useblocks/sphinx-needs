@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1772814473905,
+  "lastUpdate": 1773046555473,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17496,6 +17496,42 @@ window.BENCHMARK_DATA = {
             "value": 58.816596092000026,
             "unit": "s",
             "extra": "Commit: 466ad2ed988c5d183d2fdad9b737ed1a2acc3de2\nBranch: master\nTime: 2026-03-06T17:25:44+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f183dde4b8df18966d57116b311f0ab8e9fb29a0",
+          "message": "🐛 Fix linkcheck CI job warnings (#1667)\n\n`tox -e docs-linkcheck` fails due to 4 warnings promoted to errors by\n`-W` flag.\n\n- **`docs/directives/needbar.rst`**: Fix 3 duplicate target name\n\"transpose\" errors — the named hyperlink `` `transpose <...>`_ ``\nconflicted with the section heading target. Changed to anonymous\nreference (`` `transpose <...>`__ ``).\n- **`docs/utils.rst`**: Remove duplicate toctree entry for\n`performance/debug`, already included via `performance/index`.\n- **`docs/conf.py`**: Add `(\"py:class\", \"dict[str\")` to `nitpick_ignore`\nfor a malformed autodoc-generated type reference.\n\n---------\n\nCo-authored-by: copilot-swe-agent[bot] <198982749+Copilot@users.noreply.github.com>\nCo-authored-by: ubmarco <839934+ubmarco@users.noreply.github.com>",
+          "timestamp": "2026-03-09T09:53:46+01:00",
+          "tree_id": "5d78f67b1b33425569c6bad26993c92cb4631453",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f183dde4b8df18966d57116b311f0ab8e9fb29a0"
+        },
+        "date": 1773046535642,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.38498133699999926,
+            "unit": "s",
+            "extra": "Commit: f183dde4b8df18966d57116b311f0ab8e9fb29a0\nBranch: master\nTime: 2026-03-09T09:53:46+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.96696216400001,
+            "unit": "s",
+            "extra": "Commit: f183dde4b8df18966d57116b311f0ab8e9fb29a0\nBranch: master\nTime: 2026-03-09T09:53:46+01:00"
           }
         ]
       }
