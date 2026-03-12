@@ -1,0 +1,176 @@
+variant_resolve_match:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_filter_data = {"assignee": "Alice"}
+  ubproject: |
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :links: <<[assignee == 'Alice']:SPEC_1, SPEC_2>>
+  expect:
+    IMPL_1:
+      links:
+        - SPEC_1
+
+variant_resolve_match_multiple:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_filter_data = {"assignee": "Alice"}
+  ubproject: |
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :links: <<[assignee == 'Alice']:SPEC_1, SPEC_2>>, <<[assignee == 'Bob']:SPEC_1, SPEC_2>>
+  expect:
+    IMPL_1:
+      links:
+        - SPEC_1
+        - SPEC_2
+
+variant_resolve_fallback:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_filter_data = {"assignee": "Bob"}
+  ubproject: |
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :links: <<[assignee == 'Alice']:SPEC_1, SPEC_2>>
+  expect:
+    IMPL_1:
+      links:
+        - SPEC_2
+
+variant_named:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_variants = {"is_alice": "assignee == 'Alice'"}
+    needs_filter_data = {"assignee": "Alice"}
+  ubproject: |
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :links: <<is_alice:SPEC_1, SPEC_2>>
+  expect:
+    IMPL_1:
+      links:
+        - SPEC_1
+
+variant_named_fallback:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_variants = {"is_alice": "assignee == 'Alice'"}
+    needs_filter_data = {"assignee": "Bob"}
+  ubproject: |
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :links: <<is_alice:SPEC_1, SPEC_2>>
+  expect:
+    IMPL_1:
+      links:
+        - SPEC_2
+
+variant_multiple_expressions:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_filter_data = {"role": "developer"}
+  ubproject: |
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. spec:: Spec C
+        :id: SPEC_3
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :links: <<[role == 'manager']:SPEC_1, [role == 'developer']:SPEC_2, SPEC_3>>
+  expect:
+    IMPL_1:
+      links:
+        - SPEC_2
+
+variant_disabled:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_filter_data = {"assignee": "Alice"}
+  ubproject: |
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :links: SPEC_1
+  expect:
+    IMPL_1:
+      links:
+        - SPEC_1
