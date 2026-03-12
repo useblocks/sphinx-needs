@@ -31,7 +31,9 @@ def test_link_variants(
     for need_id, expected_fields in expect.items():
         need = view[need_id]
         for field, expected_value in expected_fields.items():
-            actual = list(need[field])
+            actual = need[field]
+            if isinstance(expected_value, list):
+                actual = list(actual)
             assert actual == expected_value, (
                 f"Need {need_id!r} field {field!r}: expected {expected_value}, got {actual}"
             )
