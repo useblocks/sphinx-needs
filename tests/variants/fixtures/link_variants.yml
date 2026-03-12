@@ -90,8 +90,10 @@ variant_named:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_variants = {"is_alice": "assignee == 'Alice'"}
   ubproject: |
+    [needs.variants]
+    is_alice = "assignee == 'Alice'"
+
     [needs.fields.assignee]
     nullable = true
 
@@ -120,8 +122,10 @@ variant_named_fallback:
   conf: |
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
-    needs_variants = {"is_alice": "assignee == 'Alice'"}
   ubproject: |
+    [needs.variants]
+    is_alice = "assignee == 'Alice'"
+
     [needs.fields.assignee]
     nullable = true
 
