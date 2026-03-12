@@ -1,0 +1,208 @@
+variant_resolve_match:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.assignee]
+    nullable = true
+
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :assignee: Alice
+        :links: <<[assignee == 'Alice']:SPEC_1, SPEC_2>>
+  expect:
+    IMPL_1:
+      assignee: Alice
+      links:
+        - SPEC_1
+
+variant_resolve_match_multiple:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.assignee]
+    nullable = true
+
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :assignee: Alice
+        :links: <<[assignee == 'Alice']:SPEC_1, SPEC_2>>, <<[assignee == 'Bob']:SPEC_1, SPEC_2>>
+  expect:
+    IMPL_1:
+      assignee: Alice
+      links:
+        - SPEC_1
+        - SPEC_2
+
+variant_resolve_fallback:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.assignee]
+    nullable = true
+
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :assignee: Bob
+        :links: <<[assignee == 'Alice']:SPEC_1, SPEC_2>>
+  expect:
+    IMPL_1:
+      assignee: Bob
+      links:
+        - SPEC_2
+
+variant_named:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.variants]
+    is_alice = "assignee == 'Alice'"
+
+    [needs.fields.assignee]
+    nullable = true
+
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :assignee: Alice
+        :links: <<is_alice:SPEC_1, SPEC_2>>
+  expect:
+    IMPL_1:
+      assignee: Alice
+      links:
+        - SPEC_1
+
+variant_named_fallback:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.variants]
+    is_alice = "assignee == 'Alice'"
+
+    [needs.fields.assignee]
+    nullable = true
+
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :assignee: Bob
+        :links: <<is_alice:SPEC_1, SPEC_2>>
+  expect:
+    IMPL_1:
+      assignee: Bob
+      links:
+        - SPEC_2
+
+variant_multiple_expressions:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.role]
+    nullable = true
+
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+    parse_variants = true
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. spec:: Spec B
+        :id: SPEC_2
+
+    .. spec:: Spec C
+        :id: SPEC_3
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :role: developer
+        :links: <<[role == 'manager']:SPEC_1, [role == 'developer']:SPEC_2, SPEC_3>>
+  expect:
+    IMPL_1:
+      role: developer
+      links:
+        - SPEC_2
+
+variant_disabled:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+  ubproject: |
+    [needs.fields.assignee]
+    nullable = true
+
+    [needs.links.links]
+    outgoing = "links"
+    incoming = "linked by"
+  rst: |
+    .. spec:: Spec A
+        :id: SPEC_1
+
+    .. impl:: Implementation
+        :id: IMPL_1
+        :assignee: Alice
+        :links: SPEC_1
+  expect:
+    IMPL_1:
+      assignee: Alice
+      links:
+        - SPEC_1
