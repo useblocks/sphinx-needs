@@ -30,22 +30,22 @@ import json
 import os
 from pathlib import Path
 from typing import Any
-import weakref
 
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 
 # ---------------------------------------------------------------------------
-# Per-build accumulator keyed on the Sphinx app instance.
-# Using WeakKeyDictionary ensures data from one build does not leak into
-# another build running in the same Python process (e.g. sphinx-autobuild,
-# test suites), and the entry is garbage-collected when the app is destroyed.
+# State Management
 # ---------------------------------------------------------------------------
 
-_build_data: weakref.WeakKeyDictionary[Sphinx, dict[str, Any]] = (
-    weakref.WeakKeyDictionary()
-)
+
+def _get_index_data(env: BuildEnvironment) -> dict[str, Any]:
+    """Retrieve or initialize the index string structure from the build environment."""
+    if not hasattr(env, "ai_docs_index_data"):
+        env.ai_docs_index_data = {}  # type: ignore[attr-defined]
+    return env.ai_docs_index_data  # type: ignore[attr-defined]
 
 
 # ---------------------------------------------------------------------------
@@ -137,58 +137,36 @@ def _page_summary(doctree: nodes.document) -> str:
 # ---------------------------------------------------------------------------
 
 
-def on_builder_inited(app: Sphinx) -> None:
-    """Initialise the per-build accumulator when an HTML build starts.
-
-    :param app: The Sphinx application object.
-    """
-    if getattr(app.builder, "format", "") == "html":
-        _build_data[app] = {}
+def on_env_purge_doc(_app: Sphinx, env: BuildEnvironment, docname: str) -> None:
+    """Remove a document from the accumulated data when it is purged."""
+    data = _get_index_data(env)
+    data.pop(docname, None)
 
 
-def on_doctree_resolved(
-    app: Sphinx,
-    doctree: nodes.document,
-    docname: str,
+def on_env_merge_info(
+    _app: Sphinx,
+    env: BuildEnvironment,
+    docnames: list[str],
+    other: BuildEnvironment,
 ) -> None:
-    """Collect AI index data for a single page.
+    """Merge environment data from parallel workers into the main environment."""
+    data = _get_index_data(env)
+    other_data = _get_index_data(other)
+    for docname in docnames:
+        if docname in other_data:
+            data[docname] = other_data[docname]
 
-    Called by Sphinx for each document during the write phase of an HTML build.
+
+def on_doctree_read(app: Sphinx, doctree: nodes.document) -> None:
+    """Collect AI index data for a single page during the read phase.
 
     :param app: The Sphinx application object.
-    :param doctree: The fully-resolved document tree.
-    :param docname: The document name (e.g. ``basics/installation``).
+    :param doctree: The parsed document tree.
     """
-    if getattr(app.builder, "format", "") != "html":
-        return
+    docname = app.env.docname
+    data = _get_index_data(app.env)
 
-    page_data = _build_data.get(app)
-    if page_data is None:
-        return
-
-    title_node = app.env.titles.get(docname)
-    title = title_node.astext() if title_node else ""
-
-    html_copy_source = getattr(app.config, "html_copy_source", True)
-    if html_copy_source:
-        source_rel = os.fspath(app.env.doc2path(docname, base=False))
-        sourcelink_suffix = getattr(app.config, "html_sourcelink_suffix", ".txt")
-        sourcename = getattr(app.builder, "sourcename", "_sources")
-        if not source_rel.endswith(sourcelink_suffix):
-            rst_source_path = f"{sourcename}/{source_rel}{sourcelink_suffix}"
-        else:
-            rst_source_path = f"{sourcename}/{source_rel}"
-    else:
-        rst_source_path = ""
-
-    html_path = getattr(app.builder, "get_target_uri", lambda doc: f"{doc}.html")(
-        docname
-    )
-
-    page_data[docname] = {
-        "rst_source_path": rst_source_path,
-        "html_path": html_path,
-        "title": title,
+    data[docname] = {
         "sections": _top_level_sections(doctree),
         "summary": _page_summary(doctree),
     }
@@ -202,14 +180,45 @@ def on_build_finished(app: Sphinx, exception: Exception | None) -> None:
     :param app: The Sphinx application object.
     :param exception: The exception that caused the build to fail, or None.
     """
-    if exception is not None:
+    if exception is not None or getattr(app.builder, "format", "") != "html":
         return
 
-    page_data = _build_data.get(app)
-    if not page_data:
+    data = _get_index_data(app.env)
+    if not data:
         return
 
-    pages = list(page_data.values())
+    pages = []
+    html_copy_source = getattr(app.config, "html_copy_source", True)
+    sourcelink_suffix = getattr(app.config, "html_sourcelink_suffix", ".txt")
+    sourcename = getattr(app.builder, "sourcename", "_sources")
+
+    for docname, doc_info in data.items():
+        title_node = app.env.titles.get(docname)
+        title = title_node.astext() if title_node else ""
+
+        if html_copy_source:
+            source_rel = os.fspath(app.env.doc2path(docname, base=False))
+            if not source_rel.endswith(sourcelink_suffix):
+                rst_source_path = f"{sourcename}/{source_rel}{sourcelink_suffix}"
+            else:
+                rst_source_path = f"{sourcename}/{source_rel}"
+        else:
+            rst_source_path = ""
+
+        html_path = getattr(app.builder, "get_target_uri", lambda doc: f"{doc}.html")(
+            docname
+        )
+
+        pages.append(
+            {
+                "rst_source_path": rst_source_path,
+                "html_path": html_path,
+                "title": title,
+                "sections": doc_info["sections"],
+                "summary": doc_info["summary"],
+            }
+        )
+
     output: dict[str, Any] = {"version": "1.0", "pages": pages}
     out_path = Path(app.outdir) / "ai_docs_index.json"
     out_path.write_text(
@@ -243,11 +252,12 @@ def setup(app: Sphinx) -> dict[str, Any]:
         pseudoxml=_skip,
     )
     app.add_directive("page-summary", PageSummaryDirective)
-    app.connect("builder-inited", on_builder_inited)
-    app.connect("doctree-resolved", on_doctree_resolved)
+    app.connect("env-purge-doc", on_env_purge_doc)
+    app.connect("env-merge-info", on_env_merge_info)
+    app.connect("doctree-read", on_doctree_read)
     app.connect("build-finished", on_build_finished)
     return {
         "version": "0.1.0",
         "parallel_read_safe": True,
-        "parallel_write_safe": False,
+        "parallel_write_safe": True,
     }

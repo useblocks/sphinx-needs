@@ -18,12 +18,6 @@ dependencies = [
 ]
 ```
 
-## Compatibility
-
-- **Python 3.9 and newer** are supported.
-- **Sphinx 5–9** are supported on Python 3.9–3.12.
-- **Sphinx 6–9** are supported on Python 3.13 and 3.14.
-
 ## Usage
 
 Add the extension to your Sphinx `conf.py`:
