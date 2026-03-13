@@ -18,6 +18,7 @@ from sphinx_ai_index import (
 class MockBuilder:
     def __init__(self, name: str):
         self.name = name
+        self.format = name
 
 
 class MockApp:

@@ -139,7 +139,7 @@ def on_builder_inited(app: Sphinx) -> None:
 
     :param app: The Sphinx application object.
     """
-    if app.builder.name == "html":
+    if getattr(app.builder, "format", "") == "html":
         _build_data[app] = {}
 
 
@@ -156,7 +156,7 @@ def on_doctree_resolved(
     :param doctree: The fully-resolved document tree.
     :param docname: The document name (e.g. ``basics/installation``).
     """
-    if app.builder.name != "html":
+    if getattr(app.builder, "format", "") != "html":
         return
 
     page_data = _build_data.get(app)
