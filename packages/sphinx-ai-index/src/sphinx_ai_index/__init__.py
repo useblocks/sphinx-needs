@@ -25,6 +25,7 @@ Generated file format::
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 import weakref
@@ -166,14 +167,25 @@ def on_doctree_resolved(
     title_node = app.env.titles.get(docname)
     title = title_node.astext() if title_node else ""
 
-    # env.doc2path returns the source-relative path including the real extension,
-    # e.g. "basics/installation.rst" or "references/ubproject_schema.md".
-    source_rel = app.env.doc2path(docname, base=False)
-    rst_source_path = f"_sources/{source_rel}.txt"
+    html_copy_source = getattr(app.config, "html_copy_source", True)
+    if html_copy_source:
+        source_rel = os.fspath(app.env.doc2path(docname, base=False))
+        sourcelink_suffix = getattr(app.config, "html_sourcelink_suffix", ".txt")
+        sourcename = getattr(app.builder, "sourcename", "_sources")
+        if not source_rel.endswith(sourcelink_suffix):
+            rst_source_path = f"{sourcename}/{source_rel}{sourcelink_suffix}"
+        else:
+            rst_source_path = f"{sourcename}/{source_rel}"
+    else:
+        rst_source_path = ""
+
+    html_path = getattr(app.builder, "get_target_uri", lambda doc: f"{doc}.html")(
+        docname
+    )
 
     page_data[docname] = {
         "rst_source_path": rst_source_path,
-        "html_path": f"{docname}.html",
+        "html_path": html_path,
         "title": title,
         "sections": _top_level_sections(doctree),
         "summary": _page_summary(doctree),
