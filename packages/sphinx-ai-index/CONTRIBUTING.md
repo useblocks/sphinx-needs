@@ -47,6 +47,6 @@ rye run mypy:all   # mypy
 1. Update version in `pyproject.toml`.
 2. Update `CHANGELOG.md` with the release notes.
 3. Tag the commit: `git tag vX.Y.Z && git push --tags`
-4. The [release workflow](.github/workflows/release.yaml) will build the
+4. The [release workflow](.github/workflows/release.yml) will build the
    wheel and sdist automatically.
 5. To publish to PyPI, complete the trusted-publishing setup in the release workflow.
