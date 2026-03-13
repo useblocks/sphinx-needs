@@ -1,0 +1,111 @@
+[project]
+name = "sphinx-ai-index"
+version = "0.1.0"
+description = "Sphinx extension that generates an AI-readable documentation index"
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">= 3.12"
+dependencies = ["sphinx>=5.0"]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[dependency-groups]
+testing = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0.0",
+  "syrupy>=4.9.1",
+  "hypothesis>=6.0",
+]
+docs = ["furo>=2024.5.6", "myst-parser>=4.0.0"]
+mypy = ["mypy>=1.10", "types-docutils"]
+ruff = ["ruff>=0.8.0"]
+build = ["simple-build>=0.0.2", "shiv>=1.0.8"]
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+  "types-docutils",
+  "syrupy>=4.9.1",
+  "furo>=2024.5.6",
+  "mypy>=1.10",
+  "myst-parser>=4.0.0",
+  "pytest-cov>=5.0.0",
+  "pytest>=8.0",
+  "simple-build>=0.0.2",
+  "uv>=0.5.5",
+  "shiv>=1.0.8",
+  "hypothesis>=6.0",
+  "tox>=4.49.1",
+  "tox-uv>=1.33.4",
+]
+
+[tool.rye.scripts]
+# linting and formatting
+"mypy:all" = "mypy ."
+"rye:lint" = "rye lint"
+"rye:format" = "rye format"
+"check" = { chain = ["rye:format", "rye:lint", "mypy:all"] }
+
+[tool.ruff.lint]
+extend-select = [
+  # "ANN",
+  "S",
+  "ARG",
+  "B",    # flake8-bugbear
+  "C4",   # flake8-comprehensions
+  "FURB", # refurb (modernising code)
+  "I",    # isort
+  "ICN",  # flake8-import-conventions
+  "ISC",  # flake8-implicit-str-concat
+  "N",    # pep8-naming
+  "PERF", # perflint (performance anti-patterns)
+  "PGH",  # pygrep-hooks
+  "PIE",  # flake8-pie
+  "PL",   # pylint
+  "PTH",  # flake8-use-pathlib
+  "RUF",  # Ruff-specific rules
+  "SIM",  # flake8-simplify
+  "SLF",  # private member access
+  "UP",   # pyupgrade
+  "T20",  # flake8-print
+]
+extend-ignore = [
+  "ISC001", # implicit-str-concat
+]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+force-sort-within-sections = true
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = [
+  "ARG001",  # unused-function-argument - fixtures
+  "ARG005",  # unused-lambda-argument - monkeypatches
+  "PLR2004", # magic-value-comparison - valueable for tests
+  "S101",    # assert - needed for tests
+]
+
+[tool.mypy]
+exclude = ["tests/", "dist/", "docs/_build/", "docs/conf.py"]
+show_error_codes = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_any_explicit = false
+disallow_any_unimported = false
+disallow_untyped_defs = false
+disallow_any_expr = false
+
+[[tool.mypy.overrides]]
+module = "sphinx_ai_index.*"
+disallow_any_unimported = false
+disallow_untyped_defs = false
+disallow_any_expr = false
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

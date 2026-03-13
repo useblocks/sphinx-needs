@@ -1,0 +1,12 @@
+name: Set up rye
+description: Sets up rye and synchronizes project dependencies
+runs:
+  using: 'composite'
+  steps:
+    # now install rye and sync the dependencies
+    - uses: eifinger/setup-rye@v4
+      with:
+        version: "0.42.0"
+        enable-cache: false
+    - run: rye sync
+      shell: ${{ runner.os == 'Windows' && 'powershell' || 'bash' }}
