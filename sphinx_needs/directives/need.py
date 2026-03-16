@@ -23,7 +23,7 @@ from sphinx_needs.functions.functions import (
 from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_constraints import process_constraints
-from sphinx_needs.need_item import NeedItem, NeedItemSourceDirective
+from sphinx_needs.need_item import NeedItem, NeedItemSourceDirective, NeedLink
 from sphinx_needs.needs_schema import FieldsSchema
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import (
@@ -32,7 +32,6 @@ from sphinx_needs.utils import (
     coerce_to_boolean,
     profile,
     remove_node_from_tree,
-    split_need_id,
 )
 
 LOGGER = get_logger(__name__)
@@ -440,22 +439,21 @@ def update_back_links(
         need.reset_backlinks()
 
     for key, need in needs.items():
-        dead_links = []
+        dead_links: list[tuple[str, NeedLink]] = []
 
-        for link_type, references in need.iter_links_items():
-            for need_id_full in references:
-                need_id_main, need_id_part = split_need_id(need_id_full)
-                if linked_need := needs.get(need_id_main):
-                    linked_need.add_backlink(link_type, key)
-                    if need_id_part is not None:
-                        if linked_part := linked_need.get_part(need_id_part):
+        for link_type, references in need.iter_links_items(as_str=False):
+            for need_link in references:
+                if linked_need := needs.get(need_link.id):
+                    linked_need.add_backlink(link_type, NeedLink(id=key))
+                    if need_link.part is not None:
+                        if linked_part := linked_need.get_part(need_link.part):
                             if link_type not in linked_part.backlinks:
                                 linked_part.backlinks[link_type] = []
                             linked_part.backlinks[link_type].append(key)
                         else:
-                            dead_links.append((link_type, need_id_full))
+                            dead_links.append((link_type, need_link))
                 else:
-                    dead_links.append((link_type, need_id_full))
+                    dead_links.append((link_type, need_link))
 
         need["has_dead_links"] = bool(dead_links)
         allow_dead_links = {
@@ -465,8 +463,8 @@ def update_back_links(
             any(not allow_dead_links.get(lt, False) for lt, _ in dead_links)
         )
         if need["has_forbidden_dead_links"] and config.report_dead_links:
-            for link_type, need_id_full in dead_links:
-                message = f"Need '{need.id}' has unknown outgoing link '{need_id_full}' in field '{link_type}'"
+            for link_type, need_link in dead_links:
+                message = f"Need '{need.id}' has unknown outgoing link '{need_link.to_filter_string()}' in field '{link_type}'"
                 # if the need has been imported from an external URL,
                 # we want to provide that URL as the location of the warning,
                 # otherwise we use the location of the need in the source file

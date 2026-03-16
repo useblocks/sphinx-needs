@@ -6,6 +6,7 @@ from sphinx_needs.data import NeedsInfoType
 from sphinx_needs.need_item import (
     NeedConstraintResults,
     NeedItem,
+    NeedLink,
     NeedModification,
     NeedPartData,
     NeedsContent,
@@ -179,13 +180,38 @@ def test_need_item_get(snapshot):
         item.get_extra("unknown_extra")
     assert sorted(item.iter_links_keys()) == ["link1", "link2"]
     assert sorted(item.iter_links_items()) == [("link1", ["ref1"]), ("link2", ["ref2"])]
+    assert sorted(item.iter_links_items(as_str=True)) == [
+        ("link1", ["ref1"]),
+        ("link2", ["ref2"]),
+    ]
+    assert sorted(item.iter_links_items(as_str=False)) == [
+        ("link1", [NeedLink(id="ref1")]),
+        ("link2", [NeedLink(id="ref2")]),
+    ]
     assert item.get_links("link1") == ["ref1"]
+    assert item.get_links("link1", as_str=True) == ["ref1"]
+    assert item.get_links("link1", as_str=False) == [NeedLink(id="ref1")]
     with pytest.raises(KeyError, match="'unknown_link'"):
         item.get_links("unknown_link")
+    with pytest.raises(KeyError, match="'unknown_link'"):
+        item.get_links("unknown_link", as_str=False)
     assert sorted(item.iter_backlinks_items()) == [("link1", ["ref3"]), ("link2", [])]
+    assert sorted(item.iter_backlinks_items(as_str=True)) == [
+        ("link1", ["ref3"]),
+        ("link2", []),
+    ]
+    assert sorted(item.iter_backlinks_items(as_str=False)) == [
+        ("link1", [NeedLink(id="ref3")]),
+        ("link2", []),
+    ]
     assert item.get_backlinks("link1") == ["ref3"]
+    assert item.get_backlinks("link1", as_str=True) == ["ref3"]
+    assert item.get_backlinks("link1", as_str=False) == [NeedLink(id="ref3")]
+    assert item.get_backlinks("link2", as_str=False) == []
     with pytest.raises(KeyError, match="'unknown_link'"):
         item.get_backlinks("unknown_link")
+    with pytest.raises(KeyError, match="'unknown_link'"):
+        item.get_backlinks("unknown_link", as_str=False)
 
 
 def test_need_item_set():
@@ -377,10 +403,35 @@ def test_need_part_item(snapshot):
         part.get_extra("unknown_extra")
     assert sorted(part.iter_links_keys()) == ["links", "other"]
     assert sorted(part.iter_links_items()) == [("links", []), ("other", [])]
+    assert sorted(part.iter_links_items(as_str=True)) == [
+        ("links", []),
+        ("other", []),
+    ]
+    assert sorted(part.iter_links_items(as_str=False)) == [
+        ("links", []),
+        ("other", []),
+    ]
     assert part.get_links("other") == []
+    assert part.get_links("other", as_str=True) == []
+    assert part.get_links("other", as_str=False) == []
     with pytest.raises(KeyError, match="'unknown_link'"):
         part.get_links("unknown_link")
+    with pytest.raises(KeyError, match="'unknown_link'"):
+        part.get_links("unknown_link", as_str=False)
     assert sorted(part.iter_backlinks_items()) == [("links", ["ref3"]), ("other", [])]
+    assert sorted(part.iter_backlinks_items(as_str=True)) == [
+        ("links", ["ref3"]),
+        ("other", []),
+    ]
+    assert sorted(part.iter_backlinks_items(as_str=False)) == [
+        ("links", [NeedLink(id="ref3")]),
+        ("other", []),
+    ]
     assert part.get_backlinks("links") == ["ref3"]
+    assert part.get_backlinks("links", as_str=True) == ["ref3"]
+    assert part.get_backlinks("links", as_str=False) == [NeedLink(id="ref3")]
+    assert part.get_backlinks("other", as_str=False) == []
     with pytest.raises(KeyError, match="'unknown_link'"):
         part.get_backlinks("unknown_link")
+    with pytest.raises(KeyError, match="'unknown_link'"):
+        part.get_backlinks("unknown_link", as_str=False)

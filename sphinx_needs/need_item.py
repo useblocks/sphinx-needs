@@ -805,37 +805,95 @@ class NeedItem:
         """Yield all extras as key-value pairs."""
         yield from self._extras.items()
 
-    def get_links(self, link_type: str) -> list[str]:
+    @overload
+    def get_links(
+        self, link_type: str, *, as_str: Literal[True] = True
+    ) -> list[str]: ...
+
+    @overload
+    def get_links(
+        self, link_type: str, *, as_str: Literal[False]
+    ) -> list[NeedLink]: ...
+
+    def get_links(
+        self, link_type: str, *, as_str: bool = True
+    ) -> list[str] | list[NeedLink]:
         """Get link references by link_type key.
 
         :raises KeyError: If the link_type is not a link type.
         """
-        return [li.to_filter_string() for li in self._links[link_type]]
+        if as_str:
+            return [li.to_filter_string() for li in self._links[link_type]]
+        return self._links[link_type]
 
     def iter_links_keys(self) -> Iterable[str]:
         """Yield all link_type keys."""
         yield from self._links.keys()
 
-    def iter_links_items(self) -> Iterable[tuple[str, list[str]]]:
-        """Yield all links as (link_type, references) pairs."""
-        yield from (
-            (key, [li.to_filter_string() for li in value])
-            for key, value in self._links.items()
-        )
+    @overload
+    def iter_links_items(
+        self, as_str: Literal[True] = True
+    ) -> Iterable[tuple[str, list[str]]]: ...
 
-    def get_backlinks(self, link_type: str) -> list[str]:
+    @overload
+    def iter_links_items(
+        self, as_str: Literal[False] = False
+    ) -> Iterable[tuple[str, list[NeedLink]]]: ...
+
+    def iter_links_items(
+        self, as_str: bool = True
+    ) -> Iterable[tuple[str, list[str]]] | Iterable[tuple[str, list[NeedLink]]]:
+        """Yield all links as (link_type, references) pairs."""
+        if as_str:
+            yield from (
+                (key, [li.to_filter_string() for li in value])
+                for key, value in self._links.items()
+            )
+        else:
+            yield from self._links.items()
+
+    @overload
+    def get_backlinks(
+        self, link_type: str, *, as_str: Literal[True] = True
+    ) -> list[str]: ...
+
+    @overload
+    def get_backlinks(
+        self, link_type: str, *, as_str: Literal[False]
+    ) -> list[NeedLink]: ...
+
+    def get_backlinks(
+        self, link_type: str, *, as_str: bool = True
+    ) -> list[str] | list[NeedLink]:
         """Get backlink references by link_type key.
 
         :raises KeyError: If the link_type is not a backlink type.
         """
-        return [li.to_filter_string() for li in self._backlinks[link_type]]
+        if as_str:
+            return [li.to_filter_string() for li in self._backlinks[link_type]]
+        return self._backlinks[link_type]
 
-    def iter_backlinks_items(self) -> Iterable[tuple[str, list[str]]]:
+    @overload
+    def iter_backlinks_items(
+        self, as_str: Literal[True] = True
+    ) -> Iterable[tuple[str, list[str]]]: ...
+
+    @overload
+    def iter_backlinks_items(
+        self, as_str: Literal[False] = False
+    ) -> Iterable[tuple[str, list[NeedLink]]]: ...
+
+    def iter_backlinks_items(
+        self, as_str: bool = True
+    ) -> Iterable[tuple[str, list[str]]] | Iterable[tuple[str, list[NeedLink]]]:
         """Yield all backlinks as (link_type, references) pairs."""
-        yield from (
-            (key, [li.to_filter_string() for li in value])
-            for key, value in self._backlinks.items()
-        )
+        if as_str:
+            yield from (
+                (key, [li.to_filter_string() for li in value])
+                for key, value in self._backlinks.items()
+            )
+        else:
+            yield from self._backlinks.items()
 
     def set_content(self, content: NeedsContent) -> None:
         """Replace the content of the need item.
@@ -1141,34 +1199,100 @@ class NeedPartItem:
         for key in self._need._extras:
             yield (key, self[key])
 
-    def get_links(self, link_type: str) -> list[str]:
+    @overload
+    def get_links(
+        self, link_type: str, *, as_str: Literal[True] = True
+    ) -> list[str]: ...
+
+    @overload
+    def get_links(
+        self, link_type: str, *, as_str: Literal[False]
+    ) -> list[NeedLink]: ...
+
+    def get_links(
+        self, link_type: str, *, as_str: bool = True
+    ) -> list[str] | list[NeedLink]:
         """Get link references by link_type key.
 
         :raises KeyError: If the link_type is not a link type.
         """
         if link_type not in self._need._links:
             raise KeyError(link_type)
-        return self[link_type]  # type: ignore[no-any-return]
+        # parts cannot link to anything, so return empty list
+        return []
 
     def iter_links_keys(self) -> Iterable[str]:
         """Yield all link_type keys."""
         yield from self._need._links.keys()
 
-    def iter_links_items(self) -> Iterable[tuple[str, list[str]]]:
-        """Yield all links as (link_type, references) pairs."""
-        for key in self._need._links:
-            yield (key, self[key])
+    @overload
+    def iter_links_items(
+        self, as_str: Literal[True] = True
+    ) -> Iterable[tuple[str, list[str]]]: ...
 
-    def get_backlinks(self, link_type: str) -> list[str]:
+    @overload
+    def iter_links_items(
+        self, as_str: Literal[False] = False
+    ) -> Iterable[tuple[str, list[NeedLink]]]: ...
+
+    def iter_links_items(
+        self, as_str: bool = True
+    ) -> Iterable[tuple[str, list[str]]] | Iterable[tuple[str, list[NeedLink]]]:
+        """Yield all links as (link_type, references) pairs."""
+        if as_str:
+            for key in self._need._links:
+                yield (key, self[key])
+        else:
+            # parts cannot link to anything, so return empty lists
+            yield from ((key, []) for key in self._need._links)
+
+    @overload
+    def get_backlinks(
+        self, link_type: str, *, as_str: Literal[True] = True
+    ) -> list[str]: ...
+
+    @overload
+    def get_backlinks(
+        self, link_type: str, *, as_str: Literal[False]
+    ) -> list[NeedLink]: ...
+
+    def get_backlinks(
+        self, link_type: str, *, as_str: bool = True
+    ) -> list[str] | list[NeedLink]:
         """Get backlink references by link_type key.
 
         :raises KeyError: If the link_type is not a backlink type.
         """
         if link_type not in self._need._backlinks:
             raise KeyError(link_type)
-        return self[f"{link_type}_back"]  # type: ignore[no-any-return]
+        if as_str:
+            return self[f"{link_type}_back"]  # type: ignore[no-any-return]
+        part = self._need.get_part(self.part_id)
+        assert part is not None
+        return [NeedLink.from_string(v) for v in part.backlinks.get(link_type, [])]
 
-    def iter_backlinks_items(self) -> Iterable[tuple[str, list[str]]]:
+    @overload
+    def iter_backlinks_items(
+        self, as_str: Literal[True] = True
+    ) -> Iterable[tuple[str, list[str]]]: ...
+
+    @overload
+    def iter_backlinks_items(
+        self, as_str: Literal[False] = False
+    ) -> Iterable[tuple[str, list[NeedLink]]]: ...
+
+    def iter_backlinks_items(
+        self, as_str: bool = True
+    ) -> Iterable[tuple[str, list[str]]] | Iterable[tuple[str, list[NeedLink]]]:
         """Yield all backlinks as (link_type, references) pairs."""
-        for key in self._need._backlinks:
-            yield (key, self.get_backlinks(key))
+        if as_str:
+            for key in self._need._backlinks:
+                yield (key, self.get_backlinks(key))
+        else:
+            for key in self._need._backlinks:
+                part = self._need.get_part(self.part_id)
+                assert part is not None
+                yield (
+                    key,
+                    [NeedLink.from_string(v) for v in part.backlinks.get(key, [])],
+                )
