@@ -36,6 +36,7 @@ extensions = [
     "sphinx_design",
     "sphinx.ext.duration",
     "sphinx.ext.todo",
+    "sphinx_ai_index",
 ]
 if DOCS_THEME == "sphinx_immaterial":
     extensions.append("sphinx_immaterial")

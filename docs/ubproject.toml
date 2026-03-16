@@ -42,6 +42,15 @@ content = false
 parse_content = false
 content_required = false
 
+[parse.extend_directives.page-summary]
+argument = false
+options = false
+content = true
+content_required = true
+parse_content = true
+description = "Provides a summary of the page used for building a retrieval index."
+extension = "sphinx-ai-index"
+
 [needs]
 show_link_type = false
 show_link_title = false
