@@ -956,6 +956,35 @@ def test_split_string(text, expected):
                 )
             ],
         ),
+        # Bare opening bracket with no closing
+        (
+            "REQ[",
+            True,
+            True,
+            [
+                LinkSplitWarning(
+                    "Unclosed condition brackets in link 'REQ[': expected 1 closing ']' characters."
+                )
+            ],
+        ),
+        # Trailing content after closing bracket is caught
+        (
+            "REQ[cond]trailing",
+            True,
+            True,
+            [
+                LinkSplitWarning(
+                    "Unexpected text after closing condition bracket in link 'REQ[cond]trailing': 'trailing'."
+                )
+            ],
+        ),
+        # Condition containing a dot (should not be confused with part separator)
+        (
+            "REQ[a.b > 1]",
+            True,
+            True,
+            [NeedLink(id="REQ", condition="a.b > 1")],
+        ),
     ],
 )
 def test_split_link_list(text, parse_df, parse_vf, expected):

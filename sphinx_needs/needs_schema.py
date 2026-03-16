@@ -1134,12 +1134,18 @@ def _parse_link_with_condition(text: str) -> NeedLink | LinkSplitWarning:
     closing = "]" * depth
     # The content is between the opening and closing brackets
     inner = rest[depth:]
-    if not inner.endswith(closing):
+    close_pos = inner.find(closing)
+    if close_pos < 0:
         return LinkSplitWarning(
             f"Unclosed condition brackets in link {text!r}: "
             f"expected {depth} closing ']' characters."
         )
-    condition = inner[: len(inner) - depth]
+    trailing = inner[close_pos + depth :]
+    if trailing:
+        return LinkSplitWarning(
+            f"Unexpected text after closing condition bracket in link {text!r}: {trailing!r}."
+        )
+    condition = inner[:close_pos]
 
     # Parse address for id.part
     if "." in address:
