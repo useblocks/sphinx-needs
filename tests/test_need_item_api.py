@@ -62,7 +62,8 @@ def test_need_item_validate():
         NeedItem(core=core(), content=content(), extras={}, links=1, source=None)
 
     with pytest.raises(
-        TypeError, match=r"NeedItem links must be a dictionary of lists of strings."
+        TypeError,
+        match=r"NeedItem links must be a dictionary of lists of NeedLink instances.",
     ):
         NeedItem(
             core=core(), content=content(), extras={}, links={"a": [1]}, source=None
@@ -79,7 +80,8 @@ def test_need_item_validate():
         )
 
     with pytest.raises(
-        TypeError, match=r"NeedItem backlinks must be a dictionary of lists of strings."
+        TypeError,
+        match=r"NeedItem backlinks must be a dictionary of lists of NeedLink instance.",
     ):
         NeedItem(
             core=core(),
