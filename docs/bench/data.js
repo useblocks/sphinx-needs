@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773669032775,
+  "lastUpdate": 1773669789563,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17604,6 +17604,42 @@ window.BENCHMARK_DATA = {
             "value": 54.04020785799999,
             "unit": "s",
             "extra": "Commit: f77ac0ac9849cc8a7296b8c10cb81d6596321f67\nBranch: master\nTime: 2026-03-16T14:48:41+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9748aea48ffe27eaf9441ffcc72d19df5eaea466",
+          "message": "♻️  Introduce `NeedLink` structured internal representation for links (#1670)\n\n## Motivation\n\nThis refactor introduces `NeedLink` — a frozen dataclass with `id` and\n`part` fields — as the internal representation for links and backlinks\nin `NeedItem`. This is a preparatory step for the **constrained link\nsyntax** (`ADDRESS[filter_expr]`), where `NeedLink` will gain a\n`constraint` field to support inline validation of linked needs.\n\nPreviously, links were stored internally as `dict[str, list[str]]` —\nflat string lists with no structure. The id/part split (`\"NEED-1.part\"`)\nwas re-parsed at every usage site via `split_need_id()`. This made it\nimpossible to attach additional metadata (like constraints or namespace\nprefixes) to individual link references without changing the string\nformat everywhere.\n\n## What changed\n\n### New `NeedLink` dataclass\n\n```python\n@dataclass(slots=True, frozen=True, kw_only=True)\nclass NeedLink:\n    id: str\n    part: str | None = None\n```\n\n- `from_string(\"NEED-1.part\")` → `NeedLink(id=\"NEED-1\", part=\"part\")`\n- `to_filter_string()` → `\"NEED-1.part\"` (round-trips to the original\nstring)\n\n### Internal storage changed\n\n| Before | After |\n|--------|-------|\n| `_links: dict[str, list[str]]` | `_links: dict[str, list[NeedLink]]` |\n| `_backlinks: dict[str, list[str]]` | `_backlinks: dict[str,\nlist[NeedLink]]` |\n\n### External API unchanged\n\nAll public-facing access points (`__getitem__`, `items()`, `values()`,\n`get_links()`, `get_backlinks()`, `iter_links_items()`,\n`iter_backlinks_items()`, filter context via `{**need}`) continue to\nreturn `list[str]` through `to_filter_string()`. JSON serialization,\nfilter evaluation, and directive processing see no change.\n\n### `__setitem__` accepts both formats\n\n`need[\"links\"] = [\"NEED-1\", NeedLink(id=\"NEED-1\")]` — both strings and\n`NeedLink` instances are accepted and normalized to `NeedLink`\ninternally. Same for `add_backlink()`.\n\n### Validation error messages updated\n\nInternal validation messages now correctly reference `NeedLink`\ninstances instead of strings.\n\n### `parent_need` computed field fixed\n\n`_recompute()` now calls `to_filter_string()` on the first\n`parent_needs` link, since the internal list is now `list[NeedLink]`\nrather than `list[str]`.\n\n## Back-compatibility considerations\n\n### 1. Link list mutation via `__getitem__` is now a no-op (MEDIUM risk)\n\n**Before**: `need[\"links\"]` returned the actual internal `list[str]`, so\n`need[\"links\"].append(\"x\")` mutated the stored data.\n\n**After**: `need[\"links\"]` returns a freshly constructed `list[str]`\n(via list comprehension over `NeedLink` objects), so `.append()` mutates\na throwaway copy.\n\n**Impact assessment**: No internal sphinx-needs code relies on this\npattern. All link mutations use either:\n- `__setitem__` with read-copy-write: `need[k] = [*need[k], ...]`\n(needextend)\n- Typed methods: `add_backlink()`, `reset_backlinks()`\n- Direct `NeedPartData.backlinks` dict mutation (for parts)\n\nThe only indexed mutation found (`utils.py:import_prefix_link_edit`)\noperates on plain dicts from JSON imports, not `NeedItem` objects.\n\n**External extensions** that relied on `need[\"links\"].append(\"x\")` would\nsilently break. This is an inherent consequence of the structured\ninternal storage.\n\n**Possible mitigation** (not yet implemented): Return `tuple` instead of\n`list` from `__getitem__` for link fields, turning silent failure into a\nloud `AttributeError`. This makes the immutability contract explicit.\n\n### 2. `get_links()` / `get_backlinks()` now return copies (LOW risk)\n\nPreviously returned the actual internal list. Same mutation concern, but\nthese are newer APIs with no known external callers.\n\n### 3. `iter_links_items()` / `iter_backlinks_items()` return string\nlists (LOW risk)\n\nPreviously yielded `(key, list[str])` where the list was the internal\nreference. Now yields freshly constructed string lists. Mutation on\niteration results would be unusual.\n\n## Design decisions and future direction\n\n### Why `to_filter_string()` excludes constraints\n\nWhen constraints are added (e.g. `NeedLink(id=\"REQ-1\",\nconstraint=\"status==approved\")`), the filter string representation\nshould **not** include the constraint. Filter expressions like `\"REQ-1\"\nin links` should match based on the target ID, not the constraint\npredicate. Constraints are a property of the link *declaration* that\ngets validated separately.\n\nThis naturally leads to two serialization methods:\n- `to_filter_string()` → `\"ID\"` or `\"ID.part\"` — for filter context,\nbackward compat\n- `to_string()` (future) → `\"ID[constraint]\"` — full round-trip\nrepresentation\n\n### `NeedLink` replaces `split_need_id()`\n\nThe `split_need_id()` utility (called in `update_back_links`, `needuml`,\n`need_ref`, `need_outgoing`) parses `\"NEED-1.part\"` into `(id, part)` —\nexactly what `NeedLink.from_string()` does. Once `NeedLink` is\npropagated through the pipeline, `split_need_id()` can be removed.\n\n### Equality semantics for deduplication\n\n`add_backlink()` deduplicates via `if backlink not in\nself._backlinks[link_type]`, relying on `NeedLink.__eq__`. Since\n`NeedLink` is a frozen dataclass, equality is structural — two\n`NeedLink(id=\"X\", part=None)` are equal. When constraints are added,\nbacklink deduplication should ignore constraints (backlinks don't carry\nforward-link constraints), which may require custom `__eq__` or a\nseparate dedup key.\n\n### `from_string()` dot-splitting edge case\n\n`NeedLink.from_string(\"A.B.C\")` splits on the first `.` → `id=\"A\",\npart=\"B.C\"`. This matches current `split_need_id` behavior. If\n`id_regex` allows dots, there is inherent ambiguity — same as today, but\ndocumented here for awareness.",
+          "timestamp": "2026-03-16T15:01:10+01:00",
+          "tree_id": "43d1ed3c17dab6ec4b1463e629acd811ae097d0c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9748aea48ffe27eaf9441ffcc72d19df5eaea466"
+        },
+        "date": 1773669766394,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1473931929999992,
+            "unit": "s",
+            "extra": "Commit: 9748aea48ffe27eaf9441ffcc72d19df5eaea466\nBranch: master\nTime: 2026-03-16T15:01:10+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.74658258699999,
+            "unit": "s",
+            "extra": "Commit: 9748aea48ffe27eaf9441ffcc72d19df5eaea466\nBranch: master\nTime: 2026-03-16T15:01:10+01:00"
           }
         ]
       }
