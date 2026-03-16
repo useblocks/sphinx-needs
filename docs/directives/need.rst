@@ -167,7 +167,8 @@ Links without conditions continue to work as before:
 
 .. note::
 
-   If a condition contains square brackets (e.g. for list indexing), use double brackets: ``REQ_001[[tags[0]=="important"]]``.
+   If a condition contains square brackets (e.g. for list indexing),
+   use double brackets to distinguish them from the outer condition delimiters: ``REQ_001[[tags[0]=="important"]]``.
 
 extra links
 +++++++++++
