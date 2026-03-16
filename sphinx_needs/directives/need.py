@@ -15,6 +15,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.needextend import Needextend, extend_needs_data
+from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.functions.functions import (
     check_and_get_content,
     find_and_replace_node_content,
@@ -361,7 +362,7 @@ def post_process_needs_data(app: Sphinx) -> None:
         app.emit("needs-before-post-processing", needs)
         extend_needs_data(needs, needs_data.get_or_create_extends(), needs_config)
         resolve_functions(app, needs, needs_config)
-        update_back_links(needs, needs_config, needs_schema)
+        resolve_links(needs, needs_config, needs_schema)
         process_constraints(needs, needs_config)
         app.emit("needs-before-sealing", needs)
         # run a last check to ensure all needs are of the correct type
@@ -431,10 +432,16 @@ def format_need_nodes(
         node_need.parent.replace(node_need, rendered_node)
 
 
-def update_back_links(
+def resolve_links(
     needs: NeedsMutable, config: NeedsSphinxConfig, schema: FieldsSchema
 ) -> None:
-    """Update needs with back-links, i.e. for each need A that links to need B,"""
+    """Resolve links between needs: generate back-links and assess link conditions.
+
+    For each need A that links to need B, a back-link from B to A is created.
+    If a link specifies a condition (via ``NeedLink.condition``), the condition
+    is evaluated as standard filter syntax against the targeted need.
+    Warnings are emitted for links with failing or invalid conditions.
+    """
     for need in needs.values():
         need.reset_backlinks()
 
@@ -444,6 +451,29 @@ def update_back_links(
         for link_type, references in need.iter_links_items(as_str=False):
             for need_link in references:
                 if linked_need := needs.get(need_link.id):
+                    # Assess link condition if present
+                    if need_link.condition is not None:
+                        try:
+                            if not filter_single_need(
+                                linked_need, config, need_link.condition
+                            ):
+                                _emit_link_warning(
+                                    need,
+                                    f"Need '{need.id}' link '{need_link.to_filter_string()}' "
+                                    f"in field '{link_type}': "
+                                    f"condition {need_link.condition!r} "
+                                    f"not satisfied by target need '{need_link.id}'",
+                                    "link_condition_failed",
+                                )
+                        except Exception as e:
+                            _emit_link_warning(
+                                need,
+                                f"Need '{need.id}' link '{need_link.to_filter_string()}' "
+                                f"in field '{link_type}': "
+                                f"invalid condition syntax {need_link.condition!r}: {e}",
+                                "link_condition_invalid",
+                            )
+
                     linked_need.add_backlink(link_type, NeedLink(id=key))
                     if need_link.part is not None:
                         if linked_part := linked_need.get_part(need_link.part):
@@ -465,23 +495,25 @@ def update_back_links(
         if need["has_forbidden_dead_links"] and config.report_dead_links:
             for link_type, need_link in dead_links:
                 message = f"Need '{need.id}' has unknown outgoing link '{need_link.to_filter_string()}' in field '{link_type}'"
-                # if the need has been imported from an external URL,
-                # we want to provide that URL as the location of the warning,
-                # otherwise we use the location of the need in the source file
-                if need["is_external"]:
-                    log_warning(
-                        LOGGER,
-                        f"{need['external_url']}: {message}",
-                        "external_link_outgoing",
-                        None,
-                    )
-                else:
-                    log_warning(
-                        LOGGER,
-                        message,
-                        "link_outgoing",
-                        location=(need["docname"], need["lineno"]),
-                    )
+                _emit_link_warning(need, message, "link_outgoing")
+
+
+def _emit_link_warning(need: NeedItem, message: str, subtype: WarningSubTypes) -> None:
+    """Emit a warning for a link issue, using the appropriate location."""
+    if need["is_external"]:
+        log_warning(
+            LOGGER,
+            f"{need['external_url']}: {message}",
+            "external_link_outgoing" if subtype == "link_outgoing" else subtype,
+            None,
+        )
+    else:
+        log_warning(
+            LOGGER,
+            message,
+            subtype,
+            location=(need["docname"], need["lineno"]),
+        )
 
 
 #####################
