@@ -813,20 +813,20 @@
       ),
     }),
     'link1': dict({
-      'default': LinksLiteralValue(value=[NeedLink(id='SPEC_1', part=None)]),
+      'default': LinksLiteralValue(value=[NeedLink(id='SPEC_1', part=None, condition=None)]),
       'predicate_defaults': tuple(
       ),
     }),
     'link2': dict({
-      'default': LinksLiteralValue(value=[NeedLink(id='SPEC_1', part=None)]),
+      'default': LinksLiteralValue(value=[NeedLink(id='SPEC_1', part=None, condition=None)]),
       'predicate_defaults': tuple(
         tuple(
           'status == "implemented"',
-          LinksFunctionArray(value=(NeedLink(id='SPEC_2', part=None), DynamicFunctionParsed(name='copy', args=('link1',), kwargs=()))),
+          LinksFunctionArray(value=(NeedLink(id='SPEC_2', part=None, condition=None), DynamicFunctionParsed(name='copy', args=('link1',), kwargs=()))),
         ),
         tuple(
           'status == "closed"',
-          LinksLiteralValue(value=[NeedLink(id='SPEC_3', part=None)]),
+          LinksLiteralValue(value=[NeedLink(id='SPEC_3', part=None, condition=None)]),
         ),
       ),
     }),

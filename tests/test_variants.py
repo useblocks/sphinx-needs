@@ -71,8 +71,7 @@ def test_variant_fields_html(test_app, snapshot):
         .splitlines()
     )
     assert warnings == [
-        "<srcdir>/index.rst:33: WARNING: Need 'SPEC_005' has unknown outgoing link '<<['tag_a' in build_tags]:SPEC_003' in field 'links' [needs.link_outgoing]",
-        "<srcdir>/index.rst:33: WARNING: Need 'SPEC_005' has unknown outgoing link 'SPEC_004>>' in field 'links' [needs.link_outgoing]",
+        "<srcdir>/index.rst:33: WARNING: Need could not be created: Link option 'links' is invalid: Unexpected text after closing condition bracket in link \"<<['tag_a' in build_tags]:SPEC_003\": ':SPEC_003'. [needs.create_need]"
     ]
 
     needs = json.loads(Path(app.outdir, "needs.json").read_text())

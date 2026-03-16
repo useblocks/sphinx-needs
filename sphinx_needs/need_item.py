@@ -244,6 +244,7 @@ class NeedLink:
 
     id: str
     part: str | None = None
+    condition: str | None = None
 
     @staticmethod
     def from_string(link_str: str) -> NeedLink:

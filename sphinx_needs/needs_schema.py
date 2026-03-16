@@ -724,27 +724,17 @@ class LinkSchema:
 
         has_df_or_vf = False
         array: list[NeedLink | DynamicFunctionParsed | VariantFunctionParsed] = []
-        for parsed in _split_list(
+        for item in _split_link_list(
             value, self.parse_dynamic_functions, self.parse_variants
         ):
-            if len(parsed) != 1:
-                raise ValueError(
-                    "only one string, dynamic function or variant function allowed per array item."
-                )
-            item, item_type = parsed[0]
-            match item_type:
-                case ListItemType.STD:
-                    array.append(NeedLink.from_string(item))
-                case ListItemType.DF | ListItemType.DF_U:
-                    from sphinx_needs.functions.functions import DynamicFunctionParsed
-
-                    # TODO warn on unclosed dynamic function
-                    has_df_or_vf = True
-                    array.append(DynamicFunctionParsed.from_string(item))
-                case ListItemType.VF | ListItemType.VF_U:
-                    # TODO warn on unclosed variant function
-                    has_df_or_vf = True
-                    array.append(VariantFunctionParsed.from_string(item))
+            if isinstance(item, LinkSplitWarning):
+                # TODO bubble up as warning?
+                raise ValueError(item.message)
+            elif isinstance(item, NeedLink):
+                array.append(item)
+            else:
+                has_df_or_vf = True
+                array.append(item)
 
         if has_df_or_vf:
             return LinksFunctionArray(tuple(array))
@@ -1004,6 +994,165 @@ def _split_list(
         _current_elements.append((el, ListItemType.STD))
     if _current_elements:
         yield _current_elements
+
+
+@dataclass(frozen=True, slots=True)
+class LinkSplitWarning:
+    """A warning yielded during link list splitting."""
+
+    message: str
+
+
+def _split_link_list(
+    text: str,
+    parse_dynamic_functions: bool,
+    parse_variants: bool,
+) -> Iterator[
+    NeedLink | DynamicFunctionParsed | VariantFunctionParsed | LinkSplitWarning
+]:
+    """Split a ``;|,`` delimited link string, directly yielding typed objects.
+
+    Handles ``[[...]]`` dynamic functions, ``<<...>>`` variant functions,
+    and plain link IDs with optional ``[condition]`` syntax.
+
+    Parsing is done left-to-right in a single pass with these priority rules:
+
+    1. ``[[...]]`` → ``DynamicFunctionParsed``
+    2. ``<<...>>`` → ``VariantFunctionParsed``
+    3. ``;|,`` → flush accumulated text as a ``NeedLink``
+    4. Otherwise → accumulate character
+
+    Plain link items support the format ``ID``, ``ID.part``,
+    ``ID[condition]``, or ``ID.part[condition]``.
+    The condition uses matched bracket depth,
+    so ``ID[[x>1]]`` parses the condition as ``[x>1]``.
+
+    :param text: The string to split.
+    :param parse_dynamic_functions: Whether to parse ``[[...]]`` dynamic functions.
+    :param parse_variants: Whether to parse ``<<...>>`` variant functions.
+    :yields: Parsed link items, or ``LinkSplitWarning`` for non-fatal issues
+        (e.g. text adjacent to a dynamic/variant function, unclosed brackets).
+    """
+    from sphinx_needs.functions.functions import DynamicFunctionParsed
+
+    _current = ""  # text accumulated for the current plain-text item
+    _has_special = False  # whether current slot has yielded a DF/VF
+
+    def _flush_current() -> NeedLink | LinkSplitWarning | None:
+        """Flush accumulated plain text as a NeedLink, or None if empty."""
+        nonlocal _current
+        stripped = _current.strip()
+        _current = ""
+        if not stripped:
+            return None
+        return _parse_link_with_condition(stripped)
+
+    while text:
+        if parse_dynamic_functions and text.startswith("[[") and not _current.strip():
+            # [[ at start of slot (no preceding non-whitespace text) → dynamic function
+            _current = ""  # discard any leading whitespace
+            _has_special = True
+            # Consume until closing ]]
+            text = text[2:]
+            content = ""
+            while text and not text.startswith("]]"):
+                content += text[0]
+                text = text[1:]
+            if content.endswith("]"):
+                content = content[:-1]
+            yield DynamicFunctionParsed.from_string(content)
+            if text.startswith("]]"):
+                text = text[2:]
+        elif parse_variants and text.startswith("<<") and not _current.strip():
+            # << at start of slot (no preceding non-whitespace text) → variant function
+            _current = ""  # discard any leading whitespace
+            _has_special = True
+            # Consume until closing >>
+            text = text[2:]
+            content = ""
+            while text and not text.startswith(">>"):
+                content += text[0]
+                text = text[1:]
+            if content.endswith(">"):
+                content = content[:-1]
+            yield VariantFunctionParsed.from_string(content)
+            if text.startswith(">>"):
+                text = text[2:]
+        elif text[0] in ";|,":
+            # Delimiter: flush current item
+            if not _has_special:
+                if result := _flush_current():
+                    yield result
+            else:
+                # After a DF/VF, check there's no trailing text
+                if _current.strip():
+                    yield LinkSplitWarning(
+                        "only one string, dynamic function or variant function allowed per array item."
+                    )
+                _current = ""
+            _has_special = False
+            text = text[1:]
+        else:
+            _current += text[0]
+            text = text[1:]
+
+    # Flush final item
+    if not _has_special:
+        if result := _flush_current():
+            yield result
+    else:
+        if _current.strip():
+            yield LinkSplitWarning(
+                "only one string, dynamic function or variant function allowed per array item."
+            )
+
+
+def _parse_link_with_condition(text: str) -> NeedLink | LinkSplitWarning:
+    """Parse a plain link string that may contain a ``[condition]`` suffix.
+
+    Supports matched bracket depth: ``ID[[x>1]]`` parses condition as ``[x>1]``.
+
+    :param text: A stripped, non-empty link string (no delimiters, no DF/VF markers).
+    :returns: A NeedLink with id, optional part, and optional condition,
+        or a ``LinkSplitWarning`` if brackets are unclosed.
+    """
+    # Find the first '[' that starts the condition
+    bracket_start = text.find("[")
+    if bracket_start <= 0:
+        # No condition or no address before '[' — plain ID or ID.part
+        return NeedLink.from_string(text)
+
+    address = text[:bracket_start]
+    rest = text[bracket_start:]
+
+    # Count opening bracket depth
+    depth = 0
+    while depth < len(rest) and rest[depth] == "[":
+        depth += 1
+
+    # Find the matching closing brackets
+    closing = "]" * depth
+    # The content is between the opening and closing brackets
+    inner = rest[depth:]
+    close_pos = inner.find(closing)
+    if close_pos < 0:
+        return LinkSplitWarning(
+            f"Unclosed condition brackets in link {text!r}: "
+            f"expected {depth} closing ']' characters."
+        )
+    trailing = inner[close_pos + depth :]
+    if trailing:
+        return LinkSplitWarning(
+            f"Unexpected text after closing condition bracket in link {text!r}: {trailing!r}."
+        )
+    condition = inner[:close_pos]
+
+    # Parse address for id.part
+    if "." in address:
+        id_, part = address.split(".", maxsplit=1)
+        return NeedLink(id=id_, part=part, condition=condition if condition else None)
+    else:
+        return NeedLink(id=address, condition=condition if condition else None)
 
 
 def _split_string(
