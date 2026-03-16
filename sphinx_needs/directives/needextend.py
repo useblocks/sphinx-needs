@@ -11,7 +11,7 @@ from sphinx_needs.data import ExtendType, NeedsExtendType, NeedsMutable, SphinxN
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import filter_needs_mutable
 from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
-from sphinx_needs.need_item import NeedModification
+from sphinx_needs.need_item import NeedLink, NeedModification
 from sphinx_needs.needs_schema import (
     FieldFunctionArray,
     FieldLiteralValue,
@@ -268,12 +268,13 @@ def extend_needs_data(
                             )
                             need[option_name] = []
                         else:
+                            existing = [
+                                NeedLink.from_string(s) for s in need[option_name]
+                            ]
                             need[option_name] = [
-                                *need[option_name],
+                                *existing,
                                 *(  # keep unique
-                                    v
-                                    for v in link_value.value
-                                    if v not in need[option_name]
+                                    v for v in link_value.value if v not in existing
                                 ),
                             ]
                     case (ExtendType.APPEND, LinksFunctionArray()):
@@ -286,13 +287,14 @@ def extend_needs_data(
                             )
                             need[option_name] = []
                         else:
+                            existing = [
+                                NeedLink.from_string(s) for s in need[option_name]
+                            ]
                             need._dynamic_fields[option_name] = LinksFunctionArray(
                                 (
-                                    *need[option_name],
+                                    *existing,
                                     *(  # keep unique
-                                        v
-                                        for v in link_value.value
-                                        if v not in need[option_name]
+                                        v for v in link_value.value if v not in existing
                                     ),
                                 )
                             )

@@ -10,6 +10,7 @@ import jsonschema_rs
 
 from sphinx_needs.config import NeedFields
 from sphinx_needs.exceptions import VariantParsingException
+from sphinx_needs.need_item import NeedLink
 from sphinx_needs.schema.config import (
     FieldBooleanSchemaType,
     FieldIntegerSchemaType,
@@ -439,7 +440,7 @@ class FieldLiteralValue:
 
 @dataclass(frozen=True, slots=True)
 class LinksLiteralValue:
-    value: list[str]
+    value: list[NeedLink]
 
 
 @dataclass(frozen=True, slots=True)
@@ -474,7 +475,7 @@ class FunctionArrayTyped(Generic[_ValueType]):
 
 @dataclass(frozen=True, slots=True)
 class LinksFunctionArray:
-    value: tuple[str | DynamicFunctionParsed | VariantFunctionParsed, ...]
+    value: tuple[NeedLink | DynamicFunctionParsed | VariantFunctionParsed, ...]
 
 
 @lru_cache(maxsize=128)
@@ -692,7 +693,7 @@ class LinkSchema:
         if self.description:
             schema["description"] = self.description
         if isinstance(self.default, LinksLiteralValue):
-            schema["default"] = self.default.value
+            schema["default"] = [nl.to_filter_string() for nl in self.default.value]
         return schema
 
     def type_check(self, value: Any) -> bool:
@@ -722,7 +723,7 @@ class LinkSchema:
             raise TypeError(f"Value '{value}' is not a string.")
 
         has_df_or_vf = False
-        array: list[str | DynamicFunctionParsed | VariantFunctionParsed] = []
+        array: list[NeedLink | DynamicFunctionParsed | VariantFunctionParsed] = []
         for parsed in _split_list(
             value, self.parse_dynamic_functions, self.parse_variants
         ):
@@ -733,7 +734,7 @@ class LinkSchema:
             item, item_type = parsed[0]
             match item_type:
                 case ListItemType.STD:
-                    array.append(item)
+                    array.append(NeedLink.from_string(item))
                 case ListItemType.DF | ListItemType.DF_U:
                     from sphinx_needs.functions.functions import DynamicFunctionParsed
 
@@ -774,7 +775,7 @@ class LinkSchema:
                 from sphinx_needs.functions.functions import DynamicFunctionParsed
 
                 new_value: list[
-                    str | DynamicFunctionParsed | VariantFunctionParsed
+                    NeedLink | DynamicFunctionParsed | VariantFunctionParsed
                 ] = []
                 has_function = False
                 item: str
@@ -798,13 +799,13 @@ class LinkSchema:
                             VariantFunctionParsed.from_string(item.strip()[2:-2])
                         )
                     else:
-                        new_value.append(item)
+                        new_value.append(NeedLink.from_string(item))
                 if has_function:
                     return LinksFunctionArray(tuple(new_value))
                 else:
-                    return LinksLiteralValue(value)
+                    return LinksLiteralValue([NeedLink.from_string(v) for v in value])
             else:
-                return LinksLiteralValue(value)
+                return LinksLiteralValue([NeedLink.from_string(v) for v in value])
 
 
 class FieldsSchema:
