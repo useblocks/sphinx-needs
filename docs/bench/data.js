@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773344038250,
+  "lastUpdate": 1773669032775,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17568,6 +17568,42 @@ window.BENCHMARK_DATA = {
             "value": 52.283459463000014,
             "unit": "s",
             "extra": "Commit: ffd94713e89a3c61a2aec361ecb8f73d301bdda5\nBranch: master\nTime: 2026-03-12T20:32:04+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "felix.ruh@useblocks.com",
+            "name": "Felix-Ruh",
+            "username": "Felix-Ruh"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f77ac0ac9849cc8a7296b8c10cb81d6596321f67",
+          "message": "📚 DOCS: add sphinx-ai-index to sphinx docs builder (#1671)\n\nThis PR adds the\n[sphinx-ai-index](https://github.com/useblocks/sphinx-ai-index) sphinx\nextension to the documentation extensions. This will automatically\ngenerate a ai_docs_index.json file, which serves as efficient retrieval\ninterface for AI agents or other applications.\nIt also adds the ability to add an optional page-summary directive to a\npage, which will be added to this index, but will not be rendered into\nHTML.",
+          "timestamp": "2026-03-16T14:48:41+01:00",
+          "tree_id": "f6effc65fa13aed1ddb70e0aa5cb7d22bc24c4af",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/f77ac0ac9849cc8a7296b8c10cb81d6596321f67"
+        },
+        "date": 1773669011818,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1370236420000026,
+            "unit": "s",
+            "extra": "Commit: f77ac0ac9849cc8a7296b8c10cb81d6596321f67\nBranch: master\nTime: 2026-03-16T14:48:41+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.04020785799999,
+            "unit": "s",
+            "extra": "Commit: f77ac0ac9849cc8a7296b8c10cb81d6596321f67\nBranch: master\nTime: 2026-03-16T14:48:41+01:00"
           }
         ]
       }
