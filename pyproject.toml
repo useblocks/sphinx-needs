@@ -65,6 +65,7 @@ docs = [
   "sphinx-copybutton~=0.5",
   "sphinxcontrib-programoutput~=0.17",
   "sphinx-design~=0.6",
+  "sphinx-ai-index~=0.1.0",
 ]
 theme-im = ["sphinx-immaterial~=0.11.11"]
 theme-furo = ["furo~=2024.8.6"]
