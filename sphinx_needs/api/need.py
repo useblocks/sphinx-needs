@@ -36,6 +36,7 @@ from sphinx_needs.need_item import (
     NeedItem,
     NeedItemSourceProtocol,
     NeedItemSourceUnknown,
+    NeedLink,
     NeedPartData,
     NeedsContent,
 )
@@ -320,7 +321,9 @@ def generate_need(
         for k, v in extras_no_defaults.items()
     }
     defaults_links_ctx = {
-        k: copy(v.value) if isinstance(v, LinksLiteralValue) else []
+        k: [nl.to_filter_string() for nl in v.value]
+        if isinstance(v, LinksLiteralValue)
+        else []
         for k, v in links_no_defaults.items()
     }
 
@@ -426,7 +429,7 @@ def generate_need(
         if _func is not None:
             dynamic_fields[k] = _func
 
-    links_pre: dict[str, list[str]] = {}
+    links_pre: dict[str, list[NeedLink]] = {}
     for lk, lv in links.items():
         if lv is None:
             # TODO currently no link_schema.nullable
@@ -999,7 +1002,7 @@ def _copy_links(
     """Implement 'copy' logic for links."""
     if "links" not in links:
         return  # should not happen, but be defensive
-    copy_links: list[str | DynamicFunctionParsed | VariantFunctionParsed] = []
+    copy_links: list[NeedLink | DynamicFunctionParsed | VariantFunctionParsed] = []
     for link_field in schema.iter_link_fields():
         if link_field.copy and link_field.name != "links":
             other = links[link_field.name]
@@ -1016,7 +1019,7 @@ def _copy_links(
                 tuple(links["links"].value) + tuple(copy_links)
             )
     else:
-        copy_links_literal = cast(list[str], copy_links)
+        copy_links_literal = cast(list[NeedLink], copy_links)
         if links["links"] is None:
             links["links"] = LinksLiteralValue(copy_links_literal)
         elif isinstance(links["links"], LinksLiteralValue):
