@@ -4,11 +4,14 @@ from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.functions.functions import (
     DynamicFunctionParsed,
 )
+from sphinx_needs.need_item import NeedLink
 from sphinx_needs.needs_schema import (
     FieldFunctionArray,
     FieldLiteralValue,
     FieldSchema,
+    LinkSplitWarning,
     ListItemType,
+    _split_link_list,
     _split_list,
     _split_string,
     create_inherited_field,
@@ -752,6 +755,211 @@ def test_split_list(text, expected):
 )
 def test_split_string(text, expected):
     assert _split_string(text, True, True) == expected
+
+
+@pytest.mark.parametrize(
+    "text, parse_df, parse_vf, expected",
+    [
+        # --- Plain IDs ---
+        ("", True, True, []),
+        ("REQ-001", True, True, [NeedLink(id="REQ-001")]),
+        ("  REQ-001  ", True, True, [NeedLink(id="REQ-001")]),
+        # --- Parts ---
+        ("REQ-001.part", True, True, [NeedLink(id="REQ-001", part="part")]),
+        # --- Conditions ---
+        (
+            "REQ-001[status=='open']",
+            True,
+            True,
+            [NeedLink(id="REQ-001", condition="status=='open'")],
+        ),
+        (
+            "REQ.part[x>1]",
+            True,
+            True,
+            [NeedLink(id="REQ", part="part", condition="x>1")],
+        ),
+        # Matched bracket depth: [[ ]] strips both layers, allowing ] inside condition
+        (
+            "REQ[[a[0]>1]]",
+            True,
+            True,
+            [NeedLink(id="REQ", condition="a[0]>1")],
+        ),
+        # Empty condition brackets -> condition is None
+        ("REQ[]", True, True, [NeedLink(id="REQ")]),
+        # --- Delimiters ---
+        (
+            "REQ-001, REQ-002",
+            True,
+            True,
+            [NeedLink(id="REQ-001"), NeedLink(id="REQ-002")],
+        ),
+        (
+            "REQ-001; REQ-002",
+            True,
+            True,
+            [NeedLink(id="REQ-001"), NeedLink(id="REQ-002")],
+        ),
+        (
+            "REQ-001| REQ-002",
+            True,
+            True,
+            [NeedLink(id="REQ-001"), NeedLink(id="REQ-002")],
+        ),
+        (
+            "REQ-001,",
+            True,
+            True,
+            [NeedLink(id="REQ-001")],
+        ),
+        # Multiple with conditions
+        (
+            "REQ-001, REQ-002[x>1]",
+            True,
+            True,
+            [NeedLink(id="REQ-001"), NeedLink(id="REQ-002", condition="x>1")],
+        ),
+        # --- Dynamic functions ---
+        (
+            "[[copy('links')]]",
+            True,
+            True,
+            [DynamicFunctionParsed.from_string("copy('links')")],
+        ),
+        (
+            "[[func()]],REQ-001",
+            True,
+            True,
+            [DynamicFunctionParsed.from_string("func()"), NeedLink(id="REQ-001")],
+        ),
+        # --- Variant functions ---
+        (
+            "<<ubuntu:REQ-1, REQ-2>>",
+            True,
+            True,
+            [VariantFunctionParsed.from_string("ubuntu:REQ-1, REQ-2")],
+        ),
+        # --- Mixed ---
+        (
+            "REQ[a>1], [[func()]], <<var>>",
+            True,
+            True,
+            [
+                NeedLink(id="REQ", condition="a>1"),
+                DynamicFunctionParsed.from_string("func()"),
+                VariantFunctionParsed.from_string("var"),
+            ],
+        ),
+        # --- Whitespace handling ---
+        (
+            "ID;    [[func()]]  ;",
+            True,
+            True,
+            [NeedLink(id="ID"), DynamicFunctionParsed.from_string("func()")],
+        ),
+        (
+            "  A  ,  B.p  ;  C[x]  ",
+            True,
+            True,
+            [
+                NeedLink(id="A"),
+                NeedLink(id="B", part="p"),
+                NeedLink(id="C", condition="x"),
+            ],
+        ),
+        # Delimiters inside [[ ]] are preserved
+        (
+            "[[func('a','b')]],REQ",
+            True,
+            True,
+            [DynamicFunctionParsed.from_string("func('a','b')"), NeedLink(id="REQ")],
+        ),
+        # Delimiters inside << >> are preserved
+        (
+            "<<a:1,b:2>>;REQ",
+            True,
+            True,
+            [VariantFunctionParsed.from_string("a:1,b:2"), NeedLink(id="REQ")],
+        ),
+        # DF/VF disabled: [[ and << treated as plain text
+        (
+            "[[func()]]",
+            False,
+            False,
+            [NeedLink(id="[[func()]]")],
+        ),
+        # Only DF enabled
+        (
+            "<<var>>",
+            True,
+            False,
+            [NeedLink(id="<<var>>")],
+        ),
+        # Only VF enabled
+        (
+            "[[func()]]",
+            False,
+            True,
+            [NeedLink(id="[[func()]]")],
+        ),
+        # --- Warnings (non-fatal issues yielded as LinkSplitWarning) ---
+        (
+            "[[func()]]b",
+            True,
+            True,
+            [
+                DynamicFunctionParsed.from_string("func()"),
+                LinkSplitWarning(
+                    "only one string, dynamic function or variant function allowed per array item."
+                ),
+            ],
+        ),
+        (
+            "<<var>>b",
+            True,
+            True,
+            [
+                VariantFunctionParsed.from_string("var"),
+                LinkSplitWarning(
+                    "only one string, dynamic function or variant function allowed per array item."
+                ),
+            ],
+        ),
+        (
+            "REQ[unclosed",
+            True,
+            True,
+            [
+                LinkSplitWarning(
+                    "Unclosed condition brackets in link 'REQ[unclosed': expected 1 closing ']' characters."
+                )
+            ],
+        ),
+        (
+            "REQ[[unclosed]",
+            True,
+            True,
+            [
+                LinkSplitWarning(
+                    "Unclosed condition brackets in link 'REQ[[unclosed]': expected 2 closing ']' characters."
+                )
+            ],
+        ),
+        (
+            "REQ[[[x]]",
+            True,
+            True,
+            [
+                LinkSplitWarning(
+                    "Unclosed condition brackets in link 'REQ[[[x]]': expected 3 closing ']' characters."
+                )
+            ],
+        ),
+    ],
+)
+def test_split_link_list(text, parse_df, parse_vf, expected):
+    assert list(_split_link_list(text, parse_df, parse_vf)) == expected
 
 
 @pytest.mark.parametrize(
