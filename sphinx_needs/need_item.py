@@ -238,6 +238,27 @@ class NeedConstraintResults(Mapping[str, tuple[tuple[str, bool, str | None], ...
         )
 
 
+@dataclass(slots=True, frozen=True, kw_only=True)
+class NeedLink:
+    """A class representing a link from one need to another."""
+
+    id: str
+    part: str | None = None
+
+    @staticmethod
+    def from_string(link_str: str) -> NeedLink:
+        """Parse a link from a string, which can be in the format 'NEED-1' or 'NEED-1.part'."""
+        if "." in link_str:
+            id, part = link_str.split(".", maxsplit=1)
+            return NeedLink(id=id, part=part)
+        else:
+            return NeedLink(id=link_str)
+
+    def to_filter_string(self) -> str:
+        """Convert the link to a filter string, e.g. 'NEED-1' or 'NEED-1.part'."""
+        return f"{self.id}.{self.part}" if self.part else self.id
+
+
 class NeedItem:
     """A class representing a single need item."""
 
@@ -265,8 +286,8 @@ class NeedItem:
         content: NeedsContent,
         core: NeedsInfoType,
         extras: dict[str, AllowedTypes | None],
-        links: dict[str, list[str]],
-        backlinks: dict[str, list[str]] | None = None,
+        links: dict[str, list[str]] | dict[str, list[NeedLink]],
+        backlinks: dict[str, list[str]] | dict[str, list[NeedLink]] | None = None,
         parts: Sequence[NeedPartData] = (),
         modifications: Sequence[NeedModification] = (),
         constraint_results: None | NeedConstraintResults = None,
@@ -326,11 +347,19 @@ class NeedItem:
         )
         self._core = core.copy()
         self._extras = extras.copy()
-        self._links = links.copy()
+        self._links: dict[str, list[NeedLink]] = {
+            key: [NeedLink.from_string(v) if isinstance(v, str) else v for v in value]
+            for key, value in links.items()
+        }
         if backlinks is None:
-            self._backlinks: dict[str, list[str]] = {li: [] for li in self._links}
+            self._backlinks: dict[str, list[NeedLink]] = {li: [] for li in self._links}
         else:
-            self._backlinks = backlinks.copy()
+            self._backlinks = {
+                key: [
+                    NeedLink.from_string(v) if isinstance(v, str) else v for v in value
+                ]
+                for key, value in backlinks.items()
+            }
         self._backlinks_keymap = {f"{key}_back": key for key in self._links}
         """mapping of exposed backlink keys to actual link keys, e.g. {'link_type_back': 'link_type'}
         
@@ -347,18 +376,18 @@ class NeedItem:
         # consistency checks for data, this is optional so that we don't have to re-run when copying an instance.
         if _validate:
             if not all(
-                isinstance(v, list) and all(isinstance(i, str) for i in v)
+                isinstance(v, list) and all(isinstance(i, NeedLink) for i in v)
                 for v in self._links.values()
             ):
                 raise TypeError(
-                    "NeedItem links must be a dictionary of lists of strings."
+                    "NeedItem links must be a dictionary of lists of NeedLink instances."
                 )
             if not all(
-                isinstance(v, list) and all(isinstance(i, str) for i in v)
+                isinstance(v, list) and all(isinstance(i, NeedLink) for i in v)
                 for v in self._backlinks.values()
             ):
                 raise TypeError(
-                    "NeedItem backlinks must be a dictionary of lists of strings."
+                    "NeedItem backlinks must be a dictionary of lists of NeedLink instances."
                 )
             if set(self._backlinks) != set(self._links):
                 raise ValueError(
@@ -420,7 +449,7 @@ class NeedItem:
             "section_name": sections[0]
             if (sections := self._core["sections"])
             else None,
-            "parent_need": parent_needs[0]
+            "parent_need": parent_needs[0].to_filter_string()
             if (parent_needs := self._links.get("parent_needs"))
             else None,
         }
@@ -618,9 +647,12 @@ class NeedItem:
         elif key in self._extras:
             return self._extras[key]
         elif key in self._links:
-            return self._links[key]
+            return [li.to_filter_string() for li in self._links[key]]
         elif key in self._backlinks_keymap:
-            return self._backlinks[self._backlinks_keymap[key]]
+            return [
+                li.to_filter_string()
+                for li in self._backlinks[self._backlinks_keymap[key]]
+            ]
         elif key in self._source.dict_repr:
             return self._source.dict_repr[key]  # type: ignore[literal-required]
         elif key in self._content.dict_repr:
@@ -650,8 +682,11 @@ class NeedItem:
         return chain(
             self._core.values(),
             self._extras.values(),
-            self._links.values(),
-            self._backlinks.values(),
+            ([li.to_filter_string() for li in links] for links in self._links.values()),
+            (
+                [li.to_filter_string() for li in links]
+                for links in self._backlinks.values()
+            ),
             self._source.dict_repr.values(),
             self._content.dict_repr.values(),
             self._computed.values(),
@@ -662,8 +697,11 @@ class NeedItem:
         return chain(
             self._core.items(),
             self._extras.items(),
-            self._links.items(),
-            ((k1, self._backlinks[k2]) for k1, k2 in self._backlinks_keymap.items()),
+            ((k, [li.to_filter_string() for li in v]) for k, v in self._links.items()),
+            (
+                (k1, [li.to_filter_string() for li in self._backlinks[k2]])
+                for k1, k2 in self._backlinks_keymap.items()
+            ),
             self._source.dict_repr.items(),
             self._content.dict_repr.items(),
             self._computed.items(),
@@ -699,20 +737,24 @@ class NeedItem:
             self._extras[key] = value
         elif key in self._links:
             if not isinstance(value, list) or not all(
-                isinstance(v, str) for v in value
+                isinstance(v, str | NeedLink) for v in value
             ):
                 raise TypeError(
-                    f"Value for link key {key!r} must be a list of strings."
+                    f"Value for link key {key!r} must be a list of strings or NeedLink instances."
                 )
-            self._links[key] = value
+            self._links[key] = [
+                NeedLink.from_string(v) if isinstance(v, str) else v for v in value
+            ]
         elif key in self._backlinks_keymap:
             if not isinstance(value, list) or not all(
-                isinstance(v, str) for v in value
+                isinstance(v, str | NeedLink) for v in value
             ):
                 raise TypeError(
                     f"Value for backlink key {key!r} must be a list of strings."
                 )
-            self._backlinks[self._backlinks_keymap[key]] = value
+            self._backlinks[self._backlinks_keymap[key]] = [
+                NeedLink.from_string(v) if isinstance(v, str) else v for v in value
+            ]
         else:
             raise KeyError(f"Only existing keys can be set, not: {key!r}")
         self._recompute()
@@ -725,10 +767,13 @@ class NeedItem:
             for k in part.backlinks:
                 part.backlinks[k] = []
 
-    def add_backlink(self, link_type: str, backlink: str) -> None:
+    def add_backlink(self, link_type: str, backlink: str | NeedLink) -> None:
         """Add a backlink to the need."""
         if link_type not in self._backlinks:
             raise KeyError(f"Link type {link_type!r} does not exist in backlinks.")
+        backlink = (
+            NeedLink.from_string(backlink) if isinstance(backlink, str) else backlink
+        )
         if backlink not in self._backlinks[link_type]:
             self._backlinks[link_type].append(backlink)
 
@@ -765,7 +810,7 @@ class NeedItem:
 
         :raises KeyError: If the link_type is not a link type.
         """
-        return self._links[link_type]
+        return [li.to_filter_string() for li in self._links[link_type]]
 
     def iter_links_keys(self) -> Iterable[str]:
         """Yield all link_type keys."""
@@ -773,19 +818,24 @@ class NeedItem:
 
     def iter_links_items(self) -> Iterable[tuple[str, list[str]]]:
         """Yield all links as (link_type, references) pairs."""
-        yield from self._links.items()
+        yield from (
+            (key, [li.to_filter_string() for li in value])
+            for key, value in self._links.items()
+        )
 
     def get_backlinks(self, link_type: str) -> list[str]:
         """Get backlink references by link_type key.
 
         :raises KeyError: If the link_type is not a backlink type.
         """
-        return self._backlinks[link_type]
+        return [li.to_filter_string() for li in self._backlinks[link_type]]
 
     def iter_backlinks_items(self) -> Iterable[tuple[str, list[str]]]:
         """Yield all backlinks as (link_type, references) pairs."""
-        for key in self._backlinks:
-            yield (key, self._backlinks[key])
+        yield from (
+            (key, [li.to_filter_string() for li in value])
+            for key, value in self._backlinks.items()
+        )
 
     def set_content(self, content: NeedsContent) -> None:
         """Replace the content of the need item.
