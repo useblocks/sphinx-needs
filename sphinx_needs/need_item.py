@@ -805,12 +805,26 @@ class NeedItem:
         """Yield all extras as key-value pairs."""
         yield from self._extras.items()
 
-    def get_links(self, link_type: str) -> list[str]:
+    @overload
+    def get_links(
+        self, link_type: str, *, as_str: Literal[True] = True
+    ) -> list[str]: ...
+
+    @overload
+    def get_links(
+        self, link_type: str, *, as_str: Literal[False]
+    ) -> list[NeedLink]: ...
+
+    def get_links(
+        self, link_type: str, *, as_str: bool = True
+    ) -> list[str] | list[NeedLink]:
         """Get link references by link_type key.
 
         :raises KeyError: If the link_type is not a link type.
         """
-        return [li.to_filter_string() for li in self._links[link_type]]
+        if as_str:
+            return [li.to_filter_string() for li in self._links[link_type]]
+        return self._links[link_type]
 
     def iter_links_keys(self) -> Iterable[str]:
         """Yield all link_type keys."""
@@ -838,12 +852,26 @@ class NeedItem:
         else:
             yield from self._links.items()
 
-    def get_backlinks(self, link_type: str) -> list[str]:
+    @overload
+    def get_backlinks(
+        self, link_type: str, *, as_str: Literal[True] = True
+    ) -> list[str]: ...
+
+    @overload
+    def get_backlinks(
+        self, link_type: str, *, as_str: Literal[False]
+    ) -> list[NeedLink]: ...
+
+    def get_backlinks(
+        self, link_type: str, *, as_str: bool = True
+    ) -> list[str] | list[NeedLink]:
         """Get backlink references by link_type key.
 
         :raises KeyError: If the link_type is not a backlink type.
         """
-        return [li.to_filter_string() for li in self._backlinks[link_type]]
+        if as_str:
+            return [li.to_filter_string() for li in self._backlinks[link_type]]
+        return self._backlinks[link_type]
 
     @overload
     def iter_backlinks_items(
@@ -1171,14 +1199,27 @@ class NeedPartItem:
         for key in self._need._extras:
             yield (key, self[key])
 
-    def get_links(self, link_type: str) -> list[str]:
+    @overload
+    def get_links(
+        self, link_type: str, *, as_str: Literal[True] = True
+    ) -> list[str]: ...
+
+    @overload
+    def get_links(
+        self, link_type: str, *, as_str: Literal[False]
+    ) -> list[NeedLink]: ...
+
+    def get_links(
+        self, link_type: str, *, as_str: bool = True
+    ) -> list[str] | list[NeedLink]:
         """Get link references by link_type key.
 
         :raises KeyError: If the link_type is not a link type.
         """
         if link_type not in self._need._links:
             raise KeyError(link_type)
-        return self[link_type]  # type: ignore[no-any-return]
+        # parts cannot link to anything, so return empty list
+        return []
 
     def iter_links_keys(self) -> Iterable[str]:
         """Yield all link_type keys."""
@@ -1205,14 +1246,30 @@ class NeedPartItem:
             # parts cannot link to anything, so return empty lists
             yield from ((key, []) for key in self._need._links)
 
-    def get_backlinks(self, link_type: str) -> list[str]:
+    @overload
+    def get_backlinks(
+        self, link_type: str, *, as_str: Literal[True] = True
+    ) -> list[str]: ...
+
+    @overload
+    def get_backlinks(
+        self, link_type: str, *, as_str: Literal[False]
+    ) -> list[NeedLink]: ...
+
+    def get_backlinks(
+        self, link_type: str, *, as_str: bool = True
+    ) -> list[str] | list[NeedLink]:
         """Get backlink references by link_type key.
 
         :raises KeyError: If the link_type is not a backlink type.
         """
         if link_type not in self._need._backlinks:
             raise KeyError(link_type)
-        return self[f"{link_type}_back"]  # type: ignore[no-any-return]
+        if as_str:
+            return self[f"{link_type}_back"]  # type: ignore[no-any-return]
+        part = self._need.get_part(self.part_id)
+        assert part is not None
+        return [NeedLink.from_string(v) for v in part.backlinks.get(link_type, [])]
 
     @overload
     def iter_backlinks_items(
