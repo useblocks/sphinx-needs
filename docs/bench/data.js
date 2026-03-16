@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773679569191,
+  "lastUpdate": 1773702337005,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17712,6 +17712,42 @@ window.BENCHMARK_DATA = {
             "value": 58.113017179999986,
             "unit": "s",
             "extra": "Commit: 123c09c46a0f1be3135d652954f206d5ee7f8db8\nBranch: master\nTime: 2026-03-16T17:44:00+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "63d751aa5b2fcd029001762b5ee9c85ac72510b9",
+          "message": "♻️ Add `_split_link_list` parser with condition syntax support (#1674)",
+          "timestamp": "2026-03-17T00:03:38+01:00",
+          "tree_id": "f03d2a5c2b41d15d5c9133dec2935c7ef301dcab",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/63d751aa5b2fcd029001762b5ee9c85ac72510b9"
+        },
+        "date": 1773702315371,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16993509299999943,
+            "unit": "s",
+            "extra": "Commit: 63d751aa5b2fcd029001762b5ee9c85ac72510b9\nBranch: master\nTime: 2026-03-17T00:03:38+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.530967791,
+            "unit": "s",
+            "extra": "Commit: 63d751aa5b2fcd029001762b5ee9c85ac72510b9\nBranch: master\nTime: 2026-03-17T00:03:38+01:00"
           }
         ]
       }
