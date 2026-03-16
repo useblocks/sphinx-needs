@@ -191,6 +191,28 @@ Lets also add some more need items to our plan:
     
     For full options see the reference sections for :ref:`need_links configuration <need_links>` and :ref:`need items directive <need>`.
 
+Adding conditions to links
+--------------------------
+
+You can also attach conditions to links, using square brackets after the target ID.
+The condition is a :ref:`filter_string` evaluated against the **target** need.
+If the target need does not satisfy the condition, a warning is emitted during the build.
+
+This is useful for enforcing constraints, for example ensuring that a specification only links to requirements with a certain status:
+
+.. code-block:: rst
+
+   .. tutorial-spec:: Implement RADAR system
+      :id: T_RADAR_COND
+      :tutorial_specifies: T_SAFE[status=="open"]
+
+      This specification links to T_SAFE, but a build warning will be emitted
+      if T_SAFE does not have status "open".
+
+.. seealso::
+
+    For more details on conditional link syntax, see :ref:`need_conditional_links`.
+
 Importing need items
 --------------------
 

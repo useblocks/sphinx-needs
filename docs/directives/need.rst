@@ -126,6 +126,49 @@ You can easily set links to multiple needs by using **;** as a separator.
 
       This sets a link to id ``REQ_LINK_1``.
 
+.. _need_conditional_links:
+
+conditional links
++++++++++++++++++
+
+.. versionadded:: 7.0.0
+
+You can attach a condition to any link by appending a :ref:`filter_string` in square brackets after the target ID.
+The condition is evaluated against the **targeted** need.
+If the condition evaluates to ``False``, a warning is emitted with the subcode ``needs.link_condition_failed``.
+If the condition syntax is invalid, a warning is emitted with the subcode ``needs.link_condition_invalid``.
+
+The syntax is ``TARGET_ID[condition]``, for example:
+
+.. code-block:: rst
+
+   .. spec:: My Specification
+      :links: REQ_001[status=="open"]
+
+This creates a link from the specification to ``REQ_001``, but emits a warning if ``REQ_001`` does not have ``status`` equal to ``"open"``.
+
+You can use any valid :ref:`filter_string` expression as the condition.
+The condition is evaluated with the fields of the **target** need as variables,
+so you can check any of its attributes (``status``, ``type``, ``tags``, etc.).
+
+Multiple links can be specified, each with their own condition:
+
+.. code-block:: rst
+
+   .. spec:: Another Specification
+      :links: REQ_001[status=="open"], REQ_002[type=="req"]
+
+Links without conditions continue to work as before:
+
+.. code-block:: rst
+
+   .. spec:: Mixed links
+      :links: REQ_001[status=="open"], REQ_002
+
+.. note::
+
+   If a condition contains square brackets (e.g. for list indexing), use double brackets: ``REQ_001[[tags[0]=="important"]]``.
+
 extra links
 +++++++++++
 
