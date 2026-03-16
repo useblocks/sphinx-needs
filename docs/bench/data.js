@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773669789563,
+  "lastUpdate": 1773673754457,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17640,6 +17640,42 @@ window.BENCHMARK_DATA = {
             "value": 55.74658258699999,
             "unit": "s",
             "extra": "Commit: 9748aea48ffe27eaf9441ffcc72d19df5eaea466\nBranch: master\nTime: 2026-03-16T15:01:10+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8f52e13e8c738acb579dd9ba0920e5005be89462",
+          "message": "🔧 Use `NeedLink` directly in `update_back_links` function (#1672)\n\nAdd `as_str` parameter to link/backlink accessor methods on `NeedItem`\nand `NeedPartItem`, enabling direct access to `NeedLink` objects without\nstring conversion.\nUse this in `update_back_links` to work with structured `NeedLink` data\ninstead of parsing strings.\n\n## Changes\n\n### need_item.py\n- **`NeedItem.get_links` / `get_backlinks`**: Add `as_str: bool = True`\nkeyword arg. When `as_str=False`, returns `list[NeedLink]` instead of\n`list[str]`.\n- **`NeedItem.iter_links_items` / `iter_backlinks_items`**: Add `as_str`\nparameter with the same semantics.\n- **`NeedPartItem`**: Mirror the same `as_str` overloads on `get_links`,\n`get_backlinks`, `iter_links_items`, and `iter_backlinks_items`.\n\nAll methods default to `as_str=True` for full backward compatibility.\nType narrowing via `@overload` ensures correct return types at the call\nsite.\n\n### need.py\n- **`update_back_links`**: Use `iter_links_items(as_str=False)` to\niterate over `NeedLink` objects directly, replacing the previous pattern\nof iterating string references and calling `split_need_id()`. Removes\nthe `split_need_id` import.\n\n### test_need_item_api.py\n- Add test coverage for `as_str=True` and `as_str=False` variants of all\nfour methods on both `NeedItem` and `NeedPartItem`.",
+          "timestamp": "2026-03-16T16:06:56+01:00",
+          "tree_id": "32c6c74f83764fff84f25ea43a85e72a913af49b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8f52e13e8c738acb579dd9ba0920e5005be89462"
+        },
+        "date": 1773673733160,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16516013899999393,
+            "unit": "s",
+            "extra": "Commit: 8f52e13e8c738acb579dd9ba0920e5005be89462\nBranch: master\nTime: 2026-03-16T16:06:56+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.718873454,
+            "unit": "s",
+            "extra": "Commit: 8f52e13e8c738acb579dd9ba0920e5005be89462\nBranch: master\nTime: 2026-03-16T16:06:56+01:00"
           }
         ]
       }
