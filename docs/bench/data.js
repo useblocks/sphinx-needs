@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773673754457,
+  "lastUpdate": 1773679569191,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17676,6 +17676,42 @@ window.BENCHMARK_DATA = {
             "value": 64.718873454,
             "unit": "s",
             "extra": "Commit: 8f52e13e8c738acb579dd9ba0920e5005be89462\nBranch: master\nTime: 2026-03-16T16:06:56+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "123c09c46a0f1be3135d652954f206d5ee7f8db8",
+          "message": "♻️ Store `NeedLink` instead of `str` in `LinksLiteralValue` and `LinksFunctionArray` (#1673)\n\n## Summary\n\nChange `LinksLiteralValue` and `LinksFunctionArray` to store `NeedLink`\nobjects instead of raw strings. This aligns the schema layer with\n`NeedItem._links` (which already stores `dict[str, list[NeedLink]]`),\nparsing link strings into structured `NeedLink` objects at the schema\nconversion boundary rather than deferring conversion to\n`NeedItem.__init__`.\n\n## Motivation\n\n- **Type consistency**: `NeedItem._links` already stores\n`list[NeedLink]`, but `LinksLiteralValue` stored `list[str]` and\n`LinksFunctionArray` was constructed with raw `str` items despite its\ntype annotation declaring `NeedLink`. This mismatch meant link strings\nwere parsed to `NeedLink` redundantly in `NeedItem.__init__`.\n- **Single parsing boundary**: Link strings are now parsed to `NeedLink`\nonce in `convert_directive_option` / `convert_or_type_check`, rather\nthan being deferred.\n- **Cleaner mixing**: When `LinksLiteralValue` items flow into\n`LinksFunctionArray` (e.g. in `_copy_links`, needextend APPEND), both\nnow use `NeedLink`, eliminating conversion at every mixing point.\n- **Future extensibility**: Storing structured `NeedLink` objects\n(rather than plain strings) opens the door to attaching richer data to\nlinks in the future — such as validation constraints and edge properties\n(e.g. weight, labels, or metadata for graph-based tooling). A structured\nobject is the natural place to carry this information through the\npipeline.\n\n## Changes\n\n### `sphinx_needs/needs_schema.py`\n\n- `LinksLiteralValue.value`: `list[str]` → `list[NeedLink]`\n- `LinkSchema.convert_directive_option()`: STD items now wrapped via\n`NeedLink.from_string(item)`; array type annotation updated to\n`list[NeedLink | DynamicFunctionParsed | VariantFunctionParsed]`\n- `LinkSchema.convert_or_type_check()`: Same `NeedLink.from_string()`\nconversion for both the coercion path and the plain list path\n- `LinkSchema.json_schema()`: Converts back to strings via\n`to_filter_string()` for JSON output\n\n### `sphinx_needs/api/need.py`\n\n- `defaults_links_ctx`: Converts `NeedLink` items back to strings via\n`to_filter_string()` for predicate filter context (preserves\nbackward-compatible `dict[str, list[str]]`)\n- `links_pre`: Type changed to `dict[str, list[NeedLink]]`; `lv.value`\npassed directly since `NeedItem.__init__` accepts `list[NeedLink]`\n- `_copy_links()`: Updated type annotations; `NeedLink` items flow\nnaturally between `LinksLiteralValue` and `LinksFunctionArray`\n\n### `sphinx_needs/directives/needextend.py`\n\n- APPEND + `LinksLiteralValue` without existing DF: `link_value.value`\nitems (now `NeedLink`) passed to `__setitem__` which accepts `list[str |\nNeedLink]`\n- APPEND + `LinksFunctionArray` without existing DF: `need[option_name]`\n(returns `list[str]`) converted to `NeedLink` via `from_string()` when\nbuilding `LinksFunctionArray` tuples\n- REPLACE/DELETE + `LinksLiteralValue`: `list[NeedLink]` accepted by\n`__setitem__`\n\n### Snapshots\n\n- `LinksLiteralValue(value=['SPEC_1'])` →\n`LinksLiteralValue(value=[NeedLink(id='SPEC_1', part=None)])`\n- `LinksFunctionArray(value=('SPEC_2', ...))` →\n`LinksFunctionArray(value=(NeedLink(id='SPEC_2', part=None), ...))`\n\n## Backward compatibility\n\n- **Public API unchanged**: `NeedItem.__getitem__` still returns\n`list[str]` for link fields (via `to_filter_string()`). User-facing\nfilter predicates continue to work with string comparisons.\n- **`NeedItem.__setitem__`** already accepts both `str` and `NeedLink`\nitems.\n- **`resolve_functions`**: Resolved `NeedLink` items from\n`LinksFunctionArray` are passed to `need[field] = resolved`, which\nhandles `NeedLink` natively.",
+          "timestamp": "2026-03-16T17:44:00+01:00",
+          "tree_id": "a26fa1e2c1a6b8ef9b16c4751afa68fbba6d18a6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/123c09c46a0f1be3135d652954f206d5ee7f8db8"
+        },
+        "date": 1773679540819,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1534763239999961,
+            "unit": "s",
+            "extra": "Commit: 123c09c46a0f1be3135d652954f206d5ee7f8db8\nBranch: master\nTime: 2026-03-16T17:44:00+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.113017179999986,
+            "unit": "s",
+            "extra": "Commit: 123c09c46a0f1be3135d652954f206d5ee7f8db8\nBranch: master\nTime: 2026-03-16T17:44:00+01:00"
           }
         ]
       }
