@@ -11,6 +11,14 @@ needs_external_needs = [
     },
 ]
 
+needs_links = {
+    "raw_links": {
+        "outgoing": "raw links outgoing",
+        "incoming": "raw links incoming",
+        "parse_conditions": False,
+    },
+}
+
 needs_types = [
     {
         "directive": "req",

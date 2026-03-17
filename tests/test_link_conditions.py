@@ -41,6 +41,9 @@ def test_link_conditions(test_app: Sphinx, snapshot):
         "srcdir/index.rst:52: WARNING: Need 'SPEC_006' link 'REQ_001' in field 'links': condition '\"open\" in tags' not satisfied by target need 'REQ_001' [needs.link_condition_failed]",
         # IMP_COND_FAIL imported via needimport, links to REQ_002[status=="open"] which fails
         "srcdir/index.rst:61: WARNING: Need 'IMP_COND_FAIL' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
+        # SPEC_RAW_001 uses raw_links (parse_conditions=False), so brackets are literal ID text.
+        # The link target 'REQ_001[status=="open"]' doesn't exist as a need, so it's a dead link.
+        "srcdir/index.rst:66: WARNING: Need 'SPEC_RAW_001' has unknown outgoing link 'REQ_001[status==\"open\"]' in field 'raw_links' [needs.link_outgoing]",
     ]
 
     needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
@@ -66,3 +69,32 @@ def test_json_excludes_link_conditions_when_disabled(test_app: Sphinx, snapshot)
 
     needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
     assert needs_data == snapshot(exclude=props("created", "project", "creator"))
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_link_conditions",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_parse_conditions_disabled(test_app: Sphinx):
+    """Test that parse_conditions=False treats brackets as literal ID text."""
+    app = test_app
+    app.build()
+
+    needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
+    spec_raw = needs_data["versions"][""]["needs"]["SPEC_RAW_001"]
+
+    # With parse_conditions=False, the brackets are NOT parsed as a condition.
+    # The entire string 'REQ_001[status=="open"]' is treated as a literal link ID.
+    assert spec_raw["raw_links"] == ['REQ_001[status=="open"]']
+
+    # Verify no condition was extracted (the link has no condition field)
+    # The raw_links_back on REQ_001 should be empty since the literal ID doesn't match
+    req_001 = needs_data["versions"][""]["needs"]["REQ_001"]
+    assert req_001.get("raw_links_back", []) == []

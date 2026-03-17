@@ -59,3 +59,13 @@ Imported Needs
 --------------
 
 .. needimport:: needs_test_conditions.json
+
+Parse Conditions Disabled
+-------------------------
+
+.. spec:: Spec with raw link containing brackets
+   :id: SPEC_RAW_001
+   :raw_links: REQ_001[status=="open"]
+
+   The ``raw_links`` link type has ``parse_conditions: False``,
+   so the brackets are treated as literal ID text, not as a condition.
