@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773775550120,
+  "lastUpdate": 1773778430078,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17964,6 +17964,42 @@ window.BENCHMARK_DATA = {
             "value": 59.43126078300003,
             "unit": "s",
             "extra": "Commit: bccacdebb33b2572e9c2b312b2ee2b70980b458f\nBranch: master\nTime: 2026-03-17T20:23:47+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "36d4b705cfe4a1e27d5ab5b241e64f7126ead344",
+          "message": "🔧 Bump ENV_DATA_VERSION to 4 for NeedLink storage format change (#1683)",
+          "timestamp": "2026-03-17T21:10:41+01:00",
+          "tree_id": "5b77286277569f78a5ad646ee39af68f67ea36d8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/36d4b705cfe4a1e27d5ab5b241e64f7126ead344"
+        },
+        "date": 1773778355087,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15055468599999244,
+            "unit": "s",
+            "extra": "Commit: 36d4b705cfe4a1e27d5ab5b241e64f7126ead344\nBranch: master\nTime: 2026-03-17T21:10:41+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.016752112999995,
+            "unit": "s",
+            "extra": "Commit: 36d4b705cfe4a1e27d5ab5b241e64f7126ead344\nBranch: master\nTime: 2026-03-17T21:10:41+01:00"
           }
         ]
       }
