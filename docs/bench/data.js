@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773764708264,
+  "lastUpdate": 1773771450840,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17892,6 +17892,42 @@ window.BENCHMARK_DATA = {
             "value": 62.09478826799999,
             "unit": "s",
             "extra": "Commit: e22e31dc8fde2fab7931b3ff3bb0dc96de623d29\nBranch: master\nTime: 2026-03-17T17:22:59+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4473aef548dab35f74176a881e6b7cb228ff404b",
+          "message": "👌 Add `needs_json_include_link_conditions` config option (#1681)",
+          "timestamp": "2026-03-17T19:15:29+01:00",
+          "tree_id": "a769a3564bbf2e0f4a846a299d86659fba7d520d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/4473aef548dab35f74176a881e6b7cb228ff404b"
+        },
+        "date": 1773771426006,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.13121728600000182,
+            "unit": "s",
+            "extra": "Commit: 4473aef548dab35f74176a881e6b7cb228ff404b\nBranch: master\nTime: 2026-03-17T19:15:29+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.050863330000006,
+            "unit": "s",
+            "extra": "Commit: 4473aef548dab35f74176a881e6b7cb228ff404b\nBranch: master\nTime: 2026-03-17T19:15:29+01:00"
           }
         ]
       }
