@@ -1725,6 +1725,13 @@ Allows to reference and use external needs without having their representation i
      },
    ]
 
+.. note::
+
+   External needs support :ref:`conditional links <need_conditional_links>`.
+   Link strings in the JSON file can contain conditions,
+   e.g. ``"links": ["REQ_001[status==\"open\"]"]``,
+   and these conditions will be evaluated against the target needs during the build.
+
 ``needs_external_needs`` must be a list of dictionary elements and each dictionary must/can have the following
 keys:
 

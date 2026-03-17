@@ -54,3 +54,8 @@ Specifications
    :links: REQ_001[["open" in tags]]
 
    Uses double brackets; the condition fails because REQ_001 has no tag "open".
+
+Imported Needs
+--------------
+
+.. needimport:: needs_test_conditions.json

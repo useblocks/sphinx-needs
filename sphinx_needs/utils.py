@@ -256,19 +256,27 @@ def import_prefix_link_edit(
     if not id_prefix:
         return
 
-    needs_ids = needs.keys()
+    from sphinx_needs.need_item import NeedLink
+
+    needs_ids = set(needs.keys())
     link_names_list = list(link_names)
 
     for need in needs.values():
+        for link_name in link_names_list:
+            if link_name not in need:
+                continue
+            for n, link in enumerate(need[link_name]):
+                parsed = NeedLink.from_string(link)
+                if parsed.id in needs_ids:
+                    prefixed = NeedLink(
+                        id=f"{id_prefix}{parsed.id}",
+                        part=parsed.part,
+                        condition=parsed.condition,
+                    )
+                    need[link_name][n] = prefixed.to_link_string()
+        # Manipulate descriptions
+        # ToDo: Use regex for better matches.
         for id in needs_ids:
-            # Manipulate links in all link types
-            for link_name in link_names_list:
-                if link_name in need and id in need[link_name]:
-                    for n, link in enumerate(need[link_name]):
-                        if id == link:
-                            need[link_name][n] = f"{id_prefix}{id}"
-            # Manipulate descriptions
-            # ToDo: Use regex for better matches.
             for key in ("content", "description"):
                 if key in need:
                     need[key] = need[key].replace(id, "".join([id_prefix, id]))
