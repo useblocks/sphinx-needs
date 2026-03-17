@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773771450840,
+  "lastUpdate": 1773775550120,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17928,6 +17928,42 @@ window.BENCHMARK_DATA = {
             "value": 55.050863330000006,
             "unit": "s",
             "extra": "Commit: 4473aef548dab35f74176a881e6b7cb228ff404b\nBranch: master\nTime: 2026-03-17T19:15:29+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bccacdebb33b2572e9c2b312b2ee2b70980b458f",
+          "message": "♻️ Store NeedLink on NeedRef node at parse time instead of re-parsing later (#1682)",
+          "timestamp": "2026-03-17T20:23:47+01:00",
+          "tree_id": "72e05055023eb0a69abc62da384a34682459356a",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bccacdebb33b2572e9c2b312b2ee2b70980b458f"
+        },
+        "date": 1773775529085,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14700690899999813,
+            "unit": "s",
+            "extra": "Commit: bccacdebb33b2572e9c2b312b2ee2b70980b458f\nBranch: master\nTime: 2026-03-17T20:23:47+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.43126078300003,
+            "unit": "s",
+            "extra": "Commit: bccacdebb33b2572e9c2b312b2ee2b70980b458f\nBranch: master\nTime: 2026-03-17T20:23:47+01:00"
           }
         ]
       }
