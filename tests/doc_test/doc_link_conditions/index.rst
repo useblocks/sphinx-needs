@@ -48,3 +48,9 @@ Specifications
    :links: REQ_001[status=="open"], REQ_003[status=="open"]
 
    First link condition passes, second fails (REQ_003 has status "done").
+
+.. spec:: Spec with multi-bracket condition
+   :id: SPEC_006
+   :links: REQ_001[["open" in tags]]
+
+   Uses double brackets; the condition fails because REQ_001 has no tag "open".

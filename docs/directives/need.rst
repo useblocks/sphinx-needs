@@ -131,7 +131,7 @@ You can easily set links to multiple needs by using **;** as a separator.
 conditional links
 +++++++++++++++++
 
-.. versionadded:: 7.0.0
+.. versionadded:: 8.0.0
 
 You can attach a condition to any link by appending a :ref:`filter_string` in square brackets after the target ID.
 The condition is evaluated against the **targeted** need.
@@ -167,8 +167,10 @@ Links without conditions continue to work as before:
 
 .. note::
 
-   If a condition contains square brackets (e.g. for list indexing),
-   use double brackets to distinguish them from the outer condition delimiters: ``REQ_001[[tags[0]=="important"]]``.
+   Any number of opening ``[`` brackets can be used to start the condition,
+   as long as the same number of closing ``]`` brackets are used to end it.
+   This is useful when the condition itself contains square brackets (e.g. for list indexing):
+   ``REQ_001[[tags[0]=="important"]]``.
 
 extra links
 +++++++++++

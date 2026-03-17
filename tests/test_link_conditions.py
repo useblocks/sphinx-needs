@@ -1,107 +1,37 @@
 import os
-import subprocess
-from pathlib import Path
 
 import pytest
+from sphinx.application import Sphinx
 from sphinx.util.console import strip_colors
 
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_link_conditions"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_link_conditions",
+            "no_plantuml": True,
+        }
+    ],
     indirect=True,
 )
-def test_link_condition_passed(test_app):
-    """Test that links with conditions that pass do not emit warnings."""
+def test_link_conditions(test_app: Sphinx):
+    """Test that link conditions produce the expected warnings."""
     app = test_app
+    app.build()
 
-    src_dir = Path(app.srcdir)
-    out_dir = Path(app.outdir)
-    output = subprocess.run(
-        ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
-    )
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
 
-    stderr = strip_colors(
-        output.stderr.decode("utf-8").replace(str(app.srcdir) + os.sep, "srcdir/")
-    )
-
-    # SPEC_001 links to REQ_001[status=="open"] which should pass — no warning for it
-    assert "SPEC_001" not in stderr
-    # SPEC_004 links to REQ_001 with no condition — no warning for it
-    assert "SPEC_004" not in stderr
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_link_conditions"}],
-    indirect=True,
-)
-def test_link_condition_failed(test_app):
-    """Test that links with failing conditions emit link_condition_failed warnings."""
-    app = test_app
-
-    src_dir = Path(app.srcdir)
-    out_dir = Path(app.outdir)
-    output = subprocess.run(
-        ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
-    )
-
-    stderr = strip_colors(
-        output.stderr.decode("utf-8").replace(str(app.srcdir) + os.sep, "srcdir/")
-    )
-
-    # SPEC_002 links to REQ_002[status=="open"] but REQ_002 has status "closed"
-    assert "SPEC_002" in stderr
-    assert "link_condition_failed" in stderr
-    assert "not satisfied" in stderr
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_link_conditions"}],
-    indirect=True,
-)
-def test_link_condition_invalid_syntax(test_app):
-    """Test that links with invalid condition syntax emit link_condition_invalid warnings."""
-    app = test_app
-
-    src_dir = Path(app.srcdir)
-    out_dir = Path(app.outdir)
-    output = subprocess.run(
-        ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
-    )
-
-    stderr = strip_colors(
-        output.stderr.decode("utf-8").replace(str(app.srcdir) + os.sep, "srcdir/")
-    )
-
-    # SPEC_003 links to REQ_001[status===] which has invalid syntax
-    assert "SPEC_003" in stderr
-    assert "link_condition_invalid" in stderr
-    assert "invalid condition syntax" in stderr
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_link_conditions"}],
-    indirect=True,
-)
-def test_link_condition_mixed(test_app):
-    """Test that with multiple links, only failing conditions emit warnings."""
-    app = test_app
-
-    src_dir = Path(app.srcdir)
-    out_dir = Path(app.outdir)
-    output = subprocess.run(
-        ["sphinx-build", "-M", "html", src_dir, out_dir], capture_output=True
-    )
-
-    stderr = strip_colors(
-        output.stderr.decode("utf-8").replace(str(app.srcdir) + os.sep, "srcdir/")
-    )
-
-    # SPEC_005 links to REQ_001[status=="open"] (passes) and REQ_003[status=="open"] (fails)
-    # We should see a warning for REQ_003 condition failure
-    assert "SPEC_005" in stderr
-    assert "REQ_003" in stderr
-    assert "not satisfied" in stderr
+    assert warnings == [
+        # SPEC_002 links to REQ_002[status=="open"] but REQ_002 has status "closed"
+        "srcdir/index.rst:28: WARNING: Need 'SPEC_002' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
+        # SPEC_003 links to REQ_001[status===] which has invalid syntax
+        "srcdir/index.rst:34: WARNING: Need 'SPEC_003' link 'REQ_001' in field 'links': invalid condition syntax 'status===': Filter 'status===' not valid. Error: invalid syntax (<string>, line 1). [needs.link_condition_invalid]",
+        # SPEC_005 links to REQ_003[status=="open"] which fails (REQ_003 has status "done")
+        "srcdir/index.rst:46: WARNING: Need 'SPEC_005' link 'REQ_003' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_003' [needs.link_condition_failed]",
+        # SPEC_006 links to REQ_001[["open" in tags]] with multi-bracket; fails because REQ_001 has no "open" tag
+        "srcdir/index.rst:52: WARNING: Need 'SPEC_006' link 'REQ_001' in field 'links': condition '\"open\" in tags' not satisfied by target need 'REQ_001' [needs.link_condition_failed]",
+    ]
