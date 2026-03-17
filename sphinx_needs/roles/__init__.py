@@ -18,5 +18,5 @@ class NeedsXRefRole(XRefRole):
         nodes, messages = super().run()
         for node in nodes:
             if isinstance(node, NeedRef):
-                node["need_link"] = NeedLink._parse_address(node["reftarget"])
+                node["need_link"] = NeedLink.parse_address(node["reftarget"])
         return nodes, messages

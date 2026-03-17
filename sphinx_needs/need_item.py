@@ -274,7 +274,7 @@ class NeedLink:
         bracket_start = link_str.find("[")
         if bracket_start <= 0:
             # No condition or no address before '[' — plain ID or ID.part
-            return NeedLink._parse_address(link_str), warnings
+            return NeedLink.parse_address(link_str), warnings
 
         address = link_str[:bracket_start]
         rest = link_str[bracket_start:]
@@ -293,7 +293,7 @@ class NeedLink:
                 f"Unclosed condition brackets in link {link_str!r}: "
                 f"expected {depth} closing ']' characters."
             )
-            return NeedLink._parse_address(link_str), warnings
+            return NeedLink.parse_address(link_str), warnings
 
         trailing = inner[close_pos + depth :]
         if trailing:
@@ -301,16 +301,16 @@ class NeedLink:
                 f"Unexpected text after closing condition bracket "
                 f"in link {link_str!r}: {trailing!r}."
             )
-            return NeedLink._parse_address(address), warnings
+            return NeedLink.parse_address(address), warnings
 
         condition = inner[:close_pos]
-        link = NeedLink._parse_address(
+        link = NeedLink.parse_address(
             address, condition=condition if condition else None
         )
         return link, warnings
 
     @staticmethod
-    def _parse_address(address: str, /, *, condition: str | None = None) -> NeedLink:
+    def parse_address(address: str, /, *, condition: str | None = None) -> NeedLink:
         """Parse an address string into a NeedLink, optionally with a condition."""
         if "." in address:
             id_, part = address.split(".", maxsplit=1)
