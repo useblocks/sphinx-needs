@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773738818225,
+  "lastUpdate": 1773764708264,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17856,6 +17856,42 @@ window.BENCHMARK_DATA = {
             "value": 56.641114277,
             "unit": "s",
             "extra": "Commit: 8ad874bee75526e876c14f63dc53508ef07920ed\nBranch: master\nTime: 2026-03-17T10:11:41+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e22e31dc8fde2fab7931b3ff3bb0dc96de623d29",
+          "message": "👌 Parse link conditions from imported and external needs (#1680)",
+          "timestamp": "2026-03-17T17:22:59+01:00",
+          "tree_id": "d76314c68c30471a6ba96d15c5556116a8b0a89c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/e22e31dc8fde2fab7931b3ff3bb0dc96de623d29"
+        },
+        "date": 1773764683562,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15152915899999186,
+            "unit": "s",
+            "extra": "Commit: e22e31dc8fde2fab7931b3ff3bb0dc96de623d29\nBranch: master\nTime: 2026-03-17T17:22:59+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.09478826799999,
+            "unit": "s",
+            "extra": "Commit: e22e31dc8fde2fab7931b3ff3bb0dc96de623d29\nBranch: master\nTime: 2026-03-17T17:22:59+01:00"
           }
         ]
       }
