@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773702337005,
+  "lastUpdate": 1773708680185,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17748,6 +17748,42 @@ window.BENCHMARK_DATA = {
             "value": 58.530967791,
             "unit": "s",
             "extra": "Commit: 63d751aa5b2fcd029001762b5ee9c85ac72510b9\nBranch: master\nTime: 2026-03-17T00:03:38+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "21bf8b995718e3030ba31eeae2c03d2a002ac04a",
+          "message": "✨ Add conditional need link assessment (#1675)",
+          "timestamp": "2026-03-17T01:49:20+01:00",
+          "tree_id": "0f09664c4b20f8c00d4798aa364a5f64e4dc6ef2",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/21bf8b995718e3030ba31eeae2c03d2a002ac04a"
+        },
+        "date": 1773708657013,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14346022499999833,
+            "unit": "s",
+            "extra": "Commit: 21bf8b995718e3030ba31eeae2c03d2a002ac04a\nBranch: master\nTime: 2026-03-17T01:49:20+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.024220762000006,
+            "unit": "s",
+            "extra": "Commit: 21bf8b995718e3030ba31eeae2c03d2a002ac04a\nBranch: master\nTime: 2026-03-17T01:49:20+01:00"
           }
         ]
       }
