@@ -1936,10 +1936,13 @@ needs_json_include_link_conditions
 
 .. versionadded:: 8.0.0
 
-When ``True`` (the default), link fields in the ``needs.json`` output include
+When ``True`` (the default), outgoing link fields in the ``needs.json`` output include
 any conditions attached to the link, for example ``NEED-1[status=="open"]``.
 
 When ``False``, only the target need ID is written, for example ``NEED-1``.
+
+This option only affects outgoing link fields. Backlink fields (e.g. ``links_back``)
+never carry conditions, so they are unaffected by this setting.
 
 Default: :need_config_default:`json_include_link_conditions`
 
