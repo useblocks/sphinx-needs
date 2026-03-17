@@ -183,7 +183,7 @@ class NeedPartData:
 
     id: str
     content: str
-    backlinks: dict[str, list[str]] = field(default_factory=dict)
+    backlinks: dict[str, list[NeedLink]] = field(default_factory=dict)
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
@@ -423,7 +423,11 @@ class NeedItem:
                 "id": p.id,
                 "content": p.content,
                 **(
-                    {f"{k}_back": v for k, v in p.backlinks.items() if v}  # type: ignore[typeddict-item]
+                    {
+                        f"{k}_back": [li.to_filter_string() for li in v]
+                        for k, v in p.backlinks.items()
+                        if v
+                    }  # type: ignore[typeddict-item]
                     if p.backlinks is not None
                     else {}
                 ),
@@ -916,11 +920,11 @@ class NeedItem:
         if not isinstance(part.backlinks, dict) or any(
             not isinstance(k, str)
             or not isinstance(v, list)
-            or any(not isinstance(i, str) for i in v)
+            or any(not isinstance(i, NeedLink) for i in v)
             for k, v in part.backlinks.items()
         ):
             raise ValueError(
-                f"Part {part.id!r} backlinks must be a dictionary of lists of strings."
+                f"Part {part.id!r} backlinks must be a dictionary of lists of NeedLink instances."
             )
         if unknown_part_links := (set(part.backlinks) - set(self._links)):
             raise ValueError(
@@ -1020,7 +1024,7 @@ class NeedPartItem:
             **{
                 f"{name}_back": []
                 if part.backlinks is None or not (blinks := part.backlinks.get(name))
-                else blinks
+                else [li.to_filter_string() for li in blinks]
                 for name in need.iter_links_keys()
             },
         }
@@ -1270,7 +1274,7 @@ class NeedPartItem:
             return self[f"{link_type}_back"]  # type: ignore[no-any-return]
         part = self._need.get_part(self.part_id)
         assert part is not None
-        return [NeedLink.from_string(v) for v in part.backlinks.get(link_type, [])]
+        return part.backlinks.get(link_type, [])
 
     @overload
     def iter_backlinks_items(
@@ -1295,5 +1299,5 @@ class NeedPartItem:
                 assert part is not None
                 yield (
                     key,
-                    [NeedLink.from_string(v) for v in part.backlinks.get(key, [])],
+                    part.backlinks.get(key, []),
                 )
