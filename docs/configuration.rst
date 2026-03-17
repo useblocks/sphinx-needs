@@ -382,6 +382,8 @@ Each configured link can define:
     Default: ``False``.
 - ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
     Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
+- ``parse_conditions``: If set to ``False``, the ``[condition]`` bracket syntax will not be parsed for this link type.
+    Default: ``True``.
 - ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by". Default: "<name> incoming".
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks". Default: "<name>".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
@@ -2830,6 +2832,8 @@ Each configured link should define:
     Default: ``False``.
 - ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
     Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
+- ``parse_conditions``: If set to ``False``, the ``[condition]`` bracket syntax will not be parsed for this link type.
+    Default: ``True``.
 - ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by".
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).

@@ -247,7 +247,7 @@ class NeedLink:
     condition: str | None = None
 
     @staticmethod
-    def from_string(link_str: str) -> NeedLink:
+    def from_string(link_str: str, *, parse_conditions: bool = True) -> NeedLink:
         """Parse a link from a string (infallible, best-effort).
 
         Supports formats: ``ID``, ``ID.part``, ``ID[condition]``,
@@ -256,19 +256,29 @@ class NeedLink:
         On malformed brackets (unclosed, trailing text), falls back to
         parsing without a condition. Use :meth:`from_string_with_warnings`
         if you need to detect malformed input.
+
+        :param parse_conditions: Whether to parse ``[condition]`` brackets.
         """
-        return NeedLink.from_string_with_warnings(link_str)[0]
+        return NeedLink.from_string_with_warnings(
+            link_str, parse_conditions=parse_conditions
+        )[0]
 
     @staticmethod
-    def from_string_with_warnings(link_str: str) -> tuple[NeedLink, list[str]]:
+    def from_string_with_warnings(
+        link_str: str, *, parse_conditions: bool = True
+    ) -> tuple[NeedLink, list[str]]:
         """Parse a link from a string, returning warnings for malformed input.
 
         Same parsing as :meth:`from_string`, but returns a list of warning
         messages instead of silently ignoring malformed brackets.
 
+        :param parse_conditions: Whether to parse ``[condition]`` brackets.
         :returns: A tuple of ``(NeedLink, warnings)``.
         """
         warnings: list[str] = []
+
+        if not parse_conditions:
+            return NeedLink.parse_address(link_str), warnings
 
         # Find the first '[' that could start a condition
         bracket_start = link_str.find("[")

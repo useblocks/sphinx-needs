@@ -1032,6 +1032,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                     "parse_dynamic_functions", needs_config._parse_dynamic_functions
                 ),
                 parse_variants=link.get("parse_variants", False),
+                parse_conditions=link.get("parse_conditions", True),
                 directive_option=True,
                 display=display_config,
                 copy=link.get("copy", False),

@@ -304,6 +304,8 @@ class NeedLinksConfig(TypedDict, total=False):
     """Whether variants are parsed in this field."""
     parse_dynamic_functions: NotRequired[bool]
     """Whether dynamic functions are parsed in this field."""
+    parse_conditions: NotRequired[bool]
+    """Whether conditions (bracket syntax) are parsed in this field."""
 
 
 class LinkOptionsType(NeedLinksConfig):
