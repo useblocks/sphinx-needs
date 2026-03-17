@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 3
+ENV_DATA_VERSION: Final = 4
 """Version of the data stored in the environment.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
