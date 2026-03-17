@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773736976466,
+  "lastUpdate": 1773738818225,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17820,6 +17820,42 @@ window.BENCHMARK_DATA = {
             "value": 57.88556865999999,
             "unit": "s",
             "extra": "Commit: dce9f998e783fdffc69a75f4812c8b47c77c6f9e\nBranch: master\nTime: 2026-03-17T09:40:55+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8ad874bee75526e876c14f63dc53508ef07920ed",
+          "message": "🔧 Store `NeedPartData.backlinks` as `NeedLink` instead of `str` (#1679)\n\nChange `NeedPartData.backlinks` from `dict[str, list[str]]` to\n`dict[str, list[NeedLink]]`, aligning it with how `NeedItem` already\nstores its backlinks internally.\n\nPreviously, part backlinks were stored as raw strings and converted to\n`NeedLink` on read (e.g. in `NeedPartItem.get_backlinks(as_str=False)`).\nNow they are stored as `NeedLink` from the start, avoiding redundant\nre-parsing and making the internal representation consistent across\nneeds and parts.\n\n**Changes:**\n- `NeedPartData.backlinks` type: `dict[str, list[str]]` → `dict[str,\nlist[NeedLink]]`\n- `resolve_links()`: append `NeedLink(id=key)` instead of raw `str` to\npart backlinks\n- `_recompute()`, `NeedPartItem.__init__`: serialize via\n`to_filter_string()` for dict-like access and JSON output (unchanged\nexternal behavior)\n- `NeedPartItem.get_backlinks`/`iter_backlinks_items`: return stored\n`NeedLink` directly instead of re-parsing from strings\n- `_validate_part`: validate `NeedLink` instances instead of `str`\n\nNo change in external behavior — dict-like access\n(`item[\"links_back\"]`), JSON serialization, and all public APIs continue\nto return the same values.",
+          "timestamp": "2026-03-17T10:11:41+01:00",
+          "tree_id": "ffa472ce28c0f131d0a3f2b3d5b0fd0fd0b6ccc7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8ad874bee75526e876c14f63dc53508ef07920ed"
+        },
+        "date": 1773738795514,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14972884400000197,
+            "unit": "s",
+            "extra": "Commit: 8ad874bee75526e876c14f63dc53508ef07920ed\nBranch: master\nTime: 2026-03-17T10:11:41+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.641114277,
+            "unit": "s",
+            "extra": "Commit: 8ad874bee75526e876c14f63dc53508ef07920ed\nBranch: master\nTime: 2026-03-17T10:11:41+01:00"
           }
         ]
       }
