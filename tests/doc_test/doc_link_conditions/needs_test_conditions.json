@@ -1,0 +1,40 @@
+{
+    "current_version": "1.0",
+    "versions": {
+        "1.0": {
+            "needs": {
+                "IMP_COND_PASS": {
+                    "id": "IMP_COND_PASS",
+                    "type": "impl",
+                    "type_name": "Implementation",
+                    "title": "Imported with passing condition",
+                    "description": "",
+                    "tags": [],
+                    "status": null,
+                    "links": ["REQ_001[status==\"open\"]"]
+                },
+                "IMP_COND_FAIL": {
+                    "id": "IMP_COND_FAIL",
+                    "type": "impl",
+                    "type_name": "Implementation",
+                    "title": "Imported with failing condition",
+                    "description": "",
+                    "tags": [],
+                    "status": null,
+                    "links": ["REQ_002[status==\"open\"]"]
+                },
+                "IMP_COND_NONE": {
+                    "id": "IMP_COND_NONE",
+                    "type": "impl",
+                    "type_name": "Implementation",
+                    "title": "Imported with no condition",
+                    "description": "",
+                    "tags": [],
+                    "status": null,
+                    "links": ["REQ_001"]
+                }
+            },
+            "needs_amount": 3
+        }
+    }
+}

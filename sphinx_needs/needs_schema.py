@@ -1045,7 +1045,10 @@ def _split_link_list(
         _current = ""
         if not stripped:
             return None
-        return _parse_link_with_condition(stripped)
+        link, warnings = NeedLink.from_string_with_warnings(stripped)
+        if warnings:
+            return LinkSplitWarning(warnings[0])
+        return link
 
     while text:
         if parse_dynamic_functions and text.startswith("[[") and not _current.strip():
@@ -1105,54 +1108,6 @@ def _split_link_list(
             yield LinkSplitWarning(
                 "only one string, dynamic function or variant function allowed per array item."
             )
-
-
-def _parse_link_with_condition(text: str) -> NeedLink | LinkSplitWarning:
-    """Parse a plain link string that may contain a ``[condition]`` suffix.
-
-    Supports matched bracket depth: ``ID[[x>1]]`` parses condition as ``[x>1]``.
-
-    :param text: A stripped, non-empty link string (no delimiters, no DF/VF markers).
-    :returns: A NeedLink with id, optional part, and optional condition,
-        or a ``LinkSplitWarning`` if brackets are unclosed.
-    """
-    # Find the first '[' that starts the condition
-    bracket_start = text.find("[")
-    if bracket_start <= 0:
-        # No condition or no address before '[' — plain ID or ID.part
-        return NeedLink.from_string(text)
-
-    address = text[:bracket_start]
-    rest = text[bracket_start:]
-
-    # Count opening bracket depth
-    depth = 0
-    while depth < len(rest) and rest[depth] == "[":
-        depth += 1
-
-    # Find the matching closing brackets
-    closing = "]" * depth
-    # The content is between the opening and closing brackets
-    inner = rest[depth:]
-    close_pos = inner.find(closing)
-    if close_pos < 0:
-        return LinkSplitWarning(
-            f"Unclosed condition brackets in link {text!r}: "
-            f"expected {depth} closing ']' characters."
-        )
-    trailing = inner[close_pos + depth :]
-    if trailing:
-        return LinkSplitWarning(
-            f"Unexpected text after closing condition bracket in link {text!r}: {trailing!r}."
-        )
-    condition = inner[:close_pos]
-
-    # Parse address for id.part
-    if "." in address:
-        id_, part = address.split(".", maxsplit=1)
-        return NeedLink(id=id_, part=part, condition=condition if condition else None)
-    else:
-        return NeedLink(id=address, condition=condition if condition else None)
 
 
 def _split_string(

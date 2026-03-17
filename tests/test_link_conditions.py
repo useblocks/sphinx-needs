@@ -26,6 +26,8 @@ def test_link_conditions(test_app: Sphinx):
     ).splitlines()
 
     assert warnings == [
+        # EXT_COND_FAIL external need links to REQ_002[status=="open"] which fails
+        "WARNING: http://my_company.com/docs/v1/index.html#COND_FAIL: Need 'EXT_COND_FAIL' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
         # SPEC_002 links to REQ_002[status=="open"] but REQ_002 has status "closed"
         "srcdir/index.rst:28: WARNING: Need 'SPEC_002' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
         # SPEC_003 links to REQ_001[status===] which has invalid syntax
@@ -34,4 +36,6 @@ def test_link_conditions(test_app: Sphinx):
         "srcdir/index.rst:46: WARNING: Need 'SPEC_005' link 'REQ_003' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_003' [needs.link_condition_failed]",
         # SPEC_006 links to REQ_001[["open" in tags]] with multi-bracket; fails because REQ_001 has no "open" tag
         "srcdir/index.rst:52: WARNING: Need 'SPEC_006' link 'REQ_001' in field 'links': condition '\"open\" in tags' not satisfied by target need 'REQ_001' [needs.link_condition_failed]",
+        # IMP_COND_FAIL imported via needimport, links to REQ_002[status=="open"] which fails
+        "srcdir/index.rst:61: WARNING: Need 'IMP_COND_FAIL' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
     ]

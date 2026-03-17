@@ -172,6 +172,14 @@ Links without conditions continue to work as before:
    This is useful when the condition itself contains square brackets (e.g. for list indexing):
    ``REQ_001[[tags[0]=="important"]]``.
 
+.. note::
+
+   Conditional link syntax is also supported in link strings within ``needs.json`` files
+   loaded via :ref:`needimport` or :ref:`needs_external_needs`.
+   For example, a need in a JSON file can have
+   ``"links": ["REQ_001[status==\"open\"]"]``
+   and the condition will be evaluated during the build just as it would for a directive-defined link.
+
 extra links
 +++++++++++
 

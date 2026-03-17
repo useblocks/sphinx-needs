@@ -1,5 +1,13 @@
 extensions = ["sphinx_needs"]
 
+needs_external_needs = [
+    {
+        "base_url": "http://my_company.com/docs/v1/",
+        "json_path": "needs_test_external.json",
+        "id_prefix": "EXT_",
+    },
+]
+
 needs_types = [
     {
         "directive": "req",
