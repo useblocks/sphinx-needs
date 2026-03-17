@@ -1,8 +1,11 @@
+import json
 import os
+from pathlib import Path
 
 import pytest
 from sphinx.application import Sphinx
 from sphinx.util.console import strip_colors
+from syrupy.filters import props
 
 
 @pytest.mark.parametrize(
@@ -16,8 +19,8 @@ from sphinx.util.console import strip_colors
     ],
     indirect=True,
 )
-def test_link_conditions(test_app: Sphinx):
-    """Test that link conditions produce the expected warnings."""
+def test_link_conditions(test_app: Sphinx, snapshot):
+    """Test that link conditions produce the expected warnings and JSON output."""
     app = test_app
     app.build()
 
@@ -39,3 +42,27 @@ def test_link_conditions(test_app: Sphinx):
         # IMP_COND_FAIL imported via needimport, links to REQ_002[status=="open"] which fails
         "srcdir/index.rst:61: WARNING: Need 'IMP_COND_FAIL' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
     ]
+
+    needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
+    assert needs_data == snapshot(exclude=props("created", "project", "creator"))
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_link_conditions",
+            "no_plantuml": True,
+            "confoverrides": {"needs_json_include_link_conditions": False},
+        }
+    ],
+    indirect=True,
+)
+def test_json_excludes_link_conditions_when_disabled(test_app: Sphinx, snapshot):
+    """Test that conditions are stripped from needs.json when config is False."""
+    app = test_app
+    app.build()
+
+    needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
+    assert needs_data == snapshot(exclude=props("created", "project", "creator"))
