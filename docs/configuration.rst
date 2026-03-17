@@ -1929,6 +1929,26 @@ The defaults can be retrieved from the ``needs_schema`` now also output in the J
 
 Default: :need_config_default:`json_remove_defaults`
 
+.. _`needs_json_include_link_conditions`:
+
+needs_json_include_link_conditions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 5.2.0
+
+When ``True`` (the default), link fields in the ``needs.json`` output include
+any conditions attached to the link, for example ``NEED-1[status=="open"]``.
+
+When ``False``, only the target need ID is written, for example ``NEED-1``.
+
+Default: :need_config_default:`json_include_link_conditions`
+
+Example:
+
+.. code-block:: python
+
+   needs_json_include_link_conditions = False
+
 .. _`needs_build_json_per_id`:
 
 needs_build_json_per_id

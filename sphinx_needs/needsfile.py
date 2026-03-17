@@ -161,6 +161,16 @@ class NeedsList:
             for key, value in need_info.items()
             if key not in self._exclude_need_keys
         }
+        if self.needs_config.json_include_link_conditions:
+            # Overwrite link fields with serializations that include conditions
+            for key, links in need_info.iter_links_items(as_str=False):
+                if key not in self._exclude_need_keys:
+                    writable_needs[key] = [li.to_link_string() for li in links]
+            # Overwrite backlink fields similarly
+            for key, blinks in need_info.iter_backlinks_items(as_str=False):
+                bkey = f"{key}_back"
+                if bkey not in self._exclude_need_keys:
+                    writable_needs[bkey] = [li.to_link_string() for li in blinks]
         if self.needs_config.json_remove_defaults:
             writable_needs = {
                 key: value

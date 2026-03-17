@@ -1,4 +1,6 @@
+import json
 import os
+from pathlib import Path
 
 import pytest
 from sphinx.application import Sphinx
@@ -39,3 +41,65 @@ def test_link_conditions(test_app: Sphinx):
         # IMP_COND_FAIL imported via needimport, links to REQ_002[status=="open"] which fails
         "srcdir/index.rst:61: WARNING: Need 'IMP_COND_FAIL' link 'REQ_002' in field 'links': condition 'status==\"open\"' not satisfied by target need 'REQ_002' [needs.link_condition_failed]",
     ]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "srcdir": "doc_test/doc_link_conditions",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_link_conditions_json_include_conditions_default(test_app: Sphinx):
+    """Test that the default config includes link conditions in needs.json."""
+    app = test_app
+    app.build()
+
+    needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
+    version = needs_data["current_version"]
+    needs = needs_data["versions"][version]["needs"]
+
+    # SPEC_001 links to REQ_001[status=="open"] — condition should be present
+    assert 'REQ_001[status=="open"]' in needs["SPEC_001"]["links"]
+    # SPEC_004 links to REQ_001 (no condition) — just the ID
+    assert "REQ_001" in needs["SPEC_004"]["links"]
+    # SPEC_005 links to REQ_001[status=="open"], REQ_003[status=="open"]
+    assert 'REQ_001[status=="open"]' in needs["SPEC_005"]["links"]
+    assert 'REQ_003[status=="open"]' in needs["SPEC_005"]["links"]
+    # SPEC_006 links to REQ_001[["open" in tags]] — multi-bracket normalized to single
+    assert 'REQ_001["open" in tags]' in needs["SPEC_006"]["links"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "needs",
+            "srcdir": "doc_test/doc_link_conditions",
+            "no_plantuml": True,
+            "confoverrides": {"needs_json_include_link_conditions": False},
+        }
+    ],
+    indirect=True,
+)
+def test_link_conditions_json_exclude_conditions(test_app: Sphinx):
+    """Test that conditions are stripped from needs.json when config is False."""
+    app = test_app
+    app.build()
+
+    needs_data = json.loads(Path(app.outdir, "needs.json").read_text())
+    version = needs_data["current_version"]
+    needs = needs_data["versions"][version]["needs"]
+
+    # SPEC_001 links to REQ_001 — condition should be stripped
+    assert needs["SPEC_001"]["links"] == ["REQ_001"]
+    # SPEC_004 links to REQ_001 — unchanged (no condition)
+    assert needs["SPEC_004"]["links"] == ["REQ_001"]
+    # SPEC_005 — both links should have conditions stripped
+    assert set(needs["SPEC_005"]["links"]) == {"REQ_001", "REQ_003"}
+    # SPEC_006 — condition stripped
+    assert needs["SPEC_006"]["links"] == ["REQ_001"]
