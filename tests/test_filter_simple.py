@@ -274,12 +274,13 @@ class TestFilterSingleNeedSimpleFilter:
         )
         assert result is True
 
-    def test_simple_filter_fallback_to_eval(self) -> None:
+    def test_simple_filter_complex_falls_through_to_eval(self) -> None:
         """Complex expressions fall through to eval() even with simple_filter=True."""
+        # search() calls can't be short-circuited, so they fall through to eval()
         result = filter_single_need(
             self.need,
             self.config,
-            'type == "requirement"',
+            'type == "requirement" or [x for x in ["requirement"] if x == type][0] == type',
             simple_filter=True,
         )
         assert result is True
