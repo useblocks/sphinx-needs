@@ -366,7 +366,9 @@ def test_need_part_item(snapshot):
     item = NeedItem(
         core=core(),
         parts=(
-            NeedPartData(id="part1", content="Part 1", backlinks={"links": ["ref3"]}),
+            NeedPartData(
+                id="part1", content="Part 1", backlinks={"links": [NeedLink(id="ref3")]}
+            ),
         ),
         content=content("Need 1"),
         extras={
