@@ -54,7 +54,7 @@ def test_link_conditions(test_app: Sphinx):
     ],
     indirect=True,
 )
-def test_link_conditions_json_include_conditions_default(test_app: Sphinx):
+def test_json_includes_link_conditions_by_default(test_app: Sphinx):
     """Test that the default config includes link conditions in needs.json."""
     app = test_app
     app.build()
@@ -86,7 +86,7 @@ def test_link_conditions_json_include_conditions_default(test_app: Sphinx):
     ],
     indirect=True,
 )
-def test_link_conditions_json_exclude_conditions(test_app: Sphinx):
+def test_json_excludes_link_conditions_when_disabled(test_app: Sphinx):
     """Test that conditions are stripped from needs.json when config is False."""
     app = test_app
     app.build()
