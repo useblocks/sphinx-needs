@@ -387,7 +387,7 @@ The `ensure_post_process_needs_data` function calls `post_process_needs_data`, w
 
 1. `extend_needs_data` - Apply all `needextend` modifications to need data
 2. `resolve_functions` - Resolve dynamic function values (calls functions set as field values)
-3. `update_back_links` - Generate back-links and check for dead/broken links between needs
+3. `resolve_links` - Generate back-links, assess link conditions, and check for dead/broken links between needs
 4. `process_constraints` - Process constraints for each need
 
 After this, needs are "sealed" (made immutable) via the `needs-before-sealing` event.

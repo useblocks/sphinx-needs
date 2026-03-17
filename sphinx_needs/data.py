@@ -54,7 +54,7 @@ class NeedsPartType(TypedDict, total=False):
     content: str
     """Content of the part."""
 
-    # note back links for each type are also set dynamically in post_process_needs_data (-> update_back_links)
+    # note back links for each type are also set dynamically in post_process_needs_data (-> resolve_links)
 
 
 class CoreFieldParameters(TypedDict):
@@ -497,7 +497,7 @@ class NeedsInfoType(TypedDict):
     signature: None | str
     """Derived from a docutils desc_name node."""
 
-    # these default to False and are updated in update_back_links post-process
+    # these default to False and are updated in resolve_links post-process
     has_dead_links: bool
     """True if any links reference need ids that are not found in the need list."""
     has_forbidden_dead_links: bool
