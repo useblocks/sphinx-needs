@@ -1,5 +1,8 @@
 extensions = ["sphinx_needs"]
 
+needs_build_json = True
+needs_json_remove_defaults = True
+
 needs_external_needs = [
     {
         "base_url": "http://my_company.com/docs/v1/",
