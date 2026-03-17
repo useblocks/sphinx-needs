@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773708680185,
+  "lastUpdate": 1773736976466,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -17784,6 +17784,42 @@ window.BENCHMARK_DATA = {
             "value": 57.024220762000006,
             "unit": "s",
             "extra": "Commit: 21bf8b995718e3030ba31eeae2c03d2a002ac04a\nBranch: master\nTime: 2026-03-17T01:49:20+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dce9f998e783fdffc69a75f4812c8b47c77c6f9e",
+          "message": "🔧 Use `get_links(as_str=False)` in needextend to avoid round-trip serialization (#1678)\n\nIn `extend_needs_data`, when appending to link fields, existing links\nwere fetched via `need[option_name]` (which serializes `NeedLink` →\n`str`) then immediately parsed back with `NeedLink.from_string()`. This\nround-trip is wasteful and lossy — `to_filter_string()` discards the\n`condition` field, so `from_string()` can't restore it.\n\nReplaced both occurrences with `need.get_links(option_name,\nas_str=False)`, which returns the internal `NeedLink` objects directly.\nRemoved the now-unused `NeedLink` import.",
+          "timestamp": "2026-03-17T09:40:55+01:00",
+          "tree_id": "8c7db43e45b2647a2140a76ce08875be87575a15",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/dce9f998e783fdffc69a75f4812c8b47c77c6f9e"
+        },
+        "date": 1773736953054,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15841674700001818,
+            "unit": "s",
+            "extra": "Commit: dce9f998e783fdffc69a75f4812c8b47c77c6f9e\nBranch: master\nTime: 2026-03-17T09:40:55+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.88556865999999,
+            "unit": "s",
+            "extra": "Commit: dce9f998e783fdffc69a75f4812c8b47c77c6f9e\nBranch: master\nTime: 2026-03-17T09:40:55+01:00"
           }
         ]
       }
