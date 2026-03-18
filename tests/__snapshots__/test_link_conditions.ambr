@@ -232,8 +232,31 @@
             'type': 'spec',
             'type_name': 'Specification',
           }),
+          'SPEC_RAW_001': dict({
+            'content': '''
+              The ``raw_links`` link type has ``parse_conditions: False``,
+              so the brackets are treated as literal ID text, not as a condition.
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'has_dead_links': True,
+            'has_forbidden_dead_links': True,
+            'id': 'SPEC_RAW_001',
+            'lineno': 66,
+            'raw_links': list([
+              'REQ_001[status=="open"]',
+            ]),
+            'section_name': 'Parse Conditions Disabled',
+            'sections': list([
+              'Parse Conditions Disabled',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Spec with raw link containing brackets',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
         }),
-        'needs_amount': 12,
+        'needs_amount': 13,
         'needs_defaults_removed': True,
         'needs_schema': dict({
           '$schema': 'http://json-schema.org/draft-07/schema#',
@@ -583,6 +606,26 @@
                 'string',
                 'null',
               ]),
+            }),
+            'raw_links': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'raw_links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
             }),
             'section_name': dict({
               'default': None,
@@ -960,8 +1003,31 @@
             'type': 'spec',
             'type_name': 'Specification',
           }),
+          'SPEC_RAW_001': dict({
+            'content': '''
+              The ``raw_links`` link type has ``parse_conditions: False``,
+              so the brackets are treated as literal ID text, not as a condition.
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'has_dead_links': True,
+            'has_forbidden_dead_links': True,
+            'id': 'SPEC_RAW_001',
+            'lineno': 66,
+            'raw_links': list([
+              'REQ_001[status=="open"]',
+            ]),
+            'section_name': 'Parse Conditions Disabled',
+            'sections': list([
+              'Parse Conditions Disabled',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Spec with raw link containing brackets',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
         }),
-        'needs_amount': 12,
+        'needs_amount': 13,
         'needs_defaults_removed': True,
         'needs_schema': dict({
           '$schema': 'http://json-schema.org/draft-07/schema#',
@@ -1311,6 +1377,26 @@
                 'string',
                 'null',
               ]),
+            }),
+            'raw_links': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'raw_links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
             }),
             'section_name': dict({
               'default': None,

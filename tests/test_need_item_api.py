@@ -496,6 +496,25 @@ class TestNeedLinkFromString:
         assert len(warnings) == 1
         assert "Unexpected text" in warnings[0]
 
+    def test_parse_conditions_false_with_brackets(self) -> None:
+        link = NeedLink.from_string("NEED-1[cond]", parse_conditions=False)
+        assert link == NeedLink(id="NEED-1[cond]", condition=None)
+
+    def test_parse_conditions_false_with_part_and_brackets(self) -> None:
+        link = NeedLink.from_string("NEED-1.partA[cond]", parse_conditions=False)
+        assert link == NeedLink(id="NEED-1", part="partA[cond]", condition=None)
+
+    def test_parse_conditions_false_plain_id(self) -> None:
+        link = NeedLink.from_string("NEED-1", parse_conditions=False)
+        assert link == NeedLink(id="NEED-1")
+
+    def test_parse_conditions_false_with_warnings(self) -> None:
+        link, warnings = NeedLink.from_string_with_warnings(
+            "NEED-1[cond]", parse_conditions=False
+        )
+        assert link == NeedLink(id="NEED-1[cond]", condition=None)
+        assert warnings == []
+
 
 class TestNeedLinkToLinkString:
     """Tests for NeedLink.to_link_string."""

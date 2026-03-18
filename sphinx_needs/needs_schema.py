@@ -549,6 +549,7 @@ class LinkSchema:
     allow_extend: bool = False
     parse_dynamic_functions: bool = False
     parse_variants: bool = False
+    parse_conditions: bool = True
     allow_defaults: bool = False
     predicate_defaults: tuple[
         tuple[str, LinksLiteralValue | LinksFunctionArray],
@@ -589,6 +590,8 @@ class LinkSchema:
             raise ValueError("parse_dynamic_functions must be a boolean.")
         if not isinstance(self.parse_variants, bool):
             raise ValueError("parse_variants must be a boolean.")
+        if not isinstance(self.parse_conditions, bool):
+            raise ValueError("parse_conditions must be a boolean.")
         if not isinstance(self.allow_defaults, bool):
             raise ValueError("allow_defaults must be a boolean.")
         if not isinstance(self.allow_extend, bool):
@@ -725,7 +728,10 @@ class LinkSchema:
         has_df_or_vf = False
         array: list[NeedLink | DynamicFunctionParsed | VariantFunctionParsed] = []
         for item in _split_link_list(
-            value, self.parse_dynamic_functions, self.parse_variants
+            value,
+            self.parse_dynamic_functions,
+            self.parse_variants,
+            parse_conditions=self.parse_conditions,
         ):
             if isinstance(item, LinkSplitWarning):
                 # TODO bubble up as warning?
@@ -789,13 +795,29 @@ class LinkSchema:
                             VariantFunctionParsed.from_string(item.strip()[2:-2])
                         )
                     else:
-                        new_value.append(NeedLink.from_string(item))
+                        new_value.append(
+                            NeedLink.from_string(
+                                item, parse_conditions=self.parse_conditions
+                            )
+                        )
                 if has_function:
                     return LinksFunctionArray(tuple(new_value))
                 else:
-                    return LinksLiteralValue([NeedLink.from_string(v) for v in value])
+                    return LinksLiteralValue(
+                        [
+                            NeedLink.from_string(
+                                v, parse_conditions=self.parse_conditions
+                            )
+                            for v in value
+                        ]
+                    )
             else:
-                return LinksLiteralValue([NeedLink.from_string(v) for v in value])
+                return LinksLiteralValue(
+                    [
+                        NeedLink.from_string(v, parse_conditions=self.parse_conditions)
+                        for v in value
+                    ]
+                )
 
 
 class FieldsSchema:
@@ -1007,6 +1029,8 @@ def _split_link_list(
     text: str,
     parse_dynamic_functions: bool,
     parse_variants: bool,
+    *,
+    parse_conditions: bool = True,
 ) -> Iterator[
     NeedLink | DynamicFunctionParsed | VariantFunctionParsed | LinkSplitWarning
 ]:
@@ -1030,6 +1054,7 @@ def _split_link_list(
     :param text: The string to split.
     :param parse_dynamic_functions: Whether to parse ``[[...]]`` dynamic functions.
     :param parse_variants: Whether to parse ``<<...>>`` variant functions.
+    :param parse_conditions: Whether to parse ``[condition]`` brackets.
     :yields: Parsed link items, or ``LinkSplitWarning`` for non-fatal issues
         (e.g. text adjacent to a dynamic/variant function, unclosed brackets).
     """
@@ -1045,7 +1070,9 @@ def _split_link_list(
         _current = ""
         if not stripped:
             return None
-        link, warnings = NeedLink.from_string_with_warnings(stripped)
+        link, warnings = NeedLink.from_string_with_warnings(
+            stripped, parse_conditions=parse_conditions
+        )
         if warnings:
             return LinkSplitWarning(warnings[0])
         return link
