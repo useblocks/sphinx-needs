@@ -210,6 +210,28 @@ def test_doc_df_linked_values(test_app):
     [
         {
             "buildername": "html",
+            "srcdir": "doc_test/doc_df_links_from_content",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_doc_df_links_from_content(test_app, snapshot):
+    app = test_app
+    app.build()
+    warnings = strip_colors(app._warning.getvalue()).splitlines()
+    assert warnings == []
+
+    json_data = Path(app.outdir, "needs.json").read_text()
+    needs = json.loads(json_data)
+    assert needs == snapshot(exclude=props("created", "project", "creator"))
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
             "srcdir": "doc_test/doc_df_user_functions",
             "no_plantuml": True,
         }
