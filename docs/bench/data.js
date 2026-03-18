@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773819107975,
+  "lastUpdate": 1773837261744,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18036,6 +18036,42 @@ window.BENCHMARK_DATA = {
             "value": 58.797821867,
             "unit": "s",
             "extra": "Commit: d898e4189c1bcd15d46f5bd0f3adf8706f2b615f\nBranch: master\nTime: 2026-03-18T08:29:49+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0411af3fb61fc8e56a1689f3a186c9b7cd760964",
+          "message": "♻️ Fix `links_from_content` to use parsed doctree nodes instead of regex (#1685)\n\nCloses #1668\n\n### Problem\n\n`links_from_content` used a regex (`` r\":need:\\`(\\w+)\\`\" ``) on the raw\ncontent string to extract need references. This was brittle:\n\n- `\\w+` doesn't match IDs containing hyphens, dots, or other valid\ncharacters\n- Titled references like `` :need:`My title <SOME_ID>` `` weren't\nreliably matched\n- The regex doesn't support MyST Markdown\n- The regex duplicated parsing logic that Sphinx already performs\n\n### Solution\n\nReplace the regex with doctree node traversal:\n\n1. Retrieve the stored `Need` node via `SphinxNeedsData.get_need_node()`\n2. Walk the node tree with a custom traversal (`_find_need_refs`) that\nyields `NeedRef` nodes but skips nested `Need` nodes (mirroring the\n`find_parts` pattern)\n3. Return `NeedLink` objects directly from `ref_node[\"need_link\"]` — the\nalready-parsed, authoritative reference created via\n`NeedLink.parse_address`\n\nThis uses the same parsed representation that Sphinx uses for\ncross-references, so it handles all valid ID formats and role syntax\ncorrectly. Returning `NeedLink` directly avoids a lossy\n`to_filter_string()` → `from_string()` round-trip (since `parse_address`\nand `from_string` handle edge cases differently, e.g. IDs containing\n`[`).\n\n### Trade-offs\n\nNeeds without a stored doctree node will now emit a\n`[needs.dynamic_function]` warning and return an empty list. This\naffects:\n\n- **External needs** (from `needs_external_needs`) — no parsed node\navailable\n- **Need parts** (`NeedPartItem`) — no per-part node stored\n- **Hidden needs** — node not stored due to early return in\n`_create_need_node` (see issue #1321)\n\n### Changes\n\n- **`sphinx_needs/functions/common.py`** — Rewrote\n`links_from_content()` to use node traversal; returns `list[NeedLink]`\ninstead of `list[str]`; added `_find_need_refs()` helper that skips\nnested `Need` nodes; removed `import re`\n- **`sphinx_needs/functions/functions.py`** — Updated `DynamicFunction`\nprotocol return type and runtime type checks to accept `NeedLink` in\nlist returns\n- **`sphinx_needs/needs_schema.py`** — Updated `LinkSchema.type_check` /\n`type_check_item` to accept `NeedLink` alongside `str`\n- **`tests/doc_test/doc_df_links_from_content/`** — New test doc project\nexercising self-content extraction, cross-need extraction, hyphenated\nIDs, titled refs, filtered extraction, and nested needs (refs in nested\nneeds are not collected)\n- **`tests/test_dynamic_functions.py`** — Added\n`test_doc_df_links_from_content`",
+          "timestamp": "2026-03-18T13:32:15+01:00",
+          "tree_id": "42e0f39fa06f076f6395f5530dc2f67ac3ff34d9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0411af3fb61fc8e56a1689f3a186c9b7cd760964"
+        },
+        "date": 1773837237377,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15471967600001335,
+            "unit": "s",
+            "extra": "Commit: 0411af3fb61fc8e56a1689f3a186c9b7cd760964\nBranch: master\nTime: 2026-03-18T13:32:15+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.59053395899991,
+            "unit": "s",
+            "extra": "Commit: 0411af3fb61fc8e56a1689f3a186c9b7cd760964\nBranch: master\nTime: 2026-03-18T13:32:15+01:00"
           }
         ]
       }
