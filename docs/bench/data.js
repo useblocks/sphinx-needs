@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773778430078,
+  "lastUpdate": 1773819107975,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18000,6 +18000,42 @@ window.BENCHMARK_DATA = {
             "value": 59.016752112999995,
             "unit": "s",
             "extra": "Commit: 36d4b705cfe4a1e27d5ab5b241e64f7126ead344\nBranch: master\nTime: 2026-03-17T21:10:41+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d898e4189c1bcd15d46f5bd0f3adf8706f2b615f",
+          "message": "👌 Add `parse_conditions` configuration for link types (#1684)",
+          "timestamp": "2026-03-18T08:29:49+01:00",
+          "tree_id": "f2725fa20dba8ff518d53e51c5b0201c78bfcd2e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/d898e4189c1bcd15d46f5bd0f3adf8706f2b615f"
+        },
+        "date": 1773819085770,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14820710499999734,
+            "unit": "s",
+            "extra": "Commit: d898e4189c1bcd15d46f5bd0f3adf8706f2b615f\nBranch: master\nTime: 2026-03-18T08:29:49+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.797821867,
+            "unit": "s",
+            "extra": "Commit: d898e4189c1bcd15d46f5bd0f3adf8706f2b615f\nBranch: master\nTime: 2026-03-18T08:29:49+01:00"
           }
         ]
       }
