@@ -23,7 +23,7 @@ from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.debug import measure_time_func
 from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_func import NeedFunc
 from sphinx_needs.variants import VariantFunctionParsed
@@ -45,7 +45,9 @@ class DynamicFunction(Protocol):
         needs: NeedsView | NeedsMutable,
         *args: Any,
         **kwargs: Any,
-    ) -> str | int | float | list[str] | list[int] | list[float] | None: ...
+    ) -> (
+        str | int | float | list[str] | list[int] | list[float] | list[NeedLink] | None
+    ): ...
 
 
 def _execute_dynamic_func(
@@ -53,7 +55,7 @@ def _execute_dynamic_func(
     need: NeedItem | NeedPartItem | None,
     needs: NeedsView | NeedsMutable,
     df: DynamicFunctionParsed,
-) -> str | int | float | list[str] | list[int] | list[float] | None:
+) -> str | int | float | list[str] | list[int] | list[float] | list[NeedLink] | None:
     """Executes a given function string.
 
     :param env: Sphinx environment
@@ -101,7 +103,7 @@ def execute_func(
     needs: NeedsView | NeedsMutable,
     df: str | DynamicFunctionParsed,
     location: str | tuple[str | None, int | None] | nodes.Node | None,
-) -> str | int | float | list[str] | list[int] | list[float] | None:
+) -> str | int | float | list[str] | list[int] | list[float] | list[NeedLink] | None:
     """Executes a given function string.
 
     :param env: Sphinx environment
@@ -180,10 +182,10 @@ def execute_func(
         return "??"
     if isinstance(func_return, list):
         for i, element in enumerate(func_return):
-            if not isinstance(element, str | int | float):
+            if not isinstance(element, str | int | float | NeedLink):
                 log_warning(
                     logger,
-                    f"Return value item {i} of function {df.name!r} is of type {type(element)}. Allowed are str, int, float",
+                    f"Return value item {i} of function {df.name!r} is of type {type(element)}. Allowed are str, int, float, NeedLink",
                     "dynamic_function",
                     location=location,
                 )
@@ -412,7 +414,10 @@ def check_and_get_content(
 
 def _detect_and_execute_field(
     content: Any, need: NeedItem, needs: NeedsMutable, app: Sphinx
-) -> tuple[str | None, str | int | float | list[str] | list[int] | list[float] | None]:
+) -> tuple[
+    str | None,
+    str | int | float | list[str] | list[int] | list[float] | list[NeedLink] | None,
+]:
     """Detects if given need field value is a function call and executes it."""
     content = str(content)
 

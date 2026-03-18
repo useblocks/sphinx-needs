@@ -701,7 +701,9 @@ class LinkSchema:
 
     def type_check(self, value: Any) -> bool:
         """Check if a value is of the correct type for this field."""
-        return isinstance(value, list) and all(isinstance(i, str) for i in value)
+        return isinstance(value, list) and all(
+            isinstance(i, str | NeedLink) for i in value
+        )
 
     def type_check_item(self, value: Any) -> bool:
         """Check if a value is of the correct item type for this field.
@@ -709,7 +711,7 @@ class LinkSchema:
         For 'array' fields, this checks the type of the array items.
         For other fields, this checks the type of the field itself.
         """
-        return isinstance(value, str)
+        return isinstance(value, str | NeedLink)
 
     def convert_directive_option(
         self, value: str
