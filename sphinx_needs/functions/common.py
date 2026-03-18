@@ -507,6 +507,8 @@ def links_from_content(
                 if source_need["docname"]
                 else None
             )
+        elif need is not None:
+            location = (need["docname"], need["lineno"]) if need["docname"] else None
         else:
             location = None
         log_warning(

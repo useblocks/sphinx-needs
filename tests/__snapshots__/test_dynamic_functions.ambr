@@ -49,6 +49,7 @@
             'links_back': list([
               'CON_SPEC_1',
               'CON_SPEC_2',
+              'CON_SPEC_5',
             ]),
             'section_name': 'LINKS FROM CONTENT',
             'sections': list([
@@ -171,8 +172,26 @@
             'type': 'spec',
             'type_name': 'Specification',
           }),
+          'CON_SPEC_5': dict({
+            'content': "This content contains :need:`CON_REQ_2` and :ndf:`links_from_content()`, :ndf:`links_from_content('CON_REQ_4')`, :ndf:`links_from_content('unknown2')`",
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'CON_SPEC_5',
+            'lineno': 51,
+            'links': list([
+              'CON_REQ_2',
+              'CON_REQ_2',
+            ]),
+            'section_name': 'LINKS FROM CONTENT',
+            'sections': list([
+              'LINKS FROM CONTENT',
+            ]),
+            'title': 'Spec with links_from_content in ndf role',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
         }),
-        'needs_amount': 8,
+        'needs_amount': 9,
         'needs_defaults_removed': True,
         'needs_schema': dict({
           '$schema': 'http://json-schema.org/draft-07/schema#',
