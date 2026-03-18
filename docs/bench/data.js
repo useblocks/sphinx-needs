@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1773837261744,
+  "lastUpdate": 1773839549159,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18072,6 +18072,42 @@ window.BENCHMARK_DATA = {
             "value": 59.59053395899991,
             "unit": "s",
             "extra": "Commit: 0411af3fb61fc8e56a1689f3a186c9b7cd760964\nBranch: master\nTime: 2026-03-18T13:32:15+01:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5b223fd71eeb7402d5b60c1a5832434d8fd05e31",
+          "message": "🧪 Add some more tests for links_from_content (#1686)\n\nSpecifically, for warning about unknown needs and for using within the\n`ndf` role",
+          "timestamp": "2026-03-18T14:10:25+01:00",
+          "tree_id": "863025c190b514b73af7c290fb9160b608b9dde8",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5b223fd71eeb7402d5b60c1a5832434d8fd05e31"
+        },
+        "date": 1773839526359,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1494931540000266,
+            "unit": "s",
+            "extra": "Commit: 5b223fd71eeb7402d5b60c1a5832434d8fd05e31\nBranch: master\nTime: 2026-03-18T14:10:25+01:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.54181948399997,
+            "unit": "s",
+            "extra": "Commit: 5b223fd71eeb7402d5b60c1a5832434d8fd05e31\nBranch: master\nTime: 2026-03-18T14:10:25+01:00"
           }
         ]
       }
