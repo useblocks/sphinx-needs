@@ -31,6 +31,7 @@
               'CON_SPEC_1',
               'CON_SPEC_2',
               'CON_SPEC_3',
+              'CON_SPEC_4',
             ]),
             'section_name': 'LINKS FROM CONTENT',
             'sections': list([
@@ -54,6 +55,24 @@
               'LINKS FROM CONTENT',
             ]),
             'title': 'Requirement 2',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+          'CON_REQ_4': dict({
+            'content': 'This nested need references :need:`CON_REQ_2` which should NOT be collected.',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'CON_REQ_4',
+            'lineno': 46,
+            'parent_need': 'CON_SPEC_4',
+            'parent_needs': list([
+              'CON_SPEC_4',
+            ]),
+            'section_name': 'LINKS FROM CONTENT',
+            'sections': list([
+              'LINKS FROM CONTENT',
+            ]),
+            'title': 'Nested requirement',
             'type': 'req',
             'type_name': 'Requirement',
           }),
@@ -125,8 +144,35 @@
             'type': 'spec',
             'type_name': 'Specification',
           }),
+          'CON_SPEC_4': dict({
+            'content': '''
+              This references :need:`CON_REQ_1` but also contains a nested need:
+              
+              .. req:: Nested requirement
+                 :id: CON_REQ_4
+              
+                 This nested need references :need:`CON_REQ_2` which should NOT be collected.
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'CON_SPEC_4',
+            'lineno': 40,
+            'links': list([
+              'CON_REQ_1',
+            ]),
+            'parent_needs_back': list([
+              'CON_REQ_4',
+            ]),
+            'section_name': 'LINKS FROM CONTENT',
+            'sections': list([
+              'LINKS FROM CONTENT',
+            ]),
+            'title': 'Spec with nested need',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
         }),
-        'needs_amount': 6,
+        'needs_amount': 8,
         'needs_defaults_removed': True,
         'needs_schema': dict({
           '$schema': 'http://json-schema.org/draft-07/schema#',

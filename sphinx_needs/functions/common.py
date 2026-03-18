@@ -7,8 +7,10 @@ Collection of common sphinx-needs functions for dynamic values
 from __future__ import annotations
 
 import contextlib
+from collections.abc import Iterator
 from typing import Any
 
+from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
@@ -19,7 +21,9 @@ from sphinx_needs.filter_common import (
     filter_single_need,
 )
 from sphinx_needs.logging import log_warning
-from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
+from sphinx_needs.nodes import Need
+from sphinx_needs.roles.need_ref import NeedRef
 from sphinx_needs.utils import logger
 from sphinx_needs.views import NeedsView
 
@@ -402,13 +406,22 @@ def calc_sum(
     return calculated_sum
 
 
+def _find_need_refs(node: nodes.Node) -> Iterator[NeedRef]:
+    """Yield ``NeedRef`` nodes, without descending into nested ``Need`` nodes."""
+    for child in node.children:
+        if isinstance(child, NeedRef):
+            yield child
+        elif not isinstance(child, Need):
+            yield from _find_need_refs(child)
+
+
 def links_from_content(
     app: Sphinx,
     need: NeedItem | NeedPartItem | None,
     needs: NeedsMutable | NeedsView,
     need_id: str | None = None,
     filter: str | None = None,
-) -> list[str]:
+) -> list[NeedLink]:
     """
     Extracts need references from the content of a need.
 
@@ -467,8 +480,6 @@ def links_from_content(
     :param filter: :ref:`filter_string`, which a found need-link must pass.
     :return: List of linked need-ids in content
     """
-    from sphinx_needs.roles.need_ref import NeedRef
-
     if need_id:
         source_need_id = need_id
     elif need is None:
@@ -506,18 +517,21 @@ def links_from_content(
         )
         return []
 
-    raw_links: list[str] = []
-    for ref_node in need_node.findall(NeedRef):
-        ref_id = ref_node["need_link"].id
-        if ref_id not in raw_links:
-            raw_links.append(ref_id)
+    raw_links: list[NeedLink] = []
+    for ref_node in _find_need_refs(need_node):
+        need_link: NeedLink = ref_node["need_link"]
+        if need_link not in raw_links:
+            raw_links.append(need_link)
 
     if filter:
         needs_config = NeedsSphinxConfig(app.config)
-        filtered_links = []
+        filtered_links: list[NeedLink] = []
         for link in raw_links:
-            if link not in filtered_links and filter_single_need(
-                needs[link], needs_config, filter
+            target = needs.get(link.id)
+            if (
+                target is not None
+                and link not in filtered_links
+                and filter_single_need(target, needs_config, filter)
             ):
                 filtered_links.append(link)
         return filtered_links

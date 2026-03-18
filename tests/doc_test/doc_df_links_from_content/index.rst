@@ -36,3 +36,14 @@ LINKS FROM CONTENT
    * :need:`CON_SPEC_1`
 
    But only requirements should pass the filter.
+
+.. spec:: Spec with nested need
+   :id: CON_SPEC_4
+   :links: [[links_from_content()]]
+
+   This references :need:`CON_REQ_1` but also contains a nested need:
+
+   .. req:: Nested requirement
+      :id: CON_REQ_4
+
+      This nested need references :need:`CON_REQ_2` which should NOT be collected.
