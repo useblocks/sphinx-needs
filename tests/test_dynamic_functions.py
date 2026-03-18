@@ -219,8 +219,15 @@ def test_doc_df_linked_values(test_app):
 def test_doc_df_links_from_content(test_app, snapshot):
     app = test_app
     app.build()
-    warnings = strip_colors(app._warning.getvalue()).splitlines()
-    assert warnings == []
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
+    assert warnings == [
+        "srcdir/index.rst:51: WARNING: links_from_content: no stored node for need 'unknown1' [needs.dynamic_function]",
+        "srcdir/index.rst:51: WARNING: links_from_content: no stored node for need 'unknown2' [needs.dynamic_function]",
+        "srcdir/index.rst:57: WARNING: Error while executing function 'links_from_content': No need found for links_from_content [needs.dynamic_function]",
+        "WARNING: links_from_content: no stored node for need 'unknown3' [needs.dynamic_function]",
+    ]
 
     json_data = Path(app.outdir, "needs.json").read_text()
     needs = json.loads(json_data)

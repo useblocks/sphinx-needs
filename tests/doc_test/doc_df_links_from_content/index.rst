@@ -47,3 +47,14 @@ LINKS FROM CONTENT
       :id: CON_REQ_4
 
       This nested need references :need:`CON_REQ_2` which should NOT be collected.
+
+.. spec:: Spec with links_from_content in ndf role
+   :id: CON_SPEC_5
+   :links: [[links_from_content()]], [[links_from_content('CON_REQ_4')]], [[links_from_content('unknown1')]]
+
+   This content contains :need:`CON_REQ_2` and :ndf:`links_from_content()`, :ndf:`links_from_content('CON_REQ_4')`, :ndf:`links_from_content('unknown2')`
+
+:ndf:`links_from_content()` out side of a need, with no specified need should emit a warning,
+and also for an unknown need id :ndf:`links_from_content('unknown3')`,
+but :ndf:`links_from_content('CON_REQ_4')` should work without warnings, as it has a valid need id.
+
