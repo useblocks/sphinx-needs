@@ -26,7 +26,8 @@ For example, a specification should only link to requirements that are in an
 ``"open"`` or ``"approved"`` state, or a test should only reference an implementation
 at a compatible version.
 
-Sphinx-Needs now supports this via **inline conditions** on link references.
+Sphinx-Needs now supports this via **inline conditions** on link references
+(see :ref:`need_conditional_links`).
 Append a :ref:`filter_string` in square brackets after the target ID:
 
 .. code-block:: rst

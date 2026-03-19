@@ -133,6 +133,11 @@ conditional links
 
 .. versionadded:: 8.0.0
 
+In requirements management, traceability is not just about *whether* two needs are linked,
+but whether the link is **valid in context**.
+For example, a specification should only link to requirements that are ``"open"`` or ``"approved"``,
+or a test should only reference an implementation at a compatible version.
+
 You can attach a condition to any link by appending a :ref:`filter_string` in square brackets after the target ID.
 The condition is evaluated against the **targeted** need.
 If the condition evaluates to ``False``, a warning is emitted with the subcode ``needs.link_condition_failed``.
