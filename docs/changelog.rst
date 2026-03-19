@@ -10,7 +10,7 @@ Changelog
 -----
 
 :Released: Unreleased
-:Full Changelog: `v7.0.0...v8.0.0 <https://github.com/useblocks/sphinx-needs/compare/7.0.0...HEAD>`__
+:Full Changelog: `v7.0.0...v8.0.0 <https://github.com/useblocks/sphinx-needs/compare/7.0.0...5b223fd71eeb7402d5b60c1a5832434d8fd05e31>`__
 
 This release introduces **conditional link assessment** — the ability to attach
 :ref:`filter_string` conditions to links that are checked against the target need at build time.
@@ -162,7 +162,7 @@ Documentation
 -----
 
 :Released: 24.02.2026
-:Full Changelog: `v6.3.0...v7.0.0 <https://github.com/useblocks/sphinx-needs/compare/6.3.0...0aea09eda386880272205cbdc8a98fde3ff3566a>`__
+:Full Changelog: `v6.3.0...v7.0.0 <https://github.com/useblocks/sphinx-needs/compare/6.3.0...7.0.0>`__
 
 This is a major release that consolidates field, link, and default configuration
 into a single, composable schema system — inspired by
@@ -416,7 +416,7 @@ Documentation fixes
 -----
 
 :Released: 15.12.2025
-:Full Changelog: `v6.2.0...v6.3.0 <https://github.com/useblocks/sphinx-needs/compare/6.2.0...f567c1fafb4e1ba1a7dabb3bd6afc5f17ded84cd>`__
+:Full Changelog: `v6.2.0...v6.3.0 <https://github.com/useblocks/sphinx-needs/compare/6.2.0...6.3.0>`__
 
 - ⬆️ Support Python 3.14 (:pr:`1598`)
 - ♻️ Remove ``typeguard`` dependency (:pr:`1597`)
