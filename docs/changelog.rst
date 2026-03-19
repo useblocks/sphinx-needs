@@ -4,6 +4,158 @@
 Changelog
 =========
 
+.. _`release:8.0.0`:
+
+8.0.0
+-----
+
+:Released: Unreleased
+:Full Changelog: `v7.0.0...v8.0.0 <https://github.com/useblocks/sphinx-needs/compare/7.0.0...HEAD>`__
+
+This release introduces **conditional link assessment** — the ability to attach
+:ref:`filter_string` conditions to links that are checked against the target need at build time.
+It also overhauls the internal link representation and fixes ``links_from_content`` to
+use the parsed doctree instead of fragile regex matching.
+
+Conditional link assessment
+...........................
+
+A major motivation for requirements-management tooling is ensuring traceability —
+not just *that* two needs are linked, but that the link is **valid in context**.
+For example, a specification should only link to requirements that are in an
+``"open"`` or ``"approved"`` state, or a test should only reference an implementation
+at a compatible version.
+
+Sphinx-Needs now supports this via **inline conditions** on link references.
+Append a :ref:`filter_string` in square brackets after the target ID:
+
+.. code-block:: rst
+
+   .. spec:: My Specification
+      :links: REQ_001[status=="open"], REQ_002[version>=3]
+
+Each condition is evaluated against the **target** need's fields.
+If a condition evaluates to ``False``, a ``needs.link_condition_failed`` warning is emitted;
+if the condition syntax is invalid, a ``needs.link_condition_invalid`` warning is emitted.
+Links without conditions continue to work exactly as before.
+
+The condition is a standard :ref:`filter_string` expression, so you can use any Python-style
+comparison operators (``==``, ``!=``, ``>``, ``<``, ``>=``, ``<=``), membership checks
+(``in``, ``not in``), boolean connectives (``and``, ``or``, ``not``), and built-in helpers
+like ``search()``.
+
+This means conditions already work with **numeric fields** such as ``integer`` or ``number``
+(decimal) types. For example, if you define a ``version`` field:
+
+.. code-block:: toml
+
+   [needs.fields.version]
+   schema.type = "integer"
+   nullable = false
+
+You can then enforce version constraints on links:
+
+.. code-block:: rst
+
+   .. spec:: My Specification
+      :links: REQ_001[version>=2]
+
+When the condition contains square brackets (e.g. for list indexing), use multiple opening
+brackets — the parser matches N opening ``[`` with N closing ``]``:
+``REQ_001[[tags[0]=="important"]]``.
+
+- ✨ Add conditional need link assessment (:pr:`1675`)
+- ♻️ Add ``_split_link_list`` parser with condition syntax support (:pr:`1674`)
+- 👌 Parse link conditions from imported and external needs (:pr:`1680`)
+- 👌 Add :ref:`needs_json_include_link_conditions` config option (:pr:`1681`)
+
+  Controls whether conditions are included in ``needs.json`` output (default: ``True``).
+  Backlink fields are never affected.
+
+- 👌 Add ``parse_conditions`` configuration for link types (:pr:`1684`)
+
+  Per-link-type control over whether ``[condition]`` brackets are parsed.
+  Set ``parse_conditions = false`` on a link type to treat brackets as literal ID text.
+
+  .. code-block:: toml
+
+     [needs.links.raw_links]
+     parse_conditions = false
+
+.. note::
+
+   **Potential future directions**:
+
+   - **Hash-based checks**: combined with a ``hash`` field and a dynamic function that
+     computes a content hash, conditions like ``REQ_001[hash=="abc123"]`` could detect
+     when a linked need's content has changed since the link was authored.
+   - **Semantic version comparisons**: a dedicated semver field type would enable
+     conditions like ``REQ_001[version~=">=1.2.0"]`` with proper semver semantics.
+   - **Terse constraint syntax**: a more compact notation (e.g. ``REQ_001[s=open,v>=2]``
+     with field shorthands) is under consideration for common cases, but would
+     complement — not replace — the current filter-string syntax.
+
+``links_from_content`` rewrite
+..............................
+
+The ``links_from_content`` dynamic function previously used a regex to
+extract ``:need:`ID``` references from raw RST source text.
+This was fragile and could not handle custom titles (e.g. ``:need:`My Title <REQ_001>```),
+nested content, or other edge cases.
+
+It now walks the **parsed doctree** for the source need, collecting ``NeedRef`` nodes
+directly. This is more robust and correctly handles all role syntax variants.
+
+**Limitations**: ``links_from_content`` requires a stored doctree node.
+It will emit a warning and return an empty list for:
+
+- **External needs** (loaded via ``needimport`` / ``needs_external_needs``) — they have no doctree.
+- **Need parts** — not supported; a warning is emitted.
+
+- ♻️ Fix ``links_from_content`` to use parsed doctree nodes instead of regex (:pr:`1685`)
+
+Breaking changes
+................
+
+- ‼️ ``ENV_DATA_VERSION`` bumped to 4 (:pr:`1683`)
+
+  The internal format for storing link data in the Sphinx build environment has changed
+  (links are now stored as structured ``NeedLink`` objects instead of plain strings).
+  **Incremental builds from a previous version will trigger a full rebuild automatically.**
+
+- ‼️ ``need["links"]`` (and other link fields) now returns a fresh ``list[str]`` copy
+  rather than a reference to the internal storage (:pr:`1670`)
+
+  Previously, code like ``need["links"].append("NEW_ID")`` would mutate the internal list.
+  This now **silently has no effect** — the returned list is a projection from the internal
+  ``NeedLink`` representation. This should only affect exotic use cases such as dynamic
+  functions or custom extensions that mutate link lists via ``__getitem__`` access.
+  Use the ``NeedItem`` API (e.g. ``get_links(as_str=False)``) for direct access to the
+  internal ``NeedLink`` objects.
+
+Internal changes
+................
+
+These changes do not affect user-facing behaviour but improve link handling internals:
+
+- ♻️ Introduce ``NeedLink`` structured internal representation for links (:pr:`1670`)
+- ♻️ Store ``NeedLink`` instead of ``str`` in ``LinksLiteralValue`` and ``LinksFunctionArray`` (:pr:`1673`)
+- 🔧 Use ``NeedLink`` directly in ``update_back_links`` function (:pr:`1672`)
+- 🔧 Store ``NeedPartData.backlinks`` as ``NeedLink`` instead of ``str`` (:pr:`1679`)
+- 🔧 Use ``get_links(as_str=False)`` in needextend to avoid round-trip serialization (:pr:`1678`)
+- ♻️ Store ``NeedLink`` on ``NeedRef`` node at parse time instead of re-parsing later (:pr:`1682`)
+- 🧪 Add tests for variants in links (:pr:`1669`)
+
+Bug fixes
+.........
+
+- 🐛 Fix linkcheck CI job warnings (:pr:`1667`)
+
+Documentation
+.............
+
+- 📚 Add sphinx-ai-index to Sphinx docs builder (:pr:`1671`)
+
 .. _`release:7.0.0`:
 
 7.0.0

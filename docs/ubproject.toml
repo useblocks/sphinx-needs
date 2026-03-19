@@ -42,6 +42,13 @@ content = false
 parse_content = false
 content_required = false
 
+[parse.extend_directives.need-core-fields]
+argument = false
+options = false
+content = false
+parse_content = false
+content_required = false
+
 [parse.extend_directives.page-summary]
 argument = false
 options = false
