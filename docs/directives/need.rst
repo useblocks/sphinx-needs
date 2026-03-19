@@ -185,6 +185,10 @@ Links without conditions continue to work as before:
    ``"links": ["REQ_001[status==\"open\"]"]``
    and the condition will be evaluated during the build just as it would for a directive-defined link.
 
+.. seealso::
+
+   :ref:`needs_json_include_link_conditions` — controls whether conditions are included in ``needs.json`` output.
+
 extra links
 +++++++++++
 

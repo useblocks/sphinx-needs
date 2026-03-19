@@ -430,7 +430,11 @@ def links_from_content(
 
     Same links are only added once.
 
-    .. note::
+    .. versionchanged:: 8.0.0
+
+       Previously used a regex on raw RST source text to extract ``:need:`` references.
+       Now walks the parsed doctree, which correctly handles custom titles
+       (e.g. ``:need:`My Title <REQ_001>```) and nested content.
 
        This function requires the source need to have a stored doctree node.
        It will emit a warning and return an empty list for needs without a
