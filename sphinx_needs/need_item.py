@@ -240,7 +240,10 @@ class NeedConstraintResults(Mapping[str, tuple[tuple[str, bool, str | None], ...
 
 @dataclass(slots=True, frozen=True, kw_only=True)
 class NeedLink:
-    """A class representing a link from one need to another."""
+    """A class representing a link from one need to another.
+
+    .. versionadded:: 8.0.0
+    """
 
     id: str
     part: str | None = None
