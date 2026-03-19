@@ -7,8 +7,10 @@ from __future__ import annotations
 
 import ast
 import json
+import operator
 import re
 from collections.abc import Callable, Iterable
+from functools import lru_cache
 from pathlib import Path
 from timeit import default_timer as timer
 from types import CodeType
@@ -639,6 +641,128 @@ def filter_import_item(
     return result
 
 
+_COMPARE_OPS: dict[type, Callable[[Any, Any], Any]] = {
+    ast.Eq: operator.eq,
+    ast.NotEq: operator.ne,
+    ast.Lt: operator.lt,
+    ast.LtE: operator.le,
+    ast.Gt: operator.gt,
+    ast.GtE: operator.ge,
+}
+
+
+def _get_field(need: NeedItem | NeedPartItem, name: str) -> Any:
+    """Retrieve a field from a need, raising NameError if missing (mirrors eval)."""
+    if name in need:
+        return need[name]
+    raise NameError(f"name {name!r} is not defined")
+
+
+@lru_cache(maxsize=256)
+def _try_build_simple_predicate(
+    filter_string: str,
+) -> Callable[[NeedItem | NeedPartItem], bool] | None:
+    """Try to compile a filter string into a native Python predicate.
+
+    Returns None if the expression is too complex to short-circuit.
+    """
+    try:
+        tree = ast.parse(filter_string, mode="eval")
+    except SyntaxError:
+        return None
+    return _expr_to_predicate(tree.body)
+
+
+def _expr_to_predicate(
+    expr: ast.expr,
+) -> Callable[[NeedItem | NeedPartItem], bool] | None:
+    """Convert an AST expression to a native callable, or None if too complex."""
+
+    # --- comparisons: ==, !=, <, <=, >, >= ---
+    if isinstance(expr, ast.Compare) and len(expr.ops) == 1:
+        op_type = type(expr.ops[0])
+
+        if op_type in _COMPARE_OPS:
+            field: str | None = None
+            value: Any = None
+            swapped = False
+            if (
+                isinstance(expr.left, ast.Name)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Constant)
+            ):
+                field = expr.left.id
+                value = expr.comparators[0].value
+            elif (
+                isinstance(expr.left, ast.Constant)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Name)
+            ):
+                field = expr.comparators[0].id
+                value = expr.left.value
+                swapped = True
+
+            if field is not None:
+                op_fn = _COMPARE_OPS[op_type]
+                if swapped:
+                    return lambda need, _f=field, _v=value, _op=op_fn: _op(  # type: ignore[misc]
+                        _v, _get_field(need, _f)
+                    )
+                return lambda need, _f=field, _v=value, _op=op_fn: _op(  # type: ignore[misc]
+                    _get_field(need, _f), _v
+                )
+
+        # field in [literal, ...]
+        if isinstance(expr.ops[0], ast.In):
+            if (
+                isinstance(expr.left, ast.Name)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.List | ast.Tuple | ast.Set)
+                and all(isinstance(e, ast.Constant) for e in expr.comparators[0].elts)
+            ):
+                field_name = expr.left.id
+                values = frozenset(
+                    e.value
+                    for e in expr.comparators[0].elts
+                    if isinstance(e, ast.Constant)
+                )
+                return lambda need, _f=field_name, _v=values: _get_field(need, _f) in _v  # type: ignore[misc]
+
+            # "value" in field  (e.g. "tag" in tags)
+            if (
+                isinstance(expr.left, ast.Constant)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Name)
+            ):
+                in_value = expr.left.value
+                in_field = expr.comparators[0].id
+                return lambda need, _f=in_field, _v=in_value: _v in _get_field(need, _f)  # type: ignore[misc]
+
+    # --- bare name (e.g. is_external) ---
+    if isinstance(expr, ast.Name):
+        return lambda need, _f=expr.id: bool(_get_field(need, _f))  # type: ignore[misc]
+
+    # --- not <expr> ---
+    if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.Not):
+        inner = _expr_to_predicate(expr.operand)
+        if inner is not None:
+            return lambda need, _fn=inner: not _fn(need)  # type: ignore[misc]
+
+    # --- <expr> and <expr> and ... ---
+    if isinstance(expr, ast.BoolOp) and isinstance(expr.op, ast.And):
+        preds = [_expr_to_predicate(v) for v in expr.values]
+        if all(p is not None for p in preds):
+            return lambda need, _fns=preds: all(fn(need) for fn in _fns)  # type: ignore[misc]
+
+    # --- <expr> or <expr> or ... ---
+    if isinstance(expr, ast.BoolOp) and isinstance(expr.op, ast.Or):
+        preds = [_expr_to_predicate(v) for v in expr.values]
+        if all(p is not None for p in preds):
+            return lambda need, _fns=preds: any(fn(need) for fn in _fns)  # type: ignore[misc]
+
+    return None
+
+
 @measure_time("filtering")
 def filter_single_need(
     need: NeedItem | NeedPartItem,
@@ -648,10 +772,10 @@ def filter_single_need(
     current_need: NeedItem | NeedPartItem | None = None,
     filter_compiled: CodeType | None = None,
     *,
+    simple_filter: bool = False,
     origin_docname: str | None = None,
 ) -> bool:
-    """
-    Checks if a single need/need_part passes a filter_string
+    """Checks if a single need/need_part passes a filter_string.
 
     :param need: the data for a single need
     :param config: NeedsSphinxConfig object
@@ -659,10 +783,32 @@ def filter_single_need(
     :param needs: list of all needs
     :param current_need: set the current_need in the filter context as this, otherwise the need itself
     :param filter_compiled: An already compiled filter_string to save time
+    :param simple_filter: If True, attempt AST-based short-circuit evaluation
+        before falling back to eval(). Use for known-simple expressions
+        (e.g. link conditions) where the full eval context is not needed.
     :param origin_docname: The origin docname that the filter was called from, if any
 
     :return: True, if need passes the filter_string, else False
     """
+    # === Fast path: short-circuit simple expressions ===
+    if simple_filter:
+        simple_pred = _try_build_simple_predicate(filter_string)
+        if simple_pred is not None:
+            try:
+                result = simple_pred(need)
+                if not isinstance(result, bool):
+                    raise NeedsInvalidFilter(
+                        f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
+                    )
+                return result
+            except NeedsInvalidFilter:
+                raise
+            except Exception as e:
+                raise NeedsInvalidFilter(
+                    f"Filter {filter_string!r} not valid. Error: {e}."
+                )
+
+    # === Existing slow path (unchanged) ===
     filter_context: dict[str, Any] = {**need}
     if needs:
         filter_context["needs"] = needs
