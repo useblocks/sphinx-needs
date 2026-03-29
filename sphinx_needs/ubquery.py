@@ -4,6 +4,15 @@ This module short-circuits ``eval()`` overhead for common filter patterns
 (comparisons, membership tests, boolean combinators) by compiling filter
 strings to native Python callables via the :mod:`ast` module.
 
+Because field names are resolved lazily (only when the predicate actually
+reaches them at runtime), short-circuit evaluation in ``and``/``or``
+expressions means a predicate like ``type == "spec" and spec_field == "x"``
+will never access ``spec_field`` for needs whose ``type`` is not ``"spec"``.
+This opens a pathway to per-type fields
+(see `discussion #1646 <https://github.com/useblocks/sphinx-needs/discussions/1646>`_),
+which is not possible with ``eval()`` since it eagerly evaluates all names
+in the expression context upfront.
+
 The public entry point is :func:`try_build_simple_predicate`.
 """
 

@@ -76,42 +76,47 @@ class TestGetField:
 
 
 @pytest.mark.parametrize(
-    ("filter_string", "expected"),
+    ("filter_string", "expected", "need_kw"),
     [
-        pytest.param('status == "open"', True, id="eq-true"),
-        pytest.param('status != "closed"', True, id="ne-true"),
-        pytest.param('"open" == status', True, id="reversed-eq-true"),
-        pytest.param('"open" != status', False, id="reversed-ne-false"),
-        pytest.param('type in ["requirement", "spec"]', True, id="field-in-list"),
-        pytest.param('type in ("requirement", "spec")', True, id="field-in-tuple"),
-        pytest.param('type in {"requirement", "spec"}', True, id="field-in-set"),
-        pytest.param('"safety" in tags', True, id="value-in-field-true"),
-        pytest.param('"missing" in tags', False, id="value-in-field-false"),
-        pytest.param("status", True, id="bare-name-truthy"),
-        pytest.param('not status == "closed"', True, id="not-expr"),
-        pytest.param('type == "requirement" and status == "open"', True, id="and-true"),
+        pytest.param('status == "open"', True, {}, id="eq-true"),
+        pytest.param('status != "closed"', True, {}, id="ne-true"),
+        pytest.param('"open" == status', True, {}, id="reversed-eq-true"),
+        pytest.param('"open" != status', False, {}, id="reversed-ne-false"),
+        pytest.param('type in ["requirement", "spec"]', True, {}, id="field-in-list"),
+        pytest.param('type in ("requirement", "spec")', True, {}, id="field-in-tuple"),
+        pytest.param('type in {"requirement", "spec"}', True, {}, id="field-in-set"),
+        pytest.param('"safety" in tags', True, {}, id="value-in-field-true"),
+        pytest.param('"missing" in tags', False, {}, id="value-in-field-false"),
+        pytest.param("status", True, {}, id="bare-name-truthy"),
+        pytest.param("status", False, {"status": ""}, id="bare-name-falsy"),
+        pytest.param('not status == "closed"', True, {}, id="not-expr"),
         pytest.param(
-            'type == "requirement" and status == "closed"', False, id="and-false"
+            'type == "requirement" and status == "open"', True, {}, id="and-true"
         ),
         pytest.param(
-            'type == "requirement" or type == "spec"', True, id="or-first-true"
+            'type == "requirement" and status == "closed"', False, {}, id="and-false"
         ),
         pytest.param(
-            'type == "spec" or type == "requirement"', True, id="or-second-true"
+            'type == "requirement" or type == "spec"', True, {}, id="or-first-true"
         ),
-        pytest.param('type == "spec" or type == "impl"', False, id="or-false"),
+        pytest.param(
+            'type == "spec" or type == "requirement"', True, {}, id="or-second-true"
+        ),
+        pytest.param('type == "spec" or type == "impl"', False, {}, id="or-false"),
+        pytest.param(
+            'type == "not-set" and unknown == "something"',
+            False,
+            {},
+            id="and-unknown-field",
+        ),
     ],
 )
-def test_predicate_eval(filter_string: str, expected: bool) -> None:
+def test_predicate_eval(
+    filter_string: str, expected: bool, need_kw: dict[str, object]
+) -> None:
     pred = try_build_simple_predicate(filter_string)
     assert pred is not None
-    assert pred(_make_need()) is expected
-
-
-def test_predicate_bare_name_falsy() -> None:
-    pred = try_build_simple_predicate("status")
-    assert pred is not None
-    assert pred(_make_need(status="")) is False
+    assert pred(_make_need(**need_kw)) is expected
 
 
 @pytest.mark.parametrize(
