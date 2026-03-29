@@ -314,3 +314,123 @@ class TestFilterSingleNeedSimpleFilter:
             simple_filter=True,
         )
         assert result is True
+
+
+class TestContextOnlyNameBlocklist:
+    """Ensure context-only names (needs, current_need, search, c) cause the
+    fast path to bail out and fall through to the slow eval path."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self) -> None:
+        self.need = _make_need()
+
+    def test_bare_needs_returns_none(self) -> None:
+        pred = _try_build_simple_predicate("needs")
+        assert pred is None
+
+    def test_bare_current_need_returns_none(self) -> None:
+        pred = _try_build_simple_predicate("current_need")
+        assert pred is None
+
+    def test_bare_search_returns_none(self) -> None:
+        pred = _try_build_simple_predicate("search")
+        assert pred is None
+
+    def test_bare_c_returns_none(self) -> None:
+        pred = _try_build_simple_predicate("c")
+        assert pred is None
+
+    def test_comparison_with_context_name_returns_none(self) -> None:
+        pred = _try_build_simple_predicate('current_need == "REQ_001"')
+        assert pred is None
+
+    def test_reversed_comparison_with_context_name_returns_none(self) -> None:
+        pred = _try_build_simple_predicate('"REQ_001" == current_need')
+        assert pred is None
+
+    def test_context_name_in_list_returns_none(self) -> None:
+        pred = _try_build_simple_predicate('current_need in ["REQ_001", "REQ_002"]')
+        assert pred is None
+
+    def test_value_in_context_name_returns_none(self) -> None:
+        pred = _try_build_simple_predicate('"x" in needs')
+        assert pred is None
+
+    def test_and_with_context_name_returns_none(self) -> None:
+        pred = _try_build_simple_predicate('status == "open" and needs')
+        assert pred is None
+
+    def test_or_with_context_name_returns_none(self) -> None:
+        pred = _try_build_simple_predicate('status == "open" or needs')
+        assert pred is None
+
+    def test_not_context_name_returns_none(self) -> None:
+        pred = _try_build_simple_predicate("not needs")
+        assert pred is None
+
+    def test_normal_field_still_works(self) -> None:
+        """Sanity check: non-blocked names still produce predicates."""
+        pred = _try_build_simple_predicate('status == "open"')
+        assert pred is not None
+        assert pred(self.need) is True
+
+
+class TestFilterDataFallback:
+    """Tests for filter_data support in the fast path."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self) -> None:
+        self.need = _make_need()
+
+    def test_predicate_resolves_filter_data_key(self) -> None:
+        pred = _try_build_simple_predicate('project == "alpha"')
+        assert pred is not None
+        # Without fallback: raises NameError (field not in need)
+        with pytest.raises(NameError):
+            pred(self.need, None)
+        # With fallback: resolves from filter_data
+        assert pred(self.need, {"project": "alpha"}) is True
+        assert pred(self.need, {"project": "beta"}) is False
+
+    def test_filter_data_shadows_need_field(self) -> None:
+        """filter_data values take precedence over need fields (matches slow path)."""
+        pred = _try_build_simple_predicate('status == "override"')
+        assert pred is not None
+        # Need has status="open", but filter_data overrides it
+        assert pred(self.need, {"status": "override"}) is True
+        # Without override, "open" != "override"
+        assert pred(self.need, None) is False
+
+    def test_filter_single_need_passes_filter_data(self) -> None:
+        """filter_single_need with simple_filter=True passes config.filter_data."""
+        config = Mock()
+        config.filter_data = {"project": "alpha"}
+        result = filter_single_need(
+            self.need, config, 'project == "alpha"', simple_filter=True
+        )
+        assert result is True
+
+    def test_filter_single_need_filter_data_shadows(self) -> None:
+        """filter_data shadows need fields in the fast path (matches slow path)."""
+        config = Mock()
+        config.filter_data = {"status": "override"}
+        result = filter_single_need(
+            self.need, config, 'status == "override"', simple_filter=True
+        )
+        assert result is True
+
+    def test_empty_filter_data_no_effect(self) -> None:
+        """Empty filter_data behaves like no filter_data."""
+        config = Mock()
+        config.filter_data = {}
+        result = filter_single_need(
+            self.need, config, 'status == "open"', simple_filter=True
+        )
+        assert result is True
+
+    def test_filter_data_in_compound_expr(self) -> None:
+        """filter_data works in compound (and/or) expressions."""
+        pred = _try_build_simple_predicate('status == "open" and project == "alpha"')
+        assert pred is not None
+        assert pred(self.need, {"project": "alpha"}) is True
+        assert pred(self.need, {"project": "beta"}) is False

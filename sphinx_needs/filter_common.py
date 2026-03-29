@@ -9,7 +9,7 @@ import ast
 import json
 import operator
 import re
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from functools import lru_cache
 from pathlib import Path
 from timeit import default_timer as timer
@@ -650,18 +650,40 @@ _COMPARE_OPS: dict[type, Callable[[Any, Any], Any]] = {
     ast.GtE: operator.ge,
 }
 
+#: Names injected into the eval context by the slow path that are *not* need fields.
+#: If a filter references these, the fast path must bail out (return None).
+_CONTEXT_ONLY_NAMES: frozenset[str] = frozenset(
+    {"needs", "current_need", "search", "c"}
+)
 
-def _get_field(need: NeedItem | NeedPartItem, name: str) -> Any:
-    """Retrieve a field from a need, raising NameError if missing (mirrors eval)."""
+
+def _get_field(
+    need: NeedItem | NeedPartItem,
+    name: str,
+    fallback: Mapping[str, Any] | None = None,
+) -> Any:
+    """Retrieve a field from a need, raising NameError if missing (mirrors eval).
+
+    :param fallback: Optional mapping (e.g. ``config.filter_data``) checked
+        **before** the need dict, matching the slow-path shadowing semantics
+        where ``filter_context.update(config.filter_data)`` overwrites need fields.
+    """
+    if fallback is not None and name in fallback:
+        return fallback[name]
     if name in need:
         return need[name]
     raise NameError(f"name {name!r} is not defined")
 
 
+#: Type alias for predicates returned by the fast-path builder.
+#: The second argument is an optional fallback mapping (e.g. ``config.filter_data``).
+_SimplePredicate = Callable[[NeedItem | NeedPartItem, Mapping[str, Any] | None], bool]
+
+
 @lru_cache(maxsize=256)
 def _try_build_simple_predicate(
     filter_string: str,
-) -> Callable[[NeedItem | NeedPartItem], bool] | None:
+) -> _SimplePredicate | None:
     """Try to compile a filter string into a native Python predicate.
 
     Returns None if the expression is too complex to short-circuit.
@@ -675,8 +697,12 @@ def _try_build_simple_predicate(
 
 def _expr_to_predicate(
     expr: ast.expr,
-) -> Callable[[NeedItem | NeedPartItem], bool] | None:
-    """Convert an AST expression to a native callable, or None if too complex."""
+) -> _SimplePredicate | None:
+    """Convert an AST expression to a native callable, or None if too complex.
+
+    Each returned callable has signature ``(need, ctx) -> bool`` where *ctx*
+    is an optional fallback mapping (e.g. ``config.filter_data``).
+    """
 
     # --- comparisons: ==, !=, <, <=, >, >= ---
     if isinstance(expr, ast.Compare) and len(expr.ops) == 1:
@@ -703,13 +729,15 @@ def _expr_to_predicate(
                 swapped = True
 
             if field is not None:
+                if field in _CONTEXT_ONLY_NAMES:
+                    return None
                 op_fn = _COMPARE_OPS[op_type]
                 if swapped:
-                    return lambda need, _f=field, _v=value, _op=op_fn: _op(  # type: ignore[misc]
-                        _v, _get_field(need, _f)
+                    return lambda need, ctx=None, _f=field, _v=value, _op=op_fn: _op(  # type: ignore[misc]
+                        _v, _get_field(need, _f, ctx)
                     )
-                return lambda need, _f=field, _v=value, _op=op_fn: _op(  # type: ignore[misc]
-                    _get_field(need, _f), _v
+                return lambda need, ctx=None, _f=field, _v=value, _op=op_fn: _op(  # type: ignore[misc]
+                    _get_field(need, _f, ctx), _v
                 )
 
         # field in [literal, ...]
@@ -721,12 +749,16 @@ def _expr_to_predicate(
                 and all(isinstance(e, ast.Constant) for e in expr.comparators[0].elts)
             ):
                 field_name = expr.left.id
+                if field_name in _CONTEXT_ONLY_NAMES:
+                    return None
                 values = frozenset(
                     e.value
                     for e in expr.comparators[0].elts
                     if isinstance(e, ast.Constant)
                 )
-                return lambda need, _f=field_name, _v=values: _get_field(need, _f) in _v  # type: ignore[misc]
+                return lambda need, ctx=None, _f=field_name, _v=values: (  # type: ignore[misc]
+                    _get_field(need, _f, ctx) in _v
+                )
 
             # "value" in field  (e.g. "tag" in tags)
             if (
@@ -736,29 +768,35 @@ def _expr_to_predicate(
             ):
                 in_value = expr.left.value
                 in_field = expr.comparators[0].id
-                return lambda need, _f=in_field, _v=in_value: _v in _get_field(need, _f)  # type: ignore[misc]
+                if in_field in _CONTEXT_ONLY_NAMES:
+                    return None
+                return lambda need, ctx=None, _f=in_field, _v=in_value: (  # type: ignore[misc]
+                    _v in _get_field(need, _f, ctx)
+                )
 
     # --- bare name (e.g. is_external) ---
     if isinstance(expr, ast.Name):
-        return lambda need, _f=expr.id: bool(_get_field(need, _f))  # type: ignore[misc]
+        if expr.id in _CONTEXT_ONLY_NAMES:
+            return None
+        return lambda need, ctx=None, _f=expr.id: bool(_get_field(need, _f, ctx))  # type: ignore[misc]
 
     # --- not <expr> ---
     if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.Not):
         inner = _expr_to_predicate(expr.operand)
         if inner is not None:
-            return lambda need, _fn=inner: not _fn(need)  # type: ignore[misc]
+            return lambda need, ctx=None, _fn=inner: not _fn(need, ctx)  # type: ignore[misc]
 
     # --- <expr> and <expr> and ... ---
     if isinstance(expr, ast.BoolOp) and isinstance(expr.op, ast.And):
         preds = [_expr_to_predicate(v) for v in expr.values]
         if all(p is not None for p in preds):
-            return lambda need, _fns=preds: all(fn(need) for fn in _fns)  # type: ignore[misc]
+            return lambda need, ctx=None, _fns=preds: all(fn(need, ctx) for fn in _fns)  # type: ignore[misc]
 
     # --- <expr> or <expr> or ... ---
     if isinstance(expr, ast.BoolOp) and isinstance(expr.op, ast.Or):
         preds = [_expr_to_predicate(v) for v in expr.values]
         if all(p is not None for p in preds):
-            return lambda need, _fns=preds: any(fn(need) for fn in _fns)  # type: ignore[misc]
+            return lambda need, ctx=None, _fns=preds: any(fn(need, ctx) for fn in _fns)  # type: ignore[misc]
 
     return None
 
@@ -794,8 +832,9 @@ def filter_single_need(
     if simple_filter:
         simple_pred = _try_build_simple_predicate(filter_string)
         if simple_pred is not None:
+            fallback = config.filter_data or None
             try:
-                result = simple_pred(need)
+                result = simple_pred(need, fallback)
                 if not isinstance(result, bool):
                     raise NeedsInvalidFilter(
                         f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"

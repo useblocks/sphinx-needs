@@ -9,19 +9,24 @@ import pytest
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable
 from sphinx_needs.directives.need import resolve_links
-from sphinx_needs.filter_common import filter_single_need
+from sphinx_needs.filter_common import _try_build_simple_predicate, filter_single_need
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedsContent
 from sphinx_needs.needs_schema import FieldsSchema, LinkDisplayConfig, LinkSchema
 
 
 def _make_needs_with_constrained_links(
     need_cnt: int,
+    *,
+    unique_conditions: bool = False,
 ) -> tuple[NeedsMutable, NeedsSphinxConfig, FieldsSchema]:
     """Create ``need_cnt`` needs, each with 2 conditional links to other needs.
 
     Every need links to the two "next" needs (wrapping around)
     with simple filter conditions like ``status == "open"``
     and ``type == "requirement"``.
+
+    :param unique_conditions: If True, every link gets a unique condition string
+        so the LRU cache in ``_try_build_simple_predicate`` never hits.
     """
     conditions = [
         'status == "open"',
@@ -63,8 +68,13 @@ def _make_needs_with_constrained_links(
     for i, nid in enumerate(need_ids):
         target1 = need_ids[(i + 1) % need_cnt]
         target2 = need_ids[(i + 2) % need_cnt]
-        cond1 = conditions[i % len(conditions)]
-        cond2 = conditions[(i + 1) % len(conditions)]
+        if unique_conditions:
+            # Each link gets a unique condition so the LRU cache never hits
+            cond1 = f'status == "v{2 * i}"'
+            cond2 = f'status == "v{2 * i + 1}"'
+        else:
+            cond1 = conditions[i % len(conditions)]
+            cond2 = conditions[(i + 1) % len(conditions)]
 
         need = NeedItem(
             core=core_base | {"id": nid},
@@ -110,6 +120,23 @@ def test_resolve_links_constrained(need_cnt: int, benchmark) -> None:
 
     def run() -> None:
         # Reset backlinks before each run so resolve_links can be called again
+        for need in needs.values():
+            need.reset_backlinks()
+        resolve_links(needs, config, schema)
+
+    benchmark.pedantic(run, iterations=3, rounds=5)
+
+
+@pytest.mark.benchmark
+@pytest.mark.parametrize("need_cnt", [100, 500, 1000])
+def test_resolve_links_unique_conditions(need_cnt: int, benchmark) -> None:
+    """Benchmark resolve_links where every condition is unique (no LRU cache benefit)."""
+    needs, config, schema = _make_needs_with_constrained_links(
+        need_cnt, unique_conditions=True
+    )
+
+    def run() -> None:
+        _try_build_simple_predicate.cache_clear()
         for need in needs.values():
             need.reset_backlinks()
         resolve_links(needs, config, schema)
