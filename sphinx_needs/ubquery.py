@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import ast
 import operator
+import re
 from collections.abc import Callable, Mapping
 from functools import lru_cache
 from typing import Any
@@ -37,9 +38,7 @@ _COMPARE_OPS: dict[type, Callable[[Any, Any], Any]] = {
 
 #: Names injected into the eval context by the slow path that are *not* need fields.
 #: If a filter references these, the fast path must bail out (return None).
-_CONTEXT_ONLY_NAMES: frozenset[str] = frozenset(
-    {"needs", "current_need", "search", "c"}
-)
+_CONTEXT_ONLY_NAMES: frozenset[str] = frozenset({"needs", "current_need", "c"})
 
 
 def _get_field(
@@ -158,6 +157,28 @@ def _expr_to_predicate(
                 return lambda need, ctx=None, _f=in_field, _v=in_value: (  # type: ignore[misc]
                     _v in _get_field(need, _f, ctx)
                 )
+
+    # --- search(pattern, field) function call ---
+    if (
+        isinstance(expr, ast.Call)
+        and isinstance(expr.func, ast.Name)
+        and expr.func.id == "search"
+        and len(expr.args) == 2
+        and not expr.keywords
+        and isinstance(expr.args[0], ast.Constant)
+        and isinstance(expr.args[0].value, str)
+        and isinstance(expr.args[1], ast.Name)
+        and expr.args[1].id not in _CONTEXT_ONLY_NAMES
+    ):
+        pattern = expr.args[0].value
+        search_field = expr.args[1].id
+        try:
+            compiled = re.compile(pattern)
+        except re.error:
+            return None
+        return lambda need, ctx=None, _rx=compiled, _f=search_field: (  # type: ignore[misc]
+            _rx.search(_get_field(need, _f, ctx)) is not None
+        )
 
     # --- bare name (e.g. is_external) ---
     if isinstance(expr, ast.Name):

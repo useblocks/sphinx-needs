@@ -109,6 +109,16 @@ class TestGetField:
             {},
             id="and-unknown-field",
         ),
+        pytest.param('search("REQ", id)', True, {}, id="search-match"),
+        pytest.param('search("MISSING", id)', False, {}, id="search-no-match"),
+        pytest.param(
+            'search("REQ", id) and status == "open"',
+            True,
+            {},
+            id="search-and-compare",
+        ),
+        pytest.param(r'search("^\w+_\d+$", id)', True, {}, id="search-regex"),
+        pytest.param('not search("MISSING", id)', True, {}, id="not-search"),
     ],
 )
 def test_predicate_eval(
@@ -122,12 +132,23 @@ def test_predicate_eval(
 @pytest.mark.parametrize(
     "filter_string",
     [
-        pytest.param('search("pattern", id)', id="function-call"),
         pytest.param("status===", id="syntax-error"),
+        pytest.param("search(variable, id)", id="search-non-literal-pattern"),
+        pytest.param('search("pattern")', id="search-one-arg"),
+        pytest.param('search("a", "b")', id="search-two-literals"),
+        pytest.param('search("a", id, "c")', id="search-three-args"),
+        pytest.param('search("a", id, extra=1)', id="search-with-kwarg"),
     ],
 )
 def test_predicate_returns_none(filter_string: str) -> None:
     assert try_build_simple_predicate(filter_string) is None
+
+
+def test_search_missing_field_raises() -> None:
+    pred = try_build_simple_predicate('search("pattern", nonexistent)')
+    assert pred is not None
+    with pytest.raises(NameError, match="'nonexistent'"):
+        pred(_make_need())
 
 
 def test_predicate_missing_field_raises() -> None:
@@ -182,6 +203,11 @@ class TestFilterSingleNeedSimpleFilter:
             ),
             pytest.param('"safety" in tags', True, id="value-in-tags"),
             pytest.param('not status == "closed"', True, id="not-expr"),
+            pytest.param(
+                'search("REQ", id) and status == "open"',
+                True,
+                id="search-and-compare",
+            ),
         ],
     )
     def test_simple_filter(self, filter_string: str, expected: bool) -> None:
@@ -224,7 +250,6 @@ class TestFilterSingleNeedSimpleFilter:
     [
         pytest.param("needs", id="bare-needs"),
         pytest.param("current_need", id="bare-current_need"),
-        pytest.param("search", id="bare-search"),
         pytest.param("c", id="bare-c"),
         pytest.param('current_need == "REQ_001"', id="comparison"),
         pytest.param('"REQ_001" == current_need', id="reversed-comparison"),
