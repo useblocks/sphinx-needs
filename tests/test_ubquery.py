@@ -1,4 +1,4 @@
-"""Tests for the AST-based simple filter fast path in filter_single_need."""
+"""Tests for the AST-based simple filter fast path in sphinx_needs.ubquery."""
 
 from __future__ import annotations
 
@@ -8,12 +8,14 @@ import pytest
 
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import (
-    _expr_to_predicate,
-    _get_field,
-    _try_build_simple_predicate,
     filter_single_need,
 )
 from sphinx_needs.need_item import NeedItem, NeedsContent
+from sphinx_needs.ubquery import (
+    _expr_to_predicate,
+    _get_field,
+    try_build_simple_predicate,
+)
 
 
 def _make_need(**core_overrides: object) -> NeedItem:
@@ -69,78 +71,78 @@ class TestGetField:
         assert _get_field(need, "style") is None
 
 
-# --- _try_build_simple_predicate tests ---
+# --- try_build_simple_predicate tests ---
 
 
 class TestTryBuildSimplePredicate:
     def test_simple_eq(self) -> None:
-        pred = _try_build_simple_predicate('status == "open"')
+        pred = try_build_simple_predicate('status == "open"')
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_simple_ne(self) -> None:
-        pred = _try_build_simple_predicate('status != "closed"')
+        pred = try_build_simple_predicate('status != "closed"')
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_reversed_eq(self) -> None:
-        pred = _try_build_simple_predicate('"open" == status')
+        pred = try_build_simple_predicate('"open" == status')
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_reversed_ne(self) -> None:
-        pred = _try_build_simple_predicate('"open" != status')
+        pred = try_build_simple_predicate('"open" != status')
         assert pred is not None
         need = _make_need()
         assert pred(need) is False
 
     def test_field_in_list(self) -> None:
-        pred = _try_build_simple_predicate('type in ["requirement", "spec"]')
+        pred = try_build_simple_predicate('type in ["requirement", "spec"]')
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_value_in_field(self) -> None:
-        pred = _try_build_simple_predicate('"safety" in tags')
+        pred = try_build_simple_predicate('"safety" in tags')
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_value_not_in_field(self) -> None:
-        pred = _try_build_simple_predicate('"missing" in tags')
+        pred = try_build_simple_predicate('"missing" in tags')
         assert pred is not None
         need = _make_need()
         assert pred(need) is False
 
     def test_bare_name_truthy(self) -> None:
-        pred = _try_build_simple_predicate("status")
+        pred = try_build_simple_predicate("status")
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_bare_name_falsy(self) -> None:
-        pred = _try_build_simple_predicate("status")
+        pred = try_build_simple_predicate("status")
         assert pred is not None
         need = _make_need(status="")
         assert pred(need) is False
 
     def test_not_expr(self) -> None:
-        pred = _try_build_simple_predicate('not status == "closed"')
+        pred = try_build_simple_predicate('not status == "closed"')
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_and_expr(self) -> None:
-        pred = _try_build_simple_predicate('type == "requirement" and status == "open"')
+        pred = try_build_simple_predicate('type == "requirement" and status == "open"')
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_and_expr_false(self) -> None:
-        pred = _try_build_simple_predicate(
+        pred = try_build_simple_predicate(
             'type == "requirement" and status == "closed"'
         )
         assert pred is not None
@@ -148,46 +150,46 @@ class TestTryBuildSimplePredicate:
         assert pred(need) is False
 
     def test_or_expr(self) -> None:
-        pred = _try_build_simple_predicate('type == "requirement" or type == "spec"')
+        pred = try_build_simple_predicate('type == "requirement" or type == "spec"')
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_or_expr_second_true(self) -> None:
-        pred = _try_build_simple_predicate('type == "spec" or type == "requirement"')
+        pred = try_build_simple_predicate('type == "spec" or type == "requirement"')
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_or_expr_false(self) -> None:
-        pred = _try_build_simple_predicate('type == "spec" or type == "impl"')
+        pred = try_build_simple_predicate('type == "spec" or type == "impl"')
         assert pred is not None
         need = _make_need()
         assert pred(need) is False
 
     def test_complex_expr_returns_none(self) -> None:
         # Function calls can't be short-circuited
-        pred = _try_build_simple_predicate('search("pattern", id)')
+        pred = try_build_simple_predicate('search("pattern", id)')
         assert pred is None
 
     def test_syntax_error_returns_none(self) -> None:
-        pred = _try_build_simple_predicate("status===")
+        pred = try_build_simple_predicate("status===")
         assert pred is None
 
     def test_field_in_tuple(self) -> None:
-        pred = _try_build_simple_predicate('type in ("requirement", "spec")')
+        pred = try_build_simple_predicate('type in ("requirement", "spec")')
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_field_in_set(self) -> None:
-        pred = _try_build_simple_predicate('type in {"requirement", "spec"}')
+        pred = try_build_simple_predicate('type in {"requirement", "spec"}')
         assert pred is not None
         need = _make_need()
         assert pred(need) is True
 
     def test_missing_field_raises(self) -> None:
-        pred = _try_build_simple_predicate('nonexistent == "value"')
+        pred = try_build_simple_predicate('nonexistent == "value"')
         assert pred is not None
         need = _make_need()
         with pytest.raises(NameError, match="'nonexistent'"):
@@ -195,8 +197,8 @@ class TestTryBuildSimplePredicate:
 
     def test_caching(self) -> None:
         """Verify that the same predicate object is returned on repeated calls."""
-        pred1 = _try_build_simple_predicate('status == "open"')
-        pred2 = _try_build_simple_predicate('status == "open"')
+        pred1 = try_build_simple_predicate('status == "open"')
+        pred2 = try_build_simple_predicate('status == "open"')
         assert pred1 is pred2
 
 
@@ -325,52 +327,52 @@ class TestContextOnlyNameBlocklist:
         self.need = _make_need()
 
     def test_bare_needs_returns_none(self) -> None:
-        pred = _try_build_simple_predicate("needs")
+        pred = try_build_simple_predicate("needs")
         assert pred is None
 
     def test_bare_current_need_returns_none(self) -> None:
-        pred = _try_build_simple_predicate("current_need")
+        pred = try_build_simple_predicate("current_need")
         assert pred is None
 
     def test_bare_search_returns_none(self) -> None:
-        pred = _try_build_simple_predicate("search")
+        pred = try_build_simple_predicate("search")
         assert pred is None
 
     def test_bare_c_returns_none(self) -> None:
-        pred = _try_build_simple_predicate("c")
+        pred = try_build_simple_predicate("c")
         assert pred is None
 
     def test_comparison_with_context_name_returns_none(self) -> None:
-        pred = _try_build_simple_predicate('current_need == "REQ_001"')
+        pred = try_build_simple_predicate('current_need == "REQ_001"')
         assert pred is None
 
     def test_reversed_comparison_with_context_name_returns_none(self) -> None:
-        pred = _try_build_simple_predicate('"REQ_001" == current_need')
+        pred = try_build_simple_predicate('"REQ_001" == current_need')
         assert pred is None
 
     def test_context_name_in_list_returns_none(self) -> None:
-        pred = _try_build_simple_predicate('current_need in ["REQ_001", "REQ_002"]')
+        pred = try_build_simple_predicate('current_need in ["REQ_001", "REQ_002"]')
         assert pred is None
 
     def test_value_in_context_name_returns_none(self) -> None:
-        pred = _try_build_simple_predicate('"x" in needs')
+        pred = try_build_simple_predicate('"x" in needs')
         assert pred is None
 
     def test_and_with_context_name_returns_none(self) -> None:
-        pred = _try_build_simple_predicate('status == "open" and needs')
+        pred = try_build_simple_predicate('status == "open" and needs')
         assert pred is None
 
     def test_or_with_context_name_returns_none(self) -> None:
-        pred = _try_build_simple_predicate('status == "open" or needs')
+        pred = try_build_simple_predicate('status == "open" or needs')
         assert pred is None
 
     def test_not_context_name_returns_none(self) -> None:
-        pred = _try_build_simple_predicate("not needs")
+        pred = try_build_simple_predicate("not needs")
         assert pred is None
 
     def test_normal_field_still_works(self) -> None:
         """Sanity check: non-blocked names still produce predicates."""
-        pred = _try_build_simple_predicate('status == "open"')
+        pred = try_build_simple_predicate('status == "open"')
         assert pred is not None
         assert pred(self.need) is True
 
@@ -383,7 +385,7 @@ class TestFilterDataFallback:
         self.need = _make_need()
 
     def test_predicate_resolves_filter_data_key(self) -> None:
-        pred = _try_build_simple_predicate('project == "alpha"')
+        pred = try_build_simple_predicate('project == "alpha"')
         assert pred is not None
         # Without fallback: raises NameError (field not in need)
         with pytest.raises(NameError):
@@ -394,7 +396,7 @@ class TestFilterDataFallback:
 
     def test_filter_data_shadows_need_field(self) -> None:
         """filter_data values take precedence over need fields (matches slow path)."""
-        pred = _try_build_simple_predicate('status == "override"')
+        pred = try_build_simple_predicate('status == "override"')
         assert pred is not None
         # Need has status="open", but filter_data overrides it
         assert pred(self.need, {"status": "override"}) is True
@@ -430,7 +432,7 @@ class TestFilterDataFallback:
 
     def test_filter_data_in_compound_expr(self) -> None:
         """filter_data works in compound (and/or) expressions."""
-        pred = _try_build_simple_predicate('status == "open" and project == "alpha"')
+        pred = try_build_simple_predicate('status == "open" and project == "alpha"')
         assert pred is not None
         assert pred(self.need, {"project": "alpha"}) is True
         assert pred(self.need, {"project": "beta"}) is False

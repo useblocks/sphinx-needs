@@ -9,9 +9,10 @@ import pytest
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable
 from sphinx_needs.directives.need import resolve_links
-from sphinx_needs.filter_common import _try_build_simple_predicate, filter_single_need
+from sphinx_needs.filter_common import filter_single_need
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedsContent
 from sphinx_needs.needs_schema import FieldsSchema, LinkDisplayConfig, LinkSchema
+from sphinx_needs.ubquery import try_build_simple_predicate
 
 
 def _make_needs_with_constrained_links(
@@ -136,7 +137,7 @@ def test_resolve_links_unique_conditions(need_cnt: int, benchmark) -> None:
     )
 
     def run() -> None:
-        _try_build_simple_predicate.cache_clear()
+        try_build_simple_predicate.cache_clear()
         for need in needs.values():
             need.reset_backlinks()
         resolve_links(needs, config, schema)
