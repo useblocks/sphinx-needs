@@ -458,7 +458,6 @@ def resolve_links(
                                 linked_need,
                                 config,
                                 need_link.condition,
-                                simple_filter=True,
                             ):
                                 _emit_link_warning(
                                     need,

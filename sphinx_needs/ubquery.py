@@ -124,8 +124,9 @@ def _expr_to_predicate(
                     _get_field(need, _f, ctx), _v
                 )
 
-        # field in [literal, ...]
-        if isinstance(expr.ops[0], ast.In):
+        # field in [literal, ...] / field not in [literal, ...]
+        if isinstance(expr.ops[0], ast.In | ast.NotIn):
+            negate = isinstance(expr.ops[0], ast.NotIn)
             if (
                 isinstance(expr.left, ast.Name)
                 and len(expr.comparators) == 1
@@ -140,11 +141,16 @@ def _expr_to_predicate(
                     for e in expr.comparators[0].elts
                     if isinstance(e, ast.Constant)
                 )
+                if negate:
+                    return lambda need, ctx=None, _f=field_name, _v=values: (  # type: ignore[misc]
+                        _get_field(need, _f, ctx) not in _v
+                    )
                 return lambda need, ctx=None, _f=field_name, _v=values: (  # type: ignore[misc]
                     _get_field(need, _f, ctx) in _v
                 )
 
             # "value" in field  (e.g. "tag" in tags)
+            # "value" not in field
             if (
                 isinstance(expr.left, ast.Constant)
                 and len(expr.comparators) == 1
@@ -154,6 +160,10 @@ def _expr_to_predicate(
                 in_field = expr.comparators[0].id
                 if in_field in _CONTEXT_ONLY_NAMES:
                     return None
+                if negate:
+                    return lambda need, ctx=None, _f=in_field, _v=in_value: (  # type: ignore[misc]
+                        _v not in _get_field(need, _f, ctx)
+                    )
                 return lambda need, ctx=None, _f=in_field, _v=in_value: (  # type: ignore[misc]
                     _v in _get_field(need, _f, ctx)
                 )

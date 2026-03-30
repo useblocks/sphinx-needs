@@ -539,7 +539,38 @@ def filter_needs_and_parts(
     if not filter_string:
         return list(needs)
 
-    found_needs = []
+    # === Fast path: try compiled predicate to avoid eval() entirely ===
+    simple_pred = try_build_simple_predicate(filter_string)
+    if simple_pred is not None:
+        fallback = config.filter_data or None
+        found_needs: list[NeedItem | NeedPartItem] = []
+        error_reported = False
+        for filter_need in needs:
+            try:
+                result = simple_pred(filter_need, fallback)
+                if not isinstance(result, bool):
+                    raise NeedsInvalidFilter(
+                        f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
+                    )
+                if result:
+                    found_needs.append(filter_need)
+            except NeedsInvalidFilter:
+                raise
+            except Exception as e:
+                if not error_reported:
+                    if append_warning:
+                        append_warning = f" {append_warning}"
+                    log_warning(
+                        log,
+                        f"Filter {filter_string!r} not valid. Error: {e}.{append_warning}",
+                        "filter",
+                        location=location,
+                    )
+                    error_reported = True
+        return found_needs
+
+    # === Slow path: fall back to eval() per item ===
+    found_needs_slow: list[NeedItem | NeedPartItem] = []
 
     # https://docs.python.org/3/library/functions.html?highlight=compile#compile
     filter_compiled = compile(filter_string, "<string>", "eval")
@@ -555,7 +586,7 @@ def filter_needs_and_parts(
                 filter_compiled=filter_compiled,
                 origin_docname=origin_docname,
             ):
-                found_needs.append(filter_need)
+                found_needs_slow.append(filter_need)
         except Exception as e:
             if not error_reported:  # Let's report a filter-problem only once
                 if append_warning:
@@ -568,7 +599,7 @@ def filter_needs_and_parts(
                 )
                 error_reported = True
 
-    return found_needs
+    return found_needs_slow
 
 
 def need_search(*args: Any, **kwargs: Any) -> bool:
@@ -649,7 +680,6 @@ def filter_single_need(
     current_need: NeedItem | NeedPartItem | None = None,
     filter_compiled: CodeType | None = None,
     *,
-    simple_filter: bool = False,
     origin_docname: str | None = None,
 ) -> bool:
     """Checks if a single need/need_part passes a filter_string.
@@ -660,33 +690,27 @@ def filter_single_need(
     :param needs: list of all needs
     :param current_need: set the current_need in the filter context as this, otherwise the need itself
     :param filter_compiled: An already compiled filter_string to save time
-    :param simple_filter: If True, attempt AST-based short-circuit evaluation
-        before falling back to eval(). Use for known-simple expressions
-        (e.g. link conditions) where the full eval context is not needed.
     :param origin_docname: The origin docname that the filter was called from, if any
 
     :return: True, if need passes the filter_string, else False
     """
     # === Fast path: short-circuit simple expressions ===
-    if simple_filter:
-        simple_pred = try_build_simple_predicate(filter_string)
-        if simple_pred is not None:
-            fallback = config.filter_data or None
-            try:
-                result = simple_pred(need, fallback)
-                if not isinstance(result, bool):
-                    raise NeedsInvalidFilter(
-                        f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
-                    )
-                return result
-            except NeedsInvalidFilter:
-                raise
-            except Exception as e:
+    simple_pred = try_build_simple_predicate(filter_string)
+    if simple_pred is not None:
+        fallback = config.filter_data or None
+        try:
+            result = simple_pred(need, fallback)
+            if not isinstance(result, bool):
                 raise NeedsInvalidFilter(
-                    f"Filter {filter_string!r} not valid. Error: {e}."
+                    f"Filter did not evaluate to a boolean, instead {type(result)}: {result}"
                 )
+            return result
+        except NeedsInvalidFilter:
+            raise
+        except Exception as e:
+            raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
 
-    # === Existing slow path (unchanged) ===
+    # === Slow path: fall back to eval() ===
     filter_context: dict[str, Any] = {**need}
     if needs:
         filter_context["needs"] = needs

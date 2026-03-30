@@ -87,6 +87,17 @@ class TestGetField:
         pytest.param('type in {"requirement", "spec"}', True, {}, id="field-in-set"),
         pytest.param('"safety" in tags', True, {}, id="value-in-field-true"),
         pytest.param('"missing" in tags', False, {}, id="value-in-field-false"),
+        pytest.param(
+            'type not in ["spec", "impl"]', True, {}, id="field-not-in-list-true"
+        ),
+        pytest.param(
+            'type not in ["requirement", "spec"]',
+            False,
+            {},
+            id="field-not-in-list-false",
+        ),
+        pytest.param('"missing" not in tags', True, {}, id="value-not-in-field-true"),
+        pytest.param('"safety" not in tags', False, {}, id="value-not-in-field-false"),
         pytest.param("status", True, {}, id="bare-name-truthy"),
         pytest.param("status", False, {"status": ""}, id="bare-name-falsy"),
         pytest.param('not status == "closed"', True, {}, id="not-expr"),
@@ -183,10 +194,10 @@ def test_expr_to_predicate_comparison(expr: str, expected: bool) -> None:
     assert pred(_make_need()) is expected
 
 
-# --- filter_single_need with simple_filter tests ---
+# --- filter_single_need fast-path tests ---
 
 
-class TestFilterSingleNeedSimpleFilter:
+class TestFilterSingleNeedFastPath:
     @pytest.fixture(autouse=True)
     def _setup(self) -> None:
         self.need = _make_need()
@@ -211,18 +222,15 @@ class TestFilterSingleNeedSimpleFilter:
         ],
     )
     def test_simple_filter(self, filter_string: str, expected: bool) -> None:
-        result = filter_single_need(
-            self.need, self.config, filter_string, simple_filter=True
-        )
+        result = filter_single_need(self.need, self.config, filter_string)
         assert result is expected
 
     def test_complex_falls_through_to_eval(self) -> None:
-        """Complex expressions fall through to eval() even with simple_filter=True."""
+        """Complex expressions fall through to eval()."""
         result = filter_single_need(
             self.need,
             self.config,
             'type == "requirement" or [x for x in ["requirement"] if x == type][0] == type',
-            simple_filter=True,
         )
         assert result is True
 
@@ -233,13 +241,7 @@ class TestFilterSingleNeedSimpleFilter:
                 self.need,
                 self.config,
                 'nonexistent == "value"',
-                simple_filter=True,
             )
-
-    def test_false_does_not_use_fast_path(self) -> None:
-        """When simple_filter is False (default), the eval path is used."""
-        result = filter_single_need(self.need, self.config, 'status == "open"')
-        assert result is True
 
 
 # --- context-only name blocklist ---
@@ -297,30 +299,24 @@ class TestFilterDataFallback:
         assert pred(self.need, None) is False
 
     def test_filter_single_need_passes_filter_data(self) -> None:
-        """filter_single_need with simple_filter=True passes config.filter_data."""
+        """filter_single_need passes config.filter_data to the fast path."""
         config = Mock()
         config.filter_data = {"project": "alpha"}
-        result = filter_single_need(
-            self.need, config, 'project == "alpha"', simple_filter=True
-        )
+        result = filter_single_need(self.need, config, 'project == "alpha"')
         assert result is True
 
     def test_filter_single_need_filter_data_shadows(self) -> None:
         """filter_data shadows need fields in the fast path (matches slow path)."""
         config = Mock()
         config.filter_data = {"status": "override"}
-        result = filter_single_need(
-            self.need, config, 'status == "override"', simple_filter=True
-        )
+        result = filter_single_need(self.need, config, 'status == "override"')
         assert result is True
 
     def test_empty_filter_data_no_effect(self) -> None:
         """Empty filter_data behaves like no filter_data."""
         config = Mock()
         config.filter_data = {}
-        result = filter_single_need(
-            self.need, config, 'status == "open"', simple_filter=True
-        )
+        result = filter_single_need(self.need, config, 'status == "open"')
         assert result is True
 
     def test_filter_data_in_compound_expr(self) -> None:

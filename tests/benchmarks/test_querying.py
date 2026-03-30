@@ -1,4 +1,20 @@
-"""Benchmark resolve_links with many constrained links."""
+"""Benchmarks for need querying and filtering performance.
+
+Benchmarks
+----------
+resolve_links_constrained
+    End-to-end ``resolve_links`` with conditional links (LRU cache hits).
+resolve_links_unique_conditions
+    ``resolve_links`` where every condition is unique (no LRU cache benefit).
+filter_single_need_simple
+    Per-need ``filter_single_need`` with a simple equality filter (AST fast path).
+filter_needs_and_parts_simple
+    Batch ``filter_needs_and_parts`` with a simple equality filter (AST fast path).
+filter_needs_and_parts_compound
+    Batch ``filter_needs_and_parts`` with a compound ``and`` filter (AST fast path).
+filter_needs_and_parts_complex_eval
+    Batch ``filter_needs_and_parts`` with an expression that forces ``eval()`` fallback.
+"""
 
 from __future__ import annotations
 
@@ -9,7 +25,7 @@ import pytest
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsMutable
 from sphinx_needs.directives.need import resolve_links
-from sphinx_needs.filter_common import filter_single_need
+from sphinx_needs.filter_common import filter_needs_and_parts, filter_single_need
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedsContent
 from sphinx_needs.needs_schema import FieldsSchema, LinkDisplayConfig, LinkSchema
 from sphinx_needs.ubquery import try_build_simple_predicate
@@ -148,13 +164,56 @@ def test_resolve_links_unique_conditions(need_cnt: int, benchmark) -> None:
 @pytest.mark.benchmark
 @pytest.mark.parametrize("need_cnt", [100, 500, 1000])
 def test_filter_single_need_simple(need_cnt: int, benchmark) -> None:
-    """Benchmark filter_single_need with simple_filter=True vs False."""
+    """Benchmark filter_single_need with AST-based fast path."""
     needs, config, _ = _make_needs_with_constrained_links(need_cnt)
     need_list = list(needs.values())
     filter_string = 'status == "open"'
 
     def run() -> None:
         for need in need_list:
-            filter_single_need(need, config, filter_string, simple_filter=True)
+            filter_single_need(need, config, filter_string)
+
+    benchmark.pedantic(run, iterations=3, rounds=5)
+
+
+@pytest.mark.benchmark
+@pytest.mark.parametrize("need_cnt", [100, 500, 1000])
+def test_filter_needs_and_parts_simple(need_cnt: int, benchmark) -> None:
+    """Benchmark filter_needs_and_parts with a simple filter (fast path)."""
+    needs, config, _ = _make_needs_with_constrained_links(need_cnt)
+    need_list = list(needs.values())
+    filter_string = 'status == "open"'
+
+    def run() -> list[object]:
+        return filter_needs_and_parts(need_list, config, filter_string)
+
+    benchmark.pedantic(run, iterations=3, rounds=5)
+
+
+@pytest.mark.benchmark
+@pytest.mark.parametrize("need_cnt", [100, 500, 1000])
+def test_filter_needs_and_parts_compound(need_cnt: int, benchmark) -> None:
+    """Benchmark filter_needs_and_parts with a compound AND filter (fast path)."""
+    needs, config, _ = _make_needs_with_constrained_links(need_cnt)
+    need_list = list(needs.values())
+    filter_string = 'type == "requirement" and status == "open" and "safety" in tags'
+
+    def run() -> list[object]:
+        return filter_needs_and_parts(need_list, config, filter_string)
+
+    benchmark.pedantic(run, iterations=3, rounds=5)
+
+
+@pytest.mark.benchmark
+@pytest.mark.parametrize("need_cnt", [100, 500, 1000])
+def test_filter_needs_and_parts_complex_eval(need_cnt: int, benchmark) -> None:
+    """Benchmark filter_needs_and_parts with a complex filter (eval fallback)."""
+    needs, config, _ = _make_needs_with_constrained_links(need_cnt)
+    need_list = list(needs.values())
+    # Uses 'current_need' which forces the eval() slow path
+    filter_string = 'type == "requirement" and current_need'
+
+    def run() -> list[object]:
+        return filter_needs_and_parts(need_list, config, filter_string)
 
     benchmark.pedantic(run, iterations=3, rounds=5)
