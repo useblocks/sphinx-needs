@@ -455,7 +455,9 @@ def resolve_links(
                     if need_link.condition is not None:
                         try:
                             if not filter_single_need(
-                                linked_need, config, need_link.condition
+                                linked_need,
+                                config,
+                                need_link.condition,
                             ):
                                 _emit_link_warning(
                                     need,
