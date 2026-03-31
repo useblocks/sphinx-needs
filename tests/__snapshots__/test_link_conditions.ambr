@@ -1,197 +1,262 @@
 # serializer version: 1
-# name: test_doc_df_links_from_content[test_app0]
+# name: test_json_excludes_link_conditions_when_disabled[test_app0]
   dict({
     'current_version': '',
     'versions': dict({
       '': dict({
         'needs': dict({
-          'CON-REQ-3': dict({
+          'IMP_COND_FAIL': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'CON-REQ-3',
-            'lineno': 10,
-            'links_back': list([
-              'CON_SPEC_1',
-              'CON_SPEC_2',
+            'id': 'IMP_COND_FAIL',
+            'is_import': True,
+            'lineno': 61,
+            'links': list([
+              'REQ_002',
             ]),
-            'section_name': 'LINKS FROM CONTENT',
+            'section_name': 'Imported Needs',
             'sections': list([
-              'LINKS FROM CONTENT',
+              'Imported Needs',
+              'LINK CONDITIONS TEST',
             ]),
-            'title': 'Requirement with hyphens',
-            'type': 'req',
-            'type_name': 'Requirement',
+            'title': 'Imported with failing condition',
+            'type': 'impl',
+            'type_name': 'Implementation',
           }),
-          'CON_REQ_1': dict({
+          'IMP_COND_NONE': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'CON_REQ_1',
-            'lineno': 4,
-            'links_back': list([
-              'CON_SPEC_1',
-              'CON_SPEC_2',
-              'CON_SPEC_3',
-              'CON_SPEC_4',
+            'id': 'IMP_COND_NONE',
+            'is_import': True,
+            'lineno': 61,
+            'links': list([
+              'REQ_001',
             ]),
-            'section_name': 'LINKS FROM CONTENT',
+            'section_name': 'Imported Needs',
             'sections': list([
-              'LINKS FROM CONTENT',
+              'Imported Needs',
+              'LINK CONDITIONS TEST',
             ]),
-            'title': 'Requirement 1',
-            'type': 'req',
-            'type_name': 'Requirement',
+            'title': 'Imported with no condition',
+            'type': 'impl',
+            'type_name': 'Implementation',
           }),
-          'CON_REQ_2': dict({
+          'IMP_COND_PASS': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'CON_REQ_2',
+            'id': 'IMP_COND_PASS',
+            'is_import': True,
+            'lineno': 61,
+            'links': list([
+              'REQ_001',
+            ]),
+            'section_name': 'Imported Needs',
+            'sections': list([
+              'Imported Needs',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Imported with passing condition',
+            'type': 'impl',
+            'type_name': 'Implementation',
+          }),
+          'REQ_001': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'REQ_001',
             'lineno': 7,
             'links_back': list([
-              'CON_SPEC_1',
-              'CON_SPEC_2',
-              'CON_SPEC_5',
+              'EXT_COND_PASS',
+              'EXT_COND_NONE',
+              'SPEC_001',
+              'SPEC_003',
+              'SPEC_004',
+              'SPEC_005',
+              'SPEC_006',
+              'IMP_COND_PASS',
+              'IMP_COND_NONE',
             ]),
-            'section_name': 'LINKS FROM CONTENT',
+            'section_name': 'Requirements',
             'sections': list([
-              'LINKS FROM CONTENT',
+              'Requirements',
+              'LINK CONDITIONS TEST',
             ]),
-            'title': 'Requirement 2',
+            'status': 'open',
+            'title': 'Requirement Open',
             'type': 'req',
             'type_name': 'Requirement',
           }),
-          'CON_REQ_4': dict({
-            'content': 'This nested need references :need:`CON_REQ_2` which should NOT be collected.',
+          'REQ_002': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'CON_REQ_4',
-            'lineno': 46,
-            'parent_need': 'CON_SPEC_4',
-            'parent_needs': list([
-              'CON_SPEC_4',
+            'id': 'REQ_002',
+            'lineno': 11,
+            'links_back': list([
+              'EXT_COND_FAIL',
+              'SPEC_002',
+              'IMP_COND_FAIL',
             ]),
-            'section_name': 'LINKS FROM CONTENT',
+            'section_name': 'Requirements',
             'sections': list([
-              'LINKS FROM CONTENT',
+              'Requirements',
+              'LINK CONDITIONS TEST',
             ]),
-            'title': 'Nested requirement',
+            'status': 'closed',
+            'title': 'Requirement Closed',
             'type': 'req',
             'type_name': 'Requirement',
           }),
-          'CON_SPEC_1': dict({
-            'content': '''
-              This specification cares about the realisation of:
-              
-              * :need:`CON_REQ_1`
-              * :need:`My need <CON_REQ_2>`
-              * :need:`CON-REQ-3`
-            ''',
+          'REQ_003': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'CON_SPEC_1',
-            'lineno': 13,
-            'links': list([
-              'CON_REQ_1',
-              'CON_REQ_2',
-              'CON-REQ-3',
+            'id': 'REQ_003',
+            'lineno': 15,
+            'links_back': list([
+              'SPEC_005',
             ]),
-            'section_name': 'LINKS FROM CONTENT',
+            'section_name': 'Requirements',
             'sections': list([
-              'LINKS FROM CONTENT',
+              'Requirements',
+              'LINK CONDITIONS TEST',
             ]),
-            'title': 'Spec that extracts links from own content',
+            'status': 'done',
+            'title': 'Requirement Done',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+          'SPEC_001': dict({
+            'content': 'Links to REQ_001 with a condition that should pass.',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SPEC_001',
+            'lineno': 22,
+            'links': list([
+              'REQ_001',
+            ]),
+            'section_name': 'Specifications',
+            'sections': list([
+              'Specifications',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Spec with passing condition',
             'type': 'spec',
             'type_name': 'Specification',
           }),
-          'CON_SPEC_2': dict({
-            'content': 'Links retrieved from content of :need:`CON_SPEC_1`.',
+          'SPEC_002': dict({
+            'content': 'Links to REQ_002 with a condition that should fail (REQ_002 has status "closed").',
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'CON_SPEC_2',
-            'lineno': 23,
+            'id': 'SPEC_002',
+            'lineno': 28,
             'links': list([
-              'CON_REQ_1',
-              'CON_REQ_2',
-              'CON-REQ-3',
+              'REQ_002',
             ]),
-            'section_name': 'LINKS FROM CONTENT',
+            'section_name': 'Specifications',
             'sections': list([
-              'LINKS FROM CONTENT',
+              'Specifications',
+              'LINK CONDITIONS TEST',
             ]),
-            'title': 'Spec that extracts links from another need',
+            'title': 'Spec with failing condition',
             'type': 'spec',
             'type_name': 'Specification',
           }),
-          'CON_SPEC_3': dict({
-            'content': '''
-              This also references:
-              
-              * :need:`CON_REQ_1`
-              * :need:`CON_SPEC_1`
-              
-              But only requirements should pass the filter.
-            ''',
+          'SPEC_003': dict({
+            'content': 'Links to REQ_001 with invalid filter syntax.',
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'CON_SPEC_3',
-            'lineno': 29,
+            'id': 'SPEC_003',
+            'lineno': 34,
             'links': list([
-              'CON_REQ_1',
+              'REQ_001',
             ]),
-            'section_name': 'LINKS FROM CONTENT',
+            'section_name': 'Specifications',
             'sections': list([
-              'LINKS FROM CONTENT',
+              'Specifications',
+              'LINK CONDITIONS TEST',
             ]),
-            'title': 'Spec with filter',
+            'title': 'Spec with invalid condition syntax',
             'type': 'spec',
             'type_name': 'Specification',
           }),
-          'CON_SPEC_4': dict({
-            'content': '''
-              This references :need:`CON_REQ_1` but also contains a nested need:
-              
-              .. req:: Nested requirement
-                 :id: CON_REQ_4
-              
-                 This nested need references :need:`CON_REQ_2` which should NOT be collected.
-            ''',
+          'SPEC_004': dict({
+            'content': 'Links to REQ_001 with no condition (should always pass).',
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'CON_SPEC_4',
+            'id': 'SPEC_004',
             'lineno': 40,
             'links': list([
-              'CON_REQ_1',
+              'REQ_001',
             ]),
-            'parent_needs_back': list([
-              'CON_REQ_4',
-            ]),
-            'section_name': 'LINKS FROM CONTENT',
+            'section_name': 'Specifications',
             'sections': list([
-              'LINKS FROM CONTENT',
+              'Specifications',
+              'LINK CONDITIONS TEST',
             ]),
-            'title': 'Spec with nested need',
+            'title': 'Spec with no condition',
             'type': 'spec',
             'type_name': 'Specification',
           }),
-          'CON_SPEC_5': dict({
-            'content': "This content contains :need:`CON_REQ_2` and :ndf:`links_from_content()`, :ndf:`links_from_content('CON_REQ_4')`, :ndf:`links_from_content('unknown2')`",
+          'SPEC_005': dict({
+            'content': 'First link condition passes, second fails (REQ_003 has status "done").',
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'CON_SPEC_5',
-            'lineno': 51,
+            'id': 'SPEC_005',
+            'lineno': 46,
             'links': list([
-              'CON_REQ_2',
-              'CON_REQ_2',
+              'REQ_001',
+              'REQ_003',
             ]),
-            'section_name': 'LINKS FROM CONTENT',
+            'section_name': 'Specifications',
             'sections': list([
-              'LINKS FROM CONTENT',
+              'Specifications',
+              'LINK CONDITIONS TEST',
             ]),
-            'title': 'Spec with links_from_content in ndf role',
+            'title': 'Spec with multiple links mixed conditions',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_006': dict({
+            'content': 'Uses double brackets; the condition fails because REQ_001 has no tag "open".',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SPEC_006',
+            'lineno': 52,
+            'links': list([
+              'REQ_001',
+            ]),
+            'section_name': 'Specifications',
+            'sections': list([
+              'Specifications',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Spec with multi-bracket condition',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_RAW_001': dict({
+            'content': '''
+              The ``raw_links`` link type has ``parse_conditions: False``,
+              so the brackets are treated as literal ID text, not as a condition.
+            ''',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'has_dead_links': True,
+            'has_forbidden_dead_links': True,
+            'id': 'SPEC_RAW_001',
+            'lineno': 66,
+            'raw_links': list([
+              'REQ_001[status=="open"]',
+            ]),
+            'section_name': 'Parse Conditions Disabled',
+            'sections': list([
+              'Parse Conditions Disabled',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Spec with raw link containing brackets',
             'type': 'spec',
             'type_name': 'Specification',
           }),
         }),
-        'needs_amount': 9,
+        'needs_amount': 13,
         'needs_defaults_removed': True,
         'needs_schema': dict({
           '$schema': 'http://json-schema.org/draft-07/schema#',
@@ -541,6 +606,26 @@
                 'string',
                 'null',
               ]),
+            }),
+            'raw_links': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'raw_links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
             }),
             'section_name': dict({
               'default': None,
@@ -685,140 +770,264 @@
     }),
   })
 # ---
-# name: test_doc_dynamic_functions[test_app0]
+# name: test_link_conditions[test_app0]
   dict({
     'current_version': '',
     'versions': dict({
       '': dict({
         'needs': dict({
-          'SP_TOO_001': dict({
-            'content': '''
-              This is id [[copy("id")]]
-              
-              This is also id :need_func:`[[copy("id")]]`
-              
-              This is the best id :ndf:`copy("id")`
-            ''',
+          'IMP_COND_FAIL': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'SP_TOO_001',
-            'lineno': 4,
-            'section_name': 'DYNAMIC FUNCTIONS',
+            'id': 'IMP_COND_FAIL',
+            'is_import': True,
+            'lineno': 61,
+            'links': list([
+              'REQ_002[status=="open"]',
+            ]),
+            'section_name': 'Imported Needs',
             'sections': list([
-              'DYNAMIC FUNCTIONS',
+              'Imported Needs',
+              'LINK CONDITIONS TEST',
             ]),
-            'status': 'implemented',
-            'tags': list([
-              'test',
-              'test2',
-            ]),
-            'title': 'Command line interface',
-            'type': 'spec',
-            'type_name': 'Specification',
+            'title': 'Imported with failing condition',
+            'type': 'impl',
+            'type_name': 'Implementation',
           }),
-          'TEST_2': dict({
+          'IMP_COND_NONE': dict({
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'TEST_2',
+            'id': 'IMP_COND_NONE',
+            'is_import': True,
+            'lineno': 61,
+            'links': list([
+              'REQ_001',
+            ]),
+            'section_name': 'Imported Needs',
+            'sections': list([
+              'Imported Needs',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Imported with no condition',
+            'type': 'impl',
+            'type_name': 'Implementation',
+          }),
+          'IMP_COND_PASS': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'IMP_COND_PASS',
+            'is_import': True,
+            'lineno': 61,
+            'links': list([
+              'REQ_001[status=="open"]',
+            ]),
+            'section_name': 'Imported Needs',
+            'sections': list([
+              'Imported Needs',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Imported with passing condition',
+            'type': 'impl',
+            'type_name': 'Implementation',
+          }),
+          'REQ_001': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'REQ_001',
+            'lineno': 7,
+            'links_back': list([
+              'EXT_COND_PASS',
+              'EXT_COND_NONE',
+              'SPEC_001',
+              'SPEC_003',
+              'SPEC_004',
+              'SPEC_005',
+              'SPEC_006',
+              'IMP_COND_PASS',
+              'IMP_COND_NONE',
+            ]),
+            'section_name': 'Requirements',
+            'sections': list([
+              'Requirements',
+              'LINK CONDITIONS TEST',
+            ]),
+            'status': 'open',
+            'title': 'Requirement Open',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+          'REQ_002': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'REQ_002',
+            'lineno': 11,
+            'links_back': list([
+              'EXT_COND_FAIL',
+              'SPEC_002',
+              'IMP_COND_FAIL',
+            ]),
+            'section_name': 'Requirements',
+            'sections': list([
+              'Requirements',
+              'LINK CONDITIONS TEST',
+            ]),
+            'status': 'closed',
+            'title': 'Requirement Closed',
+            'type': 'req',
+            'type_name': 'Requirement',
+          }),
+          'REQ_003': dict({
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'REQ_003',
             'lineno': 15,
-            'section_name': 'DYNAMIC FUNCTIONS',
+            'links_back': list([
+              'SPEC_005',
+            ]),
+            'section_name': 'Requirements',
             'sections': list([
-              'DYNAMIC FUNCTIONS',
+              'Requirements',
+              'LINK CONDITIONS TEST',
             ]),
-            'tags': list([
-              'my_tag',
-              'test',
-              'test2',
-            ]),
-            'title': 'TEST_2',
-            'type': 'spec',
-            'type_name': 'Specification',
+            'status': 'done',
+            'title': 'Requirement Done',
+            'type': 'req',
+            'type_name': 'Requirement',
           }),
-          'TEST_3': dict({
+          'SPEC_001': dict({
+            'content': 'Links to REQ_001 with a condition that should pass.',
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'TEST_3',
-            'lineno': 19,
-            'section_name': 'DYNAMIC FUNCTIONS',
-            'sections': list([
-              'DYNAMIC FUNCTIONS',
+            'id': 'SPEC_001',
+            'lineno': 22,
+            'links': list([
+              'REQ_001[status=="open"]',
             ]),
-            'test_func': 'Test output of dynamic function; need: TEST_3; args: (); kwargs: {}',
-            'title': 'TEST_3',
+            'section_name': 'Specifications',
+            'sections': list([
+              'Specifications',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Spec with passing condition',
             'type': 'spec',
             'type_name': 'Specification',
           }),
-          'TEST_5': dict({
+          'SPEC_002': dict({
+            'content': 'Links to REQ_002 with a condition that should fail (REQ_002 has status "closed").',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SPEC_002',
+            'lineno': 28,
+            'links': list([
+              'REQ_002[status=="open"]',
+            ]),
+            'section_name': 'Specifications',
+            'sections': list([
+              'Specifications',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Spec with failing condition',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_003': dict({
+            'content': 'Links to REQ_001 with invalid filter syntax.',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SPEC_003',
+            'lineno': 34,
+            'links': list([
+              'REQ_001[status===]',
+            ]),
+            'section_name': 'Specifications',
+            'sections': list([
+              'Specifications',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Spec with invalid condition syntax',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_004': dict({
+            'content': 'Links to REQ_001 with no condition (should always pass).',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SPEC_004',
+            'lineno': 40,
+            'links': list([
+              'REQ_001',
+            ]),
+            'section_name': 'Specifications',
+            'sections': list([
+              'Specifications',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Spec with no condition',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_005': dict({
+            'content': 'First link condition passes, second fails (REQ_003 has status "done").',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SPEC_005',
+            'lineno': 46,
+            'links': list([
+              'REQ_001[status=="open"]',
+              'REQ_003[status=="open"]',
+            ]),
+            'section_name': 'Specifications',
+            'sections': list([
+              'Specifications',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Spec with multiple links mixed conditions',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_006': dict({
+            'content': 'Uses double brackets; the condition fails because REQ_001 has no tag "open".',
+            'docname': 'index',
+            'external_css': 'external_link',
+            'id': 'SPEC_006',
+            'lineno': 52,
+            'links': list([
+              'REQ_001["open" in tags]',
+            ]),
+            'section_name': 'Specifications',
+            'sections': list([
+              'Specifications',
+              'LINK CONDITIONS TEST',
+            ]),
+            'title': 'Spec with multi-bracket condition',
+            'type': 'spec',
+            'type_name': 'Specification',
+          }),
+          'SPEC_RAW_001': dict({
             'content': '''
-              Test a `link <http://www.[[copy('id')]]>`_
-              
-              .. spec:: TEST_6
-                  :id: TEST_6
-              
-                  nested id [[copy('id')]]
-              
-                  nested id also :need_func:`[[copy("id")]]`
-              
-                  nested id best :ndf:`copy("id")`
+              The ``raw_links`` link type has ``parse_conditions: False``,
+              so the brackets are treated as literal ID text, not as a condition.
             ''',
             'docname': 'index',
             'external_css': 'external_link',
-            'id': 'TEST_5',
-            'lineno': 29,
-            'parent_needs_back': list([
-              'TEST_6',
+            'has_dead_links': True,
+            'has_forbidden_dead_links': True,
+            'id': 'SPEC_RAW_001',
+            'lineno': 66,
+            'raw_links': list([
+              'REQ_001[status=="open"]',
             ]),
-            'section_name': 'DYNAMIC FUNCTIONS',
+            'section_name': 'Parse Conditions Disabled',
             'sections': list([
-              'DYNAMIC FUNCTIONS',
+              'Parse Conditions Disabled',
+              'LINK CONDITIONS TEST',
             ]),
-            'tags': list([
-              'TEST_5',
-            ]),
-            'title': 'TEST_5',
-            'type': 'spec',
-            'type_name': 'Specification',
-          }),
-          'TEST_6': dict({
-            'content': '''
-              nested id [[copy('id')]]
-              
-              nested id also :need_func:`[[copy("id")]]`
-              
-              nested id best :ndf:`copy("id")`
-            ''',
-            'docname': 'index',
-            'external_css': 'external_link',
-            'id': 'TEST_6',
-            'lineno': 35,
-            'parent_need': 'TEST_5',
-            'parent_needs': list([
-              'TEST_5',
-            ]),
-            'section_name': 'DYNAMIC FUNCTIONS',
-            'sections': list([
-              'DYNAMIC FUNCTIONS',
-            ]),
-            'title': 'TEST_6',
-            'type': 'spec',
-            'type_name': 'Specification',
-          }),
-          'TEST_9': dict({
-            'docname': 'index',
-            'external_css': 'external_link',
-            'id': 'TEST_9',
-            'lineno': 56,
-            'non_func': '[[test(need.unknown)]]',
-            'section_name': 'DYNAMIC FUNCTIONS',
-            'sections': list([
-              'DYNAMIC FUNCTIONS',
-            ]),
-            'title': 'TEST_9',
+            'title': 'Spec with raw link containing brackets',
             'type': 'spec',
             'type_name': 'Specification',
           }),
         }),
-        'needs_amount': 6,
+        'needs_amount': 13,
         'needs_defaults_removed': True,
         'needs_schema': dict({
           '$schema': 'http://json-schema.org/draft-07/schema#',
@@ -1067,15 +1276,6 @@
               'field_type': 'core',
               'type': 'integer',
             }),
-            'non_func': dict({
-              'default': None,
-              'description': 'Added by needs_fields config',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'params': dict({
               'default': None,
               'description': 'Added by service open-needs',
@@ -1178,6 +1378,26 @@
                 'null',
               ]),
             }),
+            'raw_links': dict({
+              'default': list([
+              ]),
+              'description': 'Link field',
+              'field_type': 'links',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
+            'raw_links_back': dict({
+              'default': list([
+              ]),
+              'description': 'Backlink field',
+              'field_type': 'backlinks',
+              'items': dict({
+                'type': 'string',
+              }),
+              'type': 'array',
+            }),
             'section_name': dict({
               'default': None,
               'description': 'Simply the first section.',
@@ -1256,15 +1476,6 @@
               'default': None,
               'description': 'The template key, if the content was created from a jinja template.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'test_func': dict({
-              'default': None,
-              'description': 'Added by needs_fields config',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',

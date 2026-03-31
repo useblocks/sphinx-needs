@@ -1,5 +1,24 @@
 extensions = ["sphinx_needs"]
 
+needs_build_json = True
+needs_json_remove_defaults = True
+
+needs_external_needs = [
+    {
+        "base_url": "http://my_company.com/docs/v1/",
+        "json_path": "needs_test_external.json",
+        "id_prefix": "EXT_",
+    },
+]
+
+needs_links = {
+    "raw_links": {
+        "outgoing": "raw links outgoing",
+        "incoming": "raw links incoming",
+        "parse_conditions": False,
+    },
+}
+
 needs_types = [
     {
         "directive": "req",

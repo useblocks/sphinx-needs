@@ -481,7 +481,7 @@ def resolve_links(
                         if linked_part := linked_need.get_part(need_link.part):
                             if link_type not in linked_part.backlinks:
                                 linked_part.backlinks[link_type] = []
-                            linked_part.backlinks[link_type].append(key)
+                            linked_part.backlinks[link_type].append(NeedLink(id=key))
                         else:
                             dead_links.append((link_type, need_link))
                 else:

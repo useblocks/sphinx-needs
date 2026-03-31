@@ -183,7 +183,7 @@ class NeedPartData:
 
     id: str
     content: str
-    backlinks: dict[str, list[str]] = field(default_factory=dict)
+    backlinks: dict[str, list[NeedLink]] = field(default_factory=dict)
 
 
 @dataclass(slots=True, frozen=True, kw_only=True)
@@ -240,24 +240,127 @@ class NeedConstraintResults(Mapping[str, tuple[tuple[str, bool, str | None], ...
 
 @dataclass(slots=True, frozen=True, kw_only=True)
 class NeedLink:
-    """A class representing a link from one need to another."""
+    """A class representing a link from one need to another.
+
+    .. versionadded:: 8.0.0
+    """
 
     id: str
     part: str | None = None
     condition: str | None = None
 
     @staticmethod
-    def from_string(link_str: str) -> NeedLink:
-        """Parse a link from a string, which can be in the format 'NEED-1' or 'NEED-1.part'."""
-        if "." in link_str:
-            id, part = link_str.split(".", maxsplit=1)
-            return NeedLink(id=id, part=part)
-        else:
-            return NeedLink(id=link_str)
+    def from_string(link_str: str, *, parse_conditions: bool = True) -> NeedLink:
+        """Parse a link from a string (infallible, best-effort).
+
+        Supports formats: ``ID``, ``ID.part``, ``ID[condition]``,
+        ``ID.part[condition]``, ``ID[[nested_condition]]``.
+
+        On malformed brackets (unclosed, trailing text), falls back to
+        parsing without a condition. Use :meth:`from_string_with_warnings`
+        if you need to detect malformed input.
+
+        :param parse_conditions: Whether to parse ``[condition]`` brackets.
+        """
+        return NeedLink.from_string_with_warnings(
+            link_str, parse_conditions=parse_conditions
+        )[0]
+
+    @staticmethod
+    def from_string_with_warnings(
+        link_str: str, *, parse_conditions: bool = True
+    ) -> tuple[NeedLink, list[str]]:
+        """Parse a link from a string, returning warnings for malformed input.
+
+        Same parsing as :meth:`from_string`, but returns a list of warning
+        messages instead of silently ignoring malformed brackets.
+
+        :param parse_conditions: Whether to parse ``[condition]`` brackets.
+        :returns: A tuple of ``(NeedLink, warnings)``.
+        """
+        warnings: list[str] = []
+
+        if not parse_conditions:
+            return NeedLink.parse_address(link_str), warnings
+
+        # Find the first '[' that could start a condition
+        bracket_start = link_str.find("[")
+        if bracket_start <= 0:
+            # No condition or no address before '[' — plain ID or ID.part
+            return NeedLink.parse_address(link_str), warnings
+
+        address = link_str[:bracket_start]
+        rest = link_str[bracket_start:]
+
+        # Count opening bracket depth
+        depth = 0
+        while depth < len(rest) and rest[depth] == "[":
+            depth += 1
+
+        # Find the matching closing brackets
+        closing = "]" * depth
+        inner = rest[depth:]
+        close_pos = inner.find(closing)
+        if close_pos < 0:
+            warnings.append(
+                f"Unclosed condition brackets in link {link_str!r}: "
+                f"expected {depth} closing ']' characters."
+            )
+            return NeedLink.parse_address(link_str), warnings
+
+        trailing = inner[close_pos + depth :]
+        if trailing:
+            warnings.append(
+                f"Unexpected text after closing condition bracket "
+                f"in link {link_str!r}: {trailing!r}."
+            )
+            return NeedLink.parse_address(address), warnings
+
+        condition = inner[:close_pos]
+        link = NeedLink.parse_address(
+            address, condition=condition if condition else None
+        )
+        return link, warnings
+
+    @staticmethod
+    def parse_address(address: str, /, *, condition: str | None = None) -> NeedLink:
+        """Parse an address string into a NeedLink, optionally with a condition."""
+        if "." in address:
+            id_, part = address.split(".", maxsplit=1)
+            return NeedLink(id=id_, part=part, condition=condition)
+        return NeedLink(id=address, condition=condition)
 
     def to_filter_string(self) -> str:
-        """Convert the link to a filter string, e.g. 'NEED-1' or 'NEED-1.part'."""
+        """Convert the link to a filter string, e.g. 'NEED-1' or 'NEED-1.part'.
+
+        This does **not** include the condition.
+        """
         return f"{self.id}.{self.part}" if self.part else self.id
+
+    def to_link_string(self) -> str:
+        """Serialize the link including the condition, e.g. 'NEED-1[cond]' or 'NEED-1.part[cond]'.
+
+        Uses bracket depth one greater than the longest consecutive run of
+        ``]`` in the condition, so the result always round-trips through
+        :meth:`from_string`.
+        """
+        base = f"{self.id}.{self.part}" if self.part else self.id
+        if self.condition is None:
+            return base
+        # Find the longest consecutive run of ']' in the condition
+        max_run = 0
+        current_run = 0
+        for ch in self.condition:
+            if ch == "]":
+                current_run += 1
+                if current_run > max_run:
+                    max_run = current_run
+            else:
+                current_run = 0
+        depth = max_run + 1
+        open_b = "[" * depth
+        close_b = "]" * depth
+        return f"{base}{open_b}{self.condition}{close_b}"
 
 
 class NeedItem:
@@ -423,7 +526,11 @@ class NeedItem:
                 "id": p.id,
                 "content": p.content,
                 **(
-                    {f"{k}_back": v for k, v in p.backlinks.items() if v}  # type: ignore[typeddict-item]
+                    {
+                        f"{k}_back": [li.to_filter_string() for li in v]
+                        for k, v in p.backlinks.items()
+                        if v
+                    }  # type: ignore[typeddict-item]
                     if p.backlinks is not None
                     else {}
                 ),
@@ -916,11 +1023,11 @@ class NeedItem:
         if not isinstance(part.backlinks, dict) or any(
             not isinstance(k, str)
             or not isinstance(v, list)
-            or any(not isinstance(i, str) for i in v)
+            or any(not isinstance(i, NeedLink) for i in v)
             for k, v in part.backlinks.items()
         ):
             raise ValueError(
-                f"Part {part.id!r} backlinks must be a dictionary of lists of strings."
+                f"Part {part.id!r} backlinks must be a dictionary of lists of NeedLink instances."
             )
         if unknown_part_links := (set(part.backlinks) - set(self._links)):
             raise ValueError(
@@ -1020,7 +1127,7 @@ class NeedPartItem:
             **{
                 f"{name}_back": []
                 if part.backlinks is None or not (blinks := part.backlinks.get(name))
-                else blinks
+                else [li.to_filter_string() for li in blinks]
                 for name in need.iter_links_keys()
             },
         }
@@ -1270,7 +1377,7 @@ class NeedPartItem:
             return self[f"{link_type}_back"]  # type: ignore[no-any-return]
         part = self._need.get_part(self.part_id)
         assert part is not None
-        return [NeedLink.from_string(v) for v in part.backlinks.get(link_type, [])]
+        return part.backlinks.get(link_type, [])
 
     @overload
     def iter_backlinks_items(
@@ -1295,5 +1402,5 @@ class NeedPartItem:
                 assert part is not None
                 yield (
                     key,
-                    [NeedLink.from_string(v) for v in part.backlinks.get(key, [])],
+                    part.backlinks.get(key, []),
                 )

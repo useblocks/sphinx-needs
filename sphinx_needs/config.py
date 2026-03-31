@@ -304,6 +304,8 @@ class NeedLinksConfig(TypedDict, total=False):
     """Whether variants are parsed in this field."""
     parse_dynamic_functions: NotRequired[bool]
     """Whether dynamic functions are parsed in this field."""
+    parse_conditions: NotRequired[bool]
+    """Whether conditions (bracket syntax) are parsed in this field."""
 
 
 class LinkOptionsType(NeedLinksConfig):
@@ -853,6 +855,13 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
     """If True, remove need fields with default values from the JSON needs file."""
+    json_include_link_conditions: bool = field(
+        default=True, metadata={"rebuild": "html", "types": (bool,)}
+    )
+    """If True, include link conditions in outgoing link fields of the JSON needs file output (e.g. 'NEED-1[cond]').
+    If False, link conditions are stripped and only the target ID is written (e.g. 'NEED-1').
+    Backlink fields are unaffected as they never carry conditions.
+    """
     build_needumls: str = field(
         default="", metadata={"rebuild": "html", "types": (str,)}
     )

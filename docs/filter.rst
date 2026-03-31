@@ -105,6 +105,7 @@ Filter string
 
 The usage of a filter string is supported/required by:
 
+* :ref:`Conditional links <need_conditional_links>` (to assert properties of a link target)
 * :ref:`need_count`
 * :ref:`needlist`
 * :ref:`needtable`

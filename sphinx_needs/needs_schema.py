@@ -549,6 +549,7 @@ class LinkSchema:
     allow_extend: bool = False
     parse_dynamic_functions: bool = False
     parse_variants: bool = False
+    parse_conditions: bool = True
     allow_defaults: bool = False
     predicate_defaults: tuple[
         tuple[str, LinksLiteralValue | LinksFunctionArray],
@@ -589,6 +590,8 @@ class LinkSchema:
             raise ValueError("parse_dynamic_functions must be a boolean.")
         if not isinstance(self.parse_variants, bool):
             raise ValueError("parse_variants must be a boolean.")
+        if not isinstance(self.parse_conditions, bool):
+            raise ValueError("parse_conditions must be a boolean.")
         if not isinstance(self.allow_defaults, bool):
             raise ValueError("allow_defaults must be a boolean.")
         if not isinstance(self.allow_extend, bool):
@@ -698,7 +701,9 @@ class LinkSchema:
 
     def type_check(self, value: Any) -> bool:
         """Check if a value is of the correct type for this field."""
-        return isinstance(value, list) and all(isinstance(i, str) for i in value)
+        return isinstance(value, list) and all(
+            isinstance(i, str | NeedLink) for i in value
+        )
 
     def type_check_item(self, value: Any) -> bool:
         """Check if a value is of the correct item type for this field.
@@ -706,7 +711,7 @@ class LinkSchema:
         For 'array' fields, this checks the type of the array items.
         For other fields, this checks the type of the field itself.
         """
-        return isinstance(value, str)
+        return isinstance(value, str | NeedLink)
 
     def convert_directive_option(
         self, value: str
@@ -725,7 +730,10 @@ class LinkSchema:
         has_df_or_vf = False
         array: list[NeedLink | DynamicFunctionParsed | VariantFunctionParsed] = []
         for item in _split_link_list(
-            value, self.parse_dynamic_functions, self.parse_variants
+            value,
+            self.parse_dynamic_functions,
+            self.parse_variants,
+            parse_conditions=self.parse_conditions,
         ):
             if isinstance(item, LinkSplitWarning):
                 # TODO bubble up as warning?
@@ -789,13 +797,29 @@ class LinkSchema:
                             VariantFunctionParsed.from_string(item.strip()[2:-2])
                         )
                     else:
-                        new_value.append(NeedLink.from_string(item))
+                        new_value.append(
+                            NeedLink.from_string(
+                                item, parse_conditions=self.parse_conditions
+                            )
+                        )
                 if has_function:
                     return LinksFunctionArray(tuple(new_value))
                 else:
-                    return LinksLiteralValue([NeedLink.from_string(v) for v in value])
+                    return LinksLiteralValue(
+                        [
+                            NeedLink.from_string(
+                                v, parse_conditions=self.parse_conditions
+                            )
+                            for v in value
+                        ]
+                    )
             else:
-                return LinksLiteralValue([NeedLink.from_string(v) for v in value])
+                return LinksLiteralValue(
+                    [
+                        NeedLink.from_string(v, parse_conditions=self.parse_conditions)
+                        for v in value
+                    ]
+                )
 
 
 class FieldsSchema:
@@ -1007,6 +1031,8 @@ def _split_link_list(
     text: str,
     parse_dynamic_functions: bool,
     parse_variants: bool,
+    *,
+    parse_conditions: bool = True,
 ) -> Iterator[
     NeedLink | DynamicFunctionParsed | VariantFunctionParsed | LinkSplitWarning
 ]:
@@ -1030,6 +1056,7 @@ def _split_link_list(
     :param text: The string to split.
     :param parse_dynamic_functions: Whether to parse ``[[...]]`` dynamic functions.
     :param parse_variants: Whether to parse ``<<...>>`` variant functions.
+    :param parse_conditions: Whether to parse ``[condition]`` brackets.
     :yields: Parsed link items, or ``LinkSplitWarning`` for non-fatal issues
         (e.g. text adjacent to a dynamic/variant function, unclosed brackets).
     """
@@ -1045,7 +1072,12 @@ def _split_link_list(
         _current = ""
         if not stripped:
             return None
-        return _parse_link_with_condition(stripped)
+        link, warnings = NeedLink.from_string_with_warnings(
+            stripped, parse_conditions=parse_conditions
+        )
+        if warnings:
+            return LinkSplitWarning(warnings[0])
+        return link
 
     while text:
         if parse_dynamic_functions and text.startswith("[[") and not _current.strip():
@@ -1105,54 +1137,6 @@ def _split_link_list(
             yield LinkSplitWarning(
                 "only one string, dynamic function or variant function allowed per array item."
             )
-
-
-def _parse_link_with_condition(text: str) -> NeedLink | LinkSplitWarning:
-    """Parse a plain link string that may contain a ``[condition]`` suffix.
-
-    Supports matched bracket depth: ``ID[[x>1]]`` parses condition as ``[x>1]``.
-
-    :param text: A stripped, non-empty link string (no delimiters, no DF/VF markers).
-    :returns: A NeedLink with id, optional part, and optional condition,
-        or a ``LinkSplitWarning`` if brackets are unclosed.
-    """
-    # Find the first '[' that starts the condition
-    bracket_start = text.find("[")
-    if bracket_start <= 0:
-        # No condition or no address before '[' — plain ID or ID.part
-        return NeedLink.from_string(text)
-
-    address = text[:bracket_start]
-    rest = text[bracket_start:]
-
-    # Count opening bracket depth
-    depth = 0
-    while depth < len(rest) and rest[depth] == "[":
-        depth += 1
-
-    # Find the matching closing brackets
-    closing = "]" * depth
-    # The content is between the opening and closing brackets
-    inner = rest[depth:]
-    close_pos = inner.find(closing)
-    if close_pos < 0:
-        return LinkSplitWarning(
-            f"Unclosed condition brackets in link {text!r}: "
-            f"expected {depth} closing ']' characters."
-        )
-    trailing = inner[close_pos + depth :]
-    if trailing:
-        return LinkSplitWarning(
-            f"Unexpected text after closing condition bracket in link {text!r}: {trailing!r}."
-        )
-    condition = inner[:close_pos]
-
-    # Parse address for id.part
-    if "." in address:
-        id_, part = address.split(".", maxsplit=1)
-        return NeedLink(id=id_, part=part, condition=condition if condition else None)
-    else:
-        return NeedLink(id=address, condition=condition if condition else None)
 
 
 def _split_string(

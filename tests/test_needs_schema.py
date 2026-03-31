@@ -992,6 +992,46 @@ def test_split_link_list(text, parse_df, parse_vf, expected):
 
 
 @pytest.mark.parametrize(
+    "text, parse_df, parse_vf, expected",
+    [
+        # Brackets treated as literal text when parse_conditions=False
+        (
+            "REQ[cond]",
+            True,
+            True,
+            [NeedLink(id="REQ[cond]")],
+        ),
+        # Part with brackets treated as literal text
+        (
+            "REQ.partA[cond]",
+            True,
+            True,
+            [NeedLink(id="REQ", part="partA[cond]")],
+        ),
+        # Plain ID unchanged
+        (
+            "REQ-001",
+            True,
+            True,
+            [NeedLink(id="REQ-001")],
+        ),
+        # Multiple items with brackets as literal text
+        (
+            "REQ[c1];SPEC[c2]",
+            True,
+            True,
+            [NeedLink(id="REQ[c1]"), NeedLink(id="SPEC[c2]")],
+        ),
+    ],
+)
+def test_split_link_list_no_parse_conditions(text, parse_df, parse_vf, expected):
+    assert (
+        list(_split_link_list(text, parse_df, parse_vf, parse_conditions=False))
+        == expected
+    )
+
+
+@pytest.mark.parametrize(
     "parent_schema,child_schema,expected",
     [
         # String: const constraint - child inherits parent const

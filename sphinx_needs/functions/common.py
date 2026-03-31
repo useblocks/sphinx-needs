@@ -7,20 +7,23 @@ Collection of common sphinx-needs functions for dynamic values
 from __future__ import annotations
 
 import contextlib
-import re
+from collections.abc import Iterator
 from typing import Any
 
+from docutils import nodes
 from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsMutable
+from sphinx_needs.data import NeedsMutable, SphinxNeedsData
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.filter_common import (
     filter_needs_and_parts,
     filter_single_need,
 )
 from sphinx_needs.logging import log_warning
-from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
+from sphinx_needs.nodes import Need
+from sphinx_needs.roles.need_ref import NeedRef
 from sphinx_needs.utils import logger
 from sphinx_needs.views import NeedsView
 
@@ -403,19 +406,39 @@ def calc_sum(
     return calculated_sum
 
 
+def _find_need_refs(node: nodes.Node) -> Iterator[NeedRef]:
+    """Yield ``NeedRef`` nodes, without descending into nested ``Need`` nodes."""
+    for child in node.children:
+        if isinstance(child, NeedRef):
+            yield child
+        elif not isinstance(child, Need):
+            yield from _find_need_refs(child)
+
+
 def links_from_content(
     app: Sphinx,
     need: NeedItem | NeedPartItem | None,
     needs: NeedsMutable | NeedsView,
     need_id: str | None = None,
     filter: str | None = None,
-) -> list[str]:
+) -> list[NeedLink]:
     """
-    Extracts links from content of a need.
+    Extracts need references from the content of a need.
 
-    All need-links set by using ``:need:`NEED_ID``` get extracted.
+    All need-links set by using ``:need:`NEED_ID``` are extracted
+    from the parsed doctree node of the source need.
 
     Same links are only added once.
+
+    .. versionchanged:: 8.0.0
+
+       Previously used a regex on raw RST source text to extract ``:need:`` references.
+       Now walks the parsed doctree, which correctly handles custom titles
+       (e.g. ``:need:`My Title <REQ_001>```) and nested content.
+
+       This function requires the source need to have a stored doctree node.
+       It will emit a warning and return an empty list for needs without a
+       stored node (e.g. external needs or need parts).
 
     Example:
 
@@ -461,25 +484,60 @@ def links_from_content(
     :param filter: :ref:`filter_string`, which a found need-link must pass.
     :return: List of linked need-ids in content
     """
-    source_need = needs[need_id] if need_id else need
-
-    if source_need is None:
+    if need_id:
+        source_need_id = need_id
+    elif need is None:
         raise ValueError("No need found for links_from_content")
+    elif isinstance(need, NeedPartItem):
+        location = (need["docname"], need["lineno"]) if need["docname"] else None
+        log_warning(
+            logger,
+            "links_from_content does not support need parts",
+            "dynamic_function",
+            location=location,
+        )
+        return []
+    else:
+        source_need_id = need["id"]
 
-    links = re.findall(r":need:`(\w+)`|:need:`.+\<(.+)\>`", source_need["content"])
-    raw_links = []
-    for link in links:
-        if link[0] and link[0] not in raw_links:
-            raw_links.append(link[0])
-        elif link[1] and link[0] not in raw_links:
-            raw_links.append(link[1])
+    need_node = SphinxNeedsData(app.env).get_need_node(source_need_id)
+    if need_node is None:
+        # This can happen for external needs or hidden needs,
+        # which do not have a stored doctree node.
+        source_need = needs.get(source_need_id)
+        if source_need is not None:
+            location = (
+                (source_need["docname"], source_need["lineno"])
+                if source_need["docname"]
+                else None
+            )
+        elif need is not None:
+            location = (need["docname"], need["lineno"]) if need["docname"] else None
+        else:
+            location = None
+        log_warning(
+            logger,
+            f"links_from_content: no stored node for need {source_need_id!r}",
+            "dynamic_function",
+            location=location,
+        )
+        return []
+
+    raw_links: list[NeedLink] = []
+    for ref_node in _find_need_refs(need_node):
+        need_link: NeedLink = ref_node["need_link"]
+        if need_link not in raw_links:
+            raw_links.append(need_link)
 
     if filter:
         needs_config = NeedsSphinxConfig(app.config)
-        filtered_links = []
+        filtered_links: list[NeedLink] = []
         for link in raw_links:
-            if link not in filtered_links and filter_single_need(
-                needs[link], needs_config, filter
+            target = needs.get(link.id)
+            if (
+                target is not None
+                and link not in filtered_links
+                and filter_single_need(target, needs_config, filter)
             ):
                 filtered_links.append(link)
         return filtered_links

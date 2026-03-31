@@ -366,7 +366,9 @@ def test_need_part_item(snapshot):
     item = NeedItem(
         core=core(),
         parts=(
-            NeedPartData(id="part1", content="Part 1", backlinks={"links": ["ref3"]}),
+            NeedPartData(
+                id="part1", content="Part 1", backlinks={"links": [NeedLink(id="ref3")]}
+            ),
         ),
         content=content("Need 1"),
         extras={
@@ -435,3 +437,127 @@ def test_need_part_item(snapshot):
         part.get_backlinks("unknown_link")
     with pytest.raises(KeyError, match="'unknown_link'"):
         part.get_backlinks("unknown_link", as_str=False)
+
+
+class TestNeedLinkFromString:
+    """Tests for NeedLink.from_string and from_string_with_warnings."""
+
+    def test_plain_id(self) -> None:
+        link = NeedLink.from_string("NEED-1")
+        assert link == NeedLink(id="NEED-1")
+
+    def test_id_with_part(self) -> None:
+        link = NeedLink.from_string("NEED-1.partA")
+        assert link == NeedLink(id="NEED-1", part="partA")
+
+    def test_id_with_condition(self) -> None:
+        link = NeedLink.from_string('NEED-1[status=="open"]')
+        assert link == NeedLink(id="NEED-1", condition='status=="open"')
+
+    def test_id_part_with_condition(self) -> None:
+        link = NeedLink.from_string('NEED-1.partA[status=="open"]')
+        assert link == NeedLink(id="NEED-1", part="partA", condition='status=="open"')
+
+    def test_nested_brackets(self) -> None:
+        link = NeedLink.from_string("NEED-1[[x>1]]")
+        assert link == NeedLink(id="NEED-1", condition="x>1")
+
+    def test_empty_condition_becomes_none(self) -> None:
+        link = NeedLink.from_string("NEED-1[]")
+        assert link == NeedLink(id="NEED-1", condition=None)
+
+    def test_unclosed_bracket_fallback(self) -> None:
+        # Infallible: falls back to no condition
+        link = NeedLink.from_string("NEED-1[unclosed")
+        assert link.id == "NEED-1[unclosed"
+        assert link.condition is None
+
+    def test_trailing_text_fallback(self) -> None:
+        link = NeedLink.from_string("NEED-1[cond]extra")
+        assert link.id == "NEED-1"
+        assert link.condition is None
+
+    def test_warnings_clean(self) -> None:
+        link, warnings = NeedLink.from_string_with_warnings('NEED-1[status=="open"]')
+        assert link == NeedLink(id="NEED-1", condition='status=="open"')
+        assert warnings == []
+
+    def test_warnings_unclosed(self) -> None:
+        link, warnings = NeedLink.from_string_with_warnings("NEED-1[unclosed")
+        assert link.id == "NEED-1[unclosed"
+        assert link.condition is None
+        assert len(warnings) == 1
+        assert "Unclosed" in warnings[0]
+
+    def test_warnings_trailing(self) -> None:
+        link, warnings = NeedLink.from_string_with_warnings("NEED-1[cond]extra")
+        assert link.id == "NEED-1"
+        assert link.condition is None
+        assert len(warnings) == 1
+        assert "Unexpected text" in warnings[0]
+
+    def test_parse_conditions_false_with_brackets(self) -> None:
+        link = NeedLink.from_string("NEED-1[cond]", parse_conditions=False)
+        assert link == NeedLink(id="NEED-1[cond]", condition=None)
+
+    def test_parse_conditions_false_with_part_and_brackets(self) -> None:
+        link = NeedLink.from_string("NEED-1.partA[cond]", parse_conditions=False)
+        assert link == NeedLink(id="NEED-1", part="partA[cond]", condition=None)
+
+    def test_parse_conditions_false_plain_id(self) -> None:
+        link = NeedLink.from_string("NEED-1", parse_conditions=False)
+        assert link == NeedLink(id="NEED-1")
+
+    def test_parse_conditions_false_with_warnings(self) -> None:
+        link, warnings = NeedLink.from_string_with_warnings(
+            "NEED-1[cond]", parse_conditions=False
+        )
+        assert link == NeedLink(id="NEED-1[cond]", condition=None)
+        assert warnings == []
+
+
+class TestNeedLinkToLinkString:
+    """Tests for NeedLink.to_link_string."""
+
+    def test_plain_id(self) -> None:
+        assert NeedLink(id="NEED-1").to_link_string() == "NEED-1"
+
+    def test_id_with_part(self) -> None:
+        assert NeedLink(id="NEED-1", part="partA").to_link_string() == "NEED-1.partA"
+
+    def test_id_with_condition(self) -> None:
+        assert NeedLink(id="NEED-1", condition="x>0").to_link_string() == "NEED-1[x>0]"
+
+    def test_id_part_condition(self) -> None:
+        link = NeedLink(id="NEED-1", part="partA", condition="x>0")
+        assert link.to_link_string() == "NEED-1.partA[x>0]"
+
+    def test_condition_with_bracket_uses_double(self) -> None:
+        link = NeedLink(id="NEED-1", condition="x]y")
+        assert link.to_link_string() == "NEED-1[[x]y]]"
+
+    def test_round_trip_plain(self) -> None:
+        link = NeedLink(id="NEED-1")
+        assert NeedLink.from_string(link.to_link_string()) == link
+
+    def test_round_trip_part(self) -> None:
+        link = NeedLink(id="NEED-1", part="partA")
+        assert NeedLink.from_string(link.to_link_string()) == link
+
+    def test_round_trip_condition(self) -> None:
+        link = NeedLink(id="NEED-1", condition='status=="open"')
+        assert NeedLink.from_string(link.to_link_string()) == link
+
+    def test_round_trip_part_condition(self) -> None:
+        link = NeedLink(id="NEED-1", part="partA", condition='status=="open"')
+        assert NeedLink.from_string(link.to_link_string()) == link
+
+    def test_round_trip_nested(self) -> None:
+        link = NeedLink(id="NEED-1", condition="x]y")
+        assert NeedLink.from_string(link.to_link_string()) == link
+
+    def test_condition_with_consecutive_brackets(self) -> None:
+        link = NeedLink(id="NEED-1", condition="a]]b")
+        # max run of ']' is 2, so depth = 3
+        assert link.to_link_string() == "NEED-1[[[a]]b]]]"
+        assert NeedLink.from_string(link.to_link_string()) == link

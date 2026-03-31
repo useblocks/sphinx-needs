@@ -382,6 +382,8 @@ Each configured link can define:
     Default: ``False``.
 - ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
     Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
+- ``parse_conditions``: If set to ``False``, the ``[condition]`` bracket syntax will not be parsed for this link type.
+    Default: ``True``. *New in version 8.0.0.*
 - ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by". Default: "<name> incoming".
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks". Default: "<name>".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
@@ -1725,6 +1727,13 @@ Allows to reference and use external needs without having their representation i
      },
    ]
 
+.. note::
+
+   External needs support :ref:`conditional links <need_conditional_links>`.
+   Link strings in the JSON file can contain conditions,
+   e.g. ``"links": ["REQ_001[status==\"open\"]"]``,
+   and these conditions will be evaluated against the target needs during the build.
+
 ``needs_external_needs`` must be a list of dictionary elements and each dictionary must/can have the following
 keys:
 
@@ -1921,6 +1930,23 @@ Setting ``needs_json_remove_defaults = True`` will remove all need fields with d
 The defaults can be retrieved from the ``needs_schema`` now also output in the JSON file (see :ref:`this section <needs_builder_format>` for the format).
 
 Default: :need_config_default:`json_remove_defaults`
+
+.. _`needs_json_include_link_conditions`:
+
+needs_json_include_link_conditions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.0.0
+
+When ``True`` (the default), outgoing link fields in the ``needs.json`` output include
+any conditions attached to the link, for example ``NEED-1[status=="open"]``.
+
+When ``False``, only the target need ID is written, for example ``NEED-1``.
+
+This option only affects outgoing link fields. Backlink fields (e.g. ``links_back``)
+never carry conditions, so they are unaffected by this setting.
+
+Default: :need_config_default:`json_include_link_conditions`
 
 .. _`needs_build_json_per_id`:
 
@@ -2806,6 +2832,8 @@ Each configured link should define:
     Default: ``False``.
 - ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
     Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
+- ``parse_conditions``: If set to ``False``, the ``[condition]`` bracket syntax will not be parsed for this link type.
+    Default: ``True``. *New in version 8.0.0.*
 - ``incoming`` (optional): Incoming text, to use for incoming links. E.g. "is blocked by".
 - ``outgoing`` (optional): Outgoing text, to use for outgoing links. E.g. "blocks".
 - ``copy`` (optional): True/False. If True, the links will be copied also to the common link-list (link type ``links``).
