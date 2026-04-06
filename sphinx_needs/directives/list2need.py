@@ -76,7 +76,6 @@ class List2NeedDirective(SphinxDirective):
         if not delimiter:
             delimiter = "."
 
-        content_raw = "\n".join(self.content)
         types_raw = self.options.get("types")
         if not types_raw:
             raise SphinxWarning("types must be set.")
@@ -116,8 +115,7 @@ class List2NeedDirective(SphinxDirective):
 
         list_needs = []
         # Storing the data in a sorted list
-        for content_line in content_raw.split("\n"):
-            # for groups in line.findall(content_raw):
+        for content_line in self.content:
             match = LINE_REGEX.search(content_line)
             if not match:
                 continue
