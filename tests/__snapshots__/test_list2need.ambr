@@ -59,7 +59,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 26,
+      'lineno': 7,
       'lineno_content': 32,
       'links': list([
       ]),
@@ -149,7 +149,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 32,
+      'lineno': 13,
       'lineno_content': 35,
       'links': list([
       ]),
@@ -186,6 +186,94 @@
       ]),
       'template': None,
       'title': 'Sub-Need on level 2',
+      'triggers': list([
+      ]),
+      'triggers_back': list([
+      ]),
+      'type': 'spec',
+      'type_color': '#FEDCD2',
+      'type_name': 'Specification',
+      'type_prefix': 'SP_',
+      'type_style': 'node',
+      'updated_at': None,
+      'url': None,
+      'url_postfix': None,
+      'user': None,
+    }),
+    'NEED-004': dict({
+      'arch': dict({
+      }),
+      'avatar': None,
+      'checks': list([
+      ]),
+      'checks_back': list([
+      ]),
+      'closed_at': None,
+      'collapse': False,
+      'completion': None,
+      'constraints': list([
+      ]),
+      'constraints_error': None,
+      'constraints_passed': True,
+      'constraints_results': dict({
+      }),
+      'content': '',
+      'created_at': None,
+      'docname': 'index',
+      'doctype': '.rst',
+      'duration': None,
+      'external_css': 'external_link',
+      'external_url': None,
+      'has_dead_links': False,
+      'has_forbidden_dead_links': False,
+      'hide': False,
+      'id': 'NEED-004',
+      'id_complete': 'NEED-004',
+      'id_parent': 'NEED-004',
+      'id_prefix': None,
+      'is_external': False,
+      'is_import': False,
+      'is_modified': False,
+      'is_need': True,
+      'is_part': False,
+      'jinja_content': False,
+      'layout': None,
+      'lineno': 19,
+      'lineno_content': 56,
+      'links': list([
+      ]),
+      'links_back': list([
+      ]),
+      'max_amount': None,
+      'max_content_lines': None,
+      'modifications': 0,
+      'params': None,
+      'parent_need': None,
+      'parent_needs': list([
+      ]),
+      'parent_needs_back': list([
+      ]),
+      'parts': dict({
+      }),
+      'post_content': None,
+      'post_template': None,
+      'pre_content': None,
+      'pre_template': None,
+      'prefix': None,
+      'query': None,
+      'section_name': 'TEST DOCUMENT LIST2NEED',
+      'sections': tuple(
+        'TEST DOCUMENT LIST2NEED',
+      ),
+      'service': None,
+      'signature': None,
+      'specific': None,
+      'status': None,
+      'style': None,
+      'tags': list([
+      ]),
+      'template': None,
+      'title': 'Spec from normal directive',
       'triggers': list([
       ]),
       'triggers_back': list([
@@ -238,7 +326,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 20,
+      'lineno': 1,
       'lineno_content': 24,
       'links': list([
       ]),
@@ -327,7 +415,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 27,
+      'lineno': 8,
       'lineno_content': 32,
       'links': list([
       ]),
@@ -419,7 +507,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 35,
+      'lineno': 16,
       'lineno_content': 39,
       'links': list([
         'NEED-1',
@@ -511,7 +599,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 42,
+      'lineno': 23,
       'lineno_content': 49,
       'links': list([
         'NEED-3',
@@ -601,7 +689,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 19,
+      'lineno': 1,
       'lineno_content': 23,
       'links': list([
       ]),
@@ -690,7 +778,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 25,
+      'lineno': 7,
       'lineno_content': 29,
       'links': list([
       ]),
@@ -779,7 +867,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 31,
+      'lineno': 13,
       'lineno_content': 34,
       'links': list([
       ]),
@@ -868,7 +956,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 21,
+      'lineno': 1,
       'lineno_content': 26,
       'links': list([
       ]),
@@ -960,7 +1048,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 29,
+      'lineno': 9,
       'lineno_content': 34,
       'links': list([
       ]),
@@ -1054,7 +1142,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 37,
+      'lineno': 17,
       'lineno_content': 42,
       'links': list([
         'NEED-W',
@@ -1148,7 +1236,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 45,
+      'lineno': 25,
       'lineno_content': 53,
       'links': list([
         'NEED-3',
@@ -1250,7 +1338,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 38,
+      'lineno': 19,
       'lineno_content': 42,
       'links': list([
       ]),
@@ -1343,7 +1431,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 45,
+      'lineno': 26,
       'lineno_content': 49,
       'links': list([
       ]),
@@ -1432,7 +1520,7 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 20,
+      'lineno': 1,
       'lineno_content': 23,
       'links': list([
       ]),

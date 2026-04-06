@@ -160,9 +160,11 @@ class NeedDirective(SphinxDirective):
                 self._log_warning(f"Invalid value for '{key}' option: {err}")
                 return []
 
+        source_path, source_lineno = self.state_machine.get_source_and_line(self.lineno)
+        docname = self.env.path2doc(source_path)
         source = NeedItemSourceDirective(
-            docname=self.env.docname,
-            lineno=self.lineno,
+            docname=source_path if docname is None else docname,
+            lineno=source_lineno,
             lineno_content=self.content_offset + 1,
         )
 
