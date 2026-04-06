@@ -113,9 +113,11 @@ class List2NeedDirective(SphinxDirective):
         # Retrieve tags defined at list level
         tags = self.options.get("tags", "")
 
+        _, content_first_line = self.state_machine.get_source_and_line(self.content_offset+1)
+
         list_needs = []
         # Storing the data in a sorted list
-        for content_line in self.content:
+        for content_lineno, content_line in enumerate(self.content):
             match = LINE_REGEX.search(content_line)
             if not match:
                 continue
@@ -171,6 +173,7 @@ class List2NeedDirective(SphinxDirective):
                     "content": content.lstrip(),
                     "level": level,
                     "options": {},
+                    "lineno": content_first_line + content_lineno
                 }
                 list_needs.append(need)
             else:
@@ -182,7 +185,6 @@ class List2NeedDirective(SphinxDirective):
                 )
 
         # Finally creating the rst code
-        overall_text = []
         for index, list_need in enumerate(list_needs):
             # Search for meta data in the complete title/content
             search_string = list_need["title"] + list_need["content"]
@@ -224,11 +226,10 @@ class List2NeedDirective(SphinxDirective):
             if presentation == "nested":
                 indented_text_list = ["   " * list_need["level"] + x for x in text_list]
                 text_list = indented_text_list
-            overall_text += text_list
 
-        self.state_machine.insert_input(
-            overall_text, self.state_machine.document.attributes["source"]
-        )
+            self.state_machine.insert_input(
+                text_list, self.state_machine.document.attributes["source"] + "\0%d" % list_need["lineno"]
+            )
 
         return []
 

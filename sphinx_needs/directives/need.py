@@ -161,6 +161,10 @@ class NeedDirective(SphinxDirective):
                 return []
 
         source_path, source_lineno = self.state_machine.get_source_and_line(self.lineno)
+        if '\0' in source_path:
+            # Retrieve line number encoded in source name
+            source_path, source_lineno = source_path.split('\0')
+            source_lineno = int(source_lineno)
         docname = self.env.path2doc(source_path)
         source = NeedItemSourceDirective(
             docname=source_path if docname is None else docname,
