@@ -276,11 +276,29 @@ class OneLineCommentStyle:
             needs_field_names.add(_field["name"])
         return errors
 
+    def check_fields_default_order(self) -> list[str]:
+        errors = []
+        seen_default = False
+        first_default_field = ""
+        for _field in self.needs_fields:
+            has_default = _field.get("default") is not None
+            if has_default and not seen_default:
+                seen_default = True
+                first_default_field = _field["name"]
+            elif not has_default and seen_default:
+                errors.append(
+                    f"Field '{_field['name']}' without a default follows "
+                    f"field '{first_default_field}' which has a default. "
+                    f"Fields without defaults must be defined before fields with defaults."
+                )
+        return errors
+
     def check_fields_configuration(self) -> list[str]:
         return (
             self.check_schema()
             + self.check_required_fields()
             + self.check_fields_mutually_exclusive()
+            + self.check_fields_default_order()
         )
 
     def get_cnt_required_fields(self) -> int:

@@ -152,6 +152,23 @@ def test_config_schema_validator_negative(analyse_config, result):
                 "Missing required fields: ['title', 'type']",
             ],
         ),
+        (
+            OneLineCommentStyle(
+                start_sequence="@need",
+                end_sequence="\n",
+                field_split_char=",",
+                needs_fields=[
+                    {"name": "id"},
+                    {"name": "implements", "type": "list[str]", "default": []},
+                    {"name": "type", "default": "impl"},
+                    {"name": "title"},  # required after optional
+                ],
+            ),
+            [
+                "Field 'title' without a default follows field 'implements' which has a default. "
+                "Fields without defaults must be defined before fields with defaults.",
+            ],
+        ),
     ],
 )
 def test_oneline_schema_validator_negative(oneline_config, result):
