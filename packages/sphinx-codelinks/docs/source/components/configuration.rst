@@ -178,6 +178,7 @@ Configures how **Sphinx-CodeLinks** discovers and processes source files within 
    exclude = []
    include = []
    gitignore = true
+   follow_links = false
    comment_type = "cpp"
 
 **Configuration fields:**
@@ -185,8 +186,9 @@ Configures how **Sphinx-CodeLinks** discovers and processes source files within 
 - ``src_dir`` - Root directory for source file discovery (relative to Sphinx project root or the directory where the TOML config file is located if given)
 - ``exclude`` - List of glob patterns to exclude from processing
 - ``include`` - List of glob patterns to include (if empty, includes all files)
-- ``gitignore`` - Whether to respect ``.gitignore`` rules when discovering files (Nested .gitignore is NOT supported yet)
-- ``comment_type`` - Comment style for the programming language ("cpp" and "python" are currently supported)
+- ``gitignore`` - Whether to respect ``.gitignore``, ``.ignore``, and related ignore files when discovering files
+- ``follow_links`` - Whether to follow symbolic links during file discovery
+- ``comment_type`` - Comment style for the programming language
 
 .. _`source_dir`:
 
@@ -251,7 +253,9 @@ Defines a list of glob patterns for files to explicitly include in discovery. Wh
        "include/**/*.hpp"
    ]
 
-**Priority:** The ``include`` option has the highest priority and overrides both ``exclude`` and ``gitignore`` settings.
+**Priority:** When ``include`` patterns are specified, only files matching those patterns
+are considered (this overrides ``gitignore`` exclusions for matched files).
+``exclude`` patterns are then applied to remove files from that set.
 
 **Common inclusion patterns:**
 
@@ -317,7 +321,9 @@ Specifies the comment syntax style used in the source code files. This determine
 gitignore
 ^^^^^^^^^
 
-Controls whether to respect ``.gitignore`` files when discovering source files. When enabled, files and directories listed in ``.gitignore`` will be automatically excluded from processing.
+Controls whether to respect ignore files when discovering source files.
+When enabled, files and directories matched by ignore rules will be automatically
+excluded from processing.
 
 **Type:** ``bool``
 **Default:** ``true``
@@ -329,10 +335,34 @@ Controls whether to respect ``.gitignore`` files when discovering source files. 
 
 **Behavior:**
 
-- ``true`` - Respect ``.gitignore`` rules (recommended)
-- ``false`` - Ignore ``.gitignore`` files and process all matching files
+When set to ``true`` (recommended), the following ignore sources are respected:
 
-.. important:: **Current Limitation:** This option only supports the root-level ``.gitignore`` file. Nested ``.gitignore`` files in subdirectories or parent directories are not currently processed.
+- ``.gitignore`` files (including nested ``.gitignore`` files in subdirectories)
+- ``.ignore`` files (same syntax as ``.gitignore``, useful for non-git projects)
+- ``.git/info/exclude``
+- Global gitignore (e.g. ``~/.config/git/ignore``)
+- Parent directory ignore files
+
+When set to ``false``, all ignore files are disregarded and every matching file is processed.
+
+follow_links
+^^^^^^^^^^^^
+
+Controls whether symbolic links are followed during file discovery.
+When disabled, symbolic links to directories are not traversed.
+
+**Type:** ``bool``
+**Default:** ``false``
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.source_discover]
+   follow_links = true
+
+**Behavior:**
+
+- ``false`` - Symbolic links to directories are skipped (default, safer)
+- ``true`` - Symbolic links are followed, discovering files inside linked directories
 
 For more information about the usage examples, see :ref:`source discover <discover>`.
 
@@ -355,6 +385,7 @@ Configures how **Sphinx-CodeLinks** analyse source files to extract markers from
    exclude = []
    include = []
    gitignore = true
+   follow_links = false
    comment_type = "cpp"
 
    [codelinks.projects.my_project.analyse]

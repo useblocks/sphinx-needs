@@ -30,6 +30,7 @@ class SourceDiscoverSectionConfigType(TypedDict, total=False):
     exclude: list[str]
     include: list[str]
     gitignore: bool
+    follow_links: bool
     comment_type: CommentType
 
 
@@ -40,6 +41,7 @@ class SourceDiscoverConfigType(TypedDict, total=False):
     exclude: list[str]
     include: list[str]
     gitignore: bool
+    follow_links: bool
     comment_type: CommentType
 
 
@@ -68,6 +70,9 @@ class SourceDiscoverConfig:
 
     gitignore: bool = field(default=True, metadata={"schema": {"type": "boolean"}})
     """Whether to respect .gitignore to exclude files."""
+
+    follow_links: bool = field(default=False, metadata={"schema": {"type": "boolean"}})
+    """Whether to follow symbolic links during file discovery."""
 
     comment_type: str = field(
         default="cpp",

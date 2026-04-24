@@ -26,6 +26,7 @@ Usage Examples
    include = []
    exclude = ["src/legacy/**", "**/*_test.cpp"]
    gitignore = true
+   follow_links = false
    comment_type = "cpp"
 
 **Python Project:**

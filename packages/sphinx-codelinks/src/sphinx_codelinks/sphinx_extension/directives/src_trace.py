@@ -213,6 +213,7 @@ class SourceTracingDirective(SphinxDirective):
                 gitignore=src_discover_config.gitignore,
                 include=src_discover_config.include,
                 exclude=src_discover_config.exclude,
+                follow_links=src_discover_config.follow_links,
                 comment_type=src_discover_config.comment_type,
             )
             source_discover = SourceDiscover(src_discover)

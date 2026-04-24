@@ -1,11 +1,8 @@
-from collections.abc import Callable
-import fnmatch
 import os
 from pathlib import Path
 
-from gitignore_parser import (  # type: ignore[import-untyped]  # library has no stub
-    parse_gitignore,
-)
+from ignore import WalkBuilder
+from ignore.overrides import OverrideBuilder
 
 from sphinx_codelinks.source_discover.config import (
     COMMENT_FILETYPE,
@@ -17,14 +14,6 @@ from sphinx_codelinks.source_discover.config import (
 class SourceDiscover:
     def __init__(self, src_discover_config: SourceDiscoverConfig):
         self.src_discover_config = src_discover_config
-        # Only gitignore at source root is considered.
-        # TODO: Support nested gitignore files
-        gitignore_path = self.src_discover_config.src_dir / ".gitignore"
-        self.gitignore_matcher: Callable[[str], bool] | None = (
-            parse_gitignore(gitignore_path)
-            if self.src_discover_config.gitignore and gitignore_path.exists()
-            else None
-        )
         # normalize the file types to lower case with leading dot
         self.file_types = {
             f".{ext}" for ext in COMMENT_FILETYPE[src_discover_config.comment_type]
@@ -32,36 +21,65 @@ class SourceDiscover:
 
         self.source_paths = self._discover()
 
+    def _build_overrides(self) -> OverrideBuilder | None:
+        """Build an OverrideBuilder for include/exclude patterns.
+
+        Include patterns are added as whitelist globs.
+        Exclude patterns are added as negated globs (prefixed with ``!``).
+        """
+        has_include = bool(self.src_discover_config.include)
+        has_exclude = bool(self.src_discover_config.exclude)
+
+        if not has_include and not has_exclude:
+            return None
+
+        ob = OverrideBuilder(self.src_discover_config.src_dir)
+
+        if has_include:
+            for pattern in self.src_discover_config.include:
+                ob.add(pattern)
+
+        if has_exclude:
+            for pattern in self.src_discover_config.exclude:
+                ob.add(f"!{pattern}")
+
+        return ob
+
     def _discover(self) -> list[Path]:
         """Discover source files recursively in the given directory."""
+        src_dir = self.src_discover_config.src_dir
+        if not src_dir.is_dir():
+            return []
+
+        gitignore = self.src_discover_config.gitignore
+
+        builder = WalkBuilder(src_dir)
+        # Replicate the Rust ignore crate's standard_filters(gitignore)
+        # followed by hidden(false), matching ubc_codelinks behaviour.
+        builder.ignore(gitignore)
+        builder.parents(gitignore)
+        builder.git_ignore(gitignore)
+        builder.git_global(gitignore)
+        builder.git_exclude(gitignore)
+        builder.hidden(False)
+        builder.follow_links(self.src_discover_config.follow_links)
+
+        override_builder = self._build_overrides()
+        if override_builder is not None:
+            builder.overrides(override_builder.build())
+
         discovered_files = []
-        for filepath in self.src_discover_config.src_dir.rglob("*"):
-            if filepath.is_file():
-                if self.file_types and filepath.suffix.lower() not in self.file_types:
-                    continue
-                rel_filepath = str(
-                    filepath.relative_to(self.src_discover_config.src_dir)
-                )
-                if self.src_discover_config.include and self._matches_any(
-                    rel_filepath, self.src_discover_config.include
-                ):
-                    # "includes" has the highest priority over "gitignore" and "excludes"
-                    discovered_files.append(filepath)
-                    continue
-                if self.gitignore_matcher and self.gitignore_matcher(
-                    str(filepath.absolute())
-                ):
-                    continue
-                if self.src_discover_config.exclude and self._matches_any(
-                    rel_filepath, self.src_discover_config.exclude
-                ):
-                    continue
-                discovered_files.append(filepath)
+        for entry in builder.build():
+            filepath = entry.path()
+            if not filepath.is_file():
+                continue
+            if self.file_types and filepath.suffix.lower() not in self.file_types:
+                continue
+            # resolve() produces canonical absolute paths; follow_links only
+            # controls whether the walker descends into symlinked directories
+            discovered_files.append(filepath.resolve())
+
         sorted_filepaths = sorted(
             discovered_files, key=lambda x: os.path.normcase(os.path.normpath(x))
         )
         return sorted_filepaths
-
-    def _matches_any(self, rel_filepath: str, patterns: list[str]) -> bool:
-        """Check if the given file path matches any of the given patterns."""
-        return any(fnmatch.fnmatch(rel_filepath, pattern) for pattern in patterns)

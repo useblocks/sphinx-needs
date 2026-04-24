@@ -19,7 +19,7 @@ Source Code Parsing
 
 - Introduce a configurable option to strip leading characters (e.g., ``*``) from commented RST blocks.
 - Enrich tagged scopes with additional metadata.
-- Enhance ``.gitignore`` handling to support nested ``.gitignore`` files.
+- ✅ Nested ``.gitignore`` files are now supported (implemented via ``ignore-python``).
 
 Defining Needs in Source Code
 -----------------------------

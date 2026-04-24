@@ -170,7 +170,7 @@ def analyse(  # noqa: PLR0912   # for CLI, so it needs the branches
 
 
 @app.command(no_args_is_help=True)
-def discover(
+def discover(  # noqa: PLR0913   # CLI command requires multiple parameters
     src_dir: Annotated[
         Path,
         typer.Argument(
@@ -203,9 +203,13 @@ def discover(
     gitignore: Annotated[
         bool,
         typer.Option(
-            help="Respect .gitignore in the given directory. Nested .gitignore Not supported"
+            help="Respect .gitignore files in the given directory and its parents"
         ),
     ] = True,
+    follow_links: Annotated[
+        bool,
+        typer.Option(help="Follow symbolic links during file discovery"),
+    ] = False,
     comment_type: Annotated[
         CommentType,
         typer.Option(
@@ -222,6 +226,7 @@ def discover(
         "exclude": exclude,
         "include": include,
         "gitignore": gitignore,
+        "follow_links": follow_links,
         "comment_type": comment_type,
     }
 
