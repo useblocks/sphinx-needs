@@ -67,24 +67,27 @@ All commands should be run via [`tox`](https://tox.wiki) for consistency. The pr
 
 ### Testing
 
+Test environments follow the pattern `py{VERSION}-sphinx{MAJOR}-needs{MAJOR}`,
+e.g. `py312-sphinx8-needs5`. Use `tox -a` to list all available combinations.
+
 ```bash
 # Run default test environment
 tox
 
-# Run tests for specific Python/Sphinx combination
-tox -e py312-sphinx8
+# Run tests for a specific Python/Sphinx/sphinx-needs combination
+tox -e py312-sphinx8-needs5
 
 # Run a specific test file
-tox -e py312-sphinx8 -- tests/test_analyse.py
+tox -e py312-sphinx8-needs5 -- tests/test_analyse.py
 
 # Run a specific test function
-tox -e py312-sphinx8 -- tests/test_analyse.py::test_function_name
+tox -e py312-sphinx8-needs5 -- tests/test_analyse.py::test_function_name
 
 # Run with coverage
-tox -e py312-sphinx8 -- --cov=sphinx_codelinks
+tox -e py312-sphinx8-needs5 -- --cov=sphinx_codelinks
 
 # Update snapshot test fixtures
-tox -e py312-sphinx8 -- --snapshot-update
+tox -e py312-sphinx8-needs5 -- --snapshot-update
 ```
 
 ### Documentation
@@ -385,10 +388,10 @@ The CLI uses Typer for command definitions:
 
 ## Debugging
 
-- Use `--pdb` with pytest to drop into debugger on failures: `tox -e py312-sphinx8 -- --pdb`
-- Use `-v` for verbose test output: `tox -e py312-sphinx8 -- -v`
+- Use `--pdb` with pytest to drop into debugger on failures: `tox -e py312-sphinx8-needs5 -- --pdb`
+- Use `-v` for verbose test output: `tox -e py312-sphinx8-needs5 -- -v`
 - Build docs with `-T` flag for full tracebacks: `tox -e docs-clean -- -T`
-- Set logging level in tests: `tox -e py312-sphinx8 -- --log-cli-level=DEBUG`
+- Set logging level in tests: `tox -e py312-sphinx8-needs5 -- --log-cli-level=DEBUG`
 - Use `debug.py` module functions for development debugging
 
 ## Common Patterns

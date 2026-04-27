@@ -31,10 +31,12 @@ jobs:
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
-      - uses: eifinger/setup-rye@v4
-      - run: rye sync
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      - run: python -m pip install tox tox-uv
       - name: Run documentation build
-        run: rye run docs
+        run: tox -e docs-clean
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

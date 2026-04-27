@@ -26,7 +26,7 @@ html_theme = "furo"
 extensions = ["sphinx_needs", "sphinx_codelinks"]
 
 # for needextend to work with remote url
-needs_extra_options = ["remote_url"]
+needs_fields = {"remote_url": {"default": ""}}
 
 needs_string_links = {
     "custom_name": {

@@ -3,6 +3,11 @@
 Changelog
 =========
 
+Upcoming
+--------
+
+- ⬆️ Support and test sphinx-needs v5-8
+
 .. _`release:1.2.0`:
 
 1.2.0

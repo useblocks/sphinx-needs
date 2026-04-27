@@ -22,13 +22,14 @@ Your PR should conform with the following rules:
 Install Dependencies
 --------------------
 
-``CodeLinks`` uses `rye <https://rye.astral.sh/>`_ to manage the repository.
+``CodeLinks`` uses `tox <https://tox.wiki/>`_ (with `tox-uv <https://github.com/tox-dev/tox-uv>`_) to manage development tasks.
 
-For development, use the following command to install Python dependencies into the virtual environment.
+Install tox with pip or uv:
 
 .. code-block:: bash
 
-   rye sync
+   pip install tox tox-uv
+   uv tool install tox --with tox-uv
 
 Formatting, Linting and Typing
 ------------------------------
@@ -44,7 +45,7 @@ The CI also checks typing. Use the following command locally to see if your code
 
 .. code-block:: bash
 
-   rye run mypy:all
+   tox -e mypy
 
 Build docs
 ----------
@@ -53,7 +54,7 @@ To build the documentation stored in ``docs``, run:
 
 .. code-block:: bash
 
-   rye run docs
+   tox -e docs-clean
 
 Test Cases
 ----------
@@ -62,7 +63,7 @@ To run test cases locally:
 
 .. code-block:: bash
 
-   rye test -a
+   tox -e py312-sphinx8
 
 Note some tests use `syrupy <https://github.com/tophat/syrupy>`__ to perform snapshot testing.
 These snapshots can be updated by running:

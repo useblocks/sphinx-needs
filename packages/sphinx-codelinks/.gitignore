@@ -1,3 +1,5 @@
+.DS_Store
+
 # python generated files
 .ruff_cache
 .pytest_cache
@@ -17,7 +19,7 @@ requirements-dev.lock
 # Sphinx build output
 **/_build
 
-# rye is the primary tool, uv is only used for on-the-fly setups
+# uv lock file
 uv.lock
 
 # coverage files
@@ -26,3 +28,5 @@ coverage.xml
 invalid_objs.json
 
 .tox
+
+output/

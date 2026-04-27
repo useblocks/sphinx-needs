@@ -17,7 +17,7 @@ dependencies = [
   "click < 8.2",                # click 8.2.* produces empty errors if no args are given
   "jsonschema",
   "sphinx>=7.4,<9",
-  "sphinx-needs>=4.2.0",        # unconstrained versions, to be pinned by user or Sphinx
+  "sphinx-needs>=5,<9",
   "jinja2",
   "pygments",
   "docutils",                   # constrained by user or Sphinx
@@ -66,63 +66,8 @@ mypy = [
 ruff = ["ruff>=0.8.0"]
 build = ["simple-build>=0.0.2", "shiv>=1.0.8"]
 
-[tool.rye]
-managed = true
-dev-dependencies = [
-  "types-docutils",
-  "types-Pygments",
-  "syrupy>=4.9.1",
-  "furo>=2024.5.6",
-  "moto ~= 5.0",
-  "mypy>=1.12.1",
-  "myst-parser>=4.0.0",
-  "pydantic ~= 2.9",
-  "pip-licenses>=5.0.0",
-  "psutil>=7.0.0",
-  "pytest-cov>=5.0.0",
-  "pytest>=8.2.2",
-  "simple-build>=0.0.2",
-  "sphinx-design>=0.6.1",
-  "types-psutil>=7.0.0.20250218",
-  "uv>=0.5.5",
-  "pytest-docker>=3.1.2",
-  "shiv>=1.0.8",
-  "insta-science>=0.2.1",
-  "types-jsonschema>=4.23.0.20241208",
-  "toml>=0.10.2",
-  "sphinx-code-tabs>=0.5.5",
-  "sphinxcontrib-typer>=0.5.1",
-  "sphinxcontrib-video>=0.4.1",
-]
-
 [project.scripts]
 codelinks = "sphinx_codelinks.cmd:app"
-
-[tool.rye.scripts]
-# linting and formatting
-"mypy:all" = "mypy ."
-"rye:lint" = "rye lint"
-"rye:format" = "rye format"
-"check" = { chain = ["rye:format", "rye:lint", "mypy:all"] }
-# docs html
-"docs:rm" = "rm -rf docs/_build/html"
-"docs" = "sphinx-build -nW --keep-going -b html -T -c docs docs/source docs/_build/html"
-"docs:clean" = { chain = ["docs:rm", "docs"] }
-# needextend demo
-"analyse" = "codelinks analyse tests/data/configs/minimum_config.toml"
-"analyse:rm" = "rm -rf output/marked_content.json"
-"write" = "codelinks write rst output/marked_content.json --outpath tests/data/needextend_demo/needextend.rst"
-"write:rm" = "rm -rf tests/data/needextend_demo/needextend.rst"
-"demo:rm" = "rm -rf tests/data/needextend_demo/_build"
-"demo:build" = "sphinx-build -nW --keep-going -b html -T -c tests/data/needextend_demo tests/data/needextend_demo tests/data/needextend_demo/_build/html"
-"demo:clean" = { chain = [
-  "demo:rm",
-  "analyse:rm",
-  "write:rm",
-  "analyse",
-  "write",
-  "demo:build",
-] }
 
 [tool.ruff.lint]
 extend-select = [
@@ -161,15 +106,6 @@ force-sort-within-sections = true
   "ARG005",  # unused-lambda-argument - monkeypatches
   "PLR2004", # magic-value-comparison - valueable for tests
   "S101",    # assert - needed for tests
-]
-"**/build_hooks_*/**" = [
-  "S607", # start-process-with-partial-path - pyarmor call in rye context
-  "S603", # subprocess-without-shell-equals-true - pyarmor call
-]
-"scripts/*.py" = [
-  "T201", # print - used for output
-  "S607", # start-process-with-partial-path - pyarmor call in rye context
-  "S603", # subprocess-without-shell-equals-true - build scripts
 ]
 "src/sphinx_codelinks/sphinx_extension/debug.py" = [
   "T201",  # print - used for output

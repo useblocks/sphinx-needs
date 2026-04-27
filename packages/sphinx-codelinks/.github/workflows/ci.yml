@@ -37,26 +37,51 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup_rye
-      - run: rye run mypy:all
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      - run: python -m pip install tox tox-uv
+      - run: tox -e mypy
 
   pytest:
-    name: Pytest (${{ matrix.os }})
+    name: "Pytest: ${{ matrix.tox-env }} (${{ matrix.os }})"
     strategy:
       fail-fast: false
       matrix:
         include:
+          # minimal versions
           - os: ubuntu-latest
-          - os: ubuntu-24.04-arm
+            python: "3.12"
+            tox-env: py312-sphinx7-needs5
+          # maximal versions
+          - os: ubuntu-latest
+            python: "3.14"
+            tox-env: py314-sphinx8-needs8
+          # minimal version on Windows
           - os: windows-latest
+            python: "3.14"
+            tox-env: py312-sphinx7-needs5
+          # maximal versions on other OSes
+          - os: ubuntu-24.04-arm
+            python: "3.14"
+            tox-env: py314-sphinx8-needs8
+          - os: windows-latest
+            python: "3.14"
+            tox-env: py314-sphinx8-needs8
           - os: macos-latest
+            python: "3.14"
+            tox-env: py314-sphinx8-needs8
 
-    runs-on: ["${{ matrix.os }}"]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup_rye
-      - run: rye test -a
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ matrix.python }}"
+          allow-prereleases: true
+      - run: python -m pip install tox tox-uv
+      - run: tox -e "${{ matrix.tox-env }}"
 
   docs:
     name: Documentation build
@@ -64,9 +89,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup_rye
-      - name: Run documentation build
-        run: rye run docs
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      - run: python -m pip install tox tox-uv
+      - run: tox -e docs-clean
 
   all_good:
     # This job does nothing and is only used for the branch protection
