@@ -499,6 +499,11 @@ def resolve_links(
                 message = f"Need '{need.id}' has unknown outgoing link '{need_link.to_filter_string()}' in field '{link_type}'"
                 _emit_link_warning(need, message, "link_outgoing")
 
+    # Sort link lists alphabetically so that outputs (needs.json, HTML) are
+    # deterministic and reproducible, regardless of needs/external_needs load order.
+    for need in needs.values():
+        need.sort_links()
+
 
 def _emit_link_warning(need: NeedItem, message: str, subtype: WarningSubTypes) -> None:
     """Emit a warning for a link issue, using the appropriate location."""

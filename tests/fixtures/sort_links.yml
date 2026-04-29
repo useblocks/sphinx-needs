@@ -1,0 +1,133 @@
+alphabetical_outgoing:
+  conf: |
+    extensions = ["sphinx_needs"]
+    version = "1.0"
+    needs_build_json = True
+    needs_builder_filter = "True"
+  rst: |
+    Sorted Links Test
+    =================
+
+    .. req:: REQ A
+        :id: REQ_A
+
+    .. req:: REQ B
+        :id: REQ_B
+
+    .. req:: REQ C
+        :id: REQ_C
+
+    .. spec:: SPEC 1
+        :id: SPEC_1
+        :links: REQ_C, REQ_A, REQ_B
+
+natural_outgoing:
+  conf: |
+    extensions = ["sphinx_needs"]
+    version = "1.0"
+    needs_build_json = True
+    needs_builder_filter = "True"
+  rst: |
+    Natural Sort Test
+    =================
+
+    .. req:: REQ 1
+        :id: REQ_1
+
+    .. req:: REQ 2
+        :id: REQ_2
+
+    .. req:: REQ 9
+        :id: REQ_9
+
+    .. req:: REQ 10
+        :id: REQ_10
+
+    .. req:: REQ 11
+        :id: REQ_11
+
+    .. req:: REQ 100
+        :id: REQ_100
+
+    .. spec:: SPEC mixed
+        :id: SPEC_1
+        :links: REQ_100, REQ_2, REQ_11, REQ_1, REQ_10, REQ_9
+
+mixed_alphanumeric:
+  conf: |
+    extensions = ["sphinx_needs"]
+    version = "1.0"
+    needs_build_json = True
+    needs_builder_filter = "True"
+  rst: |
+    Mixed Alphanumeric Sort Test
+    ============================
+
+    .. req:: REQ A1
+        :id: REQ_A1
+
+    .. req:: REQ A2
+        :id: REQ_A2
+
+    .. req:: REQ A10
+        :id: REQ_A10
+
+    .. req:: REQ B1
+        :id: REQ_B1
+
+    .. spec:: SPEC mixed
+        :id: SPEC_1
+        :links: REQ_B1, REQ_A10, REQ_A1, REQ_A2
+
+backlinks_sorted:
+  conf: |
+    extensions = ["sphinx_needs"]
+    version = "1.0"
+    needs_build_json = True
+    needs_builder_filter = "True"
+  rst: |
+    Sorted Backlinks Test
+    =====================
+
+    .. req:: REQ target
+        :id: REQ_TARGET
+
+    .. spec:: SPEC 10
+        :id: SPEC_10
+        :links: REQ_TARGET
+
+    .. spec:: SPEC 2
+        :id: SPEC_2
+        :links: REQ_TARGET
+
+    .. spec:: SPEC 1
+        :id: SPEC_1
+        :links: REQ_TARGET
+
+custom_link_types:
+  conf: |
+    extensions = ["sphinx_needs"]
+    version = "1.0"
+    needs_build_json = True
+    needs_builder_filter = "True"
+    needs_extra_links = [
+        {"option": "implements", "incoming": "implemented by", "outgoing": "implements"},
+        {"option": "derives", "incoming": "derived by", "outgoing": "derives from"},
+    ]
+  rst: |
+    Custom Link Types Test
+    ======================
+
+    .. req:: REQ A
+        :id: REQ_A
+
+    .. req:: REQ B
+        :id: REQ_B
+
+    .. req:: REQ C
+        :id: REQ_C
+
+    .. spec:: SPEC 1
+        :id: SPEC_1
+        :implements: REQ_C, REQ_A, REQ_B
+        :derives: REQ_B, REQ_A

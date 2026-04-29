@@ -239,6 +239,10 @@ Bug fixes
 .........
 
 - 🐛 Fix linkcheck CI job warnings (:pr:`1667`)
+- 🐛 Sort need link and backlink lists in ``needs.json`` and HTML output using
+  natural ordering (e.g. ``REQ_2`` < ``REQ_9`` < ``REQ_10``), so build outputs
+  are reproducible regardless of need load order (e.g. when using
+  :ref:`needs_external_needs`) (:issue:`1371`)
 
 Documentation
 .............

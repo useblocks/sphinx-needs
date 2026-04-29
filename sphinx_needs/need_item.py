@@ -9,6 +9,7 @@
 # For NeedItem, we allow mutability, but only for values, i.e. it should not allow adding or removing keys.
 from __future__ import annotations
 
+import re
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import chain
@@ -369,6 +370,28 @@ class NeedLink:
         open_b = "[" * depth
         close_b = "]" * depth
         return f"{base}{open_b}{self.condition}{close_b}"
+
+
+_NATURAL_SORT_RE = re.compile(r"(\d+)")
+
+
+def _natural_sort_key(value: str) -> list[str | int]:
+    """Build a sort key for natural ordering: digit runs are compared as ints.
+
+    For example, ``REQ_2`` < ``REQ_9`` < ``REQ_10`` (instead of the default
+    lexicographic ``REQ_10`` < ``REQ_2`` < ``REQ_9``). The result alternates
+    between str and int, always starting with a str, so mixed-type comparisons
+    are well-defined.
+    """
+    return [
+        int(part) if i % 2 else part
+        for i, part in enumerate(_NATURAL_SORT_RE.split(value))
+    ]
+
+
+def _link_natural_sort_key(link: NeedLink) -> list[str | int]:
+    """Natural sort key for a :class:`NeedLink`, based on its filter string."""
+    return _natural_sort_key(link.to_filter_string())
 
 
 class NeedItem:
@@ -882,6 +905,23 @@ class NeedItem:
         for part in self._parts.values():
             for k in part.backlinks:
                 part.backlinks[k] = []
+
+    def sort_links(self) -> None:
+        """Sort all link and backlink lists in place using natural ordering.
+
+        Sorts outgoing links, backlinks, and part backlinks by the link's
+        string representation, treating embedded digit sequences as integers
+        so that e.g. ``REQ_2`` < ``REQ_9`` < ``REQ_10``. This makes the order
+        of linked need IDs deterministic, regardless of the order in which
+        they were added or the iteration order of the needs collection.
+        """
+        for value in self._links.values():
+            value.sort(key=_link_natural_sort_key)
+        for value in self._backlinks.values():
+            value.sort(key=_link_natural_sort_key)
+        for part in self._parts.values():
+            for value in part.backlinks.values():
+                value.sort(key=_link_natural_sort_key)
 
     def add_backlink(self, link_type: str, backlink: str | NeedLink) -> None:
         """Add a backlink to the need."""

@@ -21,8 +21,8 @@
               'SPEC_3',
             ]),
             'link2': list([
-              'SPEC_2',
               'SPEC_1',
+              'SPEC_2',
             ]),
             'link2_back': list([
               'SPEC_1',

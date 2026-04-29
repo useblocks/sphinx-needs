@@ -65,15 +65,15 @@
             'id': 'REQ_001',
             'lineno': 7,
             'links_back': list([
-              'EXT_COND_PASS',
               'EXT_COND_NONE',
+              'EXT_COND_PASS',
+              'IMP_COND_NONE',
+              'IMP_COND_PASS',
               'SPEC_001',
               'SPEC_003',
               'SPEC_004',
               'SPEC_005',
               'SPEC_006',
-              'IMP_COND_PASS',
-              'IMP_COND_NONE',
             ]),
             'section_name': 'Requirements',
             'sections': list([
@@ -92,8 +92,8 @@
             'lineno': 11,
             'links_back': list([
               'EXT_COND_FAIL',
-              'SPEC_002',
               'IMP_COND_FAIL',
+              'SPEC_002',
             ]),
             'section_name': 'Requirements',
             'sections': list([
@@ -836,15 +836,15 @@
             'id': 'REQ_001',
             'lineno': 7,
             'links_back': list([
-              'EXT_COND_PASS',
               'EXT_COND_NONE',
+              'EXT_COND_PASS',
+              'IMP_COND_NONE',
+              'IMP_COND_PASS',
               'SPEC_001',
               'SPEC_003',
               'SPEC_004',
               'SPEC_005',
               'SPEC_006',
-              'IMP_COND_PASS',
-              'IMP_COND_NONE',
             ]),
             'section_name': 'Requirements',
             'sections': list([
@@ -863,8 +863,8 @@
             'lineno': 11,
             'links_back': list([
               'EXT_COND_FAIL',
-              'SPEC_002',
               'IMP_COND_FAIL',
+              'SPEC_002',
             ]),
             'section_name': 'Requirements',
             'sections': list([
