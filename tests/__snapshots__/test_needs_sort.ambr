@@ -273,3 +273,119 @@
     ]),
   })
 # ---
+# name: test_links_sort[reproducible_json_disabled]
+  dict({
+    'REQ_A': dict({
+      'links_back': list([
+        'SPEC_2',
+        'SPEC_10',
+      ]),
+    }),
+    'REQ_B': dict({
+      'links_back': list([
+        'SPEC_2',
+        'SPEC_10',
+      ]),
+    }),
+    'REQ_C': dict({
+      'links_back': list([
+        'SPEC_10',
+      ]),
+    }),
+    'SPEC_10': dict({
+      'links': list([
+        'REQ_A',
+        'REQ_B',
+        'REQ_C',
+      ]),
+    }),
+    'SPEC_2': dict({
+      'links': list([
+        'REQ_A',
+        'REQ_B',
+      ]),
+    }),
+  })
+# ---
+# name: test_links_sort[reproducible_json_disabled].1
+  dict({
+    'REQ_A': list([
+      'SPEC_2',
+      'SPEC_10',
+    ]),
+    'REQ_B': list([
+      'SPEC_2',
+      'SPEC_10',
+    ]),
+    'REQ_C': list([
+      'SPEC_10',
+    ]),
+    'SPEC_10': list([
+      'REQ_A',
+      'REQ_B',
+      'REQ_C',
+    ]),
+    'SPEC_2': list([
+      'REQ_A',
+      'REQ_B',
+    ]),
+  })
+# ---
+# name: test_links_sort[reproducible_json_enabled]
+  dict({
+    'REQ_A': dict({
+      'links_back': list([
+        'SPEC_2',
+        'SPEC_10',
+      ]),
+    }),
+    'REQ_B': dict({
+      'links_back': list([
+        'SPEC_2',
+        'SPEC_10',
+      ]),
+    }),
+    'REQ_C': dict({
+      'links_back': list([
+        'SPEC_10',
+      ]),
+    }),
+    'SPEC_10': dict({
+      'links': list([
+        'REQ_A',
+        'REQ_B',
+        'REQ_C',
+      ]),
+    }),
+    'SPEC_2': dict({
+      'links': list([
+        'REQ_A',
+        'REQ_B',
+      ]),
+    }),
+  })
+# ---
+# name: test_links_sort[reproducible_json_enabled].1
+  dict({
+    'REQ_A': list([
+      'SPEC_2',
+      'SPEC_10',
+    ]),
+    'REQ_B': list([
+      'SPEC_2',
+      'SPEC_10',
+    ]),
+    'REQ_C': list([
+      'SPEC_10',
+    ]),
+    'SPEC_10': list([
+      'REQ_A',
+      'REQ_B',
+      'REQ_C',
+    ]),
+    'SPEC_2': list([
+      'REQ_A',
+      'REQ_B',
+    ]),
+  })
+# ---

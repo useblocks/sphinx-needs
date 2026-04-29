@@ -89,8 +89,10 @@ def test_links_sort(
 ) -> None:
     """Need links and backlinks are sorted in both needs.json and HTML output.
 
-    Sorting is unconditional (no ``needs_reproducible_json`` flag set in the
-    fixtures) and uses natural ordering so embedded numbers compare as ints.
+    Sorting uses natural ordering so embedded numbers compare as ints, and is
+    unconditional with respect to ``needs_reproducible_json`` — see the
+    ``reproducible_json_enabled`` / ``reproducible_json_disabled`` fixtures
+    whose link snapshots must be byte-identical.
     """
     write_fixture_files(tmpdir, content)
     app: SphinxTestApp = make_app(srcdir=Path(tmpdir), freshenv=True)

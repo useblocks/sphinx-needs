@@ -131,3 +131,62 @@ custom_link_types:
         :id: SPEC_1
         :implements: REQ_C, REQ_A, REQ_B
         :derives: REQ_B, REQ_A
+
+# The following two cases share identical RST content and only differ in
+# ``needs_reproducible_json``: their snapshots must therefore be identical,
+# proving that link sorting is unconditional with respect to this flag.
+reproducible_json_enabled:
+  conf: |
+    extensions = ["sphinx_needs"]
+    version = "1.0"
+    needs_build_json = True
+    needs_builder_filter = "True"
+    needs_reproducible_json = True
+  rst: |
+    Reproducible JSON Toggle Test
+    =============================
+
+    .. req:: REQ A
+        :id: REQ_A
+
+    .. req:: REQ B
+        :id: REQ_B
+
+    .. req:: REQ C
+        :id: REQ_C
+
+    .. spec:: SPEC 10
+        :id: SPEC_10
+        :links: REQ_C, REQ_A, REQ_B
+
+    .. spec:: SPEC 2
+        :id: SPEC_2
+        :links: REQ_B, REQ_A
+
+reproducible_json_disabled:
+  conf: |
+    extensions = ["sphinx_needs"]
+    version = "1.0"
+    needs_build_json = True
+    needs_builder_filter = "True"
+    needs_reproducible_json = False
+  rst: |
+    Reproducible JSON Toggle Test
+    =============================
+
+    .. req:: REQ A
+        :id: REQ_A
+
+    .. req:: REQ B
+        :id: REQ_B
+
+    .. req:: REQ C
+        :id: REQ_C
+
+    .. spec:: SPEC 10
+        :id: SPEC_10
+        :links: REQ_C, REQ_A, REQ_B
+
+    .. spec:: SPEC 2
+        :id: SPEC_2
+        :links: REQ_B, REQ_A
