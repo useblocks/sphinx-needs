@@ -16,7 +16,7 @@ dependencies = [
   "typer>=0.16.0",
   "click < 8.2",                # click 8.2.* produces empty errors if no args are given
   "jsonschema",
-  "sphinx>=7.4,<9",
+  "sphinx>=7.4,<10",
   "sphinx-needs>=5,<9",
   "jinja2",
   "pygments",

@@ -57,6 +57,14 @@ jobs:
           - os: ubuntu-latest
             python: "3.14"
             tox-env: py314-sphinx8-needs8
+          # Sphinx 9 with lowest compatible sphinx-needs
+          - os: ubuntu-latest
+            python: "3.12"
+            tox-env: py312-sphinx9-needs7
+          # Sphinx 9 with highest sphinx-needs
+          - os: ubuntu-latest
+            python: "3.14"
+            tox-env: py314-sphinx9-needs8
           # minimal version on Windows
           - os: windows-latest
             python: "3.14"
