@@ -33,8 +33,10 @@ needs_types = [
     },
 ]
 
-needs_role_need_template = "" \
-    "{% if is_need %}[NEED] {% endif -%}" \
-    "{% if is_part %}[NEEDPART]{% endif -%}" \
-    "[{{id}}] [{{id_complete}}] [{{id_parent}}] [{{id_part}}] " \
+needs_role_need_template = (
+    ""
+    "{% if is_need %}[NEED] {% endif -%}"
+    "{% if is_part %}[NEEDPART]{% endif -%}"
+    "[{{id}}] [{{id_complete}}] [{{id_parent}}] [{{id_part}}] "
     "[{{ type|upper }}] [{{ id }}] {{ title }} ({{ status }}) {{ type_name }}/{{ type }} - {{ tags }} - {{ links }} - {{ links_back }} - {{ content }}"
+)

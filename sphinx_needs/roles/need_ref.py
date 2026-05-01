@@ -71,7 +71,9 @@ def process_need_ref(
 
     role_template = None
     try:
-        role_template = compile_template(needs_config.role_need_template, autoescape=False)
+        role_template = compile_template(
+            needs_config.role_need_template, autoescape=False
+        )
     except Exception as exc:
         log_warning(
             log,
@@ -180,7 +182,9 @@ def process_need_ref(
                     link_text = f"{dict_need['title']} ({dict_need['id']})"
                 else:
                     try:
-                        link_text = role_template.render({"need": dict_need, **dict_need})
+                        link_text = role_template.render(
+                            {"need": dict_need, **dict_need}
+                        )
                     except Exception as exc:
                         log_warning(
                             log,
