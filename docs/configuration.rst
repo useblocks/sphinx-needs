@@ -1223,7 +1223,7 @@ By default a referenced need is described by the following string:
 
 .. code-block:: jinja
 
-   {title} ({id})
+   {{ title }} ({{ id }})
 
 By using ``needs_role_need_template`` this representation can be easily adjusted to own requirements.
 
@@ -1231,16 +1231,23 @@ Here are some ideas, how it could be used inside the **conf.py** file:
 
 .. code-block:: python
 
-   needs_role_need_template = "[{id}]: {title}"
-   needs_role_need_template = "-{id}-"
-   needs_role_need_template = "{type}: {title} ({status})"
-   needs_role_need_template = "{title} ({tags})"
-   needs_role_need_template = "{title:*^20s} - {content:.30}"
-   needs_role_need_template = "[{id}] {title} ({status}) {type_name}/{type} - {tags} - {links} - {links_back} - {content}"
+   needs_role_need_template = "[{{ id }}]: {{ title }}"
+   needs_role_need_template = "-{{ id }}-"
+   needs_role_need_template = "{{ type }}: {{ title }} ({{ status }})"
+   needs_role_need_template = "{{ title }} ({{ tags }})"
+   needs_role_need_template = "[{{ id }}] {{ title }} ({{ status }}) {{ type_name }}/{{ type }} - {{ tags }} - {{ links }} - {{ links_back }} - {{ content }}"
+   needs_role_need_template = "{% if type == 'spec' %}[SPEC] {{ title }}{% else %}[{{ type|upper }}] {{ title }}{% endif %}"
 
-``needs_role_need_template`` must be a string, which supports the following placeholders:
+   # Multi-line template, important it the '-' in the jinja template '-}}':
+   needs_role_need_template = "" \
+       "{% if type == 'spec' %}[SPEC] {{ title -}}" \
+       "{% else %}[{{ type|upper }}] {{ title }}{% endif %}"
 
-* id
+``needs_role_need_template`` must be a Jinja string, which supports the following variables:
+
+* id or id_complete
+* id_parent
+* id_part
 * type (short version)
 * type_name (long, human readable version)
 * title
@@ -1249,9 +1256,13 @@ Here are some ideas, how it could be used inside the **conf.py** file:
 * links, joined by ";"
 * links_back, joined by ";"
 * content
+* is_need
+* is_part
 
-All options of Python's `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ function are supported.
-Please see https://pyformat.info/ for more information.
+To access the same values via an object, use ``need`` (for example ``{{ need.type }}``).
+
+Jinja filters and control structures are supported.
+Please see https://jinja.palletsprojects.com/ for syntax and features.
 
 RST-attributes like ``**bold**`` are **not** supported.
 
@@ -1753,7 +1764,7 @@ keys:
 :css_class: A class name as string, which gets set in link representations like :ref:`needtable`.
   The related CSS class definition must be done by the user, e.g. by :ref:`own_css`.
   (*optional*) (*default*: ``external_link``)
-:allow_type_coercion: 
+:allow_type_coercion:
   Allows to enable or disable type coercion of fields for each need, and parsing of dynamic functions.
   For example if the ``tags`` need field is provided as a string like ``"tag1,tag2,[[func()]]"``, it will be parsed only if this option is set to ``True``,
   otherwise will fail.

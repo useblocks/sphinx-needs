@@ -1,5 +1,7 @@
 extensions = ["sphinx_needs"]
 
+needs_build_json = True
+
 needs_types = [
     {
         "directive": "story",
@@ -31,4 +33,8 @@ needs_types = [
     },
 ]
 
-needs_role_need_template = "[{id}] {title} ({status}) {type_name}/{type} - {tags} - {links} - {links_back} - {content}"
+needs_role_need_template = "" \
+    "{% if is_need %}[NEED] {% endif -%}" \
+    "{% if is_part %}[NEEDPART]{% endif -%}" \
+    "[{{id}}] [{{id_complete}}] [{{id_parent}}] [{{id_part}}] " \
+    "[{{ type|upper }}] [{{ id }}] {{ title }} ({{ status }}) {{ type_name }}/{{ type }} - {{ tags }} - {{ links }} - {{ links_back }} - {{ content }}"

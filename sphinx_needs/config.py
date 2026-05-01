@@ -71,7 +71,7 @@ class NewFieldParams:
     """
     default: None | Any = None
     """Default value for the field.
-    
+
     Used if the field has not been specifically set, and no predicate matches.
     """
 
@@ -257,8 +257,8 @@ GlobalOptionsType = dict[str, Any]
 Values can be:
 
 - a tuple: ``(value, filter_string)``, where the default is only applied if the filter_string is fulfilled
-- a tuple: ``(value, filter_string, alternative default)``, 
-    where the default is applied if the filter_string is fulfilled, 
+- a tuple: ``(value, filter_string, alternative default)``,
+    where the default is applied if the filter_string is fulfilled,
     otherwise the alternative default is used
 - a list of the tuples above
 - otherwise, always set as the given value
@@ -291,7 +291,7 @@ class NeedLinksConfig(TypedDict, total=False):
     schema: NotRequired[LinkSchemaType]
     """
     A JSON schema for the link option.
-    
+
     If given, the schema will apply to all needs that use this link option.
     The schema is applied locally on unresolved links, i.e. on the list of string ids.
     For more granular control and graph traversal, use the `needs_schema_definitions` configuration.
@@ -338,7 +338,7 @@ class NeedFields(TypedDict):
     schema: NotRequired[FieldSchemaTypes]
     """
     A JSON schema definition for the field.
-    
+
     If given, the schema will apply to all needs that use this option.
     For more granular control, use the `needs_schema_definitions` configuration.
     """
@@ -636,7 +636,8 @@ class NeedsSphinxConfig:
     )
     """Default style for the needtable."""
     role_need_template: str = field(
-        default="{title} ({id})", metadata={"rebuild": "html", "types": (str,)}
+        default="{{ title }} ({{ id }})",
+        metadata={"rebuild": "html", "types": (str,)},
     )
     """Template for the need role output."""
     role_need_max_title_length: int = field(

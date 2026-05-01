@@ -15,7 +15,9 @@ The role ``:need:`` will add title, id and a link to the need.
 
 We use it to reference an existing need, without the need to keep title and link location manually in sync.
 
-With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra fields <needs_fields>`. 
+With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra fields <needs_fields>`.
+
+The possible variables are listed in the configuration documentation for :ref:`needs_role_need_template`.
 
 .. need-example::
 
@@ -34,10 +36,10 @@ With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra fields <need
    You can customize the string representation by using the
    configuration parameters :ref:`needs_role_need_template` and
    :ref:`needs_role_need_max_title_length`.
-   If we find a ``[[`` in the customized string, we handle it 
-   according to Python's ``{`` `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ 
-   function.
-   Please see https://pyformat.info/ for more information.
+   ``needs_role_need_template`` is rendered using Jinja syntax.
+   The explicit role text variant ``:need:`[[...]] <ID>``` is also
+   rendered as Jinja by internally converting ``[[``/``]]`` to
+   ``{{``/``}}``.
    RST-attributes like ``**bold**`` are **not** supported.
 
 .. warning::

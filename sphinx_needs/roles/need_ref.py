@@ -8,6 +8,7 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.util.nodes import make_refnode
 
+from sphinx_needs._jinja import compile_template, render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
@@ -67,6 +68,18 @@ def process_need_ref(
     env = app.env
     needs_config = NeedsSphinxConfig(env.config)
     all_needs = SphinxNeedsData(env).get_needs_view()
+
+    role_template = None
+    try:
+        role_template = compile_template(needs_config.role_need_template, autoescape=False)
+    except Exception as exc:
+        log_warning(
+            log,
+            f"could not compile needs_role_need_template as Jinja template: {exc}",
+            "link_text",
+            location=None,
+        )
+
     # for node_need_ref in doctree.findall(NeedRef):
     for node_need_ref in found_nodes:
         # Let's create a dummy node, for the case we will not be able to create a real reference
@@ -87,6 +100,7 @@ def process_need_ref(
         need_id_full = node_need_ref["reftarget"]
         need_id_main = need_link.id
         need_id_part = need_link.part
+        need_id_complete = need_link.to_link_string()
 
         if need_id_main not in all_needs:
             log_warning(
@@ -112,6 +126,16 @@ def process_need_ref(
                 target_need
             )  # Transform a dict in a dict of {str, str}
 
+            if need_id_part:
+                dict_need["id_complete"] = need_id_complete
+                dict_need["id_part"] = need_id_part
+                dict_need["is_need"] = False
+                dict_need["is_part"] = True
+            else:
+                dict_need["id_part"] = ""
+                dict_need["is_need"] = True
+                dict_need["is_part"] = False
+
             # We set the id to the complete id maintained in node_need_ref["reftarget"]
             dict_need["id"] = need_id_full
 
@@ -133,14 +157,18 @@ def process_need_ref(
 
             link_text = ""
             if ref_name and prefix in ref_name and postfix in ref_name:
-                # if ref_name is set and has prefix to process, we will do so.
-                ref_name = ref_name.replace(prefix, "{").replace(postfix, "}")
+                # Keep the user-facing [[...]] syntax, but render using Jinja.
+                ref_name = ref_name.replace(prefix, "{{").replace(postfix, "}}")
                 try:
-                    link_text = ref_name.format(**dict_need)
-                except KeyError as e:
+                    link_text = render_template_string(
+                        ref_name,
+                        {"need": dict_need, **dict_need},
+                        autoescape=False,
+                    )
+                except Exception as exc:
                     log_warning(
                         log,
-                        f"option placeholder {e} for need {node_need_ref['reftarget']} not found",
+                        f"invalid inline need role template for need {node_need_ref['reftarget']}: {exc}",
                         "link_text",
                         location=node_need_ref,
                     )
@@ -148,15 +176,19 @@ def process_need_ref(
                 if ref_name:
                     # If ref_name differs from the need id, we treat the "ref_name content" as title.
                     dict_need["title"] = ref_name
-                try:
-                    link_text = needs_config.role_need_template.format(**dict_need)
-                except KeyError as e:
-                    log_warning(
-                        log,
-                        f"the config parameter needs_role_need_template uses unsupported placeholders: {e} ",
-                        "link_text",
-                        location=node_need_ref,
-                    )
+                if role_template is None:
+                    link_text = f"{dict_need['title']} ({dict_need['id']})"
+                else:
+                    try:
+                        link_text = role_template.render({"need": dict_need, **dict_need})
+                    except Exception as exc:
+                        log_warning(
+                            log,
+                            f"the config parameter needs_role_need_template uses invalid Jinja syntax or variables: {exc}",
+                            "link_text",
+                            location=node_need_ref,
+                        )
+                        link_text = f"{dict_need['title']} ({dict_need['id']})"
 
             node_need_ref[0].children[0] = nodes.Text(link_text)  # type: ignore[index]
 
