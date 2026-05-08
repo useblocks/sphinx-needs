@@ -18,6 +18,9 @@
 import os
 import sys
 
+import sphinx_needs
+from packaging.version import Version
+
 sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
 # -- General configuration ------------------------------------------------
@@ -69,7 +72,10 @@ language = "en"
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
-needs_extra_options = ["more_info"]
+if Version(sphinx_needs.__version__) >= Version("8.0.0"):
+    needs_fields = {"more_info": {"nullable": True}}
+else:
+    needs_extra_options = ["more_info"]
 tr_extra_options = ["more_info"]
 
 # The name of the Pygments (syntax highlighting) style to use.

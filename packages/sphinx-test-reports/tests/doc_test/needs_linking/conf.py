@@ -18,6 +18,9 @@
 import os
 import sys
 
+import sphinx_needs
+from packaging.version import Version
+
 sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
 # -- General configuration ------------------------------------------------
@@ -75,7 +78,14 @@ source_suffix = ".rst"
 # The master toctree document.
 master_doc = "index"
 
-needs_extra_options = ["asil", "uses_secure", "references"]
+if Version(sphinx_needs.__version__) >= Version("8.0.0"):
+    needs_fields = {
+        "asil": {"nullable": True},
+        "uses_secure": {"nullable": True},
+        "references": {"nullable": True},
+    }
+else:
+    needs_extra_options = ["asil", "uses_secure", "references"]
 
 # General information about the project.
 project = "test-report test docs"

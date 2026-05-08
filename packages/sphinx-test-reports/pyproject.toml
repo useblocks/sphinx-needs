@@ -25,10 +25,11 @@ classifiers = [
 ]
 keywords = ["sphinx", "documentation", "test-reports"]
 requires-python = ">=3.10"
-dependencies = ["sphinx>4.0", "lxml", "sphinx-needs>=1.0.1"]
+dependencies = ["sphinx>4.0", "lxml", "sphinx-needs>=1.0.1", "packaging>=20.0"]
 
 [project.optional-dependencies]
 test = [
+  "beautifulsoup4",
   "nox>=2025.2.9",
   "pytest-xdist",
   "pytest>=7.0",

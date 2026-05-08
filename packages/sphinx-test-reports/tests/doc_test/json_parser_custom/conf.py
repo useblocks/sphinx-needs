@@ -18,6 +18,9 @@
 import os
 import sys
 
+import sphinx_needs
+from packaging.version import Version
+
 sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
 # -- General configuration ------------------------------------------------
@@ -32,7 +35,10 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
 extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
 
-needs_extra_options = ["priority"]
+if Version(sphinx_needs.__version__) >= Version("8.0.0"):
+    needs_fields = {"priority": {"nullable": True}}
+else:
+    needs_extra_options = ["priority"]
 tr_extra_options = ["priority"]
 
 tr_json_mapping = {

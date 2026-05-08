@@ -92,7 +92,7 @@ In the last years, we have created additional information and extensions, which 
 
     .. grid-item-card::
         :columns: 12 6 6 6
-        :link: https://sphinx-needs.com
+        :link: https://sphinx-needs.readthedocs.io/en/latest/
         :img-top: /_static/sphinx-needs-card.png
         :class-card: border
 
@@ -103,7 +103,7 @@ In the last years, we have created additional information and extensions, which 
         Also, it is a good entry point to understand the benefits and get an idea about the complete ecosystem of Sphinx-Needs.
         +++
 
-        .. button-link:: https://sphinx-needs.com
+        .. button-link:: https://sphinx-needs.readthedocs.io/en/latest/
             :color: primary
             :outline:
             :align: center

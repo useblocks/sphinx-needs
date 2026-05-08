@@ -17,6 +17,9 @@ import os
 # import os
 import sys
 
+import sphinx_needs
+from packaging.version import Version
+
 sys.path.append(os.path.abspath("."))
 
 from ub_theme.conf import html_theme_options
@@ -67,7 +70,13 @@ plantuml_output_format = "png"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates", "ub_theme/templates"]
-needs_extra_options = ["more_info"]
+if Version(sphinx_needs.__version__) >= Version("8.0.0"):
+    needs_fields = {
+        "more_info": {"nullable": True},
+    }
+else:
+    needs_extra_options = ["more_info"]
+
 tr_extra_options = ["more_info"]
 # Add a custom test report template. Please add a relative path from this conf.py
 # tr_report_template = "./custom_test_report_template.txt"
