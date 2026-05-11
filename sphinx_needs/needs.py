@@ -245,6 +245,11 @@ def setup(app: Sphinx) -> dict[str, Any]:
         html=(visitor_dummy, visitor_dummy),
         latex=(visitor_dummy, visitor_dummy),
     )
+    app.add_node(
+        NeedRef,
+        html=(visitor_dummy, visitor_dummy),
+        latex=(visitor_dummy, visitor_dummy),
+    )
 
     ########################################################################
     # DIRECTIVES
