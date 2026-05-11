@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1774968246114,
+  "lastUpdate": 1778497419826,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18216,6 +18216,42 @@ window.BENCHMARK_DATA = {
             "value": 57.33681648400001,
             "unit": "s",
             "extra": "Commit: df81a5c8e9c80866923679a34c9805b0488f5a93\nBranch: master\nTime: 2026-03-31T16:41:55+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "198982749+Copilot@users.noreply.github.com",
+            "name": "Copilot",
+            "username": "Copilot"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bf09911207faa7bfd48b06ce0148177dea7da9b5",
+          "message": "🐛 Fix need role in section headings by registering NeedRef node (#1700)",
+          "timestamp": "2026-05-11T13:01:36+02:00",
+          "tree_id": "70c4116b54ebee9047f9fbb85b175203dff81270",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/bf09911207faa7bfd48b06ce0148177dea7da9b5"
+        },
+        "date": 1778497395653,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.21095949000000758,
+            "unit": "s",
+            "extra": "Commit: bf09911207faa7bfd48b06ce0148177dea7da9b5\nBranch: master\nTime: 2026-05-11T13:01:36+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.65112781399999,
+            "unit": "s",
+            "extra": "Commit: bf09911207faa7bfd48b06ce0148177dea7da9b5\nBranch: master\nTime: 2026-05-11T13:01:36+02:00"
           }
         ]
       }
