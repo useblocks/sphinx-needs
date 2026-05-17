@@ -4,6 +4,19 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Bug fixes
+.........
+
+- 🐛 Fix ``needflow`` rendering very dark / black nodes when a need type has no
+  ``color`` set in ``needs_types`` (:issue:`1664`).
+  Previously a hard-coded ``#000000`` fallback was used as the fill color, which
+  produced unreadable nodes — especially under browser dark mode.
+  When no color is configured, no color is emitted and the diagram engine's
+  default node color is used.
+
 .. _`release:8.0.0`:
 
 8.0.0

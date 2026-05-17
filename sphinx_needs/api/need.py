@@ -373,7 +373,7 @@ def generate_need(
         "type": need_type,
         "type_name": need_type_data["title"],
         "type_prefix": need_type_data["prefix"],
-        "type_color": need_type_data.get("color") or "#000000",
+        "type_color": need_type_data.get("color") or "",
         "type_style": need_type_data.get("style") or "node",
         "title": core_values["title"],
         "status": core_values["status"],

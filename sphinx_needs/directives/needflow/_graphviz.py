@@ -336,8 +336,8 @@ def _render_subgraph(
         params.append(("shape", "rectangle"))
 
     # fill color
-    params.append(("style", "filled"))
     if need["type_color"]:
+        params.append(("style", "filled"))
         params.append(("fillcolor", _quote(need["type_color"])))
 
     # outline color

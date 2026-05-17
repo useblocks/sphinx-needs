@@ -447,11 +447,16 @@ class JinjaFunctions:
             new_env=True,
         )
 
-        need_uml = '{style} "{node_text}" as {id} [[{link}]] #{color}'.format(
+        color_suffix = (
+            f" #{need_info['type_color'].replace('#', '')}"
+            if need_info["type_color"]
+            else ""
+        )
+        need_uml = '{style} "{node_text}" as {id} [[{link}]]{color_suffix}'.format(
             id=make_entity_name(need_id),
             node_text=node_text,
             link=link,
-            color=need_info["type_color"].replace("#", ""),
+            color_suffix=color_suffix,
             style=need_info["type_style"],
         )
 
