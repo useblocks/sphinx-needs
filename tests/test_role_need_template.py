@@ -29,4 +29,4 @@ def test_doc_build_html(test_app):
         "[SPEC] [SP_TOO_001.cli]  Command parser support (implemented) Specification/spec"
         in html
     )
-    assert '<em class="xref need">COMMAND PARSER SUPPORT</em>' in html
+    assert '<em class="xref need"> COMMAND PARSER SUPPORT</em>' in html
