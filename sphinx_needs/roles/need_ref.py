@@ -131,12 +131,12 @@ def process_need_ref(
             if need_id_part:
                 dict_need["id_complete"] = need_id_complete
                 dict_need["id_part"] = need_id_part
-                dict_need["is_need"] = False
-                dict_need["is_part"] = True
+                dict_need["is_need"] = "False"
+                dict_need["is_part"] = "True"
             else:
                 dict_need["id_part"] = ""
-                dict_need["is_need"] = True
-                dict_need["is_part"] = False
+                dict_need["is_need"] = "True"
+                dict_need["is_part"] = "False"
 
             # We set the id to the complete id maintained in node_need_ref["reftarget"]
             dict_need["id"] = need_id_full
