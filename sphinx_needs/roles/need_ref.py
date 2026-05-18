@@ -194,18 +194,18 @@ def process_need_ref(
                     try:
                         # Build after potential title override via ref_name so
                         # templates see the latest values.
-                        need_context: dict[str, Any] = {
+                        need_context_role: dict[str, Any] = {
                             **dict_need,
                             "is_need": is_need,
                             "is_part": is_part,
                         }
-                        template_context: dict[str, Any] = {
-                            "need": need_context,
+                        template_context_role: dict[str, Any] = {
+                            "need": need_context_role,
                             **dict_need,
                             "is_need": is_need,
                             "is_part": is_part,
                         }
-                        link_text = role_template.render(template_context)
+                        link_text = role_template.render(template_context_role)
                     except Exception as exc:
                         log_warning(
                             log,
