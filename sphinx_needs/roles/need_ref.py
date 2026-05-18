@@ -128,15 +128,12 @@ def process_need_ref(
                 target_need
             )  # Transform a dict in a dict of {str, str}
 
+            is_part = need_id_part is not None
+            is_need = not is_part
+
+            dict_need["id_part"] = need_id_part or ""
             if need_id_part:
                 dict_need["id_complete"] = need_id_complete
-                dict_need["id_part"] = need_id_part
-                dict_need["is_need"] = "False"
-                dict_need["is_part"] = "True"
-            else:
-                dict_need["id_part"] = ""
-                dict_need["is_need"] = "True"
-                dict_need["is_part"] = "False"
 
             # We set the id to the complete id maintained in node_need_ref["reftarget"]
             dict_need["id"] = need_id_full
@@ -152,6 +149,14 @@ def process_need_ref(
                 title = f"{title[: max_length - 3]}..."
                 dict_need["title"] = title
 
+            need_context = {**dict_need, "is_need": is_need, "is_part": is_part}
+            template_context: dict[str, Any] = {
+                "need": need_context,
+                **dict_need,
+                "is_need": is_need,
+                "is_part": is_part,
+            }
+
             ref_name: None | str | nodes.Text = node_need_ref.children[0].children[0]  # type: ignore[assignment]
             # Only use ref_name, if it differs from ref_id
             if str(need_id_full) == str(ref_name):
@@ -164,7 +169,7 @@ def process_need_ref(
                 try:
                     link_text = render_template_string(
                         ref_name,
-                        {"need": dict_need, **dict_need},
+                        template_context,
                         autoescape=False,
                     )
                 except Exception as exc:
@@ -182,9 +187,7 @@ def process_need_ref(
                     link_text = f"{dict_need['title']} ({dict_need['id']})"
                 else:
                     try:
-                        link_text = role_template.render(
-                            {"need": dict_need, **dict_need}
-                        )
+                        link_text = role_template.render(template_context)
                     except Exception as exc:
                         log_warning(
                             log,
