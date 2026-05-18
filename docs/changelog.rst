@@ -17,6 +17,15 @@ Bug fixes
   When no color is configured, no color is emitted and the diagram engine's
   default node color is used.
 
+  .. note::
+
+     This is a minor behavior change for users with ``needs_types`` entries
+     that omit the ``color`` key: diagrams (``needflow``, ``needuml``,
+     ``needgantt``) that previously rendered such nodes as solid black will
+     now render them with the diagram engine's default node color (typically
+     light). To preserve the old appearance, set ``"color": "#000000"``
+     explicitly on the affected ``needs_types`` entry.
+
 .. _`release:8.0.0`:
 
 8.0.0
