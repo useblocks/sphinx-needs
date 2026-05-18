@@ -149,13 +149,21 @@ def process_need_ref(
                 title = f"{title[: max_length - 3]}..."
                 dict_need["title"] = title
 
-            need_context = {**dict_need, "is_need": is_need, "is_part": is_part}
-            template_context: dict[str, Any] = {
-                "need": need_context,
-                **dict_need,
-                "is_need": is_need,
-                "is_part": is_part,
-            }
+            def _template_context() -> dict[str, Any]:
+                # Keep dict_need as dict[str, str] for typing, but expose boolean
+                # flags for Jinja conditionals. Build context lazily because
+                # dict_need may still be updated later (e.g. custom ref_name title).
+                need_context: dict[str, Any] = {
+                    **dict_need,
+                    "is_need": is_need,
+                    "is_part": is_part,
+                }
+                return {
+                    "need": need_context,
+                    **dict_need,
+                    "is_need": is_need,
+                    "is_part": is_part,
+                }
 
             ref_name: None | str | nodes.Text = node_need_ref.children[0].children[0]  # type: ignore[assignment]
             # Only use ref_name, if it differs from ref_id
@@ -169,7 +177,7 @@ def process_need_ref(
                 try:
                     link_text = render_template_string(
                         ref_name,
-                        template_context,
+                        _template_context(),
                         autoescape=False,
                     )
                 except Exception as exc:
@@ -187,7 +195,7 @@ def process_need_ref(
                     link_text = f"{dict_need['title']} ({dict_need['id']})"
                 else:
                     try:
-                        link_text = role_template.render(template_context)
+                        link_text = role_template.render(_template_context())
                     except Exception as exc:
                         log_warning(
                             log,
