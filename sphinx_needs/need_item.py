@@ -248,6 +248,14 @@ class NeedLink:
     id: str
     part: str | None = None
     condition: str | None = None
+    _filter_string: str = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "_filter_string",
+            f"{self.id}.{self.part}" if self.part else self.id,
+        )
 
     @staticmethod
     def from_string(link_str: str, *, parse_conditions: bool = True) -> NeedLink:
@@ -335,7 +343,7 @@ class NeedLink:
 
         This does **not** include the condition.
         """
-        return f"{self.id}.{self.part}" if self.part else self.id
+        return self._filter_string
 
     def to_link_string(self) -> str:
         """Serialize the link including the condition, e.g. 'NEED-1[cond]' or 'NEED-1.part[cond]'.
