@@ -289,9 +289,10 @@ def process_needgantt(
                     need["title"], complete
                 )
 
-            el_color_string += "[{}] is colored in {}\n".format(
-                need["title"], need["type_color"]
-            )
+            if need["type_color"]:
+                el_color_string += "[{}] is colored in {}\n".format(
+                    need["title"], need["type_color"]
+                )
 
             puml_node["uml"] += gantt_element
 

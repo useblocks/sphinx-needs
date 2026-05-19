@@ -325,7 +325,8 @@ class NeedType(TypedDict):
     prefix: str
     """The prefix to use for the need ID."""
     color: NotRequired[str]
-    """The default color to use in diagrams (default: "#000000")."""
+    """The default color to use in diagrams.
+    If unset or empty, no color is applied and the diagram engine's default is used."""
     style: NotRequired[str]
     """The default node style to use in diagrams (default: "node")."""
 

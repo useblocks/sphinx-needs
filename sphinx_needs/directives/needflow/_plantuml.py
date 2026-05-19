@@ -76,11 +76,12 @@ def get_need_node_rep_for_plantuml(
     node_style = need_info["type_style"] if need_info["is_need"] else "rectangle"
 
     # node representation for plantuml
-    need_node_code = '{style} "{node_text}" as {id} [[{link}]] #{color}'.format(
+    color_suffix = f" #{';'.join(node_colors)}" if node_colors else ""
+    need_node_code = '{style} "{node_text}" as {id} [[{link}]]{color_suffix}'.format(
         id=make_entity_name(need_info["id_complete"]),
         node_text=node_text,
         link=node_link,
-        color=";".join(node_colors),
+        color_suffix=color_suffix,
         style=node_style,
     )
     return need_node_code
