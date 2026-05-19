@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778497419826,
+  "lastUpdate": 1779180392486,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18252,6 +18252,42 @@ window.BENCHMARK_DATA = {
             "value": 58.65112781399999,
             "unit": "s",
             "extra": "Commit: bf09911207faa7bfd48b06ce0148177dea7da9b5\nBranch: master\nTime: 2026-05-11T13:01:36+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1e60746c3bf7d64f589b81b69fe209bdbe5671c0",
+          "message": "🐛 Fix needflow nodes rendering as black when no type color is set (#1702)\n\n## Summary\n\nFixes #1664.\n\nWhen a `needs_types` entry omitted the `color` field, `generate_need`\nfell back to `#000000`. That value was then forwarded to PlantUML as the\nnode background colour and to Graphviz as `fillcolor` with\n`style=filled`, producing very dark, unreadable nodes — especially under\nbrowser forced dark mode.\n\nThe default is now an empty string. Each diagram emitter skips the\ncolour suffix / `style=filled` when no colour is configured, so the\ndiagram engine's own default node colour is used.\n\n## Why this only surfaced recently\n\nThe `#000000` fallback has been in the code since 1.0, but it was\nunreachable until **3.0.0** (Aug 2024). Before PR #1185 (commit\n`eee2eb40`), the code used bracket access — `ntype[\"color\"] or\n\"#000000\"` — so a `needs_types` entry missing `color` raised `KeyError`\nat build time and the field was *de facto* required. PR #1185 made\n`color` an optional `NotRequired[str]` and switched to\n`ntype.get(\"color\") or \"#000000\"`, which silently substitutes the black\nfallback for users who omit the field.\n\nSphinx / PlantUML / Graphviz versions are not factors — the bug is\npurely on the Sphinx-Needs side and reproduces with every renderer\nversion. Forced dark mode doesn't cause it; it just removes the\nsurrounding light page that previously made the broken render mildly\nvisible, which is why bug reports started arriving.\n\n## Changes\n\n- `sphinx_needs/api/need.py`: default `type_color` to `\"\"` instead of\n`\"#000000\"`.\n- `sphinx_needs/directives/needflow/_plantuml.py`: only emit the\n`#color` suffix when a colour is set.\n- `sphinx_needs/directives/needflow/_graphviz.py` (subgraph path): only\nset `style=filled` when there is a fill colour. The plain-node path\nalready had this guard.\n- `sphinx_needs/directives/needuml.py`: same conditional `#color`\nemission as needflow.\n- `sphinx_needs/directives/needgantt.py`: skip the `is colored in …`\nline when no colour is set.\n- `sphinx_needs/config.py`: update the `NeedType.color` docstring.\n- `docs/changelog.rst`: bug-fix entry under a new \"Unreleased\" section.\n\n## Test plan\n\n- [x] New parameterised regression test\n`tests/test_github_issues.py::test_doc_github_1664` covering both\n`plantuml` and `graphviz` engines with a `needs_types` entry that has no\n`color` field.\n- [x] Verified the new test fails on the pre-fix code and passes after\nthe fix.\n- [x] Full test suite: 912 passed, 5 skipped (pre-existing benchmark\nerrors due to a missing `sphinx_ai_index` extension are unrelated).",
+          "timestamp": "2026-05-19T10:44:27+02:00",
+          "tree_id": "f0052dc021b091981fb9967de2fc3952986d6cf3",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/1e60746c3bf7d64f589b81b69fe209bdbe5671c0"
+        },
+        "date": 1779180368245,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1569550459999789,
+            "unit": "s",
+            "extra": "Commit: 1e60746c3bf7d64f589b81b69fe209bdbe5671c0\nBranch: master\nTime: 2026-05-19T10:44:27+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.16810147299998,
+            "unit": "s",
+            "extra": "Commit: 1e60746c3bf7d64f589b81b69fe209bdbe5671c0\nBranch: master\nTime: 2026-05-19T10:44:27+02:00"
           }
         ]
       }
