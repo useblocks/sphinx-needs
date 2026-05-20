@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779265778968,
+  "lastUpdate": 1779266650863,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18324,6 +18324,42 @@ window.BENCHMARK_DATA = {
             "value": 52.775922949000005,
             "unit": "s",
             "extra": "Commit: b9ce9f440edc7c417588241e56cb18230952e5cd\nBranch: master\nTime: 2026-05-20T10:27:40+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8745a55e24b2ed17b7e8048340a262c9767b14ae",
+          "message": "⚡️ Cache `NeedLink` filter string (#1705)\n\nPre-compute and store the filter string (`to_filter_string()` result) on\nNeedLink construction, avoiding repeated string formatting on every\naccess through NeedItem.__getitem__, values(), items(), etc.\n\nPartially addresses #1699",
+          "timestamp": "2026-05-20T10:42:18+02:00",
+          "tree_id": "cbe89d94177e3eaafc214399dd04192205cd1b94",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8745a55e24b2ed17b7e8048340a262c9767b14ae"
+        },
+        "date": 1779266629374,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14382261899999094,
+            "unit": "s",
+            "extra": "Commit: 8745a55e24b2ed17b7e8048340a262c9767b14ae\nBranch: master\nTime: 2026-05-20T10:42:18+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.42738832500001,
+            "unit": "s",
+            "extra": "Commit: 8745a55e24b2ed17b7e8048340a262c9767b14ae\nBranch: master\nTime: 2026-05-20T10:42:18+02:00"
           }
         ]
       }
