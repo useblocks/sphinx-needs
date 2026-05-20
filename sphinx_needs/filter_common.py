@@ -711,7 +711,7 @@ def filter_single_need(
             raise NeedsInvalidFilter(f"Filter {filter_string!r} not valid. Error: {e}.")
 
     # === Slow path: fall back to eval() ===
-    filter_context: dict[str, Any] = {**need}
+    filter_context: dict[str, Any] = need.filter_context()
     if needs:
         filter_context["needs"] = needs
     if current_need:

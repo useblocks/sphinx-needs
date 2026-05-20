@@ -46,7 +46,7 @@ def get_need_node_rep_for_plantuml(
 
     node_text = render_template_string(
         needs_config.diagram_template,
-        {**need_info, **needs_config.render_context},
+        {**need_info.filter_context(), **needs_config.render_context},
         autoescape=False,
     )
 
@@ -65,7 +65,7 @@ def get_need_node_rep_for_plantuml(
     elif current_needflow["border_color"]:
         color = match_variants(
             current_needflow["border_color"],
-            {**need_info},
+            need_info.filter_context(),
             needs_config.variants,
             location=(current_needflow["docname"], current_needflow["lineno"]),
         )

@@ -296,7 +296,7 @@ def _render_node(
         color = str(
             match_variants(
                 node["border_color"],
-                {**need},
+                need.filter_context(),
                 config.variants,
                 location=node,
             )
@@ -347,7 +347,7 @@ def _render_subgraph(
         color = str(
             match_variants(
                 node["border_color"],
-                {**need},
+                need.filter_context(),
                 config.variants,
                 location=node,
             )

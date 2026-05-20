@@ -468,7 +468,7 @@ def generate_need(
     if jinja_content or _template or _pre_template or _post_template:
         # TODO ideally perform all these content alterations before creating the need item
         if jinja_content:
-            need_content_context: dict[str, Any] = {**needs_info}
+            need_content_context: dict[str, Any] = needs_info.filter_context()
             need_content_context.update(**needs_config.filter_data)
             need_content_context.update(**needs_config.render_context)
             try:
@@ -972,7 +972,7 @@ def _prepare_template(
     try:
         new_content = render_template_string(
             template_content,
-            {**needs_info, **needs_config.render_context},
+            {**needs_info.filter_context(), **needs_config.render_context},
             autoescape=False,
         )
     except Exception as e:
