@@ -436,7 +436,7 @@ class JinjaFunctions:
 
         node_text = render_template_string(
             self.needs_config.diagram_template,
-            {**need_info, **self.needs_config.render_context},
+            {**need_info.filter_context(), **self.needs_config.render_context},
             autoescape=False,
             # new_env=True because flow() is called from within a template callback
             # (e.g. {{ flow("ID") }}) while the outer jinja2uml render holds a lock

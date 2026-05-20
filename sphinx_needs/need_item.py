@@ -1099,6 +1099,26 @@ class NeedItem:
         if _recompute:
             self._recompute()
 
+    def filter_context(self) -> dict[str, Any]:
+        """Build a flat dict of all need fields, suitable for use as an eval/template context.
+
+        This is more efficient than ``{**need}`` because it avoids the per-key
+        multi-namespace lookup chain and materializes link string lists only once.
+        """
+        ctx: dict[str, Any] = {}
+        ctx.update(self._core)
+        ctx.update(self._extras)
+        for key, links in self._links.items():
+            ctx[key] = [li.to_filter_string() for li in links]
+        for exposed_key, link_key in self._backlinks_keymap.items():
+            ctx[exposed_key] = [
+                li.to_filter_string() for li in self._backlinks[link_key]
+            ]
+        ctx.update(self._source.dict_repr)
+        ctx.update(self._content.dict_repr)
+        ctx.update(self._computed)
+        return ctx
+
 
 class NeedPartItem:
     """A class representing a part of a need, which is a sub-need, merged with the parent need.
@@ -1296,6 +1316,16 @@ class NeedPartItem:
                 yield (key, self._overrides[key])
             else:
                 yield (key, self._need[key])
+
+    def filter_context(self) -> dict[str, Any]:
+        """Build a flat dict of all need part fields, suitable for use as an eval/template context.
+
+        This is more efficient than ``{**need_part}`` because it avoids
+        per-key lookup overhead.
+        """
+        ctx = self._need.filter_context()
+        ctx.update(self._overrides)
+        return ctx
 
     def get_extra(self, key: str) -> str:
         """Get an extra by key.
