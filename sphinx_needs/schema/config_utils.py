@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import Any, Literal, cast
 
@@ -83,7 +84,17 @@ def validate_schemas_config(app: Sphinx, needs_config: NeedsSphinxConfig) -> Non
 def resolve_schemas_config(
     app: Sphinx, env: BuildEnvironment, _docnames: list[str]
 ) -> None:
-    """Validates schema definitions and inject type information."""
+    """Validates schema definitions and inject type information.
+
+    The injected types are stored on the environment via
+    :py:meth:`SphinxNeedsData._set_resolved_schemas`, not mutated back into
+    ``needs_config.schema_definitions``. Mutating the config dict here would
+    happen *after* Sphinx's ``config-inited`` comparison checkpoint, so the
+    pickled environment would carry the mutated config while the next build
+    would start from the unmutated JSON/dict -- triggering a spurious
+    ``config changed ('needs_schema_definitions')`` rebuild on every
+    incremental run.
+    """
     needs_config = NeedsSphinxConfig(app.config)
 
     if not (
@@ -95,9 +106,15 @@ def resolve_schemas_config(
 
     fields_schema = SphinxNeedsData(env).get_schema()
 
+    # Work on a deep copy so type injection does not leak back into the
+    # Sphinx config object that gets pickled at end of build.
+    resolved_schemas: list[SchemasRootType] = copy.deepcopy(
+        needs_config.schema_definitions["schemas"]
+    )
+
     # inject extra/link/core option types to each nested schema, to avoid silent json schema
     # failures; this must happens before the type check, because it requires type fields
-    for schema in needs_config.schema_definitions["schemas"]:
+    for schema in resolved_schemas:
         schema_name = get_schema_name(schema)
         populate_field_type(
             schema,
@@ -106,7 +123,7 @@ def resolve_schemas_config(
         )
 
     # validate schemas against type hints at runtime
-    for schema in needs_config.schema_definitions["schemas"]:
+    for schema in resolved_schemas:
         try:
             validate_schemas_root_type(schema)
         except TypeError as exc:
@@ -118,12 +135,12 @@ def resolve_schemas_config(
     # after type check, we can safely walk the schema for nested checks;
     # check if network links are defined as links
     check_network_links_against_links(
-        needs_config.schema_definitions["schemas"],
+        resolved_schemas,
         fields_schema,
     )
 
     # check recursively all internal schemas compile
-    for idx, schema in enumerate(needs_config.schema_definitions["schemas"]):
+    for idx, schema in enumerate(resolved_schemas):
         if "select" in schema:
             try:
                 validate_object_schema_compiles(schema["select"])
@@ -134,6 +151,8 @@ def resolve_schemas_config(
         _recursive_validate(
             schema["validate"], ("needs_schema_definitions", str(idx), "validate")
         )
+
+    SphinxNeedsData(env)._set_resolved_schemas(resolved_schemas)
 
 
 def _recursive_validate(validate: ValidateSchemaType, path: tuple[str, ...]) -> None:
