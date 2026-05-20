@@ -1,0 +1,57 @@
+# Build the Sphinx site on every push to ``main`` and publish it to
+# GitHub Pages. Mirrors the workflow used by sphinx-codelinks. Pages
+# is configured to "Source: GitHub Actions" for this repo, so the
+# deploy job uploads an artifact and ``actions/deploy-pages`` does the
+# rest.
+
+name: Deploy docs to GH Pages
+
+on:
+  push:
+    branches: ["main"]
+  # Allow manual re-runs from the Actions tab.
+  workflow_dispatch:
+
+# Permissions required for OIDC-authenticated Pages deployment.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent Pages deployment. Do NOT cancel an
+# in-progress production deploy when a new push lands.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+      - run: python -m pip install tox tox-uv
+      - name: Run documentation build
+        run: tox -e docs-clean
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/_build/html
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

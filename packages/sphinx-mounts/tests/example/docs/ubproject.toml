@@ -1,0 +1,29 @@
+# Single declarative source of truth for the example project. Both
+# Sphinx (via ``sphinx-mounts``) and the ubCode language server read
+# this file. After ``bazel build //:all_bundles`` runs once, the
+# referenced paths exist and ubCode can resolve cross-references
+# against them with no further build step.
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+[server]
+index_on_save = true
+
+# Bazel-generated RST bundle. Source is resolved relative to *this*
+# file's directory (docs/), so ``../bazel-bin/bundles/api-foo`` lands
+# at ``tests/example/bazel-bin/bundles/api-foo`` regardless of which
+# OS or working directory the build is invoked from.
+[[mounts]]
+dir = "../bazel-bin/bundles/api-foo"
+mount_at = "_generated/api-foo"
+attach_to = "index"
+entry_doc = "index"
+
+# Bazel-generated Markdown bundle. No ``attach_to`` / ``entry_doc`` here —
+# the host project references this bundle's entry doc by hand from
+# ``index.rst``. This shows the two supported wiring styles side-by-side:
+# auto-attach (api-foo) and manual reference (api-bar).
+# ``myst-parser`` (loaded in conf.py) makes ``.md`` part of ``source_suffix``,
+# so the entry doc is ``index.md``.
+[[mounts]]
+dir = "../bazel-bin/bundles/api-bar"
+mount_at = "_generated/api-bar"

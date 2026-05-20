@@ -1,0 +1,123 @@
+[project]
+name = "sphinx-mounts"
+version = "0.1.0"
+description = "Mount external sources into a Sphinx build without copying or symlinking"
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+maintainers = [
+  { name = "Marco Heinemann", email = "marco.heinemann@useblocks.com" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.12,<4"
+dependencies = ["sphinx>=7.4,<10", "ignore-python>=0.3.3"]
+keywords = ["sphinx", "documentation", "mount", "bazel", "monorepo"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: Sphinx :: Extension",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Documentation",
+  "Topic :: Documentation :: Sphinx",
+  "Topic :: Software Development :: Documentation",
+]
+
+[project.urls]
+Homepage = "https://sphinx-mounts.useblocks.com"
+Documentation = "https://sphinx-mounts.useblocks.com"
+Repository = "https://github.com/useblocks/sphinx-mounts"
+Issues = "https://github.com/useblocks/sphinx-mounts/issues"
+Changelog = "https://github.com/useblocks/sphinx-mounts/blob/main/docs/source/changelog.rst"
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[dependency-groups]
+dev = ["prek>=0.3.3"]
+testing = [
+  "pytest>=8.2.2",
+  "pytest-cov>=5.0.0",
+  "beautifulsoup4>=4.12",
+  # Exercised by the Markdown-mounting test; the extension supports any
+  # source suffix Sphinx knows about, so `.md` works whenever the host
+  # project loads `myst_parser`.
+  "myst-parser>=4.0.0",
+]
+docs = ["furo>=2024.5.6", "myst-parser>=4.0.0", "sphinx-design>=0.6.1"]
+ty = ["ty>=0.0.37"]
+ruff = ["ruff>=0.8.0"]
+
+[tool.ruff.lint]
+extend-select = [
+  "S",
+  "ARG",
+  "B",    # flake8-bugbear
+  "C4",   # flake8-comprehensions
+  "FURB", # refurb (modernising code)
+  "I",    # isort
+  "ICN",  # flake8-import-conventions
+  "ISC",  # flake8-implicit-str-concat
+  "N",    # pep8-naming
+  "PERF", # perflint (performance anti-patterns)
+  "PGH",  # pygrep-hooks
+  "PIE",  # flake8-pie
+  "PL",   # pylint
+  "PTH",  # flake8-use-pathlib
+  "RUF",  # Ruff-specific rules
+  "SIM",  # flake8-simplify
+  "SLF",  # private member access
+  "UP",   # pyupgrade
+  "T20",  # flake8-print
+]
+extend-ignore = [
+  "ISC001", # implicit-str-concat
+]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+force-sort-within-sections = true
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = [
+  "ARG001",  # unused-function-argument - fixtures
+  "ARG005",  # unused-lambda-argument - monkeypatches
+  "PLR2004", # magic-value-comparison - valuable for tests
+  "S101",    # assert - needed for tests
+  "S603",    # subprocess - bazel invocation in tests
+  "S607",    # partial-executable-path - bazel by name
+  "SLF001",  # private-member-access - inspecting Project._docname_to_path
+]
+"src/sphinx_mounts/mounter.py" = [
+  "SLF001", # private-member-access - we intentionally write to Project._docname_to_path
+]
+
+[tool.ty.src]
+# Only the package source is type-checked. Tests, docs, and build artefacts
+# are skipped — they are not part of the published API surface.
+include = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# ``bazel build`` materialises ``tests/example/bazel-*`` convenience symlinks
+# that point into the Bazel execroot. Without this filter, pytest happily
+# walks them and tries to collect ``test_*.py`` from ``bazel_tools`` external
+# repositories — none of which can import in our environment.
+norecursedirs = [
+  "bazel-*",
+  "*.egg-info",
+  ".git",
+  ".tox",
+  ".venv",
+  "build",
+  "dist",
+]
+markers = [
+  "bazel: tests that require a Bazel installation on PATH (deselect with '-m \"not bazel\"')",
+]

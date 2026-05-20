@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  sphinx-mounts favicon.
+
+  Square mark with a dark rounded-square background and the brand's
+  yellow-green pyramid on top, mirroring sphinx-codelinks' favicon
+  convention (dark background, light icon). At 16-32 px in a browser
+  tab even the completed 3-2-1 pyramid renders as a smear, so the
+  favicon reduces further to a minimal 2-1 stack — two base blocks
+  with one block crowning them. Still reads as "stacked / built up",
+  still unmistakably the same family as the full logo.
+
+  Blocks are slightly inset inside an implicit grid so the dark
+  background shines through the seams at retina resolutions,
+  matching the seam effect in the full logos.
+-->
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 64 64"
+     width="64"
+     height="64"
+     role="img"
+     aria-label="sphinx-mounts favicon">
+  <title>sphinx-mounts</title>
+
+  <!-- Dark rounded-square background -->
+  <rect x="0" y="0" width="64" height="64" rx="8" ry="8" fill="#0a0000"/>
+
+  <!-- Minimal 2-1 stack in the dark-variant accent -->
+  <g fill="#e4ff3e">
+    <!-- Top -->
+    <rect x="23" y="11" width="18" height="18"/>
+    <!-- Base row -->
+    <rect x="11" y="35" width="18" height="18"/>
+    <rect x="35" y="35" width="18" height="18"/>
+  </g>
+</svg>

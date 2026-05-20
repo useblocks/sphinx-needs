@@ -1,0 +1,63 @@
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
+# Convenience filegroup: ``bazel build //:all_bundles`` materialises
+# every external bundle the host docs project mounts. This is the
+# single command an editor (or a developer) runs before opening the
+# project in ubCode or invoking sphinx-build.
+filegroup(
+    name = "all_bundles",
+    srcs = [
+        "//bundles/api-bar:bundle",
+        "//bundles/api-foo:bundle",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# ``bazel run //:build_docs`` builds the host Sphinx project against
+# the Bazel-generated bundles, *in the user's source workspace*. The
+# rendered HTML lands under ``docs/_build/html`` — convenient for
+# iterative editing because ``sphinx-build`` reads ``ubproject.toml``
+# from its on-disk location and the ``bazel-bin`` convenience
+# symlink is already where ``../bazel-bin/...`` expects it. The
+# ``data`` dependency on ``:all_bundles`` makes Bazel produce the
+# bundles first.
+sh_binary(
+    name = "build_docs",
+    srcs = ["build_docs.sh"],
+    data = [":all_bundles"],
+    visibility = ["//visibility:public"],
+)
+
+# ``bazel build //:docs_html`` produces the rendered HTML site as a
+# tarball under ``bazel-bin/docs_html.tar.gz`` — i.e. the build runs
+# inside a Bazel action and emits an artefact on the build graph,
+# rather than mutating the source tree. This shows that
+# ``sphinx-mounts`` plugs into Bazel's build model end-to-end:
+# bundles ⇒ host docs ⇒ Bazel-tracked artefact.
+#
+# A wrapper script handles the bit that ``bazel run`` got for free
+# from the user's workspace: in a genrule action the convenience
+# symlinks (``bazel-bin``) don't exist, so the script stages a
+# temporary working tree whose layout matches the user-facing
+# workspace before invoking ``sphinx-build``.
+#
+# ``local = 1`` because the build calls ``uv`` from PATH; flipping
+# to a fully sandboxed action would require ``rules_python`` plus a
+# pinned requirements lock — left as an extension for projects that
+# need full hermeticity.
+genrule(
+    name = "docs_html",
+    srcs = [
+        ":all_bundles",
+        "docs/conf.py",
+        "docs/index.rst",
+        "docs/installation.rst",
+        "docs/ubproject.toml",
+    ],
+    outs = ["docs_html.tar.gz"],
+    cmd = "$(execpath build_docs_sandbox.sh) $@ " +
+          "$(execpath docs/conf.py) $(locations :all_bundles)",
+    tools = ["build_docs_sandbox.sh"],
+    local = 1,
+    visibility = ["//visibility:public"],
+)

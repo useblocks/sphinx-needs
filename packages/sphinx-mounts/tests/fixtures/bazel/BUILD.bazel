@@ -1,0 +1,45 @@
+# Genrules that emit RST fragments under bazel-bin/docs/.
+#
+# The sphinx-mounts Sphinx project under sphinx_project/ points its mount
+# at bazel-bin/docs/ so these files become docnames under "_bazel/...".
+
+genrule(
+    name = "gen_index",
+    outs = ["docs/index.rst"],
+    cmd = """cat > $@ <<'EOF'
+Bazel-generated docs
+====================
+
+This page was emitted by a Bazel ``genrule`` and is read in place by
+``sphinx-mounts`` — no copy or symlink into srcdir.
+
+.. toctree::
+
+   tutorial
+EOF
+""",
+)
+
+genrule(
+    name = "gen_tutorial",
+    outs = ["docs/tutorial.rst"],
+    cmd = """cat > $@ <<'EOF'
+Tutorial
+--------
+
+Marker for the test assertion: BAZEL_GENRULE_MARKER.
+
+The Bazel build emitted this file under ``bazel-bin/docs/tutorial.rst``.
+The Sphinx build then read it directly from there.
+EOF
+""",
+)
+
+filegroup(
+    name = "generated_docs",
+    srcs = [
+        ":gen_index",
+        ":gen_tutorial",
+    ],
+    visibility = ["//visibility:public"],
+)

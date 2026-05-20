@@ -1,0 +1,55 @@
+name: Release
+
+# Tag-driven PyPI publish via Trusted Publishing (OIDC). The repo's
+# entry on pypi.org is configured to trust this workflow file by name
+# (release.yaml), so renaming it would break the publish.
+#
+# Tag format: bare semver (e.g. ``1.0.0``, ``0.2.0``) — no leading
+# ``v``. Matches the convention used by sphinx-codelinks.
+
+on:
+  push:
+    tags:
+      - '[0-9].[0-9]+.[0-9]+'
+
+permissions:
+  id-token: write   # mandatory for PyPI trusted publishing
+  contents: read
+
+jobs:
+  build:
+    name: Build distribution 📦
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - name: Install pypa/build
+        run: python3 -m pip install --user build
+      - name: Build a binary wheel and a source tarball
+        run: python3 -m build
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish-to-pypi:
+    name: Publish to PyPI 📦
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v8
+        with:
+          name: python-package-distributions
+          path: dist/
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

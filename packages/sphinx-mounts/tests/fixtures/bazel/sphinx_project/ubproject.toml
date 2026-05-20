@@ -1,0 +1,9 @@
+# Declarative sphinx-mounts config for the Bazel integration test.
+#
+# Sphinx's confdir is this directory (sphinx_project/), so the relative
+# path ../bazel-bin/docs points at <workspace>/bazel-bin/docs — where the
+# genrule outputs land.
+
+[[mounts]]
+dir = "../bazel-bin/docs"
+mount_at = "_bazel"
