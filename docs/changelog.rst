@@ -4,14 +4,40 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:8.1.0`:
+
+8.1.0
+-----
+
+:Released: 20.05.2026
+:Full Changelog: `v8.0.0...v8.1.0 <https://github.com/useblocks/sphinx-needs/compare/8.0.0...8745a55e24b2ed17b7e8048340a262c9767b14ae>`__
+
+This release focuses on **filter performance improvements** and bug fixes.
+
+Performance
+...........
+
+- ⚡️ Short-circuit simple filter expressions to avoid ``eval()`` overhead (:pr:`1677`)
+
+  Common filter patterns (e.g. ``id == "REQ_001"``, ``type == "spec"``) are now
+  matched and evaluated directly without invoking Python's ``eval()``, significantly
+  reducing filtering time for large need sets.
+
+- ⚡️ Add ``NeedItem.filter_context()`` to avoid costly ``{**need}`` unpacking (:pr:`1706`)
+
+  Filter evaluation no longer creates a full dictionary copy of each need on every
+  filter call, reducing memory allocations and improving throughput.
+
+- ⚡️ Cache ``NeedLink`` filter string (:pr:`1705`)
+
+  Pre-compute and store the filter string on ``NeedLink`` construction, avoiding
+  repeated string formatting on every access through ``NeedItem.__getitem__``.
 
 Bug fixes
 .........
 
 - 🐛 Fix ``needflow`` rendering very dark / black nodes when a need type has no
-  ``color`` set in ``needs_types`` (:issue:`1664`).
+  ``color`` set in ``needs_types`` (:issue:`1664`, :pr:`1702`).
   Previously a hard-coded ``#000000`` fallback was used as the fill color, which
   produced unreadable nodes — especially under browser dark mode.
   When no color is configured, no color is emitted and the diagram engine's
@@ -26,13 +52,16 @@ Bug fixes
      light). To preserve the old appearance, set ``"color": "#000000"``
      explicitly on the affected ``needs_types`` entry.
 
+- 🐛 Fix ``:need:`` role in section headings by registering ``NeedRef`` node
+  with Sphinx's LaTeX builder (:pr:`1700`).
+
 .. _`release:8.0.0`:
 
 8.0.0
 -----
 
-:Released: Unreleased
-:Full Changelog: `v7.0.0...v8.0.0 <https://github.com/useblocks/sphinx-needs/compare/7.0.0...5b223fd71eeb7402d5b60c1a5832434d8fd05e31>`__
+:Released: 19.03.2026
+:Full Changelog: `v7.0.0...v8.0.0 <https://github.com/useblocks/sphinx-needs/compare/7.0.0...8.0.0>`__
 
 This release introduces **conditional link assessment** — the ability to attach
 :ref:`filter_string` conditions to links that are checked against the target need at build time.
