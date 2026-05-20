@@ -13,4 +13,5 @@ DEFAULT_OPTIONS = [
     "text",
     "message",
     "system-out",
+    "properties",
 ]

@@ -73,6 +73,22 @@ class TestSuiteDirective(TestCommonDirective):
         errors = suite["errors"]
         failed = suite["failures"]
 
+        # Flatten JUnit <properties> into extra_options so that
+        # suite-level properties are surfaced as sphinx-needs fields.
+        # Only propagate properties that are explicitly listed in
+        # tr_extra_options to avoid unknown-kwarg errors from add_need.
+        allowed_extras = set(getattr(self.app.config, "tr_extra_options", []))
+        suite_properties = suite.get("properties", {})
+        for prop_name, prop_value in suite_properties.items():
+            if (
+                prop_name in allowed_extras
+                and prop_name not in suite
+                and prop_value not in ["", None]
+            ):
+                self.extra_options[prop_name] = str(prop_value)
+
+        self._apply_property_links(suite_properties)
+
         main_section = []
         docname = self.state.document.settings.env.docname
         main_section += add_need(

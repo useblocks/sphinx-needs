@@ -63,7 +63,13 @@ try:
 
     def _register_field(app, name, schema=None):
         description = FIELD_DESCRIPTIONS.get(name, name)
-        _add_field(name, description, schema=schema)
+        try:
+            _add_field(name, description, schema=schema)
+        except Exception:
+            # Field already registered (e.g. via needs_fields or needs_extra_options
+            # in conf.py). Skip to avoid duplicate registration errors.
+            log = logging.getLogger(__name__)
+            log.debug(f"Field '{name}' already registered, skipping")
 
 except ImportError:
     from sphinx_needs.api import add_extra_option as _add_extra_option
@@ -78,7 +84,11 @@ except ImportError:
             kwargs["description"] = FIELD_DESCRIPTIONS.get(name, name)
         if schema is not None:
             kwargs["schema"] = schema
-        _add_extra_option(app, name, **kwargs)
+        try:
+            _add_extra_option(app, name, **kwargs)
+        except Exception:
+            log = logging.getLogger(__name__)
+            log.debug(f"Field '{name}' already registered, skipping")
 
 
 def setup(app: Sphinx):
@@ -122,6 +132,7 @@ def setup(app: Sphinx):
     app.add_config_value("tr_case_id_length", 5, "html")
     app.add_config_value("tr_import_encoding", "utf8", "html")
     app.add_config_value("tr_extra_options", [], "env")
+    app.add_config_value("tr_property_link_types", {}, "env")
 
     json_mapping = {
         "json_config": {
@@ -257,6 +268,15 @@ def sphinx_needs_update(app: Sphinx, config: Config) -> None:
     # For details about usage read
     # https://sphinx-needs.readthedocs.io/en/latest/api.html#sphinx_needs.api.configuration.add_dynamic_function
     add_dynamic_function(app, tr_link)
+
+    # Register tr_extra_options as sphinx-needs fields so that properties
+    # extracted from JUnit XML are accepted by sphinx-needs
+    tr_extra_options = getattr(config, "tr_extra_options", [])
+    for option_name in tr_extra_options:
+        if use_schema:
+            _register_field(app, option_name, schema={"type": "string"})
+        else:
+            _register_field(app, option_name)
 
     # Extra need types
     # For details about usage read

@@ -155,3 +155,22 @@ class TestCommonDirective(Directive):
 
         # Also collect any extra options while we're at it
         self.collect_extra_options()
+
+    def _apply_property_links(self, properties):
+        """Map JUnit <properties> values to sphinx-needs link fields via tr_property_link_types."""
+        tr_property_link_types = getattr(self.app.config, "tr_property_link_types", {})
+        for prop_name, link_field in tr_property_link_types.items():
+            prop_value = properties.get(prop_name, "")
+            if prop_value:
+                link_ids = ";".join(
+                    id_val.strip() for id_val in prop_value.split(",") if id_val.strip()
+                )
+                if link_field == "links":
+                    existing = self.test_links
+                else:
+                    existing = self.extra_options.get(link_field, "")
+                merged = existing + ";" + link_ids if existing else link_ids
+                if link_field == "links":
+                    self.test_links = merged
+                else:
+                    self.extra_options[link_field] = merged

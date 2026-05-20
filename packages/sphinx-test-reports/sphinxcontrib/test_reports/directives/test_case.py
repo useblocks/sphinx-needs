@@ -160,6 +160,19 @@ class TestCaseDirective(TestCommonDirective):
         if case_parameter is None:
             case_parameter = ""
 
+        # Flatten JUnit <properties> into top-level case keys so that
+        # the extra-data loop below picks them up as sphinx-needs fields.
+        # Only propagate properties that are explicitly listed in
+        # tr_extra_options to avoid unknown-kwarg errors from add_need.
+        # Properties do not overwrite core JUnit attributes (name, time, etc.).
+        allowed_extras = set(getattr(self.app.config, "tr_extra_options", []))
+        case_properties = case.get("properties", {})
+        for prop_name, prop_value in case_properties.items():
+            if prop_name in allowed_extras and prop_name not in case:
+                case[prop_name] = prop_value
+
+        self._apply_property_links(case_properties)
+
         # Set extra data, which is not part of the Sphinx-Test-Reports default options
         for key, value in case.items():
             if key == "id" and value not in ["", None]:

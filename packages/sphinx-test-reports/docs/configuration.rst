@@ -138,6 +138,65 @@ You can then use these options in your directives:
 
    This test file contains enhanced metadata using custom extra options.
 
+**Mapping JUnit XML ``<properties>`` to fields**
+
+When importing JUnit XML files, ``tr_extra_options`` also controls which ``<property>``
+elements inside ``<testcase>`` and ``<testsuite>`` blocks are surfaced as sphinx-needs
+fields. Only property names listed here are imported; all others are silently ignored.
+
+.. code-block:: xml
+
+   <!-- Example JUnit XML -->
+   <testcase name="test_login">
+     <properties>
+       <property name="priority" value="high"/>
+       <property name="verifies" value="REQ_001,REQ_002"/>
+     </properties>
+   </testcase>
+
+.. code-block:: python
+
+   # conf.py – surface "priority" as a sphinx-needs field
+   tr_extra_options = ["priority"]
+   needs_extra_options = ["priority"]
+
+See :ref:`tr_property_link_types` to map properties to sphinx-needs link fields instead.
+
+.. _tr_property_link_types:
+
+tr_property_link_types
+----------------------
+.. versionadded:: 1.3.0
+
+Maps a JUnit XML ``<property>`` name to a sphinx-needs link field. When a test case or
+suite contains a matching property, its comma-separated values are converted to
+semicolon-separated need IDs and merged into the specified link field.
+
+.. code-block:: python
+
+   # conf.py
+   tr_property_link_types = {
+       "verifies": "links",   # comma-separated IDs → need links
+   }
+
+With this configuration a ``<property name="verifies" value="REQ_001,REQ_002"/>`` in
+a ``<testcase>`` results in ``links: REQ_001;REQ_002`` on the generated need.
+
+Multiple properties can map to different link fields:
+
+.. code-block:: python
+
+   tr_property_link_types = {
+       "verifies": "links",
+       "blocks":   "blocks_back",
+   }
+
+.. note::
+
+   The property name does **not** need to be listed in :ref:`tr_extra_options` when it
+   is used exclusively for link mapping. Only add it there if you also want the raw
+   value to appear as a plain text field on the need.
+
 .. _tr_import_encoding:
 
 tr_import_encoding

@@ -83,6 +83,18 @@ class JUnitParser:
             else:
                 tc_dict["system-out"] = ""
 
+            # Extract <properties> child elements as a dict
+            props = {}
+            if hasattr(testcase, "properties") and hasattr(
+                testcase.properties, "property"
+            ):
+                for prop in testcase.properties.property:
+                    name = prop.attrib.get("name", "")
+                    value = prop.attrib.get("value", "")
+                    if name:
+                        props[name] = value
+            tc_dict["properties"] = props
+
             return tc_dict
 
         def parse_testsuite(xml_object):
@@ -111,6 +123,18 @@ class JUnitParser:
                 "testcases": [],
                 "testsuite_nested": [],
             }
+
+            # Extract <properties> child elements as a dict
+            props = {}
+            if hasattr(testsuite, "properties") and hasattr(
+                testsuite.properties, "property"
+            ):
+                for prop in testsuite.properties.property:
+                    name = prop.attrib.get("name", "")
+                    value = prop.attrib.get("value", "")
+                    if name:
+                        props[name] = value
+            ts_dict["properties"] = props
 
             # add nested testsuite objects to
             if hasattr(testsuite, "testsuite"):
