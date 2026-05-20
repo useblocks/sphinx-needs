@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779267647186,
+  "lastUpdate": 1779274611734,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18396,6 +18396,42 @@ window.BENCHMARK_DATA = {
             "value": 56.763104829999996,
             "unit": "s",
             "extra": "Commit: 1d60ee998abf984e3f63a99811a239917451f011\nBranch: master\nTime: 2026-05-20T10:58:50+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9fa98e68fba57c028d48fe146ba393262705622a",
+          "message": "🐛 Fix Docker build by switching PlantUML source to GitHub releases (#1708)\n\n## Summary\n\n- The Docker-Image workflow has been failing because the Dockerfile\nhardcodes a specific Sourceforge mirror\n(`netcologne.dl.sourceforge.net`) that is no longer reachable, causing\n`wget` to exit with code 4 (network failure). See [failed\nrun](https://github.com/useblocks/sphinx-needs/actions/runs/26152538995/job/76923393653).\n- Switched the download URL to the official GitHub releases endpoint\n`https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar`,\nwhich is mirror-free and always serves the latest `plantuml.jar` asset.\n- Preserves unpinned-latest behavior of the original line.\n\n## Test plan\n\n- [x] CI Docker-Image workflow triggered by this PR (path filter\n`docker/**`) completes successfully for both `sphinxdoc/sphinx:latest`\nand `sphinxdoc/sphinx-latexpdf:latest` base images.",
+          "timestamp": "2026-05-20T12:54:43+02:00",
+          "tree_id": "874b933834ce0f573de2780468d0e20759a94371",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/9fa98e68fba57c028d48fe146ba393262705622a"
+        },
+        "date": 1779274588771,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16577720900000514,
+            "unit": "s",
+            "extra": "Commit: 9fa98e68fba57c028d48fe146ba393262705622a\nBranch: master\nTime: 2026-05-20T12:54:43+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.113151456,
+            "unit": "s",
+            "extra": "Commit: 9fa98e68fba57c028d48fe146ba393262705622a\nBranch: master\nTime: 2026-05-20T12:54:43+02:00"
           }
         ]
       }
