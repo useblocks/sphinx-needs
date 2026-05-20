@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import Any, Literal, cast
 
@@ -97,10 +98,11 @@ def resolve_schemas_config(
 
     # inject extra/link/core option types to each nested schema, to avoid silent json schema
     # failures; this must happens before the type check, because it requires type fields
+    # Use deepcopy to avoid mutating the original config (which is pickled for incremental builds)
     for schema in needs_config.schema_definitions["schemas"]:
         schema_name = get_schema_name(schema)
         populate_field_type(
-            schema,
+            copy.deepcopy(schema),
             schema_name,
             fields_schema,
         )
