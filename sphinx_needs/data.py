@@ -835,7 +835,7 @@ class SphinxNeedsData:
         if self.needs_is_post_processed:
             raise RuntimeError("Needs have already been post-processed and frozen.")
         for need_id in list(self._env_needs):
-            if self._env_needs[need_id]["docname"] == docname:
+            if self._env_needs[need_id].is_in_document(docname):
                 del self._env_needs[need_id]
                 self.remove_need_node(need_id)
         docs = self.get_or_create_docs()

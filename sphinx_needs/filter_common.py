@@ -753,4 +753,4 @@ class NeedCheckContext:
     def this_doc(self) -> bool:
         if self._origin_docname is None:
             raise ValueError("`this_doc` can not be used in this context")
-        return self._need["docname"] == self._origin_docname
+        return self._need.is_in_document(self._origin_docname)

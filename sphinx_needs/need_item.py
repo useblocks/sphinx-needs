@@ -1119,6 +1119,10 @@ class NeedItem:
         ctx.update(self._computed)
         return ctx
 
+    def is_in_document(self, docname: str) -> bool:
+        """Check if the need is in a given document."""
+        return self._source.dict_repr.get("docname") == docname
+
 
 class NeedPartItem:
     """A class representing a part of a need, which is a sub-need, merged with the parent need.
@@ -1442,3 +1446,7 @@ class NeedPartItem:
                     key,
                     part.backlinks.get(key, []),
                 )
+
+    def is_in_document(self, docname: str) -> bool:
+        """Check if the need is in a given document."""
+        return self._need.is_in_document(docname)
