@@ -57,7 +57,9 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
     # Validate needs against user-defined type schemas. We read the
     # type-injected copy stored on the environment by resolve_schemas_config,
     # not config.schema_definitions itself (see resolve_schemas_config for why).
-    type_schemas: list[SchemasRootType] = SphinxNeedsData(app.env).get_resolved_schemas()
+    type_schemas: list[SchemasRootType] = SphinxNeedsData(
+        app.env
+    ).get_resolved_schemas()
     if type_schemas:
         field_properties: Mapping[str, NeedFieldProperties] = generate_needs_schema(
             needs_schema
