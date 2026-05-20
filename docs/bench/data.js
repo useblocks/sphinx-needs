@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779285820777,
+  "lastUpdate": 1779287436564,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18468,6 +18468,42 @@ window.BENCHMARK_DATA = {
             "value": 56.961767901,
             "unit": "s",
             "extra": "Commit: 747a978b59413137179e43f4fcdc0a2faf50504b\nBranch: master\nTime: 2026-05-20T16:01:36+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6d0c7c071db3ecec49580dccbaece18d56624301",
+          "message": "🐛 Fix `needs_schema_definitions` triggering full rebuilds (#1712)\n\n## Summary\n\nFixes #1710.\n\n`resolve_schemas_config` ran on `env-before-read-docs` and mutated\n`needs_config.schema_definitions['schemas']` in place via\n`populate_field_type` (injecting `type` keys). That event fires\n**after** Sphinx's `config-inited` config-change checkpoint, so the\nend-of-build pickle stored the mutated config while the next build\nloaded the unmutated JSON/dict — Sphinx then saw a diff on\n`needs_schema_definitions` and rebuilt every document on every\nincremental run.\n\n- Work on a `copy.deepcopy` of the schemas inside\n`resolve_schemas_config` and store the type-injected copy on the env via\nnew `SphinxNeedsData.get_resolved_schemas` / `_set_resolved_schemas`\naccessors.\n- `sphinx_needs/schema/process.py` now reads from there instead of from\nthe config dict, so the config object Sphinx pickles is byte-equal to\nthe config object loaded on the next build.\n\n## Test plan\n\n- [x] New regression test `tests/schema/test_schema_incremental.py` runs\ntwo `SphinxTestApp` builds against the same srcdir and asserts the\nsecond one reports `0 added, 0 changed, 0 removed` and **no** `config\nchanged` message. Fails on `master`, passes on this branch.\n- [x] All 171 tests in `tests/schema/` pass.\n- [x] Schema benchmark tests\n(`tests/benchmarks/test_schema_benchmark.py`) pass.\n- [x] Manually re-ran the reporter's reproduction (`sphinx-build` twice\non a fixture with `needs_schema_definitions_from_json`): first build\nreports `[new config] 1 added, 0 changed, 0 removed`, second reports `0\nadded, 0 changed, 0 removed` with no spurious config-change message.\n- [x] Verified schema validation still fires and still reports\nviolations against the resolved schemas (intentionally bad `id:` value\ncaught as expected).\n\n---------\n\nCo-authored-by: pre-commit-ci[bot] <66853113+pre-commit-ci[bot]@users.noreply.github.com>",
+          "timestamp": "2026-05-20T16:28:15+02:00",
+          "tree_id": "95353e3ecfc5d4a11b59c936ca3e2bd9a5ca5877",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6d0c7c071db3ecec49580dccbaece18d56624301"
+        },
+        "date": 1779287414171,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.149001829999996,
+            "unit": "s",
+            "extra": "Commit: 6d0c7c071db3ecec49580dccbaece18d56624301\nBranch: master\nTime: 2026-05-20T16:28:15+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.19497543199999,
+            "unit": "s",
+            "extra": "Commit: 6d0c7c071db3ecec49580dccbaece18d56624301\nBranch: master\nTime: 2026-05-20T16:28:15+02:00"
           }
         ]
       }
