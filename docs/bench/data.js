@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779274611734,
+  "lastUpdate": 1779285820777,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18432,6 +18432,42 @@ window.BENCHMARK_DATA = {
             "value": 63.113151456,
             "unit": "s",
             "extra": "Commit: 9fa98e68fba57c028d48fe146ba393262705622a\nBranch: master\nTime: 2026-05-20T12:54:43+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "747a978b59413137179e43f4fcdc0a2faf50504b",
+          "message": "⚡️ Add `NeedItem.is_in_document()` (#1709)\n\nReplace direct `need[\"docname\"] == docname` comparisons with a method on\n`NeedItem` and `NeedPartItem`, encapsulating the document membership\nlogic behind a single access point.\n\nIn particular this should speed up document purges, for projects with\nlots of needs",
+          "timestamp": "2026-05-20T16:01:36+02:00",
+          "tree_id": "db636980a17a3544384b354c15686385d57dd123",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/747a978b59413137179e43f4fcdc0a2faf50504b"
+        },
+        "date": 1779285797600,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1484142879999979,
+            "unit": "s",
+            "extra": "Commit: 747a978b59413137179e43f4fcdc0a2faf50504b\nBranch: master\nTime: 2026-05-20T16:01:36+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.961767901,
+            "unit": "s",
+            "extra": "Commit: 747a978b59413137179e43f4fcdc0a2faf50504b\nBranch: master\nTime: 2026-05-20T16:01:36+02:00"
           }
         ]
       }
