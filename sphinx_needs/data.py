@@ -34,6 +34,7 @@ if TYPE_CHECKING:
         LinksLiteralValue,
     )
     from sphinx_needs.nodes import Need
+    from sphinx_needs.schema.config import SchemasRootType
     from sphinx_needs.services.manager import ServiceManager
 
 
@@ -789,6 +790,21 @@ class SphinxNeedsData:
         This should only be called once, during initialization.
         """
         self.env._needs_schema = schema
+
+    def get_resolved_schemas(self) -> list[SchemasRootType]:
+        """Get the type-injected user schema definitions, if any.
+
+        These are produced by ``resolve_schemas_config`` from
+        ``needs_schema_definitions['schemas']`` and stored on the environment
+        rather than mutated back into the config, so Sphinx's config-change
+        detection does not see a diff between the in-memory config (loaded
+        each build) and the pickled config (saved at end of build).
+        """
+        return getattr(self.env, "_needs_resolved_schemas", [])
+
+    def _set_resolved_schemas(self, schemas: list[SchemasRootType]) -> None:
+        """Store the type-injected user schema definitions on the environment."""
+        self.env._needs_resolved_schemas = schemas
 
     @property
     def _env_needs(self) -> dict[str, NeedItem]:
