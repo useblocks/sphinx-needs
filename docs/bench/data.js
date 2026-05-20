@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779180392486,
+  "lastUpdate": 1779265778968,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18288,6 +18288,42 @@ window.BENCHMARK_DATA = {
             "value": 59.16810147299998,
             "unit": "s",
             "extra": "Commit: 1e60746c3bf7d64f589b81b69fe209bdbe5671c0\nBranch: master\nTime: 2026-05-19T10:44:27+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b9ce9f440edc7c417588241e56cb18230952e5cd",
+          "message": "⚡️ Add `NeedItem.filter_context()` to avoid costly `{**need}` unpacking (#1706)",
+          "timestamp": "2026-05-20T10:27:40+02:00",
+          "tree_id": "a5dc9503e0cd567c90afd0296818888564c1bef7",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/b9ce9f440edc7c417588241e56cb18230952e5cd"
+        },
+        "date": 1779265756394,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1393136070000196,
+            "unit": "s",
+            "extra": "Commit: b9ce9f440edc7c417588241e56cb18230952e5cd\nBranch: master\nTime: 2026-05-20T10:27:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 52.775922949000005,
+            "unit": "s",
+            "extra": "Commit: b9ce9f440edc7c417588241e56cb18230952e5cd\nBranch: master\nTime: 2026-05-20T10:27:40+02:00"
           }
         ]
       }
