@@ -4,13 +4,50 @@
 Changelog
 =========
 
+.. _`release:8.1.1`:
+
+8.1.1
+-----
+
+:Released: 20.05.2026
+:Full Changelog: `v8.1.0...v8.1.1 <https://github.com/useblocks/sphinx-needs/compare/8.1.0...6d0c7c071db3ecec49580dccbaece18d56624301>`__
+
+This is a patch release with bug fixes and a minor performance improvement.
+
+Performance
+...........
+
+- ⚡️ Add ``NeedItem.is_in_document()`` (:pr:`1709`)
+
+  Replace direct ``need["docname"] == docname`` comparisons with a method on
+  ``NeedItem`` and ``NeedPartItem``, encapsulating the document membership
+  logic behind a single access point. Speeds up document purges on projects
+  with many needs.
+
+Bug fixes
+.........
+
+- 🐛 Fix ``needs_schema_definitions`` triggering full rebuilds (:issue:`1710`, :pr:`1712`).
+  ``resolve_schemas_config`` mutated the schemas dict in place after Sphinx's
+  ``config-inited`` checkpoint, so the pickled config diverged from the config
+  loaded on the next build — causing Sphinx to detect a spurious change and
+  rebuild every document on every incremental run. The resolved schemas are
+  now stored on the env via ``SphinxNeedsData`` accessors, leaving the config
+  object byte-equal across builds.
+
+- 🐛 Fix Docker build by switching PlantUML source to GitHub releases (:pr:`1708`).
+  The Dockerfile hardcoded a Sourceforge mirror that became unreachable,
+  breaking the ``Docker-Image`` workflow. The download URL now points at the
+  official ``github.com/plantuml/plantuml/releases/latest/download/plantuml.jar``
+  endpoint.
+
 .. _`release:8.1.0`:
 
 8.1.0
 -----
 
 :Released: 20.05.2026
-:Full Changelog: `v8.0.0...v8.1.0 <https://github.com/useblocks/sphinx-needs/compare/8.0.0...8745a55e24b2ed17b7e8048340a262c9767b14ae>`__
+:Full Changelog: `v8.0.0...v8.1.0 <https://github.com/useblocks/sphinx-needs/compare/8.0.0...8.1.0>`__
 
 This release focuses on **filter performance improvements** and bug fixes.
 
