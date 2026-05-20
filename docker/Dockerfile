@@ -36,7 +36,7 @@ RUN apt-get -y install \
   default-jre
 
 # Install PlantUML
-RUN wget -c https://netcologne.dl.sourceforge.net/project/plantuml/plantuml.jar -O /tmp/plantuml.jar && \
+RUN wget -c https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar -O /tmp/plantuml.jar && \
     mkdir -p /usr/share/plantuml && \
     mv /tmp/plantuml.jar /usr/share/plantuml/plantuml.jar
 
