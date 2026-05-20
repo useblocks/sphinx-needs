@@ -180,7 +180,6 @@
             'lineno': 51,
             'links': list([
               'CON_REQ_2',
-              'CON_REQ_2',
             ]),
             'section_name': 'LINKS FROM CONTENT',
             'sections': list([

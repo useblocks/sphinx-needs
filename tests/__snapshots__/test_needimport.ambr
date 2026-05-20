@@ -37,9 +37,9 @@
               'R_F4722',
             ]),
             'links_back': list([
+              'filter_IMPL_01',
               'IMPL_01',
               'T_C3893',
-              'filter_IMPL_01',
             ]),
             'section_name': 'TEST DOCUMENT IMPORT',
             'sections': list([
