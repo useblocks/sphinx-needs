@@ -90,9 +90,9 @@
             'id': 'CON_SPEC_1',
             'lineno': 13,
             'links': list([
+              'CON-REQ-3',
               'CON_REQ_1',
               'CON_REQ_2',
-              'CON-REQ-3',
             ]),
             'section_name': 'LINKS FROM CONTENT',
             'sections': list([
@@ -109,9 +109,9 @@
             'id': 'CON_SPEC_2',
             'lineno': 23,
             'links': list([
+              'CON-REQ-3',
               'CON_REQ_1',
               'CON_REQ_2',
-              'CON-REQ-3',
             ]),
             'section_name': 'LINKS FROM CONTENT',
             'sections': list([
@@ -179,7 +179,6 @@
             'id': 'CON_SPEC_5',
             'lineno': 51,
             'links': list([
-              'CON_REQ_2',
               'CON_REQ_2',
             ]),
             'section_name': 'LINKS FROM CONTENT',

@@ -829,8 +829,8 @@
             'links': list([
             ]),
             'links_back': list([
-              'SPEC_SAFE_UNSAFE_FEAT',
               'SPEC_SAFE_ADD_UNSAFE_FEAT',
+              'SPEC_SAFE_UNSAFE_FEAT',
             ]),
             'max_amount': None,
             'max_content_lines': None,
@@ -986,8 +986,8 @@
             'links': list([
             ]),
             'links_back': list([
-              'SPEC_SAFE_ADD_UNSAFE_FEAT',
               'SPEC_SAFE',
+              'SPEC_SAFE_ADD_UNSAFE_FEAT',
             ]),
             'max_amount': None,
             'max_content_lines': None,

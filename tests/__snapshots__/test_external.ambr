@@ -604,8 +604,8 @@
             'id': 'SPEC_1',
             'lineno': 12,
             'links': list([
-              'REQ_1',
               'EXT_TEST_01',
+              'REQ_1',
             ]),
             'section_name': 'TEST DOCUMENT EXTERNAL',
             'sections': list([

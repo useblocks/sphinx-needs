@@ -37,9 +37,9 @@
               'R_F4722',
             ]),
             'links_back': list([
+              'filter_IMPL_01',
               'IMPL_01',
               'T_C3893',
-              'filter_IMPL_01',
             ]),
             'section_name': 'TEST DOCUMENT IMPORT',
             'sections': list([
@@ -315,8 +315,8 @@
             'is_import': True,
             'lineno': 4,
             'links': list([
-              'OWN_ID_123',
               'IMPL_01',
+              'OWN_ID_123',
             ]),
             'parent_need': 'T_5CCAA',
             'parent_needs': list([
@@ -679,8 +679,8 @@
             'is_import': True,
             'lineno': 16,
             'links': list([
-              'collapsed_OWN_ID_123',
               'collapsed_IMPL_01',
+              'collapsed_OWN_ID_123',
             ]),
             'parent_need': 'collapsed_T_5CCAA',
             'parent_needs': list([
@@ -1127,8 +1127,8 @@
             'is_import': True,
             'lineno': 9,
             'links': list([
-              'hidden_OWN_ID_123',
               'hidden_IMPL_01',
+              'hidden_OWN_ID_123',
             ]),
             'parent_need': 'hidden_T_5CCAA',
             'parent_needs': list([
@@ -1593,8 +1593,8 @@
             'is_import': True,
             'lineno': 23,
             'links': list([
-              'test_OWN_ID_123',
               'test_IMPL_01',
+              'test_OWN_ID_123',
             ]),
             'parent_need': 'test_T_5CCAA',
             'parent_needs': list([

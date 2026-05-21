@@ -4,6 +4,22 @@
 Changelog
 =========
 
+.. _`release:unreleased`:
+
+Unreleased
+----------
+
+:Released: Unreleased
+
+Bug fixes
+.........
+
+- 🐛 Sort need link and backlink lists in ``needs.json`` and HTML output using
+  natural, case-insensitive ordering (e.g. ``REQ_2`` < ``REQ_9`` < ``REQ_10``)
+  and collapse duplicate entries, so build outputs are reproducible regardless
+  of need load order (e.g. when using :ref:`needs_external_needs`)
+  (:issue:`1371`)
+
 .. _`release:8.1.1`:
 
 8.1.1

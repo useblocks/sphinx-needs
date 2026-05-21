@@ -36,8 +36,8 @@
             'lineno': 4,
             'links': list([
               'REQ_A_1',
-              'REQ_D_1',
               'REQ_B_1',
+              'REQ_D_1',
             ]),
             'links_back': list([
             ]),
