@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779292138448,
+  "lastUpdate": 1779364517798,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18540,6 +18540,42 @@ window.BENCHMARK_DATA = {
             "value": 50.68255323900001,
             "unit": "s",
             "extra": "Commit: dd487c1d64654d805456341afae17cbabcd0c1fd\nBranch: master\nTime: 2026-05-20T17:47:04+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0375eb55cb19bb6c1fd6063f5b4d142ce093771a",
+          "message": "🐛 Sort need links and backlinks naturally in needs.json and HTML (#1695)\n\n## Summary\n\nCloses #1371.\n\nNeed link and backlink lists are now naturally sorted (e.g. ``REQ_2`` <\n``REQ_9`` < ``REQ_10``) so build outputs are reproducible regardless of\nneed load order, including when ``needs_external_needs`` is configured.\nSorting happens unconditionally — no ``needs_reproducible_json`` flag is\nrequired — and applies to both ``needs.json`` and HTML output.\n\nThis matches the behaviour [`@ubmarco`\nconfirmed](https://github.com/useblocks/sphinx-needs/issues/1371#issuecomment-4343807737)\nwas desired: sort by default, in both outputs, irrespective of the\n``needs_reproducible_json`` setting (which still keeps its existing role\nof stripping timestamps).\n\n## Implementation\n\n- ``NeedItem.sort_links()`` sorts ``_links``, ``_backlinks`` and\nper-part ``backlinks`` in place using a natural sort key (digit runs are\ncompared as ints, with the result alternating ``str``/``int`` so\nmixed-type comparisons are well-defined).\n- ``resolve_links()`` calls ``sort_links()`` on every need at the end of\nthe post-processing pass, so all downstream consumers — JSON\nserialization in ``needsfile.py`` and the HTML rendering of\noutgoing/incoming refs in ``roles/need_outgoing.py`` and\n``roles/need_incoming.py`` — see sorted lists.\n\n## Tests\n\nNew ``tests/test_needs_sort.py`` is YAML-driven and snapshot-based,\nmodelled on ``tests/schema/test_schema.py``:\n\n- ``tests/fixtures/sort_links.yml`` declares 5 cases:\n- ``alphabetical_outgoing`` — basic alphabetical sort of outgoing links\n- ``natural_outgoing`` — natural sort with digits (proves ``REQ_10``\nlands after ``REQ_9``)\n  - ``mixed_alphanumeric`` — mixed letter+number IDs\n- ``backlinks_sorted`` — backlinks naturally sorted (``SPEC_1, SPEC_2,\nSPEC_10``)\n- ``custom_link_types`` — sort works for custom link types\n(``implements``, ``derives``)\n- For each case the test reads ``needs.json``, derives link-field names\nfrom the embedded ``needs_schema`` (``field_type ∈ {links,\nbacklinks}``), and snapshots the link/backlink fields per need. It also\nreads ``index.html``, extracts ``(source need, target need)`` ref pairs\nby matching ``title=\"<source>\"`` on link anchors, and snapshots that\nmapping. Both snapshots clearly show the natural ordering.\n\nExisting snapshots in 8 unrelated test files were updated for the new\nsorted order; all changes are mechanical reorderings within link lists.\n\n## Test plan\n\n- [x] CI passes\n- [x] ``pytest tests/test_needs_sort.py`` — 5 cases pass, 10 snapshots\nmatch\n- [x] ``pytest tests/`` — no link-related regressions\n\n## Changelog\n\nThe bug-fix entry is in a new ``Unreleased`` section above 8.0.0 (now\nmarked released on 19.03.2026).",
+          "timestamp": "2026-05-21T13:53:20+02:00",
+          "tree_id": "e9568788935eec71a138cecdc6663c6e53eb172c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/0375eb55cb19bb6c1fd6063f5b4d142ce093771a"
+        },
+        "date": 1779364494359,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15251484099999857,
+            "unit": "s",
+            "extra": "Commit: 0375eb55cb19bb6c1fd6063f5b4d142ce093771a\nBranch: master\nTime: 2026-05-21T13:53:20+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.20057488200001,
+            "unit": "s",
+            "extra": "Commit: 0375eb55cb19bb6c1fd6063f5b4d142ce093771a\nBranch: master\nTime: 2026-05-21T13:53:20+02:00"
           }
         ]
       }
