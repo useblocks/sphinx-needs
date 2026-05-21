@@ -8,7 +8,7 @@ Changelog
 0.1.0
 -----
 
-:Released: Unreleased
+:Released: 2026-05-21
 
 Initial release of **sphinx-mounts** — a Sphinx extension that mounts external
 RST source trees into a Sphinx build *without copying or symlinking the
