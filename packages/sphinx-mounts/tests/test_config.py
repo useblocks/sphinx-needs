@@ -344,8 +344,12 @@ class TestLoadMountsFromToml:
     def test_absolute_paths_pass_through_unchanged(self, tmp_path: Path) -> None:
         abs_dir = tmp_path / "abs"
         toml = tmp_path / "ubproject.toml"
+        # Use a TOML *literal* string (single quotes) so that a Windows
+        # absolute path like ``C:\Users\...`` is not interpreted as TOML
+        # escape sequences (``\U`` would otherwise be parsed as a
+        # \Uxxxxxxxx Unicode escape and fail to parse).
         toml.write_text(
-            f'[[mounts]]\ndir = "{abs_dir}"\nmount_at = "_g/abs"\n',
+            f"[[mounts]]\ndir = '{abs_dir}'\nmount_at = '_g/abs'\n",
             encoding="utf-8",
         )
         raw = load_mounts_from_toml(toml)
