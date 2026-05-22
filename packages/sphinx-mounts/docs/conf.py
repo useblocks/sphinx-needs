@@ -20,7 +20,7 @@ extensions = [
 ]
 
 exclude_patterns: list[str] = []
-templates_path: list[str] = []
+templates_path = ["source/_static/_templates/furo"]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
@@ -40,6 +40,20 @@ html_theme_options = {
     "source_branch": "main",
     "source_directory": "docs/source/",
 }
+html_sidebars = {
+    "**": [
+        "sidebar/brand.html",
+        "sidebar/search.html",
+        "sidebar/scroll-start.html",
+        "sidebar/navigation.html",
+        "sidebar/ethical-ads.html",
+        "sidebar/scroll-end.html",
+        "side-github.html",
+        "sidebar/variant-selector.html",
+    ]
+}
+html_context = {"repository": "useblocks/sphinx-mounts"}
+html_css_files = ["furo.css"]
 
 # Named hyperlink targets for sibling useblocks projects. Defined once
 # here (appended to every RST source via ``rst_epilog``) so the URLs are
