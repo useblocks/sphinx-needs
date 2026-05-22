@@ -26,7 +26,7 @@ def process_need_outgoing(
     builder = app.builder
     env = app.env
     needs_config = NeedsSphinxConfig(app.config)
-    link_lookup = {link["option"]: link for link in needs_config.extra_links}
+    needs_schema = SphinxNeedsData(env).get_schema()
 
     # for node_need_ref in doctree.findall(NeedOutgoing):
     for node_need_ref in found_nodes:
@@ -124,7 +124,8 @@ def process_need_outgoing(
                 # add a CSS class for disallowed unknown links
                 # note a warning is already emitted when validating the needs list
                 # so we don't need to do it here
-                if not link_lookup.get(link_type, {}).get("allow_dead_links", False):  # type: ignore
+                link_field = needs_schema.get_link_field(link_type)
+                if not (link_field and link_field.allow_dead_links):
                     dead_link_para.attributes["classes"].append("forbidden")
 
             # If we have several links, we add an empty text between them

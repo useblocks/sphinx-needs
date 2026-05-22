@@ -104,6 +104,9 @@ def test_ons_service(test_app):
     assert "Test rocket power" in html
     assert "ONS_TEST_NEP_004" in html
     assert "NEP_003" in html
+    assert "links outgoing" in html
+    assert "ONS_TEST_NEP_001" in html
+    assert "ONS_TEST_NEP_002" in html
 
     assert "open" in html
     assert "Debug data" in html

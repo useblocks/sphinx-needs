@@ -37,18 +37,3 @@ needs_types = [
         "style": "node",
     },
 ]
-
-
-# needs_extra_links = [
-#     {
-#         "option": "blocks",
-#         "incoming": "is blocked by",
-#         "outgoing": "blocks",
-#         "copy": False,
-#         "style": "#AA0000",
-#         "style_part": "dotted,#AA0000",
-#         "style_start": "-",
-#         "style_end": "-o",
-#         "allow_dead_links": True,
-#     },
-# ]

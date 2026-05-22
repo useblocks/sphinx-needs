@@ -4,9 +4,9 @@ needs_build_json = True
 needs_json_remove_defaults = True
 
 needs_fields = {
-    "introduced": {},
-    "updated": {},
-    "impacts": {},
+    "introduced": {"nullable": True},
+    "updated": {"nullable": True},
+    "impacts": {"nullable": True},
 }
 
 needs_template_collapse = """

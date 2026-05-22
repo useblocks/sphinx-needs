@@ -59,9 +59,8 @@ needs_types = [
     },
 ]
 
-needs_extra_links = [
-    {
-        "option": "triggers",
+needs_links = {
+    "triggers": {
         "incoming": "triggered by",
         "outgoing": "triggers",
         "copy": False,
@@ -69,6 +68,6 @@ needs_extra_links = [
         "style_part": "solid,#777777",
         "allow_dead_links": True,
     },
-]
+}
 
 needs_css = os.path.join(os.path.dirname(__file__), "filter.css")

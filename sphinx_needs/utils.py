@@ -12,10 +12,10 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar
 from urllib.parse import urlparse
 
 from docutils import nodes
-from jinja2 import Environment, Template
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
+from sphinx_needs._jinja import compile_template, render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
@@ -140,20 +140,21 @@ def row_col_maker(
             link_id = datum
             link_part = None
 
+            needs_schema = SphinxNeedsData(env).get_schema()
             link_list = []
-            for link_type in needs_config.extra_links:
-                link_list.append(link_type["option"])
-                link_list.append(link_type["option"] + "_back")
+            for link_field in needs_schema.iter_link_fields():
+                link_list.append(link_field.name)
+                link_list.append(link_field.name + "_back")
 
             # For needs_string_links
             link_string_list = {}
             for link_name, link_conf in needs_config.string_links.items():
                 link_string_list[link_name] = {
-                    "url_template": Environment(autoescape=True).from_string(
-                        link_conf["link_url"]
+                    "url_template": compile_template(
+                        link_conf["link_url"], autoescape=False
                     ),
-                    "name_template": Environment(autoescape=True).from_string(
-                        link_conf["link_name"]
+                    "name_template": compile_template(
+                        link_conf["link_name"], autoescape=False
                     ),
                     "regex_compiled": re.compile(link_conf["regex"]),
                     "options": link_conf["options"],
@@ -255,19 +256,27 @@ def import_prefix_link_edit(
     if not id_prefix:
         return
 
-    needs_ids = needs.keys()
+    from sphinx_needs.need_item import NeedLink
+
+    needs_ids = set(needs.keys())
     link_names_list = list(link_names)
 
     for need in needs.values():
+        for link_name in link_names_list:
+            if link_name not in need:
+                continue
+            for n, link in enumerate(need[link_name]):
+                parsed = NeedLink.from_string(link)
+                if parsed.id in needs_ids:
+                    prefixed = NeedLink(
+                        id=f"{id_prefix}{parsed.id}",
+                        part=parsed.part,
+                        condition=parsed.condition,
+                    )
+                    need[link_name][n] = prefixed.to_link_string()
+        # Manipulate descriptions
+        # ToDo: Use regex for better matches.
         for id in needs_ids:
-            # Manipulate links in all link types
-            for link_name in link_names_list:
-                if link_name in need and id in need[link_name]:
-                    for n, link in enumerate(need[link_name]):
-                        if id == link:
-                            need[link_name][n] = f"{id_prefix}{id}"
-            # Manipulate descriptions
-            # ToDo: Use regex for better matches.
             for key in ("content", "description"):
                 if key in need:
                     need[key] = need[key].replace(id, "".join([id_prefix, id]))
@@ -392,14 +401,13 @@ def jinja_parse(context: dict[str, Any], jinja_string: str) -> str:
 
     """
     try:
-        content_template = Template(jinja_string, autoescape=True)
+        content = render_template_string(jinja_string, context, autoescape=False)
     except Exception as e:
         raise ReferenceError(
             f'There was an error in the jinja statement: "{jinja_string}". '
             f"Error Msg: {e}"
-        )
+        ) from e
 
-    content = content_template.render(**context)
     return content
 
 
@@ -494,10 +502,10 @@ def match_string_link(
         if match:
             render_content = match.groupdict()
             link_url = link_conf["url_template"].render(
-                **render_content, **render_context
+                {**render_content, **render_context}
             )
             link_name = link_conf["name_template"].render(
-                **render_content, **render_context
+                {**render_content, **render_context}
             )
 
         # if no string_link match was made, we handle it as normal string value

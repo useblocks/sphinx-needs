@@ -80,3 +80,45 @@ def test_doc_github_160(test_app):
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert '<a class="reference internal" href="#A-001" title="A-002">A-001</a>' in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_github_issue_1664",
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_github_issue_1664",
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_doc_github_1664(test_app):
+    """
+    https://github.com/useblocks/sphinx-needs/issues/1664
+
+    When a ``needs_types`` entry has no ``color`` field, needflow used to fall
+    back to ``#000000`` (black), producing very dark / unreadable nodes.
+    After the fix, no color should be emitted so the diagram engine's own
+    default is used.
+    """
+    app = test_app
+    app.build()
+    html = Path(app.outdir, "index.html").read_text()
+
+    # No #000000 fill color should appear in the rendered output when the
+    # user did not set a color in needs_types.
+    # For plantuml the rendered source is shown via :debug:; for graphviz the
+    # fill color would appear in the embedded SVG when the bug is present.
+    assert "#000000" not in html
+    for graphviz_file in Path(app.outdir, "_images").glob("graphviz-*.svg"):
+        assert "#000000" not in graphviz_file.read_text()

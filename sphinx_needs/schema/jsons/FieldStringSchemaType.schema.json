@@ -47,6 +47,6 @@
   "required": [
     "type"
   ],
-  "title": "ExtraOptionStringSchemaTypeModel",
+  "title": "FieldStringSchemaTypeModel",
   "type": "object"
 }

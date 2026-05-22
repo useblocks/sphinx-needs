@@ -31,18 +31,16 @@ needs_types = [
     },
 ]
 
-needs_extra_links = [
-    {
-        "option": "other_links",
+needs_links = {
+    "other_links": {
         "incoming": "is incoming",
         "outgoing": "is outgoing",
     },
-    {
-        "option": "more_links",
+    "more_links": {
         "incoming": "is incoming",
         "outgoing": "is outgoing",
     },
-]
+}
 
 needs_build_json = True
 needs_json_remove_defaults = True

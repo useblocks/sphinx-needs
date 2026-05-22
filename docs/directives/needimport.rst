@@ -116,6 +116,13 @@ collapse
 The ``:collapse:`` will hide the meta-data information by default, if set to ``True``.
 See also :ref:`need_collapse` description of :ref:`need`.
 
+.. note::
+
+   Imported needs support :ref:`conditional links <need_conditional_links>`.
+   Link strings in the JSON file can contain conditions,
+   e.g. ``"links": ["REQ_001[status==\"open\"]"]``,
+   and these conditions will be evaluated against the target needs during the build.
+
 .. warning::
 
     * Imported needs may use different need types as the current project.

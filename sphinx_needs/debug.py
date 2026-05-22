@@ -15,8 +15,9 @@ from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, TypeVar
 
-from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx
+
+from sphinx_needs._jinja import render_template_string
 
 TIME_MEASUREMENTS: dict[str, Any] = {}  # Stores the timing results
 EXECUTE_TIME_MEASUREMENTS = (
@@ -165,13 +166,17 @@ def _store_timing_results_json(app: Sphinx, build_data: dict[str, Any]) -> None:
 
 
 def _store_timing_results_html(app: Sphinx, build_data: dict[str, Any]) -> None:
-    jinja_env = Environment(
-        loader=PackageLoader("sphinx_needs"), autoescape=select_autoescape()
-    )
-    template = jinja_env.get_template("time_measurements.html")
+    template_path = Path(__file__).parent / "templates" / "time_measurements.html"
+    template_content = template_path.read_text(encoding="utf-8")
     out_file = Path(str(app.outdir)) / "debug_measurement.html"
     with open(out_file, "w", encoding="utf-8") as f:
-        f.write(template.render(data=TIME_MEASUREMENTS, build_data=build_data))
+        f.write(
+            render_template_string(
+                template_content,
+                {"data": TIME_MEASUREMENTS, "build_data": build_data},
+                autoescape=True,
+            )
+        )
     print(f"Timing measurement report (HTML) stored under {out_file}")
 
 

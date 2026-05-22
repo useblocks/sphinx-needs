@@ -288,7 +288,7 @@ The ``:horizontal:`` flag does not support any values and it's useful with the `
 transpose
 ~~~~~~~~~
 
-You can `transpose <https://en.wikipedia.org/wiki/Transpose>`_ the data in the content by setting the ``:transpose:`` flag.
+You can `transpose <https://en.wikipedia.org/wiki/Transpose>`__ the data in the content by setting the ``:transpose:`` flag.
 The idea is, you can try to see the data from different point of view, without refactoring.
 
 The ``:transpose:`` flag does not support any values and it's useful with big content tables.

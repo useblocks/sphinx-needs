@@ -12,8 +12,8 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.errors import NoUri
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItem
-from sphinx_needs.utils import check_and_calc_base_url_rel_path, split_need_id
+from sphinx_needs.need_item import NeedItem, NeedLink
+from sphinx_needs.utils import check_and_calc_base_url_rel_path
 
 log = get_logger(__name__)
 
@@ -83,8 +83,10 @@ def process_need_ref(
         prefix = "[["
         postfix = "]]"
 
+        need_link: NeedLink = node_need_ref["need_link"]
         need_id_full = node_need_ref["reftarget"]
-        need_id_main, need_id_part = split_need_id(need_id_full)
+        need_id_main = need_link.id
+        need_id_part = need_link.part
 
         if need_id_main not in all_needs:
             log_warning(

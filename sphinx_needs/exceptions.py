@@ -21,7 +21,7 @@ class InvalidNeedException(Exception):
         type_: Literal[
             "invalid_kwargs",
             "invalid_type",
-            "invalid_extra_option",
+            "invalid_field_value",
             "invalid_link_option",
             "missing_id",
             "invalid_id",
@@ -50,7 +50,7 @@ class InvalidNeedException(Exception):
     ) -> Literal[
         "invalid_kwargs",
         "invalid_type",
-        "invalid_extra_option",
+        "invalid_field_value",
         "invalid_link_option",
         "missing_id",
         "invalid_id",

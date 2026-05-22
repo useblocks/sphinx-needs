@@ -6,14 +6,14 @@ repos:
       - id: taplo-format
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.10
+    rev: v0.15.8
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/google/yamlfmt
-    rev: v0.20.0
+    rev: v0.21.0
     hooks:
       - id: yamlfmt
 
@@ -29,6 +29,7 @@ repos:
           - jsonschema-rs==0.37.1
           - types-docutils==0.20.0.20240201
           - types-requests
+          - minijinja~=2.15
 
   # TODO this does not work on pre-commit.ci
   # - repo: https://github.com/astral-sh/uv-pre-commit

@@ -4,19 +4,552 @@
 Changelog
 =========
 
+.. _`release:unreleased`:
+
+Unreleased
+----------
+
+:Released: Unreleased
+
+Improvements
+............
+
+- 👌 Allow link fields in :ref:`needservice` directive options, so needs
+  created via a custom service can declare links to other needs (:pr:`1632`)
+
+Bug fixes
+.........
+
+- 🐛 Sort need link and backlink lists in ``needs.json`` and HTML output using
+  natural, case-insensitive ordering (e.g. ``REQ_2`` < ``REQ_9`` < ``REQ_10``)
+  and collapse duplicate entries, so build outputs are reproducible regardless
+  of need load order (e.g. when using :ref:`needs_external_needs`)
+  (:issue:`1371`)
+
+.. _`release:8.1.1`:
+
+8.1.1
+-----
+
+:Released: 20.05.2026
+:Full Changelog: `v8.1.0...v8.1.1 <https://github.com/useblocks/sphinx-needs/compare/8.1.0...6d0c7c071db3ecec49580dccbaece18d56624301>`__
+
+This is a patch release with bug fixes and a minor performance improvement.
+
+Performance
+...........
+
+- ⚡️ Add ``NeedItem.is_in_document()`` (:pr:`1709`)
+
+  Replace direct ``need["docname"] == docname`` comparisons with a method on
+  ``NeedItem`` and ``NeedPartItem``, encapsulating the document membership
+  logic behind a single access point. Speeds up document purges on projects
+  with many needs.
+
+Bug fixes
+.........
+
+- 🐛 Fix ``needs_schema_definitions`` triggering full rebuilds (:issue:`1710`, :pr:`1712`).
+  ``resolve_schemas_config`` mutated the schemas dict in place after Sphinx's
+  ``config-inited`` checkpoint, so the pickled config diverged from the config
+  loaded on the next build — causing Sphinx to detect a spurious change and
+  rebuild every document on every incremental run. The resolved schemas are
+  now stored on the env via ``SphinxNeedsData`` accessors, leaving the config
+  object byte-equal across builds.
+
+- 🐛 Fix Docker build by switching PlantUML source to GitHub releases (:pr:`1708`).
+  The Dockerfile hardcoded a Sourceforge mirror that became unreachable,
+  breaking the ``Docker-Image`` workflow. The download URL now points at the
+  official ``github.com/plantuml/plantuml/releases/latest/download/plantuml.jar``
+  endpoint.
+
+.. _`release:8.1.0`:
+
+8.1.0
+-----
+
+:Released: 20.05.2026
+:Full Changelog: `v8.0.0...v8.1.0 <https://github.com/useblocks/sphinx-needs/compare/8.0.0...8.1.0>`__
+
+This release focuses on **filter performance improvements** and bug fixes.
+
+Performance
+...........
+
+- ⚡️ Short-circuit simple filter expressions to avoid ``eval()`` overhead (:pr:`1677`)
+
+  Common filter patterns (e.g. ``id == "REQ_001"``, ``type == "spec"``) are now
+  matched and evaluated directly without invoking Python's ``eval()``, significantly
+  reducing filtering time for large need sets.
+
+- ⚡️ Add ``NeedItem.filter_context()`` to avoid costly ``{**need}`` unpacking (:pr:`1706`)
+
+  Filter evaluation no longer creates a full dictionary copy of each need on every
+  filter call, reducing memory allocations and improving throughput.
+
+- ⚡️ Cache ``NeedLink`` filter string (:pr:`1705`)
+
+  Pre-compute and store the filter string on ``NeedLink`` construction, avoiding
+  repeated string formatting on every access through ``NeedItem.__getitem__``.
+
+Bug fixes
+.........
+
+- 🐛 Fix ``needflow`` rendering very dark / black nodes when a need type has no
+  ``color`` set in ``needs_types`` (:issue:`1664`, :pr:`1702`).
+  Previously a hard-coded ``#000000`` fallback was used as the fill color, which
+  produced unreadable nodes — especially under browser dark mode.
+  When no color is configured, no color is emitted and the diagram engine's
+  default node color is used.
+
+  .. note::
+
+     This is a minor behavior change for users with ``needs_types`` entries
+     that omit the ``color`` key: diagrams (``needflow``, ``needuml``,
+     ``needgantt``) that previously rendered such nodes as solid black will
+     now render them with the diagram engine's default node color (typically
+     light). To preserve the old appearance, set ``"color": "#000000"``
+     explicitly on the affected ``needs_types`` entry.
+
+- 🐛 Fix ``:need:`` role in section headings by registering ``NeedRef`` node
+  with Sphinx's LaTeX builder (:pr:`1700`).
+
+.. _`release:8.0.0`:
+
+8.0.0
+-----
+
+:Released: 19.03.2026
+:Full Changelog: `v7.0.0...v8.0.0 <https://github.com/useblocks/sphinx-needs/compare/7.0.0...8.0.0>`__
+
+This release introduces **conditional link assessment** — the ability to attach
+:ref:`filter_string` conditions to links that are checked against the target need at build time.
+It also overhauls the internal link representation and fixes ``links_from_content`` to
+use the parsed doctree instead of fragile regex matching.
+
+Conditional link assessment
+...........................
+
+A major motivation for requirements-management tooling is ensuring traceability —
+not just *that* two needs are linked, but that the link is **valid in context**.
+For example, a specification should only link to requirements that are in an
+``"open"`` or ``"approved"`` state, or a test should only reference an implementation
+at a compatible version.
+
+Sphinx-Needs now supports this via **inline conditions** on link references
+(see :ref:`need_conditional_links`).
+Append a :ref:`filter_string` in square brackets after the target ID:
+
+.. code-block:: rst
+
+   .. spec:: My Specification
+      :links: REQ_001[status=="open"], REQ_002[version>=3]
+
+Each condition is evaluated against the **target** need's fields.
+If a condition evaluates to ``False``, a ``needs.link_condition_failed`` warning is emitted;
+if the condition syntax is invalid, a ``needs.link_condition_invalid`` warning is emitted.
+Links without conditions continue to work exactly as before.
+
+The condition is a standard :ref:`filter_string` expression, so you can use any Python-style
+comparison operators (``==``, ``!=``, ``>``, ``<``, ``>=``, ``<=``), membership checks
+(``in``, ``not in``), boolean connectives (``and``, ``or``, ``not``), and built-in helpers
+like ``search()``.
+
+This means conditions already work with **numeric fields** such as ``integer`` or ``number``
+(decimal) types. For example, if you define a ``version`` field:
+
+.. code-block:: toml
+
+   [needs.fields.version]
+   schema.type = "integer"
+   nullable = false
+
+You can then enforce version constraints on links:
+
+.. code-block:: rst
+
+   .. spec:: My Specification
+      :links: REQ_001[version>=2]
+
+When the condition contains square brackets (e.g. for list indexing), use multiple opening
+brackets — the parser matches N opening ``[`` with N closing ``]``:
+``REQ_001[[tags[0]=="important"]]``.
+
+- ✨ Add conditional need link assessment (:pr:`1675`)
+- ♻️ Add ``_split_link_list`` parser with condition syntax support (:pr:`1674`)
+- 👌 Parse link conditions from imported and external needs (:pr:`1680`)
+- 👌 Add :ref:`needs_json_include_link_conditions` config option (:pr:`1681`)
+
+  Controls whether conditions are included in ``needs.json`` output (default: ``True``).
+  Backlink fields are never affected.
+
+- 👌 Add ``parse_conditions`` configuration for link types (:pr:`1684`)
+
+  Per-link-type control over whether ``[condition]`` brackets are parsed.
+  Set ``parse_conditions = false`` on a link type to treat brackets as literal ID text.
+
+  .. code-block:: toml
+
+     [needs.links.raw_links]
+     parse_conditions = false
+
+.. note::
+
+   **Potential future directions**:
+
+   - **Hash-based checks**: combined with a ``hash`` field and a dynamic function that
+     computes a content hash, conditions like ``REQ_001[hash=="abc123"]`` could detect
+     when a linked need's content has changed since the link was authored.
+   - **Semantic version comparisons**: a dedicated semver field type would enable
+     conditions like ``REQ_001[version~=">=1.2.0"]`` with proper semver semantics.
+   - **Terse constraint syntax**: a more compact notation (e.g. ``REQ_001[s=open,v>=2]``
+     with field shorthands) is under consideration for common cases, but would
+     complement — not replace — the current filter-string syntax.
+
+``links_from_content`` rewrite
+..............................
+
+The ``links_from_content`` dynamic function previously used a regex to
+extract ``:need:`ID``` references from raw RST source text.
+This was fragile and could not handle custom titles (e.g. ``:need:`My Title <REQ_001>```),
+nested content, or other edge cases.
+
+It now walks the **parsed doctree** for the source need, collecting ``NeedRef`` nodes
+directly. This is more robust and correctly handles all role syntax variants.
+
+**Limitations**: ``links_from_content`` requires a stored doctree node.
+It will emit a warning and return an empty list for:
+
+- **External needs** (loaded via ``needimport`` / ``needs_external_needs``) — they have no doctree.
+- **Need parts** — not supported; a warning is emitted.
+
+- ♻️ Fix ``links_from_content`` to use parsed doctree nodes instead of regex (:pr:`1685`)
+
+Breaking changes
+................
+
+- ‼️ ``ENV_DATA_VERSION`` bumped to 4 (:pr:`1683`)
+
+  The internal format for storing link data in the Sphinx build environment has changed
+  (links are now stored as structured ``NeedLink`` objects instead of plain strings).
+  **Incremental builds from a previous version will trigger a full rebuild automatically.**
+
+- ‼️ ``need["links"]`` (and other link fields) now returns a fresh ``list[str]`` copy
+  rather than a reference to the internal storage (:pr:`1670`)
+
+  Previously, code like ``need["links"].append("NEW_ID")`` would mutate the internal list.
+  This now **silently has no effect** — the returned list is a projection from the internal
+  ``NeedLink`` representation. This should only affect exotic use cases such as dynamic
+  functions or custom extensions that mutate link lists via ``__getitem__`` access.
+  Use the ``NeedItem`` API (e.g. ``get_links(as_str=False)``) for direct access to the
+  internal ``NeedLink`` objects.
+
+Internal changes
+................
+
+These changes do not affect user-facing behaviour but improve link handling internals:
+
+- ♻️ Introduce ``NeedLink`` structured internal representation for links (:pr:`1670`)
+- ♻️ Store ``NeedLink`` instead of ``str`` in ``LinksLiteralValue`` and ``LinksFunctionArray`` (:pr:`1673`)
+- 🔧 Use ``NeedLink`` directly in ``update_back_links`` function (:pr:`1672`)
+- 🔧 Store ``NeedPartData.backlinks`` as ``NeedLink`` instead of ``str`` (:pr:`1679`)
+- 🔧 Use ``get_links(as_str=False)`` in needextend to avoid round-trip serialization (:pr:`1678`)
+- ♻️ Store ``NeedLink`` on ``NeedRef`` node at parse time instead of re-parsing later (:pr:`1682`)
+- 🧪 Add tests for variants in links (:pr:`1669`)
+
+Bug fixes
+.........
+
+- 🐛 Fix linkcheck CI job warnings (:pr:`1667`)
+
+Documentation
+.............
+
+- 📚 Add sphinx-ai-index to Sphinx docs builder (:pr:`1671`)
+
+.. _`release:7.0.0`:
+
+7.0.0
+-----
+
+:Released: 24.02.2026
+:Full Changelog: `v6.3.0...v7.0.0 <https://github.com/useblocks/sphinx-needs/compare/6.3.0...7.0.0>`__
+
+This is a major release that consolidates field, link, and default configuration
+into a single, composable schema system — inspired by
+`SysML2 <https://github.com/Systems-Modeling/SysML-v2-Release>`__.
+See the `extensible schema proposal <https://github.com/useblocks/sphinx-needs/discussions/1646>`__
+for the full design rationale.
+
+This release completes the first two phases of the proposal:
+migrating fields (``needs_extra_options`` → :ref:`needs_fields`) and
+links (``needs_extra_links`` → :ref:`needs_links`).
+The next potential phase is **per-type schemas with type inheritance**,
+allowing individual need types to specialize fields and links
+(see `discussion comment <https://github.com/useblocks/sphinx-needs/discussions/1646#discussioncomment-15788244>`__
+for the implementation plan).
+
+All deprecated configuration options continue to work in this release but emit warnings.
+We recommend migrating to the new options as soon as possible;
+deprecated options will be removed in a future major release.
+
+Consolidated field & link configuration
+........................................
+
+The core theme of this release is moving from many scattered configuration options
+to a **unified per-field / per-link definition**.
+This makes the configuration more explicit, easier to understand, and
+lays the groundwork for future per-type schemas.
+
+- ✨ Add :ref:`needs_fields` configuration, deprecate ``needs_extra_options`` (:pr:`1611`)
+
+  The new :ref:`needs_fields` is a **dictionary** mapping field names to their full configuration.
+  It replaces the flat list ``needs_extra_options`` and also allows **specializing core fields**
+  (e.g. ``status``, ``tags``) by narrowing their type constraints
+  (following the `Liskov substitution principle <https://en.wikipedia.org/wiki/Liskov_substitution_principle>`__).
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     needs_extra_options = ["priority", "verified"]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.priority]
+     description = "Priority level"
+     schema.type = "integer"
+     schema.minimum = 1
+     schema.maximum = 5
+
+     [needs.fields.verified]
+     schema.type = "boolean"
+
+- ⚠️ Migrate ``needs_extra_links`` to :ref:`needs_links` (:pr:`1649`)
+
+  The new :ref:`needs_links` uses the same dict-based pattern as :ref:`needs_fields`,
+  replacing the list-based ``needs_extra_links``.
+  The redundant ``option`` key is no longer needed.
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     [[needs.extra_links]]
+     option = "blocks"
+     incoming = "is blocked by"
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.links.blocks]
+     incoming = "is blocked by"
+
+- ✨ Add ``default`` and ``predicates`` keys to :ref:`needs_fields` and :ref:`needs_links`,
+  deprecate ``needs_global_options`` (:pr:`1612`)
+
+  Field defaults and conditional (predicate-based) defaults can now be set
+  **directly on each field or link**, replacing the separate ``needs_global_options`` configuration.
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     [needs.global_options.status]
+     default = "draft"
+     predicates = [['status == "open"', "active"]]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.status]
+     default = "draft"
+     predicates = [['status == "open"', "active"]]
+
+- ✨ Add ``nullable`` key to :ref:`needs_fields` items (:pr:`1613`)
+
+  Individual fields can now declare whether ``null`` (``None``) is a valid value.
+
+- ✨ Add ``parse_variants`` to :ref:`needs_fields` / :ref:`needs_links`,
+  deprecate ``needs_variant_options`` (:pr:`1614`)
+
+  Variant parsing is now enabled per-field/link instead of via a separate global list.
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     needs_variant_options = ["author", "status"]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.author]
+     parse_variants = true
+
+     [needs.fields.status]
+     parse_variants = true
+
+- ♻️ Move ``needs_statuses`` and ``needs_tags`` checking to schema validation (:pr:`1605`)
+
+  ``needs_statuses`` and ``needs_tags`` are now deprecated.
+  Use schema ``enum`` constraints on the ``status`` and ``tags`` fields instead:
+
+  .. code-block:: toml
+     :caption: Before (deprecated)
+
+     needs_statuses = [{name = "draft"}, {name = "approved"}]
+     needs_tags = [{name = "security"}, {name = "usability"}]
+
+  .. code-block:: toml
+     :caption: After
+
+     [needs.fields.status]
+     schema.enum = ["draft", "approved"]
+
+     [needs.fields.tags]
+     schema.items.enum = ["security", "usability"]
+
+API changes
+...........
+
+- ✨ Add ``add_field`` API; deprecate ``add_extra_option`` (:pr:`1641`)
+
+  Extensions that programmatically add fields should migrate from
+  :py:func:`~sphinx_needs.api.configuration.add_extra_option` to the new
+  :py:func:`~sphinx_needs.api.configuration.add_field`,
+  which accepts the same schema, default, and predicate options as :ref:`needs_fields`.
+
+- 👌 Allow ``add_field`` API to set defaults/predicates (:pr:`1643`)
+
+Breaking changes
+................
+
+- ‼️ ``needs_fields`` and ``add_field`` default to **nullable with no default** (:pr:`1645`)
+
+  When defining a field via :ref:`needs_fields` or ``add_field`` **without** an explicit ``schema``,
+  the field now defaults to ``nullable=True`` with no default value (i.e. ``null``).
+
+  Previously, fields without an explicit schema defaulted to ``nullable=False`` with a
+  default of ``""`` (empty string). This was a legacy of the untyped ``needs_extra_options`` era
+  and caused confusion when users expected unset fields to be ``null`` rather than an empty string.
+
+  The old ``needs_extra_options`` / ``add_extra_option`` APIs retain their legacy behaviour,
+  so **only** users who have already migrated to ``needs_fields`` / ``add_field`` are affected.
+
+  To restore the old behaviour explicitly:
+
+  .. code-block:: toml
+
+     [needs.fields.my_field]
+     nullable = false
+     default = ""
+
+- ‼️ Need fields added by services default to nullable and null (:pr:`1644`)
+
+  Fields registered by built-in services (e.g. GitHub) now default to nullable with no default,
+  matching the new ``needs_fields`` convention.
+
+- ⚠️ Separate reduced vs full need representation for schema validation (:pr:`1652`)
+
+  Schema validation now distinguishes between a **reduced** need representation
+  (for type-specific ``local``/``network`` schemas, where default-valued and empty fields are
+  stripped) and a **full** representation (for global field/link constraints).
+
+  Previously, fields with default ``[]`` values (link fields, ``tags``) were stripped before
+  validation, silently bypassing constraints like ``minItems``, ``contains``, and ``minContains``.
+  These fields are now retained as ``[]`` in global constraint validation, so such constraints
+  will now correctly trigger on needs that have empty link/tag lists.
+
+- ♻️ Replace ``jinja2`` with ``minijinja`` for template rendering (:pr:`1659`)
+
+  The ``jinja2`` dependency has been replaced by ``minijinja`` (``minijinja-py``),
+  a lightweight, Rust-based Jinja2-compatible template engine.
+  This provides faster template rendering and a smaller dependency footprint.
+
+  **Standard Jinja2 syntax is fully supported** — most custom templates will work without changes.
+  Notable differences:
+
+  - ``None`` renders as ``"none"`` (lowercase) instead of ``"None"``.
+    Use ``{% if field %}{{ field }}{% endif %}`` to guard against ``None`` output.
+  - A few Jinja2-only filters are not available: ``wordcount``, ``center``, ``urlize``,
+    ``xmlattr``, ``forceescape``. See the ``minijinja``
+    `documentation <https://docs.rs/minijinja/latest/minijinja/>`__ for alternatives.
+
+Compatibility changes
+.....................
+
+- ⬆️ Support Sphinx 9 and Docutils 0.22 (:pr:`1653`)
+
+  Sphinx-Needs now supports Sphinx 7.4 through 9.x and Docutils 0.22.
+
+Bug fixes
+.........
+
+- 🐛 Fix ``needs.json`` read/write when no needs are present (:pr:`1661`)
+- 🐛 Fix ``needextend`` data purging and deterministic ordering (:pr:`1657`)
+- 🐛 Fix schema validation returning per-need errors (:pr:`1640`)
+
+Improvements
+............
+
+- 👌 Default values of extra fields now checked against schema definitions (:pr:`1647`)
+- 👌 Expose ``parse_dynamic_functions`` in field and link configuration (:pr:`1660`)
+- 👌 Minor improvements for ``needs_fields`` inheritance (:pr:`1635`)
+- ✨ Add ``uniqueItems`` to ``array`` schema validation (:pr:`1610`)
+
+Internal changes
+................
+
+These changes do not affect user-facing behaviour but improve the codebase:
+
+- ♻️ Migrate use of ``extra_links`` to Schema-Based Access (:pr:`1638`)
+- 🔧 Refactor schema validation: separate select filtering from local validation (:pr:`1655`)
+- 🔧 Simplify field/link validation (:pr:`1654`)
+- 🔧 Simplify ``generate_needs`` function (:pr:`1651`)
+- 🔧 Rename "option" to "field" internally (:pr:`1642`)
+- 🔧 Refactor ``populate_field_type`` to use type-directed schema walking (:pr:`1639`)
+- 🔧 Store full schema on ``FieldSchema`` (:pr:`1603`)
+- 🔧 Add ``validate_extra_option_schema`` (:pr:`1602`)
+- 🔧 Remove use of ``extra_options`` after config resolution (:pr:`1607`)
+- 🔧 Move link ``schema`` to ``LinkSchema`` (:pr:`1617`)
+- 🔧 Simplify ``import_prefix_link_edit`` (:pr:`1615`)
+- 🔧 Add ``AGENTS.md`` (:pr:`1621`)
+- 🧪 Add tests for ``create_inherited_field`` (:pr:`1636`)
+
+Documentation fixes
+...................
+
+- 📚 Fix typo in sort of ``needtable`` documentation (:pr:`1619`)
+- 📚 Fix small grammatical error in ``need.rst`` (:pr:`1637`)
+- 📚 Fix typo in documentation for GitHub service example (:pr:`1634`)
+
 .. _`release:6.3.0`:
 
 6.3.0
 -----
 
 :Released: 15.12.2025
-:Full Changelog: `v6.2.0...v6.3.0 <https://github.com/useblocks/sphinx-needs/compare/6.2.0...f567c1fafb4e1ba1a7dabb3bd6afc5f17ded84cd>`__
+:Full Changelog: `v6.2.0...v6.3.0 <https://github.com/useblocks/sphinx-needs/compare/6.2.0...6.3.0>`__
 
 - ⬆️ Support Python 3.14 (:pr:`1598`)
 - ♻️ Remove ``typeguard`` dependency (:pr:`1597`)
 - 👌 Relative paths from toml configuration (:pr:`1589`)
 
   Ensure that file paths originating from a :ref:`needs_from_toml` file are relative to that file, rather than the :file:`conf.py` file
+
+- ✨ Add new ``needs_links`` configuration (dict-based) as replacement for ``needs_extra_links`` (list-based)
+
+  The new :ref:`needs_links` configuration uses a dictionary mapping link name to configuration,
+  removing the redundant ``option`` key required in :ref:`needs_extra_links`.
+  Also adds support for a ``description`` field for link types.
+  The old ``needs_extra_links`` configuration is now deprecated but remains supported for backward compatibility.
+
+- ✨ Expose ``parse_dynamic_functions`` in field and link configuration
+
+  Add per-field/link ``parse_dynamic_functions`` option to :ref:`needs_fields`, :ref:`needs_links`,
+  and the ``add_field`` / ``add_extra_option`` API functions.
+  Also add a new :ref:`needs_parse_dynamic_functions` global config option (default ``True``)
+  that sets the default for all extra fields and links when not explicitly set per-field/link.
+  This provides a migration path to eventually disable dynamic function parsing by default
+  in a future major release.
 
 .. _`release:6.2.0`:
 

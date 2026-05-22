@@ -5,10 +5,10 @@ from pathlib import Path
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from jinja2 import Template
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 
+from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.logging import log_warning
@@ -46,7 +46,18 @@ class NeedReportDirective(SphinxDirective):
             "options": list(needs_schema.iter_extra_field_names())
             if "options" in self.options
             else [],
-            "links": needs_config.extra_links if "links" in self.options else [],
+            "links": [
+                {
+                    "option": link.name,
+                    "incoming": link.display.incoming,
+                    "outgoing": link.display.outgoing,
+                    "copy": link.copy,
+                    "allow_dead_links": link.allow_dead_links,
+                }
+                for link in needs_schema.iter_link_fields()
+            ]
+            if "links" in self.options
+            else [],
             # note the usage dict format here is just to keep backwards compatibility,
             # but actually this is now post-processed so we only really need the need types
             "usage": {
@@ -86,8 +97,9 @@ class NeedReportDirective(SphinxDirective):
             encoding="utf8"
         )
 
-        template = Template(needs_report_template_file_content, autoescape=True)
-        text = template.render(**report_info)
+        text = render_template_string(
+            needs_report_template_file_content, report_info, autoescape=False
+        )
         self.state_machine.insert_input(
             text.split("\n"), self.state_machine.document.attributes["source"]
         )

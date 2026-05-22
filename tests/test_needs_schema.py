@@ -4,13 +4,17 @@ from sphinx_needs.exceptions import FunctionParsingException
 from sphinx_needs.functions.functions import (
     DynamicFunctionParsed,
 )
+from sphinx_needs.need_item import NeedLink
 from sphinx_needs.needs_schema import (
     FieldFunctionArray,
     FieldLiteralValue,
     FieldSchema,
+    LinkSplitWarning,
     ListItemType,
+    _split_link_list,
     _split_list,
     _split_string,
+    create_inherited_field,
     inherit_schema,
 )
 from sphinx_needs.variants import VariantFunctionParsed
@@ -754,6 +758,280 @@ def test_split_string(text, expected):
 
 
 @pytest.mark.parametrize(
+    "text, parse_df, parse_vf, expected",
+    [
+        # --- Plain IDs ---
+        ("", True, True, []),
+        ("REQ-001", True, True, [NeedLink(id="REQ-001")]),
+        ("  REQ-001  ", True, True, [NeedLink(id="REQ-001")]),
+        # --- Parts ---
+        ("REQ-001.part", True, True, [NeedLink(id="REQ-001", part="part")]),
+        # --- Conditions ---
+        (
+            "REQ-001[status=='open']",
+            True,
+            True,
+            [NeedLink(id="REQ-001", condition="status=='open'")],
+        ),
+        (
+            "REQ.part[x>1]",
+            True,
+            True,
+            [NeedLink(id="REQ", part="part", condition="x>1")],
+        ),
+        # Matched bracket depth: [[ ]] strips both layers, allowing ] inside condition
+        (
+            "REQ[[a[0]>1]]",
+            True,
+            True,
+            [NeedLink(id="REQ", condition="a[0]>1")],
+        ),
+        # Empty condition brackets -> condition is None
+        ("REQ[]", True, True, [NeedLink(id="REQ")]),
+        # --- Delimiters ---
+        (
+            "REQ-001, REQ-002",
+            True,
+            True,
+            [NeedLink(id="REQ-001"), NeedLink(id="REQ-002")],
+        ),
+        (
+            "REQ-001; REQ-002",
+            True,
+            True,
+            [NeedLink(id="REQ-001"), NeedLink(id="REQ-002")],
+        ),
+        (
+            "REQ-001| REQ-002",
+            True,
+            True,
+            [NeedLink(id="REQ-001"), NeedLink(id="REQ-002")],
+        ),
+        (
+            "REQ-001,",
+            True,
+            True,
+            [NeedLink(id="REQ-001")],
+        ),
+        # Multiple with conditions
+        (
+            "REQ-001, REQ-002[x>1]",
+            True,
+            True,
+            [NeedLink(id="REQ-001"), NeedLink(id="REQ-002", condition="x>1")],
+        ),
+        # --- Dynamic functions ---
+        (
+            "[[copy('links')]]",
+            True,
+            True,
+            [DynamicFunctionParsed.from_string("copy('links')")],
+        ),
+        (
+            "[[func()]],REQ-001",
+            True,
+            True,
+            [DynamicFunctionParsed.from_string("func()"), NeedLink(id="REQ-001")],
+        ),
+        # --- Variant functions ---
+        (
+            "<<ubuntu:REQ-1, REQ-2>>",
+            True,
+            True,
+            [VariantFunctionParsed.from_string("ubuntu:REQ-1, REQ-2")],
+        ),
+        # --- Mixed ---
+        (
+            "REQ[a>1], [[func()]], <<var>>",
+            True,
+            True,
+            [
+                NeedLink(id="REQ", condition="a>1"),
+                DynamicFunctionParsed.from_string("func()"),
+                VariantFunctionParsed.from_string("var"),
+            ],
+        ),
+        # --- Whitespace handling ---
+        (
+            "ID;    [[func()]]  ;",
+            True,
+            True,
+            [NeedLink(id="ID"), DynamicFunctionParsed.from_string("func()")],
+        ),
+        (
+            "  A  ,  B.p  ;  C[x]  ",
+            True,
+            True,
+            [
+                NeedLink(id="A"),
+                NeedLink(id="B", part="p"),
+                NeedLink(id="C", condition="x"),
+            ],
+        ),
+        # Delimiters inside [[ ]] are preserved
+        (
+            "[[func('a','b')]],REQ",
+            True,
+            True,
+            [DynamicFunctionParsed.from_string("func('a','b')"), NeedLink(id="REQ")],
+        ),
+        # Delimiters inside << >> are preserved
+        (
+            "<<a:1,b:2>>;REQ",
+            True,
+            True,
+            [VariantFunctionParsed.from_string("a:1,b:2"), NeedLink(id="REQ")],
+        ),
+        # DF/VF disabled: [[ and << treated as plain text
+        (
+            "[[func()]]",
+            False,
+            False,
+            [NeedLink(id="[[func()]]")],
+        ),
+        # Only DF enabled
+        (
+            "<<var>>",
+            True,
+            False,
+            [NeedLink(id="<<var>>")],
+        ),
+        # Only VF enabled
+        (
+            "[[func()]]",
+            False,
+            True,
+            [NeedLink(id="[[func()]]")],
+        ),
+        # --- Warnings (non-fatal issues yielded as LinkSplitWarning) ---
+        (
+            "[[func()]]b",
+            True,
+            True,
+            [
+                DynamicFunctionParsed.from_string("func()"),
+                LinkSplitWarning(
+                    "only one string, dynamic function or variant function allowed per array item."
+                ),
+            ],
+        ),
+        (
+            "<<var>>b",
+            True,
+            True,
+            [
+                VariantFunctionParsed.from_string("var"),
+                LinkSplitWarning(
+                    "only one string, dynamic function or variant function allowed per array item."
+                ),
+            ],
+        ),
+        (
+            "REQ[unclosed",
+            True,
+            True,
+            [
+                LinkSplitWarning(
+                    "Unclosed condition brackets in link 'REQ[unclosed': expected 1 closing ']' characters."
+                )
+            ],
+        ),
+        (
+            "REQ[[unclosed]",
+            True,
+            True,
+            [
+                LinkSplitWarning(
+                    "Unclosed condition brackets in link 'REQ[[unclosed]': expected 2 closing ']' characters."
+                )
+            ],
+        ),
+        (
+            "REQ[[[x]]",
+            True,
+            True,
+            [
+                LinkSplitWarning(
+                    "Unclosed condition brackets in link 'REQ[[[x]]': expected 3 closing ']' characters."
+                )
+            ],
+        ),
+        # Bare opening bracket with no closing
+        (
+            "REQ[",
+            True,
+            True,
+            [
+                LinkSplitWarning(
+                    "Unclosed condition brackets in link 'REQ[': expected 1 closing ']' characters."
+                )
+            ],
+        ),
+        # Trailing content after closing bracket is caught
+        (
+            "REQ[cond]trailing",
+            True,
+            True,
+            [
+                LinkSplitWarning(
+                    "Unexpected text after closing condition bracket in link 'REQ[cond]trailing': 'trailing'."
+                )
+            ],
+        ),
+        # Condition containing a dot (should not be confused with part separator)
+        (
+            "REQ[a.b > 1]",
+            True,
+            True,
+            [NeedLink(id="REQ", condition="a.b > 1")],
+        ),
+    ],
+)
+def test_split_link_list(text, parse_df, parse_vf, expected):
+    assert list(_split_link_list(text, parse_df, parse_vf)) == expected
+
+
+@pytest.mark.parametrize(
+    "text, parse_df, parse_vf, expected",
+    [
+        # Brackets treated as literal text when parse_conditions=False
+        (
+            "REQ[cond]",
+            True,
+            True,
+            [NeedLink(id="REQ[cond]")],
+        ),
+        # Part with brackets treated as literal text
+        (
+            "REQ.partA[cond]",
+            True,
+            True,
+            [NeedLink(id="REQ", part="partA[cond]")],
+        ),
+        # Plain ID unchanged
+        (
+            "REQ-001",
+            True,
+            True,
+            [NeedLink(id="REQ-001")],
+        ),
+        # Multiple items with brackets as literal text
+        (
+            "REQ[c1];SPEC[c2]",
+            True,
+            True,
+            [NeedLink(id="REQ[c1]"), NeedLink(id="SPEC[c2]")],
+        ),
+    ],
+)
+def test_split_link_list_no_parse_conditions(text, parse_df, parse_vf, expected):
+    assert (
+        list(_split_link_list(text, parse_df, parse_vf, parse_conditions=False))
+        == expected
+    )
+
+
+@pytest.mark.parametrize(
     "parent_schema,child_schema,expected",
     [
         # String: const constraint - child inherits parent const
@@ -1148,6 +1426,30 @@ def test_split_string(text, expected):
             {},
             {"type": "string", "minLength": 5},
         ),
+        # Number: multipleOf with floats (tests precision fix - 0.2 is a multiple of 0.1)
+        (
+            {"type": "number", "multipleOf": 0.1},
+            {"type": "number", "multipleOf": 0.2},
+            {"type": "number", "multipleOf": 0.2},
+        ),
+        # Number: multipleOf with floats (0.3 is a multiple of 0.1)
+        (
+            {"type": "number", "multipleOf": 0.1},
+            {"type": "number", "multipleOf": 0.3},
+            {"type": "number", "multipleOf": 0.3},
+        ),
+        # String: const in parent enum is valid
+        (
+            {"type": "string", "enum": ["a", "b", "c"]},
+            {"type": "string", "const": "b"},
+            {"type": "string", "enum": ["a", "b", "c"], "const": "b"},
+        ),
+        # String: new pattern when parent has no pattern (valid regex)
+        (
+            {"type": "string"},
+            {"type": "string", "pattern": "^[a-z]+$"},
+            {"type": "string", "pattern": "^[a-z]+$"},
+        ),
     ],
 )
 def test_inherit_schema_valid(parent_schema, child_schema, expected):
@@ -1371,9 +1673,401 @@ def test_inherit_schema_valid(parent_schema, child_schema, expected):
             "not a dict",
             r"Child schema must be a dictionary",
         ),
+        # String: const not in parent enum
+        (
+            {"type": "string", "enum": ["a", "b", "c"]},
+            {"type": "string", "const": "d"},
+            r"Child 'const' value 'd' is not in parent 'enum' values",
+        ),
+        # Integer: const not in parent enum
+        (
+            {"type": "integer", "enum": [1, 2, 3]},
+            {"type": "integer", "const": 4},
+            r"Child 'const' value 4 is not in parent 'enum' values",
+        ),
+        # Number: const not in parent enum
+        (
+            {"type": "number", "enum": [1.0, 2.0, 3.0]},
+            {"type": "number", "const": 4.0},
+            r"Child 'const' value 4\.0 is not in parent 'enum' values",
+        ),
+        # Number: multipleOf not a multiple (using floats to test precision fix)
+        (
+            {"type": "number", "multipleOf": 0.1},
+            {"type": "number", "multipleOf": 0.25},
+            r"Child 'multipleOf' 0\.25 must be a multiple of parent 'multipleOf' 0\.1",
+        ),
     ],
 )
 def test_inherit_schema_invalid(parent_schema, child_schema, error_match):
     """Test invalid schema inheritance cases that should raise ValueError."""
     with pytest.raises(ValueError, match=error_match):
         inherit_schema(parent_schema, child_schema)
+
+
+# =============================================================================
+# Tests for create_inherited_field
+# =============================================================================
+
+
+class TestCreateInheritedField:
+    """Tests for create_inherited_field function."""
+
+    @staticmethod
+    def _base_field(
+        schema: dict | None = None,
+        nullable: bool = False,
+        parse_variants: bool = False,
+        description: str = "",
+    ) -> FieldSchema:
+        """Create a base FieldSchema for testing."""
+        return FieldSchema(
+            name="test_field",
+            schema=schema or {"type": "string"},
+            nullable=nullable,
+            directive_option=True,
+            parse_dynamic_functions=False,
+            parse_variants=parse_variants,
+            description=description,
+        )
+
+    def test_nullable_cannot_widen(self):
+        """Test that nullable cannot be changed from False to True."""
+        parent = self._base_field(nullable=False)
+        child = {"nullable": True}
+
+        with pytest.raises(
+            ValueError, match="Cannot change 'nullable' from False to True"
+        ):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_nullable_can_narrow(self):
+        """Test that nullable can be changed from True to False (narrowing)."""
+        parent = self._base_field(nullable=True)
+        child = {"nullable": False}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.nullable is False
+
+    def test_nullable_false_on_already_non_nullable(self):
+        """Test that setting nullable=False on already non-nullable is a no-op."""
+        parent = self._base_field(nullable=False)
+        child = {"nullable": False}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.nullable is False
+
+    def test_nullable_true_on_already_nullable(self):
+        """Test that setting nullable=True on already nullable is a no-op."""
+        parent = self._base_field(nullable=True)
+        child = {"nullable": True}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.nullable is True
+
+    def test_parse_variants_not_allowed(self):
+        """Test that parse_variants=True is rejected when not allowed."""
+        parent = self._base_field()
+        child = {"parse_variants": True}
+
+        with pytest.raises(
+            ValueError, match="parse_variants is not allowed to be True"
+        ):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_parse_variants_allowed_when_permitted(self):
+        """Test that parse_variants=True is allowed when permitted."""
+        parent = self._base_field()
+        child = {"parse_variants": True}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=True, allow_dynamic_functions=False
+        )
+        assert result.parse_variants is True
+
+    def test_parse_variants_false_explicitly(self):
+        """Test that explicitly setting parse_variants=False is allowed."""
+        parent = self._base_field()
+        child = {"parse_variants": False}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.parse_variants is False
+
+    def test_parse_dynamic_functions_not_allowed(self):
+        """Test that parse_dynamic_functions=True is rejected when not allowed."""
+        parent = self._base_field()
+        child = {"parse_dynamic_functions": True}
+
+        with pytest.raises(
+            ValueError,
+            match="parse_dynamic_functions is not allowed to be True",
+        ):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_parse_dynamic_functions_allowed_when_permitted(self):
+        """Test that parse_dynamic_functions=True is allowed when permitted."""
+        parent = self._base_field()
+        child = {"parse_dynamic_functions": True}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=True
+        )
+        assert result.parse_dynamic_functions is True
+
+    def test_parse_dynamic_functions_false_explicitly(self):
+        """Test that explicitly setting parse_dynamic_functions=False is allowed."""
+        parent = self._base_field()
+        child = {"parse_dynamic_functions": False}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.parse_dynamic_functions is False
+
+    def test_parse_dynamic_functions_invalid_type(self):
+        """Test that non-boolean parse_dynamic_functions value raises error."""
+        parent = self._base_field()
+        child = {"parse_dynamic_functions": "yes"}
+
+        with pytest.raises(
+            ValueError,
+            match="Child 'parse_dynamic_functions' must be a boolean",
+        ):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_description_override(self):
+        """Test that child description overrides parent description."""
+        parent = self._base_field(description="Original description")
+        child = {"description": "New description"}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.description == "New description"
+
+    def test_description_inherited_when_not_provided(self):
+        """Test that parent description is preserved when child doesn't override."""
+        parent = self._base_field(description="Original description")
+        child = {}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.description == "Original description"
+
+    def test_empty_child_inherits_from_parent(self):
+        """Test that an empty child dict inherits everything from parent."""
+        parent = self._base_field(
+            schema={"type": "string", "minLength": 5},
+            nullable=True,
+            parse_variants=True,
+            description="Parent description",
+        )
+        child = {}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=True, allow_dynamic_functions=False
+        )
+        assert result.nullable is True
+        assert result.parse_variants is True
+        assert result.description == "Parent description"
+        assert result.schema == {"type": "string", "minLength": 5}
+
+    def test_schema_type_mismatch_at_field_level(self):
+        """Test type mismatch error when child provides different schema type."""
+        parent = self._base_field(schema={"type": "string"})
+        child = {"schema": {"type": "integer"}}
+
+        with pytest.raises(
+            ValueError, match=r"Child 'type'.*does not match parent 'type'"
+        ):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_schema_inheritance_valid_subset(self):
+        """Test valid schema inheritance with enum subset."""
+        parent = self._base_field(schema={"type": "string", "enum": ["a", "b", "c"]})
+        child = {"schema": {"type": "string", "enum": ["a", "b"]}}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.schema == {"type": "string", "enum": ["a", "b"]}
+
+    def test_schema_inheritance_invalid_subset(self):
+        """Test invalid schema inheritance with enum not a subset."""
+        parent = self._base_field(schema={"type": "string", "enum": ["a", "b"]})
+        child = {"schema": {"type": "string", "enum": ["a", "c"]}}
+
+        with pytest.raises(ValueError, match="are not a subset"):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_child_adds_constraint_when_parent_has_none(self):
+        """Test that child can add constraints when parent doesn't have them."""
+        parent = self._base_field(schema={"type": "string"})
+        child = {"schema": {"type": "string", "minLength": 5, "pattern": "^[a-z]+$"}}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.schema == {
+            "type": "string",
+            "minLength": 5,
+            "pattern": "^[a-z]+$",
+        }
+
+    def test_combined_enum_narrowing_and_const(self):
+        """Test child can narrow enum and set const simultaneously."""
+        parent = self._base_field(
+            schema={"type": "string", "enum": ["a", "b", "c", "d"]}
+        )
+        child = {"schema": {"type": "string", "enum": ["a", "b"], "const": "a"}}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.schema["enum"] == ["a", "b"]
+        assert result.schema["const"] == "a"
+
+    def test_invalid_nullable_type(self):
+        """Test that non-boolean nullable value raises error."""
+        parent = self._base_field()
+        child = {"nullable": "yes"}
+
+        with pytest.raises(ValueError, match="Child 'nullable' must be a boolean"):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_invalid_parse_variants_type(self):
+        """Test that non-boolean parse_variants value raises error."""
+        parent = self._base_field()
+        child = {"parse_variants": "yes"}
+
+        with pytest.raises(
+            ValueError, match="Child 'parse_variants' must be a boolean"
+        ):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_invalid_description_type(self):
+        """Test that non-string description value raises error."""
+        parent = self._base_field()
+        child = {"description": 123}
+
+        with pytest.raises(ValueError, match="Child 'description' must be a string"):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_array_item_type_mismatch(self):
+        """Test type mismatch error for array item types."""
+        parent = self._base_field(schema={"type": "array", "items": {"type": "string"}})
+        child = {"schema": {"type": "array", "items": {"type": "integer"}}}
+
+        with pytest.raises(ValueError, match=r"'items' inheritance.*does not match"):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_array_item_constraints_inherited(self):
+        """Test that array item constraints are properly inherited."""
+        parent = self._base_field(
+            schema={"type": "array", "items": {"type": "string", "minLength": 3}}
+        )
+        child = {
+            "schema": {"type": "array", "items": {"type": "string", "minLength": 5}}
+        }
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.schema["items"]["minLength"] == 5
+
+    def test_array_item_constraint_violation(self):
+        """Test that array item constraint violations are detected."""
+        parent = self._base_field(
+            schema={"type": "array", "items": {"type": "string", "minLength": 10}}
+        )
+        child = {
+            "schema": {"type": "array", "items": {"type": "string", "minLength": 5}}
+        }
+
+        with pytest.raises(ValueError, match=r"'minLength'.*is less than parent"):
+            create_inherited_field(
+                parent, child, allow_variants=False, allow_dynamic_functions=False
+            )
+
+    def test_multiple_properties_overridden(self):
+        """Test that multiple properties can be overridden simultaneously."""
+        parent = self._base_field(
+            schema={"type": "string", "minLength": 1},
+            nullable=True,
+            description="Original",
+        )
+        child = {
+            "schema": {"type": "string", "minLength": 5},
+            "nullable": False,
+            "description": "Updated",
+        }
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.schema["minLength"] == 5
+        assert result.nullable is False
+        assert result.description == "Updated"
+
+    def test_uniqueitems_can_become_more_restrictive(self):
+        """Test that uniqueItems can be made more restrictive (false -> true)."""
+        parent = self._base_field(
+            schema={"type": "array", "items": {"type": "string"}, "uniqueItems": False}
+        )
+        child = {
+            "schema": {
+                "type": "array",
+                "items": {"type": "string"},
+                "uniqueItems": True,
+            }
+        }
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.schema["uniqueItems"] is True
+
+    def test_contains_inherited_when_not_overridden(self):
+        """Test that contains constraint is inherited when child doesn't specify it."""
+        parent = self._base_field(
+            schema={
+                "type": "array",
+                "items": {"type": "string"},
+                "contains": {"type": "string", "pattern": "^test"},
+            }
+        )
+        child = {"schema": {"type": "array", "items": {"type": "string"}}}
+
+        result = create_inherited_field(
+            parent, child, allow_variants=False, allow_dynamic_functions=False
+        )
+        assert result.schema["contains"] == {"type": "string", "pattern": "^test"}

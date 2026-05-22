@@ -34,9 +34,9 @@ def generate_needs_schema(
 
     It is based on:
     * the core fields defined in NeedsCoreFields
-    * the extra options defined dynamically
+    * the extra fields defined dynamically
     * the global options defined dynamically
-    * the extra links defined dynamically
+    * the links defined dynamically
     """
     properties: dict[str, Any] = {}
 
@@ -53,10 +53,10 @@ def generate_needs_schema(
         elif field.nullable:
             properties[field.name]["default"] = None
 
-    # TODO currently extra options can overlap with core fields,
+    # TODO currently extra fields can overlap with core fields,
     # in which case they are ignored,
     # (this is the case for `type` added by the github service)
-    # hence this is why we add the core options after the extra options
+    # hence this is why we add the core options after the extra fields
     for name, core_params in NeedsCoreFields.items():
         properties[name] = deepcopy(core_params["schema"])
         properties[name]["description"] = f"{core_params['description']}"
@@ -161,6 +161,11 @@ class NeedsList:
             for key, value in need_info.items()
             if key not in self._exclude_need_keys
         }
+        if self.needs_config.json_include_link_conditions:
+            # Overwrite link fields with serializations that include conditions
+            for key, links in need_info.iter_links_items(as_str=False):
+                if key not in self._exclude_need_keys:
+                    writable_needs[key] = [li.to_link_string() for li in links]
         if self.needs_config.json_remove_defaults:
             writable_needs = {
                 key: value
@@ -179,6 +184,7 @@ class NeedsList:
             del self.needs_list["versions"][version]
 
     def _finalise(self) -> None:
+        self.update_or_add_version(self.current_version)
         # We need to rewrite some data, because this kind of data gets overwritten during needs.json import
         if not self.needs_config.reproducible_json:
             self.needs_list["created"] = datetime.now().isoformat()

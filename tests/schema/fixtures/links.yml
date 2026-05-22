@@ -3,8 +3,7 @@ inject_array:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.minItems = 2
@@ -21,8 +20,7 @@ items_pattern:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.items = { type = "string", pattern = "^[A-Z0-9_]{3,}" }
@@ -39,8 +37,7 @@ items_pattern_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.items = { type = "string", pattern = "^[A-Z0-9_]{10,}" }
@@ -57,8 +54,7 @@ min_items:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.type = "array"
@@ -76,8 +72,7 @@ min_items_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.type = "array"
@@ -95,8 +90,7 @@ max_items:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.type = "array"
@@ -114,8 +108,7 @@ max_items_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.maxItems = 1
@@ -135,8 +128,7 @@ contains:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.contains = { pattern = "^SPEC_" }
@@ -153,8 +145,7 @@ contains_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.contains = { pattern = "^REQ_" }
@@ -171,8 +162,7 @@ min_contains:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.contains = { pattern = "^SPEC_" }
@@ -190,8 +180,7 @@ min_contains_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.type = "array"
@@ -210,8 +199,7 @@ max_contains:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.contains = { pattern = "^SPEC_" }
@@ -232,8 +220,7 @@ max_contains_error:
     extensions = ["sphinx_needs"]
     needs_from_toml = "ubproject.toml"
   ubproject: |
-    [[needs.extra_links]]
-    option = "links"
+    [needs.links.links]
     outgoing = "links"
     incoming = "linked by"
     schema.type = "array"

@@ -15,7 +15,7 @@
 {# Output for needs_fields #}
 {% if options|length != 0 %}
 
-.. dropdown:: Need Extra Options
+.. dropdown:: Need Fields
 
    {% for option in options %}
    * {{ option }}
@@ -23,10 +23,10 @@
 {% endif %}
 {# Output for needs_fields #}
 
-{# Output for needs_extra_links #}
+{# Output for needs_links #}
 {% if links|length != 0 %}
 
-.. dropdown:: Need Extra Links
+.. dropdown:: Need Links
 
    {% for link in links %}
    * {{ link.option | upper }}
@@ -36,5 +36,5 @@
        + **:allow_dead_links:** {{ link.get('allow_dead_links', False) | capitalize }}
    {% endfor %}
 {% endif %}
-{# Output for needs_extra_links #}
+{# Output for needs_links #}
 

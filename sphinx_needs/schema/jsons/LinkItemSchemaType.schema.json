@@ -23,6 +23,6 @@
   "required": [
     "type"
   ],
-  "title": "ExtraLinkItemSchemaTypeModel",
+  "title": "LinkItemSchemaTypeModel",
   "type": "object"
 }

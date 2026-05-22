@@ -105,6 +105,7 @@ Filter string
 
 The usage of a filter string is supported/required by:
 
+* :ref:`Conditional links <need_conditional_links>` (to assert properties of a link target)
 * :ref:`need_count`
 * :ref:`needlist`
 * :ref:`needtable`
@@ -144,7 +145,7 @@ Additional variables for :ref:`need_part`:
 * **id_complete** as Python string. Contains the concatenated ids of parent need and need_part.
   (compare like ``id_complete != 'ABC_01.03'``)
 
-.. note:: If extra options were specified using :ref:`needs_fields` then
+.. note:: If extra fields were specified using :ref:`needs_fields` then
           those will be available for use in filter expressions as well.
 
 Finally, the following are available:

@@ -26,6 +26,6 @@ def test_doc_needarch(test_app):
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "Need Types" in html
-    assert "Need Extra Links" in html
-    assert "Need Extra Options" in html
+    assert "Need Links" in html
+    assert "Need Fields" in html
     assert "Need Metrics" in html

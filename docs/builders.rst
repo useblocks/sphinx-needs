@@ -48,7 +48,7 @@ This is a JSON schema of for the data structure of a single need,
 and also includes a ``field_type`` for each field, to denote the source of the field,
 that can be one of: ``core``, ``links``, ``backlinks``, ``extra``, ``global``.
 
-See also :ref:`needs_json_exclude_fields`, :ref:`needs_json_remove_defaults`, and :ref:`needs_reproducible_json` for more options on modifying the content of the ``needs.json`` file.
+See also :ref:`needs_json_exclude_fields`, :ref:`needs_json_remove_defaults`, :ref:`needs_reproducible_json`, and :ref:`needs_json_include_link_conditions` for more options on modifying the content of the ``needs.json`` file.
 
 .. note:: ``needs_defaults_removed`` is a flag that is set to ``true`` if the defaults are removed from the needs. If it is missing or set to ``false``, the defaults are not removed.
 

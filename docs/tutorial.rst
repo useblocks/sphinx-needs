@@ -95,7 +95,7 @@ that can be used to add additional data to the item or further style its represe
     To add additional fields to the directive,
     see :ref:`needs_fields`,
     and to add additional link types,
-    see :ref:`needs_extra_links`.
+    see :ref:`needs_links`.
 
 Enforcing valid need items
 ..........................
@@ -130,18 +130,17 @@ Linking need items
 Now that we know how to create individual need items,
 the next thing we may want to do is to link them together.
 
-We can define custom link types in the ``conf.py`` file, using the :ref:`needs_extra_links` configuration option:
+We can define custom link types in the ``conf.py`` file, using the :ref:`needs_links` configuration option:
 
 .. code-block:: python
 
-    needs_extra_links = [
-      {
-        "option": "tutorial_required_by",
+    needs_links = {
+      "tutorial_required_by": {
         "incoming": "requires",  # text to describe incoming links
         "outgoing": "required by",  # text to describe outgoing links
         "style": "#00AA00",  # color for the link in diagrams
       },
-    ]
+    }
 
 We can now uses these links when specifying need items, notice how "back links" are automatically generated when displaying the item:
 
@@ -190,7 +189,29 @@ Lets also add some more need items to our plan:
 
 .. seealso::
     
-    For full options see the reference sections for :ref:`need_extra_links configuration <need_extra_links>` and :ref:`need items directive <need>`.
+    For full options see the reference sections for :ref:`need_links configuration <need_links>` and :ref:`need items directive <need>`.
+
+Adding conditions to links
+--------------------------
+
+You can also attach conditions to links, using square brackets after the target ID.
+The condition is a :ref:`filter_string` evaluated against the **target** need.
+If the target need does not satisfy the condition, a warning is emitted during the build.
+
+This is useful for enforcing constraints, for example ensuring that a specification only links to requirements with a certain status:
+
+.. code-block:: rst
+
+   .. tutorial-spec:: Implement RADAR system
+      :id: T_RADAR_COND
+      :tutorial_specifies: T_SAFE[status=="open"]
+
+      This specification links to T_SAFE, but a build warning will be emitted
+      if T_SAFE does not have status "open".
+
+.. seealso::
+
+    For more details on conditional link syntax, see :ref:`need_conditional_links`.
 
 Importing need items
 --------------------

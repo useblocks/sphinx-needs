@@ -86,11 +86,12 @@ def process_needsequence(
     # Replace all needsequence nodes with a list of the collected needs.
     env = app.env
     needs_data = SphinxNeedsData(env)
+    needs_schema = needs_data.get_schema()
     all_needs_dict = needs_data.get_needs_view()
 
     needs_config = NeedsSphinxConfig(env.config)
     include_needs = needs_config.include_needs
-    link_type_names = [link["option"].upper() for link in needs_config.extra_links]
+    link_type_names = [name.upper() for name in needs_schema.iter_link_field_names()]
     needs_types = needs_config.types
 
     # NEEDSEQUENCE

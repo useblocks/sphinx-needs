@@ -66,16 +66,14 @@ needs_types = [
     },
 ]
 
-needs_extra_links = [
-    {
-        "option": "uses",
+needs_links = {
+    "uses": {
         "incoming": "is used by",
         "outgoing": "uses",
     },
-    {
-        "option": "tests",
+    "tests": {
         "incoming": "is tested by",
         "outgoing": "tests",
         "style": "#00AA00",
     },
-]
+}

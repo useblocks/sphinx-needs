@@ -1,3 +1,4 @@
+import docutils
 import pytest
 
 from tests.util import extract_needs_from_html
@@ -33,15 +34,19 @@ def test_doc_build_html(test_app):
     assert "custom footer for" in html
 
     # Check image is correctly referenced
+    class_names = "align-center needs_image"
+    if docutils.__version_info__ < (0, 22):
+        class_names = "needs_image align-center"
+
     assert (
-        '<img alt="_images/smile.png" class="needs_image align-center" src="_images/smile.png" />'
+        f'<img alt="_images/smile.png" class="{class_names}" src="_images/smile.png" />'
         in html
     )
 
     # Check a "root"-image is correctly referenced in subfolders
     html_subfolder_1 = (app.outdir / "subfolder_1/index.html").read_text()
     assert (
-        '<img alt="../_images/smile.png" class="needs_image align-center" src="../_images/smile.png" />'
+        f'<img alt="../_images/smile.png" class="{class_names}" src="../_images/smile.png" />'
         in html_subfolder_1
     )
     assert '<span class="needs_data">_images/smile.png</span>' in html_subfolder_1
@@ -49,7 +54,7 @@ def test_doc_build_html(test_app):
     # Check a "subfolder"-image is correctly referenced in subfolders
     html_subfolder_2 = (app.outdir / "subfolder_2/index.html").read_text()
     assert (
-        '<img alt="../_images/subfolder_smile.png" class="needs_image align-center" src="../_images/subfolder_smile.png" />'
+        f'<img alt="../_images/subfolder_smile.png" class="{class_names}" src="../_images/subfolder_smile.png" />'
         in html_subfolder_2
     )
     assert (

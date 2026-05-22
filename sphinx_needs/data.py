@@ -34,12 +34,13 @@ if TYPE_CHECKING:
         LinksLiteralValue,
     )
     from sphinx_needs.nodes import Need
+    from sphinx_needs.schema.config import SchemasRootType
     from sphinx_needs.services.manager import ServiceManager
 
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 3
+ENV_DATA_VERSION: Final = 4
 """Version of the data stored in the environment.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
@@ -54,7 +55,7 @@ class NeedsPartType(TypedDict, total=False):
     content: str
     """Content of the part."""
 
-    # note back links for each type are also set dynamically in post_process_needs_data (-> update_back_links)
+    # note back links for each type are also set dynamically in post_process_needs_data (-> resolve_links)
 
 
 class CoreFieldParameters(TypedDict):
@@ -497,7 +498,7 @@ class NeedsInfoType(TypedDict):
     signature: None | str
     """Derived from a docutils desc_name node."""
 
-    # these default to False and are updated in update_back_links post-process
+    # these default to False and are updated in resolve_links post-process
     has_dead_links: bool
     """True if any links reference need ids that are not found in the need list."""
     has_forbidden_dead_links: bool
@@ -790,6 +791,21 @@ class SphinxNeedsData:
         """
         self.env._needs_schema = schema
 
+    def get_resolved_schemas(self) -> list[SchemasRootType]:
+        """Get the type-injected user schema definitions, if any.
+
+        These are produced by ``resolve_schemas_config`` from
+        ``needs_schema_definitions['schemas']`` and stored on the environment
+        rather than mutated back into the config, so Sphinx's config-change
+        detection does not see a diff between the in-memory config (loaded
+        each build) and the pickled config (saved at end of build).
+        """
+        return getattr(self.env, "_needs_resolved_schemas", [])
+
+    def _set_resolved_schemas(self, schemas: list[SchemasRootType]) -> None:
+        """Store the type-injected user schema definitions on the environment."""
+        self.env._needs_resolved_schemas = schemas
+
     @property
     def _env_needs(self) -> dict[str, NeedItem]:
         try:
@@ -835,12 +851,20 @@ class SphinxNeedsData:
         if self.needs_is_post_processed:
             raise RuntimeError("Needs have already been post-processed and frozen.")
         for need_id in list(self._env_needs):
-            if self._env_needs[need_id]["docname"] == docname:
+            if self._env_needs[need_id].is_in_document(docname):
                 del self._env_needs[need_id]
                 self.remove_need_node(need_id)
         docs = self.get_or_create_docs()
         for key, value in docs.items():
             docs[key] = [doc for doc in value if doc != docname]
+        extends = self.get_or_create_extends()
+        for extend_id in list(extends):
+            if extends[extend_id]["docname"] == docname:
+                del extends[extend_id]
+        umls = self.get_or_create_umls()
+        for uml_id in list(umls):
+            if umls[uml_id]["docname"] == docname:
+                del umls[uml_id]
 
     def get_needs_mutable(self) -> NeedsMutable:
         """Get all needs, mapped by ID.

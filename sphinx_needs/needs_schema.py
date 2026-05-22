@@ -10,16 +10,17 @@ import jsonschema_rs
 
 from sphinx_needs.config import NeedFields
 from sphinx_needs.exceptions import VariantParsingException
+from sphinx_needs.need_item import NeedLink
 from sphinx_needs.schema.config import (
-    ExtraLinkSchemaType,
-    ExtraOptionBooleanSchemaType,
-    ExtraOptionIntegerSchemaType,
-    ExtraOptionMultiValueSchemaType,
-    ExtraOptionNumberSchemaType,
-    ExtraOptionSchemaTypes,
-    ExtraOptionStringSchemaType,
-    validate_extra_link_schema_type,
-    validate_extra_option_schema,
+    FieldBooleanSchemaType,
+    FieldIntegerSchemaType,
+    FieldMultiValueSchemaType,
+    FieldNumberSchemaType,
+    FieldSchemaTypes,
+    FieldStringSchemaType,
+    LinkSchemaType,
+    validate_field_schema,
+    validate_link_schema_type,
 )
 from sphinx_needs.schema.core import validate_object_schema_compiles
 from sphinx_needs.variants import VariantFunctionParsed
@@ -37,7 +38,7 @@ class FieldSchema:
 
     name: str
     description: str = ""
-    schema: ExtraOptionSchemaTypes
+    schema: FieldSchemaTypes
     nullable: bool = False
     directive_option: bool = False
     parse_dynamic_functions: bool = False
@@ -66,7 +67,7 @@ class FieldSchema:
         if not isinstance(self.description, str):
             raise ValueError("description must be a string.")
         try:
-            validate_extra_option_schema(self.schema)
+            validate_field_schema(self.schema)
         except TypeError as exc:
             raise ValueError(f"Invalid schema: {exc}") from exc
         try:
@@ -439,7 +440,7 @@ class FieldLiteralValue:
 
 @dataclass(frozen=True, slots=True)
 class LinksLiteralValue:
-    value: list[str]
+    value: list[NeedLink]
 
 
 @dataclass(frozen=True, slots=True)
@@ -474,7 +475,7 @@ class FunctionArrayTyped(Generic[_ValueType]):
 
 @dataclass(frozen=True, slots=True)
 class LinksFunctionArray:
-    value: tuple[str | DynamicFunctionParsed | VariantFunctionParsed, ...]
+    value: tuple[NeedLink | DynamicFunctionParsed | VariantFunctionParsed, ...]
 
 
 @lru_cache(maxsize=128)
@@ -518,16 +519,37 @@ def _from_string_item(
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
+class LinkDisplayConfig:
+    """Display/rendering configuration for a link type."""
+
+    incoming: str
+    """Title for incoming links (e.g., 'links incoming')."""
+    outgoing: str
+    """Title for outgoing links (e.g., 'links outgoing')."""
+    color: str = "#000000"
+    """Color used for needflow diagrams."""
+    style: str = ""
+    """Line style used for needflow diagrams."""
+    style_part: str = "dotted"
+    """Line style used for need parts in needflow diagrams."""
+    style_start: str = "-"
+    """Arrow start style for needflow diagrams."""
+    style_end: str = "->"
+    """Arrow end style for needflow diagrams."""
+
+
+@dataclass(frozen=True, kw_only=True, slots=True)
 class LinkSchema:
     """Schema for a single link field."""
 
     name: str
     description: str = ""
-    schema: ExtraLinkSchemaType
+    schema: LinkSchemaType
     directive_option: bool = False
     allow_extend: bool = False
     parse_dynamic_functions: bool = False
     parse_variants: bool = False
+    parse_conditions: bool = True
     allow_defaults: bool = False
     predicate_defaults: tuple[
         tuple[str, LinksLiteralValue | LinksFunctionArray],
@@ -544,6 +566,12 @@ class LinkSchema:
     
     Used if the field has not been specifically set, and no predicate matches.
     """
+    display: LinkDisplayConfig
+    """Display/rendering configuration for this link type."""
+    copy: bool = False
+    """If True, copy links to the common 'links' field."""
+    allow_dead_links: bool = False
+    """If True, add a 'forbidden' class to dead links instead of warning."""
 
     def __post_init__(self) -> None:
         if not isinstance(self.name, str) or not self.name:
@@ -551,7 +579,7 @@ class LinkSchema:
         if not isinstance(self.description, str):
             raise ValueError("description must be a string.")
         try:
-            validate_extra_link_schema_type(self.schema)
+            validate_link_schema_type(self.schema)
         except TypeError as exc:
             raise ValueError(f"Invalid schema: {exc}") from exc
         try:
@@ -562,6 +590,8 @@ class LinkSchema:
             raise ValueError("parse_dynamic_functions must be a boolean.")
         if not isinstance(self.parse_variants, bool):
             raise ValueError("parse_variants must be a boolean.")
+        if not isinstance(self.parse_conditions, bool):
+            raise ValueError("parse_conditions must be a boolean.")
         if not isinstance(self.allow_defaults, bool):
             raise ValueError("allow_defaults must be a boolean.")
         if not isinstance(self.allow_extend, bool):
@@ -666,12 +696,14 @@ class LinkSchema:
         if self.description:
             schema["description"] = self.description
         if isinstance(self.default, LinksLiteralValue):
-            schema["default"] = self.default.value
+            schema["default"] = [nl.to_filter_string() for nl in self.default.value]
         return schema
 
     def type_check(self, value: Any) -> bool:
         """Check if a value is of the correct type for this field."""
-        return isinstance(value, list) and all(isinstance(i, str) for i in value)
+        return isinstance(value, list) and all(
+            isinstance(i, str | NeedLink) for i in value
+        )
 
     def type_check_item(self, value: Any) -> bool:
         """Check if a value is of the correct item type for this field.
@@ -679,7 +711,7 @@ class LinkSchema:
         For 'array' fields, this checks the type of the array items.
         For other fields, this checks the type of the field itself.
         """
-        return isinstance(value, str)
+        return isinstance(value, str | NeedLink)
 
     def convert_directive_option(
         self, value: str
@@ -696,28 +728,21 @@ class LinkSchema:
             raise TypeError(f"Value '{value}' is not a string.")
 
         has_df_or_vf = False
-        array: list[str | DynamicFunctionParsed | VariantFunctionParsed] = []
-        for parsed in _split_list(
-            value, self.parse_dynamic_functions, self.parse_variants
+        array: list[NeedLink | DynamicFunctionParsed | VariantFunctionParsed] = []
+        for item in _split_link_list(
+            value,
+            self.parse_dynamic_functions,
+            self.parse_variants,
+            parse_conditions=self.parse_conditions,
         ):
-            if len(parsed) != 1:
-                raise ValueError(
-                    "only one string, dynamic function or variant function allowed per array item."
-                )
-            item, item_type = parsed[0]
-            match item_type:
-                case ListItemType.STD:
-                    array.append(item)
-                case ListItemType.DF | ListItemType.DF_U:
-                    from sphinx_needs.functions.functions import DynamicFunctionParsed
-
-                    # TODO warn on unclosed dynamic function
-                    has_df_or_vf = True
-                    array.append(DynamicFunctionParsed.from_string(item))
-                case ListItemType.VF | ListItemType.VF_U:
-                    # TODO warn on unclosed variant function
-                    has_df_or_vf = True
-                    array.append(VariantFunctionParsed.from_string(item))
+            if isinstance(item, LinkSplitWarning):
+                # TODO bubble up as warning?
+                raise ValueError(item.message)
+            elif isinstance(item, NeedLink):
+                array.append(item)
+            else:
+                has_df_or_vf = True
+                array.append(item)
 
         if has_df_or_vf:
             return LinksFunctionArray(tuple(array))
@@ -748,7 +773,7 @@ class LinkSchema:
                 from sphinx_needs.functions.functions import DynamicFunctionParsed
 
                 new_value: list[
-                    str | DynamicFunctionParsed | VariantFunctionParsed
+                    NeedLink | DynamicFunctionParsed | VariantFunctionParsed
                 ] = []
                 has_function = False
                 item: str
@@ -772,13 +797,29 @@ class LinkSchema:
                             VariantFunctionParsed.from_string(item.strip()[2:-2])
                         )
                     else:
-                        new_value.append(item)
+                        new_value.append(
+                            NeedLink.from_string(
+                                item, parse_conditions=self.parse_conditions
+                            )
+                        )
                 if has_function:
                     return LinksFunctionArray(tuple(new_value))
                 else:
-                    return LinksLiteralValue(value)
+                    return LinksLiteralValue(
+                        [
+                            NeedLink.from_string(
+                                v, parse_conditions=self.parse_conditions
+                            )
+                            for v in value
+                        ]
+                    )
             else:
-                return LinksLiteralValue(value)
+                return LinksLiteralValue(
+                    [
+                        NeedLink.from_string(v, parse_conditions=self.parse_conditions)
+                        for v in value
+                    ]
+                )
 
 
 class FieldsSchema:
@@ -979,6 +1020,125 @@ def _split_list(
         yield _current_elements
 
 
+@dataclass(frozen=True, slots=True)
+class LinkSplitWarning:
+    """A warning yielded during link list splitting."""
+
+    message: str
+
+
+def _split_link_list(
+    text: str,
+    parse_dynamic_functions: bool,
+    parse_variants: bool,
+    *,
+    parse_conditions: bool = True,
+) -> Iterator[
+    NeedLink | DynamicFunctionParsed | VariantFunctionParsed | LinkSplitWarning
+]:
+    """Split a ``;|,`` delimited link string, directly yielding typed objects.
+
+    Handles ``[[...]]`` dynamic functions, ``<<...>>`` variant functions,
+    and plain link IDs with optional ``[condition]`` syntax.
+
+    Parsing is done left-to-right in a single pass with these priority rules:
+
+    1. ``[[...]]`` → ``DynamicFunctionParsed``
+    2. ``<<...>>`` → ``VariantFunctionParsed``
+    3. ``;|,`` → flush accumulated text as a ``NeedLink``
+    4. Otherwise → accumulate character
+
+    Plain link items support the format ``ID``, ``ID.part``,
+    ``ID[condition]``, or ``ID.part[condition]``.
+    The condition uses matched bracket depth,
+    so ``ID[[x>1]]`` parses the condition as ``[x>1]``.
+
+    :param text: The string to split.
+    :param parse_dynamic_functions: Whether to parse ``[[...]]`` dynamic functions.
+    :param parse_variants: Whether to parse ``<<...>>`` variant functions.
+    :param parse_conditions: Whether to parse ``[condition]`` brackets.
+    :yields: Parsed link items, or ``LinkSplitWarning`` for non-fatal issues
+        (e.g. text adjacent to a dynamic/variant function, unclosed brackets).
+    """
+    from sphinx_needs.functions.functions import DynamicFunctionParsed
+
+    _current = ""  # text accumulated for the current plain-text item
+    _has_special = False  # whether current slot has yielded a DF/VF
+
+    def _flush_current() -> NeedLink | LinkSplitWarning | None:
+        """Flush accumulated plain text as a NeedLink, or None if empty."""
+        nonlocal _current
+        stripped = _current.strip()
+        _current = ""
+        if not stripped:
+            return None
+        link, warnings = NeedLink.from_string_with_warnings(
+            stripped, parse_conditions=parse_conditions
+        )
+        if warnings:
+            return LinkSplitWarning(warnings[0])
+        return link
+
+    while text:
+        if parse_dynamic_functions and text.startswith("[[") and not _current.strip():
+            # [[ at start of slot (no preceding non-whitespace text) → dynamic function
+            _current = ""  # discard any leading whitespace
+            _has_special = True
+            # Consume until closing ]]
+            text = text[2:]
+            content = ""
+            while text and not text.startswith("]]"):
+                content += text[0]
+                text = text[1:]
+            if content.endswith("]"):
+                content = content[:-1]
+            yield DynamicFunctionParsed.from_string(content)
+            if text.startswith("]]"):
+                text = text[2:]
+        elif parse_variants and text.startswith("<<") and not _current.strip():
+            # << at start of slot (no preceding non-whitespace text) → variant function
+            _current = ""  # discard any leading whitespace
+            _has_special = True
+            # Consume until closing >>
+            text = text[2:]
+            content = ""
+            while text and not text.startswith(">>"):
+                content += text[0]
+                text = text[1:]
+            if content.endswith(">"):
+                content = content[:-1]
+            yield VariantFunctionParsed.from_string(content)
+            if text.startswith(">>"):
+                text = text[2:]
+        elif text[0] in ";|,":
+            # Delimiter: flush current item
+            if not _has_special:
+                if result := _flush_current():
+                    yield result
+            else:
+                # After a DF/VF, check there's no trailing text
+                if _current.strip():
+                    yield LinkSplitWarning(
+                        "only one string, dynamic function or variant function allowed per array item."
+                    )
+                _current = ""
+            _has_special = False
+            text = text[1:]
+        else:
+            _current += text[0]
+            text = text[1:]
+
+    # Flush final item
+    if not _has_special:
+        if result := _flush_current():
+            yield result
+    else:
+        if _current.strip():
+            yield LinkSplitWarning(
+                "only one string, dynamic function or variant function allowed per array item."
+            )
+
+
 def _split_string(
     text: str, parse_dynamic_functions: bool, parse_variants: bool
 ) -> list[tuple[str, ListItemType]]:
@@ -1007,7 +1167,11 @@ def _split_string(
 
 
 def create_inherited_field(
-    parent: FieldSchema, child: NeedFields, *, allow_variants: bool
+    parent: FieldSchema,
+    child: NeedFields,
+    *,
+    allow_variants: bool,
+    allow_dynamic_functions: bool,
 ) -> FieldSchema:
     """Create a new FieldSchema by inheriting from a parent FieldSchema and applying overrides from a child dictionary.
 
@@ -1016,6 +1180,8 @@ def create_inherited_field(
     :param allow_variants: Whether to allow parse_variants to be set to True in the child.
         This is a bit of a special case for certain core fields, and maybe should be handled differently in the future;
         fields like ``template`` are used before variants are processed, so allowing variants there would not make sense.
+    :param allow_dynamic_functions: Whether to allow parse_dynamic_functions to be set to True in the child.
+        Core fields that do not support dynamic functions (``allow_df=False``) cannot have this overridden to True.
     """
     replacements: dict[str, Any] = {}
 
@@ -1043,11 +1209,20 @@ def create_inherited_field(
             raise ValueError("parse_variants is not allowed to be True for this field.")
         replacements["parse_variants"] = child["parse_variants"]
 
+    if "parse_dynamic_functions" in child:
+        if not isinstance(child["parse_dynamic_functions"], bool):
+            raise ValueError("Child 'parse_dynamic_functions' must be a boolean.")
+        if not allow_dynamic_functions and child["parse_dynamic_functions"]:
+            raise ValueError(
+                "parse_dynamic_functions is not allowed to be True for this field."
+            )
+        replacements["parse_dynamic_functions"] = child["parse_dynamic_functions"]
+
     return replace(parent, **replacements)
 
 
 def inherit_schema(
-    parent_schema: ExtraOptionSchemaTypes, child_schema: dict[str, Any]
+    parent_schema: FieldSchemaTypes, child_schema: dict[str, Any]
 ) -> None:
     """Inherit and validate constraints from parent schema to child schema.
 
@@ -1123,7 +1298,7 @@ def inherit_schema(
 
 
 def _validate_boolean_constraints(
-    parent_schema: ExtraOptionBooleanSchemaType, child_schema: dict[str, Any]
+    parent_schema: FieldBooleanSchemaType, child_schema: dict[str, Any]
 ) -> None:
     """Validate and merge boolean-specific constraints from parent to child schema.
 
@@ -1142,7 +1317,7 @@ def _validate_boolean_constraints(
 
 
 def _validate_string_constraints(
-    parent_schema: ExtraOptionStringSchemaType, child_schema: dict[str, Any]
+    parent_schema: FieldStringSchemaType, child_schema: dict[str, Any]
 ) -> None:
     """Validate and merge string-specific constraints from parent to child schema.
 
@@ -1172,6 +1347,16 @@ def _validate_string_constraints(
         else:
             child_schema["enum"] = parent_schema["enum"]
 
+    # Validate const is in parent's enum if both exist
+    if (
+        "const" in child_schema
+        and "enum" in parent_schema
+        and child_schema["const"] not in parent_schema["enum"]
+    ):
+        raise ValueError(
+            f"Child 'const' value {child_schema['const']!r} is not in parent 'enum' values {parent_schema['enum']}."
+        )
+
     # Inherit pattern constraint - child cannot override
     if "pattern" in parent_schema:
         if (
@@ -1182,6 +1367,12 @@ def _validate_string_constraints(
                 f"Child 'pattern' {child_schema['pattern']!r} does not match parent 'pattern' {parent_schema['pattern']!r}. Pattern constraints cannot be overridden."
             )
         child_schema["pattern"] = parent_schema["pattern"]
+    elif "pattern" in child_schema:
+        # Validate that new pattern is a string (leave compilation to jsonschema)
+        if not isinstance(child_schema["pattern"], str):
+            raise ValueError(
+                f"Child 'pattern' {child_schema['pattern']!r} is not a string."
+            )
 
     # Inherit format constraint - child cannot override
     if "format" in parent_schema:
@@ -1215,7 +1406,7 @@ def _validate_string_constraints(
             child_schema["maxLength"] = parent_schema["maxLength"]
 
 
-_T = TypeVar("_T", ExtraOptionNumberSchemaType, ExtraOptionIntegerSchemaType)
+_T = TypeVar("_T", FieldNumberSchemaType, FieldIntegerSchemaType)
 
 
 def _validate_number_or_integer_constraints(
@@ -1248,6 +1439,16 @@ def _validate_number_or_integer_constraints(
                 )
         else:
             child_schema["enum"] = parent_schema["enum"]
+
+    # Validate const is in parent's enum if both exist
+    if (
+        "const" in child_schema
+        and "enum" in parent_schema
+        and child_schema["const"] not in parent_schema["enum"]
+    ):
+        raise ValueError(
+            f"Child 'const' value {child_schema['const']!r} is not in parent 'enum' values {parent_schema['enum']}."
+        )
 
     # Validate minimum constraint
     if "minimum" in parent_schema:
@@ -1298,7 +1499,10 @@ def _validate_number_or_integer_constraints(
             child_multiple = child_schema["multipleOf"]
             # For proper constraint narrowing, child should be a multiple of parent
             # e.g., if parent requires multipleOf 2, child can require multipleOf 4, 6, 8, etc.
-            if child_multiple % parent_multiple != 0:
+            # Use modulo with tolerance for float precision issues
+            remainder = child_multiple % parent_multiple
+            # Check if remainder is effectively zero (accounting for float precision)
+            if not (abs(remainder) < 1e-9 or abs(remainder - parent_multiple) < 1e-9):
                 raise ValueError(
                     f"Child 'multipleOf' {child_multiple} must be a multiple of parent 'multipleOf' {parent_multiple}."
                 )
@@ -1307,7 +1511,7 @@ def _validate_number_or_integer_constraints(
 
 
 def _validate_array_constraints(
-    parent_schema: ExtraOptionMultiValueSchemaType, child_schema: dict[str, Any]
+    parent_schema: FieldMultiValueSchemaType, child_schema: dict[str, Any]
 ) -> None:
     """Validate and merge array-specific constraints from parent to child schema.
 
@@ -1400,13 +1604,13 @@ def _validate_array_constraints(
                     parent_items["type"] == "integer"
                     and child_items["type"] == "integer"
                 ):
-                    # type restricted to ExtraOptionIntegerSchemaType
+                    # type restricted to FieldIntegerSchemaType
                     _validate_number_or_integer_constraints(parent_items, child_items)
 
                 elif (
                     parent_items["type"] == "number" and child_items["type"] == "number"
                 ):
-                    # type restricted to ExtraOptionNumberSchemaType
+                    # type restricted to FieldNumberSchemaType
                     _validate_number_or_integer_constraints(parent_items, child_items)
 
                 elif (

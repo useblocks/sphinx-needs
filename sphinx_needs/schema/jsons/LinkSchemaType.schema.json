@@ -1,6 +1,6 @@
 {
   "$defs": {
-    "ExtraLinkItemSchemaType": {
+    "LinkItemSchemaType": {
       "additionalProperties": false,
       "description": "Items in array of link string ids",
       "properties": {
@@ -25,7 +25,7 @@
       "required": [
         "type"
       ],
-      "title": "ExtraLinkItemSchemaType",
+      "title": "LinkItemSchemaType",
       "type": "object"
     }
   },
@@ -33,10 +33,10 @@
   "additionalProperties": false,
   "properties": {
     "contains": {
-      "$ref": "#/$defs/ExtraLinkItemSchemaType"
+      "$ref": "#/$defs/LinkItemSchemaType"
     },
     "items": {
-      "$ref": "#/$defs/ExtraLinkItemSchemaType"
+      "$ref": "#/$defs/LinkItemSchemaType"
     },
     "maxContains": {
       "title": "Maxcontains",
@@ -63,6 +63,6 @@
   "required": [
     "type"
   ],
-  "title": "ExtraLinkSchemaTypeModel",
+  "title": "LinkSchemaTypeModel",
   "type": "object"
 }

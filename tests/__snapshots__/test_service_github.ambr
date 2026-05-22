@@ -8,7 +8,7 @@
           'GITHUB_050bec': dict({
             'arch': dict({
             }),
-            'closed_at': '',
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -30,7 +30,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_050bec',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -41,10 +41,10 @@
             ]),
             'links_back': list([
             ]),
-            'max_amount': '',
-            'max_content_lines': '',
+            'max_amount': None,
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -56,8 +56,8 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
-            'query': '',
+            'prefix': None,
+            'query': None,
             'section_name': 'Title',
             'sections': list([
               'Title',
@@ -73,15 +73,15 @@
             'title': 'Bump actions/cache from 3 to 4 (#1092)',
             'type': 'commit',
             'type_name': 'Commit',
-            'updated_at': '',
+            'updated_at': None,
             'url': 'https://github.com/useblocks/sphinx-needs/commit/050bec750ff2c5acf881415fa2b5efb5fcce8414',
-            'url_postfix': '',
+            'url_postfix': None,
             'user': 'dependabot[bot]',
           }),
           'GITHUB_1110': dict({
             'arch': dict({
             }),
-            'closed_at': '',
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -107,7 +107,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_1110',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -121,7 +121,7 @@
             'max_amount': '1',
             'max_content_lines': '2',
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -133,7 +133,7 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'query': 'repo:useblocks/sphinx-needs',
             'section_name': 'Title',
             'sections': list([
@@ -141,7 +141,7 @@
             ]),
             'service': 'github-issues',
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': 'open',
             'style': None,
             'tags': list([
@@ -153,13 +153,13 @@
             'type_name': 'Requirement',
             'updated_at': '2024-02-15T12:19:30Z',
             'url': 'https://github.com/useblocks/sphinx-needs/issues/1110',
-            'url_postfix': '',
+            'url_postfix': None,
             'user': 'chrisjsewell',
           }),
           'GITHUB_1112': dict({
             'arch': dict({
             }),
-            'closed_at': '',
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -207,7 +207,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_1112',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -219,9 +219,9 @@
             'links_back': list([
             ]),
             'max_amount': '1',
-            'max_content_lines': '',
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -233,7 +233,7 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'query': 'repo:useblocks/sphinx-needs',
             'section_name': 'Title',
             'sections': list([
@@ -241,7 +241,7 @@
             ]),
             'service': 'github-prs',
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': 'open',
             'style': None,
             'tags': list([
@@ -252,13 +252,13 @@
             'type_name': 'PullRequest',
             'updated_at': '2024-02-15T20:55:43Z',
             'url': 'https://github.com/useblocks/sphinx-needs/pull/1112',
-            'url_postfix': '',
+            'url_postfix': None,
             'user': 'chrisjsewell',
           }),
           'GITHUB_6abd38': dict({
             'arch': dict({
             }),
-            'closed_at': '',
+            'closed_at': None,
             'completion': None,
             'constraints': list([
             ]),
@@ -291,7 +291,7 @@
             'has_dead_links': False,
             'has_forbidden_dead_links': False,
             'id': 'GITHUB_6abd38',
-            'id_prefix': '',
+            'id_prefix': None,
             'is_external': False,
             'is_import': False,
             'is_modified': False,
@@ -303,9 +303,9 @@
             'links_back': list([
             ]),
             'max_amount': '1',
-            'max_content_lines': '',
+            'max_content_lines': None,
             'modifications': 0,
-            'params': '',
+            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -317,7 +317,7 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': '',
+            'prefix': None,
             'query': 'repo:useblocks/sphinx-needs error',
             'section_name': 'Title',
             'sections': list([
@@ -325,7 +325,7 @@
             ]),
             'service': 'github-commits',
             'signature': None,
-            'specific': '',
+            'specific': None,
             'status': None,
             'style': None,
             'tags': list([
@@ -334,9 +334,9 @@
             'title': '🧪 Add test for `needreport` directive (#1105)',
             'type': 'commit',
             'type_name': 'Commit',
-            'updated_at': '',
+            'updated_at': None,
             'url': 'https://github.com/useblocks/sphinx-needs/commit/6abd389369c5bbd5216f5ecdc3da1323ebe8620d',
-            'url_postfix': '',
+            'url_postfix': None,
             'user': 'chrisjsewell',
           }),
         }),
@@ -355,10 +355,13 @@
               'type': 'object',
             }),
             'closed_at': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'completion': dict({
               'default': None,
@@ -417,10 +420,13 @@
               'type': 'string',
             }),
             'created_at': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'docname': dict({
               'default': None,
@@ -479,10 +485,13 @@
               'type': 'string',
             }),
             'id_prefix': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'is_external': dict({
               'default': False,
@@ -547,16 +556,22 @@
               'type': 'array',
             }),
             'max_amount': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'max_content_lines': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'modifications': dict({
               'default': 0,
@@ -565,10 +580,13 @@
               'type': 'integer',
             }),
             'params': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service open-needs',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'parent_need': dict({
               'default': None,
@@ -646,16 +664,22 @@
               ]),
             }),
             'prefix': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service open-needs',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'query': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'section_name': dict({
               'default': None,
@@ -677,10 +701,13 @@
               'type': 'array',
             }),
             'service': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'signature': dict({
               'default': None,
@@ -692,10 +719,13 @@
               ]),
             }),
             'specific': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'status': dict({
               'default': None,
@@ -752,28 +782,40 @@
               'type': 'string',
             }),
             'updated_at': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'url': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'url_postfix': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service open-needs',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
             'user': dict({
-              'default': '',
+              'default': None,
               'description': 'Added by service github-issues',
               'field_type': 'extra',
-              'type': 'string',
+              'type': list([
+                'string',
+                'null',
+              ]),
             }),
           }),
           'type': 'object',

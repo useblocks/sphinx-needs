@@ -28,7 +28,7 @@ def test_external_html(test_app: SphinxTestApp):
     )
     # print(warnings)
     assert warnings == [
-        "WARNING: External need 'EXT_TEST_01' in 'needs_test_small.json' could not be added: Extra option 'extra2' is invalid: Invalid value for field 'extra2': 1 [needs.load_external_need]",
+        "WARNING: External need 'EXT_TEST_01' in 'needs_test_small.json' could not be added: Field 'extra2' is invalid: Invalid value for field 'extra2': 1 [needs.load_external_need]",
         "WARNING: External need 'EXT_TEST_03' in 'needs_test_small.json' could not be added: Unknown need type 'ask'. [needs.load_external_need]",
         "WARNING: Unknown keys in external need source 'needs_test_small.json': ['unknown_key'] [needs.unknown_external_keys]",
         "WARNING: http://my_company.com/docs/v1/index.html#TEST_02: Need 'EXT_TEST_02' has unknown outgoing link 'EXT_TEST_01' in field 'links' [needs.external_link_outgoing]",
@@ -261,3 +261,52 @@ def test_external_allow_type_coercion_false(test_app):
     assert strip_colors(app._warning.getvalue()).splitlines() == [
         "WARNING: External need 'TEST_01' in 'needs.json' could not be added: 'tags' value is invalid: Invalid value for field 'tags': 'a,b,c' [needs.load_external_need]"
     ]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                ("index.rst", "Test\n====\n"),
+                (
+                    "conf.py",
+                    """
+extensions = ["sphinx_needs"]
+needs_external_needs = [{
+    'json_path':  'needs.json',
+    'base_url': 'http://my_company.com/docs/v1/',
+}]
+needs_build_json = True
+                 """,
+                ),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_external_empty_versions(test_app):
+    """Test external needs when the loaded needs.json has an empty versions dict."""
+    json_path = Path(test_app.srcdir) / "needs.json"
+    json_path.write_text(
+        json.dumps(
+            {
+                "current_version": "0.1.0",
+                "project": "foo",
+                "project_url": "https://bar",
+                "versions": {},
+            }
+        )
+    )
+
+    app = test_app
+    app.build()
+    assert app.statuscode == 0
+    assert not app._warning.getvalue()
+
+    needs_json = Path(test_app.outdir, "needs.json").read_text()
+    needs = json.loads(needs_json)
+    # the empty external needs should just be ignored without crashing.
+    assert "TEST_01" not in needs["versions"][""]["needs"]

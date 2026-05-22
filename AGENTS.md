@@ -329,7 +329,7 @@ flowchart TB
 
 ```python
 app.connect("config-inited", load_config_from_toml, priority=10)  # Load TOML config
-app.connect("config-inited", load_config)                         # Register extra options/directives
+app.connect("config-inited", load_config)                         # Register extra fields/directives
 app.connect("config-inited", merge_default_configs)               # Merge defaults
 app.connect("config-inited", check_configuration, priority=600)   # Validate config
 ```
@@ -343,7 +343,7 @@ app.connect("env-before-read-docs", resolve_schemas_config). # Validates schema 
 app.connect("env-before-read-docs", load_external_needs)   # Load external need files
 ```
 
-The `prepare_env` function initializes `BuildEnvironment` variables, registers services (GitHub, OpenNeeds), registers dynamic functions, initializes extra options and link types, and optionally starts process timing.
+The `prepare_env` function initializes `BuildEnvironment` variables, registers services (GitHub, OpenNeeds), registers dynamic functions, initializes extra fields and links, and optionally starts process timing.
 
 #### Document Processing
 
@@ -387,7 +387,7 @@ The `ensure_post_process_needs_data` function calls `post_process_needs_data`, w
 
 1. `extend_needs_data` - Apply all `needextend` modifications to need data
 2. `resolve_functions` - Resolve dynamic function values (calls functions set as field values)
-3. `update_back_links` - Generate back-links and check for dead/broken links between needs
+3. `resolve_links` - Generate back-links, assess link conditions, and check for dead/broken links between needs
 4. `process_constraints` - Process constraints for each need
 
 After this, needs are "sealed" (made immutable) via the `needs-before-sealing` event.

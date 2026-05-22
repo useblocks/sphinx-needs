@@ -28,7 +28,7 @@ classifiers = [
 ]
 requires-python = ">=3.10,<4"
 dependencies = [
-  "sphinx>=7.4,<9",
+  "sphinx>=7.4,<10",
   "requests-file~=2.1",             # external links
   "requests~=2.32",                 # external links
   "jsonschema-rs~=0.37.1",          # schema validation
@@ -36,6 +36,7 @@ dependencies = [
   "sphinxcontrib-jquery~=4.0",      # needed for datatables in sphinx>=6
   "tomli; python_version < '3.11'", # for needs_from_toml configuration
   "typing-extensions>=4.14.0",      # for dict NotRequired type indication
+  "minijinja~=2.15",                # lightweight jinja2-compatible template engine
 ]
 
 [project.optional-dependencies]
@@ -64,6 +65,7 @@ docs = [
   "sphinx-copybutton~=0.5",
   "sphinxcontrib-programoutput~=0.17",
   "sphinx-design~=0.6",
+  "sphinx-ai-index~=0.1.0",
 ]
 theme-im = ["sphinx-immaterial~=0.11.11"]
 theme-furo = ["furo~=2024.8.6"]

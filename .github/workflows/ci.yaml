@@ -37,7 +37,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.10", "3.12", "3.13", "3.14"]
-        sphinx-version: ["7.4", "8.2"]
+        sphinx-version: ["7.4", "8.2", "9.1"]
         include:
           # corner cases for Windows
           - os: "windows-latest"
@@ -48,12 +48,15 @@ jobs:
             sphinx-version: "8.2"
           - os: "windows-latest"
             python-version: "3.14"
-            sphinx-version: "8.2"
+            sphinx-version: "9.1"
         exclude:
           # Sphinx 8.2 only supports py3.11+
           - os: "ubuntu-latest"
             python-version: "3.10"
             sphinx-version: "8.2"
+          - os: "ubuntu-latest"
+            python-version: "3.10"
+            sphinx-version: "9.1"
 
     steps:
       - uses: actions/checkout@v4
@@ -62,7 +65,7 @@ jobs:
         run: sudo apt-get install graphviz
       - name: Install graphviz (windows)
         if: matrix.os == 'windows-latest'
-        run: choco install --no-progress graphviz
+        run: choco install -y --no-progress graphviz
       - name: Set Up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -98,7 +101,7 @@ jobs:
             sphinx-version: "7.4"
           - os: "ubuntu-latest"
             python-version: "3.13"
-            sphinx-version: "8.2"
+            sphinx-version: "9.1"
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js

@@ -23,19 +23,19 @@
 {% endif %}
 {# Output for needs_types #}
 
-{# Output for needs_extra_links #}
+{# Output for needs_links #}
 {% if links|length != 0 %}
 .. container:: toggle needs_report_table
 
    .. container::  header
 
-      **Need Extra Links**
+      **Need Links**
 
    .. list-table::
       :widths: 10 30 30 5 20
       :header-rows: 1
 
-      * - OPTION
+      * - NAME
         - INCOMING
         - OUTGOING
         - COPY
@@ -48,7 +48,7 @@
         - {{ link.get('allow_dead_links', False) | capitalize }}
       {% endfor %}
 {% endif %}
-{# Output for needs_extra_links #}
+{# Output for needs_links #}
 
 {# Output for needs_fields #}
 {% if options|length != 0 %}
@@ -56,7 +56,7 @@
 
    .. container::  header
 
-      **Need Extra Options**
+      **Need Fields**
 
    {% for option in options %}
    * {{ option }}

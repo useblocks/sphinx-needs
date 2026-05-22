@@ -93,6 +93,7 @@ class NeedserviceDirective(SphinxDirective):
                 "constraints",
                 "content",
                 *needs_schema.iter_extra_field_names(),
+                *needs_schema.iter_link_field_names(),
             }
             for datum in service_data:
                 options = {}
@@ -118,7 +119,7 @@ class NeedserviceDirective(SphinxDirective):
                     del datum["title"]
 
                 # We need to check if all given options from services are really available as configured
-                # extra_option or extra_link
+                # needs_fields or needs_links
                 missing_options = {}
                 for element in datum:
                     if element not in defined_options:

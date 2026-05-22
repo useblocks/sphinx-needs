@@ -42,6 +42,6 @@
   "required": [
     "type"
   ],
-  "title": "ExtraOptionIntegerSchemaTypeModel",
+  "title": "FieldIntegerSchemaTypeModel",
   "type": "object"
 }
