@@ -11,6 +11,12 @@ Unreleased
 
 :Released: Unreleased
 
+Improvements
+............
+
+- 👌 Allow link fields in :ref:`needservice` directive options, so needs
+  created via a custom service can declare links to other needs (:pr:`1632`)
+
 Bug fixes
 .........
 
