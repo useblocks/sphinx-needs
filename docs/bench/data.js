@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779364517798,
+  "lastUpdate": 1779466977286,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18576,6 +18576,42 @@ window.BENCHMARK_DATA = {
             "value": 55.20057488200001,
             "unit": "s",
             "extra": "Commit: 0375eb55cb19bb6c1fd6063f5b4d142ce093771a\nBranch: master\nTime: 2026-05-21T13:53:20+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "39275267+filipepcampos@users.noreply.github.com",
+            "name": "Filipe Campos",
+            "username": "filipepcampos"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a50a2f9c0614d054a4cd7cd0fde5a7ca2ec61763",
+          "message": "🔧 Allow links in needservice directive (#1632)\n\nAdded the link keys to the allowed options, similarly to what's done in the need.py directive\n\n---------\n\nCo-authored-by: Marco Heinemann <marco.heinemann@useblocks.com>",
+          "timestamp": "2026-05-22T18:20:57+02:00",
+          "tree_id": "3a522818013fc7c3a004b5908ecb237a22ad933b",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a50a2f9c0614d054a4cd7cd0fde5a7ca2ec61763"
+        },
+        "date": 1779466951233,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10873714399997425,
+            "unit": "s",
+            "extra": "Commit: a50a2f9c0614d054a4cd7cd0fde5a7ca2ec61763\nBranch: master\nTime: 2026-05-22T18:20:57+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 45.44293691600001,
+            "unit": "s",
+            "extra": "Commit: a50a2f9c0614d054a4cd7cd0fde5a7ca2ec61763\nBranch: master\nTime: 2026-05-22T18:20:57+02:00"
           }
         ]
       }
