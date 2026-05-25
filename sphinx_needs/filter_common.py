@@ -29,6 +29,7 @@ from sphinx_needs.needs_schema import AllowedTypes
 from sphinx_needs.ubquery import try_build_simple_predicate
 from sphinx_needs.utils import check_and_get_external_filter_func
 from sphinx_needs.utils import logger as log
+from sphinx_needs.variant_data import VariantDataProxy
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
 
@@ -542,7 +543,11 @@ def filter_needs_and_parts(
     # === Fast path: try compiled predicate to avoid eval() entirely ===
     simple_pred = try_build_simple_predicate(filter_string)
     if simple_pred is not None:
-        fallback = config.filter_data or None
+        fallback: dict[str, Any] | None = None
+        if config.filter_data or config.variant_data:
+            fallback = dict(config.filter_data) if config.filter_data else {}
+            if config.variant_data:
+                fallback["var"] = VariantDataProxy(config.variant_data)
         found_needs: list[NeedItem | NeedPartItem] = []
         error_reported = False
         for filter_need in needs:
@@ -631,12 +636,14 @@ def apply_default_predicate(
 
     :raises NeedsInvalidFilter: if the predicate is not valid
     """
-    predicate_context = {
+    predicate_context: dict[str, Any] = {
         **context,
         **extras,
         **links,
         **config.filter_data,
     }
+    if config.variant_data:
+        predicate_context["var"] = VariantDataProxy(config.variant_data)
     try:
         # Set filter_context as globals and not only locals in eval()!
         # Otherwise, the vars not be accessed in list comprehensions.
@@ -657,6 +664,8 @@ def filter_import_item(
     filter_context = context.copy()
     # Get needs external filter data and merge to filter_context
     filter_context.update(config.filter_data)
+    if config.variant_data:
+        filter_context["var"] = VariantDataProxy(config.variant_data)
     filter_context["search"] = need_search
     try:
         # Set filter_context as globals and not only locals in eval()!
@@ -697,7 +706,11 @@ def filter_single_need(
     # === Fast path: short-circuit simple expressions ===
     simple_pred = try_build_simple_predicate(filter_string)
     if simple_pred is not None:
-        fallback = config.filter_data or None
+        fallback: dict[str, Any] | None = None
+        if config.filter_data or config.variant_data:
+            fallback = dict(config.filter_data) if config.filter_data else {}
+            if config.variant_data:
+                fallback["var"] = VariantDataProxy(config.variant_data)
         try:
             result = simple_pred(need, fallback)
             if not isinstance(result, bool):
@@ -721,6 +734,8 @@ def filter_single_need(
 
     # Get needs external filter data and merge to filter_context
     filter_context.update(config.filter_data)
+    if config.variant_data:
+        filter_context["var"] = VariantDataProxy(config.variant_data)
 
     filter_context["search"] = need_search
 

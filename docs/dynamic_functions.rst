@@ -170,7 +170,7 @@ Rules for specifying variant definitions
 * Variants gets checked from left to right.
 * When evaluating a variant definition, we use data from the current need object,
   `Sphinx-Tags <https://www.sphinx-doc.org/en/master/man/sphinx-build.html#cmdoption-sphinx-build-t>`_,
-  and :ref:`needs_filter_data` as the context for filtering.
+  and :ref:`needs_variant_data` as the context for filtering.
   Sphinx tags are injected under the name ``build_tags`` as a set of strings.
 * You can set a *need option* to multiple variant definitions by separating each definition with either
   the ``,`` symbol, like ``var_a:open, ['name' in tags]:assigned``.|br|

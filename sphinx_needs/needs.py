@@ -658,12 +658,40 @@ def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
     pass
 
 
+def _resolve_variant_data_config(config: NeedsSphinxConfig, confdir: str) -> None:
+    """Resolve variant data from file + inline config, validate, and store back.
+
+    After this call, ``config.variant_data`` contains the fully merged result.
+    """
+    from sphinx_needs.variant_data import VariantDataError, resolve_variant_data
+
+    if not config.variant_data and not config.variant_data_file:
+        return
+
+    # Resolve relative file paths against the Sphinx confdir
+    file_path = config.variant_data_file
+    if file_path and not Path(file_path).is_absolute():
+        file_path = str(Path(confdir) / file_path)
+
+    try:
+        resolved = resolve_variant_data(config.variant_data, file_path)
+    except VariantDataError as e:
+        from sphinx_needs.exceptions import NeedsConfigException
+
+        raise NeedsConfigException(str(e)) from e
+    # Store the resolved result back so downstream code sees the merged dict
+    config.variant_data = resolved
+
+
 def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
     """
     Prepares the sphinx environment to store sphinx-needs internal data.
     """
     needs_config = NeedsSphinxConfig(app.config)
     data = SphinxNeedsData(env)
+
+    # Resolve variant data (load file + merge + validate) once for the build
+    _resolve_variant_data_config(needs_config, str(app.confdir))
 
     # Register embedded services
     services = data.get_or_create_services()
@@ -754,6 +782,14 @@ def check_configuration(app: Sphinx, config: Config) -> None:
     link_types = [x["option"] for x in needs_config._extra_links]
 
     external_filter = needs_config.filter_data
+    if external_filter:
+        log_warning(
+            LOGGER,
+            "needs_filter_data is deprecated and will be removed in a future version. "
+            "Use needs_variant_data instead.",
+            "deprecated",
+            None,
+        )
     for extern_filter, value in external_filter.items():
         # Check if external filter values is really a string
         if not isinstance(value, str):

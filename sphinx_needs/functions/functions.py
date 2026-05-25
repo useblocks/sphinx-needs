@@ -317,6 +317,12 @@ def resolve_functions(
                             **needs_config.filter_data,
                             "build_tags": set(app.builder.tags),
                         }
+                        if needs_config.variant_data:
+                            from sphinx_needs.variant_data import VariantDataProxy
+
+                            var_context["var"] = VariantDataProxy(
+                                needs_config.variant_data
+                            )
                         if (
                             var_return := _get_variant(
                                 item, needs_config.variants, var_context

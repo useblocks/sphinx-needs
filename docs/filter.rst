@@ -189,6 +189,45 @@ If it is invalid or returns False, the related need is not taken into account fo
       .. needlist::
          :filter: "filter_example" in tags and (("B" in tags or ("spec" == type and "closed" == status)) or "test" == type)
 
+.. _filter_variant_data:
+
+Using variant data (``var``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.2.0
+
+If :ref:`needs_variant_data` or :ref:`needs_variant_data_file` is configured,
+a ``var`` namespace is available in filter expressions, providing dot-access to nested structured data.
+
+This is useful for switching build outputs based on external configuration (CPU architecture, debug/release mode, feature flags, etc.)
+without polluting the need field namespace.
+
+The dot-access syntax mirrors `Jinja2 template syntax <https://jinja.palletsprojects.com/en/latest/templates/#variables>`__,
+making it familiar to Sphinx users.
+
+**Examples:**
+
+.. code-block:: rst
+
+   .. needtable::
+      :filter: var.cpu == "arm"
+
+   .. needlist::
+      :filter: var.build.debug == True and var.build.optimization > 1
+
+   .. needtable::
+      :filter: "feature_a" in var.build.features
+
+Accessing a key that doesn't exist raises an error, which helps catch typos:
+
+.. code-block:: rst
+
+   .. needlist::
+      :filter: var.typo == "x"
+      .. this will raise AttributeError: Unknown variant key: var.typo
+
+See :ref:`needs_variant_data` for configuration details and allowed data shapes.
+
 .. _filter_current_page:
 
 Filtering for needs on the current page
@@ -248,6 +287,8 @@ To improve performance, certain common patterns are identified and optimized by 
 - ``status == 'value'`` / ``status == "value"`` / ``'value' == status`` / ``"value" == status``
 - ``status in ['value1', 'value2', ...]`` / ``status in ("value1", "value2", ...)``
 - ``'value' in tags`` / ``"value" in tags``
+- ``var.key == 'value'`` / ``var.nested.key == 'value'`` (see :ref:`filter_variant_data`)
+- ``'value' in var.key`` / ``'value' not in var.key``
 
 Also filters containing ``and`` will be split into multiple filters and evaluated separately for the above patterns.
 For example, ``type == 'spec' and other == 'value'`` will first be filtered performantly by ``type == 'spec'`` and then the remaining needs will be filtered by ``other == 'value'``.

@@ -20,6 +20,7 @@ def test_doc_needs_filter_data_html(test_app):
     ).splitlines()
     print(warnings)
     assert warnings == [
+        "WARNING: needs_filter_data is deprecated and will be removed in a future version. Use needs_variant_data instead. [needs.deprecated]",
         "srcdir/filter_code.rst:34: WARNING: malformed function signature: 'own_filter_code(' [needs.filter_func]",
         "srcdir/filter_code.rst:43: WARNING: malformed function signature: 'own_filter_code(' [needs.filter_func]",
         "srcdir/filter_code.rst:39: WARNING: malformed function signature: 'my_pie_filter_code(' [needs.filter_func]",

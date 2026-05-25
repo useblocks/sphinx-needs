@@ -732,7 +732,42 @@ class NeedsSphinxConfig:
     filter_data: dict[str, str] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
-    """Additional context data for filters."""
+    """Additional context data for filters.
+
+    .. deprecated::
+        Use :confval:`needs_variant_data` with the ``var.*`` namespace instead.
+    """
+    variant_data: dict[str, Any] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+    )
+    """Nested variant data accessible as ``var.*`` in filter expressions.
+
+    Supports nested dicts with scalar leaf values (str, bool, int, float)
+    and uniform-type arrays of scalars.
+
+    Example::
+
+        needs_variant_data = {
+            "cpu": "arm",
+            "debug": True,
+            "build": {"optimization": 2},
+        }
+
+    Then in filters: ``var.cpu == "arm"`` or ``var.build.optimization > 1``.
+    """
+    variant_data_file: str | None = field(
+        default=None,
+        metadata={
+            "rebuild": "html",
+            "types": (str, type(None)),
+            "toml_convert": _abs_path,
+        },
+    )
+    """Path to a JSON file containing variant data.
+
+    If both this and :confval:`needs_variant_data` are set, the file is loaded first
+    and inline values are deep-merged on top (inline wins).
+    """
     allow_unsafe_filters: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
