@@ -6,10 +6,10 @@ if
 .. versionadded:: 8.2.0
 
 The ``if`` directive conditionally includes or excludes content based on
-:ref:`variant data <variant_data>` evaluated at parse time.
+:ref:`variant data <filter_variant_data>` evaluated at parse time.
 
 The directive argument is a Python expression evaluated against the ``var``
-namespace (populated from :confval:`needs_variant_data`).
+namespace (populated from :ref:`needs_variant_data`).
 If the expression evaluates to ``True``, the directive body is parsed and
 included in the document. Otherwise the entire body is skipped.
 
