@@ -342,7 +342,7 @@ For ``predicates``, the match expression is a string, using Python syntax, that 
 - ``is_import`` (``bool``)
 - :ref:`needs_fields`
 - :ref:`needs_links` (``tuple[str, ...]``)
-- :ref:`needs_filter_data`
+- :ref:`needs_variant_data` (via the ``var`` namespace)
 
 For example:
 
@@ -454,7 +454,7 @@ For ``predicates``, the match expression is a string, using Python syntax, that 
 - ``is_import`` (``bool``)
 - :ref:`needs_fields`
 - :ref:`needs_links` (``tuple[str, ...]``)
-- :ref:`needs_filter_data`
+- :ref:`needs_variant_data` (via the ``var`` namespace)
 
 For example:
 
@@ -570,55 +570,101 @@ Use ``style_start`` and ``style_end`` like this:
    and orientation (``left``, ``rigth``, ``up`` and ``down``). We suggest to set the orientation
    in ``style_end`` like in the example above, as this is more often supported.
 
-.. _`needs_filter_data`:
+.. _`needs_variant_data`:
 
-needs_filter_data
-~~~~~~~~~~~~~~~~~
+needs_variant_data
+~~~~~~~~~~~~~~~~~~
 
-This option allows to use custom data inside a :ref:`filter_string`.
+.. versionadded:: 8.2.0
+
+Provides structured variant data accessible under the ``var`` namespace in :ref:`filter expressions <filter_string>`.
+This replaces the flat :ref:`needs_filter_data` option with a namespaced, nested data structure
+that avoids collisions with need field names.
+
+The dot-access syntax (``var.build.debug``) is more readable than dictionary-style access (``var["build"]["debug"]``)
+and mirrors `Jinja2 template syntax <https://jinja.palletsprojects.com/en/latest/templates/#variables>`__,
+which Sphinx users are already familiar with.
 
 Configuration example:
 
 .. code-block:: python
 
-   def custom_defined_func():
-       return "my_tag"
-
-   needs_filter_data = {
-       "current_variant": "project_x",
-       "sphinx_tag": custom_defined_func(),
+   needs_variant_data = {
+       "cpu": "arm",
+       "debug": True,
+       "build": {
+           "optimization": 2,
+           "features": ["feature_a", "feature_b"],
+       },
    }
 
-The defined ``needs_filter_data`` must be a dictionary. Its values can be a string variable or a custom defined
-function. The function get executed during config loading and must return a string.
-
-The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very powerful
-together with internal needs information to filter needs.
-
-The defined extra filter data can be used like this:
+The data is then available in filter expressions via the ``var`` namespace:
 
 .. code-block:: rst
 
-   .. needextend:: type == "req" and sphinx_tag in tags
-      :+tags: my_external_tag
+   .. needtable::
+      :filter: var.cpu == "arm" and var.build.debug == True
 
-or if project has :ref:`needs_fields` defined like:
+   .. needlist::
+      :filter: "feature_a" in var.build.features
+
+**Allowed data shape:**
+
+- Top-level must be a dictionary with string keys.
+- Intermediate nodes: dictionaries only.
+- Leaf values: ``str``, ``bool``, ``int``, ``float``, or uniform lists of these types.
+- Arrays must be uniform (all elements the same scalar type).
+- No ``None`` values, no dictionaries inside arrays.
+
+Accessing a missing key raises an ``AttributeError``, which helps catch typos in filter expressions.
+
+Default: ``{}``
+
+.. seealso::
+
+   :ref:`needs_variant_data_file` for loading variant data from a JSON file.
+
+.. _`needs_variant_data_file`:
+
+needs_variant_data_file
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.2.0
+
+Path to a JSON file containing variant data. The file is loaded and its contents
+are made available under the ``var`` namespace, just like :ref:`needs_variant_data`.
+
+If both ``needs_variant_data_file`` and ``needs_variant_data`` are set, the file is loaded first
+and the inline dictionary is deep-merged on top (inline values win on conflict).
+
+The path is resolved relative to the Sphinx ``confdir`` (the directory containing ``conf.py``).
+
+Configuration example:
 
 .. code-block:: python
 
-   needs_fields = {'variant': {}}
+   needs_variant_data_file = "variants/arm_debug.json"
 
-The defined extra filter data can also be used like:
+Where ``variants/arm_debug.json`` contains:
 
-.. code-block:: rst
+.. code-block:: json
 
-   .. needlist::
-      :filter: variant != current_variant
+   {
+     "cpu": "arm",
+     "debug": true,
+     "build": {
+       "optimization": 2,
+       "features": ["feature_a", "feature_b"]
+     }
+   }
 
-   .. needextract::
-      :filter: type == "story" and variant == current_variant
-      :layout: clean
-      :style: green_border
+This is particularly useful for switching configurations at build time:
+
+.. code-block:: bash
+
+   sphinx-build -D needs_variant_data_file=variants/x86_release.json docs/ _build/
+
+Default: ``None``
 
 .. _`needs_allow_unsafe_filters`:
 
@@ -2472,6 +2518,37 @@ final need and schema looks like.
 Deprecated Options
 ------------------
 
+.. _`needs_filter_data`:
+
+needs_filter_data
+~~~~~~~~~~~~~~~~~
+
+.. deprecated:: 8.2.0
+
+   Use :ref:`needs_variant_data` and :ref:`needs_variant_data_file` instead.
+   These provide a dedicated ``var`` namespace that avoids collisions with need field names
+   and supports nested structured data.
+
+This option allows to use custom data inside a :ref:`filter_string`.
+
+Configuration example:
+
+.. code-block:: python
+
+   def custom_defined_func():
+       return "my_tag"
+
+   needs_filter_data = {
+       "current_variant": "project_x",
+       "sphinx_tag": custom_defined_func(),
+   }
+
+The defined ``needs_filter_data`` must be a dictionary. Its values can be a string variable or a custom defined
+function. The function gets executed during config loading and must return a string.
+
+The value of ``needs_filter_data`` will be available as data inside :ref:`filter_string` and can be very powerful
+together with internal needs information to filter needs.
+
 .. _`needs_extra_options`:
 
 needs_extra_options
@@ -2672,7 +2749,7 @@ A match expression is a string, using Python syntax, that will be evaluated agai
 - ``is_import`` (``bool``)
 - :ref:`needs_fields`
 - :ref:`needs_links` (``tuple[str, ...]``)
-- :ref:`needs_filter_data`
+- :ref:`needs_variant_data` (via the ``var`` namespace)
 
 If no predicates match, the ``default`` value is used (if present).
 

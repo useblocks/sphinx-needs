@@ -541,8 +541,14 @@ def filter_needs_and_parts(
 
     # === Fast path: try compiled predicate to avoid eval() entirely ===
     simple_pred = try_build_simple_predicate(filter_string)
+    var_proxy = config.variant_data_proxy
+
     if simple_pred is not None:
-        fallback = config.filter_data or None
+        fallback: dict[str, Any] | None = None
+        if config.filter_data or var_proxy is not None:
+            fallback = dict(config.filter_data) if config.filter_data else {}
+            if var_proxy is not None:
+                fallback["var"] = var_proxy
         found_needs: list[NeedItem | NeedPartItem] = []
         error_reported = False
         for filter_need in needs:
@@ -631,12 +637,14 @@ def apply_default_predicate(
 
     :raises NeedsInvalidFilter: if the predicate is not valid
     """
-    predicate_context = {
+    predicate_context: dict[str, Any] = {
         **context,
         **extras,
         **links,
         **config.filter_data,
     }
+    if (var_proxy := config.variant_data_proxy) is not None:
+        predicate_context["var"] = var_proxy
     try:
         # Set filter_context as globals and not only locals in eval()!
         # Otherwise, the vars not be accessed in list comprehensions.
@@ -657,6 +665,8 @@ def filter_import_item(
     filter_context = context.copy()
     # Get needs external filter data and merge to filter_context
     filter_context.update(config.filter_data)
+    if (var_proxy := config.variant_data_proxy) is not None:
+        filter_context["var"] = var_proxy
     filter_context["search"] = need_search
     try:
         # Set filter_context as globals and not only locals in eval()!
@@ -694,10 +704,16 @@ def filter_single_need(
 
     :return: True, if need passes the filter_string, else False
     """
+    var_proxy = config.variant_data_proxy
+
     # === Fast path: short-circuit simple expressions ===
     simple_pred = try_build_simple_predicate(filter_string)
     if simple_pred is not None:
-        fallback = config.filter_data or None
+        fallback: dict[str, Any] | None = None
+        if config.filter_data or var_proxy is not None:
+            fallback = dict(config.filter_data) if config.filter_data else {}
+            if var_proxy is not None:
+                fallback["var"] = var_proxy
         try:
             result = simple_pred(need, fallback)
             if not isinstance(result, bool):
@@ -721,6 +737,8 @@ def filter_single_need(
 
     # Get needs external filter data and merge to filter_context
     filter_context.update(config.filter_data)
+    if var_proxy is not None:
+        filter_context["var"] = var_proxy
 
     filter_context["search"] = need_search
 

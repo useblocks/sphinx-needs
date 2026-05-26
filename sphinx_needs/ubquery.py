@@ -38,7 +38,41 @@ _COMPARE_OPS: dict[type, Callable[[Any, Any], Any]] = {
 
 #: Names injected into the eval context by the slow path that are *not* need fields.
 #: If a filter references these, the fast path must bail out (return None).
-_CONTEXT_ONLY_NAMES: frozenset[str] = frozenset({"needs", "current_need", "c"})
+_CONTEXT_ONLY_NAMES: frozenset[str] = frozenset({"needs", "current_need", "c", "var"})
+
+#: Root names that live in the fallback context (not on the need itself).
+#: Attribute chains starting with these are resolved via the fallback mapping.
+_FALLBACK_ROOTS: frozenset[str] = frozenset({"var"})
+
+
+def _unpack_attribute_chain(node: ast.expr) -> tuple[str, ...] | None:
+    """Unpack an AST attribute chain into a tuple of names.
+
+    E.g. ``var.build.debug`` → ``("var", "build", "debug")``.
+    Returns None if the node is not a simple attribute chain of Names.
+    """
+    parts: list[str] = []
+    while isinstance(node, ast.Attribute):
+        parts.append(node.attr)
+        node = node.value
+    if isinstance(node, ast.Name):
+        parts.append(node.id)
+        parts.reverse()
+        return tuple(parts)
+    return None
+
+
+def _resolve_chain(ctx: Mapping[str, Any] | None, chain: tuple[str, ...]) -> Any:
+    """Resolve an attribute chain against the fallback context.
+
+    E.g. chain=("var", "cpu") looks up ctx["var"].cpu
+    """
+    if ctx is None or chain[0] not in ctx:
+        raise NameError(f"name {chain[0]!r} is not defined")
+    obj: Any = ctx[chain[0]]
+    for segment in chain[1:]:
+        obj = getattr(obj, segment)
+    return obj
 
 
 def _get_field(
@@ -124,6 +158,36 @@ def _expr_to_predicate(
                     _get_field(need, _f, ctx), _v
                 )
 
+            # --- attribute chain comparisons: var.cpu == "arm" ---
+            chain: tuple[str, ...] | None = None
+            chain_value: Any = None
+            chain_swapped = False
+            if (
+                isinstance(expr.left, ast.Attribute)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Constant)
+            ):
+                chain = _unpack_attribute_chain(expr.left)
+                chain_value = expr.comparators[0].value
+            elif (
+                isinstance(expr.left, ast.Constant)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Attribute)
+            ):
+                chain = _unpack_attribute_chain(expr.comparators[0])
+                chain_value = expr.left.value
+                chain_swapped = True
+
+            if chain is not None and chain[0] in _FALLBACK_ROOTS:
+                op_fn = _COMPARE_OPS[op_type]
+                if chain_swapped:
+                    return lambda need, ctx=None, _c=chain, _v=chain_value, _op=op_fn: (  # type: ignore[misc]
+                        _op(_v, _resolve_chain(ctx, _c))
+                    )
+                return lambda need, ctx=None, _c=chain, _v=chain_value, _op=op_fn: _op(  # type: ignore[misc]
+                    _resolve_chain(ctx, _c), _v
+                )
+
         # field in [literal, ...] / field not in [literal, ...]
         if isinstance(expr.ops[0], ast.In | ast.NotIn):
             negate = isinstance(expr.ops[0], ast.NotIn)
@@ -167,6 +231,24 @@ def _expr_to_predicate(
                 return lambda need, ctx=None, _f=in_field, _v=in_value: (  # type: ignore[misc]
                     _v in _get_field(need, _f, ctx)
                 )
+
+            # "value" in var.field  (e.g. "arm" in var.archs)
+            # "value" not in var.field
+            if (
+                isinstance(expr.left, ast.Constant)
+                and len(expr.comparators) == 1
+                and isinstance(expr.comparators[0], ast.Attribute)
+            ):
+                in_chain = _unpack_attribute_chain(expr.comparators[0])
+                if in_chain is not None and in_chain[0] in _FALLBACK_ROOTS:
+                    in_val = expr.left.value
+                    if negate:
+                        return lambda need, ctx=None, _c=in_chain, _v=in_val: (  # type: ignore[misc]
+                            _v not in _resolve_chain(ctx, _c)
+                        )
+                    return lambda need, ctx=None, _c=in_chain, _v=in_val: (  # type: ignore[misc]
+                        _v in _resolve_chain(ctx, _c)
+                    )
 
     # --- search(pattern, field) function call ---
     if (

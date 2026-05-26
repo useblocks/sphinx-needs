@@ -319,7 +319,7 @@ The option activates jinja-parsing for the content of a need.
 If the value is set to ``true``, you can specify `Jinja <https://jinja.palletsprojects.com/>`_ syntax in the content.
 
 The **:jinja_content:** option give access to all need data, including the original content
-and the data in :ref:`needs_filter_data`.
+and the data in :ref:`needs_variant_data`.
 
 If you set the option to **False**, you deactivate jinja-parsing for the need's content.
 

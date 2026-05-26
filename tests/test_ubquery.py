@@ -325,3 +325,127 @@ class TestFilterDataFallback:
         assert pred is not None
         assert pred(self.need, {"project": "alpha"}) is True
         assert pred(self.need, {"project": "beta"}) is False
+
+
+# --- variant data (var.*) fast-path tests ---
+
+
+class TestVariantDataFastPath:
+    """Tests for var.* attribute chain support in the fast path."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self) -> None:
+        from sphinx_needs.variant_data import VariantDataProxy
+
+        self.need = _make_need()
+        self.ctx = {
+            "var": VariantDataProxy(
+                {
+                    "cpu": "arm",
+                    "os": "linux",
+                    "build": {"debug": True, "opt_level": 2},
+                    "archs": ["arm", "x86"],
+                }
+            )
+        }
+
+    @pytest.mark.parametrize(
+        ("filter_string", "expected"),
+        [
+            pytest.param('var.cpu == "arm"', True, id="eq-true"),
+            pytest.param('var.cpu == "x86"', False, id="eq-false"),
+            pytest.param('var.cpu != "x86"', True, id="ne-true"),
+            pytest.param('var.cpu != "arm"', False, id="ne-false"),
+            pytest.param('"arm" == var.cpu', True, id="swapped-eq-true"),
+            pytest.param('"x86" == var.cpu', False, id="swapped-eq-false"),
+            pytest.param('var.os == "linux"', True, id="eq-os"),
+        ],
+        ids=lambda x: "",
+    )
+    def test_simple_comparison(self, filter_string: str, expected: bool) -> None:
+        pred = try_build_simple_predicate(filter_string)
+        assert pred is not None
+        assert pred(self.need, self.ctx) is expected
+
+    @pytest.mark.parametrize(
+        ("filter_string", "expected"),
+        [
+            pytest.param("var.build.debug == True", True, id="nested-bool-true"),
+            pytest.param("var.build.debug == False", False, id="nested-bool-false"),
+            pytest.param("var.build.opt_level == 2", True, id="nested-int"),
+            pytest.param("var.build.opt_level == 3", False, id="nested-int-false"),
+        ],
+        ids=lambda x: "",
+    )
+    def test_nested_comparison(self, filter_string: str, expected: bool) -> None:
+        pred = try_build_simple_predicate(filter_string)
+        assert pred is not None
+        assert pred(self.need, self.ctx) is expected
+
+    @pytest.mark.parametrize(
+        ("filter_string", "expected"),
+        [
+            pytest.param('"arm" in var.archs', True, id="in-true"),
+            pytest.param('"mips" in var.archs', False, id="in-false"),
+            pytest.param('"mips" not in var.archs', True, id="not-in-true"),
+            pytest.param('"arm" not in var.archs', False, id="not-in-false"),
+        ],
+        ids=lambda x: "",
+    )
+    def test_membership(self, filter_string: str, expected: bool) -> None:
+        pred = try_build_simple_predicate(filter_string)
+        assert pred is not None
+        assert pred(self.need, self.ctx) is expected
+
+    def test_compound_var_and_field(self) -> None:
+        """var.* works combined with need field comparisons."""
+        pred = try_build_simple_predicate('var.cpu == "arm" and status == "open"')
+        assert pred is not None
+        assert pred(self.need, self.ctx) is True
+
+        pred2 = try_build_simple_predicate('var.cpu == "x86" and status == "open"')
+        assert pred2 is not None
+        assert pred2(self.need, self.ctx) is False
+
+    def test_compound_var_or(self) -> None:
+        pred = try_build_simple_predicate('var.cpu == "x86" or var.os == "linux"')
+        assert pred is not None
+        assert pred(self.need, self.ctx) is True
+
+    def test_not_var(self) -> None:
+        pred = try_build_simple_predicate('not var.cpu == "x86"')
+        assert pred is not None
+        assert pred(self.need, self.ctx) is True
+
+    def test_bare_var_returns_none(self) -> None:
+        """Bare 'var' name should bail to slow path (return None)."""
+        assert try_build_simple_predicate("var") is None
+
+    def test_var_in_comparison_returns_none_for_non_var_root(self) -> None:
+        """Attribute chains not rooted in 'var' bail to slow path."""
+        assert try_build_simple_predicate('foo.bar == "x"') is None
+
+    def test_missing_var_key_raises(self) -> None:
+        """Accessing a missing key on var raises AttributeError at eval time."""
+        pred = try_build_simple_predicate('var.missing == "x"')
+        assert pred is not None
+        with pytest.raises(AttributeError):
+            pred(self.need, self.ctx)
+
+    def test_no_ctx_raises(self) -> None:
+        """If ctx is None, accessing var raises NameError."""
+        pred = try_build_simple_predicate('var.cpu == "arm"')
+        assert pred is not None
+        with pytest.raises(NameError):
+            pred(self.need, None)
+
+    def test_filter_single_need_with_variant_data(self) -> None:
+        """filter_single_need passes variant data through to the fast path."""
+        from sphinx_needs.variant_data import VariantDataProxy
+
+        config = Mock()
+        config.filter_data = {}
+        config.variant_data = {"cpu": "arm"}
+        config.variant_data_proxy = VariantDataProxy(config.variant_data)
+        result = filter_single_need(self.need, config, 'var.cpu == "arm"')
+        assert result is True

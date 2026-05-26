@@ -71,7 +71,8 @@ def test_variant_fields_html(test_app, snapshot):
         .splitlines()
     )
     assert warnings == [
-        "<srcdir>/index.rst:33: WARNING: Need could not be created: Link option 'links' is invalid: Unexpected text after closing condition bracket in link \"<<['tag_a' in build_tags]:SPEC_003\": ':SPEC_003'. [needs.create_need]"
+        "WARNING: needs_filter_data is deprecated and will be removed in a future version. Use needs_variant_data instead. [needs.deprecated]",
+        "<srcdir>/index.rst:33: WARNING: Need could not be created: Link option 'links' is invalid: Unexpected text after closing condition bracket in link \"<<['tag_a' in build_tags]:SPEC_003\": ':SPEC_003'. [needs.create_need]",
     ]
 
     needs = json.loads(Path(app.outdir, "needs.json").read_text())
@@ -111,7 +112,8 @@ def test_empty_variant_fields_html(test_app, snapshot):
 
     warnings = strip_colors(app._warning.getvalue()).splitlines()
     assert warnings == [
-        'WARNING: Config option "needs_variant_options" is deprecated. Please use "needs_fields" with "parse_variants" instead. [needs.deprecated]'
+        "WARNING: needs_filter_data is deprecated and will be removed in a future version. Use needs_variant_data instead. [needs.deprecated]",
+        'WARNING: Config option "needs_variant_options" is deprecated. Please use "needs_fields" with "parse_variants" instead. [needs.deprecated]',
     ]
 
     needs = json.loads(Path(app.outdir, "needs.json").read_text())
