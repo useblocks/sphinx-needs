@@ -51,7 +51,7 @@ class IfDirective(SphinxDirective):
 
         context: dict[str, object] = {"var": var_proxy, "__builtins__": {}}
         try:
-            result = eval(expression, context)
+            raw_result = eval(expression, context)
         except Exception as e:
             log_warning(
                 LOGGER,
@@ -61,7 +61,17 @@ class IfDirective(SphinxDirective):
             )
             return []
 
-        if not result:
+        if not isinstance(raw_result, bool):
+            log_warning(
+                LOGGER,
+                f"'if' directive expression did not return a bool, "
+                f"got {type(raw_result).__name__}: {raw_result!r} "
+                f"(coercing to bool): {expression!r}",
+                "if",
+                location=self.get_location(),
+            )
+
+        if not raw_result:
             return []
 
         # Parse the content into a container node
