@@ -13,6 +13,13 @@ Directives for creating and modifying needs:
    needimport
    needservice
 
+Directives for conditional content:
+
+.. toctree::
+   :maxdepth: 1
+
+   if
+
 Directives for visualizing and analyzing needs:
 
 .. toctree::
