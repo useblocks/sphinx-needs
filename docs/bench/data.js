@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779782491821,
+  "lastUpdate": 1779809226734,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18648,6 +18648,42 @@ window.BENCHMARK_DATA = {
             "value": 57.28473647799999,
             "unit": "s",
             "extra": "Commit: dfa857e9df7c804bc67090218d0ac8fef73c7602\nBranch: master\nTime: 2026-05-26T09:59:33+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a158906e7e96ae24907ccc870cabbd820ad61bb8",
+          "message": "✨ Add `if` directive for variant-conditional content (#1716)",
+          "timestamp": "2026-05-26T17:24:53+02:00",
+          "tree_id": "162585cedf712415ade551acd9d5a44ceaca5e84",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/a158906e7e96ae24907ccc870cabbd820ad61bb8"
+        },
+        "date": 1779809196682,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1472847320000028,
+            "unit": "s",
+            "extra": "Commit: a158906e7e96ae24907ccc870cabbd820ad61bb8\nBranch: master\nTime: 2026-05-26T17:24:53+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.384404180999994,
+            "unit": "s",
+            "extra": "Commit: a158906e7e96ae24907ccc870cabbd820ad61bb8\nBranch: master\nTime: 2026-05-26T17:24:53+02:00"
           }
         ]
       }
