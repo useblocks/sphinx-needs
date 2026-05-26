@@ -441,9 +441,11 @@ class TestVariantDataFastPath:
 
     def test_filter_single_need_with_variant_data(self) -> None:
         """filter_single_need passes variant data through to the fast path."""
+        from sphinx_needs.variant_data import VariantDataProxy
 
         config = Mock()
         config.filter_data = {}
         config.variant_data = {"cpu": "arm"}
+        config.variant_data_proxy = VariantDataProxy(config.variant_data)
         result = filter_single_need(self.need, config, 'var.cpu == "arm"')
         assert result is True

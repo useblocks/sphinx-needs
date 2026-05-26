@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from sphinx_needs.ubquery import try_build_simple_predicate
 from sphinx_needs.variant_data import (
     VariantDataError,
     VariantDataProxy,
@@ -51,7 +50,7 @@ class TestVariantDataProxy:
         assert set(proxy) == {"a", "b"}
 
     def test_repr(self) -> None:
-        proxy = VariantDataProxy({"x": 1}, path="var")
+        proxy = VariantDataProxy({"x": 1}, path=("var",))
         assert "var" in repr(proxy)
 
     def test_immutable(self) -> None:
@@ -78,6 +77,17 @@ class TestValidateVariantData:
     def test_non_string_key_raises(self) -> None:
         with pytest.raises(VariantDataError):
             validate_variant_data({123: "val"})  # type: ignore[dict-item]
+
+    def test_bool_int_array_not_mixed(self) -> None:
+        """bool and int must not be conflated in arrays (bool is subclass of int)."""
+        with pytest.raises(VariantDataError, match=r"expected int.*got bool"):
+            validate_variant_data({"vals": [1, True, 2]})
+        with pytest.raises(VariantDataError, match=r"expected bool.*got int"):
+            validate_variant_data({"vals": [True, 1, False]})
+
+    def test_none_value_raises(self) -> None:
+        with pytest.raises(VariantDataError, match="got NoneType"):
+            validate_variant_data({"x": None})
 
 
 class TestDeepMerge:
@@ -138,51 +148,3 @@ class TestResolveVariantData:
         # inline merges on top of file, so inline wins
         assert result["cpu"] == "arm"
         assert result["extra"] is True
-
-
-class TestUbqueryFastPath:
-    """Tests for fast-path compilation of var.* expressions."""
-
-    def _make_ctx(self, data: dict) -> dict:
-        return {"var": VariantDataProxy(data)}
-
-    def test_var_eq(self) -> None:
-        pred = try_build_simple_predicate('var.cpu == "arm"')
-        assert pred is not None
-        ctx = self._make_ctx({"cpu": "arm"})
-        assert pred({}, ctx) is True
-        ctx2 = self._make_ctx({"cpu": "x86"})
-        assert pred({}, ctx2) is False
-
-    def test_var_ne(self) -> None:
-        pred = try_build_simple_predicate('var.cpu != "arm"')
-        assert pred is not None
-        assert pred({}, self._make_ctx({"cpu": "x86"})) is True
-
-    def test_var_nested(self) -> None:
-        pred = try_build_simple_predicate("var.build.debug == True")
-        assert pred is not None
-        ctx = self._make_ctx({"build": {"debug": True}})
-        assert pred({}, ctx) is True
-
-    def test_value_in_var(self) -> None:
-        pred = try_build_simple_predicate('"arm" in var.archs')
-        assert pred is not None
-        ctx = self._make_ctx({"archs": ["arm", "x86"]})
-        assert pred({}, ctx) is True
-
-    def test_value_not_in_var(self) -> None:
-        pred = try_build_simple_predicate('"mips" not in var.archs')
-        assert pred is not None
-        ctx = self._make_ctx({"archs": ["arm", "x86"]})
-        assert pred({}, ctx) is True
-
-    def test_swapped_comparison(self) -> None:
-        pred = try_build_simple_predicate('"arm" == var.cpu')
-        assert pred is not None
-        assert pred({}, self._make_ctx({"cpu": "arm"})) is True
-
-    def test_bare_var_bails(self) -> None:
-        """Bare 'var' as a name should bail to slow path (return None)."""
-        pred = try_build_simple_predicate("var")
-        assert pred is None

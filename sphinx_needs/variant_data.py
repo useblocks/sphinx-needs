@@ -49,7 +49,7 @@ def validate_variant_data(data: dict[str, Any], path: str = "var") -> None:
                     f"got {first_type.__name__}"
                 )
             for i, item in enumerate(value):
-                if not isinstance(item, first_type):
+                if type(item) is not first_type:
                     raise VariantDataError(
                         f"{full}[{i}]: expected {first_type.__name__}, "
                         f"got {type(item).__name__} (arrays must be uniform type)"

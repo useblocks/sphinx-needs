@@ -140,6 +140,7 @@ from sphinx_needs.schema.process import process_schemas
 from sphinx_needs.services.github import GithubService
 from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import node_match
+from sphinx_needs.variant_data import VariantDataError, resolve_variant_data
 from sphinx_needs.warnings import process_warnings
 
 try:
@@ -663,8 +664,6 @@ def _resolve_variant_data_config(config: NeedsSphinxConfig, confdir: str) -> Non
 
     After this call, ``config.variant_data`` contains the fully merged result.
     """
-    from sphinx_needs.variant_data import VariantDataError, resolve_variant_data
-
     if not config.variant_data and not config.variant_data_file:
         return
 
@@ -692,6 +691,14 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
 
     # Resolve variant data (load file + merge + validate) once for the build
     _resolve_variant_data_config(needs_config, str(app.confdir))
+
+    # Cache the variant data proxy for use in filter expressions
+    if needs_config.variant_data:
+        from sphinx_needs.variant_data import VariantDataProxy
+
+        needs_config.variant_data_proxy = VariantDataProxy(needs_config.variant_data)
+    else:
+        needs_config.variant_data_proxy = None
 
     # Register embedded services
     services = data.get_or_create_services()

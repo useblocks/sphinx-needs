@@ -734,7 +734,7 @@ class NeedsSphinxConfig:
     )
     """Additional context data for filters.
 
-    .. deprecated::
+    .. deprecated:: 8.2.0
         Use :confval:`needs_variant_data` with the ``var.*`` namespace instead.
     """
     variant_data: dict[str, Any] = field(

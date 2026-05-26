@@ -281,6 +281,7 @@ def resolve_functions(
 ) -> None:
     """Resolve all dynamic/variant functions in all needs."""
     needs_schema = SphinxNeedsData(app.env).get_schema()
+    var_proxy = needs_config.variant_data_proxy
     for need in needs.values():
         if not need.has_dynamic_fields:
             continue
@@ -317,12 +318,8 @@ def resolve_functions(
                             **needs_config.filter_data,
                             "build_tags": set(app.builder.tags),
                         }
-                        if needs_config.variant_data:
-                            from sphinx_needs.variant_data import VariantDataProxy
-
-                            var_context["var"] = VariantDataProxy(
-                                needs_config.variant_data
-                            )
+                        if var_proxy is not None:
+                            var_context["var"] = var_proxy
                         if (
                             var_return := _get_variant(
                                 item, needs_config.variants, var_context
