@@ -482,16 +482,27 @@ def load_config_from_toml(app: Sphinx, config: Config) -> None:
         return
 
     allowed_keys = NeedsSphinxConfig.field_names()
+    overridden_keys: set[str] = set()
+    config_overrides = getattr(config, "overrides", None)
+    if isinstance(config_overrides, dict):
+        overridden_keys = {str(key) for key in config_overrides}
 
     for key, value in toml_data.items():
         if key not in allowed_keys:
             continue
-        config["needs_" + key] = NeedsSphinxConfig.convert_field_value(
+        config_key = "needs_" + key
+        # Keep values passed via sphinx-build -D (confoverrides) untouched.
+        if key in overridden_keys or config_key in overridden_keys:
+            continue
+        config[config_key] = NeedsSphinxConfig.convert_field_value(
             key, value, toml_file.parent
         )
 
+    schema_config_overridden = "needs_schema_" in overridden_keys
     for key, value in toml_data.get("schema", {}).items():
         if key not in allowed_keys:
+            continue
+        if schema_config_overridden or f"needs_schema_{key}" in overridden_keys:
             continue
         config["needs_schema_"][key] = NeedsSphinxConfig.convert_field_value(
             key, value, toml_file.parent, "schema_"
