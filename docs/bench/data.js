@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779809226734,
+  "lastUpdate": 1779866385416,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18684,6 +18684,42 @@ window.BENCHMARK_DATA = {
             "value": 55.384404180999994,
             "unit": "s",
             "extra": "Commit: a158906e7e96ae24907ccc870cabbd820ad61bb8\nBranch: master\nTime: 2026-05-26T17:24:53+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8239a7b63da17e5134501fafbe190d81fa6a464b",
+          "message": "👌 Honor -D overrides when loading needs_from_toml (#1717)\n\nKeep Sphinx CLI config overrides (`-D` / `confoverrides`) authoritative\nin `load_config_from_toml` by skipping TOML assignments for keys that\nwere already overridden.\n\n- Read override keys from `config.overrides`\n- Skip setting `needs_<key>` when `<key>` or `needs_<key>` is overridden\n- Skip setting schema entries when `needs_schema_` or\n`needs_schema_<key>` is overridden\n- Add regression test verifying TOML does not overwrite\n`needs_reproducible_json` when provided via `confoverrides`\n\nThis preserves expected precedence: CLI overrides > TOML values >\ndefaults.",
+          "timestamp": "2026-05-27T09:17:37+02:00",
+          "tree_id": "6d565a8445ef50fc174357733f06a091529b073d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8239a7b63da17e5134501fafbe190d81fa6a464b"
+        },
+        "date": 1779866355155,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17054712899999913,
+            "unit": "s",
+            "extra": "Commit: 8239a7b63da17e5134501fafbe190d81fa6a464b\nBranch: master\nTime: 2026-05-27T09:17:37+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.157948422000004,
+            "unit": "s",
+            "extra": "Commit: 8239a7b63da17e5134501fafbe190d81fa6a464b\nBranch: master\nTime: 2026-05-27T09:17:37+02:00"
           }
         ]
       }
