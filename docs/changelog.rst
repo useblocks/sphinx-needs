@@ -14,6 +14,10 @@ Unreleased
 Improvements
 ............
 
+- 🔧 Add a root ``context7.json`` configuration file so AI assistants using
+  Context7 can discover the live Sphinx-Needs documentation and use the
+  project-specific reference instead of stale training data (:issue:`1719`)
+
 - 👌 Allow link fields in :ref:`needservice` directive options, so needs
   created via a custom service can declare links to other needs (:pr:`1632`)
 
