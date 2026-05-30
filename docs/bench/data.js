@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779866385416,
+  "lastUpdate": 1780132612200,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18720,6 +18720,42 @@ window.BENCHMARK_DATA = {
             "value": 58.157948422000004,
             "unit": "s",
             "extra": "Commit: 8239a7b63da17e5134501fafbe190d81fa6a464b\nBranch: master\nTime: 2026-05-27T09:17:37+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "leon@weigel.com",
+            "name": "Leon Weigel",
+            "username": "Leon-Weigel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8fe59c3e316f6f16a62db340c0b31571100720b7",
+          "message": "📚 Add context7.json for Context7 documentation discovery (#1720)\n\n## Summary\n- add the root context7.json configuration requested in #1719\n- add an unreleased changelog entry describing the new Context7\nintegration\n\n## Validation\n- uvx --from tox-uv tox -e ruff-check\n- uvx --from tox-uv tox -e mypy\n\n## Notes\n- no tests were added because this change only adds repository\nconfiguration and a changelog entry\n\nCloses #1719",
+          "timestamp": "2026-05-30T11:14:46+02:00",
+          "tree_id": "dd8bf5a2bda0cf70ab0211b3d467d95f1cd7ae05",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8fe59c3e316f6f16a62db340c0b31571100720b7"
+        },
+        "date": 1780132587187,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14952333600000145,
+            "unit": "s",
+            "extra": "Commit: 8fe59c3e316f6f16a62db340c0b31571100720b7\nBranch: master\nTime: 2026-05-30T11:14:46+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 63.910379794,
+            "unit": "s",
+            "extra": "Commit: 8fe59c3e316f6f16a62db340c0b31571100720b7\nBranch: master\nTime: 2026-05-30T11:14:46+02:00"
           }
         ]
       }
