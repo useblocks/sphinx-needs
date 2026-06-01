@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from sphinx.util.console import strip_colors
+from syrupy.extensions.json import JSONSnapshotExtension
 
 
 @pytest.mark.parametrize(
@@ -81,6 +82,11 @@ def test_variant_data_file_html(test_app):
     assert "US East Needs" in index_html
 
 
+@pytest.fixture
+def snapshot_json(snapshot):
+    return snapshot.use_extension(JSONSnapshotExtension)
+
+
 @pytest.mark.parametrize(
     "test_app",
     [
@@ -92,7 +98,7 @@ def test_variant_data_file_html(test_app):
     ],
     indirect=True,
 )
-def test_variant_data_fields_html(test_app):
+def test_variant_data_fields_html(test_app, snapshot_json):
     """Test resolving ``<{...}>`` variant data references in need fields."""
     import json
 
@@ -104,16 +110,5 @@ def test_variant_data_fields_html(test_app):
     ).splitlines()
     assert warnings == []
 
-    needs = json.loads(Path(app.outdir, "needs.json").read_text())
-    versions = needs["versions"]
-    data = versions[next(iter(versions))]["needs"]
-
-    # scalar string resolves to the variant data value
-    assert data["REQ_001"]["mystring"] == "arm"
-    # embedded string substitutes the resolved value
-    # (string parts are joined with a space, as for variant functions)
-    assert data["REQ_002"]["mystring"] == "platform is  arm !"
-    # integer field resolves to the variant data integer
-    assert data["REQ_003"]["myint"] == 2
-    # array field substitutes the resolved value as an item
-    assert data["REQ_004"]["myarray"] == ["a", "arm", "c"]
+    data = json.loads(Path(app.outdir, "needs.json").read_text())
+    assert data["versions"][""]["needs"] == snapshot_json

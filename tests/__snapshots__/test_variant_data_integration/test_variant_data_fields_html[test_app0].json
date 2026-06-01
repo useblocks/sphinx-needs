@@ -1,0 +1,62 @@
+{
+  "REQ_001": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_001",
+    "lineno": 4,
+    "mystring": "arm",
+    "section_name": "Variant Data Fields Test",
+    "sections": [
+      "Variant Data Fields Test"
+    ],
+    "title": "Scalar string from variant data",
+    "type": "req",
+    "type_name": "Requirement"
+  },
+  "REQ_002": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_002",
+    "lineno": 8,
+    "mystring": "platform is  arm !",
+    "section_name": "Variant Data Fields Test",
+    "sections": [
+      "Variant Data Fields Test"
+    ],
+    "title": "Embedded string from variant data",
+    "type": "req",
+    "type_name": "Requirement"
+  },
+  "REQ_003": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_003",
+    "lineno": 12,
+    "myint": 2,
+    "section_name": "Variant Data Fields Test",
+    "sections": [
+      "Variant Data Fields Test"
+    ],
+    "title": "Integer from variant data",
+    "type": "req",
+    "type_name": "Requirement"
+  },
+  "REQ_004": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_004",
+    "lineno": 16,
+    "myarray": [
+      "a",
+      "arm",
+      "c"
+    ],
+    "section_name": "Variant Data Fields Test",
+    "sections": [
+      "Variant Data Fields Test"
+    ],
+    "title": "Array from variant data",
+    "type": "req",
+    "type_name": "Requirement"
+  }
+}
