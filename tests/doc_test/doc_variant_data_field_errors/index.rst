@@ -1,0 +1,22 @@
+Variant Data Field Errors Test
+==============================
+
+.. req:: Bad expression syntax
+   :id: REQ_SYNTAX
+   :mystring: <{ var.platform + }>
+
+.. req:: Missing variant attribute
+   :id: REQ_MISSING
+   :mystring: <{ var.nonexistent }>
+
+.. req:: Missing nested variant attribute
+   :id: REQ_MISSING_NESTED
+   :mystring: <{ var.build.missing }>
+
+.. req:: Type mismatch (integer into string field)
+   :id: REQ_BADTYPE_STR
+   :myint: <{ var.platform }>
+
+.. req:: Type mismatch (integer into array of strings)
+   :id: REQ_BADTYPE_ARRAY
+   :myarray: a, <{ var.build.opt_level }>, c
