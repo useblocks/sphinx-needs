@@ -58,5 +58,19 @@
     "title": "Array from variant data",
     "type": "req",
     "type_name": "Requirement"
+  },
+  "REQ_005": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_005",
+    "lineno": 20,
+    "mynoparse": "<{ var.platform }>",
+    "section_name": "Variant Data Fields Test",
+    "sections": [
+      "Variant Data Fields Test"
+    ],
+    "title": "Syntax not parsed when parse_variants is False",
+    "type": "req",
+    "type_name": "Requirement"
   }
 }

@@ -1,9 +1,9 @@
 Variant Data Field Errors Test
 ==============================
 
-.. req:: Bad expression syntax
+.. req:: Invalid variant data path
    :id: REQ_SYNTAX
-   :mystring: <{ var.platform + }>
+   :mystring: <{ platform }>
 
 .. req:: Missing variant attribute
    :id: REQ_MISSING

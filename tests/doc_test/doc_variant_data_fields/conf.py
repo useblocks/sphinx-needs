@@ -31,6 +31,11 @@ needs_fields = {
         "parse_variants": True,
         "nullable": True,
     },
+    "mynoparse": {
+        "schema": {"type": "string"},
+        "parse_variants": False,
+        "nullable": True,
+    },
 }
 
 needs_build_json = True

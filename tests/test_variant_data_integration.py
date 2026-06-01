@@ -127,7 +127,7 @@ def test_variant_data_fields_html(test_app, snapshot_json):
 def test_variant_data_field_errors_html(test_app, snapshot_json):
     """Test warnings for problematic ``<{...}>`` variant data references.
 
-    Covers bad expression syntax, missing variant attributes (top-level and
+    Covers invalid ``var.*`` paths, missing variant keys (top-level and
     nested), and resolved values whose type does not match the field schema.
     """
     app = test_app
@@ -138,9 +138,9 @@ def test_variant_data_field_errors_html(test_app, snapshot_json):
     ).splitlines()
 
     assert warnings == [
-        "srcdir/index.rst:4: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_SYNTAX': variant data expression 'var.platform +' failed to evaluate: invalid syntax (<string>, line 1) [needs.dynamic_function]",
-        "srcdir/index.rst:8: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_MISSING': variant data expression 'var.nonexistent' failed to evaluate: Unknown variant key: var.nonexistent [needs.dynamic_function]",
-        "srcdir/index.rst:12: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_MISSING_NESTED': variant data expression 'var.build.missing' failed to evaluate: Unknown variant key: var.build.missing [needs.dynamic_function]",
+        "srcdir/index.rst:4: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_SYNTAX': variant data reference 'platform' is invalid: expected a dotted 'var.*' path [needs.dynamic_function]",
+        "srcdir/index.rst:8: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_MISSING': Unknown variant data key: 'var.nonexistent' [needs.dynamic_function]",
+        "srcdir/index.rst:12: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_MISSING_NESTED': Unknown variant data key: 'var.build.missing' [needs.dynamic_function]",
         "srcdir/index.rst:16: WARNING: Error while resolving dynamic values for field 'myint', of need 'REQ_BADTYPE_STR': variant data value <class 'str'> is not of type 'integer' [needs.dynamic_function]",
         "srcdir/index.rst:20: WARNING: Error while resolving dynamic values for field 'myarray', of need 'REQ_BADTYPE_ARRAY': variant data value <class 'int'> is not of type 'array' or item type 'string' [needs.dynamic_function]",
     ]

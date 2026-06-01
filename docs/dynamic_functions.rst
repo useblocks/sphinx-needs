@@ -298,7 +298,7 @@ Variant data references
 In addition to :ref:`variant functions <needs_variant_support>` (``<<...>>``),
 you can inject values directly from :ref:`needs_variant_data` into a need field
 using the ``<{ ... }>`` syntax.
-The inner expression is evaluated and its result is substituted into the field value.
+The referenced value is looked up and substituted into the field value.
 
 .. important::
 
@@ -310,14 +310,10 @@ Rules for variant data references
 ---------------------------------
 
 * References must be wrapped in ``<{`` and ``}>`` symbols, like ``<{ var.cpu }>``.
-* The expression is evaluated using Python syntax, with the
-  :ref:`needs_variant_data` exposed under the ``var`` namespace as the *only*
-  available name.
-  Unlike :ref:`variant functions <needs_variant_support>`, the need's own fields,
-  Sphinx-Tags (``build_tags``), and Python builtins are **not** available in the
-  expression.
-* Values are accessed using dot notation (``var.build.optimization``).
-  Accessing a missing key raises an error.
+* The reference must be a dotted path rooted at the ``var`` namespace, which
+  exposes the :ref:`needs_variant_data`,
+  via key lookup via dot notation (``var.build.optimization``).
+* Accessing a missing key, or a path that does not resolve to a leaf value will emit a warning.
 * The resolved value is type-validated against the schema of the field
   (or, for array fields, against the schema of the array items).
   A warning is emitted if the type does not match.

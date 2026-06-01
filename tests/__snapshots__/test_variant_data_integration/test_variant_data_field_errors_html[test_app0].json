@@ -60,7 +60,7 @@
     "sections": [
       "Variant Data Field Errors Test"
     ],
-    "title": "Bad expression syntax",
+    "title": "Invalid variant data path",
     "type": "req",
     "type_name": "Requirement"
   }

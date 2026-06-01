@@ -16,3 +16,7 @@ Variant Data Fields Test
 .. req:: Array from variant data
    :id: REQ_004
    :myarray: a, <{ var.platform }>, c
+
+.. req:: Syntax not parsed when parse_variants is False
+   :id: REQ_005
+   :mynoparse: <{ var.platform }>
