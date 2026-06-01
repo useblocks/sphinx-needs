@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,28 @@ _SCALAR_TYPES = (str, bool, int, float)
 
 class VariantDataError(Exception):
     """Raised when variant data fails validation."""
+
+
+@dataclass(frozen=True, slots=True)
+class VariantDataParsed:
+    """A parsed variant data reference, e.g. ``<{ var.a.b }>``.
+
+    Holds the inner expression (without the ``<{`` and ``}>`` delimiters),
+    which is evaluated against the variant data context (``var``)
+    when dynamic fields are resolved.
+    """
+
+    expression: str
+    """The inner expression, stripped of surrounding whitespace."""
+
+    @classmethod
+    def from_string(cls, text: str) -> VariantDataParsed:
+        """Create a :class:`VariantDataParsed` from a raw inner string.
+
+        :param text: The inner expression text (without delimiters).
+        :returns: The parsed variant data reference.
+        """
+        return cls(text.strip())
 
 
 def validate_variant_data(data: dict[str, Any], path: str = "var") -> None:

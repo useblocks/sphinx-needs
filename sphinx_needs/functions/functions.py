@@ -26,6 +26,7 @@ from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedLink, NeedPartItem
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_func import NeedFunc
+from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
 from sphinx_needs.views import NeedsView
 
@@ -344,6 +345,27 @@ def resolve_functions(
                                 resolved.extend(var_return)
                             else:
                                 resolved.append(var_return)
+                    elif isinstance(item, VariantDataParsed):
+                        vd_return = _get_variant_data(item, var_proxy)
+                        if not (
+                            field_schema.type_check(vd_return)
+                            or (
+                                field_schema.type == "array"
+                                and field_schema.type_check_item(vd_return)
+                            )
+                        ):
+                            raise ValueError(
+                                f"variant data value {type(vd_return)} is not of type {field_schema.type!r}"
+                                + (
+                                    ""
+                                    if field_schema.type != "array"
+                                    else f" or item type {field_schema.item_type!r}"
+                                )
+                            )
+                        if isinstance(vd_return, list | tuple):
+                            resolved.extend(vd_return)
+                        else:
+                            resolved.append(vd_return)
                     else:
                         resolved.append(item)
 
@@ -377,6 +399,35 @@ def _get_variant(
         if bool(eval(expr, context.copy())):
             return value
     return variant.final_value
+
+
+def _get_variant_data(
+    variant_data: VariantDataParsed,
+    var_proxy: Any,
+) -> Any:
+    """Evaluate a variant data expression against the ``var`` context.
+
+    The expression is evaluated with ``var`` bound to the variant data proxy,
+    and no other names available.
+
+    :param variant_data: The parsed variant data reference.
+    :param var_proxy: The variant data proxy, or ``None`` if not configured.
+    :returns: The evaluated value.
+    :raises ValueError: if no variant data is configured,
+        or the expression fails to evaluate.
+    """
+    if var_proxy is None:
+        raise ValueError(
+            f"variant data {variant_data.expression!r} cannot be resolved: "
+            "no variant data is configured"
+        )
+    try:
+        return eval(variant_data.expression, {"__builtins__": {}, "var": var_proxy})
+    except Exception as exc:
+        raise ValueError(
+            f"variant data expression {variant_data.expression!r} "
+            f"failed to evaluate: {exc}"
+        ) from exc
 
 
 def check_and_get_content(

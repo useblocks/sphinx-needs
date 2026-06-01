@@ -79,3 +79,41 @@ def test_variant_data_file_html(test_app):
 
     # var.region == "us-east" still works (from file, not overridden)
     assert "US East Needs" in index_html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_variant_data_fields",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_variant_data_fields_html(test_app):
+    """Test resolving ``<{...}>`` variant data references in need fields."""
+    import json
+
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
+    assert warnings == []
+
+    needs = json.loads(Path(app.outdir, "needs.json").read_text())
+    versions = needs["versions"]
+    data = versions[next(iter(versions))]["needs"]
+
+    # scalar string resolves to the variant data value
+    assert data["REQ_001"]["mystring"] == "arm"
+    # embedded string substitutes the resolved value
+    # (string parts are joined with a space, as for variant functions)
+    assert data["REQ_002"]["mystring"] == "platform is  arm !"
+    # integer field resolves to the variant data integer
+    assert data["REQ_003"]["myint"] == 2
+    # array field substitutes the resolved value as an item
+    assert data["REQ_004"]["myarray"] == ["a", "arm", "c"]

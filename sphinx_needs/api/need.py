@@ -53,6 +53,7 @@ from sphinx_needs.needs_schema import (
 from sphinx_needs.nodes import Need
 from sphinx_needs.roles.need_part import find_parts, update_need_with_parts
 from sphinx_needs.utils import jinja_parse
+from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
 from sphinx_needs.views import NeedsView
 
@@ -1002,14 +1003,18 @@ def _copy_links(
     """Implement 'copy' logic for links."""
     if "links" not in links:
         return  # should not happen, but be defensive
-    copy_links: list[NeedLink | DynamicFunctionParsed | VariantFunctionParsed] = []
+    copy_links: list[
+        NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed
+    ] = []
     for link_field in schema.iter_link_fields():
         if link_field.copy and link_field.name != "links":
             other = links[link_field.name]
             if isinstance(other, LinksLiteralValue | LinksFunctionArray):
                 copy_links.extend(other.value)
     if any(
-        isinstance(li, DynamicFunctionParsed | VariantFunctionParsed)
+        isinstance(
+            li, DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed
+        )
         for li in copy_links
     ):
         if links["links"] is None:

@@ -23,6 +23,7 @@ from sphinx_needs.schema.config import (
     validate_link_schema_type,
 )
 from sphinx_needs.schema.core import validate_object_schema_compiles
+from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
 
 if TYPE_CHECKING:
@@ -291,6 +292,14 @@ class FieldSchema:
                             ),
                         )
                     )
+                elif (
+                    self.parse_variants
+                    and value.lstrip().startswith("<{")
+                    and value.rstrip().endswith("}>")
+                ):
+                    return FieldFunctionArray(
+                        (VariantDataParsed.from_string(value.strip()[2:-2]),)
+                    )
                 else:
                     return FieldLiteralValue(_from_string_item(value, self.type))
             case "string":
@@ -299,7 +308,12 @@ class FieldSchema:
                 )
                 if len(parsed_items) == 1 and parsed_items[0][1] == ListItemType.STD:
                     return FieldLiteralValue(parsed_items[0][0])
-                result: list[DynamicFunctionParsed | VariantFunctionParsed | str] = []
+                result: list[
+                    DynamicFunctionParsed
+                    | VariantFunctionParsed
+                    | VariantDataParsed
+                    | str
+                ] = []
                 for item, item_type in parsed_items:
                     match item_type:
                         case ListItemType.STD:
@@ -310,6 +324,9 @@ class FieldSchema:
                         case ListItemType.VF | ListItemType.VF_U:
                             # TODO warn on unclosed variant function
                             result.append(VariantFunctionParsed.from_string(item))
+                        case ListItemType.VD | ListItemType.VD_U:
+                            # TODO warn on unclosed variant data
+                            result.append(VariantDataParsed.from_string(item))
                 return FieldFunctionArray(tuple(result))
             case "array":
                 if self.item_type is None:
@@ -323,6 +340,7 @@ class FieldSchema:
                     | float
                     | DynamicFunctionParsed
                     | VariantFunctionParsed
+                    | VariantDataParsed
                 ] = []
                 for parsed in _split_list(
                     value, self.parse_dynamic_functions, self.parse_variants
@@ -350,6 +368,10 @@ class FieldSchema:
                                     ),
                                 )
                             )
+                        case ListItemType.VD | ListItemType.VD_U:
+                            # TODO warn on unclosed variant data
+                            has_df_or_vf = True
+                            array.append(VariantDataParsed.from_string(item))
 
                 if has_df_or_vf:
                     return FieldFunctionArray(tuple(array))  # type: ignore[arg-type]
@@ -390,7 +412,10 @@ class FieldSchema:
                 from sphinx_needs.functions.functions import DynamicFunctionParsed
 
                 new_value: list[
-                    str | DynamicFunctionParsed | VariantFunctionParsed
+                    str
+                    | DynamicFunctionParsed
+                    | VariantFunctionParsed
+                    | VariantDataParsed
                 ] = []
                 has_function = False
                 item: str
@@ -412,6 +437,15 @@ class FieldSchema:
                         has_function = True
                         new_value.append(
                             VariantFunctionParsed.from_string(item.strip()[2:-2])
+                        )
+                    elif (
+                        self.parse_variants
+                        and item.lstrip().startswith("<{")
+                        and item.rstrip().endswith("}>")
+                    ):
+                        has_function = True
+                        new_value.append(
+                            VariantDataParsed.from_string(item.strip()[2:-2])
                         )
                     else:
                         new_value.append(item)
@@ -446,16 +480,32 @@ class LinksLiteralValue:
 @dataclass(frozen=True, slots=True)
 class FieldFunctionArray:
     value: (
-        tuple[DynamicFunctionParsed | VariantFunctionParsed | str, ...]
-        | tuple[DynamicFunctionParsed | VariantFunctionParsed | bool, ...]
-        | tuple[DynamicFunctionParsed | VariantFunctionParsed | int, ...]
-        | tuple[DynamicFunctionParsed | VariantFunctionParsed | float, ...]
+        tuple[
+            DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed | str, ...
+        ]
+        | tuple[
+            DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed | bool,
+            ...,
+        ]
+        | tuple[
+            DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed | int, ...
+        ]
+        | tuple[
+            DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed | float,
+            ...,
+        ]
     )
 
     def __iter__(
         self,
     ) -> Iterator[
-        DynamicFunctionParsed | VariantFunctionParsed | str | bool | int | float
+        DynamicFunctionParsed
+        | VariantFunctionParsed
+        | VariantDataParsed
+        | str
+        | bool
+        | int
+        | float
     ]:
         return iter(self.value)
 
@@ -465,17 +515,25 @@ _ValueType = TypeVar("_ValueType", str, bool, int, float)
 
 @dataclass(frozen=True, slots=True)
 class FunctionArrayTyped(Generic[_ValueType]):
-    value: tuple[DynamicFunctionParsed | VariantFunctionParsed | _ValueType, ...]
+    value: tuple[
+        DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed | _ValueType,
+        ...,
+    ]
 
     def __iter__(
         self,
-    ) -> Iterator[DynamicFunctionParsed | VariantFunctionParsed | _ValueType]:
+    ) -> Iterator[
+        DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed | _ValueType
+    ]:
         return iter(self.value)
 
 
 @dataclass(frozen=True, slots=True)
 class LinksFunctionArray:
-    value: tuple[NeedLink | DynamicFunctionParsed | VariantFunctionParsed, ...]
+    value: tuple[
+        NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed,
+        ...,
+    ]
 
 
 @lru_cache(maxsize=128)
@@ -728,7 +786,9 @@ class LinkSchema:
             raise TypeError(f"Value '{value}' is not a string.")
 
         has_df_or_vf = False
-        array: list[NeedLink | DynamicFunctionParsed | VariantFunctionParsed] = []
+        array: list[
+            NeedLink | DynamicFunctionParsed | VariantFunctionParsed | VariantDataParsed
+        ] = []
         for item in _split_link_list(
             value,
             self.parse_dynamic_functions,
@@ -773,7 +833,10 @@ class LinkSchema:
                 from sphinx_needs.functions.functions import DynamicFunctionParsed
 
                 new_value: list[
-                    NeedLink | DynamicFunctionParsed | VariantFunctionParsed
+                    NeedLink
+                    | DynamicFunctionParsed
+                    | VariantFunctionParsed
+                    | VariantDataParsed
                 ] = []
                 has_function = False
                 item: str
@@ -795,6 +858,15 @@ class LinkSchema:
                         has_function = True
                         new_value.append(
                             VariantFunctionParsed.from_string(item.strip()[2:-2])
+                        )
+                    elif (
+                        self.parse_variants
+                        and item.lstrip().startswith("<{")
+                        and item.rstrip().endswith("}>")
+                    ):
+                        has_function = True
+                        new_value.append(
+                            VariantDataParsed.from_string(item.strip()[2:-2])
                         )
                     else:
                         new_value.append(
@@ -937,6 +1009,8 @@ class ListItemType(enum.Enum):
     DF_U = "df_unclosed"
     VF = "vf"
     VF_U = "vf_unclosed"
+    VD = "vd"
+    VD_U = "vd_unclosed"
 
 
 def _split_list(
@@ -945,7 +1019,7 @@ def _split_list(
     parse_variants: bool,
     allow_delimiters: bool = True,
 ) -> Iterator[list[tuple[str, ListItemType]]]:
-    """Split a ``;|,`` delimited string that may contain ``[[...]]`` dynamic functions or ``<<...>>`` variant functions.
+    """Split a ``;|,`` delimited string that may contain ``[[...]]`` dynamic functions, ``<<...>>`` variant functions, or ``<{...}>`` variant data.
 
     :param text: The string to split.
 
@@ -974,6 +1048,26 @@ def _split_list(
                 (
                     _current_element,
                     ListItemType.DF if text.startswith("]]") else ListItemType.DF_U,
+                )
+            )
+            _current_element = ""
+            text = text[2:]
+        elif parse_variants and text.startswith("<{"):
+            if not _current_elements:
+                _current_element = _current_element.lstrip()
+            if _current_element:
+                _current_elements.append((_current_element, ListItemType.STD))
+            _current_element = ""
+            text = text[2:]
+            while text and not text.startswith("}>"):
+                _current_element += text[0]
+                text = text[1:]
+            if _current_element.endswith("}"):
+                _current_element = _current_element[:-1]
+            _current_elements.append(
+                (
+                    _current_element,
+                    ListItemType.VD if text.startswith("}>") else ListItemType.VD_U,
                 )
             )
             _current_element = ""
@@ -1034,19 +1128,24 @@ def _split_link_list(
     *,
     parse_conditions: bool = True,
 ) -> Iterator[
-    NeedLink | DynamicFunctionParsed | VariantFunctionParsed | LinkSplitWarning
+    NeedLink
+    | DynamicFunctionParsed
+    | VariantFunctionParsed
+    | VariantDataParsed
+    | LinkSplitWarning
 ]:
     """Split a ``;|,`` delimited link string, directly yielding typed objects.
 
     Handles ``[[...]]`` dynamic functions, ``<<...>>`` variant functions,
-    and plain link IDs with optional ``[condition]`` syntax.
+    ``<{...}>`` variant data, and plain link IDs with optional ``[condition]`` syntax.
 
     Parsing is done left-to-right in a single pass with these priority rules:
 
     1. ``[[...]]`` → ``DynamicFunctionParsed``
     2. ``<<...>>`` → ``VariantFunctionParsed``
-    3. ``;|,`` → flush accumulated text as a ``NeedLink``
-    4. Otherwise → accumulate character
+    3. ``<{...}>`` → ``VariantDataParsed``
+    4. ``;|,`` → flush accumulated text as a ``NeedLink``
+    5. Otherwise → accumulate character
 
     Plain link items support the format ``ID``, ``ID.part``,
     ``ID[condition]``, or ``ID.part[condition]``.
@@ -1055,7 +1154,7 @@ def _split_link_list(
 
     :param text: The string to split.
     :param parse_dynamic_functions: Whether to parse ``[[...]]`` dynamic functions.
-    :param parse_variants: Whether to parse ``<<...>>`` variant functions.
+    :param parse_variants: Whether to parse ``<<...>>`` variant functions and ``<{...}>`` variant data.
     :param parse_conditions: Whether to parse ``[condition]`` brackets.
     :yields: Parsed link items, or ``LinkSplitWarning`` for non-fatal issues
         (e.g. text adjacent to a dynamic/variant function, unclosed brackets).
@@ -1063,7 +1162,7 @@ def _split_link_list(
     from sphinx_needs.functions.functions import DynamicFunctionParsed
 
     _current = ""  # text accumulated for the current plain-text item
-    _has_special = False  # whether current slot has yielded a DF/VF
+    _has_special = False  # whether current slot has yielded a DF/VF/VD
 
     def _flush_current() -> NeedLink | LinkSplitWarning | None:
         """Flush accumulated plain text as a NeedLink, or None if empty."""
@@ -1109,6 +1208,21 @@ def _split_link_list(
                 content = content[:-1]
             yield VariantFunctionParsed.from_string(content)
             if text.startswith(">>"):
+                text = text[2:]
+        elif parse_variants and text.startswith("<{") and not _current.strip():
+            # <{ at start of slot (no preceding non-whitespace text) → variant data
+            _current = ""  # discard any leading whitespace
+            _has_special = True
+            # Consume until closing }>
+            text = text[2:]
+            content = ""
+            while text and not text.startswith("}>"):
+                content += text[0]
+                text = text[1:]
+            if content.endswith("}"):
+                content = content[:-1]
+            yield VariantDataParsed.from_string(content)
+            if text.startswith("}>"):
                 text = text[2:]
         elif text[0] in ";|,":
             # Delimiter: flush current item

@@ -17,6 +17,7 @@ from sphinx_needs.needs_schema import (
     create_inherited_field,
     inherit_schema,
 )
+from sphinx_needs.variant_data import VariantDataParsed
 from sphinx_needs.variants import VariantFunctionParsed
 
 
@@ -471,6 +472,67 @@ def test_convert_directive_option_vf(type_, item_type, input, expected):
 
 
 @pytest.mark.parametrize(
+    "type_,item_type,input,expected",
+    [
+        (
+            "string",
+            None,
+            "<{ var.a.b }>",
+            FieldFunctionArray((VariantDataParsed("var.a.b"),)),
+        ),
+        (
+            "string",
+            None,
+            "x <{ var.a }>y<{ var.b }>z",
+            FieldFunctionArray(
+                (
+                    "x ",
+                    VariantDataParsed("var.a"),
+                    "y",
+                    VariantDataParsed("var.b"),
+                    "z",
+                )
+            ),
+        ),
+        (
+            "integer",
+            None,
+            "<{ var.a }>",
+            FieldFunctionArray((VariantDataParsed("var.a"),)),
+        ),
+        (
+            "array",
+            "string",
+            "<{ var.a }>",
+            FieldFunctionArray((VariantDataParsed("var.a"),)),
+        ),
+        (
+            "array",
+            "string",
+            "a, <{ var.b }>, c",
+            FieldFunctionArray(
+                (
+                    "a",
+                    VariantDataParsed("var.b"),
+                    "c",
+                )
+            ),
+        ),
+    ],
+)
+def test_convert_directive_option_vd(type_, item_type, input, expected):
+    schema = {"type": type_}
+    if item_type is not None:
+        schema["items"] = {"type": item_type}
+    field = FieldSchema(
+        name="test_field",
+        schema=schema,
+        parse_variants=True,
+    )
+    assert field.convert_directive_option(input) == expected
+
+
+@pytest.mark.parametrize(
     "type_,item_type,allow_df,allow_vf,input",
     [
         ("boolean", None, False, False, "a"),
@@ -714,6 +776,31 @@ def test_convert_directive_option_df_errors(type_, item_type, input):
                 [("d", ListItemType.STD)],
             ],
         ),
+        # --- variant data <{...}> ---
+        ("<{a}>", [[("a", ListItemType.VD)]]),
+        ("<{ var.a.b }>", [[(" var.a.b ", ListItemType.VD)]]),
+        ("<{a}", [[("a", ListItemType.VD_U)]]),
+        ("<{a", [[("a", ListItemType.VD_U)]]),
+        (
+            "a,<{b}>,c",
+            [
+                [("a", ListItemType.STD)],
+                [("b", ListItemType.VD)],
+                [("c", ListItemType.STD)],
+            ],
+        ),
+        ("<{a}>b", [[("a", ListItemType.VD), ("b", ListItemType.STD)]]),
+        ("b<{a}>", [[("b", ListItemType.STD), ("a", ListItemType.VD)]]),
+        (
+            "a,[[b]],<<c>>,<{d}>;e",
+            [
+                [("a", ListItemType.STD)],
+                [("b", ListItemType.DF)],
+                [("c", ListItemType.VF)],
+                [("d", ListItemType.VD)],
+                [("e", ListItemType.STD)],
+            ],
+        ),
     ],
 )
 def test_split_list(text, expected):
@@ -731,6 +818,10 @@ def test_split_list(text, expected):
         ("<<a>", [("a", ListItemType.VF_U)]),
         ("[[a", [("a", ListItemType.DF_U)]),
         ("<<a", [("a", ListItemType.VF_U)]),
+        ("<{a}>", [("a", ListItemType.VD)]),
+        ("<{ var.a }>", [(" var.a ", ListItemType.VD)]),
+        ("<{a}", [("a", ListItemType.VD_U)]),
+        ("<{a", [("a", ListItemType.VD_U)]),
         (
             " a << b >> c [[ d ]] e ",
             [
