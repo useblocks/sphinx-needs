@@ -20,3 +20,7 @@ Variant Data Fields Test
 .. req:: Syntax not parsed when parse_variants is False
    :id: REQ_005
    :mynoparse: <{ var.platform }>
+
+.. req:: Links from variant data
+   :id: REQ_006
+   :links: <{ var.links }>

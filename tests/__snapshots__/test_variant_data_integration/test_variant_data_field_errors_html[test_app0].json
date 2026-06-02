@@ -3,7 +3,7 @@
     "docname": "index",
     "external_css": "external_link",
     "id": "REQ_BADTYPE_ARRAY",
-    "lineno": 20,
+    "lineno": 24,
     "section_name": "Variant Data Field Errors Test",
     "sections": [
       "Variant Data Field Errors Test"
@@ -22,6 +22,19 @@
       "Variant Data Field Errors Test"
     ],
     "title": "Type mismatch (integer into string field)",
+    "type": "req",
+    "type_name": "Requirement"
+  },
+  "REQ_BADTYPE_STRING": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_BADTYPE_STRING",
+    "lineno": 20,
+    "section_name": "Variant Data Field Errors Test",
+    "sections": [
+      "Variant Data Field Errors Test"
+    ],
+    "title": "Type mismatch (integer into array of strings)",
     "type": "req",
     "type_name": "Requirement"
   },

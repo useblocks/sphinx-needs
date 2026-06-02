@@ -18,5 +18,9 @@ Variant Data Field Errors Test
    :myint: <{ var.platform }>
 
 .. req:: Type mismatch (integer into array of strings)
+   :id: REQ_BADTYPE_STRING
+   :mystring: <{ var.build }>
+
+.. req:: Type mismatch (integer into array of strings)
    :id: REQ_BADTYPE_ARRAY
    :myarray: a, <{ var.build.opt_level }>, c

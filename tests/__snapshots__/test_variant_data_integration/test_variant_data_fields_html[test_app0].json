@@ -4,6 +4,9 @@
     "external_css": "external_link",
     "id": "REQ_001",
     "lineno": 4,
+    "links_back": [
+      "REQ_006"
+    ],
     "mystring": "arm",
     "section_name": "Variant Data Fields Test",
     "sections": [
@@ -18,6 +21,9 @@
     "external_css": "external_link",
     "id": "REQ_002",
     "lineno": 8,
+    "links_back": [
+      "REQ_006"
+    ],
     "mystring": "platform is  arm !",
     "section_name": "Variant Data Fields Test",
     "sections": [
@@ -70,6 +76,23 @@
       "Variant Data Fields Test"
     ],
     "title": "Syntax not parsed when parse_variants is False",
+    "type": "req",
+    "type_name": "Requirement"
+  },
+  "REQ_006": {
+    "docname": "index",
+    "external_css": "external_link",
+    "id": "REQ_006",
+    "lineno": 24,
+    "links": [
+      "REQ_001",
+      "REQ_002"
+    ],
+    "section_name": "Variant Data Fields Test",
+    "sections": [
+      "Variant Data Fields Test"
+    ],
+    "title": "Links from variant data",
     "type": "req",
     "type_name": "Requirement"
   }

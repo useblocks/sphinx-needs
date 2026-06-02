@@ -17,6 +17,7 @@ needs_variant_data = {
         "opt_level": 2,
     },
     "archs": ["arm", "x86"],
+    "links": ["REQ_001", "REQ_002"],
 }
 
 needs_fields = {
@@ -36,6 +37,12 @@ needs_fields = {
         "parse_variants": False,
         "nullable": True,
     },
+}
+
+needs_links = {
+    "links": {
+        "parse_variants": True,
+    }
 }
 
 needs_build_json = True
