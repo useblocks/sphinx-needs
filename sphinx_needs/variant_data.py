@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -20,6 +21,74 @@ _SCALAR_TYPES = (str, bool, int, float)
 
 class VariantDataError(Exception):
     """Raised when variant data fails validation."""
+
+
+@dataclass(frozen=True, slots=True)
+class VariantDataParsed:
+    """A parsed variant data reference, e.g. ``<{ var.a.b }>``.
+
+    Holds the inner expression (without the ``<{`` and ``}>`` delimiters),
+    which must be a dotted path rooted at ``var`` (e.g. ``var.build.opt_level``).
+    The reference is resolved against the variant data context (``var``)
+    when dynamic fields are resolved.
+    """
+
+    expression: str
+    """The inner expression, stripped of surrounding whitespace."""
+
+    @classmethod
+    def from_string(cls, text: str) -> VariantDataParsed:
+        """Create a :class:`VariantDataParsed` from a raw inner string.
+
+        :param text: The inner expression text (without delimiters).
+        :returns: The parsed variant data reference.
+        """
+        return cls(text.strip())
+
+
+def lookup_variant_data(data: dict[str, Any], expression: str) -> Any:
+    """Resolve a ``var.*`` dotted-path reference against variant data.
+
+    This is a constrained lookup, not an arbitrary expression evaluation:
+    the expression must be a dotted path rooted at ``var``
+    (e.g. ``var.build.opt_level``), with no operators, function calls,
+    or item access. Each segment selects a key from the (nested) variant
+    data mapping.
+
+    :param data: The resolved variant data mapping.
+    :param expression: The reference expression, e.g. ``var.build.debug``.
+    :returns: The resolved leaf value (a scalar or list).
+    :raises VariantDataError: If the expression is not a valid ``var.*`` path,
+        a key along the path is missing, or an intermediate/leaf value has the
+        wrong shape (e.g. selecting into a non-mapping, or resolving to a mapping).
+    """
+    segments = [segment.strip() for segment in expression.split(".")]
+    if len(segments) < 2 or segments[0] != "var" or any(not s for s in segments):
+        raise VariantDataError(
+            f"variant data reference {expression!r} is invalid: "
+            "expected a dotted 'var.*' path"
+        )
+    current: Any = data
+    traversed: list[str] = []
+    for segment in segments[1:]:
+        if not isinstance(current, dict):
+            raise VariantDataError(
+                f"variant data reference {expression!r} is invalid: "
+                f"'var.{'.'.join(traversed)}' is not a mapping"
+            )
+        if segment not in current:
+            traversed.append(segment)
+            raise VariantDataError(
+                f"Unknown variant data key: 'var.{'.'.join(traversed)}'"
+            )
+        traversed.append(segment)
+        current = current[segment]
+    if isinstance(current, dict):
+        raise VariantDataError(
+            f"variant data reference {expression!r} resolves to a mapping "
+            f"('var.{'.'.join(traversed)}'); access a leaf value instead"
+        )
+    return current
 
 
 def validate_variant_data(data: dict[str, Any], path: str = "var") -> None:

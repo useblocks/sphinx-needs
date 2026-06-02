@@ -218,7 +218,7 @@ For new fields the following can be defined:
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default``: A default value for the field (optional).
     If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
-- ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
+- ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>` and :ref:`variant data references <needs_variant_data_references>`.
     Default: ``False``.
 - ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
     Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
@@ -378,7 +378,7 @@ Each configured link can define:
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default`` (optional): A default value for the field.
     If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
-- ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
+- ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>` and :ref:`variant data references <needs_variant_data_references>`.
     Default: ``False``.
 - ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
     Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).
@@ -617,6 +617,9 @@ The data is then available in filter expressions via the ``var`` namespace:
 - No ``None`` values, no dictionaries inside arrays.
 
 Accessing a missing key raises an ``AttributeError``, which helps catch typos in filter expressions.
+
+The ``var`` namespace can also be referenced directly within need field values using the
+:ref:`<{ ... }> syntax <needs_variant_data_references>`.
 
 Default: ``{}``
 
@@ -2905,7 +2908,7 @@ Each configured link should define:
     If specified, these will be evaluated in order for any need that does not explicitly set the field, with the first match setting the field value.
 - ``default`` (optional): A default value for the field.
     If specified, this value will be used for any need that does not explicitly set the field and does not match any predicates.
-- ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>`.
+- ``parse_variants``: If set to ``True``, the field will support :ref:`variant options <needs_variant_support>` and :ref:`variant data references <needs_variant_data_references>`.
     Default: ``False``.
 - ``parse_dynamic_functions``: If set to ``True``, the field will support :ref:`dynamic_functions`.
     Default: the value of :ref:`needs_parse_dynamic_functions` (``True``).

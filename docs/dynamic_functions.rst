@@ -287,3 +287,84 @@ Below is an implementation of variants for need options:
       :collapse:
 
       Variants for need options in action
+
+.. _needs_variant_data_references:
+
+Variant data references
+=======================
+
+.. versionadded:: 8.2.0
+
+In addition to :ref:`variant functions <needs_variant_support>` (``<<...>>``),
+you can inject values directly from :ref:`needs_variant_data` into a need field
+using the ``<{ ... }>`` syntax.
+The referenced value is looked up and substituted into the field value.
+
+.. important::
+
+   This feature uses the same enablement as variant functions:
+   you must set the :ref:`needs_fields` or :ref:`needs_links` configuration
+   parameter's ``parse_variants`` option to ``True`` for the specific field.
+
+Rules for variant data references
+---------------------------------
+
+* References must be wrapped in ``<{`` and ``}>`` symbols, like ``<{ var.cpu }>``.
+* The reference must be a dotted path rooted at the ``var`` namespace, which
+  exposes the :ref:`needs_variant_data`,
+  via key lookup via dot notation (``var.build.optimization``).
+* Accessing a missing key, or a path that does not resolve to a leaf value will emit a warning.
+* The resolved value is type-validated against the schema of the field
+  (or, for array fields, against the schema of the array items).
+  A warning is emitted if the type does not match.
+* References can be used for scalar, string, array, and link fields.
+* For string fields, a reference can be embedded within surrounding text, and the
+  parts are joined with spaces.
+  For non-string scalar fields, the reference must make up the entire value, so
+  that the resolved value keeps its native type (e.g. an integer).
+
+Use Cases
+---------
+
+In your ``conf.py``, enable ``parse_variants`` for the fields you want to use
+references in, and define the :ref:`needs_variant_data`:
+
+.. code-block:: python
+
+   needs_variant_data = {
+       "platform": "arm",
+       "build": {"opt_level": 2},
+   }
+
+   needs_fields = {
+       "arch": {
+           "schema": {"type": "string"},
+           "parse_variants": True,
+       },
+       "opt": {
+           "schema": {"type": "integer"},
+           "parse_variants": True,
+       },
+   }
+
+In your ``.rst`` file, reference the variant data within field values:
+
+.. code-block:: rst
+
+   .. req:: Example
+      :id: VD_001
+      :arch: <{ var.platform }>
+      :opt: <{ var.build.opt_level }>
+
+In the example above, ``arch`` resolves to the string ``"arm"`` and ``opt``
+resolves to the integer ``2``.
+
+A reference can also be embedded within a larger string value:
+
+.. code-block:: rst
+
+   .. req:: Example
+      :id: VD_002
+      :arch: platform is <{ var.platform }>
+
+Here ``arch`` resolves to ``"platform is arm"``.
