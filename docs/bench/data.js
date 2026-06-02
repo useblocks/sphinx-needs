@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1780132612200,
+  "lastUpdate": 1780380111162,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18756,6 +18756,42 @@ window.BENCHMARK_DATA = {
             "value": 63.910379794,
             "unit": "s",
             "extra": "Commit: 8fe59c3e316f6f16a62db340c0b31571100720b7\nBranch: master\nTime: 2026-05-30T11:14:46+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3ba0da0f4cfd0b18b4222295c14b73945d3dc57e",
+          "message": "✨ Add `<{...}>` variant data syntax for field values (#1721)\n\nThis PR adds a new `<{ ... }>` syntax for injecting values from\n[`needs_variant_data`](https://sphinx-needs.readthedocs.io/en/latest/configuration.html#needs-variant-data)\ndirectly into need field values.\n\n### What it does\n\nWithin a field value, `<{ var.<path> }>` is replaced by the\ncorresponding value looked up from the configured `needs_variant_data`,\ne.g.:\n\n```python\n# conf.py\nneeds_variant_data = {\n    \"platform\": \"arm\",\n    \"build\": {\"opt_level\": 2},\n}\n\nneeds_fields = {\n    \"arch\": {\"schema\": {\"type\": \"string\"}, \"parse_variants\": True},\n    \"opt\": {\"schema\": {\"type\": \"integer\"}, \"parse_variants\": True},\n}\n```\n\n```rst\n.. req:: Example\n   :id: VD_001\n   :arch: <{ var.platform }>\n   :opt: <{ var.build.opt_level }>\n```\n\nHere `arch` resolves to the string `\"arm\"` and `opt` to the integer `2`.\n\n### Semantics\n\n- Enablement follows the existing variant mechanism: the field must set\n`parse_variants: True` in `needs_fields` / `needs_links`. When\n`parse_variants` is `False`, the syntax is left untouched as a literal.\n- The reference is a **constrained dotted `var.*` path lookup** — *not*\narbitrary `eval()`. Operators, function calls, item access\n(`var[\"cpu\"]`), need fields, `build_tags`, and Python builtins are\n**not** available. This keeps the semantics simple, safe, and replicable\nby other tooling (it mirrors the ubcode implementation).\n- The resolved value is type-validated against the field schema (or\narray item schema); a warning is emitted on mismatch.\n- Works for scalar, string, array, and link fields. For string fields a\nreference can be embedded in surrounding text (parts joined with\nspaces); for non-string scalars the reference must constitute the whole\nvalue so the native type is preserved.\n- Clear warnings are emitted for invalid paths, missing keys (top-level\nand nested), and values that don't resolve to a leaf.\n\n### Changes\n\n- New `lookup_variant_data()` in variant_data.py implementing the\neval-free dotted-path resolution.\n- `resolve_functions()` resolves `<{...}>` references against\n`needs_config.variant_data` (the `VariantDataProxy` remains for\nvariant-function `<<...>>` and `needif` filter expressions).\n- Documentation in dynamic_functions.rst (new \"Variant data references\"\nsection) and cross-references in configuration.rst.\n- Tests: field resolution (snapshot), error cases (invalid path,\nmissing/nested-missing keys, type mismatches), and a `parse_variants:\nFalse` case asserting the syntax stays literal.",
+          "timestamp": "2026-06-02T07:59:40+02:00",
+          "tree_id": "cb594da75484faa647b0d67771aa836f15746c93",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3ba0da0f4cfd0b18b4222295c14b73945d3dc57e"
+        },
+        "date": 1780380081742,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15484118099999478,
+            "unit": "s",
+            "extra": "Commit: 3ba0da0f4cfd0b18b4222295c14b73945d3dc57e\nBranch: master\nTime: 2026-06-02T07:59:40+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.03659044899999,
+            "unit": "s",
+            "extra": "Commit: 3ba0da0f4cfd0b18b4222295c14b73945d3dc57e\nBranch: master\nTime: 2026-06-02T07:59:40+02:00"
           }
         ]
       }
