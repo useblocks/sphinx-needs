@@ -1,6 +1,5 @@
 from collections.abc import ByteString, Callable
 import configparser
-import logging
 from pathlib import Path
 from typing import TypedDict
 from urllib.request import pathname2url
@@ -10,6 +9,7 @@ from tree_sitter import Language, Parser, Point, Query, QueryCursor
 from tree_sitter import Node as TreeSitterNode
 
 from sphinx_codelinks.config import UNIX_NEWLINE, CommentCategory
+from sphinx_codelinks.logger import get_logger
 from sphinx_codelinks.source_discover.config import CommentType
 
 # Language-specific node types for scope detection
@@ -31,13 +31,7 @@ SCOPE_NODE_TYPES = {
     },
 }
 
-# initialize logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# log to the console
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-logger.addHandler(console)
+logger = get_logger(__name__)
 
 GIT_HOST_URL_TEMPLATE = {
     "github": "https://github.com/{owner}/{repo}/blob/{rev}/{path}#L{lineno}",
@@ -270,7 +264,11 @@ def locate_git_root(src_dir: Path) -> Path | None:
     for parent in parents:
         if (parent / ".git").exists() and (parent / ".git").is_dir():
             return parent
-    logger.warning(f"git root is not found in the parent of {src_dir}")
+    logger.warning(
+        f"git root is not found in the parent of {src_dir}",
+        subtype="git_root",
+        location=str(src_dir),
+    )
     return None
 
 
@@ -278,7 +276,11 @@ def get_remote_url(git_root: Path, remote_name: str = "origin") -> str | None:
     """Get remote url from .git/config."""
     config_path = git_root / ".git" / "config"
     if not config_path.exists():
-        logging.warning(f"{config_path} does not exist")
+        logger.warning(
+            f"{config_path} does not exist",
+            subtype="git_config",
+            location=str(config_path),
+        )
         return None
 
     config = configparser.ConfigParser(allow_no_value=True, strict=False)
@@ -287,7 +289,11 @@ def get_remote_url(git_root: Path, remote_name: str = "origin") -> str | None:
     if section in config and "url" in config[section]:
         url: str = config[section]["url"]
         return url
-    logger.warning(f"remote-url is not found in {config_path}")
+    logger.warning(
+        f"remote-url is not found in {config_path}",
+        subtype="git_remote",
+        location=str(config_path),
+    )
     return None
 
 
@@ -295,16 +301,25 @@ def get_current_rev(git_root: Path) -> str | None:
     """Get current commit rev from .git/HEAD."""
     head_path = git_root / ".git" / "HEAD"
     if not head_path.exists():
-        logging.warning(f"{head_path} does not exist")
+        logger.warning(
+            f"{head_path} does not exist",
+            subtype="git_head",
+            location=str(head_path),
+        )
         return None
     head_content = head_path.read_text().strip()
     if not head_content.startswith("ref: "):
-        logging.warning(f"Expect starting with 'ref: ' in {head_path}")
-        return None
+        # Detached HEAD (e.g. CI checkouts): .git/HEAD holds the commit SHA
+        # directly, which is exactly the rev we want.
+        return head_content
 
     ref_path = git_root / ".git" / head_content.split(":", 1)[1].strip()
     if not ref_path.exists():
-        logging.warning(f"{ref_path} does not exist")
+        logger.warning(
+            f"{ref_path} does not exist",
+            subtype="git_ref",
+            location=str(ref_path),
+        )
         return None
     return ref_path.read_text().strip()
 
@@ -315,7 +330,10 @@ def form_https_url(
     parsed_url = parse(git_url)
     template = GIT_HOST_URL_TEMPLATE.get(parsed_url.platform)
     if not template:
-        logging.warning(f"Unsupported Git host: {parsed_url.platform}")
+        logger.warning(
+            f"Unsupported Git host: {parsed_url.platform}",
+            subtype="git_host",
+        )
         return git_url
     https_url = template.format(
         owner=parsed_url.owner,

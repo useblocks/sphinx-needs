@@ -14,7 +14,7 @@ from sphinx_codelinks.config import (
     CodeLinksProjectConfigType,
     generate_project_configs,
 )
-from sphinx_codelinks.logger import logger
+from sphinx_codelinks.logger import configure_cli, logger
 from sphinx_codelinks.needextend_write import MarkedObjType, convert_marked_content
 from sphinx_codelinks.source_discover.config import (
     CommentType,
@@ -88,9 +88,12 @@ def analyse(  # noqa: PLR0912   # for CLI, so it needs the branches
             exists=True,
         ),
     ] = None,
+    verbose: OptVerbose = False,
+    quiet: OptQuiet = False,
 ) -> None:
     """Analyse marked content in source code."""
     # @CLI command to analyse source code and extract traceability markers, IMPL_CLI_ANALYZE, impl, [FE_CLI_ANALYZE]
+    configure_cli(verbose, quiet)
 
     data: CodeLinksConfigType = load_config_from_toml(config)
 
@@ -291,7 +294,7 @@ def write_rst(  # noqa: PLR0913  # for CLI, so it takes as many as it requires
     quiet: OptQuiet = False,
 ) -> None:
     """Generate needextend.rst from the extracted obj in JSON."""
-    logger.configure(verbose, quiet)
+    configure_cli(verbose, quiet)
     try:
         with jsonpath.open("r") as f:
             marked_content = json.load(f)

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from sphinx_codelinks.analyse.analyse import SourceAnalyse
+from sphinx_codelinks.analyse.analyse import SourceAnalyse, _count
 from sphinx_codelinks.config import SourceAnalyseConfig
 from tests.conftest import (
     ONELINE_COMMENT_STYLE,
@@ -232,3 +232,10 @@ def test_oneline_parser_warnings_are_collected(tmp_path):
     warning = src_analyse.oneline_warnings[0]
     assert "too_many_fields" in warning.sub_type
     assert warning.lineno == 17
+
+
+def test_count_pluralizes_nouns() -> None:
+    assert _count(0, "file") == "0 files"
+    assert _count(1, "file") == "1 file"
+    assert _count(2, "marker") == "2 markers"
+    assert _count(1, "marked-rst block") == "1 marked-rst block"

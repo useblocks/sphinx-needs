@@ -1,5 +1,4 @@
 import json
-import logging
 from pathlib import Path
 from typing import cast
 
@@ -9,14 +8,9 @@ from sphinx_codelinks.analyse.analyse import (
     SourceAnalyse,
 )
 from sphinx_codelinks.config import CodeLinksConfig, CodeLinksProjectConfigType
+from sphinx_codelinks.logger import get_logger
 
-# initialize logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# log to the console
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-logger.addHandler(console)
+logger = get_logger(__name__)
 
 
 class AnalyseProjects:
@@ -32,7 +26,7 @@ class AnalyseProjects:
 
     def run(self) -> None:
         for project, config in self.projects_configs.items():
-            src_analyse = SourceAnalyse(config["analyse_config"])
+            src_analyse = SourceAnalyse(config["analyse_config"], name=project)
             src_analyse.run()
             self.projects_analyse[project] = src_analyse
 
@@ -46,7 +40,7 @@ class AnalyseProjects:
         }
         with output_path.open("w") as f:
             json.dump(to_dump, f)
-        logger.info(f"Marked content dumped to {output_path}")
+        logger.debug(f"codelinks: marked content dumped to {output_path}")
 
     @classmethod
     def load_warnings(cls, warnings_dir: Path) -> list[AnalyseWarning] | None:

@@ -1,16 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
-import logging
 
 from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
-
-# initialize logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# log to the console
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-logger.addHandler(console)
 
 
 class WarningSubTypeEnum(str, Enum):

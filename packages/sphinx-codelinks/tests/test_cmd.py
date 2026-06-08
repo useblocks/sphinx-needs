@@ -116,6 +116,31 @@ def test_analyse_outputs_warnings(tmp_path: Path) -> None:
     assert "too_many_fields" in result.output
 
 
+def test_analyse_logs_per_project_summary_and_gates_detail(tmp_path: Path) -> None:
+    """Each project gets a default-visible ``codelinks [<project>]`` summary with
+    counts; the per-type breakdown is gated behind --verbose; --quiet silences it."""
+    config_path = DATA_DIR / "configs" / "minimum_config.toml"
+    base = ["analyse", str(config_path), "--outdir", str(tmp_path)]
+
+    # default: per-project summary shown, breakdown hidden
+    result = runner.invoke(app, base)
+    assert result.exit_code == 0
+    assert "codelinks [" in result.output
+    assert "markers" in result.output
+    assert "oneline need" not in result.output
+
+    # --verbose: per-type breakdown also shown
+    verbose_result = runner.invoke(app, [*base, "--verbose"])
+    assert verbose_result.exit_code == 0
+    assert "codelinks [" in verbose_result.output
+    assert "oneline need" in verbose_result.output
+
+    # --quiet: summary silenced
+    quiet_result = runner.invoke(app, [*base, "--quiet"])
+    assert quiet_result.exit_code == 0
+    assert "codelinks [" not in quiet_result.output
+
+
 @pytest.mark.parametrize(
     ("options", "stdout"),
     [
@@ -227,7 +252,7 @@ def test_analyse_config_negative(
     ]
     result = runner.invoke(app, options)
     assert result.exit_code != 0
-    normalized = _normalize_output(result.stdout)
+    normalized = _normalize_output(result.output)
     for line in output_lines:
         assert line in normalized
 
@@ -261,7 +286,7 @@ def test_analyse_project_negative(projects, output_lines, tmp_path: Path) -> Non
     options.extend(projects_config)
     result = runner.invoke(app, options)
     assert result.exit_code != 0
-    normalized = _normalize_output(result.stdout)
+    normalized = _normalize_output(result.output)
     for line in output_lines:
         assert line in normalized
 
@@ -287,7 +312,7 @@ def test_write_rst_invalid_json(tmp_path: Path) -> None:
     result = runner.invoke(app, options)
 
     assert result.exit_code != 0
-    assert "Expecting" in result.stdout
+    assert "Expecting" in result.output
 
 
 @pytest.mark.parametrize(
@@ -332,7 +357,7 @@ def test_write_rst_negative(json_objs: list[dict], output_lines, tmp_path) -> No
     result = runner.invoke(app, options)
 
     assert result.exit_code != 0
-    normalized = _normalize_output(result.stdout)
+    normalized = _normalize_output(result.output)
     for line in output_lines:
         assert line in normalized
 

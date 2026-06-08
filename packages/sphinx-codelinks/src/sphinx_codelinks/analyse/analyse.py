@@ -1,7 +1,6 @@
 from collections.abc import Generator
 from dataclasses import dataclass
 import json
-import logging
 from pathlib import Path
 from typing import Any, TypedDict
 
@@ -26,14 +25,14 @@ from sphinx_codelinks.config import (
     OneLineCommentStyle,
     SourceAnalyseConfig,
 )
+from sphinx_codelinks.logger import get_logger
 
-# initialize logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# log to the console
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
-logger.addHandler(console)
+logger = get_logger(__name__)
+
+
+def _count(n: int, noun: str) -> str:
+    """Format ``n noun`` with a naive (append-s) plural for progress summaries."""
+    return f"{n} {noun}" if n == 1 else f"{n} {noun}s"
 
 
 class AnalyseWarningType(TypedDict):
@@ -57,7 +56,10 @@ class SourceAnalyse:
     def __init__(
         self,
         analyse_config: SourceAnalyseConfig,
+        *,
+        name: str = "",
     ) -> None:
+        self.name = name
         self.analyse_config = analyse_config
         self.src_files: list[SourceFile] = []
         self.src_comments: list[SourceComment] = []
@@ -109,9 +111,6 @@ class SourceAnalyse:
             src_file.add_comments(src_comments)
             self.src_files.append(src_file)
             self.src_comments.extend(src_comments)
-
-        logger.info(f"Source files loaded: {len(self.src_files)}")
-        logger.info(f"Source comments extracted: {len(self.src_comments)}")
 
     def extract_marker(
         self,
@@ -353,13 +352,6 @@ class SourceAnalyse:
                 if marked_rst:
                     self.marked_rst.append(marked_rst)
 
-        if self.analyse_config.get_need_id_refs:
-            logger.info(f"Need-id-refs extracted: {len(self.need_id_refs)}")
-        if self.analyse_config.get_oneline_needs:
-            logger.info(f"Oneline needs extracted: {len(self.oneline_needs)}")
-        if self.analyse_config.get_rst:
-            logger.info(f"Marked rst extracted: {len(self.marked_rst)}")
-
     def merge_marked_content(self) -> None:
         self.all_marked_content.extend(self.need_id_refs)
         self.oneline_needs.sort(key=lambda x: x.source_map["start"]["row"])
@@ -378,9 +370,23 @@ class SourceAnalyse:
         ]
         with output_path.open("w") as f:
             json.dump(to_dump, f)
-        logger.info(f"Marked content dumped to {output_path}")
 
     def run(self) -> None:
         self.create_src_objects()
         self.extract_marked_content()
         self.merge_marked_content()
+        self._log_summary()
+
+    def _log_summary(self) -> None:
+        """Emit a per-project marker (default-visible) plus a -v breakdown."""
+        label = f"codelinks [{self.name}]" if self.name else "codelinks"
+        logger.info(
+            f"{label}: {_count(len(self.src_files), 'file')}, "
+            f"{_count(len(self.all_marked_content), 'marker')}"
+        )
+        logger.debug(
+            f"{label}: {_count(len(self.src_comments), 'comment')}, "
+            f"{_count(len(self.oneline_needs), 'oneline need')}, "
+            f"{_count(len(self.need_id_refs), 'id-ref')}, "
+            f"{_count(len(self.marked_rst), 'marked-rst block')}"
+        )

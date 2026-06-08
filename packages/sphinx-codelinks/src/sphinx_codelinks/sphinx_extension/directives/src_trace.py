@@ -123,7 +123,7 @@ class SourceTracingDirective(SphinxDirective):
                 src_trace_toml_path = Path(src_trace_sphinx_config.config_from_toml)
                 conf_dir = conf_dir / src_trace_toml_path.parent
             analyse_config.git_root = (conf_dir / analyse_config.git_root).resolve()
-        src_analyse = SourceAnalyse(analyse_config)
+        src_analyse = SourceAnalyse(analyse_config, name=project)
         src_analyse.run()
 
         dirs = {

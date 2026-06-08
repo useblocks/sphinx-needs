@@ -929,6 +929,17 @@ def test_get_current_rev(git_repo: tuple[Path, str]) -> None:
     assert current_rev == utils.get_current_rev(repo_path)
 
 
+def test_get_current_rev_detached_head(tmp_path: Path) -> None:
+    """In a detached HEAD (e.g. CI checkouts) .git/HEAD holds the commit SHA
+    directly; get_current_rev returns it rather than warning and giving up."""
+    git_root = tmp_path / "repo"
+    (git_root / ".git").mkdir(parents=True)
+    sha = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678"
+    (git_root / ".git" / "HEAD").write_text(f"{sha}\n")
+
+    assert utils.get_current_rev(git_root) == sha
+
+
 @pytest.mark.parametrize(
     ("text", "leading_sequences", "result"),
     [

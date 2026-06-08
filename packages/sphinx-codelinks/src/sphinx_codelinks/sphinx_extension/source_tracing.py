@@ -25,6 +25,7 @@ from sphinx_codelinks.config import (
     file_lineno_href,
     generate_project_configs,
 )
+from sphinx_codelinks.logger import configure_sphinx
 from sphinx_codelinks.sphinx_extension import debug
 from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     SourceTracing,
@@ -52,6 +53,9 @@ def _check_sphinx_needs_dependency(app: Sphinx) -> bool:
 
 
 def setup(app: Sphinx) -> dict[str, Any]:  # type: ignore[explicit-any]
+    # Route the shared analyse layer's logging through Sphinx (verbosity,
+    # colour, suppress_warnings, warning stream) instead of stderr.
+    configure_sphinx()
     # Check if sphinx-needs is available and properly configured
     if not _check_sphinx_needs_dependency(app):
         logger.error(
