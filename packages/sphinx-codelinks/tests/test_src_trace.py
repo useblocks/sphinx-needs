@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 
 import pytest
+from sphinx.environment import CONFIG_OK
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_codelinks.analyse.projects import AnalyseProjects
@@ -228,3 +229,50 @@ def test_build_html(
     assert not warnings
 
     assert app.env.get_doctree("index") == snapshot_doctree
+
+
+def test_incremental_build_keeps_src_trace_projects_unchanged(
+    tmpdir: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """An incremental rebuild with no source changes must not invalidate the env.
+
+    Regression test for the ``src-trace`` directive mutating the ``analyse_config``
+    object stored inside the ``rebuild="env"`` ``src_trace_projects`` config value.
+    The mutated object (populated ``src_dir``/``src_files``) was persisted into
+    ``environment.pickle``, so every incremental build compared it against the
+    freshly generated (empty) config and reported
+    ``[config changed ('src_trace_projects')]``, forcing a full re-read.
+    """
+    this_file_dir = Path(__file__).parent
+    sphinx_project = Path("data") / "sphinx"
+    source_code = Path("data") / "dcdc"
+
+    sphinx_src_dir = Path(tmpdir) / sphinx_project
+    shutil.copytree(this_file_dir / sphinx_project, sphinx_src_dir, dirs_exist_ok=True)
+    shutil.copytree(
+        this_file_dir / source_code, Path(tmpdir) / source_code, dirs_exist_ok=True
+    )
+
+    # First build populates environment.pickle in the shared build dir.
+    make_app(srcdir=sphinx_src_dir, freshenv=True).build()
+
+    # Second build reuses the same build dir and loads the pickled environment.
+    app = make_app(srcdir=sphinx_src_dir, freshenv=False)
+
+    captured: dict[str, object] = {}
+
+    def capture_config_status(_app, env, _added, _changed, _removed):  # type: ignore[no-untyped-def]
+        # ``env-get-outdated`` fires during read() after the config comparison
+        # but before config_status is reset to CONFIG_OK at the end of read().
+        captured["status"] = env.config_status
+        captured["extra"] = env.config_status_extra
+        return []
+
+    app.connect("env-get-outdated", capture_config_status)
+    app.build()
+
+    assert captured["status"] == CONFIG_OK, (
+        f"incremental build wrongly invalidated the environment: "
+        f"config changed{captured.get('extra')}"
+    )
