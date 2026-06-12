@@ -24,6 +24,13 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 Fix spurious ``needs.directive`` "Unknown option" warning for fields
+  declared via :confval:`needs_string_links` ``options`` that are not also
+  listed in :confval:`needs_fields`.  Such fields are now automatically
+  registered as nullable string extra fields during schema creation, so they
+  are accepted by both the directive parser and ``create_need`` without any
+  additional configuration.
+
 - 🐛 Sort need link and backlink lists in ``needs.json`` and HTML output using
   natural, case-insensitive ordering (e.g. ``REQ_2`` < ``REQ_9`` < ``REQ_10``)
   and collapse duplicate entries, so build outputs are reproducible regardless

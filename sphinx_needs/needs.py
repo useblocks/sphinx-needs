@@ -1046,6 +1046,39 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         except Exception as exc:
             raise NeedsConfigException(f"Invalid field {name!r}: {exc}") from exc
 
+    # Register any needs_string_links option names that are not already declared
+    # via needs_fields/needs_extra_options as nullable string extra fields.
+    # Without this, NeedDirective.run() (and create_need) reject these fields as
+    # unknown, emitting a spurious "needs.directive" warning (regression in 8.x).
+    already_registered = {
+        *schema.iter_core_field_names(),
+        *schema.iter_extra_field_names(),
+    }
+    for link_conf in needs_config.string_links.values():
+        for option_name in link_conf.get("options", []):
+            if option_name in already_registered:
+                continue
+            try:
+                schema.add_extra_field(
+                    FieldSchema(
+                        name=option_name,
+                        description="Registered automatically from needs_string_links.",
+                        schema={"type": "string"},
+                        nullable=True,
+                        default=FieldLiteralValue(""),
+                        allow_defaults=True,
+                        allow_extend=True,
+                        parse_dynamic_functions=False,
+                        parse_variants=False,
+                        directive_option=True,
+                    )
+                )
+            except Exception as exc:
+                raise NeedsConfigException(
+                    f"Invalid needs_string_links option name {option_name!r}: {exc}"
+                ) from exc
+            already_registered.add(option_name)
+
     # Get set of link names from needs_links (new config) vs needs_extra_links (deprecated)
     links: dict[str, tuple[LinkOptionsType | NeedLinksConfig, str]] = {
         k: (v, "needs_links") for k, v in needs_config._links.items()
