@@ -204,7 +204,21 @@ Keywords:
 2. **Tests**: Test cases for new functionality or bug fixes.
 3. **Documentation**: Update `docs/source/` if behavior changes.
 4. **Changelog**: Update `docs/source/changelog.rst`.
-5. **Code Quality**: `uv run prek run --all-files` must pass.
+5. **Code Quality**: `uv run prek run --all-files` must pass — exactly what
+   the CI `Prek` gate runs.
+
+   The `ruff-format` / `ruff` hooks are **version-pinned** in
+   `.pre-commit-config.yaml`. A *local* `prek` run can report
+   `python format ... Passed` while CI's pinned version reformats and fails
+   the job — a stale local hook cache may hold a different ruff. Before
+   pushing, reproduce CI's formatter with the pinned version:
+
+   ```bash
+   uvx ruff@<version-in-.pre-commit-config.yaml> format <changed-files>
+   ```
+
+   When it matches, ruff reports no changes — its result equals what CI
+   expects (the formatted file's git blob hash is identical).
 
 ## Local-Only Files (Do Not Commit)
 

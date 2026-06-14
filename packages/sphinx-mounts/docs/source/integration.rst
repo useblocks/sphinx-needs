@@ -138,6 +138,50 @@ of Sphinx.
    code with a pointer at the upstream class. If Sphinx ever changes
    this contract, the breakage will be local.
 
+.. _diagnostic-locations:
+
+Diagnostic locations are absolute
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The absolute path in ``_docname_to_path`` has a payoff beyond reading
+the file: every warning or error Sphinx emits for a mounted document
+is **located at that absolute path**, with a line number — never at a
+host-relative path or a bare docname. An editor's problem matcher, a
+terminal's Ctrl+click, or a CI annotation can therefore jump straight
+to the offending line in the *real* source file. A path relative to
+the host ``srcdir`` would be useless to a tool that does not already
+know ``srcdir`` — for instance an editor that has the bundle open on
+its own.
+
+The mechanism is entirely Sphinx's; sphinx-mounts adds nothing:
+
+- For docutils / RST messages (a short title underline, a directive
+  that cannot read its ``:file:``), the location is taken from the
+  parsed node's ``source``, which Sphinx sets to ``doc2path(docname)``
+  — the stored absolute path. ``sphinx.util.logging.get_node_location``
+  formats it with ``os.path.abspath``.
+- For reference messages (a ``:doc:`` to a missing document), the
+  location is a ``(docname, line)`` pair that Sphinx resolves through
+  ``env.doc2path(docname)`` — again the stored absolute path.
+
+Because the path comes from Sphinx core and not from any individual
+directive, the behaviour is uniform across docutils-native directives
+(``include``, ``csv-table``, ``raw``), Sphinx core (``image``,
+``figure``, ``literalinclude``, cross-references), a Sphinx-bundled
+extension (``sphinx.ext.graphviz``), and third-party extensions
+(``sphinxcontrib.plantuml``, ``sphinxcontrib.mermaid``). Every one of
+these is exercised in ``tests/test_warning_locations.py``.
+
+.. note::
+
+   One nuance: the location *prefix* of every message is absolute, but
+   the asset path printed inside the *body* of an "image file not
+   readable" / "download file not readable" message is rendered
+   relative to ``srcdir`` (e.g. ``../bundle/missing.png``). That is a
+   stock display choice in Sphinx's asset collector, not something the
+   mount controls — the location prefix that tooling jumps to is still
+   the absolute path of the referencing document.
+
 .. _docname-mapping:
 
 Docname mapping

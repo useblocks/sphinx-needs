@@ -11,6 +11,13 @@ Unreleased
   outside the bundle root (a leading-slash path, or one that climbs out
   with ``..``) now fail the build by default, keeping bundles
   self-contained. Set ``path_check = "warn"`` or ``"off"`` to relax it.
+- Documented and added regression tests confirming that build diagnostics
+  (warnings and errors) for mounted documents are emitted with the
+  **absolute** path of the external source file plus a line number — so an
+  editor's problem matcher, a terminal Ctrl+click, or a CI annotation can
+  jump straight to the real source. Covered across docutils-native directives,
+  Sphinx core, and third-party extensions (``sphinxcontrib.plantuml`` /
+  ``sphinxcontrib.mermaid``). See :ref:`diagnostic-locations`.
 
 .. _`release:0.1.0`:
 
