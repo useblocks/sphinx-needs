@@ -220,6 +220,16 @@ Keywords:
    When it matches, ruff reports no changes — its result equals what CI
    expects (the formatted file's git blob hash is identical).
 
+## Release PRs
+
+A release PR carries only the version bump and the changelog stamp, nothing else.
+
+- **Title**: `🚀 Release vX.Y.Z` (with the `v` prefix). The published *tag*
+  stays bare semver — `X.Y.Z`, no `v` — per `.github/workflows/release.yaml`.
+- **Do not note the changes in the PR description.** The
+  `docs/source/changelog.rst` entry for the version is the record; the PR body
+  must not restate or itemize what changed.
+
 ## Local-Only Files (Do Not Commit)
 
 `docs/superpowers/` is a gitignored workspace for AI agent workflow
