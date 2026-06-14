@@ -1447,3 +1447,109 @@ def test_host_toctree_change_does_not_reparse_mount_files(
     # ...yet the new toctree state is reflected in the host's HTML.
     assert "_generated/m/foo.html" in warm_html
     assert "_generated/m/bar.html" in warm_html
+
+
+def test_incremental_rereads_mount_doc_when_dependency_changes(
+    make_app, make_host_project, tmp_path
+):
+    """A mounted doc that pulls in a sibling file via ``literalinclude`` is
+    re-read when that *included* file changes — even though the doc's own
+    source is untouched.
+
+    This exercises a different change-detection path than
+    :func:`test_incremental_only_reads_changed_mount_file`: the mounted
+    doc's own mtime does not move, so the re-read is driven solely by
+    Sphinx's dependency-mtime check (``env.dependencies``). It works for
+    mounted docs because the include target is recorded with its absolute
+    external path, which ``BuildEnvironment._has_doc_changed`` stats
+    directly on each build."""
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    snippet = bundle / "snippet.py"
+    # Use distinct single-token identifiers per version: Pygments wraps each
+    # token in its own <span>, so a bare identifier survives verbatim in the
+    # HTML while a multi-token string like "X = 2" would not.
+    snippet.write_text("SNIP_OLD = 1\n", encoding="utf-8")
+    (bundle / "index.rst").write_text(
+        "Bundle\n======\n\n.. literalinclude:: snippet.py\n", encoding="utf-8"
+    )
+
+    host = make_host_project()
+    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_generated/m"}])
+    _replace_index_toctree(host, "_generated/m/index")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    # Precondition: the include target is a recorded dependency of the
+    # mounted doc, pointing at the external file (not into the host srcdir).
+    # Without this, a "re-read" below could be a false positive unrelated
+    # to the dependency path under test.
+    srcdir = Path(app.srcdir)
+    deps = {
+        (srcdir / d).resolve()
+        for d in app.env.dependencies.get("_generated/m/index", ())
+    }
+    assert snippet.resolve() in deps, (
+        f"include target not recorded as dependency; deps={deps}"
+    )
+
+    offset = len(app._status.getvalue())
+
+    # Change ONLY the included file; the mounted doc's own source (and
+    # therefore its own mtime) is left untouched.
+    snippet.write_text("SNIP_NEW = 1\n", encoding="utf-8")
+    _bump_mtime(snippet)
+
+    app.build()
+    warm_log = app._status.getvalue()[offset:]
+    read = _docs_read_in_log(warm_log)
+
+    assert "_generated/m/index" in read, (
+        f"mounted doc not re-read after its dependency changed; read={read}"
+    )
+    # The re-read really re-rendered with the new content (and dropped the old).
+    html = (Path(app.outdir) / "_generated" / "m" / "index.html").read_text(
+        encoding="utf-8"
+    )
+    assert "SNIP_NEW" in html, "rebuilt HTML missing new dependency content"
+    assert "SNIP_OLD" not in html, "rebuilt HTML still shows stale dependency content"
+
+
+def test_incremental_rereads_changed_file_in_file_list_mount(
+    make_app, make_host_project, tmp_path
+):
+    """File-list-mode mounts get the same mtime-based re-read as directory
+    mounts: editing one listed file re-reads exactly that doc on the next
+    build, and leaves the sibling untouched. Guards parity between the two
+    mount-attach paths (``_attach_mount_files`` vs ``_attach_mount_dir``)."""
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    page_a = pkg / "page_a.rst"
+    page_b = pkg / "page_b.rst"
+    page_a.write_text("Page A\n======\n\nA_MARKER\n", encoding="utf-8")
+    page_b.write_text("Page B\n======\n\nB_MARKER\n", encoding="utf-8")
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host, [{"files": [str(page_a), str(page_b)], "mount_at": "_generated/m"}]
+    )
+    _replace_index_toctree(host, "_generated/m/page_a", "_generated/m/page_b")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+    offset = len(app._status.getvalue())
+
+    page_a.write_text("Page A\n======\n\nA_MARKER_MODIFIED\n", encoding="utf-8")
+    _bump_mtime(page_a)
+
+    app.build()
+    warm_log = app._status.getvalue()[offset:]
+    read = _docs_read_in_log(warm_log)
+
+    assert "_generated/m/page_a" in read, (
+        f"edited file-list doc not re-read; read={read}"
+    )
+    assert "_generated/m/page_b" not in read, (
+        f"unchanged file-list doc re-read; read={read}"
+    )

@@ -10,7 +10,9 @@ mmdc/java/dot binary is required.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+import re
 import struct
 from typing import TYPE_CHECKING
 import zlib
@@ -64,8 +66,11 @@ def _append_conf(host: Path, line: str) -> None:
     conf.write_text(conf.read_text(encoding="utf-8") + f"\n{line}\n", encoding="utf-8")
 
 
-def _tiny_png() -> bytes:
-    """A minimal 1x1 red PNG built with the stdlib (no Pillow dependency)."""
+def _tiny_png(rgb: tuple[int, int, int] = (0xFF, 0x00, 0x00)) -> bytes:
+    """A minimal 1x1 PNG of the given color, built with the stdlib (no Pillow
+    dependency). The default (red) is byte-for-byte the original fixture;
+    passing a different color yields genuinely different bytes, used to
+    simulate an edited image between incremental builds."""
 
     def chunk(name: bytes, data: bytes) -> bytes:
         return (
@@ -76,7 +81,7 @@ def _tiny_png() -> bytes:
         )
 
     ihdr = struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)
-    idat = zlib.compress(b"\x00\xff\x00\x00")
+    idat = zlib.compress(bytes((0x00, *rgb)))
     return (
         b"\x89PNG\r\n\x1a\n"
         + chunk(b"IHDR", ihdr)
@@ -544,3 +549,215 @@ def test_path_check_is_resolved_per_mount(make_app, make_host_project, tmp_path)
     # A's escaped content really rendered (the 'off' mount was not blocked).
     a_html = (Path(app.outdir) / "_g" / "a" / "index.html").read_text(encoding="utf-8")
     assert "A_ESCAPE" in a_html
+
+
+# ---------- Task 7: a changed include target re-reads the mounted doc ----------
+
+
+def _bump_mtime(p: Path, seconds: float = 60.0) -> None:
+    """Push ``p``'s mtime forward to defeat coarse filesystem mtime
+    resolution. Linux ``ext4`` + ``relatime`` and macOS HFS+ can report
+    whole-second precision; without this, two writes within the same second
+    can leave Sphinx thinking nothing changed."""
+    bump = p.stat().st_mtime + seconds
+    os.utime(p, (bump, bump))
+
+
+_ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _docs_read_in_log(log: str) -> set[str]:
+    """Extract the set of docnames Sphinx reports as ``reading sources...``
+    in a build log (ANSI codes and the ``[NN%]`` progress marker stripped)."""
+    plain = _ANSI_ESCAPE_RE.sub("", log)
+    read: set[str] = set()
+    for line in plain.splitlines():
+        idx = line.find("reading sources...")
+        if idx == -1:
+            continue
+        after = line[idx + len("reading sources...") :]
+        after = re.sub(r"^\s*\[\s*\d+%?\s*\]\s*", "", after)
+        doc = after.strip()
+        if doc:
+            read.add(doc)
+    return read
+
+
+def _write_payload(path: Path, content: str | bytes) -> None:
+    """Write ``content`` to ``path`` as bytes or text depending on its type."""
+    if isinstance(content, bytes):
+        path.write_bytes(content)
+    else:
+        path.write_text(content, encoding="utf-8")
+
+
+_RED_PNG = _tiny_png((0xFF, 0x00, 0x00))
+_GREEN_PNG = _tiny_png((0x00, 0xFF, 0x00))
+
+
+# Every file-referencing directive the bundle path tests cover, each paired
+# with an "old" and a "new" payload for its target file. Extra ``extensions``
+# / ``conf_lines`` are applied to the host conf.py; ``requires`` names a module
+# to ``importorskip``. Cases mirror TEXT_CASES and the diagram tests above.
+REREAD_CASES = [
+    pytest.param(
+        ".. literalinclude:: snippet.py\n",
+        "snippet.py",
+        "LIT_OLD = 1\n",
+        "LIT_NEW = 1\n",
+        (),
+        (),
+        None,
+        id="literalinclude",
+    ),
+    pytest.param(
+        ".. include:: inc.txt\n",
+        "inc.txt",
+        "INC_OLD\n",
+        "INC_NEW\n",
+        (),
+        (),
+        None,
+        id="include",
+    ),
+    pytest.param(
+        ".. csv-table::\n   :file: data.csv\n",
+        "data.csv",
+        "h1,h2\nOLD,2\n",
+        "h1,h2\nNEW,2\n",
+        (),
+        (),
+        None,
+        id="csv-table-file",
+    ),
+    pytest.param(
+        ".. raw:: html\n   :file: snippet.html\n",
+        "snippet.html",
+        "<p>RAW_OLD</p>\n",
+        "<p>RAW_NEW</p>\n",
+        (),
+        (),
+        None,
+        id="raw-file",
+    ),
+    pytest.param(
+        ".. image:: pic.png\n",
+        "pic.png",
+        _RED_PNG,
+        _GREEN_PNG,
+        (),
+        (),
+        None,
+        id="image",
+    ),
+    pytest.param(
+        ".. figure:: pic.png\n\n   A caption.\n",
+        "pic.png",
+        _RED_PNG,
+        _GREEN_PNG,
+        (),
+        (),
+        None,
+        id="figure",
+    ),
+    pytest.param(
+        ".. graphviz:: g.dot\n",
+        "g.dot",
+        "digraph { A -> B }\n",
+        "digraph { A -> C }\n",
+        ("sphinx.ext.graphviz",),
+        (),
+        None,
+        id="graphviz",
+    ),
+    pytest.param(
+        ".. uml:: d.puml\n",
+        "d.puml",
+        "@startuml\nA -> B\n@enduml\n",
+        "@startuml\nA -> C\n@enduml\n",
+        ("sphinxcontrib.plantuml",),
+        (),
+        "sphinxcontrib.plantuml",
+        id="uml",
+    ),
+    pytest.param(
+        ".. mermaid:: f.mmd\n",
+        "f.mmd",
+        "graph TD\n  A[XX]\n",
+        "graph TD\n  A[YY]\n",
+        ("sphinxcontrib.mermaid",),
+        ("mermaid_output_format = 'raw'",),
+        "sphinxcontrib.mermaid",
+        id="mermaid",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "directive_rst, target_name, old_content, new_content, extensions, conf_lines, requires",
+    REREAD_CASES,
+)
+def test_changed_include_target_rereads_mounted_doc(
+    make_app,
+    make_host_project,
+    tmp_path,
+    directive_rst,
+    target_name,
+    old_content,
+    new_content,
+    extensions,
+    conf_lines,
+    requires,
+):
+    """For every file-referencing directive, editing the *referenced* file
+    re-reads the mounted doc on the next incremental build — even though the
+    mounted doc's own source (and mtime) is untouched.
+
+    Each directive records its target in ``env.dependencies`` with the
+    target's absolute external path (asserted as a precondition below), so
+    Sphinx's dependency-mtime check re-reads the doc when that file changes.
+    This locks the behaviour in across the whole file-referencing directive
+    set, not just ``literalinclude``."""
+    if requires is not None:
+        pytest.importorskip(requires)
+
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    _write_payload(bundle / target_name, old_content)
+    (bundle / "index.rst").write_text(
+        f"Bundle\n======\n\n{directive_rst}", encoding="utf-8"
+    )
+
+    host = make_host_project()
+    if extensions:
+        _add_extensions(host, *extensions)
+    for line in conf_lines:
+        _append_conf(host, line)
+    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_generated/m"}])
+    _replace_index_toctree(host, "_generated/m/index")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    # Precondition (teeth): the directive recorded its target as a dependency
+    # of the mounted doc, pointing at the external file. Without this, a later
+    # "re-read" could be a false positive unrelated to the file we change.
+    target = (bundle / target_name).resolve()
+    assert target in _resolved_deps(app, "_generated/m/index"), (
+        f"{target_name} was not recorded as a dependency of the mounted doc"
+    )
+
+    offset = len(app._status.getvalue())
+
+    # Change ONLY the referenced file; the mounted doc's own source is left
+    # untouched, so any re-read must be driven by the dependency-mtime check.
+    _write_payload(bundle / target_name, new_content)
+    _bump_mtime(bundle / target_name)
+
+    app.build()
+    read = _docs_read_in_log(app._status.getvalue()[offset:])
+
+    assert "_generated/m/index" in read, (
+        f"mounted doc not re-read after its {target_name} dependency changed; "
+        f"read={read}"
+    )

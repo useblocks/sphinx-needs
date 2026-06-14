@@ -18,6 +18,15 @@ Unreleased
   jump straight to the real source. Covered across docutils-native directives,
   Sphinx core, and third-party extensions (``sphinxcontrib.plantuml`` /
   ``sphinxcontrib.mermaid``). See :ref:`diagnostic-locations`.
+- Added regression tests confirming Sphinx's incremental rebuild re-reads
+  mounted documents when their content changes. Two paths are covered: a
+  file-list-mounted doc whose own source is edited, and a mounted doc whose
+  *referenced* file changes while the doc itself is untouched — the latter
+  across every file-referencing directive (``literalinclude``, ``include``,
+  ``csv-table :file:``, ``raw :file:``, ``image``, ``figure``, ``graphviz``,
+  ``uml``, ``mermaid``). Detection needs no extension code: it rides on the
+  absolute external paths recorded in ``Project._docname_to_path`` and
+  ``env.dependencies``, which Sphinx stats on each rebuild.
 
 .. _`release:0.1.0`:
 
