@@ -49,6 +49,9 @@ jobs:
             tox-env: py312-sphinx7
           - os: ubuntu-latest
             python: "3.12"
+            tox-env: py312-sphinx8
+          - os: ubuntu-latest
+            python: "3.12"
             tox-env: py312-sphinx9
           - os: ubuntu-latest
             python: "3.13"
