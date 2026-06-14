@@ -68,12 +68,15 @@ done
 out_dir="${stage}/_build/html"
 mkdir -p "$(dirname "${out_dir}")"
 
-# sphinx + sphinx-mounts + myst-parser come from the umbrella
-# project's uv-managed venv. Fall back to ``python -m sphinx`` for
-# environments that already have the deps installed.
+# sphinx + sphinx-mounts come from the umbrella project's uv-managed
+# environment; the host conf.py's extra extensions (myst-parser,
+# sphinxcontrib-{plantuml,mermaid}) live in its ``testing`` dependency
+# group, so ``--group testing`` pulls them in. Fall back to
+# ``python -m sphinx`` for environments that already have the deps
+# installed.
 cd "${stage}"
 if command -v uv >/dev/null 2>&1; then
-    uv run --project="${project_root}" \
+    uv run --project="${project_root}" --group testing \
         sphinx-build -nW --keep-going -b html -c docs docs "${out_dir}"
 else
     python3 -m sphinx -nW --keep-going -b html -c docs docs "${out_dir}"

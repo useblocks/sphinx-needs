@@ -82,12 +82,33 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version-file: ".python-version"
+      # The Bazel doc-build targets shell out to ``uv run`` from PATH
+      # (see tests/example/build_docs*.sh); make uv available job-wide.
+      - uses: astral-sh/setup-uv@v7
       - uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           repository-cache: true
+      # The example's host conf.py renders graphviz + plantuml diagrams at
+      # build time (mermaid runs client-side, so no mmdc needed). Without
+      # these the end-to-end test skips and the //:docs_html / //:build_docs
+      # targets below fail under ``-nW``.
+      - name: Install diagram renderers (dot, java, plantuml)
+        run: sudo apt-get update && sudo apt-get install -y graphviz default-jre plantuml
       - run: python -m pip install tox tox-uv
       - run: tox -e bazel
+      # Exercise the three Bazel targets the example's README documents.
+      # ``//:all_bundles`` is also covered by the test above; the two
+      # doc-build entry points are not, so build them here directly.
+      - name: "Bazel: materialise all bundles"
+        working-directory: tests/example
+        run: bazel build //:all_bundles
+      - name: "Bazel: build docs as a sandboxed artefact (//:docs_html)"
+        working-directory: tests/example
+        run: bazel build //:docs_html
+      - name: "Bazel: build docs in-workspace (//:build_docs)"
+        working-directory: tests/example
+        run: bazel run //:build_docs
 
   docs:
     name: Documentation build

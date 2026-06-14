@@ -92,16 +92,19 @@ Run the commands below from this directory (`tests/example/`).
    step 2:
 
    ```sh
-   uv run sphinx-build -nW --keep-going -b html -c docs docs docs/_build/html
+   uv run --group testing sphinx-build -nW --keep-going -b html -c docs docs docs/_build/html
    ```
 
    *Note on the `:docs_html` genrule:* the action runs with `local
-   = 1` and calls `uv` from `PATH`, because the umbrella project's
-   Python deps (`sphinx`, `sphinx-mounts`, `myst-parser`) live in
-   its uv-managed venv at `../../`. Projects that need a fully
-   sandboxed, hermetic build can swap the wrapper for a
-   `rules_python` `py_binary` with a pinned `requirements.txt`; the
-   genrule shape stays the same.
+   = 1` and calls `uv` from `PATH`. The umbrella project's `sphinx`
+   and `sphinx-mounts` come from its default dependencies in the
+   uv-managed environment at `../../`; the host `conf.py`'s extra
+   extensions (`myst-parser`, `sphinxcontrib-plantuml` / `-mermaid`)
+   live in that project's `testing` dependency group, so the wrapper
+   passes `--group testing`. Projects that need a fully sandboxed,
+   hermetic build can swap the wrapper for a `rules_python`
+   `py_binary` with a pinned `requirements.txt`; the genrule shape
+   stays the same.
 
 3. **Edit with ubCode** *(future capability — not available
    today)*. Once the ubCode language server adds support for the

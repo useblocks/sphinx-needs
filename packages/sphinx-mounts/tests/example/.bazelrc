@@ -2,3 +2,16 @@ common --enable_bzlmod
 common --noenable_workspace
 build --announce_rc=false
 build --color=no
+
+# The //:docs_html genrule is deliberately non-hermetic (``local = 1``):
+# it shells out to ``uv`` from PATH and lets uv resolve the host Python
+# toolchain. Bazel's default action environment uses a fixed PATH
+# (``/bin:/usr/bin:/usr/local/bin``) and no HOME, so a ``uv`` installed
+# anywhere else — the standard installer drops it in ``~/.local/bin``, and
+# CI's setup-uv action puts it under the runner toolcache — is invisible to
+# the action, which then silently falls back to a ``python3`` without
+# Sphinx. Inherit the client's PATH (so uv is found) and HOME (so uv has a
+# cache dir). A fully hermetic build would use rules_python instead and not
+# need these — see build_docs_sandbox.sh.
+build --action_env=PATH
+build --action_env=HOME
