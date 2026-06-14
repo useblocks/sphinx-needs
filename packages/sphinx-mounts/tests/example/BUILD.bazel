@@ -1,14 +1,17 @@
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 # Convenience filegroup: ``bazel build //:all_bundles`` materialises
-# every external bundle the host docs project mounts. This is the
-# single command an editor (or a developer) runs before opening the
-# project in ubCode or invoking sphinx-build.
+# every external artefact the host docs project needs — the two mounted
+# source bundles plus the pre-built HTML coverage report that
+# ``html_extra_path`` copies into the site output. This is the single
+# command an editor (or a developer) runs before opening the project in
+# ubCode or invoking sphinx-build.
 filegroup(
     name = "all_bundles",
     srcs = [
         "//bundles/api-bar:bundle",
         "//bundles/api-foo:bundle",
+        "//coverage_report:report",
     ],
     visibility = ["//visibility:public"],
 )

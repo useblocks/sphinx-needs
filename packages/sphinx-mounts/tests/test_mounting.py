@@ -475,6 +475,79 @@ def test_markdown_mount_carries_image_assets(make_app, make_host_project, tmp_pa
     assert "_images/logo" in html
 
 
+# ---------- referencing a pre-built HTML artifact (no copy) ----------
+
+
+def test_mounted_bundle_links_html_extra_path_report(
+    make_app, make_host_project, tmp_path
+):
+    """A shipped bundle RST links to and embeds a pre-built HTML report
+    (e.g. an lcov tree) that Sphinx's ``html_extra_path`` copies verbatim
+    into the build *output*.
+
+    The report is read in place — never staged into the source tree — and
+    the rendered site is *self-contained*: the report's bytes are in the
+    output, so the site can be published to any server with the report
+    travelling alongside it. This is the supported pattern for referencing
+    an external HTML artifact from a mounted bundle without duplicating
+    sources. A plain link/iframe records no Sphinx dependency, so the
+    bundle's mount machinery is not involved beyond hosting the page.
+    """
+    # A pre-built HTML report living OUTSIDE the bundle and the srcdir.
+    # ``html_extra_path`` copies the *contents* of a listed directory into
+    # the output root, so we list the report's parent; the ``coverage``
+    # directory name is then preserved at ``<out>/coverage/``.
+    extra = tmp_path / "artifacts"
+    report = extra / "coverage"
+    report.mkdir(parents=True)
+    (report / "index.html").write_text(
+        "<h1>COVERAGE_REPORT_HOME</h1>\n", encoding="utf-8"
+    )
+    (report / "mod.py.html").write_text("<p>per-file coverage</p>\n", encoding="utf-8")
+
+    # The bundle's entry doc links to + embeds the report. Mounted at
+    # ``_generated/m``, the doc renders at ``_generated/m/index.html``
+    # (depth 2), so ``../../coverage/index.html`` reaches the site-root
+    # report.
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    (bundle / "index.rst").write_text(
+        "Bundle\n======\n\nBUNDLE_WITH_REPORT\n\n"
+        ".. raw:: html\n\n"
+        '   <a href="../../coverage/index.html">Open coverage</a>\n'
+        '   <iframe src="../../coverage/index.html"></iframe>\n',
+        encoding="utf-8",
+    )
+
+    host = make_host_project()
+    # ``html_extra_path`` lives in conf.py; point it at the external
+    # report's parent directory (absolute, repr-quoted for any OS).
+    conf = host / "conf.py"
+    conf.write_text(
+        conf.read_text(encoding="utf-8") + f"\nhtml_extra_path = [{str(extra)!r}]\n",
+        encoding="utf-8",
+    )
+    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_generated/m"}])
+    _replace_index_toctree(host, "_generated/m/index")
+
+    outdir = _build(make_app, host)
+
+    # 1) The report was copied verbatim into the OUTPUT → self-contained.
+    assert (outdir / "coverage" / "index.html").exists()
+    assert (outdir / "coverage" / "mod.py.html").exists()
+    assert "COVERAGE_REPORT_HOME" in (outdir / "coverage" / "index.html").read_text(
+        encoding="utf-8"
+    )
+    # 2) The shipped bundle page links to + embeds the report.
+    page = (outdir / "_generated" / "m" / "index.html").read_text(encoding="utf-8")
+    assert 'href="../../coverage/index.html"' in page
+    assert 'src="../../coverage/index.html"' in page
+    # 3) Read in place: the report was NOT staged into the docs srcdir; the
+    #    original still lives where it was.
+    assert not (host / "coverage").exists()
+    assert (report / "index.html").exists()
+
+
 # ---------- include / gitignore opt-out ----------
 
 

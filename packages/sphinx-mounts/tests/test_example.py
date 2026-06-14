@@ -93,7 +93,18 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     bazel_bin = workspace / "bazel-bin" / "bundles"
     assert (bazel_bin / "api-foo" / "index.rst").exists()
     assert (bazel_bin / "api-foo" / "reference.rst").exists()
+    assert (bazel_bin / "api-foo" / "coverage.rst").exists()
     assert (bazel_bin / "api-bar" / "index.md").exists()
+    # The pre-built HTML report (consumed by html_extra_path) is
+    # materialised too, alongside the bundles.
+    assert (
+        workspace
+        / "bazel-bin"
+        / "coverage_report"
+        / "extra"
+        / "coverage"
+        / "index.html"
+    ).exists()
 
     # The directive "showcase" bundles are plain checked-in files (NOT
     # Bazel-generated): they live under ``showcase/<directive>/`` and are
@@ -170,6 +181,22 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert "SHOWCASE_UML" in _showcase("uml")
     assert (html_out / "_images").is_dir()
 
+    # 2c) The pre-built HTML coverage report is shipped into the site by
+    #     html_extra_path — so the built output is self-contained and
+    #     copyable to any server — and the api-foo bundle's coverage page
+    #     links to + embeds it via a bundle-relative URL. The report is
+    #     read in place; it is never staged into the docs source tree.
+    assert (html_out / "coverage" / "index.html").exists()
+    assert (html_out / "coverage" / "greeter.py.html").exists()
+    report_html = (html_out / "coverage" / "index.html").read_text(encoding="utf-8")
+    assert "API_FOO_COVERAGE_REPORT_MARKER" in report_html
+    foo_cov = (html_out / "_generated" / "api-foo" / "coverage.html").read_text(
+        encoding="utf-8"
+    )
+    assert "API_FOO_COVERAGE_MARKER" in foo_cov
+    assert 'href="../../coverage/index.html"' in foo_cov
+    assert 'src="../../coverage/index.html"' in foo_cov
+
     # 3) Markdown bundle rendered.
     bar_index = (html_out / "_generated" / "api-bar" / "index.html").read_text(
         encoding="utf-8"
@@ -198,8 +225,10 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert "_generated/showcase/literalinclude/index.html" in index_html
     assert "_generated/showcase/uml/index.html" in index_html
 
-    # 5) Nothing was copied into the host srcdir.
+    # 5) Nothing was copied into the host srcdir — neither the mounted
+    #    bundles (_generated) nor the html_extra_path report (coverage).
     assert not (docs / "_generated").exists()
+    assert not (docs / "coverage").exists()
 
 
 def _have_sphinx_module() -> bool:

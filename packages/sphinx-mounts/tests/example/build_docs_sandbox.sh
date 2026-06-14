@@ -55,12 +55,19 @@ if [ -d "${example_src}/showcase" ]; then
     cp -RL "${example_src}/showcase" "${stage}/showcase"
 fi
 
-# Stage each bundle file at ``bazel-bin/bundles/<bundle>/<file>``, so
-# the ``../bazel-bin/bundles/<name>`` paths in ``ubproject.toml``
-# resolve from ``${stage}/docs/``.
+# Stage each artefact under ``bazel-bin/`` so the workspace-relative
+# paths in the host config resolve from ``${stage}/docs/``:
+#   - source bundle files at ``bazel-bin/bundles/<bundle>/<file>``
+#     (the ``../bazel-bin/bundles/<name>`` paths in ``ubproject.toml``);
+#   - the pre-built HTML report under ``bazel-bin/coverage_report/...``
+#     (the ``../bazel-bin/coverage_report/extra`` path that conf.py's
+#     ``html_extra_path`` consumes).
 for f in "${bundle_files[@]}"; do
-    rel="${f##*/bundles/}"
-    target="${stage}/bazel-bin/bundles/${rel}"
+    case "${f}" in
+        */coverage_report/*) rel="coverage_report/${f##*/coverage_report/}" ;;
+        *) rel="bundles/${f##*/bundles/}" ;;
+    esac
+    target="${stage}/bazel-bin/${rel}"
     mkdir -p "$(dirname "${target}")"
     cp -L "${f}" "${target}"
 done

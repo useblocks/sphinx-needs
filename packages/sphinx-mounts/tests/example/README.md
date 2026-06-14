@@ -19,8 +19,9 @@ end-to-end (marked `bazel`, skipped when no `bazel`/`bazelisk` is on
     ├── build_docs.sh                  # wrapper for ``bazel run //:build_docs``
     ├── build_docs_sandbox.sh          # wrapper for ``bazel build //:docs_html``
     ├── bundles/
-    │   ├── api-foo/BUILD.bazel        # 2 RST files emitted by genrules
+    │   ├── api-foo/BUILD.bazel        # index + reference + coverage docs (genrules)
     │   └── api-bar/BUILD.bazel        # 1 Markdown file emitted by genrule
+    ├── coverage_report/BUILD.bazel    # pre-built HTML report (html_extra_path source)
     ├── showcase/                      # checked-in bundles — one per directive
     │   ├── literalinclude/            # index.rst + greeter.py
     │   ├── include/                   # index.rst + intro.txt
@@ -32,7 +33,7 @@ end-to-end (marked `bazel`, skipped when no `bazel`/`bazelisk` is on
     │   ├── uml/                       # index.rst + sequence.puml
     │   └── mermaid/                   # index.rst + flow.mmd
     └── docs/
-        ├── conf.py                    # host project + graphviz/plantuml/mermaid
+        ├── conf.py                    # host project + graphviz/plantuml/mermaid + html_extra_path
         ├── index.rst                  # host toctree — names api-bar only
         ├── installation.rst           # host-only page
         └── ubproject.toml             # 2 Bazel mounts + 9 checked-in showcase mounts
@@ -147,6 +148,20 @@ Run the commands below from this directory (`tests/example/`).
   that pointed into the host (a leading `/`) or climbed out with `..`
   would fail the build instead. These are plain files mounted in place —
   not Bazel-generated — so each directive's usage is visible at a glance.
+- **A pre-built HTML report, no copy of sources.** `//coverage_report`
+  generates a small lcov-style HTML tree. The host `conf.py` lists it in
+  Sphinx's `html_extra_path`, which copies it **verbatim into the build
+  output** (`<site>/coverage/`) — so the rendered site is *self-contained*
+  and can be published anywhere with the report travelling alongside it,
+  while the report itself is read in place from `bazel-bin/` and never
+  staged into the docs source tree. The `api-foo` bundle ships a
+  `coverage` page that links to and `<iframe>`-embeds it via the
+  bundle-relative URL `../../coverage/index.html`. The `html_extra_path`
+  entry is added only when the report has been built, so the host still
+  builds when the artefact is absent (mirroring the mount behaviour). This
+  is plain Sphinx — *not* a sphinx-mounts feature; mounts handle source
+  trees, `html_extra_path` handles finished static artefacts, and they
+  compose.
 
 ## Running the test
 

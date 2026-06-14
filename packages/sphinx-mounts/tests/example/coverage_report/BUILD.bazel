@@ -1,0 +1,59 @@
+# A pre-built HTML report (lcov-style), emitted by a genrule to stand in
+# for a real coverage tool's output. This is the "static artifact" case:
+# unlike a mounted *source* bundle (which Sphinx parses), this HTML is
+# finished output. The host project's ``conf.py`` uses Sphinx's
+# ``html_extra_path`` to copy it **verbatim into the build output**
+# (``<site>/coverage/``) so the rendered docs stay self-contained — the
+# report is read in place, never staged into the docs source tree.
+#
+# The files are emitted under ``extra/coverage/`` (rather than straight
+# ``coverage/``) because ``html_extra_path`` copies the *contents* of each
+# listed path into the output root: pointing it at ``.../extra`` makes
+# Sphinx copy the ``coverage/`` directory (name preserved) to
+# ``<site>/coverage/``.
+
+genrule(
+    name = "gen_report",
+    outs = [
+        "extra/coverage/index.html",
+        "extra/coverage/greeter.py.html",
+    ],
+    cmd = """
+mkdir -p $(RULEDIR)/extra/coverage
+cat > $(RULEDIR)/extra/coverage/index.html <<'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Coverage report</title>
+<style>body{font-family:sans-serif;margin:2rem}h1{color:#2a7}
+table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:.3rem .6rem}</style>
+</head>
+<body>
+<h1>LCOV - coverage report</h1>
+<p id="marker">API_FOO_COVERAGE_REPORT_MARKER</p>
+<table>
+<tr><th>File</th><th>Lines</th><th>Coverage</th></tr>
+<tr><td><a href="greeter.py.html">greeter.py</a></td><td>1 / 1</td><td>100.0%</td></tr>
+</table>
+</body>
+</html>
+EOF
+cat > $(RULEDIR)/extra/coverage/greeter.py.html <<'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>greeter.py</title></head>
+<body>
+<h1>greeter.py</h1>
+<pre>      1 : def greet(name): return f"hello {name}"   <!-- hit -->
+</pre>
+</body>
+</html>
+EOF
+""",
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "report",
+    srcs = [":gen_report"],
+    visibility = ["//visibility:public"],
+)

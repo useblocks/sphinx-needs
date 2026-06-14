@@ -24,6 +24,7 @@ and mounted in place by ``sphinx-mounts``.
    :maxdepth: 1
 
    reference
+   coverage
 EOF
 """,
 )
@@ -45,9 +46,42 @@ EOF
 """,
 )
 
+# A bundle page that references a pre-built HTML coverage report. The
+# report is shipped as a static artefact (see //coverage_report) and
+# placed into the site output by the host's ``html_extra_path``; this
+# page just links to and embeds it. The link/iframe target is relative
+# to this page's output location (``_generated/api-foo/coverage.html``),
+# so ``../../coverage/index.html`` reaches the report at the site root.
+genrule(
+    name = "gen_coverage",
+    outs = ["coverage.rst"],
+    cmd = """cat > $@ <<'EOF'
+Coverage report
+----------------
+
+API_FOO_COVERAGE_MARKER
+
+This page links to and embeds a **pre-built HTML coverage report** that
+ships alongside the bundle. The report is *not* parsed or copied by the
+mount: the host project's ``html_extra_path`` places it verbatim in the
+site output (at ``coverage/``) so the built docs stay self-contained, and
+this page simply links to and embeds it. A plain link/iframe records no
+Sphinx file dependency, so nothing is read or duplicated at parse time.
+
+.. raw:: html
+
+   <p><a href="../../coverage/index.html" target="_blank" rel="noopener">
+   Open the full coverage report</a></p>
+   <iframe src="../../coverage/index.html" title="Coverage report"
+           width="100%" height="360" style="border:1px solid #ccc"></iframe>
+EOF
+""",
+)
+
 filegroup(
     name = "bundle",
     srcs = [
+        ":gen_coverage",
         ":gen_index",
         ":gen_reference",
     ],
