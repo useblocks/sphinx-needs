@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:0.1.1`:
+
+0.1.1
+-----
+
+:Released: 2026-06-14
 
 - Added per-mount ``path_check`` option (``"error"`` default / ``"warn"`` /
   ``"off"``). Directives inside a mounted bundle that reference a file
@@ -27,6 +31,11 @@ Unreleased
   ``uml``, ``mermaid``). Detection needs no extension code: it rides on the
   absolute external paths recorded in ``Project._docname_to_path`` and
   ``env.dependencies``, which Sphinx stats on each rebuild.
+- The CI test matrix now exercises Sphinx 8 on Python 3.12, alongside the
+  existing Sphinx 7 and Sphinx 9 cells. The matrix previously covered only
+  the lower (``>=7.4``) and upper (``<10``) bounds of the supported Sphinx
+  range, leaving Sphinx 8 in the middle untested; all three major versions
+  are now verified on every CI run.
 
 .. _`release:0.1.0`:
 

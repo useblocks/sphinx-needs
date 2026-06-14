@@ -1,6 +1,6 @@
 [project]
 name = "sphinx-mounts"
-version = "0.1.0"
+version = "0.1.1"
 description = "Mount external sources into a Sphinx build without copying or symlinking"
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 maintainers = [
