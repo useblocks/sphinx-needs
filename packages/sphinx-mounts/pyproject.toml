@@ -49,6 +49,11 @@ testing = [
   # source suffix Sphinx knows about, so `.md` works whenever the host
   # project loads `myst_parser`.
   "myst-parser>=4.0.0",
+  # Diagram extensions exercised by the path-directive tests. Tests stay
+  # renderer-independent (mermaid 'raw' output; plantuml/graphviz asserted
+  # via the recorded dependency), so mmdc/java/dot are not required.
+  "sphinxcontrib-plantuml>=0.30",
+  "sphinxcontrib-mermaid>=1.0.0",
 ]
 docs = ["furo>=2024.5.6", "myst-parser>=4.0.0", "sphinx-design>=0.6.1"]
 ty = ["ty>=0.0.37"]
@@ -88,6 +93,8 @@ force-sort-within-sections = true
 "**/tests/*" = [
   "ARG001",  # unused-function-argument - fixtures
   "ARG005",  # unused-lambda-argument - monkeypatches
+  "PLR0913", # too-many-arguments - parametrised tests take many fixtures
+  "PLR0915", # too-many-statements - end-to-end tests have many assertions
   "PLR2004", # magic-value-comparison - valuable for tests
   "S101",    # assert - needed for tests
   "S603",    # subprocess - bazel invocation in tests

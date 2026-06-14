@@ -21,15 +21,30 @@ end-to-end (marked `bazel`, skipped when no `bazel`/`bazelisk` is on
     ├── bundles/
     │   ├── api-foo/BUILD.bazel        # 2 RST files emitted by genrules
     │   └── api-bar/BUILD.bazel        # 1 Markdown file emitted by genrule
+    ├── showcase/                      # checked-in bundles — one per directive
+    │   ├── literalinclude/            # index.rst + greeter.py
+    │   ├── include/                   # index.rst + intro.txt
+    │   ├── csv-table/                 # index.rst + data.csv
+    │   ├── raw/                       # index.rst + snippet.html
+    │   ├── image/                     # index.rst + diagram.png
+    │   ├── figure/                    # index.rst + chart.png
+    │   ├── graphviz/                  # index.rst + graph.dot
+    │   ├── uml/                       # index.rst + sequence.puml
+    │   └── mermaid/                   # index.rst + flow.mmd
     └── docs/
-        ├── conf.py                    # host Sphinx project (RST)
+        ├── conf.py                    # host project + graphviz/plantuml/mermaid
         ├── index.rst                  # host toctree — names api-bar only
         ├── installation.rst           # host-only page
-        └── ubproject.toml             # two mounts, two wiring styles
+        └── ubproject.toml             # 2 Bazel mounts + 9 checked-in showcase mounts
 
 ## Pipeline
 
 Run the commands below from this directory (`tests/example/`).
+
+> **Building the docs needs `dot` (Graphviz), `java`, and `plantuml` on
+> `PATH`.** The `api-foo` directives showcase renders Graphviz and
+> PlantUML diagrams at build time. Mermaid is configured for client-side
+> (`raw`) rendering, so no `mmdc` binary is required.
 
 1. **Build the bundles with Bazel.**
 
@@ -119,6 +134,16 @@ Run the commands below from this directory (`tests/example/`).
   back into the host project — see
   [Integration → Anti-pattern: mounted sources linking back to the
   host](../../docs/source/integration.rst) for why.
+- **File references stay inside the bundle.** The `showcase/` folder holds
+  nine **checked-in** bundles — one per file-referencing directive
+  (`literalinclude`, `include`, `csv-table` / `raw` with `:file:`,
+  `image`, `figure`, `graphviz`, `uml`, `mermaid`). Open a folder to see
+  the directive sitting next to the file it references. Every path is
+  relative to the bundle root, so each bundle is self-contained and passes
+  `sphinx-mounts`' `path_check` (default `"error"`) once mounted; a path
+  that pointed into the host (a leading `/`) or climbed out with `..`
+  would fail the build instead. These are plain files mounted in place —
+  not Bazel-generated — so each directive's usage is visible at a glance.
 
 ## Running the test
 

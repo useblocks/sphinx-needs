@@ -58,6 +58,9 @@ class _MountAwareProject(Project):
     ) -> None:
         super().__init__(srcdir, source_suffix)
         self._mounts = mounts
+        # Maps each mounted docname to (bundle_root, path_check) for the
+        # path-confinement check in the extension. Rebuilt each discover().
+        self._doc_roots: dict[str, tuple[Path, str]] = {}
 
     def discover(
         self,
@@ -66,6 +69,7 @@ class _MountAwareProject(Project):
     ) -> set[str]:
         """Discover host srcdir docs plus all mounted external trees."""
         docs = super().discover(exclude_paths, include_paths)
+        self._doc_roots = {}
         for mount in self._mounts:
             _enforce_strict_mount_at(Path(self.srcdir), mount)
             docs |= _attach_mount(self, mount)
@@ -98,7 +102,7 @@ def _enforce_strict_mount_at(srcdir: Path, mount: MountConfig) -> None:
         raise ValueError(msg)
 
 
-def _attach_mount(project: Project, mount: MountConfig) -> set[str]:
+def _attach_mount(project: _MountAwareProject, mount: MountConfig) -> set[str]:
     """Inject ``mount`` into ``project`` — either a directory or a file list.
 
     Directory mode (``mount.dir`` set): walk the directory and pick up
@@ -131,7 +135,7 @@ def _attach_mount(project: Project, mount: MountConfig) -> set[str]:
 
 
 def _attach_mount_dir(
-    project: Project, mount: MountConfig, mount_dir: Path
+    project: _MountAwareProject, mount: MountConfig, mount_dir: Path
 ) -> set[str]:
     """Walk ``mount_dir`` with the ``ignore-python`` walker (a Rust
     binding to the same crate used by ``sphinx-codelinks`` and ubCode).
@@ -173,6 +177,7 @@ def _attach_mount_dir(
         docname_tail = rel_path.as_posix()[: -len(suffix)]
         docname = _join_mount(mount.mount_at, docname_tail)
         _register(project, docname, abs_path, mount.mount_at)
+        project._doc_roots[docname] = (mount_dir, mount.path_check)
         added.add(docname)
     return added
 
@@ -227,7 +232,7 @@ def _build_walker(
 
 
 def _attach_mount_files(
-    project: Project, mount: MountConfig, files: Iterable[Path]
+    project: _MountAwareProject, mount: MountConfig, files: Iterable[Path]
 ) -> set[str]:
     added: set[str] = set()
     suffixes = tuple(project.source_suffix)
@@ -245,6 +250,7 @@ def _attach_mount_files(
         docname_tail = abs_path.name[: -len(suffix)]
         docname = _join_mount(mount.mount_at, docname_tail)
         _register(project, docname, abs_path, mount.mount_at)
+        project._doc_roots[docname] = (abs_path.parent, mount.path_check)
         added.add(docname)
     return added
 

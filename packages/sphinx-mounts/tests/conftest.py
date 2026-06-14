@@ -105,6 +105,8 @@ def write_ubproject_toml(
             lines.append(
                 f"strict_mount_at = {'true' if mount['strict_mount_at'] else 'false'}"
             )
+        if "path_check" in mount:
+            lines.append(f"path_check = {_toml_string(mount['path_check'])}")
         if mount.get("attach_to") is not None:
             lines.append(f"attach_to = {_toml_string(mount['attach_to'])}")
         if "toctree_index" in mount:

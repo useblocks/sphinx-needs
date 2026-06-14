@@ -178,6 +178,47 @@ def _on_check_consistency(app: Sphinx, env: Any) -> None:
             )
 
 
+def _on_check_path_confinement(app: Sphinx, env: Any) -> None:  # noqa: ARG001
+    """Fail (or warn) when a mounted doc references a file outside its
+    bundle root.
+
+    Every file a doc references — via Sphinx ``relfn2path`` directives
+    (literalinclude, image, graphviz, uml, mermaid, …) or docutils-native
+    ones (include, ``raw :file:``, ``csv-table :file:``) — is recorded in
+    ``env.dependencies[docname]``. Resolving each dependency and requiring
+    it to live under the mount's bundle root catches escaping references
+    uniformly, regardless of directive. An escape would otherwise drag an
+    outside file into the host build (and, for asset directives, copy it
+    into the host's ``_images``/``_downloads`` output, risking collisions
+    with host files). ``path_check`` selects the reaction per mount.
+    """
+    doc_roots: dict[str, tuple[Path, str]] = getattr(
+        getattr(env, "project", None), "_doc_roots", {}
+    )
+    if not doc_roots:
+        return
+    srcdir = Path(env.srcdir)
+    for docname, (root, mode) in doc_roots.items():
+        if mode == "off":
+            continue
+        resolved_root = root.resolve()
+        for dep in env.dependencies.get(docname, ()):
+            abs_dep = (srcdir / dep).resolve()
+            if abs_dep == resolved_root or resolved_root in abs_dep.parents:
+                continue
+            msg = (
+                f"sphinx-mounts: mounted doc {docname!r} references a file "
+                f"outside its bundle root: {abs_dep} is not under {resolved_root}. "
+                f"Mounted bundles must be self-contained — use a path "
+                f"relative to the bundle root (no leading '/', and no '..' "
+                f'climbing above the bundle). Set path_check = "warn" or '
+                f'"off" on the mount to relax this check.'
+            )
+            if mode == "error":
+                raise ExtensionError(msg)
+            logger.warning("%s", msg)
+
+
 def _build_toctree_node(parent: str, entry: str) -> addnodes.toctree:
     """Construct a fresh ``toctree`` node with sane defaults."""
     node = addnodes.toctree()
@@ -241,6 +282,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     # consistency check would flag every mounted entry doc.
     app.connect("doctree-read", _on_doctree_read, priority=400)
     app.connect("env-check-consistency", _on_check_consistency)
+    app.connect("env-check-consistency", _on_check_path_confinement)
 
     return {
         "version": __version__,

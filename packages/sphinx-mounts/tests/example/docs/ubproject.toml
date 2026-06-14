@@ -27,3 +27,57 @@ entry_doc = "index"
 [[mounts]]
 dir = "../bazel-bin/bundles/api-bar"
 mount_at = "_generated/api-bar"
+
+# ---------------------------------------------------------------------------
+# Checked-in "directive showcase" bundles — NOT Bazel-generated. Each folder
+# under ``../showcase/`` is a self-contained bundle demonstrating one
+# file-referencing directive whose path stays inside the bundle root. They
+# are plain files on disk (open the folder to see the directive next to the
+# file it references), mounted in place just like the Bazel bundles above.
+# Because every reference is bundle-relative, each survives ``path_check``
+# (default ``"error"``) after mounting. Each entry doc is wired into the
+# host ``index`` toctree via ``attach_to``.
+[[mounts]]
+dir = "../showcase/literalinclude"
+mount_at = "_generated/showcase/literalinclude"
+attach_to = "index"
+
+[[mounts]]
+dir = "../showcase/include"
+mount_at = "_generated/showcase/include"
+attach_to = "index"
+
+[[mounts]]
+dir = "../showcase/csv-table"
+mount_at = "_generated/showcase/csv-table"
+attach_to = "index"
+
+[[mounts]]
+dir = "../showcase/raw"
+mount_at = "_generated/showcase/raw"
+attach_to = "index"
+
+[[mounts]]
+dir = "../showcase/image"
+mount_at = "_generated/showcase/image"
+attach_to = "index"
+
+[[mounts]]
+dir = "../showcase/figure"
+mount_at = "_generated/showcase/figure"
+attach_to = "index"
+
+[[mounts]]
+dir = "../showcase/graphviz"
+mount_at = "_generated/showcase/graphviz"
+attach_to = "index"
+
+[[mounts]]
+dir = "../showcase/uml"
+mount_at = "_generated/showcase/uml"
+attach_to = "index"
+
+[[mounts]]
+dir = "../showcase/mermaid"
+mount_at = "_generated/showcase/mermaid"
+attach_to = "index"

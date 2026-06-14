@@ -240,6 +240,32 @@ class TestMountConfig:
         with pytest.raises(MountConfigError, match=r"strict_mount_at.*mount_at"):
             MountConfig(dir=tmp_path, strict_mount_at=True)
 
+    def test_path_check_defaults_to_error(self, tmp_path: Path) -> None:
+        m = MountConfig(dir=tmp_path, mount_at="x")
+        assert m.path_check == "error"
+
+    def test_path_check_accepts_warn_and_off(self, tmp_path: Path) -> None:
+        assert (
+            MountConfig.from_dict(
+                {"dir": tmp_path, "mount_at": "x", "path_check": "warn"}
+            ).path_check
+            == "warn"
+        )
+        assert (
+            MountConfig.from_dict(
+                {"dir": tmp_path, "mount_at": "x", "path_check": "off"}
+            ).path_check
+            == "off"
+        )
+
+    def test_path_check_invalid_value_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(MountConfigError, match=r"path_check must be one of"):
+            MountConfig(dir=tmp_path, mount_at="x", path_check="boom")
+
+    def test_path_check_non_string_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(MountConfigError, match="path_check must be a string"):
+            MountConfig(dir=tmp_path, mount_at="x", path_check=True)  # type: ignore[arg-type]
+
 
 class TestParseMounts:
     def test_empty_list(self, tmp_path: Path) -> None:
@@ -280,6 +306,14 @@ class TestParseMounts:
         raw = MountConfig(dir=tmp_path / "bundle", mount_at="_g/x")
         mounts = parse_mounts([raw], tmp_path)
         assert mounts[0].mount_at == "_g/x"
+
+    def test_preserves_path_check(self, tmp_path: Path) -> None:
+        (tmp_path / "bundle").mkdir()
+        mounts = parse_mounts(
+            [{"dir": "bundle", "mount_at": "_g/x", "path_check": "warn"}],
+            tmp_path,
+        )
+        assert mounts[0].path_check == "warn"
 
 
 class TestLoadMountsFromToml:

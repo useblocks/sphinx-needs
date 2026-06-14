@@ -246,6 +246,11 @@ and never neither.
        at ``<srcdir>/<mount_at>/``. Defaults to ``false``. See
        :ref:`strict-mount-at` for the trade-off and when to enable it.
        Incompatible with a root mount (``mount_at`` omitted).
+   * - ``path_check``
+     - no
+     - How to react when a directive inside a mounted doc references a
+       file outside the bundle root. One of ``"error"`` (default),
+       ``"warn"``, or ``"off"``. See :ref:`path-confinement` below.
 
 .. _root-mount:
 
@@ -542,5 +547,48 @@ others. If a doc inside the mount is not reachable from the entry
 doc, Sphinx will warn about an orphan; that warning is the contract,
 not the extension's job to suppress.
 
-The extension does not yet enforce these constraints. A linter is on the
-roadmap.
+.. _path-confinement:
+
+Path confinement: keeping file references inside the bundle
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Directives that reference files — ``literalinclude``, ``include``,
+``image``, ``figure``, ``csv-table`` (``:file:``), ``raw`` (``:file:``),
+``graphviz``, and diagram extensions like ``uml`` (sphinxcontrib-plantuml)
+and ``mermaid`` (sphinxcontrib-mermaid) — resolve **relative paths**
+against the document's own location. For a mounted doc, that location is
+the bundle on disk, so a relative reference resolves *inside the bundle*,
+exactly as it would when the bundle is built standalone.
+
+Two reference shapes escape the bundle root:
+
+- A **leading slash** (``/foo``) is "absolute from the source root" — for
+  a mounted doc that is the **host** ``srcdir``, not the bundle. The same
+  bundle would then read a different file in every host project.
+- A path that **climbs out** with ``..`` (e.g. ``../../foo``) resolves to
+  a location above the bundle root.
+
+Either way the bundle is no longer self-contained, and the outside file is
+dragged into the host build — for asset directives Sphinx even copies it
+into the host's ``_images`` / ``_downloads`` output, where it can collide
+with the host project's own files.
+
+``path_check`` controls the reaction, per mount:
+
+.. code-block:: toml
+
+   [[mounts]]
+   dir = "/path/to/bundle"
+   mount_at = "_generated/api-foo"
+   path_check = "error"   # default — fail the build on any escape
+
+- ``"error"`` (default): an escaping reference fails the build, naming the
+  doc, the resolved path, and the bundle root.
+- ``"warn"``: log a warning instead (escalates to an error under
+  ``sphinx-build -W``).
+- ``"off"``: disable the check for this mount.
+
+The check is directive-agnostic: it inspects the files Sphinx records as
+dependencies of each mounted doc, so it covers every file-referencing
+directive — including ones from third-party extensions — without
+enumerating them.

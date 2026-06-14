@@ -48,6 +48,13 @@ trap 'rm -rf "${stage}"' EXIT
 # symlinks (some test setups put files behind symlinks too).
 cp -RL "${docs_dir_src}/." "${stage}/docs/"
 
+# Stage the checked-in directive "showcase" bundles. They are plain
+# source folders (not Bazel outputs) that ``ubproject.toml`` mounts via
+# ``../showcase/<directive>``, so they must sit next to ``${stage}/docs``.
+if [ -d "${example_src}/showcase" ]; then
+    cp -RL "${example_src}/showcase" "${stage}/showcase"
+fi
+
 # Stage each bundle file at ``bazel-bin/bundles/<bundle>/<file>``, so
 # the ``../bazel-bin/bundles/<name>`` paths in ``ubproject.toml``
 # resolve from ``${stage}/docs/``.

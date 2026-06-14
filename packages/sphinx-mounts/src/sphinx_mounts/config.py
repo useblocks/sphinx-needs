@@ -100,6 +100,16 @@ class MountConfig:
             Incompatible with a root mount (``mount_at = None``), since
             the host srcdir always exists; that combination is rejected
             at config validation.
+        path_check: How to react when a directive inside a mounted doc
+            references a file outside the bundle root (the bundle root is
+            ``dir`` in directory mode, or the listed file's parent
+            directory in file-list mode). One of ``"error"`` (the
+            default — fail the build), ``"warn"`` (log a warning;
+            escalates to an error under ``sphinx-build -W``), or
+            ``"off"`` (disable the check). An escaping reference would
+            otherwise drag an outside file into the host build (and, for
+            asset directives, copy it into the host's output), so the
+            default is a hard error that keeps bundles self-contained.
     """
 
     mount_at: str | None = None
@@ -112,6 +122,7 @@ class MountConfig:
     toctree_index: int = 0
     entry_doc: str = "index"
     strict_mount_at: bool = False
+    path_check: str = "error"
 
     def __post_init__(self) -> None:
         if self.mount_at is not None:
@@ -163,6 +174,16 @@ class MountConfig:
             )
             raise MountConfigError(msg)
 
+        if not isinstance(self.path_check, str):
+            msg = f"path_check must be a string; got {type(self.path_check).__name__}."
+            raise MountConfigError(msg)
+        if self.path_check not in {"error", "warn", "off"}:
+            msg = (
+                f"path_check must be one of 'error', 'warn', 'off'; "
+                f"got {self.path_check!r}."
+            )
+            raise MountConfigError(msg)
+
     @classmethod
     def from_dict(cls, entry: Mapping[str, Any]) -> MountConfig:
         """Construct a :class:`MountConfig` from a mapping (e.g. TOML table).
@@ -210,6 +231,7 @@ class MountConfig:
             toctree_index=entry.get("toctree_index", 0),
             entry_doc=entry.get("entry_doc", "index"),
             strict_mount_at=entry.get("strict_mount_at", False),
+            path_check=entry.get("path_check", "error"),
         )
 
 
@@ -369,6 +391,7 @@ def parse_mounts(raw: Any, confdir: Path) -> tuple[MountConfig, ...]:
                 toctree_index=mount.toctree_index,
                 entry_doc=mount.entry_doc,
                 strict_mount_at=mount.strict_mount_at,
+                path_check=mount.path_check,
             )
         )
     return tuple(resolved)

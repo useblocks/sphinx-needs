@@ -3,6 +3,15 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- Added per-mount ``path_check`` option (``"error"`` default / ``"warn"`` /
+  ``"off"``). Directives inside a mounted bundle that reference a file
+  outside the bundle root (a leading-slash path, or one that climbs out
+  with ``..``) now fail the build by default, keeping bundles
+  self-contained. Set ``path_check = "warn"`` or ``"off"`` to relax it.
+
 .. _`release:0.1.0`:
 
 0.1.0
