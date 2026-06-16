@@ -92,6 +92,14 @@ Usage::
 ``filter`` supports complex-filter operations by using a Python-statement.
 In this case, we check that the ``cases`` value is greater than 4.
 
+.. note::
+
+   Numeric comparisons such as ``cases > 4`` require Sphinx-Needs 6.0 or newer,
+   where the count fields (``suites``, ``cases``, ``passed``, ``skipped``,
+   ``failed`` and ``errors``) are stored as integers. On older Sphinx-Needs
+   versions these values are strings, so use
+   ``cases.isdigit() and int(cases) > 4`` instead.
+
 Take a look into the
 `Filter string section <https://sphinx-needs.readthedocs.io/en/latest/filter.html#filter-string>`_
 of the Sphinx-Needs documentations for more details and ideas how to use it.
