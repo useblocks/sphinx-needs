@@ -10,6 +10,10 @@ tr.tr_skipped{
     background-color: rgba(0,0,0,0.1) !important;
 }
 
+tr.tr_error, div.tr_error {
+    background-color: rgba(255,165,0,0.2) !important;
+}
+
 td.status p {
     padding: 3px 5px;
     text-align: center;
@@ -29,4 +33,9 @@ td.status p.tr_failure{
 td.status p.tr_skipped{
     border: 1px solid #555;
     color: #555;
+}
+
+td.status p.tr_error{
+    border: 1px solid #cc6600;
+    color: #cc6600;
 }

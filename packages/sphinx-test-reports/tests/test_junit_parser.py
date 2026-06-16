@@ -16,6 +16,9 @@ xml_nose_path = os.path.join(
 )
 
 xml_ctest_path = os.path.join(os.path.dirname(__file__), "doc_test/utils", "ctest.xml")
+xml_error_path = os.path.join(
+    os.path.dirname(__file__), "doc_test/utils", "xml_data_error.xml"
+)
 
 
 def test_init_parser():
@@ -148,3 +151,33 @@ def test_parse_ctest_xml():
     assert test_suite["testcases"][3]["result"] == "failure"
     assert test_suite["testcases"][4]["name"] == "skipped_test"
     assert test_suite["testcases"][4]["result"] == "skipped"
+
+
+def test_parse_error_xml():
+    from sphinxcontrib.test_reports.junitparser import JUnitParser
+
+    parser = JUnitParser(xml_error_path)
+    test_suites = parser.parse()
+
+    assert len(test_suites) == 1
+    test_suite = test_suites[0]
+
+    assert test_suite["name"] == "error_suite"
+    assert test_suite["tests"] == 4
+    assert test_suite["errors"] == 1
+    assert test_suite["failures"] == 1
+
+    assert test_suite["testcases"][0]["name"] == "ASuccessfulTest"
+    assert test_suite["testcases"][0]["result"] == "passed"
+
+    assert test_suite["testcases"][1]["name"] == "AFailingTest"
+    assert test_suite["testcases"][1]["result"] == "failure"
+
+    assert test_suite["testcases"][2]["name"] == "AnErrorTest"
+    assert test_suite["testcases"][2]["result"] == "error"
+    assert test_suite["testcases"][2]["type"] == "RuntimeError"
+    assert test_suite["testcases"][2]["message"] == "unexpected crash"
+    assert test_suite["testcases"][2]["text"] == "stack trace here"
+
+    assert test_suite["testcases"][3]["name"] == "ASkippedTest"
+    assert test_suite["testcases"][3]["result"] == "skipped"
