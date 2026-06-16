@@ -7,6 +7,45 @@ Unreleased
 ----------
 :Released: under development
 
+.. _`release:1.4.0`:
+
+1.4.0
+-----
+:Released: 16.06.2026
+
+This release adds Sphinx-Needs 8 support and the ability to map JUnit XML
+``<properties>`` onto Sphinx-Needs fields and links. It also registers every
+field that Sphinx-Test-Reports adds with a typed schema, so unset fields no
+longer trigger false-positive ``unevaluatedProperties: false`` schema-validation
+warnings, and it fixes JUnit ``<error>`` test cases being reported as passed.
+
+* Feature: Map JUnit XML ``<properties>`` to Sphinx-Needs fields and links via
+  the new ``tr_property_link_types`` and ``tr_extra_options`` options.
+  `#135 <https://github.com/useblocks/sphinx-test-reports/pull/135>`_
+* Improvement: Support Sphinx-Needs 8 by registering fields through the new
+  ``add_field`` API, falling back to ``add_extra_option`` on older versions.
+  `#133 <https://github.com/useblocks/sphinx-test-reports/pull/133>`_
+* Bugfix: Register ``file``, ``suite``, ``case``, ``case_name``,
+  ``case_parameter`` and ``classname`` with a typed (string) schema so they
+  default to an unset/``None`` value and are stripped before schema validation.
+  Previously they were registered untyped and defaulted to ``""``, which caused
+  false-positive ``Unevaluated properties are not allowed`` warnings on needs
+  that did not set them when a schema used ``unevaluatedProperties: false``.
+  `#133 <https://github.com/useblocks/sphinx-test-reports/pull/133>`_
+* Bugfix: Handle the JUnit ``<error>`` result state in ``parse_testcase()``;
+  ``<error>`` test cases were previously misclassified as ``passed``.
+  `#134 <https://github.com/useblocks/sphinx-test-reports/pull/134>`_
+* Testing: Run the test suite against Sphinx-Needs 6.3.0.
+  `#130 <https://github.com/useblocks/sphinx-test-reports/pull/130>`_
+* Testing: Add a regression test that a strict schema ignores unpopulated
+  Sphinx-Test-Reports fields.
+  `#137 <https://github.com/useblocks/sphinx-test-reports/pull/137>`_
+* Docs: Clarify the Sphinx-Needs type names (``testfile``, ``testsuite``,
+  ``testcase``) versus the hyphenated directives.
+  `#136 <https://github.com/useblocks/sphinx-test-reports/pull/136>`_
+* Docs: Note that numeric ``cases`` filtering requires Sphinx-Needs >= 6.
+  `#139 <https://github.com/useblocks/sphinx-test-reports/pull/139>`_
+
 .. _`release:1.3.2`:
 
 1.3.2
