@@ -22,9 +22,9 @@ Filterable data
 ``Sphinx-Test-Reports`` adds the following data to a sphinx-need-configuration:
 
 * **Types**
-   * test-file
-   * test-suite
-   * test-case
+   * testfile
+   * testsuite
+   * testcase
 
 * **Options**
    * **file**: Test file path.
@@ -39,6 +39,10 @@ Filterable data
 
 Not all options are set for all created needs.
 E.g. ``test-file`` doesn't include ``case``, as it is not related to a single test case.
+
+The ``:types:`` option expects the Sphinx-Needs type names listed above.
+These names do not contain hyphens. The user-facing directives still keep their
+hyphenated names: ``test-file``, ``test-suite`` and ``test-case``.
 
 The filtering possibilities are really powerful, so take a look into
 `Filtering needs <https://sphinx-needs.readthedocs.io/en/latest/filter.html>`_ to figure out how to get
@@ -55,11 +59,11 @@ Use it like::
 
 
    .. needtable::
-      :types: test-file
+      :types: testfile
       :columns: id, file, suites, cases, passed
 
-We set ``types`` to ``test-file`` to document needs-objects from this type only.
-``Sphinx-Test-Reports`` provides also ``test-suite`` and ``test-case``.
+We set ``types`` to ``testfile`` to document needs-objects from this type only.
+``Sphinx-Test-Reports`` also provides the ``testsuite`` and ``testcase`` need types.
 
 With ``columns`` we can specify which data of a ``test-file`` we want to see.
 
@@ -67,7 +71,7 @@ With ``columns`` we can specify which data of a ``test-file`` we want to see.
 **Example**
 
 .. needtable::
-   :types: test-file
+   :types: testfile
    :columns: id, file, suites, cases, passed
 
 .. _needlist_filter:
@@ -82,11 +86,11 @@ The filter possibilities are the same as for  :ref:`needtable <needtable_filter>
 Usage::
 
    .. needlist::
-      :types: test-file
-      :filter: cases.isdigit() and int(cases) > 4
+      :types: testfile
+      :filter: cases > 4
 
 ``filter`` supports complex-filter operations by using a Python-statement.
-In this case, we check that the ``cases`` value contains a number and this number must ne bigger as 4.
+In this case, we check that the ``cases`` value is greater than 4.
 
 Take a look into the
 `Filter string section <https://sphinx-needs.readthedocs.io/en/latest/filter.html#filter-string>`_
@@ -96,8 +100,8 @@ of the Sphinx-Needs documentations for more details and ideas how to use it.
 **Example**
 
 .. needlist::
-   :types: test-file
-   :filter: cases.isdigit() and int(cases) >= 5
+   :types: testfile
+   :filter: cases >= 5
 
 
 
@@ -116,7 +120,7 @@ needflow - Flow charts of linked test data
 Usage::
 
    .. needflow::
-      :types: test-file, test-suite, test-case
+      :types: testfile, testsuite, testcase
       :filter: len(links) > 0 or len(links_back) > 0
 
 The used ``:filter:`` allows needs only, if they have an outgoing or incoming link.
@@ -124,5 +128,5 @@ The used ``:filter:`` allows needs only, if they have an outgoing or incoming li
 **Example**
 
 .. .. needflow::
-   :types: test-file, test-suite, test-case
+   :types: testfile, testsuite, testcase
    :filter: (len(links) > 0 or len(links_back) > 0) and "example" not in tags and "auto" not in tags and "pytest_sphinx" not in tags

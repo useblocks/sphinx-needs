@@ -10,7 +10,7 @@ Usage
 
 .. code-block:: rst
 
-   .. test-case:: My Test Suite
+   .. test-case:: My Test Case
       :file: my_test_data.xml
       :suite: my_tested_suite
       :case: my_case
@@ -36,7 +36,7 @@ to specify only ``case`` or ``classname``. It depends on the loaded test-data, i
 or if it selects only the first found test case. The best case is to always try to specify both values, ``case`` and
 ``classname``.
 
-``test-suite`` creates a need of type ``test-suite`` and adds the following options automatically:
+``test-case`` creates a need of type ``testcase`` and adds the following options automatically:
 
 * **result**: Result of the test case run. E.g passed or failed.
 * **time**: Needed time for running the test case

@@ -28,7 +28,7 @@ The following options can be set:
   Must be used together with ``auto_suites``!
 
 
-``test-file`` creates a need of type ``test-file`` and adds the following options automatically:
+``test-file`` creates a need of type ``testfile`` and adds the following options automatically:
 
 * **suites**: Amount of found suites in test file.
 * **cases**: Amount of found cases in test file.
