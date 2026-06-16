@@ -1,0 +1,21 @@
+{
+  "schemas": [
+    {
+      "id": "status-constrained",
+      "severity": "violation",
+      "validate": {
+        "local": {
+          "properties": {
+            "status": {
+              "const": "open"
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "unevaluatedProperties": false
+        }
+      }
+    }
+  ]
+}
