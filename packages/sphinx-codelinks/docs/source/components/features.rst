@@ -158,6 +158,31 @@ Features
    .. fault:: Sphinx-codelinks halucinates traceability objects in Rust
       :id: FAULT_RUST_2
 
+.. feature:: Go Language Support
+   :id: FE_GO
+
+   Support for defining traceability objects in Go source files via one-line comment annotations.
+
+   The Go language parser leverages tree-sitter to accurately identify and extract
+   comments from Go source files, including single-line (``//``) and multi-line
+   (``/* */``) comment styles. This ensures that traceability markers are correctly
+   associated with the appropriate code structures such as functions, methods, types,
+   and structs.
+
+   Key capabilities:
+
+   * Detection of inline and block comments
+   * Association of comments with function and method declarations
+   * Support for standard Go comment conventions
+   * Accurate scope detection for nested structures
+   * File extension ``.go`` auto-discovered when ``comment_type = "go"``
+
+   .. fault:: Traceability objects are not detected in Go language
+      :id: FAULT_GO_1
+
+   .. fault:: Sphinx-codelinks halucinates traceability objects in Go
+      :id: FAULT_GO_2
+
 .. feature:: Customized comment styles
    :id: FE_CMT
 

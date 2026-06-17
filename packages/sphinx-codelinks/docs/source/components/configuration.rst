@@ -271,7 +271,7 @@ Specifies the comment syntax style used in the source code files. This determine
 
 **Type:** ``str``
 **Default:** ``"cpp"``
-**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"yaml"``, ``"rust"``
+**Supported values:** ``"cpp"``, ``"python"``, ``"cs"``, ``"yaml"``, ``"rust"``, ``"go"``
 
 .. code-block:: toml
 
@@ -315,6 +315,11 @@ Specifies the comment syntax style used in the source code files. This determine
        ``///`` (doc comments),
        ``//!`` (inner doc comments)
      - ``.rs``
+   * - Go
+     - ``"go"``
+     - ``//`` (single-line),
+       ``/* */`` (multi-line)
+     - ``.go``
 
 .. note:: Future versions may support additional programming languages.
 

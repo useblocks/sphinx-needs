@@ -11,6 +11,7 @@ COMMENT_FILETYPE = {
     "cs": ["cs"],
     "yaml": ["yml", "yaml"],
     "rust": ["rs"],
+    "go": ["go"],
 }
 
 
@@ -21,6 +22,8 @@ class CommentType(str, Enum):
     yaml = "yaml"
     # @Support Rust style comments, IMPL_RUST_1, impl, [FE_RUST];
     rust = "rust"
+    # @Support Go style comments, IMPL_GO_1, impl, [FE_GO];
+    go = "go"
 
 
 class SourceDiscoverSectionConfigType(TypedDict, total=False):

@@ -24,6 +24,8 @@ COMMENT_MARKERS = {
     # @Support Python style comments, IMPL_PY_1, impl, [FE_PY]
     CommentType.python: ["#"],
     CommentType.cs: ["//", "/*", "///"],
+    # @Support Go style comments, IMPL_GO_2, impl, [FE_GO]
+    CommentType.go: ["//", "/*"],
 }
 ESCAPE = "\\"
 

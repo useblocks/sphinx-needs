@@ -49,7 +49,7 @@ FIXTURES_PATH = Path(__file__).parent / "data" / "discover_fixtures.json"
                 "comment_type": "java",
             },
             [
-                "Schema validation error in field 'comment_type': 'java' is not one of ['cpp', 'cs', 'python', 'rust', 'yaml']"
+                "Schema validation error in field 'comment_type': 'java' is not one of ['cpp', 'cs', 'go', 'python', 'rust', 'yaml']"
             ],
         ),
         (

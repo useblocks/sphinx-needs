@@ -7,6 +7,10 @@ Upcoming
 --------
 
 - ⬆️ Support and test sphinx-needs v5-8
+- ✨ Added Go parser for the ``analyse`` module.
+
+  Need ID references and one-line need definitions can now be extracted from Go source files.
+  The supported comment styles are ``//`` and ``/* */``.
 
 .. _`release:1.2.0`:
 
