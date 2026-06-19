@@ -194,6 +194,10 @@ def test_src_tracing_config_positive(make_app: Callable[..., SphinxTestApp], tmp
             Path("doc_test") / "id_required",
         ),
         (
+            Path("doc_test") / "cs_basic",
+            Path("doc_test") / "cs_basic",
+        ),
+        (
             Path("doc_test") / "go_basic",
             Path("doc_test") / "go_basic",
         ),

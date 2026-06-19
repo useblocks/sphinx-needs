@@ -81,6 +81,30 @@ Features
    .. fault:: Sphinx-codelinks halucinates traceability objects in C++
       :id: FAULT_CPP_2
 
+.. feature:: C# Language Support
+   :id: FE_CSHARP
+
+   Support for defining traceability objects in C# source code.
+
+   The C# language parser leverages tree-sitter to accurately identify and extract
+   comments from C# source files, including single-line (``//``), multi-line (``/* */``),
+   and documentation (``///``) comment styles. This ensures that traceability markers are
+   correctly associated with the appropriate code structures such as classes, methods, and
+   properties.
+
+   Key capabilities:
+
+   * Detection of inline, block, and documentation comments
+   * Association of comments with method, class, and property declarations
+   * Support for standard C# comment conventions
+   * Accurate scope detection for nested structures
+
+   .. fault:: Traceability objects are not detected in C# language
+      :id: FAULT_CSHARP_1
+
+   .. fault:: Sphinx-codelinks halucinates traceability objects in C#
+      :id: FAULT_CSHARP_2
+
 .. feature:: Python Language Support
    :id: FE_PY
 
