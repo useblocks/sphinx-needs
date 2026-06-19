@@ -83,46 +83,34 @@ Content
    changelog
 
 
-Sphinx-Needs Ecosystem
-----------------------
-In the last years, we have created additional information and extensions, which are based on or related to Sphinx-Needs:
+Other Sphinx extensions
+-----------------------
+In the last years, we have created several Sphinx extensions based on or related to Sphinx-Needs, to support the work of teams in (for example) the automotive industry:
 
-.. grid:: 2
+.. grid:: 3
     :gutter: 2
 
     .. grid-item-card::
-        :columns: 12 6 6 6
-        :link: https://sphinx-needs.readthedocs.io/en/latest/
-        :img-top: /_static/sphinx-needs-card.png
+        :columns: 12 6 4 4
         :class-card: border
 
-        Sphinx-Needs.com
-        ^^^^^^^^^^^^^^^^
-        The website presents the essential Sphinx-Needs functions and related extensions.
-
-        Also, it is a good entry point to understand the benefits and get an idea about the complete ecosystem of Sphinx-Needs.
-        +++
-
-        .. button-link:: https://sphinx-needs.readthedocs.io/en/latest/
-            :color: primary
-            :outline:
+        .. image:: /_static/sphinx-needs-card.png
+            :height: 120px
             :align: center
-            :expand:
-
-            :octicon:`globe;1em;sd-text-primary` Sphinx-Needs.com
-
-    .. grid-item-card::
-        :columns: 12 6 6 6
-        :link: https://sphinx-needs.readthedocs.io/en/latest/
-        :img-top: /_static/sphinx-needs-card.png
-        :class-card: border
 
         Sphinx-Needs
         ^^^^^^^^^^^^
-        Create, update, link, filter and present need objects like Requirements, Specifications, Bugs and many more.
-
-        The base extension provides all of its functionality under the MIT license for free.
+        Create, update, link, filter and present need objects like Requirements,
+        Specifications, Bugs and many more — the free, MIT-licensed base extension.
         +++
+
+        .. button-link:: https://useblocks.com/open-source/sphinx-needs
+            :color: primary
+            :outline:
+            :align: center
+            :expand:
+
+            :octicon:`globe;1em;sd-text-primary` Website @ useblocks.com
 
         .. button-link:: https://sphinx-needs.readthedocs.io/en/latest/
             :color: primary
@@ -133,40 +121,13 @@ In the last years, we have created additional information and extensions, which 
             :octicon:`book;1em;sd-text-primary` Technical Docs
 
     .. grid-item-card::
-        :columns: 12 6 6 6
-        :link: https://sphinx-test-reports.readthedocs.io/en/latest/
-        :img-top: /_static/sphinx-test-reports-logo.png
-        :class-card: border
-
-        Sphinx-Test-Reports
-        ^^^^^^^^^^^^^^^^^^^
-        Extension to import test results from XML files as **need** objects.
-
-        Created **need** objects can be filtered and linked to specification objects.
-        +++
-
-        .. button-link:: https://sphinx-test-reports.readthedocs.io/en/latest/
-            :color: primary
-            :outline:
-            :align: center
-            :expand:
-
-            :octicon:`book;1em;sd-text-primary` Technical Docs
-
-
-Other Sphinx extensions
-~~~~~~~~~~~~~~~~~~~~~~~
-During the use of Sphinx-Needs in popular companies’ internal projects,
-we have created other Sphinx extensions to support the work of teams in the automotive industry:
-
-.. grid:: 2
-    :gutter: 2
-
-    .. grid-item-card::
-        :columns: 12 6 6 6
+        :columns: 12 6 4 4
         :link: https://sphinx-collections.readthedocs.io/en/latest/
-        :img-top: /_static/sphinx_collections_logo.png
         :class-card: border
+
+        .. image:: /_static/sphinx_collections_logo.png
+            :height: 120px
+            :align: center
 
         Sphinx Collections
         ^^^^^^^^^^^^^^^^^^
@@ -184,10 +145,13 @@ we have created other Sphinx extensions to support the work of teams in the auto
             :octicon:`book;1em;sd-text-primary` Technical Docs
 
     .. grid-item-card::
-        :columns: 12 6 6 6
+        :columns: 12 6 4 4
         :link: https://sphinx-bazel.readthedocs.io/en/latest/
-        :img-top: /_static/sphinx_bazel_logo.png
         :class-card: border
+
+        .. image:: /_static/sphinx_bazel_logo.png
+            :height: 120px
+            :align: center
 
         Sphinx Bazel
         ^^^^^^^^^^^^
