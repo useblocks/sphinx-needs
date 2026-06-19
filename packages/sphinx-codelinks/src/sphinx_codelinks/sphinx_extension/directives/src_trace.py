@@ -6,8 +6,7 @@ from typing import Any, ClassVar, cast
 
 from docutils import nodes
 from docutils.parsers.rst import directives
-from packaging.version import Version
-import sphinx
+from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
 from sphinx_needs.api import add_need  # type: ignore[import-untyped]
 from sphinx_needs.utils import add_doc  # type: ignore[import-untyped]
@@ -22,14 +21,6 @@ from sphinx_codelinks.config import (
 from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
 from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 from sphinx_codelinks.sphinx_extension.debug import measure_time
-
-sphinx_version = sphinx.__version__
-
-
-if Version(sphinx_version) >= Version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging  # type: ignore[no-redef]
 
 logger = logging.getLogger(__name__)
 

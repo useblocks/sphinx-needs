@@ -1,5 +1,6 @@
 from collections.abc import Iterator  # only in python 3.11 afterwards
 import contextlib
+from inspect import signature
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
 import tomllib
@@ -34,6 +35,34 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
 
 logger = logging.getLogger(__name__)
+
+try:
+    from sphinx_needs.api import add_field as _add_field
+except ImportError:  # sphinx-needs < 8 has no add_field
+    _add_field = None
+
+# add_extra_option only accepts a schema on sphinx-needs >= 6 (where schema
+# validation exists); older versions take just (app, name). Probe the signature
+# instead of comparing versions, so no ``packaging`` dependency is needed.
+_USE_FIELD_SCHEMA = "schema" in signature(add_extra_option).parameters
+
+
+def _register_sn_field(app: Sphinx, name: str, description: str) -> None:
+    """Register a string field, preferring the modern ``add_field`` API.
+
+    ``add_field`` (sphinx-needs >= 8) registers a typed field; older versions
+    fall back to ``add_extra_option`` (only deprecated on >= 8). A typed field
+    defaults to ``None`` and is stripped before schema validation, whereas an
+    untyped field defaults to ``""`` and would trip a strict
+    ``unevaluatedProperties: false`` schema on needs that never set it.
+    """
+    schema = {"type": "string"}
+    if _add_field is not None:
+        _add_field(name, description, schema=schema)
+    elif _USE_FIELD_SCHEMA:
+        add_extra_option(app, name, schema=schema)
+    else:
+        add_extra_option(app, name)
 
 
 def _check_sphinx_needs_dependency(app: Sphinx) -> bool:
@@ -185,13 +214,17 @@ def set_config_to_sphinx(
 
 def update_sn_extra_options(app: Sphinx, config: _SphinxConfig) -> None:
     src_trace_sphinx_config = CodeLinksConfig.from_sphinx(config)
-    add_extra_option(app, "project")
-    add_extra_option(app, "file")
-    add_extra_option(app, "directory")
+    _register_sn_field(app, "project", "Source-tracing project")
+    _register_sn_field(app, "file", "Source file")
+    _register_sn_field(app, "directory", "Source directory")
     if src_trace_sphinx_config.set_local_url:
-        add_extra_option(app, src_trace_sphinx_config.local_url_field)
+        _register_sn_field(
+            app, src_trace_sphinx_config.local_url_field, "Local source URL"
+        )
     if src_trace_sphinx_config.set_remote_url:
-        add_extra_option(app, src_trace_sphinx_config.remote_url_field)
+        _register_sn_field(
+            app, src_trace_sphinx_config.remote_url_field, "Remote source URL"
+        )
 
 
 def update_sn_types(app: Sphinx, _config: _SphinxConfig) -> None:
