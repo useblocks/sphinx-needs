@@ -31,6 +31,7 @@ dependencies = [
   "tree-sitter-yaml>=0.7.1",
   "tree-sitter-rust>=0.23.0",
   "tree-sitter-go>=0.23.0",
+  "tree-sitter-json>=0.24.8",
 ]
 
 [build-system]

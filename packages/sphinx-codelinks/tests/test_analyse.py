@@ -6,6 +6,7 @@ import pytest
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse, _count
 from sphinx_codelinks.config import SourceAnalyseConfig
+from sphinx_codelinks.source_discover.config import CommentType
 from tests.conftest import (
     ONELINE_COMMENT_STYLE,
     ONELINE_COMMENT_STYLE_DEFAULT,
@@ -118,6 +119,21 @@ def test_analyse(src_dir, src_paths, tmp_path, snapshot_marks):
                 "num_oneline_warnings": 0,
             },
         ),
+        (
+            TEST_DIR / "data" / "jsonc",
+            [
+                TEST_DIR / "data" / "jsonc" / "demo.jsonc",
+            ],
+            ONELINE_COMMENT_STYLE_DEFAULT,
+            {
+                "num_src_files": 1,
+                "num_uncached_files": 1,
+                "num_cached_files": 0,
+                "num_comments": 4,
+                "num_oneline_warnings": 0,
+                "comment_type": CommentType.jsonc,
+            },
+        ),
     ],
 )
 def test_analyse_oneline_needs(
@@ -130,6 +146,7 @@ def test_analyse_oneline_needs(
         get_oneline_needs=True,
         get_rst=False,
         oneline_comment_style=oneline_comment_style,
+        comment_type=result.get("comment_type", CommentType.cpp),
     )
     src_analyse = SourceAnalyse(src_analyse_config)
     src_analyse.run()

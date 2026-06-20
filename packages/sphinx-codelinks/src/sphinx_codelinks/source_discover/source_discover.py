@@ -6,8 +6,26 @@ from ignore.overrides import OverrideBuilder
 
 from sphinx_codelinks.source_discover.config import (
     COMMENT_FILETYPE,
+    CommentType,
     SourceDiscoverConfig,
 )
+
+
+def _json_starts_with_comment(filepath: Path, sample_size: int = 256) -> bool:
+    """Return True if a ``.json`` file's first non-whitespace content is a comment.
+
+    Used to decide whether a ``.json`` file should be treated as JSONC. Per
+    https://jsonc.org/#filename-extension a ``.json`` file should only be treated as
+    JSONC when it opens with a comment (e.g. the mode line ``// -*- mode: jsonc -*-``).
+    """
+    try:
+        with filepath.open("rb") as f:
+            chunk = f.read(sample_size)
+    except OSError:
+        return False
+    # strip a leading UTF-8 BOM, then leading whitespace
+    text = chunk.removeprefix(b"\xef\xbb\xbf").lstrip()
+    return text.startswith((b"//", b"/*"))
 
 
 # @Source code file discovery with gitignore support, IMPL_DISC_1, impl, [FE_DISCOVERY, FE_CLI_DISCOVER]
@@ -74,6 +92,15 @@ class SourceDiscover:
             if not filepath.is_file():
                 continue
             if self.file_types and filepath.suffix.lower() not in self.file_types:
+                continue
+            # @JSONC .json files require a leading comment, IMPL_JSONC_3, impl, [FE_JSONC]
+            # A plain ``.json`` file is only treated as JSONC when it opens with a
+            # comment; otherwise it is skipped under the ``jsonc`` comment type.
+            if (
+                self.src_discover_config.comment_type == CommentType.jsonc
+                and filepath.suffix.lower() == ".json"
+                and not _json_starts_with_comment(filepath)
+            ):
                 continue
             # resolve() produces canonical absolute paths; follow_links only
             # controls whether the walker descends into symlinked directories

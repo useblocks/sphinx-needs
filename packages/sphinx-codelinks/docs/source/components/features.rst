@@ -207,6 +207,33 @@ Features
    .. fault:: Sphinx-codelinks halucinates traceability objects in Go
       :id: FAULT_GO_2
 
+.. feature:: JSONC Language Support
+   :id: FE_JSONC
+
+   Support for defining traceability objects in JSON with Comments (JSONC) files.
+
+   The JSONC parser leverages tree-sitter to identify and extract single-line (``//``)
+   and multi-line (``/* */``) comments from JSON data, associating each marker with the
+   surrounding data structure such as the key/value pair, array item, or object it
+   annotates.
+
+   ``.jsonc`` files are always parsed as JSONC. A ``.json`` file is only treated as JSONC
+   when it opens with a comment (e.g. the mode line ``// -*- mode: jsonc -*-``), following
+   the `JSONC filename convention <https://jsonc.org/#filename-extension>`_.
+
+   Key capabilities:
+
+   * Detection of inline and leading comments
+   * Association of comments with key/value pairs and array items
+   * Support for both ``//`` and ``/* */`` comment styles
+   * Opt-in handling of ``.json`` files via a leading comment
+
+   .. fault:: Traceability objects are not detected in JSONC
+      :id: FAULT_JSONC_1
+
+   .. fault:: Sphinx-codelinks hallucinates traceability objects in JSONC
+      :id: FAULT_JSONC_2
+
 .. feature:: Customized comment styles
    :id: FE_CMT
 

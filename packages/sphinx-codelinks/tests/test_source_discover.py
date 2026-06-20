@@ -49,7 +49,7 @@ FIXTURES_PATH = Path(__file__).parent / "data" / "discover_fixtures.json"
                 "comment_type": "java",
             },
             [
-                "Schema validation error in field 'comment_type': 'java' is not one of ['cpp', 'cs', 'go', 'python', 'rust', 'yaml']"
+                "Schema validation error in field 'comment_type': 'java' is not one of ['cpp', 'cs', 'go', 'jsonc', 'python', 'rust', 'yaml']"
             ],
         ),
         (
@@ -194,6 +194,18 @@ def test_comment_filetype(
     )
     source_discover = SourceDiscover(config)
     assert len(source_discover.source_paths) == nums_files
+
+
+def test_jsonc_discover_gate() -> None:
+    """`.jsonc` is always discovered; `.json` only when it opens with a comment."""
+    jsonc_dir = Path(__file__).parent / "data" / "jsonc"
+    config = SourceDiscoverConfig(
+        src_dir=jsonc_dir, comment_type="jsonc", gitignore=False
+    )
+    discovered = {p.name for p in SourceDiscover(config).source_paths}
+    assert "demo.jsonc" in discovered
+    assert "with_modeline.json" in discovered
+    assert "plain.json" not in discovered
 
 
 def test_follow_links(tmp_path: Path) -> None:

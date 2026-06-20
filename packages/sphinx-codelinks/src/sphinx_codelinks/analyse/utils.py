@@ -12,14 +12,22 @@ from sphinx_codelinks.config import UNIX_NEWLINE, CommentCategory
 from sphinx_codelinks.logger import get_logger
 from sphinx_codelinks.source_discover.config import CommentType
 
-# Language-specific node types for scope detection
+# Language-specific node types for scope detection.
+#
+# YAML and JSONC are intentionally absent. They are data formats, not code, so a
+# comment associates with the surrounding data structure (key/value pair, list
+# item, or scalar) rather than with an enclosing or following declaration. That
+# needs a different algorithm (inline same-row association first, scalar targets,
+# grammar-specific traversal), implemented in find_yaml_associated_structure and
+# find_jsonc_associated_structure and dispatched from find_associated_scope.
+# Those bespoke finders never read this table (only find_next_scope and
+# find_enclosing_scope do), so an entry here would be dead.
 SCOPE_NODE_TYPES = {
     # @Python Scope Node Types, IMPL_PY_2, impl, [FE_PY]
     CommentType.python: {"function_definition", "class_definition"},
     # @C and C++ Scope Node Types, IMPL_C_2, impl, [FE_C_SUPPORT, FE_CPP]
     CommentType.cpp: {"function_definition", "class_definition"},
     CommentType.cs: {"method_declaration", "class_declaration", "property_declaration"},
-    CommentType.yaml: {"block_mapping_pair", "block_sequence_item", "document"},
     # @Rust Scope Node Types, IMPL_RUST_2, impl, [FE_RUST];
     CommentType.rust: {
         "function_item",
@@ -65,6 +73,19 @@ RUST_QUERY = """
 GO_QUERY = """
     (comment) @comment
 """
+JSONC_QUERY = """(comment) @comment"""
+
+# JSON value node types that can be associated with a comment.
+JSON_STRUCTURE_TYPES = {
+    "pair",
+    "object",
+    "array",
+    "string",
+    "number",
+    "true",
+    "false",
+    "null",
+}
 
 
 def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
@@ -82,7 +103,7 @@ def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
         return False
 
 
-# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO]
+# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC]
 def init_tree_sitter(comment_type: CommentType) -> tuple[Parser, Query]:
     if comment_type == CommentType.cpp:
         import tree_sitter_cpp  # noqa: PLC0415
@@ -114,6 +135,11 @@ def init_tree_sitter(comment_type: CommentType) -> tuple[Parser, Query]:
 
         parsed_language = Language(tree_sitter_go.language())
         query = Query(parsed_language, GO_QUERY)
+    elif comment_type == CommentType.jsonc:
+        import tree_sitter_json  # noqa: PLC0415
+
+        parsed_language = Language(tree_sitter_json.language())
+        query = Query(parsed_language, JSONC_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)
@@ -213,8 +239,11 @@ def find_yaml_next_structure(node: TreeSitterNode) -> TreeSitterNode | None:
     return None
 
 
-def find_yaml_prev_sibling_on_same_row(node: TreeSitterNode) -> TreeSitterNode | None:
-    """Find a previous named sibling that is on the same row as the comment."""
+def find_prev_sibling_on_same_row(node: TreeSitterNode) -> TreeSitterNode | None:
+    """Find a previous named sibling that is on the same row as the comment.
+
+    Grammar-agnostic: used to detect inline comments in both YAML and JSONC.
+    """
     comment_row = node.start_point.row
     current = node.prev_named_sibling
 
@@ -235,7 +264,7 @@ def find_yaml_prev_sibling_on_same_row(node: TreeSitterNode) -> TreeSitterNode |
 def find_yaml_associated_structure(node: TreeSitterNode) -> TreeSitterNode | None:
     """Find the YAML structure (key-value pair, list item, etc.) associated with a comment."""
     # First, check if this is an inline comment by looking for a previous sibling on the same row
-    prev_sibling_same_row = find_yaml_prev_sibling_on_same_row(node)
+    prev_sibling_same_row = find_prev_sibling_on_same_row(node)
     if prev_sibling_same_row:
         return prev_sibling_same_row
 
@@ -254,6 +283,36 @@ def find_yaml_associated_structure(node: TreeSitterNode) -> TreeSitterNode | Non
     return None
 
 
+# @JSONC comment-to-structure association, IMPL_JSONC_2, impl, [FE_JSONC]
+def find_jsonc_associated_structure(node: TreeSitterNode) -> TreeSitterNode | None:
+    """Find the JSON structure (key/value pair, value, list item) for a comment.
+
+    JSON is data rather than code, so association follows the same intent as YAML:
+    an inline comment belongs to the value on its row, a leading comment belongs to
+    the following structure, otherwise it belongs to the enclosing structure.
+    """
+    # Inline comment: a value/pair on the same row, before the comment
+    prev_sibling_same_row = find_prev_sibling_on_same_row(node)
+    if prev_sibling_same_row:
+        return prev_sibling_same_row
+
+    # Leading comment: the next structure following the comment
+    current = node.next_named_sibling
+    while current:
+        if current.type in JSON_STRUCTURE_TYPES:
+            return current
+        current = current.next_named_sibling
+
+    # Otherwise: the enclosing structure
+    parent = node.parent
+    while parent:
+        if parent.type in {"pair", "object", "array"}:
+            return parent
+        parent = parent.parent
+
+    return None
+
+
 def find_associated_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
@@ -261,6 +320,10 @@ def find_associated_scope(
     if comment_type == CommentType.yaml:
         # YAML uses different structure association logic
         return find_yaml_associated_structure(node)
+
+    if comment_type == CommentType.jsonc:
+        # JSONC uses data-aware structure association logic
+        return find_jsonc_associated_structure(node)
 
     if node.type == CommentCategory.docstring:
         # Only for python's docstring
