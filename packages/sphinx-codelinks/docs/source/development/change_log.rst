@@ -3,16 +3,59 @@
 Changelog
 =========
 
-Upcoming
---------
+.. _`release:1.3.0`:
 
-- ⬆️ Support and test sphinx-needs v5-8
-- 📚 Documented C# language support in ``features.rst``
-- 🧪 Added Sphinx integration test for C# source files
+1.3.0
+-----
+
+:Released: 20.06.2026
+
+New and Improved
+................
+
 - ✨ Added Go parser for the ``analyse`` module.
 
   Need ID references and one-line need definitions can now be extracted from Go source files.
   The supported comment styles are ``//`` and ``/* */``.
+
+- ✨ Added JSONC language support for the ``analyse`` module.
+
+  Comments in JSONC files are now parsed for need ID references and one-line need definitions.
+  ``.json`` files are also checked when they begin with a comment (see jsonc.org).
+
+- 👌 Replaced ``gitignore-parser`` with ``ignore-python`` for source discovery.
+
+  This adds native nested ``.gitignore`` support, improves performance, and brings behavioral
+  parity with ubCode. A per-project ``follow_links`` configuration option was also added.
+
+- ⬆️ Support and test Sphinx-Needs v5-8.
+- ⬆️ Allow Sphinx 9.
+- 📚 Documented C# language support in ``features.rst``.
+- 🧪 Added a Sphinx integration test for C# source files.
+
+Fixes
+.....
+
+- 🐛 Register Sphinx-Needs fields with a typed schema.
+
+  The ``project``, ``file``, ``directory`` and URL fields are now registered with a typed
+  (string) schema, so they no longer trigger schema violations on needs that do not set them
+  when strict Sphinx-Needs schema validation is enabled.
+
+- 🐛 Do not mutate the ``rebuild='env'`` ``src_trace_projects`` configuration during builds.
+
+  Incremental Sphinx builds no longer re-read every document on each run.
+
+- 🐛 Route ``analyse`` logging through the active environment instead of installing a stderr
+  handler at import time.
+
+  Routine INFO progress no longer goes to stderr unconditionally, and importing the package no
+  longer forces a logging handler onto consumers.
+
+- 🐛 Validate field default ordering in the oneline configuration.
+
+  A required field defined after a field with a default is now reported as an error instead of
+  being silently skipped.
 
 .. _`release:1.2.0`:
 
