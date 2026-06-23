@@ -249,9 +249,24 @@ def process_needpie(
         if text_color:
             pie_kwargs["textprops"] = {"color": text_color}
 
-        wedges, _texts, autotexts = axes.pie(
-            sizes, normalize=sum(float(s) for s in sizes) >= 1, **pie_kwargs
-        )
+        total = sum(float(s) for s in sizes)
+        if total > 0:
+            wedges, _texts, autotexts = axes.pie(
+                sizes, normalize=total >= 1, **pie_kwargs
+            )
+        elif sizes:
+            # matplotlib >= 3.11 raises "All wedge sizes are zero" when every value
+            # is 0 (e.g. a pie over zero needs). Draw equal placeholder wedges so
+            # the pie and its legend still render, then hide them so no misleading
+            # proportions are shown.
+            wedges, _texts, autotexts = axes.pie(
+                [1.0] * len(sizes), normalize=True, **pie_kwargs
+            )
+            for wedge in wedges:
+                wedge.set_visible(False)
+        else:
+            # no data at all (a configuration error was already logged above)
+            wedges, _texts, autotexts = [], [], []
 
         ratio = 20  # we will remove all labels with size smaller 5%
         legend_enforced = False

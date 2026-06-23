@@ -24,6 +24,10 @@ Improvements
 Bug fixes
 .........
 
+- 🐛 Fix ``needpie`` raising ``All wedge sizes are zero`` on matplotlib 3.11+
+  when a pie has no data (e.g. zero matching needs); an empty pie with its
+  legend is now rendered instead (:issue:`1727`)
+
 - 🐛 Sort need link and backlink lists in ``needs.json`` and HTML output using
   natural, case-insensitive ordering (e.g. ``REQ_2`` < ``REQ_9`` < ``REQ_10``)
   and collapse duplicate entries, so build outputs are reproducible regardless
