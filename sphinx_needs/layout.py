@@ -83,7 +83,7 @@ def build_need_repr(
 def _generate_inline_parser() -> tuple[Values, Inliner]:
     doc_settings = OptionParser(components=(Parser,)).get_default_values()
     inline_parser = Inliner()
-    inline_parser.init_customizations(doc_settings)  # type: ignore
+    inline_parser.init_customizations(doc_settings)  # type: ignore[attr-defined]
     return doc_settings, inline_parser
 
 
@@ -359,7 +359,7 @@ class LayoutHandler:
         :param line: string to parse
         :return: nodes
         """
-        result, message = self.inline_parser.parse(  # type: ignore
+        result, message = self.inline_parser.parse(  # type: ignore[attr-defined]
             line, 0, self.doc_memo, self.dummy_doc
         )
         if message:
