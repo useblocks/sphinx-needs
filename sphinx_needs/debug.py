@@ -121,7 +121,7 @@ def measure_time(
             runtime_dict["avg"] = runtime_dict["overall"] / runtime_dict["amount"]
             return result
 
-        return wrapper  # type: ignore
+        return wrapper  # type: ignore[return-value]
 
     return inner
 

@@ -132,7 +132,7 @@ class GithubService(BaseService):
 
         auth: tuple[str, str] | None
         # TODO token can be None
-        auth = (self.username, self.token) if self.username else None  # type: ignore
+        auth = (self.username, self.token) if self.username else None  # type: ignore[assignment]
 
         resp = requests.get(url, params=params, auth=auth, headers=headers)
 
@@ -170,7 +170,7 @@ class GithubService(BaseService):
 
         if specific:
             return {"items": [resp.json()]}
-        return resp.json()  # type: ignore
+        return resp.json()  # type: ignore[no-any-return]
 
     def request_from_directive(
         self, directive: SphinxDirective, /

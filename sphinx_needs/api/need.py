@@ -930,7 +930,7 @@ def add_external_need(
         content=content,
         # TODO a title being None is not "type compatible" with other parts of the code base,
         # however, at present changing it to an empty string breaks some existing tests.
-        title=title,  # type: ignore
+        title=title,  # type: ignore[arg-type]
         status=status,
         tags=tags,
         constraints=constraints,
