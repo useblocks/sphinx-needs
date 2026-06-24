@@ -133,10 +133,6 @@ module = [
 ]
 ignore_missing_imports = true
 
-[[tool.mypy.overrides]]
-module = ["sphinx_needs.data"]
-disable_error_code = ["attr-defined", "no-any-return"]
-
 [tool.tox]
 # To use tox, see https://tox.readthedocs.io
 # $ pipx install tox
