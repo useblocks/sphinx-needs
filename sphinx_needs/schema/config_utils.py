@@ -165,11 +165,17 @@ def _recursive_validate(validate: ValidateSchemaType, path: tuple[str, ...]) -> 
             raise NeedsConfigException(
                 f"schema for '{path_str}' is not valid:\n{exc}"
             ) from exc
-    for key, value in validate.get("network", {}).items():
-        if "items" in value:
-            _recursive_validate(value["items"], (*path, "network", key, "items"))
-        if "contains" in value:
-            _recursive_validate(value["contains"], (*path, "network", key, "contains"))
+    for network_key in ("network", "network_back"):
+        network_map = cast(
+            "dict[str, ResolvedLinkSchemaType]", validate.get(network_key, {})
+        )
+        for key, value in network_map.items():
+            if "items" in value:
+                _recursive_validate(value["items"], (*path, network_key, key, "items"))
+            if "contains" in value:
+                _recursive_validate(
+                    value["contains"], (*path, network_key, key, "contains")
+                )
 
 
 def validate_severity(schemas: list[SchemasRootType]) -> None:
@@ -198,20 +204,21 @@ def check_network_links_against_links(
         validate_schemas: list[ValidateSchemaType] = [schema["validate"]]
         while validate_schemas:
             validate_schema = validate_schemas.pop()
-            if "network" in validate_schema:
-                for link_type, resolved_link_schema in validate_schema[
-                    "network"
-                ].items():
+            for network_key in ("network", "network_back"):
+                if network_key not in validate_schema:
+                    continue
+                network_map = validate_schema[network_key]
+                for link_type, resolved_link_schema in network_map.items():
                     if fields_schema.get_link_field(link_type) is None:
                         schema_name = get_schema_name(schema)
                         raise NeedsConfigException(
-                            f"Schema '{schema_name}' defines an unknown network link type"
+                            f"Schema '{schema_name}' defines an unknown {network_key} link type"
                             f" '{link_type}'."
                         )
                     if not isinstance(resolved_link_schema, dict):
                         schema_name = get_schema_name(schema)
                         raise NeedsConfigException(
-                            f"Schema '{schema_name}' defines a network link type '{link_type}' "
+                            f"Schema '{schema_name}' defines a {network_key} link type '{link_type}' "
                             "but its value a not dict."
                         )
                     nested_fields = ["contains", "items"]
@@ -220,7 +227,7 @@ def check_network_links_against_links(
                             if not isinstance(resolved_link_schema[field], dict):  # type: ignore[literal-required]
                                 schema_name = get_schema_name(schema)
                                 raise NeedsConfigException(
-                                    f"Schema '{schema_name}' defines a network link type '{link_type}' "
+                                    f"Schema '{schema_name}' defines a {network_key} link type '{link_type}' "
                                     f"but its '{field}' value is not a dict."
                                 )
                             validate_schemas.append(resolved_link_schema[field])  # type: ignore[literal-required]
@@ -338,18 +345,19 @@ def _process_validate_schema(
                 local, schema_name, fields_schema, f"{path}.local"
             )
 
-    # Handle 'network' (optional) - dict of link_name -> ResolvedLinkSchemaType
-    if "network" in validate:
-        network = validate["network"]
-        if isinstance(network, dict):
-            for link_name, resolved_link in network.items():
-                if isinstance(resolved_link, dict):
-                    _process_resolved_link(
-                        resolved_link,
-                        schema_name,
-                        fields_schema,
-                        f"{path}.network.{link_name}",
-                    )
+    # Handle 'network' / 'network_back' (optional) - dict of link_name -> ResolvedLinkSchemaType
+    for network_key in ("network", "network_back"):
+        if network_key in validate:
+            network = validate[network_key]
+            if isinstance(network, dict):
+                for link_name, resolved_link in network.items():
+                    if isinstance(resolved_link, dict):
+                        _process_resolved_link(
+                            resolved_link,
+                            schema_name,
+                            fields_schema,
+                            f"{path}.{network_key}.{link_name}",
+                        )
 
 
 def _process_resolved_link(

@@ -668,3 +668,163 @@ link_name_contains:
                   "properties":
                     "type":
                       "const": "spec"
+
+# --- network_back: validate incoming links instead of outgoing ones ---
+
+network_back_min_contains_ok:
+  # A req is "covered" when at least one test links to it (incoming 'links').
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. req:: a requirement
+        :id: REQ_1
+
+    .. test:: a test
+        :id: TEST_1
+        :links: REQ_1
+  schemas:
+    $defs:
+      type-req:
+        properties:
+          type:
+            const: req
+      type-test:
+        properties:
+          type:
+            const: test
+    schemas:
+      - id: "req<-[links]-test"
+        message: req must be covered by at least one test
+        select:
+          $ref: "#/$defs/type-req"
+        validate:
+          network_back:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/type-test"
+              minContains: 1
+
+network_back_min_contains_error:
+  # REQ_1 has no incoming test link -> too few incoming links.
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. req:: a requirement
+        :id: REQ_1
+  schemas:
+    $defs:
+      type-req:
+        properties:
+          type:
+            const: req
+      type-test:
+        properties:
+          type:
+            const: test
+    schemas:
+      - id: "req<-[links]-test"
+        message: req must be covered by at least one test
+        select:
+          $ref: "#/$defs/type-req"
+        validate:
+          network_back:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/type-test"
+              minContains: 1
+
+network_back_max_contains_error:
+  # More incoming test links than allowed -> too many incoming links.
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. req:: a requirement
+        :id: REQ_1
+
+    .. test:: test one
+        :id: TEST_1
+        :links: REQ_1
+
+    .. test:: test two
+        :id: TEST_2
+        :links: REQ_1
+  schemas:
+    $defs:
+      type-req:
+        properties:
+          type:
+            const: req
+      type-test:
+        properties:
+          type:
+            const: test
+    schemas:
+      - id: "req<-[links]-test-max-1"
+        select:
+          $ref: "#/$defs/type-req"
+        validate:
+          network_back:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/type-test"
+              minContains: 1
+              maxContains: 1
+
+network_back_items_error:
+  # 'items' requires ALL incoming links to be tests; an incoming impl link fails.
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. req:: a requirement
+        :id: REQ_1
+
+    .. test:: a test
+        :id: TEST_1
+        :links: REQ_1
+
+    .. impl:: an impl
+        :id: IMPL_1
+        :links: REQ_1
+  schemas:
+    $defs:
+      type-req:
+        properties:
+          type:
+            const: req
+      type-test:
+        properties:
+          type:
+            const: test
+    schemas:
+      - id: "req<-[links]-only-tests"
+        select:
+          $ref: "#/$defs/type-req"
+        validate:
+          network_back:
+            links:
+              items:
+                local:
+                  $ref: "#/$defs/type-test"

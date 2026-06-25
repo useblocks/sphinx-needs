@@ -538,6 +538,15 @@ class ValidateSchemaType(TypedDict):
 
     local: NotRequired[RefItemType | AllOfSchemaType | NeedFieldsSchemaType]
     network: NotRequired[dict[str, ResolvedLinkSchemaType]]
+    """Validate the need's outgoing links, keyed by link type."""
+    network_back: NotRequired[dict[str, ResolvedLinkSchemaType]]
+    """
+    Validate the need's incoming links, keyed by link type.
+
+    Mirrors ``network`` but traverses the needs that link *to* this need
+    via the given outgoing link type (the computed ``<link_type>_back`` field),
+    rather than the need's own outgoing links.
+    """
 
 
 class SchemasRootType(TypedDict):

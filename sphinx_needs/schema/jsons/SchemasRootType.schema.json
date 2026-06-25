@@ -456,6 +456,13 @@
           },
           "title": "Network",
           "type": "object"
+        },
+        "network_back": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ResolvedLinkSchemaType"
+          },
+          "title": "Network Back",
+          "type": "object"
         }
       },
       "title": "ValidateSchemaType",
