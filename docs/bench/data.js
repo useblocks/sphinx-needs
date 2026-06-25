@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782302676910,
+  "lastUpdate": 1782390431389,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18864,6 +18864,42 @@ window.BENCHMARK_DATA = {
             "value": 53.76668427300001,
             "unit": "s",
             "extra": "Commit: 68b059dac30863cc7c2f4c6b3f35ae47fb0609c9\nBranch: master\nTime: 2026-06-24T14:02:37+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "yana.hontyk@canonical.com",
+            "name": "Yana Hontyk",
+            "username": "yhontyk"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ddef10e9be3bb6a9c06e471214e84cb75633735f",
+          "message": "Track JSON files imported via needimport as dependencies (#1730)",
+          "timestamp": "2026-06-25T14:25:06+02:00",
+          "tree_id": "3bb7bb80047d1f884899d35838b269ae0abd11e0",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/ddef10e9be3bb6a9c06e471214e84cb75633735f"
+        },
+        "date": 1782390405194,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14976246900000234,
+            "unit": "s",
+            "extra": "Commit: ddef10e9be3bb6a9c06e471214e84cb75633735f\nBranch: master\nTime: 2026-06-25T14:25:06+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 61.503728328,
+            "unit": "s",
+            "extra": "Commit: ddef10e9be3bb6a9c06e471214e84cb75633735f\nBranch: master\nTime: 2026-06-25T14:25:06+02:00"
           }
         ]
       }
