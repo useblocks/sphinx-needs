@@ -56,6 +56,10 @@ The directive argument can be one of the following formats:
 
      .. needimport:: c:\absolute\path\to\needs.json
 
+.. note::
+
+   If you are rebuilding documentation incrementally (for example, when using ``sphinx-autobuild``), Sphinx  automatically detects changes to the *local* JSON files. However, with remote URLs, you must run a Sphinx build with the ``-E`` flag to rebuild the environment from scratch when the remote file changes.
+
 Options
 -------
 

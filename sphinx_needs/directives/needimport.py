@@ -117,6 +117,8 @@ class NeedimportDirective(SphinxDirective):
                 # TODO: Add exception handling
                 raise SphinxNeedsFileException(correct_need_import_path) from e
 
+            self.env.note_dependency(correct_need_import_path)
+
             errors = check_needs_data(needs_import_list)
             if errors.schema:
                 logger.info(

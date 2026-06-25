@@ -260,7 +260,7 @@ def get_message_needs(
     if tracked_receivers is None:
         tracked_receivers = []
     for link_type in link_types:
-        msg_needs += [all_needs_dict[x] for x in sender[link_type]]  # type: ignore
+        msg_needs += [all_needs_dict[x] for x in sender[link_type]]  # type: ignore[misc]
 
     messages: dict[str, dict[str, Any]] = {}
     p_string = ""
