@@ -510,3 +510,29 @@ def test_doc_needimport_noindex(test_app):
     assert Path(latex_path).exists()
     assert len(latex) > 0
     assert "AAA" in latex
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{
+        "buildername": "html",
+        "files": [
+            ("conf.py", 'extensions = ["sphinx_needs"]'),
+            ("needs.json", needs_json),  # reuse the existing needs_json string
+        ],
+        "no_plantuml": True,
+    }],
+    indirect=True,
+)
+def test_needimport_registers_dependency(test_app):
+    index_path = Path(test_app.srcdir, "index.rst")
+    index_path.write_text(".. needimport:: needs.json")
+
+    app = test_app
+    app.build()
+
+    assert app.statuscode == 0
+    
+    deps = app.env.dependencies.get("index", set())
+    assert any("needs.json" in str(dep) for dep in deps), (
+        f"needs.json not found in dependencies: {deps}"
+    )
