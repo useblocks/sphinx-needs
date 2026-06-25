@@ -25,8 +25,8 @@ Bug fixes
 .........
 
 - 🐛 Fix spurious ``needs.directive`` "Unknown option" warning for fields
-  declared via :confval:`needs_string_links` ``options`` that are not also
-  listed in :confval:`needs_fields`.  Such fields are now automatically
+  declared via :ref:`needs_string_links` ``options`` that are not also
+  listed in :ref:`needs_fields`.  Such fields are now automatically
   registered as nullable string extra fields during schema creation, so they
   are accepted by both the directive parser and ``create_need`` without any
   additional configuration.
