@@ -272,6 +272,7 @@ linkcheck_ignore = [
     r"http://sourceforge.net/projects/plantuml.*",
     r"http?://beta.plantuml.net/plantuml.jar",
     r"https?://useblocks.com/sphinx-needs/bench/index.html",
+    r"https?://open-needs\.org.*",  # domain no longer resolves
 ]
 
 linkcheck_request_headers = {
