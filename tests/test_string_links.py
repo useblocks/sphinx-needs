@@ -6,6 +6,7 @@ also registered in needs_fields / needs_extra_options) caused NeedDirective.run(
 to emit a spurious "Unknown option '<field>'" warning (needs.directive) because the
 match block had no case for string-link option names.
 """
+
 from pathlib import Path
 
 import pytest
