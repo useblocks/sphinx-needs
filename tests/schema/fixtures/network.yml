@@ -828,3 +828,102 @@ network_back_items_error:
               items:
                 local:
                   $ref: "#/$defs/type-test"
+
+network_back_nested_in_network_ok:
+  # Mixed/nested: an impl must link to a spec, and that spec must itself have at
+  # least one incoming test link (a forward hop followed by a back hop, sharing the
+  # recursion budget).
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. spec:: a spec
+        :id: SPEC_1
+
+    .. impl:: an impl
+        :id: IMPL_1
+        :links: SPEC_1
+
+    .. test:: a test
+        :id: TEST_1
+        :links: SPEC_1
+  schemas:
+    $defs:
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-test:
+        properties:
+          type:
+            const: test
+    schemas:
+      - id: "impl->spec<-test"
+        select:
+          properties:
+            type:
+              const: impl
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/type-spec"
+                network_back:
+                  links:
+                    contains:
+                      local:
+                        $ref: "#/$defs/type-test"
+                    minContains: 1
+              minContains: 1
+
+network_back_nested_in_network_error:
+  # Same as above, but SPEC_1 has no incoming test, so the nested network_back fails
+  # and the error surfaces on the impl via the forward link.
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. spec:: a spec
+        :id: SPEC_1
+
+    .. impl:: an impl
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs:
+      type-spec:
+        properties:
+          type:
+            const: spec
+      type-test:
+        properties:
+          type:
+            const: test
+    schemas:
+      - id: "impl->spec<-test"
+        select:
+          properties:
+            type:
+              const: impl
+        validate:
+          network:
+            links:
+              contains:
+                local:
+                  $ref: "#/$defs/type-spec"
+                network_back:
+                  links:
+                    contains:
+                      local:
+                        $ref: "#/$defs/type-test"
+                    minContains: 1
+              minContains: 1

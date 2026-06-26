@@ -4979,7 +4979,7 @@
   ERROR: Need 'IMPL_1' has schema violations:
     Severity:       violation
     Field:          type
-    Need path:      REQ_1 > links > IMPL_1
+    Need path:      REQ_1 > links (incoming) > IMPL_1
     Schema path:    req<-[links]-only-tests[0] > validate > network_back > links > items > local > properties > type > const
     Schema message: "test" was expected [sn_schema_violation.network_local_fail]
   
@@ -4995,7 +4995,7 @@
           ]),
           'details': dict({
             'field': 'type',
-            'need_path': 'REQ_1 > links > IMPL_1',
+            'need_path': 'REQ_1 > links (incoming) > IMPL_1',
             'schema_path': 'req<-[links]-only-tests[0] > validate > network_back > links > items > local > properties > type > const',
             'severity': 'violation',
             'validation_msg': '"test" was expected',
@@ -5012,7 +5012,7 @@
   '''
   ERROR: Need 'REQ_1' has schema violations:
     Severity:       violation
-    Need path:      REQ_1 > links
+    Need path:      REQ_1 > links (incoming)
     Schema path:    req<-[links]-test-max-1[0] > validate > network_back > links > contains
     Schema message: Too many valid incoming links of type 'links' (2 > 1) / ok: TEST_1, TEST_2 [sn_schema_violation.network_contains_too_many]
   
@@ -5027,7 +5027,7 @@
           'children': list([
           ]),
           'details': dict({
-            'need_path': 'REQ_1 > links',
+            'need_path': 'REQ_1 > links (incoming)',
             'schema_path': 'req<-[links]-test-max-1[0] > validate > network_back > links > contains',
             'severity': 'violation',
             'validation_msg': "Too many valid incoming links of type 'links' (2 > 1) / ok: TEST_1, TEST_2",
@@ -5044,7 +5044,7 @@
   '''
   ERROR: Need 'REQ_1' has schema violations:
     Severity:       violation
-    Need path:      REQ_1 > links
+    Need path:      REQ_1 > links (incoming)
     Schema path:    req<-[links]-test[0] > validate > network_back > links > contains
     Schema message: Too few valid incoming links of type 'links' (0 < 1) [sn_schema_violation.network_contains_too_few]
   
@@ -5059,7 +5059,7 @@
           'children': list([
           ]),
           'details': dict({
-            'need_path': 'REQ_1 > links',
+            'need_path': 'REQ_1 > links (incoming)',
             'schema_path': 'req<-[links]-test[0] > validate > network_back > links > contains',
             'severity': 'violation',
             'validation_msg': "Too few valid incoming links of type 'links' (0 < 1)",
@@ -5078,6 +5078,98 @@
 # name: test_schemas[schema/fixtures/network-network_back_min_contains_ok].1
   dict({
     'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_nested_in_network_error]
+  '''
+  ERROR: Need 'IMPL_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1 > links
+    Schema path:    impl->spec<-test[0] > validate > network > links > contains
+    Schema message: Too few valid links of type 'links' (0 < 1) / nok: SPEC_1
+  
+      Details for SPEC_1
+      Need path:      IMPL_1 > links > SPEC_1 > links (incoming)
+      Schema path:    impl->spec<-test[0] > validate > network > links > contains > validate > network_back > links > contains
+      Schema message: Too few valid incoming links of type 'links' (0 < 1) / nok: IMPL_1
+  
+        Details for IMPL_1
+        Field:          type
+        Need path:      IMPL_1 > links > SPEC_1 > links (incoming) > IMPL_1
+        Schema path:    impl->spec<-test[0] > validate > network > links > contains > validate > network_back > links > contains > local > properties > type > const
+        Schema message: "test" was expected [sn_schema_violation.network_contains_too_few]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_nested_in_network_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+            dict({
+              'need_id': 'SPEC_1',
+              'warning': dict({
+                'children': list([
+                ]),
+                'details': dict({
+                  'need_path': 'IMPL_1 > links > SPEC_1',
+                  'schema_path': 'impl->spec<-test[0] > validate > network > links > contains > local',
+                }),
+                'subtype': 'network_local_success',
+              }),
+            }),
+            dict({
+              'need_id': 'SPEC_1',
+              'warning': dict({
+                'children': list([
+                  dict({
+                    'need_id': 'IMPL_1',
+                    'warning': dict({
+                      'children': list([
+                      ]),
+                      'details': dict({
+                        'field': 'type',
+                        'need_path': 'IMPL_1 > links > SPEC_1 > links (incoming) > IMPL_1',
+                        'schema_path': 'impl->spec<-test[0] > validate > network > links > contains > validate > network_back > links > contains > local > properties > type > const',
+                        'validation_msg': '"test" was expected',
+                      }),
+                      'subtype': 'network_local_fail',
+                    }),
+                  }),
+                ]),
+                'details': dict({
+                  'need_path': 'IMPL_1 > links > SPEC_1 > links (incoming)',
+                  'schema_path': 'impl->spec<-test[0] > validate > network > links > contains > validate > network_back > links > contains',
+                  'validation_msg': "Too few valid incoming links of type 'links' (0 < 1) / nok: IMPL_1",
+                }),
+                'subtype': 'network_contains_too_few',
+              }),
+            }),
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links',
+            'schema_path': 'impl->spec<-test[0] > validate > network > links > contains',
+            'severity': 'violation',
+            'validation_msg': "Too few valid links of type 'links' (0 < 1) / nok: SPEC_1",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_contains_too_few',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_nested_in_network_ok]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-network_back_nested_in_network_ok].1
+  dict({
+    'validated_needs_count': 3,
     'validation_warnings': dict({
     }),
   })

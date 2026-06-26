@@ -307,6 +307,14 @@ def recurse_validate_schemas(
             # for outgoing links, traverse the link field directly.
             link_field = link_type if network_key == "network" else f"{link_type}_back"
             link_desc = "links" if network_key == "network" else "incoming links"
+            link_desc_singular = "link" if network_key == "network" else "incoming link"
+            # Label for this hop in ``need_path``. For incoming links the traversed need
+            # is the *source* of the link, so the hop is annotated to make the direction
+            # unambiguous (otherwise ``REQ_1 > links > IMPL_1`` reads as if REQ_1 links to
+            # IMPL_1, when in fact IMPL_1 links to REQ_1).
+            link_path_label = (
+                link_type if network_key == "network" else f"{link_type} (incoming)"
+            )
             items_targets_ok: list[str] = []
             """List of target need ids for items validation that passed."""
             items_targets_nok: list[str] = []
@@ -341,7 +349,7 @@ def recurse_validate_schemas(
                 except KeyError:
                     # target need does not exist (broken link)
                     rule = MessageRuleEnum.network_missing_target
-                    msg = f"Broken {link_desc[:-1]} of type '{link_type}' to '{target_need_id}'"
+                    msg = f"Broken {link_desc_singular} of type '{link_type}' to '{target_need_id}'"
                     # report it directly, it's not a minmax warning and the target need is ignored
                     # in the minmax checks
                     warnings.append(
@@ -356,14 +364,14 @@ def recurse_validate_schemas(
                                 network_key,
                                 link_type,
                             ],
-                            "need_path": [*need_path, link_type],
+                            "need_path": [*need_path, link_path_label],
                         }
                     )
                     if recurse_level == 0 and user_message is not None:
                         warnings[-1]["user_message"] = user_message
                     continue
 
-                need_path_link = [*need_path, link_type, target_need_id]
+                need_path_link = [*need_path, link_path_label, target_need_id]
                 # Handle items validation - all items must pass
                 if link_schema.get("items"):
                     new_success, new_warnings = recurse_validate_schemas(
@@ -435,7 +443,7 @@ def recurse_validate_schemas(
                     "validation_message": msg,
                     "need": need,
                     "schema_path": schema_path_items,
-                    "need_path": [*need_path, link_type],
+                    "need_path": [*need_path, link_path_label],
                     "children": items_nok_warnings,  # user is interested in these
                 }
                 if recurse_level == 0 and user_message is not None:
@@ -471,7 +479,7 @@ def recurse_validate_schemas(
                             "validation_message": msg,
                             "need": need,
                             "schema_path": schema_path_contains,
-                            "need_path": [*need_path, link_type],
+                            "need_path": [*need_path, link_path_label],
                             "children": contains_nok_warnings,  # user is interested in these
                         }
                     )
@@ -494,7 +502,7 @@ def recurse_validate_schemas(
                                 "validation_message": msg,
                                 "need": need,
                                 "schema_path": schema_path_contains,
-                                "need_path": [*need_path, link_type],
+                                "need_path": [*need_path, link_path_label],
                                 # children not passed, no interest in too much success
                             }
                         )
