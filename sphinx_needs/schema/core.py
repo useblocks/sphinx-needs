@@ -308,6 +308,9 @@ def recurse_validate_schemas(
             link_field = link_type if network_key == "network" else f"{link_type}_back"
             link_desc = "links" if network_key == "network" else "incoming links"
             link_desc_singular = "link" if network_key == "network" else "incoming link"
+            # Preposition relating the need to the traversed targets: outgoing links go
+            # "to" their targets, incoming links come "from" their sources.
+            link_prep = "to" if network_key == "network" else "from"
             # Label for this hop in ``need_path``. For incoming links the traversed need
             # is the *source* of the link, so the hop is annotated to make the direction
             # unambiguous (otherwise ``REQ_1 > links > IMPL_1`` reads as if REQ_1 links to
@@ -347,7 +350,9 @@ def recurse_validate_schemas(
                 try:
                     target_need = needs[target_need_id]
                 except KeyError:
-                    # target need does not exist (broken link)
+                    # Target need does not exist (broken link). Only reachable for the
+                    # outgoing direction: incoming-link sources come from resolved
+                    # ``<link_type>_back`` fields, so they always resolve to a need.
                     rule = MessageRuleEnum.network_missing_target
                     msg = f"Broken {link_desc_singular} of type '{link_type}' to '{target_need_id}'"
                     # report it directly, it's not a minmax warning and the target need is ignored
@@ -431,7 +436,7 @@ def recurse_validate_schemas(
                 rule = MessageRuleEnum.network_items_fail
                 msg = (
                     f"Items validation failed for {link_desc} of type '{link_type}' "
-                    f"to {', '.join(items_targets_nok)}"
+                    f"{link_prep} {', '.join(items_targets_nok)}"
                 )
                 if items_targets_ok:
                     msg += f" / ok: {', '.join(items_targets_ok)}"
