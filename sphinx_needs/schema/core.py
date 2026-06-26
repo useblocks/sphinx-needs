@@ -17,6 +17,7 @@ from sphinx_needs.schema.config import (
     MessageRuleEnum,
     NeedFieldsSchemaType,
     NeedFieldsSchemaWithVersionType,
+    ResolvedLinkSchemaType,
     SchemasRootType,
     SeverityEnum,
     ValidateSchemaType,
@@ -190,6 +191,8 @@ def validate_type_schema(
         local_network_schema["local"] = schema["validate"]["local"]
     if "network" in schema["validate"]:
         local_network_schema["network"] = schema["validate"]["network"]
+    if "network_back" in schema["validate"]:
+        local_network_schema["network_back"] = schema["validate"]["network_back"]
 
     validator_cache: dict[tuple[str, ...], SchemaValidator] = {}
 
@@ -291,8 +294,30 @@ def recurse_validate_schemas(
         warnings.extend(warnings_local)
         if any_not_of_rule(warnings_local, rule_success):
             success = False
-    if "network" in schema:
-        for link_type, link_schema in schema["network"].items():
+    if "network" in schema or "network_back" in schema:
+        # Flatten outgoing ("network") and incoming ("network_back") link rules
+        # into a single iteration so both directions share the same logic.
+        network_entries: list[tuple[str, str, ResolvedLinkSchemaType]] = [
+            (network_key, link_type, link_schema)
+            for network_key in ("network", "network_back")
+            for link_type, link_schema in schema.get(network_key, {}).items()  # type: ignore[attr-defined]
+        ]
+        for network_key, link_type, link_schema in network_entries:
+            # For incoming links, traverse the computed ``<link_type>_back`` field;
+            # for outgoing links, traverse the link field directly.
+            link_field = link_type if network_key == "network" else f"{link_type}_back"
+            link_desc = "links" if network_key == "network" else "incoming links"
+            link_desc_singular = "link" if network_key == "network" else "incoming link"
+            # Preposition relating the need to the traversed targets: outgoing links go
+            # "to" their targets, incoming links come "from" their sources.
+            link_prep = "to" if network_key == "network" else "from"
+            # Label for this hop in ``need_path``. For incoming links the traversed need
+            # is the *source* of the link, so the hop is annotated to make the direction
+            # unambiguous (otherwise ``REQ_1 > links > IMPL_1`` reads as if REQ_1 links to
+            # IMPL_1, when in fact IMPL_1 links to REQ_1).
+            link_path_label = (
+                link_type if network_key == "network" else f"{link_type} (incoming)"
+            )
             items_targets_ok: list[str] = []
             """List of target need ids for items validation that passed."""
             items_targets_nok: list[str] = []
@@ -308,26 +333,28 @@ def recurse_validate_schemas(
             schema_path_items = [
                 *schema_path,
                 "validate",
-                "network",
+                network_key,
                 link_type,
                 "items",
             ]
             schema_path_contains = [
                 *schema_path,
                 "validate",
-                "network",
+                network_key,
                 link_type,
                 "contains",
             ]
-            for target_need_id in need[link_type]:
+            for target_need_id in need[link_field]:
                 # collect all downstream warnings for broken links, items and contains
                 # evaluation happens later
                 try:
                     target_need = needs[target_need_id]
                 except KeyError:
-                    # target need does not exist (broken link)
+                    # Target need does not exist (broken link). Only reachable for the
+                    # outgoing direction: incoming-link sources come from resolved
+                    # ``<link_type>_back`` fields, so they always resolve to a need.
                     rule = MessageRuleEnum.network_missing_target
-                    msg = f"Broken link of type '{link_type}' to '{target_need_id}'"
+                    msg = f"Broken {link_desc_singular} of type '{link_type}' to '{target_need_id}'"
                     # report it directly, it's not a minmax warning and the target need is ignored
                     # in the minmax checks
                     warnings.append(
@@ -339,17 +366,17 @@ def recurse_validate_schemas(
                             "schema_path": [
                                 *schema_path,
                                 "validate",
-                                "network",
+                                network_key,
                                 link_type,
                             ],
-                            "need_path": [*need_path, link_type],
+                            "need_path": [*need_path, link_path_label],
                         }
                     )
                     if recurse_level == 0 and user_message is not None:
                         warnings[-1]["user_message"] = user_message
                     continue
 
-                need_path_link = [*need_path, link_type, target_need_id]
+                need_path_link = [*need_path, link_path_label, target_need_id]
                 # Handle items validation - all items must pass
                 if link_schema.get("items"):
                     new_success, new_warnings = recurse_validate_schemas(
@@ -408,8 +435,8 @@ def recurse_validate_schemas(
                 ]
                 rule = MessageRuleEnum.network_items_fail
                 msg = (
-                    f"Items validation failed for links of type '{link_type}' "
-                    f"to {', '.join(items_targets_nok)}"
+                    f"Items validation failed for {link_desc} of type '{link_type}' "
+                    f"{link_prep} {', '.join(items_targets_nok)}"
                 )
                 if items_targets_ok:
                     msg += f" / ok: {', '.join(items_targets_ok)}"
@@ -421,7 +448,7 @@ def recurse_validate_schemas(
                     "validation_message": msg,
                     "need": need,
                     "schema_path": schema_path_items,
-                    "need_path": [*need_path, link_type],
+                    "need_path": [*need_path, link_path_label],
                     "children": items_nok_warnings,  # user is interested in these
                 }
                 if recurse_level == 0 and user_message is not None:
@@ -440,7 +467,7 @@ def recurse_validate_schemas(
                     min_contains = link_schema["minContains"]
                 if contains_cnt_ok < min_contains:
                     rule = MessageRuleEnum.network_contains_too_few
-                    msg = f"Too few valid links of type '{link_type}' ({contains_cnt_ok} < {min_contains})"
+                    msg = f"Too few valid {link_desc} of type '{link_type}' ({contains_cnt_ok} < {min_contains})"
                     if contains_cnt_ok > 0:
                         msg += f" / ok: {', '.join(contains_targets_ok)}"
                     if contains_cnt_nok > 0:
@@ -457,7 +484,7 @@ def recurse_validate_schemas(
                             "validation_message": msg,
                             "need": need,
                             "schema_path": schema_path_contains,
-                            "need_path": [*need_path, link_type],
+                            "need_path": [*need_path, link_path_label],
                             "children": contains_nok_warnings,  # user is interested in these
                         }
                     )
@@ -468,7 +495,7 @@ def recurse_validate_schemas(
                     max_contains = link_schema["maxContains"]
                     if contains_cnt_ok > max_contains:
                         rule = MessageRuleEnum.network_contains_too_many
-                        msg = f"Too many valid links of type '{link_type}' ({contains_cnt_ok} > {max_contains})"
+                        msg = f"Too many valid {link_desc} of type '{link_type}' ({contains_cnt_ok} > {max_contains})"
                         if contains_cnt_ok > 0:
                             msg += f" / ok: {', '.join(contains_targets_ok)}"
                         if contains_cnt_nok > 0:
@@ -480,7 +507,7 @@ def recurse_validate_schemas(
                                 "validation_message": msg,
                                 "need": need,
                                 "schema_path": schema_path_contains,
-                                "need_path": [*need_path, link_type],
+                                "need_path": [*need_path, link_path_label],
                                 # children not passed, no interest in too much success
                             }
                         )

@@ -14,6 +14,13 @@ Unreleased
 Improvements
 ............
 
+- ✨ Add a ``network_back`` schema-validation key, the sibling of ``network``,
+  that validates a need's **incoming** links instead of its outgoing ones. It
+  reuses the same ``items`` / ``contains`` / ``minContains`` / ``maxContains``
+  structure and can be freely mixed and nested with ``network``, allowing
+  constraints like "every requirement must be covered by at least one test" to be
+  expressed once on the requirement (:pr:`1731`)
+
 - 🔧 Add a root ``context7.json`` configuration file so AI assistants using
   Context7 can discover the live Sphinx-Needs documentation and use the
   project-specific reference instead of stale training data (:issue:`1719`)

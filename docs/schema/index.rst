@@ -353,7 +353,8 @@ A ``schemas.json`` file (or ``needs_schema_definitions`` dict) has the following
          "select": { /* Selection criteria - which needs to validate */ },
          "validate": {
            "local": { /* Local validation rules */ },
-           "network": { /* Network validation rules */ }
+           "network": { /* Outgoing-link validation rules */ },
+           "network_back": { /* Incoming-link validation rules */ }
          }
        }
      ]
@@ -378,7 +379,9 @@ Each object within the ``schemas`` array can contain:
 - ``validate`` (required): Validation rules with two subsections:
 
   - ``local``: Validates properties of the need itself (see :ref:`local_validation`)
-  - ``network``: Validates relationships with linked needs (see :ref:`network_validation`)
+  - ``network``: Validates outgoing links to other needs (see :ref:`network_validation`)
+  - ``network_back``: Validates incoming links from other needs
+    (see :ref:`network_back_validation`)
 
 See :ref:`schema_components` for detailed documentation of each component.
 
@@ -556,6 +559,57 @@ This validates that:
 1. A safe implementation links to safe specifications
 #. Those specifications in turn link to safe features
 #. Both link levels have minimum count requirements
+
+.. _`network_back_validation`:
+
+Incoming link validation (``network_back``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, ``network`` validates a need's *outgoing* links.
+Sometimes a constraint is more naturally expressed from the target's point of view —
+for example *"every requirement must be covered by at least one test"*.
+
+The ``network_back`` key mirrors ``network`` but traverses the *incoming* links of a need:
+the needs that link **to** this need via the given outgoing link type
+(i.e. the computed ``<link_type>_back`` field).
+It accepts exactly the same ``items`` / ``contains`` / ``minContains`` / ``maxContains``
+structure (and may itself nest ``local``, ``network`` and ``network_back`` rules).
+
+The coverage example, expressed once on the requirement rather than on every test:
+
+.. code-block:: json
+
+   {
+     "id": "req-covered-by-test",
+     "select": {
+       "properties": { "type": { "const": "req" } }
+     },
+     "validate": {
+       "network_back": {
+         "links": {
+           "contains": {
+             "local": {
+               "properties": { "type": { "const": "test" } }
+             }
+           },
+           "minContains": 1
+         }
+       }
+     }
+   }
+
+Here ``links`` refers to the *outgoing* ``links`` link type of the source needs;
+the rule selects every ``req`` and requires at least one ``test`` to link to it.
+
+.. note::
+
+   - A back hop and a forward hop both consume one level of the shared recursion budget
+     (see the recursion limit below), so ``network`` and ``network_back`` can be freely mixed
+     and nested within the same 4-level chain.
+   - The ``select`` predicate always selects the *validated* need (the target of the incoming
+     links), never the sources.
+   - Broken-target errors (``network_missing_target``) only apply to outgoing links;
+     incoming links are resolved from existing needs and therefore always exist.
 
 .. important::
 
