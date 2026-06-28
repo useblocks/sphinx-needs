@@ -13,7 +13,7 @@ requires-python = ">= 3.12"
 dependencies = [
   "comment-parser>=1.2.4",
   "ignore-python>=0.3.3",
-  "typer>=0.16.0",
+  "typer>=0.16.0,<0.26.8",      # 0.26.8 removed rich_utils.STYLE_METAVAR, still imported by sphinxcontrib-typer (docs)
   "click < 8.2",                # click 8.2.* produces empty errors if no args are given
   "jsonschema",
   "sphinx>=7.4,<10",
