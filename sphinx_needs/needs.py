@@ -140,7 +140,6 @@ from sphinx_needs.schema.config_utils import (
 )
 from sphinx_needs.schema.process import process_schemas
 from sphinx_needs.services.github import GithubService
-from sphinx_needs.services.open_needs import OpenNeedsService
 from sphinx_needs.utils import node_match
 from sphinx_needs.variant_data import VariantDataError, resolve_variant_data
 from sphinx_needs.warnings import process_warnings
@@ -719,7 +718,6 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
     services.register("github-issues", GithubService, gh_type="issue")
     services.register("github-prs", GithubService, gh_type="pr")
     services.register("github-commits", GithubService, gh_type="commit")
-    services.register("open-needs", OpenNeedsService)
 
     # Register user defined services
     for name, service in needs_config.services.items():

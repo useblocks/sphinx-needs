@@ -16,7 +16,7 @@ sphinx_needs/          # Main source code
 ├── directives/        # Sphinx directives (need, needtable, needflow, etc.)
 ├── functions/         # Dynamic functions
 ├── roles/             # Sphinx roles
-├── services/          # External services (GitHub, OpenNeeds)
+├── services/          # External services (GitHub)
 ├── nodes/             # Docutils nodes
 └── ...
 
@@ -343,7 +343,7 @@ app.connect("env-before-read-docs", resolve_schemas_config). # Validates schema 
 app.connect("env-before-read-docs", load_external_needs)   # Load external need files
 ```
 
-The `prepare_env` function initializes `BuildEnvironment` variables, registers services (GitHub, OpenNeeds), registers dynamic functions, initializes extra fields and links, and optionally starts process timing.
+The `prepare_env` function initializes `BuildEnvironment` variables, registers services (GitHub), registers dynamic functions, initializes extra fields and links, and optionally starts process timing.
 
 #### Document Processing
 

@@ -835,7 +835,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -847,7 +846,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': None,
             'query': None,
             'scores': None,
@@ -869,7 +867,6 @@
             'type_name': 'Feat',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'FEAT_SAFE': dict({
@@ -913,7 +910,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -925,7 +921,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': None,
             'query': None,
             'scores': None,
@@ -947,7 +942,6 @@
             'type_name': 'Feat',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'FEAT_SAFE2': dict({
@@ -992,7 +986,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1004,7 +997,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': None,
             'query': None,
             'scores': None,
@@ -1026,7 +1018,6 @@
             'type_name': 'Feat',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'FEAt': dict({
@@ -1069,7 +1060,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1081,7 +1071,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': None,
             'query': None,
             'scores': None,
@@ -1103,7 +1092,6 @@
             'type_name': 'Feat',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'IMPL': dict({
@@ -1147,7 +1135,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1159,7 +1146,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': None,
             'query': None,
             'scores': None,
@@ -1181,7 +1167,6 @@
             'type_name': 'Implementation',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'IMPL_ARRAY_TEST': dict({
@@ -1228,7 +1213,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1240,7 +1224,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': None,
             'query': None,
             'scores': list([
@@ -1266,7 +1249,6 @@
             'type_name': 'Implementation',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'IMPL_SAFE': dict({
@@ -1310,7 +1292,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1322,7 +1303,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': None,
             'query': None,
             'scores': None,
@@ -1344,7 +1324,6 @@
             'type_name': 'Implementation',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'SPEC': dict({
@@ -1388,7 +1367,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1400,7 +1378,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': 1,
             'query': None,
             'scores': None,
@@ -1422,7 +1399,6 @@
             'type_name': 'Specification',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'SPEC_MISSING_APPROVAL': dict({
@@ -1465,7 +1441,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1477,7 +1452,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': 1,
             'query': None,
             'scores': None,
@@ -1499,7 +1473,6 @@
             'type_name': 'Specification',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'SPEC_SAFE': dict({
@@ -1544,7 +1517,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1556,7 +1528,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': 1,
             'query': None,
             'scores': None,
@@ -1578,7 +1549,6 @@
             'type_name': 'Specification',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'SPEC_SAFE_ADD_UNSAFE_FEAT': dict({
@@ -1623,7 +1593,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1635,7 +1604,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': 1,
             'query': None,
             'scores': None,
@@ -1657,7 +1625,6 @@
             'type_name': 'Specification',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'SPEC_SAFE_UNSAFE_FEAT': dict({
@@ -1702,7 +1669,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1714,7 +1680,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'priority': 1,
             'query': None,
             'scores': None,
@@ -1736,7 +1701,6 @@
             'type_name': 'Specification',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
         }),
@@ -2027,15 +1991,6 @@
               'field_type': 'core',
               'type': 'integer',
             }),
-            'params': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'parent_need': dict({
               'default': None,
               'description': 'Simply the first parent id.',
@@ -2106,15 +2061,6 @@
               'default': None,
               'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'prefix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -2271,15 +2217,6 @@
             'url': dict({
               'default': None,
               'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url_postfix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
               'field_type': 'extra',
               'type': list([
                 'string',
@@ -2702,15 +2639,6 @@
               'field_type': 'core',
               'type': 'integer',
             }),
-            'params': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'parent_need': dict({
               'default': None,
               'description': 'Simply the first parent id.',
@@ -2781,15 +2709,6 @@
               'default': None,
               'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'prefix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -2916,15 +2835,6 @@
             'url': dict({
               'default': None,
               'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url_postfix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
               'field_type': 'extra',
               'type': list([
                 'string',

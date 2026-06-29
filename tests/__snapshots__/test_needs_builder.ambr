@@ -41,7 +41,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -53,7 +52,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'TEST DOCUMENT NEEDS Builder',
             'sections': list([
@@ -72,7 +70,6 @@
             'type_name': 'Test Case',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'TC_NEG_001': dict({
@@ -111,7 +108,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -123,7 +119,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'TEST DOCUMENT NEEDS Builder',
             'sections': list([
@@ -142,7 +137,6 @@
             'type_name': 'Test Case',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'US_63252': dict({
@@ -181,7 +175,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -193,7 +186,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'TEST DOCUMENT NEEDS Builder',
             'sections': list([
@@ -213,7 +205,6 @@
             'type_name': 'User Story',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
         }),
@@ -465,15 +456,6 @@
               'field_type': 'core',
               'type': 'integer',
             }),
-            'params': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'parent_need': dict({
               'default': None,
               'description': 'Simply the first parent id.',
@@ -544,15 +526,6 @@
               'default': None,
               'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'prefix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -679,15 +652,6 @@
             'url': dict({
               'default': None,
               'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url_postfix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
               'field_type': 'extra',
               'type': list([
                 'string',
@@ -1177,15 +1141,6 @@
               'field_type': 'core',
               'type': 'integer',
             }),
-            'params': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'parent_need': dict({
               'default': None,
               'description': 'Simply the first parent id.',
@@ -1256,15 +1211,6 @@
               'default': None,
               'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'prefix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -1391,15 +1337,6 @@
             'url': dict({
               'default': None,
               'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url_postfix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
               'field_type': 'extra',
               'type': list([
                 'string',
@@ -1630,7 +1567,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1642,7 +1578,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'TEST DOCUMENT NEEDS Builder',
             'sections': list([
@@ -1661,7 +1596,6 @@
             'type_name': 'Test Case',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'TC_NEG_001': dict({
@@ -1700,7 +1634,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1712,7 +1645,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'TEST DOCUMENT NEEDS Builder',
             'sections': list([
@@ -1731,7 +1663,6 @@
             'type_name': 'Test Case',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'US_63252': dict({
@@ -1770,7 +1701,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1782,7 +1712,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'TEST DOCUMENT NEEDS Builder',
             'sections': list([
@@ -1802,7 +1731,6 @@
             'type_name': 'User Story',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
         }),
@@ -2054,15 +1982,6 @@
               'field_type': 'core',
               'type': 'integer',
             }),
-            'params': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'parent_need': dict({
               'default': None,
               'description': 'Simply the first parent id.',
@@ -2133,15 +2052,6 @@
               'default': None,
               'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'prefix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -2268,15 +2178,6 @@
             'url': dict({
               'default': None,
               'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url_postfix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
               'field_type': 'extra',
               'type': list([
                 'string',
