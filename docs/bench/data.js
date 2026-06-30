@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782852904964,
+  "lastUpdate": 1782853416770,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19080,6 +19080,42 @@ window.BENCHMARK_DATA = {
             "value": 60.46856421999999,
             "unit": "s",
             "extra": "Commit: 59b8b4ec4bdb451fbfcc093b2c7592bb713c8dfa\nBranch: master\nTime: 2026-06-30T22:53:02+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6506ecfaa12667629a142b2cf1b680dc713f96f2",
+          "message": "👌 Include JSON location in $ref resolution errors (#1736)\n\n## Summary\n\n`resolve_refs` errors (circular / invalid / missing `$ref`,\n`$ref`-with-siblings) gave **no** indication of *where* the faulty\nreference lived, so on a non-trivial `needs_schema_definitions` users\nhad to hunt through the whole config to find it. Other config errors\nalready carry a schema name via `get_schema_name` (`id[idx]`); the\nglobal `$ref`-resolution pass was the gap.\n\nThis threads the JSON path of the current item through the recursive\n`resolve_refs` walk and appends it to each error message.\n\n## Before → after\n\n```text\nCircular reference detected for 'type-impl'.\n→ Circular reference detected for 'type-impl' (at $defs.type-impl.allOf[0]).\n\nReference 'not-exist' not found in definitions.\n→ Reference 'not-exist' not found in definitions (at schemas[0].validate.local).\n\nInvalid $ref value: 123, expected a string.\n→ Invalid $ref value: 123, expected a string (at schemas[0].validate.local).\n\nInvalid $ref value: type-impl, expected to start with '#/$defs/'.\n→ Invalid $ref value: type-impl, expected to start with '#/$defs/' (at schemas[0].validate.local).\n```\n\nThe path is the JSON location from the root of\n`needs_schema_definitions` (`schemas[i]...` or `$defs.<name>...`),\ninherently encoding which schema (by index) the `$ref` sits in. When\nthere is no path (root), the suffix is omitted, so behaviour is\nunchanged for that degenerate case.\n\n## Notes\n\n- Snapshot-only test impact: the five `ref_*` config fixtures in\n`tests/schema/__snapshots__/test_schema.ambr` now include the location.",
+          "timestamp": "2026-06-30T23:01:36+02:00",
+          "tree_id": "f834ea85f45891735356105e9a94491751871065",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6506ecfaa12667629a142b2cf1b680dc713f96f2"
+        },
+        "date": 1782853389384,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15070677799999999,
+            "unit": "s",
+            "extra": "Commit: 6506ecfaa12667629a142b2cf1b680dc713f96f2\nBranch: master\nTime: 2026-06-30T23:01:36+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.88469028899999,
+            "unit": "s",
+            "extra": "Commit: 6506ecfaa12667629a142b2cf1b680dc713f96f2\nBranch: master\nTime: 2026-06-30T23:01:36+02:00"
           }
         ]
       }
