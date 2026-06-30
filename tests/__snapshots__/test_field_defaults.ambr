@@ -501,15 +501,6 @@
                 'null',
               ]),
             }),
-            'params': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'parent_need': dict({
               'default': None,
               'description': 'Simply the first parent id.',
@@ -580,15 +571,6 @@
               'default': None,
               'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'prefix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -724,15 +706,6 @@
             'url': dict({
               'default': None,
               'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url_postfix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
               'field_type': 'extra',
               'type': list([
                 'string',
@@ -891,11 +864,6 @@
         ),
       ),
     }),
-    'params': dict({
-      'default': None,
-      'predicate_defaults': tuple(
-      ),
-    }),
     'parent_needs': dict({
       'default': LinksLiteralValue(value=[]),
       'predicate_defaults': tuple(
@@ -907,11 +875,6 @@
       ),
     }),
     'pre_template': dict({
-      'default': None,
-      'predicate_defaults': tuple(
-      ),
-    }),
-    'prefix': dict({
       'default': None,
       'predicate_defaults': tuple(
       ),
@@ -975,11 +938,6 @@
       ),
     }),
     'url': dict({
-      'default': None,
-      'predicate_defaults': tuple(
-      ),
-    }),
-    'url_postfix': dict({
       'default': None,
       'predicate_defaults': tuple(
       ),

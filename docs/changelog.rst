@@ -11,6 +11,17 @@ Unreleased
 
 :Released: Unreleased
 
+Breaking changes
+................
+
+- ‼️ Remove the discontinued **Open-Needs** service (:pr:`1732`)
+
+  The Open-Needs project is discontinued and ``open-needs.org`` no longer
+  resolves, so the ``open-needs`` service has been removed. The
+  ``sphinx_needs.services.open_needs.OpenNeedsService`` import and the
+  ``params``, ``prefix`` and ``url_postfix`` extra fields that the service
+  registered are no longer available.
+
 Improvements
 ............
 

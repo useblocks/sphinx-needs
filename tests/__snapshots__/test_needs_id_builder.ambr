@@ -42,7 +42,6 @@
               'max_amount': None,
               'max_content_lines': None,
               'modifications': 0,
-              'params': None,
               'parent_need': None,
               'parent_needs': list([
               ]),
@@ -54,7 +53,6 @@
               'post_template': None,
               'pre_content': None,
               'pre_template': None,
-              'prefix': None,
               'query': None,
               'section_name': 'TEST DOCUMENT NEEDS Builder',
               'sections': list([
@@ -73,7 +71,6 @@
               'type_name': 'Test Case',
               'updated_at': None,
               'url': None,
-              'url_postfix': None,
               'user': None,
             }),
           }),
@@ -122,7 +119,6 @@
               'max_amount': None,
               'max_content_lines': None,
               'modifications': 0,
-              'params': None,
               'parent_need': None,
               'parent_needs': list([
               ]),
@@ -134,7 +130,6 @@
               'post_template': None,
               'pre_content': None,
               'pre_template': None,
-              'prefix': None,
               'query': None,
               'section_name': 'TEST DOCUMENT NEEDS Builder',
               'sections': list([
@@ -153,7 +148,6 @@
               'type_name': 'Test Case',
               'updated_at': None,
               'url': None,
-              'url_postfix': None,
               'user': None,
             }),
           }),
@@ -202,7 +196,6 @@
               'max_amount': None,
               'max_content_lines': None,
               'modifications': 0,
-              'params': None,
               'parent_need': None,
               'parent_needs': list([
               ]),
@@ -214,7 +207,6 @@
               'post_template': None,
               'pre_content': None,
               'pre_template': None,
-              'prefix': None,
               'query': None,
               'section_name': 'TEST DOCUMENT NEEDS Builder',
               'sections': list([
@@ -234,7 +226,6 @@
               'type_name': 'User Story',
               'updated_at': None,
               'url': None,
-              'url_postfix': None,
               'user': None,
             }),
           }),

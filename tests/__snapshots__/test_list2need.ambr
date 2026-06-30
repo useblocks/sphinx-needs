@@ -68,7 +68,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -82,7 +81,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'TEST DOCUMENT LIST2NEED',
       'sections': tuple(
@@ -108,7 +106,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-003': dict({
@@ -158,7 +155,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': 'NEED-002',
       'parent_needs': list([
         'NEED-002',
@@ -171,7 +167,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'TEST DOCUMENT LIST2NEED',
       'sections': tuple(
@@ -197,7 +192,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-1': dict({
@@ -248,7 +242,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -260,7 +253,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'LIST2NEED OPTIONS',
       'sections': tuple(
@@ -286,7 +278,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-2': dict({
@@ -337,7 +328,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -349,7 +339,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'LIST2NEED OPTIONS',
       'sections': tuple(
@@ -378,7 +367,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-3': dict({
@@ -432,7 +420,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -444,7 +431,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'LIST2NEED OPTIONS',
       'sections': tuple(
@@ -470,7 +456,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-4': dict({
@@ -521,7 +506,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -533,7 +517,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'LIST2NEED OPTIONS',
       'sections': tuple(
@@ -559,7 +542,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-A': dict({
@@ -610,7 +592,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -622,7 +603,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'LIST2NEED LINKS_DOWN',
       'sections': tuple(
@@ -648,7 +628,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-B': dict({
@@ -699,7 +678,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -711,7 +689,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'LIST2NEED LINKS_DOWN',
       'sections': tuple(
@@ -738,7 +715,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-C': dict({
@@ -788,7 +764,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -800,7 +775,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'LIST2NEED LINKS_DOWN',
       'sections': tuple(
@@ -827,7 +801,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-W': dict({
@@ -878,7 +851,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -890,7 +862,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'LIST2NEED GLOBAL TAGS',
       'sections': tuple(
@@ -919,7 +890,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-X': dict({
@@ -969,7 +939,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -981,7 +950,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'LIST2NEED GLOBAL TAGS',
       'sections': tuple(
@@ -1013,7 +981,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-Y': dict({
@@ -1066,7 +1033,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -1078,7 +1044,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'LIST2NEED GLOBAL TAGS',
       'sections': tuple(
@@ -1107,7 +1072,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'NEED-Z': dict({
@@ -1158,7 +1122,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -1170,7 +1133,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'LIST2NEED GLOBAL TAGS',
       'sections': tuple(
@@ -1199,7 +1161,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'SP_69FFD': dict({
@@ -1259,7 +1220,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': 'NEED-002',
       'parent_needs': list([
         'NEED-002',
@@ -1273,7 +1233,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'TEST DOCUMENT LIST2NEED',
       'sections': tuple(
@@ -1299,7 +1258,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'TC_EA5AF': dict({
@@ -1352,7 +1310,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': 'SP_69FFD',
       'parent_needs': list([
         'SP_69FFD',
@@ -1365,7 +1322,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'TEST DOCUMENT LIST2NEED',
       'sections': tuple(
@@ -1391,7 +1347,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
     'US_F1B63': dict({
@@ -1441,7 +1396,6 @@
       'max_amount': None,
       'max_content_lines': None,
       'modifications': 0,
-      'params': None,
       'parent_need': None,
       'parent_needs': list([
       ]),
@@ -1453,7 +1407,6 @@
       'post_template': None,
       'pre_content': None,
       'pre_template': None,
-      'prefix': None,
       'query': None,
       'section_name': 'TEST DOCUMENT LIST2NEED',
       'sections': tuple(
@@ -1479,7 +1432,6 @@
       'type_style': 'node',
       'updated_at': None,
       'url': None,
-      'url_postfix': None,
       'user': None,
     }),
   })

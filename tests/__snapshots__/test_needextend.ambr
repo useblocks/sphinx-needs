@@ -44,7 +44,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 2,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -56,7 +55,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
@@ -75,7 +73,6 @@
             'type_name': 'Requirement',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'REQ_A_1': dict({
@@ -115,7 +112,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -127,7 +123,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
@@ -146,7 +141,6 @@
             'type_name': 'Requirement',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'REQ_B_1': dict({
@@ -186,7 +180,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -198,7 +191,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
@@ -217,7 +209,6 @@
             'type_name': 'Requirement',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'REQ_C_1': dict({
@@ -256,7 +247,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -268,7 +258,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
@@ -287,7 +276,6 @@
             'type_name': 'Requirement',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'REQ_D_1': dict({
@@ -327,7 +315,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -339,7 +326,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
@@ -358,7 +344,6 @@
             'type_name': 'Requirement',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'REQ_E_1': dict({
@@ -397,7 +382,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 2,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -409,7 +393,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
@@ -430,7 +413,6 @@
             'type_name': 'Requirement',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'REQ_E_2': dict({
@@ -469,7 +451,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 2,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -481,7 +462,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
@@ -502,7 +482,6 @@
             'type_name': 'Requirement',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'REQ_E_3': dict({
@@ -541,7 +520,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 1,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -553,7 +531,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'needextend dynamic functions',
             'sections': list([
@@ -574,7 +551,6 @@
             'type_name': 'Requirement',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
         }),
@@ -826,15 +802,6 @@
               'field_type': 'core',
               'type': 'integer',
             }),
-            'params': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'parent_need': dict({
               'default': None,
               'description': 'Simply the first parent id.',
@@ -905,15 +872,6 @@
               'default': None,
               'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'prefix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -1046,15 +1004,6 @@
                 'null',
               ]),
             }),
-            'url_postfix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'user': dict({
               'default': None,
               'description': 'Added by service github-issues',
@@ -1119,7 +1068,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 1,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1131,7 +1079,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'Need extend',
             'sections': list([
@@ -1150,7 +1097,6 @@
             'type_name': 'User Story',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'extend_test_004': dict({
@@ -1195,7 +1141,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 0,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1207,7 +1152,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'Need extend',
             'sections': list([
@@ -1226,7 +1170,6 @@
             'type_name': 'User Story',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'extend_test_005': dict({
@@ -1269,7 +1212,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 1,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1281,7 +1223,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'Need extend',
             'sections': list([
@@ -1300,7 +1241,6 @@
             'type_name': 'User Story',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'extend_test_006': dict({
@@ -1341,7 +1281,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 2,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1353,7 +1292,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'Need extend',
             'sections': list([
@@ -1372,7 +1310,6 @@
             'type_name': 'User Story',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'extend_test_007': dict({
@@ -1414,7 +1351,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 1,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1426,7 +1362,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'Need extend',
             'sections': list([
@@ -1445,7 +1380,6 @@
             'type_name': 'User Story',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
           'extend_test_page': dict({
@@ -1484,7 +1418,6 @@
             'max_amount': None,
             'max_content_lines': None,
             'modifications': 2,
-            'params': None,
             'parent_need': None,
             'parent_needs': list([
             ]),
@@ -1496,7 +1429,6 @@
             'post_template': None,
             'pre_content': None,
             'pre_template': None,
-            'prefix': None,
             'query': None,
             'section_name': 'need objects',
             'sections': list([
@@ -1518,7 +1450,6 @@
             'type_name': 'User Story',
             'updated_at': None,
             'url': None,
-            'url_postfix': None,
             'user': None,
           }),
         }),
@@ -1770,15 +1701,6 @@
               'field_type': 'core',
               'type': 'integer',
             }),
-            'params': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
             'parent_need': dict({
               'default': None,
               'description': 'Simply the first parent id.',
@@ -1849,15 +1771,6 @@
               'default': None,
               'description': 'The template key, if the pre_content was created from a jinja template.',
               'field_type': 'core',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'prefix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
-              'field_type': 'extra',
               'type': list([
                 'string',
                 'null',
@@ -1984,15 +1897,6 @@
             'url': dict({
               'default': None,
               'description': 'Added by service github-issues',
-              'field_type': 'extra',
-              'type': list([
-                'string',
-                'null',
-              ]),
-            }),
-            'url_postfix': dict({
-              'default': None,
-              'description': 'Added by service open-needs',
               'field_type': 'extra',
               'type': list([
                 'string',

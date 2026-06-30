@@ -46,7 +46,6 @@
       "SP_TOO_001.1"
     ],
     "other_links_back": [],
-    "params": null,
     "parent_need": null,
     "parent_needs": [],
     "parent_needs_back": [],
@@ -55,7 +54,6 @@
     "post_template": null,
     "pre_content": null,
     "pre_template": null,
-    "prefix": null,
     "query": null,
     "section_name": "NEED PARTS",
     "sections": [
@@ -76,7 +74,6 @@
     "type_style": "node",
     "updated_at": null,
     "url": null,
-    "url_postfix": null,
     "user": null
   },
   "OTHER_2": {
@@ -123,7 +120,6 @@
     "more_links_back": [],
     "other_links": [],
     "other_links_back": [],
-    "params": null,
     "parent_need": null,
     "parent_needs": [],
     "parent_needs_back": [],
@@ -132,7 +128,6 @@
     "post_template": null,
     "pre_content": null,
     "pre_template": null,
-    "prefix": null,
     "query": null,
     "section_name": "NEED PARTS",
     "sections": [
@@ -153,7 +148,6 @@
     "type_style": "node",
     "updated_at": null,
     "url": null,
-    "url_postfix": null,
     "user": null
   },
   "SP_TOO_001": {
@@ -204,7 +198,6 @@
     "other_links_back": [
       "OTHER_1"
     ],
-    "params": null,
     "parent_need": null,
     "parent_needs": [],
     "parent_needs_back": [
@@ -243,7 +236,6 @@
     "post_template": null,
     "pre_content": null,
     "pre_template": null,
-    "prefix": null,
     "query": null,
     "section_name": "NEED PARTS",
     "sections": [
@@ -267,7 +259,6 @@
     "type_style": "node",
     "updated_at": null,
     "url": null,
-    "url_postfix": null,
     "user": null
   },
   "SP_TOO_001.1": {
@@ -314,7 +305,6 @@
     "other_links_back": [
       "OTHER_1"
     ],
-    "params": null,
     "parent_need": null,
     "parent_needs": [],
     "parent_needs_back": [],
@@ -323,7 +313,6 @@
     "post_template": null,
     "pre_content": null,
     "pre_template": null,
-    "prefix": null,
     "query": null,
     "section_name": "NEED PARTS",
     "sections": [
@@ -347,7 +336,6 @@
     "type_style": "node",
     "updated_at": null,
     "url": null,
-    "url_postfix": null,
     "user": null
   },
   "SP_TOO_001.2": {
@@ -392,7 +380,6 @@
     "more_links_back": [],
     "other_links": [],
     "other_links_back": [],
-    "params": null,
     "parent_need": null,
     "parent_needs": [],
     "parent_needs_back": [],
@@ -401,7 +388,6 @@
     "post_template": null,
     "pre_content": null,
     "pre_template": null,
-    "prefix": null,
     "query": null,
     "section_name": "NEED PARTS",
     "sections": [
@@ -425,7 +411,6 @@
     "type_style": "node",
     "updated_at": null,
     "url": null,
-    "url_postfix": null,
     "user": null
   },
   "SP_TOO_001.5DA": {
@@ -470,7 +455,6 @@
     "more_links_back": [],
     "other_links": [],
     "other_links_back": [],
-    "params": null,
     "parent_need": null,
     "parent_needs": [],
     "parent_needs_back": [],
@@ -479,7 +463,6 @@
     "post_template": null,
     "pre_content": null,
     "pre_template": null,
-    "prefix": null,
     "query": null,
     "section_name": "NEED PARTS",
     "sections": [
@@ -503,7 +486,6 @@
     "type_style": "node",
     "updated_at": null,
     "url": null,
-    "url_postfix": null,
     "user": null
   },
   "SP_TOO_001.7FF": {
@@ -548,7 +530,6 @@
     "more_links_back": [],
     "other_links": [],
     "other_links_back": [],
-    "params": null,
     "parent_need": null,
     "parent_needs": [],
     "parent_needs_back": [],
@@ -557,7 +538,6 @@
     "post_template": null,
     "pre_content": null,
     "pre_template": null,
-    "prefix": null,
     "query": null,
     "section_name": "NEED PARTS",
     "sections": [
@@ -581,7 +561,6 @@
     "type_style": "node",
     "updated_at": null,
     "url": null,
-    "url_postfix": null,
     "user": null
   },
   "SP_TOO_001.awesome_id": {
@@ -626,7 +605,6 @@
     "more_links_back": [],
     "other_links": [],
     "other_links_back": [],
-    "params": null,
     "parent_need": null,
     "parent_needs": [],
     "parent_needs_back": [],
@@ -635,7 +613,6 @@
     "post_template": null,
     "pre_content": null,
     "pre_template": null,
-    "prefix": null,
     "query": null,
     "section_name": "NEED PARTS",
     "sections": [
@@ -659,7 +636,6 @@
     "type_style": "node",
     "updated_at": null,
     "url": null,
-    "url_postfix": null,
     "user": null
   },
   "SP_TOO_001.multiline_id": {
@@ -704,7 +680,6 @@
     "more_links_back": [],
     "other_links": [],
     "other_links_back": [],
-    "params": null,
     "parent_need": null,
     "parent_needs": [],
     "parent_needs_back": [],
@@ -713,7 +688,6 @@
     "post_template": null,
     "pre_content": null,
     "pre_template": null,
-    "prefix": null,
     "query": null,
     "section_name": "NEED PARTS",
     "sections": [
@@ -737,7 +711,6 @@
     "type_style": "node",
     "updated_at": null,
     "url": null,
-    "url_postfix": null,
     "user": null
   },
   "TEST_2": {
@@ -782,7 +755,6 @@
     "more_links_back": [],
     "other_links": [],
     "other_links_back": [],
-    "params": null,
     "parent_need": "SP_TOO_001",
     "parent_needs": [
       "SP_TOO_001"
@@ -798,7 +770,6 @@
     "post_template": null,
     "pre_content": null,
     "pre_template": null,
-    "prefix": null,
     "query": null,
     "section_name": "NEED PARTS",
     "sections": [
@@ -819,7 +790,6 @@
     "type_style": "node",
     "updated_at": null,
     "url": null,
-    "url_postfix": null,
     "user": null
   },
   "TEST_2.nested_id": {
@@ -864,7 +834,6 @@
     "more_links_back": [],
     "other_links": [],
     "other_links_back": [],
-    "params": null,
     "parent_need": null,
     "parent_needs": [],
     "parent_needs_back": [],
@@ -873,7 +842,6 @@
     "post_template": null,
     "pre_content": null,
     "pre_template": null,
-    "prefix": null,
     "query": null,
     "section_name": "NEED PARTS",
     "sections": [
@@ -894,7 +862,6 @@
     "type_style": "node",
     "updated_at": null,
     "url": null,
-    "url_postfix": null,
     "user": null
   }
 }
