@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782847313211,
+  "lastUpdate": 1782852904964,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19044,6 +19044,42 @@ window.BENCHMARK_DATA = {
             "value": 60.253551204,
             "unit": "s",
             "extra": "Commit: cbf245cf548c2ce81d49ee7a9ab0ce5e6af48b79\nBranch: master\nTime: 2026-06-30T21:19:52+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "59b8b4ec4bdb451fbfcc093b2c7592bb713c8dfa",
+          "message": "🧪 Add multi-error network-local parity fixture (#1735)\n\nAdds `network_local_multi_error` — a network-context `local` whose\nlinked target (`SPEC_1`) violates **two** property `const` constraints\nat once (`asil` and `comment`).\n\n`_validate_need_local` collects all of `iter_errors` (one\n`OntologyWarning` per error), so both failures are reported. This pins\nthat behaviour as the parity oracle for the ubcode port, whose\nnetwork-local path currently surfaces only the first error (the\nremaining half of the #1461-style \"condense network local errors\"\ndivergence).\n\nNo behaviour change — fixture + snapshot only.",
+          "timestamp": "2026-06-30T22:53:02+02:00",
+          "tree_id": "7bf42ae1d8f019f74f9b19d602682fb4bc0612f1",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/59b8b4ec4bdb451fbfcc093b2c7592bb713c8dfa"
+        },
+        "date": 1782852878269,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15741165000000024,
+            "unit": "s",
+            "extra": "Commit: 59b8b4ec4bdb451fbfcc093b2c7592bb713c8dfa\nBranch: master\nTime: 2026-06-30T22:53:02+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.46856421999999,
+            "unit": "s",
+            "extra": "Commit: 59b8b4ec4bdb451fbfcc093b2c7592bb713c8dfa\nBranch: master\nTime: 2026-06-30T22:53:02+02:00"
           }
         ]
       }
