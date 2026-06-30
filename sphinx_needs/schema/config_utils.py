@@ -241,51 +241,68 @@ def resolve_refs(
     curr_item: Any,
     circular_refs_guard: set[str],
     is_defs: bool = False,
+    path: str = "",
 ) -> None:
-    """Recursively resolve and replace $ref entries in schemas."""
+    """Recursively resolve and replace $ref entries in schemas.
+
+    ``path`` accumulates the JSON location of ``curr_item`` from the root of
+    ``needs_schema_definitions`` (e.g. ``schemas[0].validate.network.links.contains.local``
+    or ``$defs.safe-impl.allOf[1]``) and is appended to ``$ref`` error messages so a
+    faulty reference can be located without hunting through the whole config.
+    """
+    loc = f" (at {path})" if path else ""
     if isinstance(curr_item, dict):
         if "$ref" in curr_item:
             if len(curr_item) == 1:
                 ref_raw = curr_item["$ref"]
                 if not isinstance(ref_raw, str):
                     raise NeedsConfigException(
-                        f"Invalid $ref value: {ref_raw}, expected a string."
+                        f"Invalid $ref value: {ref_raw}, expected a string{loc}."
                     )
                 if not ref_raw.startswith("#/$defs/"):
                     raise NeedsConfigException(
-                        f"Invalid $ref value: {ref_raw}, expected to start with '#/$defs/'."
+                        f"Invalid $ref value: {ref_raw}, expected to start with '#/$defs/'{loc}."
                     )
                 ref = ref_raw[8:]  # Remove '#/$defs/' prefix
                 if ref not in defs:
                     raise NeedsConfigException(
-                        f"Reference '{ref}' not found in definitions."
+                        f"Reference '{ref}' not found in definitions{loc}."
                     )
                 if ref in circular_refs_guard:
                     raise NeedsConfigException(
-                        f"Circular reference detected for '{ref}'."
+                        f"Circular reference detected for '{ref}'{loc}."
                     )
                 circular_refs_guard.add(ref)
                 curr_item.clear()
                 curr_item.update(defs[ref])
-                resolve_refs(defs, curr_item, circular_refs_guard)
+                resolve_refs(defs, curr_item, circular_refs_guard, path=path)
                 circular_refs_guard.remove(ref)
             else:
                 raise NeedsConfigException(
-                    f"Invalid $ref entry, expected a single $ref key: {curr_item}"
+                    f"Invalid $ref entry, expected a single $ref key: {curr_item}{loc}"
                 )
         for key, value in curr_item.items():
+            child_path = f"{path}.{key}" if path else str(key)
             if isinstance(value, dict):
                 if is_defs:
                     circular_refs_guard.add(key)
-                resolve_refs(defs, value, circular_refs_guard, is_defs=(key == "$defs"))
+                resolve_refs(
+                    defs,
+                    value,
+                    circular_refs_guard,
+                    is_defs=(key == "$defs"),
+                    path=child_path,
+                )
                 if is_defs:
                     circular_refs_guard.remove(key)
             if isinstance(value, list):
-                for item in value:
-                    resolve_refs(defs, item, circular_refs_guard)
+                for idx, item in enumerate(value):
+                    resolve_refs(
+                        defs, item, circular_refs_guard, path=f"{child_path}[{idx}]"
+                    )
     elif isinstance(curr_item, list):
-        for item in curr_item:
-            resolve_refs(defs, item, circular_refs_guard)
+        for idx, item in enumerate(curr_item):
+            resolve_refs(defs, item, circular_refs_guard, path=f"{path}[{idx}]")
 
 
 def populate_field_type(
