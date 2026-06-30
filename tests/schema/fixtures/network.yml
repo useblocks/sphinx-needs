@@ -627,6 +627,76 @@ max_network_levels:
                                                   type:
                                                     const: spec
 
+network_local_unevaluated_reduced_ok:
+  # The network-local schema uses ``unevaluatedProperties``, whose semantics are only
+  # meaningful after ``reduce_need()`` strips the fields the schema does not reference.
+  # SN applies that same reduction inside the network path (``_validate_need_local``)
+  # as for top-level local validation, so the linked spec — reduced to just
+  # ``{type: spec}`` — validates cleanly and ``items`` passes with no warning.
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          network:
+            links:
+              items:
+                local:
+                  properties:
+                    type: {const: spec}
+                  unevaluatedProperties: false
+
+network_local_unevaluated_reduced_error:
+  # Same as ``network_local_unevaluated_reduced_ok`` but the linked spec sets an extra
+  # field (``asil``) that the network-local schema does not reference. ``reduce_need()``
+  # keeps actively-set extra fields, so ``unevaluatedProperties: false`` still fails on
+  # it — confirming reduction matches the top-level path without masking real violations.
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    nullable = true
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+        :asil: QM
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          network:
+            links:
+              items:
+                local:
+                  properties:
+                    type: {const: spec}
+                  unevaluatedProperties: false
+
 link_name_contains:
   conf: |
     extensions = ["sphinx_needs"]
