@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782841694849,
+  "lastUpdate": 1782847313211,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19008,6 +19008,42 @@ window.BENCHMARK_DATA = {
             "value": 55.27409296100001,
             "unit": "s",
             "extra": "Commit: 7aeb1b50f56d1d3dd0a11977a33364292235361f\nBranch: master\nTime: 2026-06-30T19:46:05+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "cbf245cf548c2ce81d49ee7a9ab0ce5e6af48b79",
+          "message": "🧪 Add network-local reduction parity fixtures (#1734)\n\nAdds two schema-validation fixtures that pin sphinx-needs' behaviour for\na network-context `local` schema using `unevaluatedProperties`, to serve\nas the parity oracle for the ubcode port.\n\n- **`network_local_unevaluated_reduced_ok`** — a linked spec with no\nextra fields, reduced to just `{type: spec}`, validates cleanly.\nConfirms `_validate_need_local` applies `reduce_need` inside the network\npath exactly as for top-level local validation.\n- **`network_local_unevaluated_reduced_error`** — the linked spec sets\nan extra `asil` field the schema does not reference; reduction keeps\nactively-set extra fields, so `unevaluatedProperties: false` still\nfails. Confirms reduction does not mask real violations.\n\nNo behaviour change — fixtures + snapshots only.",
+          "timestamp": "2026-06-30T21:19:52+02:00",
+          "tree_id": "fa249e54d0ef3c9ce8eece83b20fa72f039222f9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/cbf245cf548c2ce81d49ee7a9ab0ce5e6af48b79"
+        },
+        "date": 1782847286569,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1525159869999939,
+            "unit": "s",
+            "extra": "Commit: cbf245cf548c2ce81d49ee7a9ab0ce5e6af48b79\nBranch: master\nTime: 2026-06-30T21:19:52+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.253551204,
+            "unit": "s",
+            "extra": "Commit: cbf245cf548c2ce81d49ee7a9ab0ce5e6af48b79\nBranch: master\nTime: 2026-06-30T21:19:52+02:00"
           }
         ]
       }
