@@ -1,0 +1,53 @@
+# One-line parser warnings. Each ``kind`` is a snake_case string under
+# ``warnings`` in the snapshot. The default config (4 fields: title, id, type,
+# links) is used unless a kind needs otherwise.
+
+too_many_fields:
+  # 5 fields supplied, config defines 4 -> too_many_fields.
+  lang: cpp
+  config: default
+  source: |
+    // @title, IMPL_1, impl, [REQ_1], extra
+    void f() {}
+
+too_few_fields:
+  # Only one field supplied; title + type are required (2) -> too_few_fields.
+  lang: cpp
+  config: default
+  source: |
+    // @only
+    void f() {}
+
+missing_square_brackets:
+  # links is type list[str] but given without ``[ ]`` -> missing_square_brackets.
+  lang: cpp
+  config: default
+  source: |
+    // @title, IMPL_1, impl, REQ_1
+    void f() {}
+
+not_start_or_end_with_square_brackets:
+  # links given as ``x[REQ]`` (does not start with ``[``)
+  # -> not_start_or_end_with_square_brackets.
+  lang: cpp
+  config: default
+  source: |
+    // @title, IMPL_1, impl, x[REQ]
+    void f() {}
+
+# NOTE: newline_in_field is intentionally absent.
+#
+# This warning fires only when ``oneline_parser`` receives a single string whose
+# extracted field span contains an interior newline (``is_newline_in_field``).
+# The analyse pipeline, however, runs the parser per *physical line*:
+# ``SourceAnalyse.extract_oneline_need`` does ``text.splitlines(keepends=True)``
+# and parses each element separately, so no string handed to the parser ever
+# contains an interior newline (only a trailing one, which the end_sequence
+# consumes). Block comments spanning lines therefore degrade to other warnings
+# (e.g. too_few_fields / missing_square_brackets) instead.
+#
+# A genuine block-comment attempt -- ``/* @title]] <newline> , IMPL */`` -- was
+# tried and produced too_few_fields on the first line, not newline_in_field.
+# The kind is reachable only via a direct ``oneline_parser`` unit call (see
+# tests/test_oneline_parser.py), which this declarative harness does not do, so
+# it cannot be triggered here without faking it. Left out deliberately.

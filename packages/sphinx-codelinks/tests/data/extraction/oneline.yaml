@@ -1,0 +1,42 @@
+default_oneliner_cpp:
+  lang: cpp
+  config: default
+  source: |
+    // @My Title, IMPL_1, impl, [REQ_1]
+    void f() {}
+
+default_oneliner_c:
+  lang: c
+  config: default
+  source: |
+    // @C Title, IMPL_C, impl, [REQ_C]
+    void g(void) {}
+
+default_oneliner_python:
+  lang: python
+  config: default
+  source: |
+    # @Py Title, IMPL_PY, impl, [REQ_PY]
+    def f():
+        pass
+
+default_oneliner_csharp:
+  lang: csharp
+  config: default
+  source: |
+    // @Cs Title, IMPL_CS, impl, [REQ_CS]
+    class C {}
+
+default_oneliner_rust:
+  lang: rust
+  config: default
+  source: |
+    // @Rs Title, IMPL_RS, impl, [REQ_RS]
+    fn f() {}
+
+default_oneliner_yaml:
+  lang: yaml
+  config: default
+  source: |
+    # @Yaml Title, IMPL_YAML, impl, [REQ_YAML]
+    key: value

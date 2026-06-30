@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_GO",
+      "title": "Go Title",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_GO"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

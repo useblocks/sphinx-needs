@@ -1,0 +1,70 @@
+# Escape-sequence handling in one-line fields.
+#
+# In YAML ``source: |`` block scalars backslashes are literal, so the comment
+# text below is byte-for-byte what the extractor sees. ESCAPE is ``\``.
+#
+# The bracketed multi-field config (``[[`` / ``]]`` with id, title, type, links,
+# status, priority) is used for the list-field and str-field backslash cases so
+# the escaped chars land in a ``list[str]`` field and a trailing ``str`` field.
+
+escaped_comma_in_list_item:
+  # ``[SPEC\,_1]`` -> a single link literally containing a comma: ``SPEC,_1``.
+  lang: cpp
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    field_split_char: ","
+    needs_fields:
+      - {name: id}
+      - {name: title}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+      - {name: status, default: open}
+      - {name: priority, default: low}
+  source: |
+    /* [[IMPL_11, title 11, impl, [SPEC\,_1], open]] */
+    void f() {}
+
+escaped_brackets_in_list_item:
+  # ``[\[SPEC\,_1\]]`` -> one link literally containing brackets: ``[SPEC,_1]``.
+  lang: cpp
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    field_split_char: ","
+    needs_fields:
+      - {name: id}
+      - {name: title}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+      - {name: status, default: open}
+      - {name: priority, default: low}
+  source: |
+    /* [[IMPL_12, title 12, impl, [\[SPEC\,_1\]], open]] */
+    void f() {}
+
+escaped_backslash_in_str_field:
+  # ``title\\ 13`` (escaped backslash in a str field) -> ``title\ 13``.
+  lang: cpp
+  config:
+    start_sequence: "[["
+    end_sequence: "]]"
+    field_split_char: ","
+    needs_fields:
+      - {name: id}
+      - {name: title}
+      - {name: type, default: impl}
+      - {name: links, type: "list[str]", default: []}
+      - {name: status, default: open}
+      - {name: priority, default: low}
+  source: |
+    /* [[IMPL_13, title\\ 13, impl, [\[SPEC\,_1\]], open]] */
+    void f() {}
+
+escaped_comma_in_str_field_default:
+  # Default config: an escaped comma in the ``title`` str field -> ``title, 3``.
+  lang: cpp
+  config: default
+  source: |
+    // @title\, 3, IMPL_3
+    void f() {}

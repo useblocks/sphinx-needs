@@ -101,3 +101,21 @@ def snapshot_marks(snapshot):
     Sanitize the reqif, to make the snapshots reproducible.
     """
     return snapshot.with_defaults(extension_class=AnchorsSnapshotExtension)
+
+
+class ExtractionSnapshotExtension(SingleFileSnapshotExtension):
+    """Single-file JSON snapshots for the declarative extraction tests."""
+
+    _write_mode = WriteMode.TEXT
+    file_extension = "json"
+
+    def serialize(self, data, **_kwargs):
+        if not isinstance(data, dict):
+            raise TypeError(f"Expected dict, got {type(data)}")
+        return json.dumps(data, indent=2)
+
+
+@pytest.fixture
+def snapshot_extraction(snapshot):
+    """Snapshot fixture for the normalized extraction output (one JSON per case)."""
+    return snapshot.with_defaults(extension_class=ExtractionSnapshotExtension)

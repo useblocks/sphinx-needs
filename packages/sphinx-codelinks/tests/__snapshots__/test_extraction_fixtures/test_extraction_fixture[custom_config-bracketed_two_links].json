@@ -1,0 +1,23 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_5",
+      "title": "title 5",
+      "type": "impl",
+      "links": {
+        "links": [
+          "SPEC_1",
+          "SPEC_2"
+        ]
+      },
+      "metadata": {
+        "status": "open",
+        "priority": "low"
+      },
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

@@ -1,0 +1,13 @@
+default_oneliner_go:
+  lang: go
+  config: default
+  source: |
+    // @Go Title, IMPL_GO, impl, [REQ_GO]
+    func f() {}
+
+default_oneliner_jsonc:
+  lang: jsonc
+  config: default
+  source: |
+    // @Jsonc Title, IMPL_JSONC, impl, [REQ_JSONC]
+    { "k": 1 }
