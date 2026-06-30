@@ -54,7 +54,7 @@ docs = [
   "myst-parser>=4.0.0",
   "sphinx-design>=0.6.1",
   "sphinx-code-tabs>=0.5.5",
-  "sphinxcontrib-typer>=0.5.1",
+  "sphinxcontrib-typer>=0.5.1,<0.9.1", # 0.9.1 imports typer.rich_utils.STYLE_TYPES, absent in the capped typer <0.26.8, breaking the docs build
   "sphinxcontrib-video>=0.4.1",
 ]
 mypy = [
