@@ -697,6 +697,44 @@ network_local_unevaluated_reduced_error:
                     type: {const: spec}
                   unevaluatedProperties: false
 
+network_local_multi_error:
+  # A network-context ``local`` whose target violates *two* property constraints at
+  # once. ``_validate_need_local`` lists ALL of ``iter_errors`` (one warning per error),
+  # so both the ``asil`` and ``comment`` const failures on SPEC_1 are reported — the
+  # oracle for ubcode, whose network-local path historically surfaced only the first.
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_from_toml = "ubproject.toml"
+    needs_schema_definitions_from_json = "schemas.json"
+  ubproject: |
+    [needs.fields.asil]
+    schema.type = "string"
+    [needs.fields.comment]
+    schema.type = "string"
+  rst: |
+    .. spec:: title
+        :id: SPEC_1
+        :asil: QM
+        :comment: nope
+
+    .. impl:: title
+        :id: IMPL_1
+        :links: SPEC_1
+  schemas:
+    $defs: []
+    schemas:
+      - select:
+          properties:
+            type: {const: "impl"}
+        validate:
+          network:
+            links:
+              items:
+                local:
+                  properties:
+                    asil: {const: "A"}
+                    comment: {const: "ok"}
+
 link_name_contains:
   conf: |
     extensions = ["sphinx_needs"]
