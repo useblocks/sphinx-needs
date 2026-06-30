@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782816126630,
+  "lastUpdate": 1782841694849,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18972,6 +18972,42 @@ window.BENCHMARK_DATA = {
             "value": 42.408723098999985,
             "unit": "s",
             "extra": "Commit: 41403ed0fe3cbef08a88184dfa19291ea126652f\nBranch: master\nTime: 2026-06-30T12:40:18+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7aeb1b50f56d1d3dd0a11977a33364292235361f",
+          "message": "🧪 Add schema config fixtures for invalid $ref value cases (#1733)",
+          "timestamp": "2026-06-30T19:46:05+02:00",
+          "tree_id": "00b4004db0d6ed193deae8111a116912e8aa95a5",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7aeb1b50f56d1d3dd0a11977a33364292235361f"
+        },
+        "date": 1782841661882,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14389171200001272,
+            "unit": "s",
+            "extra": "Commit: 7aeb1b50f56d1d3dd0a11977a33364292235361f\nBranch: master\nTime: 2026-06-30T19:46:05+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.27409296100001,
+            "unit": "s",
+            "extra": "Commit: 7aeb1b50f56d1d3dd0a11977a33364292235361f\nBranch: master\nTime: 2026-06-30T19:46:05+02:00"
           }
         ]
       }
