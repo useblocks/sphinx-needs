@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782482817175,
+  "lastUpdate": 1782816126630,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -18936,6 +18936,42 @@ window.BENCHMARK_DATA = {
             "value": 52.570807709,
             "unit": "s",
             "extra": "Commit: 3cb6d54494409cdb689ff8ec5dc085ee5cdf9015\nBranch: master\nTime: 2026-06-26T16:05:00+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "marco.heinemann@useblocks.com",
+            "name": "Marco Heinemann",
+            "username": "ubmarco"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "41403ed0fe3cbef08a88184dfa19291ea126652f",
+          "message": "‼️ Remove discontinued Open-Needs service (#1732)\n\n## What\n\nRemoves the discontinued **Open-Needs** service from Sphinx-Needs.\n\nThe `open-needs` service integrated with the Open-Needs server\n(`open-needs.org`). That project is discontinued and the domain no\nlonger resolves — which also made the `Docs-Linkcheck` CI job fail on\nevery PR (two dead links in the service docs, e.g. [this\nrun](https://github.com/useblocks/sphinx-needs/actions/runs/28380294816/job/84080765573?pr=1564)).\nRather than paper over the dead links with a `linkcheck_ignore` entry,\nthis removes the service outright.\n\n## Changes\n\n**Removed**\n- `sphinx_needs/services/open_needs.py` and\n`sphinx_needs/services/config/open_needs.py`\n- `docs/services/open_needs.rst` (and its `toctree` entry)\n- `tests/test_open_needs_service.py` and\n`tests/doc_test/doc_open_needs_service/`\n- the `open-needs` service registration (import + `services.register`)\nin `sphinx_needs/needs.py`\n\n**Regenerated**\n- the extra fields `params`, `prefix`, `url_postfix` were registered\n*only* by this service, so they are no longer added to the schema —\nsnapshot (`.ambr`) files and `docs/_static/tutorial_needs.json` are\nregenerated to match\n- `AGENTS.md` no longer lists OpenNeeds; changelog entry added under\n**Breaking changes**\n\n## Breaking change\n\n`from sphinx_needs.services.open_needs import OpenNeedsService` no\nlonger exists, and the `params` / `prefix` / `url_postfix` extra fields\nare no longer registered.\n\n## Verification\n\n- `pytest tests/` is green after snapshot regeneration; the only schema\ndiff is the removal of the three fields above.\n- `Docs-Linkcheck` passes — the dead `open-needs.org` links are gone, so\nno `linkcheck_ignore` workaround is needed.",
+          "timestamp": "2026-06-30T12:40:18+02:00",
+          "tree_id": "52269e98177b9ea48e4b557e6f19d81d34340bbe",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/41403ed0fe3cbef08a88184dfa19291ea126652f"
+        },
+        "date": 1782816100154,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.10731173499999613,
+            "unit": "s",
+            "extra": "Commit: 41403ed0fe3cbef08a88184dfa19291ea126652f\nBranch: master\nTime: 2026-06-30T12:40:18+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 42.408723098999985,
+            "unit": "s",
+            "extra": "Commit: 41403ed0fe3cbef08a88184dfa19291ea126652f\nBranch: master\nTime: 2026-06-30T12:40:18+02:00"
           }
         ]
       }
