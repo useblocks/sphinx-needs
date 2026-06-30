@@ -5090,6 +5090,48 @@
     }),
   })
 # ---
+# name: test_schemas[schema/fixtures/network-network_local_unevaluated_reduced_error]
+  '''
+  ERROR: Need 'SPEC_1' has schema violations:
+    Severity:       violation
+    Need path:      IMPL_1 > links > SPEC_1
+    Schema path:    [0] > validate > network > links > items > local > unevaluatedProperties
+    Schema message: Unevaluated properties are not allowed ('asil' was unexpected) [sn_schema_violation.network_local_fail]
+  
+  '''
+# ---
+# name: test_schemas[schema/fixtures/network-network_local_unevaluated_reduced_error].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+      'IMPL_1': list([
+        dict({
+          'children': list([
+          ]),
+          'details': dict({
+            'need_path': 'IMPL_1 > links > SPEC_1',
+            'schema_path': '[0] > validate > network > links > items > local > unevaluatedProperties',
+            'severity': 'violation',
+            'validation_msg': "Unevaluated properties are not allowed ('asil' was unexpected)",
+          }),
+          'log_lvl': 'error',
+          'subtype': 'network_local_fail',
+          'type': 'sn_schema_violation',
+        }),
+      ]),
+    }),
+  })
+# ---
+# name: test_schemas[schema/fixtures/network-network_local_unevaluated_reduced_ok]
+  ''
+# ---
+# name: test_schemas[schema/fixtures/network-network_local_unevaluated_reduced_ok].1
+  dict({
+    'validated_needs_count': 2,
+    'validation_warnings': dict({
+    }),
+  })
+# ---
 # name: test_schemas[schema/fixtures/network-no_error_empty_links]
   '''
   ERROR: Need 'IMPL_SAFE' has schema violations:
