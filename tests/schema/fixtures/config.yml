@@ -321,6 +321,42 @@ ref_recursive_error:
           local:
             $ref: "#/$defs/type-impl"
 
+ref_value_not_string:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_schema_definitions_from_json = "schemas.json"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs:
+      type-impl:
+        properties:
+          type:
+            const: impl
+    schemas:
+      - validate:
+          local:
+            $ref: 123
+
+ref_not_defs_prefix:
+  conf: |
+    extensions = ["sphinx_needs"]
+    needs_schema_definitions_from_json = "schemas.json"
+  rst: |
+    .. impl:: title
+        :id: IMPL_1
+  schemas:
+    $defs:
+      type-impl:
+        properties:
+          type:
+            const: impl
+    schemas:
+      - validate:
+          local:
+            $ref: "type-impl"
+
 extra_option_unknown_keys:
   conf: |
     extensions = ["sphinx_needs"]
