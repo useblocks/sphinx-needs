@@ -203,3 +203,36 @@ Executes a :ref:`need dynamic function <dynamic_functions>` and uses the return 
 .. need-example::
 
     A nice :ndf:`echo("first test")` for dynamic functions.
+
+.. _role_variant:
+
+variant
+-------
+.. versionadded:: 8.2.0
+
+Resolves a reference into :ref:`needs_variant_data` and is *immediately*
+replaced during parsing by a text node holding the looked-up value.
+
+The role content is a dotted path into the configured variant data, rooted at
+``var``. The ``var.`` prefix may be given explicitly or omitted, so
+``:variant:`build.opt_level``` and ``:variant:`var.build.opt_level``` are
+equivalent.
+
+Given the configuration:
+
+.. code-block:: python
+
+    needs_variant_data = {
+        "platform": "arm",
+        "build": {"opt_level": 2},
+    }
+
+the reference ``:variant:`platform``` resolves to ``arm`` and
+``:variant:`build.opt_level``` resolves to ``2``. List values are joined with
+``, ``.
+
+The lookup is a constrained ``var.*`` path resolution (the same as used by
+:ref:`needs_variant_data` field references), not an arbitrary expression: no
+operators, function calls, or item access are allowed. An invalid reference,
+an unknown key, or a path that resolves to a mapping emits a ``needs.variant``
+warning and produces empty text.
