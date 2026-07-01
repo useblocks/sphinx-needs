@@ -25,9 +25,9 @@ Breaking changes
 Improvements
 ............
 
-- ✨ Add a :ref:`variant role <role_variant>`, resolving ``:variant:`a.b``` at
-  parse time to a text node holding the value looked up from
-  :ref:`needs_variant_data`
+- ✨ Add a :ref:`variant role <role_variant>` that resolves a dotted
+  variant-data path inline, at parse time, to a text node holding the value
+  looked up from :ref:`needs_variant_data`
 
 - ✨ Add a ``network_back`` schema-validation key, the sibling of ``network``,
   that validates a need's **incoming** links instead of its outgoing ones. It

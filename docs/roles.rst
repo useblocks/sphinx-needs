@@ -225,9 +225,15 @@ Given the configuration:
         "build": {"opt_level": 2},
     }
 
-the reference ``:variant:`platform``` resolves to ``arm`` and
-``:variant:`build.opt_level``` resolves to ``2``. List values are joined with
-``, ``.
+then in a document:
+
+.. code-block:: rst
+
+    Platform: :variant:`platform`
+    Optimisation level: :variant:`build.opt_level`
+
+resolves to ``arm`` and ``2`` respectively. List values are joined into a
+comma-separated string.
 
 The lookup is a constrained ``var.*`` path resolution (the same as used by
 :ref:`needs_variant_data` field references), not an arbitrary expression: no
