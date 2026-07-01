@@ -17,4 +17,5 @@ needs_variant_data = {
         "opt_level": 2,
     },
     "archs": ["arm", "x86"],
+    "ratio": 1.5,
 }

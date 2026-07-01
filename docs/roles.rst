@@ -232,8 +232,31 @@ then in a document:
     Platform: :variant:`platform`
     Optimisation level: :variant:`build.opt_level`
 
-resolves to ``arm`` and ``2`` respectively. List values are joined into a
-comma-separated string.
+resolves to ``arm`` and ``2`` respectively.
+
+Type handling
+~~~~~~~~~~~~~
+
+The role always produces a single text node. The resolved value is serialised
+to text as follows:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Variant data value
+     - Rendered text
+   * - String (``"arm"``)
+     - The string itself (``arm``).
+   * - Integer / float (``2``, ``1.5``)
+     - Its ``str()`` form (``2``, ``1.5``).
+   * - Boolean (``True``)
+     - ``True`` / ``False`` (Python's ``str(bool)``).
+   * - Array (``["arm", "x86"]``)
+     - The elements joined into a comma-separated string (``arm, x86``).
+   * - Mapping (``{...}``)
+     - Not allowed — emits a warning and renders empty text (reference a leaf
+       value instead).
 
 The lookup is a constrained ``var.*`` path resolution (the same as used by
 :ref:`needs_variant_data` field references), not an arbitrary expression: no

@@ -47,6 +47,8 @@ def test_variant_role_html(test_app):
     assert "Nested bool: True" in index_html
     # List values are comma-joined.
     assert "List value: arm, x86" in index_html
+    # Floats are stringified.
+    assert "Float value: 1.5" in index_html
     # A mapping reference produces empty text.
     assert (
         "Mapping reference: </p>" in index_html

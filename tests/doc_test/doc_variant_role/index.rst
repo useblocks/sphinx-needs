@@ -12,3 +12,5 @@ List value: :variant:`archs`
 Invalid reference: :variant:`nonexistent`
 
 Mapping reference: :variant:`build`
+
+Float value: :variant:`ratio`
