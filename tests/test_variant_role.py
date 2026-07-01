@@ -30,7 +30,7 @@ def test_variant_role_html(test_app):
 
     # Only the invalid reference should warn.
     assert warnings == [
-        "srcdir/index.rst:14: WARNING: 'variant' role could not resolve "
+        "srcdir/index.rst:12: WARNING: 'variant' role could not resolve "
         "'nonexistent': Unknown variant data key: 'var.nonexistent' [needs.variant]",
     ]
 
@@ -42,7 +42,5 @@ def test_variant_role_html(test_app):
     assert "Nested int: 2" in index_html
     # Nested bool is stringified.
     assert "Nested bool: True" in index_html
-    # Explicit ``var.`` prefix works too.
-    assert "Explicit prefix: arm" in index_html
     # List values are comma-joined.
     assert "List value: arm, x86" in index_html

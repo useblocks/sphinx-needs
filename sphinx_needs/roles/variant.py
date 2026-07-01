@@ -24,23 +24,19 @@ class VariantRole(SphinxRole):
     """Role that resolves a ``var.*`` reference to its value.
 
     The role text is a dotted path into :confval:`needs_variant_data`,
-    rooted (implicitly or explicitly) at ``var``. For example, given::
+    rooted at ``var`` (the ``var`` root is implicit). For example, given::
 
         needs_variant_data = {"build": {"opt_level": 2}}
 
-    both ``:variant:`build.opt_level``` and ``:variant:`var.build.opt_level```
-    resolve immediately to the text ``2``.
+    ``:variant:`build.opt_level``` resolves immediately to the text ``2``.
     """
 
     def run(self) -> tuple[list[nodes.Node], list[nodes.system_message]]:
         add_doc(self.env, self.env.docname)
 
         expression = self.text.strip()
-        # The lookup is always rooted at ``var``; allow the prefix to be omitted.
-        if expression == "var" or expression.startswith("var."):
-            lookup_expression = expression
-        else:
-            lookup_expression = f"var.{expression}"
+        # The lookup is always rooted at ``var``.
+        lookup_expression = f"var.{expression}"
 
         config = NeedsSphinxConfig(self.env.config)
         variant_data = config.variant_data

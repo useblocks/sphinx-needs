@@ -214,9 +214,7 @@ Resolves a reference into :ref:`needs_variant_data` and is *immediately*
 replaced during parsing by a text node holding the looked-up value.
 
 The role content is a dotted path into the configured variant data, rooted at
-``var``. The ``var.`` prefix may be given explicitly or omitted, so
-``:variant:`build.opt_level``` and ``:variant:`var.build.opt_level``` are
-equivalent.
+``var`` (the ``var`` root is implicit and must not be written).
 
 Given the configuration:
 
