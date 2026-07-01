@@ -546,7 +546,7 @@ class LayoutHandler:
                     data_node += ref_item
 
                 if (
-                    name in needs_string_links_option and index + 1 < len(data)
+                    name in needs_string_links_option and index + 1 < len(data_list)
                 ) or index + 1 < len([data]):
                     data_node += nodes.emphasis("; ", "; ")
 
