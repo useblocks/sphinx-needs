@@ -637,9 +637,10 @@ class NeedsSphinxConfig:
     )
     """Default style for the needtable."""
     role_need_template: str = field(
-        default="{title} ({id})", metadata={"rebuild": "html", "types": (str,)}
+        default="{{ title }} ({{ id }})",
+        metadata={"rebuild": "html", "types": (str,)},
     )
-    """Template for the need role output."""
+    """Jinja template for the need role output."""
     role_need_max_title_length: int = field(
         default=30, metadata={"rebuild": "html", "types": (int,)}
     )

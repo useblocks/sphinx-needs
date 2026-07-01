@@ -1265,6 +1265,12 @@ needs_role_need_template
 
 .. versionadded:: 0.1.48
 
+.. versionchanged:: 8.2.0
+
+   The template is now rendered with `Jinja <https://jinja.palletsprojects.com/>`_
+   instead of Python's ``str.format``.  Replace ``{field}`` placeholders with
+   ``{{ field }}``.
+
 Provides a way of changing the text representation of a referenced need.
 
 If you use the role :ref:`role_need`, **Sphinx-Needs** will create a text representation of the referenced need.
@@ -1272,7 +1278,7 @@ By default a referenced need is described by the following string:
 
 .. code-block:: jinja
 
-   {title} ({id})
+   {{ title }} ({{ id }})
 
 By using ``needs_role_need_template`` this representation can be easily adjusted to own requirements.
 
@@ -1280,16 +1286,18 @@ Here are some ideas, how it could be used inside the **conf.py** file:
 
 .. code-block:: python
 
-   needs_role_need_template = "[{id}]: {title}"
-   needs_role_need_template = "-{id}-"
-   needs_role_need_template = "{type}: {title} ({status})"
-   needs_role_need_template = "{title} ({tags})"
-   needs_role_need_template = "{title:*^20s} - {content:.30}"
-   needs_role_need_template = "[{id}] {title} ({status}) {type_name}/{type} - {tags} - {links} - {links_back} - {content}"
+   needs_role_need_template = "[{{ id }}]: {{ title }}"
+   needs_role_need_template = "-{{ id }}-"
+   needs_role_need_template = "{{ type }}: {{ title }} ({{ status }})"
+   needs_role_need_template = "{{ title }} ({{ tags }})"
+   needs_role_need_template = "[{{ id }}] {{ title }} ({{ status }}) {{ type_name }}/{{ type }} - {{ tags }} - {{ links }} - {{ links_back }} - {{ content }}"
+   needs_role_need_template = "{% if type == 'spec' %}[SPEC] {{ title }}{% else %}[{{ type | upper }}] {{ title }}{% endif %}"
 
-``needs_role_need_template`` must be a string, which supports the following placeholders:
+``needs_role_need_template`` must be a Jinja string, which supports the following variables:
 
-* id
+* id or id_complete
+* id_parent
+* id_part
 * type (short version)
 * type_name (long, human readable version)
 * title
@@ -1298,9 +1306,13 @@ Here are some ideas, how it could be used inside the **conf.py** file:
 * links, joined by ";"
 * links_back, joined by ";"
 * content
+* is_need
+* is_part
 
-All options of Python's `.format() <https://docs.python.org/3.4/library/functions.html#format>`_ function are supported.
-Please see https://pyformat.info/ for more information.
+To access the same values via an object, use ``need`` (for example ``{{ need.type }}``).
+
+Jinja filters and control structures are supported.
+Please see https://jinja.palletsprojects.com/ for syntax and features.
 
 RST-attributes like ``**bold**`` are **not** supported.
 
