@@ -44,8 +44,7 @@ class VariantRole(SphinxRole):
         if not variant_data:
             log_warning(
                 LOGGER,
-                f"'variant' role used but needs_variant_data is not configured: "
-                f"{self.text!r}",
+                f"'variant' role used but no variant data is available: {self.text!r}",
                 "variant",
                 location=self.get_location(),
             )

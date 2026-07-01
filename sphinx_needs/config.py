@@ -738,7 +738,7 @@ class NeedsSphinxConfig:
         Use :confval:`needs_variant_data` with the ``var.*`` namespace instead.
     """
     variant_data: dict[str, Any] = field(
-        default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
+        default_factory=dict, metadata={"rebuild": "env", "types": (dict,)}
     )
     """Nested variant data accessible as ``var.*`` in filter expressions.
 
@@ -758,7 +758,7 @@ class NeedsSphinxConfig:
     variant_data_file: str | None = field(
         default=None,
         metadata={
-            "rebuild": "html",
+            "rebuild": "env",
             "types": (str, type(None)),
             "toml_convert": _abs_path,
         },

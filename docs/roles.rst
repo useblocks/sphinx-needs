@@ -240,3 +240,11 @@ The lookup is a constrained ``var.*`` path resolution (the same as used by
 operators, function calls, or item access are allowed. An invalid reference,
 an unknown key, or a path that resolves to a mapping emits a ``needs.variant``
 warning and produces empty text.
+
+.. note::
+
+    The value is resolved at parse time and baked into the document. Changing
+    :ref:`needs_variant_data` triggers a full rebuild so the resolved values
+    stay current. Editing the *contents* of a :ref:`needs_variant_data_file`
+    without changing its path is not tracked as a build dependency, so run a
+    clean build (``sphinx-build -E``) in that case.

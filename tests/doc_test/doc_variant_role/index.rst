@@ -10,3 +10,5 @@ Nested bool: :variant:`build.debug`
 List value: :variant:`archs`
 
 Invalid reference: :variant:`nonexistent`
+
+Mapping reference: :variant:`build`
