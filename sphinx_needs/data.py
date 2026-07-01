@@ -13,6 +13,7 @@ from typing import (
     Literal,
     NewType,
     TypedDict,
+    cast,
 )
 
 from sphinx.util.logging import getLogger
@@ -36,6 +37,29 @@ if TYPE_CHECKING:
     from sphinx_needs.nodes import Need
     from sphinx_needs.schema.config import SchemasRootType
     from sphinx_needs.services.manager import ServiceManager
+
+    class _NeedsApp(Sphinx):
+        """Sphinx application, annotated with the private attributes sphinx-needs stores on it."""
+
+        _needs_services: ServiceManager
+
+    class _NeedsEnv(BuildEnvironment):
+        """Build environment, annotated with the private attributes sphinx-needs stores on it.
+
+        These are accessed lazily via :class:`SphinxNeedsData`; declaring them here
+        keeps that access type-checked, instead of suppressing ``attr-defined``.
+        """
+
+        app: _NeedsApp
+        _needs_schema: FieldsSchema
+        _needs_resolved_schemas: list[SchemasRootType]
+        _needs_all_needs: dict[str, NeedItem]
+        _needs_view: NeedsView
+        _needs_all_docs: dict[str, list[str]]
+        _needs_is_post_processed: bool
+        _need_all_needextend: dict[str, NeedsExtendType]
+        _needs_all_needumls: dict[str, NeedsUmlType]
+        _needs_all_nodes: dict[str, Need]
 
 
 LOGGER = getLogger(__name__)
@@ -772,7 +796,7 @@ class SphinxNeedsData:
     """Centralised access to sphinx-needs data, stored within the Sphinx environment."""
 
     def __init__(self, env: BuildEnvironment) -> None:
-        self.env = env
+        self.env = cast("_NeedsEnv", env)
 
     def get_schema(self) -> FieldsSchema:
         """Get the schema for all fields.
