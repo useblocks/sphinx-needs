@@ -1269,7 +1269,8 @@ needs_role_need_template
 
    The template is now rendered with `Jinja <https://jinja.palletsprojects.com/>`_
    instead of Python's ``str.format``.  Replace ``{field}`` placeholders with
-   ``{{ field }}``.
+   ``{{ field }}``.  The old ``str.format`` syntax is still supported for now
+   but is deprecated and emits a ``needs.deprecated`` warning.
 
 Provides a way of changing the text representation of a referenced need.
 

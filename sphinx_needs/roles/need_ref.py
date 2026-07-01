@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import re
 from collections.abc import Iterable
 from typing import Any
 
@@ -17,6 +18,28 @@ from sphinx_needs.need_item import NeedItem, NeedLink
 from sphinx_needs.utils import check_and_calc_base_url_rel_path
 
 log = get_logger(__name__)
+
+# Markers that unambiguously identify a Jinja template.
+_JINJA_MARKERS = ("{{", "{%", "{#")
+# A ``str.format``-style field reference, e.g. ``{id}`` or ``{title:*^20s}``.
+_LEGACY_FORMAT_FIELD = re.compile(r"\{[^{}]*\}")
+
+
+def _is_legacy_format_template(template: str) -> bool:
+    """Heuristically detect a legacy ``str.format``-style template.
+
+    Before Jinja support, ``needs_role_need_template`` was rendered with
+    ``str.format`` (``{field}`` placeholders).  Such a template renders as
+    literal text under Jinja (``{id}`` stays ``{id}``), which would silently
+    change existing users' output.  To keep them working, we detect the old
+    syntax and render it the old way, emitting a deprecation warning.
+
+    A template is treated as legacy when it contains a ``{field}`` reference
+    but none of the Jinja markers ``{{``, ``{%`` or ``{#``.
+    """
+    if any(marker in template for marker in _JINJA_MARKERS):
+        return False
+    return bool(_LEGACY_FORMAT_FIELD.search(template))
 
 
 def _build_template_context(
@@ -83,18 +106,32 @@ def process_need_ref(
     all_needs = SphinxNeedsData(env).get_needs_view()
 
     # Compile the configured role template once (rendered per reference below).
+    # Templates using the legacy ``str.format`` syntax are still rendered with
+    # ``str.format`` (with a deprecation warning) so existing configs keep
+    # working; everything else is rendered with Jinja.
+    role_template_str = needs_config.role_need_template
+    role_is_legacy = _is_legacy_format_template(role_template_str)
     role_template = None
-    try:
-        role_template = compile_template(
-            needs_config.role_need_template, autoescape=False
-        )
-    except Exception as exc:
+    if role_is_legacy:
         log_warning(
             log,
-            f"needs_role_need_template could not be compiled as a Jinja template: {exc}",
-            "link_text",
+            "needs_role_need_template uses the deprecated str.format syntax; "
+            "migrate '{field}' placeholders to Jinja '{{ field }}' "
+            "(this will be rendered with str.format for now, but support will "
+            "be removed in a future release)",
+            "deprecated",
             location=None,
         )
+    else:
+        try:
+            role_template = compile_template(role_template_str, autoescape=False)
+        except Exception as exc:
+            log_warning(
+                log,
+                f"needs_role_need_template could not be compiled as a Jinja template: {exc}",
+                "link_text",
+                location=None,
+            )
 
     # for node_need_ref in doctree.findall(NeedRef):
     for node_need_ref in found_nodes:
@@ -195,7 +232,21 @@ def process_need_ref(
                 if ref_name:
                     # If ref_name differs from the need id, we treat the "ref_name content" as title.
                     dict_need["title"] = ref_name
-                if role_template is None:
+                if role_is_legacy:
+                    # Backwards-compatible str.format rendering (deprecated,
+                    # warned about once above).
+                    try:
+                        link_text = role_template_str.format(**dict_need)
+                    except (KeyError, IndexError, ValueError) as exc:
+                        log_warning(
+                            log,
+                            "the config parameter needs_role_need_template uses "
+                            f"unsupported str.format placeholders: {exc}",
+                            "link_text",
+                            location=node_need_ref,
+                        )
+                        link_text = f"{dict_need['title']} ({dict_need['id']})"
+                elif role_template is None:
                     # Compilation failed above; fall back to the default text.
                     link_text = f"{dict_need['title']} ({dict_need['id']})"
                 else:

@@ -2,6 +2,31 @@ from pathlib import Path
 
 import pytest
 
+from sphinx_needs.roles.need_ref import _is_legacy_format_template
+
+
+@pytest.mark.parametrize(
+    "template,expected",
+    [
+        # Legacy str.format syntax.
+        ("[{id}] {title}", True),
+        ("{title:*^20s}", True),
+        ("{content:.30}", True),
+        ("{title} ({id})", True),
+        # Jinja syntax (not legacy).
+        ("{{ title }} ({{ id }})", False),
+        ("{% if is_need %}[NEED]{% endif %}", False),
+        ("{{ title }} {# comment #}", False),
+        # Ambiguous escaped-brace form is treated as Jinja.
+        ("{{literal}}", False),
+        # Plain text with no placeholders.
+        ("just text", False),
+        ("", False),
+    ],
+)
+def test_is_legacy_format_template(template, expected):
+    assert _is_legacy_format_template(template) is expected
+
 
 @pytest.mark.parametrize(
     "test_app",
@@ -45,6 +70,23 @@ def test_doc_build_html(test_app):
     # ``[[``/``]]`` as the variable delimiters (so filters work there as well).
     assert '<em class="xref need">IMPL</em>' in html
     assert '<em class="xref need"> COMMAND PARSER SUPPORT</em>' in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_role_need_template_legacy"}],
+    indirect=True,
+)
+def test_doc_build_html_legacy_format_template(test_app):
+    """A legacy str.format template keeps working but warns about deprecation."""
+    app = test_app
+    app.build()
+    warnings = app._warning.getvalue()
+    assert "deprecated str.format syntax" in warnings
+    html = Path(app.outdir, "index.html").read_text()
+    # Rendered via str.format (not left as literal ``{id}`` text).
+    assert "[SP_TOO_001] Command line interface (implemented)" in html
+    assert "{id}" not in html
 
 
 @pytest.mark.parametrize(
