@@ -61,24 +61,41 @@ def _setup_builtin_filters(env: Environment) -> None:
     env.add_filter("wordwrap", _wordwrap_filter)
 
 
-def _new_env(autoescape: bool) -> Environment:
+def _new_env(
+    autoescape: bool,
+    variable_start_string: str = "{{",
+    variable_end_string: str = "}}",
+) -> Environment:
     """Create a new Environment with standard setup (filters, autoescape).
 
     :param autoescape: Whether to enable autoescaping.
+    :param variable_start_string: Delimiter that opens a variable expression
+        (default ``"{{"``).  Override to render templates that use a
+        different syntax, e.g. ``"[["`` for the inline ``:need:`` role text.
+    :param variable_end_string: Delimiter that closes a variable expression
+        (default ``"}}"``).
     :return: A new Environment instance.
     """
-    env = Environment()
+    env = Environment(
+        variable_start_string=variable_start_string,
+        variable_end_string=variable_end_string,
+    )
     if autoescape:
         env.auto_escape_callback = lambda _name: True
     _setup_builtin_filters(env)
     return env
 
 
-@lru_cache(maxsize=2)
-def _get_cached_env(autoescape: bool) -> Environment:
+@lru_cache(maxsize=4)
+def _get_cached_env(
+    autoescape: bool,
+    variable_start_string: str = "{{",
+    variable_end_string: str = "}}",
+) -> Environment:
     """Get or create a cached Environment instance (no custom functions).
 
-    Cached per ``autoescape`` value.  Safe because the returned
+    Cached per ``(autoescape, variable_start_string, variable_end_string)``.
+    Safe because the returned
     ``Environment`` is not mutated after creation.  ``lru_cache`` ensures
     that concurrent calls for the same key return the same instance
     (Python's GIL protects the cache dict).  Note that the
@@ -90,9 +107,11 @@ def _get_cached_env(autoescape: bool) -> Environment:
     environments are stateless (no per-build data).
 
     :param autoescape: Whether to enable autoescaping.
+    :param variable_start_string: Delimiter that opens a variable expression.
+    :param variable_end_string: Delimiter that closes a variable expression.
     :return: A cached Environment instance.
     """
-    return _new_env(autoescape)
+    return _new_env(autoescape, variable_start_string, variable_end_string)
 
 
 def render_template_string(
@@ -101,6 +120,8 @@ def render_template_string(
     *,
     autoescape: bool,
     new_env: bool = False,
+    variable_start_string: str = "{{",
+    variable_end_string: str = "}}",
 ) -> str:
     """Render a Jinja template string with the given context.
 
@@ -113,9 +134,17 @@ def render_template_string(
         the cached Environment (e.g. needuml's ``{{ uml() }}`` callbacks),
         because MiniJinja's ``Environment`` holds a non-reentrant lock
         during ``render_str``.
+    :param variable_start_string: Delimiter that opens a variable expression
+        (default ``"{{"``).
+    :param variable_end_string: Delimiter that closes a variable expression
+        (default ``"}}"``).
     :return: The rendered template as a string.
     """
-    env = _new_env(autoescape) if new_env else _get_cached_env(autoescape)
+    env = (
+        _new_env(autoescape, variable_start_string, variable_end_string)
+        if new_env
+        else _get_cached_env(autoescape, variable_start_string, variable_end_string)
+    )
     return env.render_str(template_string, **context)
 
 
@@ -154,6 +183,8 @@ def compile_template(
     template_string: str,
     *,
     autoescape: bool,
+    variable_start_string: str = "{{",
+    variable_end_string: str = "}}",
 ) -> CompiledTemplate:
     """Compile a template string for efficient repeated rendering.
 
@@ -172,8 +203,13 @@ def compile_template(
 
     :param template_string: The Jinja template string to compile.
     :param autoescape: Whether to enable autoescaping.
+    :param variable_start_string: Delimiter that opens a variable expression
+        (default ``"{{"``).  Override to compile templates that use a
+        different syntax, e.g. ``"[["`` for the inline ``:need:`` role text.
+    :param variable_end_string: Delimiter that closes a variable expression
+        (default ``"}}"``).
     :return: A compiled template that can be rendered with different contexts.
     """
-    env = _new_env(autoescape)
+    env = _new_env(autoescape, variable_start_string, variable_end_string)
     env.add_template(CompiledTemplate._TEMPLATE_NAME, template_string)
     return CompiledTemplate(env)
