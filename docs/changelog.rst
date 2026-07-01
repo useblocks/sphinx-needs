@@ -89,7 +89,8 @@ Improvements
   (:pr:`1731`)
 
 - 👌 Allow link fields in :ref:`needservice` directive options, so needs
-  created via a custom service can declare links to other needs (:pr:`1632`)
+  created via a custom service can declare links to other needs (:pr:`1632`).
+  Thanks to `@filipepcampos <https://github.com/filipepcampos>`__
 
 - 👌 Honor ``-D`` command-line overrides when loading needs from a TOML file,
   so per-build configuration works as expected (:pr:`1717`)
@@ -98,7 +99,8 @@ Improvements
   making schema-configuration mistakes much easier to track down (:pr:`1736`)
 
 - 👌 Track JSON files imported via :ref:`needimport` as build dependencies, so
-  editing an imported file triggers a rebuild (:pr:`1730`)
+  editing an imported file triggers a rebuild (:pr:`1730`). Thanks to
+  `@yhontyk <https://github.com/yhontyk>`__
 
 - 🔧 Add a root ``context7.json`` configuration file so AI assistants using
   Context7 can discover the live Sphinx-Needs documentation and use the
@@ -138,7 +140,8 @@ Bug fixes
 
 - 🐛 Fix parent-child relationship of newly created nodes for needs. This
   fixes interoperability with Sphinx extensions that look up source lines,
-  like sphinxcontrib-spelling (:issue:`1564`)
+  like sphinxcontrib-spelling (:issue:`1564`). Thanks to
+  `@tim-nordell-nimbelink <https://github.com/tim-nordell-nimbelink>`__
 
 .. _`release:8.1.1`:
 
