@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782853416770,
+  "lastUpdate": 1782910184516,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19116,6 +19116,42 @@ window.BENCHMARK_DATA = {
             "value": 57.88469028899999,
             "unit": "s",
             "extra": "Commit: 6506ecfaa12667629a142b2cf1b680dc713f96f2\nBranch: master\nTime: 2026-06-30T23:01:36+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "954021ef78692d556f989093e816b6c10d3bbea2",
+          "message": "✨ Add `variant` role for inline variant data references (#1737)",
+          "timestamp": "2026-07-01T14:47:41+02:00",
+          "tree_id": "16c19fe435c1b129d80e7aaf096b583a1e57b21d",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/954021ef78692d556f989093e816b6c10d3bbea2"
+        },
+        "date": 1782910157267,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15809767700000066,
+            "unit": "s",
+            "extra": "Commit: 954021ef78692d556f989093e816b6c10d3bbea2\nBranch: master\nTime: 2026-07-01T14:47:41+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 60.656267906000004,
+            "unit": "s",
+            "extra": "Commit: 954021ef78692d556f989093e816b6c10d3bbea2\nBranch: master\nTime: 2026-07-01T14:47:41+02:00"
           }
         ]
       }
