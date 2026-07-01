@@ -4,12 +4,113 @@
 Changelog
 =========
 
-.. _`release:unreleased`:
+.. _`release:8.2.0`:
 
-Unreleased
-----------
+8.2.0
+-----
 
-:Released: Unreleased
+:Released: 01.07.2026
+:Full Changelog: `v8.1.1...v8.2.0 <https://github.com/useblocks/sphinx-needs/compare/8.1.1...8.2.0>`__
+
+This release is all about **building one documentation source for many
+product variants**. If you maintain docs that differ by architecture, build
+flavour, feature flags or customer edition, the new variant-data tooling lets
+you describe those parameters once and let Sphinx-Needs do the branching — in
+filters, in need fields, in prose, and in whole sections. The other headline is
+``network_back`` schema validation, which finally lets you express link-coverage
+rules from the side of the relationship where they actually make sense.
+
+Variant data: describe your build once, reuse it everywhere
+...........................................................
+
+The centrepiece of 8.2.0 is :ref:`needs_variant_data` — a structured,
+namespaced replacement for the old flat ``needs_filter_data``. You define your
+variant parameters as ordinary (nestable) data and read them back through a
+clean ``var`` namespace:
+
+.. code-block:: python
+
+   # conf.py
+   needs_variant_data = {
+       "cpu": "arm",
+       "debug": True,
+       "build": {"optimization": 2, "features": ["feature_a", "feature_b"]},
+   }
+
+Once configured, the same ``var`` data is available in four complementary ways,
+so you can pick the right tool for each spot in your docs:
+
+- **In filters** — ``var.build.debug`` reads far more naturally than the old
+  bracket syntax, and nested data avoids clashing with your need field names:
+
+  .. code-block:: rst
+
+     .. needtable::
+        :filter: var.cpu == "arm" and var.build.debug == True
+
+- **In need field values** — inject a variant value straight into a field with
+  the new :ref:`\<{ ... }> syntax <needs_variant_data_references>` (for any
+  field flagged ``parse_variants``):
+
+  .. code-block:: rst
+
+     .. req:: Example
+        :id: VD_001
+        :arch: <{ var.cpu }>
+
+- **In prose** — the new :ref:`variant role <role_variant>` drops a resolved
+  value straight into your text, rendering the configured ``cpu`` value as
+  ``arm``.
+
+- **In whole blocks** — the new :ref:`if directive <if>` includes or excludes
+  entire sections (needs and all) at parse time, based on a ``var`` expression:
+
+  .. code-block:: rst
+
+     .. if:: var.cpu == "arm"
+
+        This section — and every need inside it — is only built for ARM.
+
+Variant data can also be loaded from JSON via :ref:`needs_variant_data_file`
+and swapped per build with ``sphinx-build -D needs_variant_data_file=...``,
+making it easy to generate variant-specific outputs from a single source tree
+(:pr:`1715`, :pr:`1716`, :pr:`1721`, :pr:`1737`).
+
+Improvements
+............
+
+- ✨ Add a ``network_back`` schema-validation key, the sibling of ``network``,
+  that validates a need's **incoming** links instead of its outgoing ones. This
+  lets you state a rule from the target's point of view — for example *"every
+  requirement must be covered by at least one test"* — once, on the requirement,
+  instead of repeating it on every test. It reuses the familiar ``items`` /
+  ``contains`` / ``minContains`` / ``maxContains`` structure and can be freely
+  mixed and nested with ``network`` (see :ref:`network_back_validation`)
+  (:pr:`1731`)
+
+- 👌 Allow link fields in :ref:`needservice` directive options, so needs
+  created via a custom service can declare links to other needs (:pr:`1632`)
+
+- 👌 Honor ``-D`` command-line overrides when loading needs from a TOML file,
+  so per-build configuration works as expected (:pr:`1717`)
+
+- 👌 Include the JSON location (path) in ``$ref`` resolution error messages,
+  making schema-configuration mistakes much easier to track down (:pr:`1736`)
+
+- 👌 Track JSON files imported via :ref:`needimport` as build dependencies, so
+  editing an imported file triggers a rebuild (:pr:`1730`)
+
+- 🔧 Add a root ``context7.json`` configuration file so AI assistants using
+  Context7 can discover the live Sphinx-Needs documentation and use the
+  project-specific reference instead of stale training data (:issue:`1719`)
+
+Deprecations
+............
+
+- ⚠️ Deprecate :ref:`needs_filter_data` in favour of the new, structured
+  :ref:`needs_variant_data`. It keeps working for now but emits a warning; the
+  flat data it provides is injected at the filter root and can collide with need
+  field names, which the namespaced ``var`` data avoids (:pr:`1715`)
 
 Breaking changes
 ................
@@ -21,27 +122,6 @@ Breaking changes
   ``sphinx_needs.services.open_needs.OpenNeedsService`` import and the
   ``params``, ``prefix`` and ``url_postfix`` extra fields that the service
   registered are no longer available.
-
-Improvements
-............
-
-- ✨ Add a :ref:`variant role <role_variant>` that resolves a dotted
-  variant-data path inline, at parse time, to a text node holding the value
-  looked up from :ref:`needs_variant_data`
-
-- ✨ Add a ``network_back`` schema-validation key, the sibling of ``network``,
-  that validates a need's **incoming** links instead of its outgoing ones. It
-  reuses the same ``items`` / ``contains`` / ``minContains`` / ``maxContains``
-  structure and can be freely mixed and nested with ``network``, allowing
-  constraints like "every requirement must be covered by at least one test" to be
-  expressed once on the requirement (:pr:`1731`)
-
-- 🔧 Add a root ``context7.json`` configuration file so AI assistants using
-  Context7 can discover the live Sphinx-Needs documentation and use the
-  project-specific reference instead of stale training data (:issue:`1719`)
-
-- 👌 Allow link fields in :ref:`needservice` directive options, so needs
-  created via a custom service can declare links to other needs (:pr:`1632`)
 
 Bug fixes
 .........
