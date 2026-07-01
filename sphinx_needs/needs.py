@@ -130,6 +130,7 @@ from sphinx_needs.roles.need_incoming import NeedIncoming, process_need_incoming
 from sphinx_needs.roles.need_outgoing import NeedOutgoing, process_need_outgoing
 from sphinx_needs.roles.need_part import NeedPart, NeedPartRole, process_need_part
 from sphinx_needs.roles.need_ref import NeedRef, process_need_ref
+from sphinx_needs.roles.variant import VariantRole
 from sphinx_needs.schema.config import (
     FieldIntegerSchemaType,
     SchemasFileRootType,
@@ -312,6 +313,9 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     app.add_role("need_func", NeedFuncRole(with_brackets=True))  # deprecrated
     app.add_role("ndf", NeedFuncRole(with_brackets=False))
+
+    # Resolves :variant:`a.b` immediately to the value from needs_variant_data.
+    app.add_role("variant", VariantRole())
 
     ########################################################################
     # EVENTS

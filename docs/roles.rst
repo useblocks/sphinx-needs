@@ -203,3 +203,71 @@ Executes a :ref:`need dynamic function <dynamic_functions>` and uses the return 
 .. need-example::
 
     A nice :ndf:`echo("first test")` for dynamic functions.
+
+.. _role_variant:
+
+variant
+-------
+.. versionadded:: 8.2.0
+
+Resolves a reference into :ref:`needs_variant_data` and is *immediately*
+replaced during parsing by a text node holding the looked-up value.
+
+The role content is a dotted path into the configured variant data, rooted at
+``var`` (the ``var`` root is implicit and must not be written).
+
+Given the configuration:
+
+.. code-block:: python
+
+    needs_variant_data = {
+        "platform": "arm",
+        "build": {"opt_level": 2},
+    }
+
+then in a document:
+
+.. code-block:: rst
+
+    Platform: :variant:`platform`
+    Optimisation level: :variant:`build.opt_level`
+
+resolves to ``arm`` and ``2`` respectively.
+
+Type handling
+~~~~~~~~~~~~~
+
+The role always produces a single text node. The resolved value is serialised
+to text as follows:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 70
+
+   * - Variant data value
+     - Rendered text
+   * - String (``"arm"``)
+     - The string itself (``arm``).
+   * - Integer / float (``2``, ``1.5``)
+     - Its ``str()`` form (``2``, ``1.5``).
+   * - Boolean (``True``)
+     - ``True`` / ``False`` (Python's ``str(bool)``).
+   * - Array (``["arm", "x86"]``)
+     - The elements joined into a comma-separated string (``arm, x86``).
+   * - Mapping (``{...}``)
+     - Not allowed — emits a warning and renders empty text (reference a leaf
+       value instead).
+
+The lookup is a constrained ``var.*`` path resolution (the same as used by
+:ref:`needs_variant_data` field references), not an arbitrary expression: no
+operators, function calls, or item access are allowed. An invalid reference,
+an unknown key, or a path that resolves to a mapping emits a ``needs.variant``
+warning and produces empty text.
+
+.. note::
+
+    The value is resolved at parse time and baked into the document. Changing
+    :ref:`needs_variant_data` triggers a full rebuild so the resolved values
+    stay current. Editing the *contents* of a :ref:`needs_variant_data_file`
+    without changing its path is not tracked as a build dependency, so run a
+    clean build (``sphinx-build -E``) in that case.
