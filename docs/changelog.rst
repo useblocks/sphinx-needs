@@ -4,6 +4,28 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+External sources provenance in needs.json
+.........................................
+
+When external needs are included in the ``needs.json`` output (by relaxing
+:ref:`needs_builder_filter`), the JSON now contains an ``external_sources``
+section in each version block that records the full provenance chain.
+
+Each external need also receives an ``external_source`` field linking it to
+the ``base_url`` of its source configuration. When a downstream project
+consumes this ``needs.json`` and re-exports, the inherited sources are
+propagated with an ``origin`` field indicating the intermediate project.
+
+This enables full traceability across multi-project documentation chains
+(e.g. Project X |rarr| Project A |rarr| Project B).
+
+.. |rarr| unicode:: U+2192
+
+See :ref:`needs_external_needs` for configuration details.
+
 .. _`release:8.2.0`:
 
 8.2.0
