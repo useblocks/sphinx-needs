@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Any
 
 import requests
 from requests_file import FileAdapter
@@ -10,8 +11,8 @@ from sphinx.environment import BuildEnvironment
 
 from sphinx_needs._jinja import compile_template
 from sphinx_needs.api import InvalidNeedException, add_external_need, del_need
-from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
+from sphinx_needs.config import ExternalSource, NeedsSphinxConfig
+from sphinx_needs.data import ExternalSourceInfo, NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItemSourceExternal
 from sphinx_needs.utils import clean_log, import_prefix_link_edit
@@ -25,6 +26,7 @@ def load_external_needs(
     """Load needs from configured external sources."""
     needs_config = NeedsSphinxConfig(app.config)
     needs_schema = SphinxNeedsData(env).get_schema()
+    data_accessor = SphinxNeedsData(env)
 
     for idx, source in enumerate(needs_config.external_needs):
         if "base_url" not in source:
@@ -106,6 +108,10 @@ def load_external_needs(
                     )
                 )
 
+        # Inherit external_sources from the consumed JSON for provenance chain
+        if "external_sources" in data:
+            _inherit_external_sources(data_accessor, data["external_sources"], source)
+
         log.debug(f"Loading {len(needs)} needs.")
 
         defaults = (
@@ -124,6 +130,7 @@ def load_external_needs(
         # all known need fields in the project
         known_keys = {
             "full_title",  # legacy
+            "external_source",  # provenance metadata from needs.json
             *NeedsCoreFields,
             *(x for x in needs_schema.iter_link_field_names()),
             *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
@@ -132,6 +139,7 @@ def load_external_needs(
         # all keys that should not be imported from external needs
         omitted_keys = {
             "full_title",  # legacy
+            "external_source",  # provenance metadata, not a need field
             *(k for k, v in NeedsCoreFields.items() if v.get("exclude_external")),
             *(f"{x}_back" for x in needs_schema.iter_link_field_names()),
         }
@@ -195,6 +203,8 @@ def load_external_needs(
                     allow_type_coercion=source.get("allow_type_coercion", True),
                     **need_params,
                 )
+                # Register provenance: which source produced this need
+                data_accessor.register_external_source(ext_need_id, source["base_url"])
             except InvalidNeedException as err:
                 location = source.get("json_url", "") or source.get("json_path", "")
                 log_warning(
@@ -220,3 +230,33 @@ def load_external_needs(
 
 class NeedsExternalException(BaseException):
     pass
+
+
+def _inherit_external_sources(
+    data_accessor: SphinxNeedsData,
+    sources_from_json: list[dict[str, Any]],
+    consuming_source: ExternalSource,
+) -> None:
+    """Inherit ``external_sources`` entries from a consumed needs.json.
+
+    For each entry in the consumed JSON's ``external_sources``, we re-record it
+    with ``origin`` set to the ``base_url`` of the source we are consuming from
+    (unless it already has an origin, meaning it was already a transitive entry).
+
+    :param data_accessor: The SphinxNeedsData instance.
+    :param sources_from_json: The ``external_sources`` list from the consumed JSON.
+    :param consuming_source: The ExternalSource config entry we are currently loading.
+    """
+    inherited: list[ExternalSourceInfo] = []
+    consumer_base_url = consuming_source["base_url"]
+    for entry in sources_from_json:
+        info = ExternalSourceInfo(
+            base_url=entry["base_url"],
+            origin=entry.get("origin") or consumer_base_url,
+        )
+        # Carry over optional fields if present
+        for key in ("target_url", "id_prefix", "css_class", "json_url", "json_path", "version"):
+            if key in entry:
+                info[key] = entry[key]
+        inherited.append(info)
+    data_accessor.add_inherited_external_sources(inherited)

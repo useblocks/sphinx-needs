@@ -310,3 +310,168 @@ def test_external_empty_versions(test_app):
     needs = json.loads(needs_json)
     # the empty external needs should just be ignored without crashing.
     assert "TEST_01" not in needs["versions"][""]["needs"]
+
+
+def test_external_sources_provenance_chain(tmp_path: Path):
+    """Test that external_sources metadata is written to needs.json and inherited transitively.
+
+    Chain: Project X (origin) -> Project A (consumes X) -> Project B (consumes A)
+    Project B should see both A and X in its external_sources.
+    """
+    if version_info < (7, 2):
+        pytest.skip("Requires Sphinx >= 7.2")
+
+    # --- Project X: origin project that just has some needs ---
+    project_x = tmp_path / "project_x"
+    project_x.mkdir()
+    project_x.joinpath("conf.py").write_text(
+        dedent("""\
+        version = "1.0"
+        extensions = ["sphinx_needs"]
+        needs_json_remove_defaults = True
+        """),
+        "utf8",
+    )
+    project_x.joinpath("index.rst").write_text(
+        dedent("""\
+        Project X
+        =========
+
+        .. req:: Requirement from X
+           :id: X_REQ_01
+        """),
+        "utf8",
+    )
+    app_x = SphinxTestApp(
+        buildername="needs", srcdir=project_x, builddir=project_x / "_build"
+    )
+    try:
+        app_x.build()
+    finally:
+        app_x.cleanup()
+    assert app_x._warning.getvalue() == ""
+    x_needs_json = Path(str(app_x.outdir), "needs.json").read_bytes()
+
+    # --- Project A: consumes X, exports including external needs ---
+    project_a = tmp_path / "project_a"
+    project_a.mkdir()
+    project_a.joinpath("x_needs.json").write_bytes(x_needs_json)
+    project_a.joinpath("conf.py").write_text(
+        dedent("""\
+        version = "2.0"
+        extensions = ["sphinx_needs"]
+        needs_id_regex = "^[A-Za-z0-9_]*"
+        needs_external_needs = [{
+            'json_path': 'x_needs.json',
+            'base_url': 'https://project-x.io/en/latest',
+            'version': '1.0',
+            'id_prefix': 'PX_',
+        }]
+        needs_builder_filter = ""
+        needs_json_remove_defaults = True
+        """),
+        "utf8",
+    )
+    project_a.joinpath("index.rst").write_text(
+        dedent("""\
+        Project A
+        =========
+
+        .. req:: Requirement from A
+           :id: A_REQ_01
+        """),
+        "utf8",
+    )
+    app_a = SphinxTestApp(
+        buildername="needs", srcdir=project_a, builddir=project_a / "_build"
+    )
+    try:
+        app_a.build()
+    finally:
+        app_a.cleanup()
+    assert app_a._warning.getvalue() == ""
+
+    a_json_path = Path(str(app_a.outdir), "needs.json")
+    a_needs_data = json.loads(a_json_path.read_text("utf8"))
+
+    # Verify Project A's needs.json has external_sources
+    a_version_data = a_needs_data["versions"]["2.0"]
+    assert "external_sources" in a_version_data
+    a_sources = a_version_data["external_sources"]
+    assert len(a_sources) == 1
+    assert a_sources[0]["base_url"] == "https://project-x.io/en/latest"
+    assert a_sources[0]["origin"] is None  # direct source
+    assert a_sources[0]["id_prefix"] == "PX_"
+
+    # Verify the external need has external_source field
+    px_req = a_version_data["needs"]["PX_X_REQ_01"]
+    assert px_req["is_external"] is True
+    assert px_req["external_source"] == "https://project-x.io/en/latest"
+
+    # --- Project B: consumes A, should inherit X's provenance ---
+    project_b = tmp_path / "project_b"
+    project_b.mkdir()
+    project_b.joinpath("a_needs.json").write_bytes(a_json_path.read_bytes())
+    project_b.joinpath("conf.py").write_text(
+        dedent("""\
+        version = "3.0"
+        extensions = ["sphinx_needs"]
+        needs_id_regex = "^[A-Za-z0-9_]*"
+        needs_external_needs = [{
+            'json_path': 'a_needs.json',
+            'base_url': 'https://project-a.io/en/latest',
+            'version': '2.0',
+            'id_prefix': 'PA_',
+        }]
+        needs_builder_filter = ""
+        needs_json_remove_defaults = True
+        """),
+        "utf8",
+    )
+    project_b.joinpath("index.rst").write_text(
+        dedent("""\
+        Project B
+        =========
+
+        .. req:: Requirement from B
+           :id: B_REQ_01
+        """),
+        "utf8",
+    )
+    app_b = SphinxTestApp(
+        buildername="needs", srcdir=project_b, builddir=project_b / "_build"
+    )
+    try:
+        app_b.build()
+    finally:
+        app_b.cleanup()
+    assert app_b._warning.getvalue() == ""
+
+    b_json_path = Path(str(app_b.outdir), "needs.json")
+    b_needs_data = json.loads(b_json_path.read_text("utf8"))
+
+    # Verify Project B's needs.json has both direct and inherited sources
+    b_version_data = b_needs_data["versions"]["3.0"]
+    assert "external_sources" in b_version_data
+    b_sources = b_version_data["external_sources"]
+    b_sources_by_url = {s["base_url"]: s for s in b_sources}
+
+    # Direct source: Project A
+    assert "https://project-a.io/en/latest" in b_sources_by_url
+    assert b_sources_by_url["https://project-a.io/en/latest"]["origin"] is None
+
+    # Inherited source: Project X (via A)
+    assert "https://project-x.io/en/latest" in b_sources_by_url
+    assert (
+        b_sources_by_url["https://project-x.io/en/latest"]["origin"]
+        == "https://project-a.io/en/latest"
+    )
+
+    # Verify external needs from A have external_source pointing to A
+    pa_a_req = b_version_data["needs"]["PA_A_REQ_01"]
+    assert pa_a_req["is_external"] is True
+    assert pa_a_req["external_source"] == "https://project-a.io/en/latest"
+
+    pa_px_req = b_version_data["needs"]["PA_PX_X_REQ_01"]
+    assert pa_px_req["is_external"] is True
+    assert pa_px_req["external_source"] == "https://project-a.io/en/latest"

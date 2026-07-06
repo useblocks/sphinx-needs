@@ -540,6 +540,41 @@ class NeedsInfoComputedType(TypedDict):
     """True if all constraints passed, False if any failed, None if not yet checked."""
 
 
+class ExternalSourceInfo(TypedDict, total=False):
+    """Metadata about an external source that contributed needs to this project.
+
+    Stored in the ``external_sources`` section of the needs.json output so that
+    downstream consumers can reconstruct the full provenance chain.
+    """
+
+    base_url: str
+    """The base URL of the external source (required)."""
+
+    target_url: str
+    """Jinja template for constructing per-need URLs (optional)."""
+
+    id_prefix: str
+    """Prefix applied to all IDs from this source (optional)."""
+
+    css_class: str
+    """CSS class applied to needs from this source (optional)."""
+
+    json_url: str
+    """Remote URL the JSON was fetched from (optional)."""
+
+    json_path: str
+    """Local path the JSON was loaded from (optional)."""
+
+    version: str
+    """Version used when loading from this source (optional)."""
+
+    origin: str | None
+    """base_url of the intermediate project that re-exported this source.
+
+    ``None`` means the source was directly consumed by this project.
+    """
+
+
 class NeedsBaseDataType(TypedDict):
     """A base type for data items collected from directives."""
 
@@ -989,6 +1024,56 @@ class SphinxNeedsData:
             return self._needs_all_nodes[need_id].deepcopy()
         return None
 
+    # --- External source provenance tracking ---
+
+    @property
+    def external_source_map(self) -> dict[str, str]:
+        """Mapping of need_id to the base_url of the external source that provided it.
+
+        Populated during :func:`~sphinx_needs.external_needs.load_external_needs`.
+        """
+        try:
+            return self.env._needs_external_source_map
+        except AttributeError:
+            self.env._needs_external_source_map = {}
+        return self.env._needs_external_source_map
+
+    def register_external_source(self, need_id: str, base_url: str) -> None:
+        """Register which external source a need came from.
+
+        :param need_id: The ID of the external need (after prefix applied).
+        :param base_url: The ``base_url`` of the ExternalSource config entry.
+        """
+        self.external_source_map[need_id] = base_url
+
+    @property
+    def inherited_external_sources(self) -> list[ExternalSourceInfo]:
+        """External source entries inherited from consumed needs.json files.
+
+        These are propagated into the output ``needs.json`` so downstream
+        consumers can reconstruct the full provenance chain.
+        """
+        try:
+            return self.env._needs_inherited_external_sources
+        except AttributeError:
+            self.env._needs_inherited_external_sources = []
+        return self.env._needs_inherited_external_sources
+
+    def add_inherited_external_sources(
+        self, sources: list[ExternalSourceInfo]
+    ) -> None:
+        """Add inherited external source entries (from a consumed needs.json).
+
+        Deduplicates by ``base_url``.
+
+        :param sources: The ``external_sources`` list from a consumed JSON file.
+        """
+        existing = {s["base_url"] for s in self.inherited_external_sources if "base_url" in s}
+        for source in sources:
+            if source.get("base_url") and source["base_url"] not in existing:
+                self.inherited_external_sources.append(source)
+                existing.add(source["base_url"])
+
 
 def merge_data(
     _app: Sphinx, env: BuildEnvironment, docnames: list[str], other: BuildEnvironment
@@ -1056,3 +1141,7 @@ def merge_data(
     _merge("_needs_all_nodes")
     _merge("_need_all_needextend")
     _merge("_needs_all_needumls")
+
+    # Merge external source provenance data
+    _merge("_needs_external_source_map")
+    this_data.add_inherited_external_sources(other_data.inherited_external_sources)
