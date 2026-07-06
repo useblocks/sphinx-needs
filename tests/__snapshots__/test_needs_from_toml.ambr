@@ -4,11 +4,19 @@
     'current_version': '0.1.0',
     'versions': dict({
       '0.1.0': dict({
+        'external_sources': list([
+          dict({
+            'base_url': 'http://example.com/docs',
+            'json_path': '/private/var/folders/vb/__zyv72j1wj2sp6k_bllyg480000gn/T/sn_test_build_data/KGCcJQNC1G/needs_from_toml/folder/external_needs.json',
+            'origin': None,
+          }),
+        ]),
         'needs': dict({
           'NEED_1': dict({
             'content': 'This is the first need.',
             'doctype': '',
             'external_css': 'external_link',
+            'external_source': 'http://example.com/docs',
             'external_url': 'http://example.com/docs/__error__.html#NEED_1',
             'id': 'NEED_1',
             'is_external': True,

@@ -1059,16 +1059,16 @@ class SphinxNeedsData:
             self.env._needs_inherited_external_sources = []
         return self.env._needs_inherited_external_sources
 
-    def add_inherited_external_sources(
-        self, sources: list[ExternalSourceInfo]
-    ) -> None:
+    def add_inherited_external_sources(self, sources: list[ExternalSourceInfo]) -> None:
         """Add inherited external source entries (from a consumed needs.json).
 
         Deduplicates by ``base_url``.
 
         :param sources: The ``external_sources`` list from a consumed JSON file.
         """
-        existing = {s["base_url"] for s in self.inherited_external_sources if "base_url" in s}
+        existing = {
+            s["base_url"] for s in self.inherited_external_sources if "base_url" in s
+        }
         for source in sources:
             if source.get("base_url") and source["base_url"] not in existing:
                 self.inherited_external_sources.append(source)

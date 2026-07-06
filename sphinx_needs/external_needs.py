@@ -255,7 +255,14 @@ def _inherit_external_sources(
             origin=entry.get("origin") or consumer_base_url,
         )
         # Carry over optional fields if present
-        for key in ("target_url", "id_prefix", "css_class", "json_url", "json_path", "version"):
+        for key in (
+            "target_url",
+            "id_prefix",
+            "css_class",
+            "json_url",
+            "json_path",
+            "version",
+        ):
             if key in entry:
                 info[key] = entry[key]
         inherited.append(info)

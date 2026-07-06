@@ -1853,8 +1853,7 @@ Need objects imported via :ref:`needs_external_needs` get sorted out.
 
 .. _`needs_builder_filter_provenance`:
 
-External sources provenance in needs.json
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**External sources provenance in needs.json**
 
 .. versionadded:: 8.3.0
 
