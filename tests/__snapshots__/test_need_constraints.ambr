@@ -4,6 +4,14 @@
     'current_version': '',
     'versions': dict({
       '': dict({
+        'external_sources': list([
+          dict({
+            'base_url': 'http://my_company.com/docs/v1',
+            'id_prefix': 'ext_',
+            'json_path': 'needs_test_small.json',
+            'origin': None,
+          }),
+        ]),
         'needs': dict({
           'SECURITY_REQ': dict({
             'arch': dict({

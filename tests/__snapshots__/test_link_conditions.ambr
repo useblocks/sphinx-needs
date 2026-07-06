@@ -4,6 +4,14 @@
     'current_version': '',
     'versions': dict({
       '': dict({
+        'external_sources': list([
+          dict({
+            'base_url': 'http://my_company.com/docs/v1',
+            'id_prefix': 'EXT_',
+            'json_path': 'needs_test_external.json',
+            'origin': None,
+          }),
+        ]),
         'needs': dict({
           'IMP_COND_FAIL': dict({
             'docname': 'index',
@@ -748,6 +756,14 @@
     'current_version': '',
     'versions': dict({
       '': dict({
+        'external_sources': list([
+          dict({
+            'base_url': 'http://my_company.com/docs/v1',
+            'id_prefix': 'EXT_',
+            'json_path': 'needs_test_external.json',
+            'origin': None,
+          }),
+        ]),
         'needs': dict({
           'IMP_COND_FAIL': dict({
             'docname': 'index',

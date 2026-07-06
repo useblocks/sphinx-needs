@@ -19,7 +19,7 @@ from jsonschema_rs import Draft7Validator, ValidationError
 from sphinx.environment import BuildEnvironment
 
 from sphinx_needs.config import NeedsSphinxConfig
-from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
+from sphinx_needs.data import ExternalSourceInfo, NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.needs_schema import FieldLiteralValue, FieldsSchema
@@ -111,6 +111,7 @@ class NeedsList:
             self.needs_list["created"] = ""
         self.log = log
 
+        self._data_accessor = SphinxNeedsData(env)
         self._exclude_need_keys = set(self.needs_config.json_exclude_fields)
 
         schema = SphinxNeedsData(env).get_schema()
@@ -174,6 +175,11 @@ class NeedsList:
                     key in self._need_defaults and value == self._need_defaults[key]
                 )
             }
+        # Inject external_source provenance for external needs
+        if need_info.get("is_external"):
+            source_map = self._data_accessor.external_source_map
+            if need_info["id"] in source_map:
+                writable_needs["external_source"] = source_map[need_info["id"]]
         self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
         self.needs_list["versions"][version]["needs_amount"] = len(
             self.needs_list["versions"][version]["needs"]
@@ -192,6 +198,54 @@ class NeedsList:
             self.needs_list.pop("created", None)
         self.needs_list["current_version"] = self.current_version
         self.needs_list["project"] = self.project
+
+        # Build external_sources provenance metadata
+        external_sources = self._build_external_sources()
+        if external_sources:
+            self.needs_list["versions"][self.current_version]["external_sources"] = (
+                external_sources
+            )
+
+    def _build_external_sources(self) -> list[ExternalSourceInfo]:
+        """Build the ``external_sources`` list for the current version.
+
+        Combines:
+        - Direct sources from this project's ``needs_external_needs`` config
+        - Inherited sources from consumed needs.json files (transitive)
+        """
+        sources: list[ExternalSourceInfo] = []
+        seen_base_urls: set[str] = set()
+
+        # Direct sources from config
+        for ext_source in self.needs_config.external_needs:
+            base_url = ext_source.get("base_url", "")
+            if not base_url or base_url in seen_base_urls:
+                continue
+            info = ExternalSourceInfo(base_url=base_url, origin=None)
+            if "target_url" in ext_source:
+                info["target_url"] = ext_source["target_url"]
+            if "id_prefix" in ext_source:
+                info["id_prefix"] = ext_source["id_prefix"]
+            if "css_class" in ext_source:
+                info["css_class"] = ext_source["css_class"]
+            if "json_url" in ext_source:
+                info["json_url"] = ext_source["json_url"]
+            if "json_path" in ext_source:
+                info["json_path"] = ext_source["json_path"]
+            if "version" in ext_source:
+                info["version"] = ext_source["version"]
+            sources.append(info)
+            seen_base_urls.add(base_url)
+
+        # Inherited (transitive) sources
+        for inherited in self._data_accessor.inherited_external_sources:
+            base_url = inherited.get("base_url", "")
+            if not base_url or base_url in seen_base_urls:
+                continue
+            sources.append(inherited)
+            seen_base_urls.add(base_url)
+
+        return sources
 
     def write_json(self, needs_file: str = "needs.json", needs_path: str = "") -> None:
         self._finalise()

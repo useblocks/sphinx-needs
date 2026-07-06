@@ -1851,6 +1851,53 @@ Need objects imported via :ref:`needs_external_needs` get sorted out.
 
    needs_builder_filter = 'status=="open"'
 
+.. _`needs_builder_filter_provenance`:
+
+**External sources provenance in needs.json**
+
+.. versionadded:: 8.3.0
+
+When ``needs_builder_filter`` is set to include external needs (e.g. ``""`` or
+``"True"``), the generated ``needs.json`` will also include an
+``external_sources`` section in each version block. This records the
+:ref:`needs_external_needs` configuration entries that produced the external
+needs, enabling downstream consumers to reconstruct the full provenance chain.
+
+Each external need in the JSON output also receives an ``external_source``
+field containing the ``base_url`` of its source.
+
+**Example output:**
+
+.. code-block:: json
+
+   {
+     "versions": {
+       "1.0": {
+         "external_sources": [
+           {
+             "base_url": "https://upstream.io/en/latest",
+             "id_prefix": "UP_",
+             "json_path": "upstream_needs.json",
+             "origin": null
+           }
+         ],
+         "needs": {
+           "UP_REQ_01": {
+             "is_external": true,
+             "external_source": "https://upstream.io/en/latest",
+             "external_url": "https://upstream.io/en/latest/index.html#REQ_01"
+           }
+         }
+       }
+     }
+   }
+
+**Transitive provenance:** When a downstream project consumes a ``needs.json``
+that already contains ``external_sources``, those entries are inherited and
+re-exported with an ``origin`` field set to the intermediate project's
+``base_url``. This allows any consumer to trace the full chain of provenance
+back to the original source.
+
 .. _`needs_string_links`:
 
 needs_string_links
