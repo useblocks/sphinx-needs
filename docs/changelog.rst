@@ -4,12 +4,13 @@
 Changelog
 =========
 
-.. _`release:unreleased`:
+.. _`release:8.3.0`:
 
-Unreleased
-----------
+8.3.0
+-----
 
-:Released: Unreleased
+:Released: 08.07.2026
+:Full Changelog: `v8.2.0...v8.3.0 <https://github.com/useblocks/sphinx-needs/compare/8.2.0...8.3.0>`__
 
 Improvements
 ............
@@ -24,7 +25,7 @@ Improvements
   ``{{ need.type }}``). The inline role variant ``:need:`[[...]] <ID>``` is
   likewise rendered as Jinja.
 
-  .. deprecated:: unreleased
+  .. deprecated:: 8.3.0
 
      The old ``str.format`` syntax (``{field}`` placeholders) is deprecated.
      Templates using it are still rendered with ``str.format`` and emit a
