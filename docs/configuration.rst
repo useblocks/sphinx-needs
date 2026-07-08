@@ -1265,7 +1265,7 @@ needs_role_need_template
 
 .. versionadded:: 0.1.48
 
-.. versionchanged:: unreleased
+.. versionchanged:: 8.3.0
 
    The template is now rendered with `Jinja <https://jinja.palletsprojects.com/>`_
    instead of Python's ``str.format``.  Replace ``{field}`` placeholders with
