@@ -255,6 +255,13 @@ def sphinx_test_tempdir(request) -> Path:
     return sphinx_test_tempdir
 
 
+def _check_parent_child(app: Sphinx, doctree: document, docname: str):
+    for idx, node in enumerate(doctree.findall()):
+        if idx == 0:
+            continue
+        assert node.parent is not None
+
+
 @pytest.fixture(scope="function")
 def test_app(make_app, sphinx_test_tempdir, request):
     """
@@ -332,6 +339,12 @@ def test_app(make_app, sphinx_test_tempdir, request):
     # Since we've bound the ``test_js`` function to the Sphinx object using ``__get__``,
     # ``test_js`` behaves like a method.
     app.test_js = test_js.__get__(app, Sphinx)
+
+    # Check created all parent-child node relationships after any other
+    # code within the doctree-resolved event by setting the priority to 999.
+    # Placing this test here provides coverage for quite a few tests in
+    # the suite, and hopefully will test any future features.
+    app.connect("doctree-resolved", _check_parent_child, priority=999)
 
     yield app
 
