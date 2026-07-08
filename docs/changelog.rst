@@ -24,7 +24,7 @@ Improvements
   ``{{ need.type }}``). The inline role variant ``:need:`[[...]] <ID>``` is
   likewise rendered as Jinja.
 
-  .. deprecated:: 8.2.0
+  .. deprecated:: unreleased
 
      The old ``str.format`` syntax (``{field}`` placeholders) is deprecated.
      Templates using it are still rendered with ``str.format`` and emit a
