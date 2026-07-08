@@ -4,6 +4,34 @@
 Changelog
 =========
 
+.. _`release:unreleased`:
+
+Unreleased
+----------
+
+:Released: Unreleased
+
+Improvements
+............
+
+- ✨ :ref:`needs_role_need_template` is now rendered with
+  `Jinja <https://jinja.palletsprojects.com/>`_ instead of Python's
+  ``str.format`` (:issue:`1697`, :pr:`1698`)
+
+  Jinja filters and control structures such as ``{% if %}`` are now supported,
+  and the additional variables ``id_complete``, ``id_parent``, ``id_part``,
+  ``is_need`` and ``is_part`` are available (also via a ``need`` object, e.g.
+  ``{{ need.type }}``). The inline role variant ``:need:`[[...]] <ID>``` is
+  likewise rendered as Jinja.
+
+  .. deprecated:: unreleased
+
+     The old ``str.format`` syntax (``{field}`` placeholders) is deprecated.
+     Templates using it are still rendered with ``str.format`` and emit a
+     ``needs.deprecated`` warning; migrate ``{field}`` to ``{{ field }}`` (e.g.
+     ``"{title} ({id})"`` → ``"{{ title }} ({{ id }})"``). Support for the old
+     syntax will be removed in a future release.
+
 .. _`release:8.2.0`:
 
 8.2.0

@@ -31,6 +31,6 @@ needs_types = [
     },
 ]
 
-needs_role_need_template = "[{id}] {title} ({status}) {type_name}/{type} - {tags} - {links} - {links_back} - {content}"
+needs_role_need_template = "[{{ id }}] {{ title }} ({{ status }}) {{ type_name }}/{{ type }} - {{ tags }} - {{ links }} - {{ links_back }} - {{ content }}"
 
 needs_role_need_max_title_length = 10
