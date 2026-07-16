@@ -325,6 +325,32 @@ The following would be invalid specializations:
        },
    }
 
+Core field reference
+++++++++++++++++++++
+
+Every need carries the following built-in core fields,
+in addition to any custom :ref:`needs_fields` you define.
+The table below lists all of them, with the full set of catalog axes:
+
+.. need-core-fields::
+   :all:
+
+The columns expose, for each field:
+the ``Namespace`` (internal data partition that declares it),
+JSON ``Type`` (suffixed with ``?`` when nullable),
+``Storage class`` and population ``Phase``,
+whether it is settable via a ``need`` directive,
+mutable after creation,
+extendable by ``needextend``,
+usable with :ref:`dynamic functions <dynamic_functions>` or variant options,
+shown in the rendered layout,
+and which outputs it is excluded from
+(see the legend above the table).
+
+The same catalog is exported as a machine-readable JSON manifest,
+shipped as ``sphinx_needs/core_fields.json`` and available at runtime via
+``sphinx_needs.data.core_fields_manifest()``, for external tooling.
+
 Default values
 ++++++++++++++
 

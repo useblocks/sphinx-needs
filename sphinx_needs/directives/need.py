@@ -39,6 +39,28 @@ LOGGER = get_logger(__name__)
 
 NON_BREAKING_SPACE = re.compile("\xa0+")
 
+# Core need fields that can be set directly as ``need`` directive options.
+# Keep in sync with the ``match key:`` block in ``NeedDirective.run`` below.
+# This set is asserted against ``NeedsCoreFields`` (the ``settable_in_directive``
+# axis, together with the ``title`` argument and the ``type`` directive name)
+# in ``tests/test_data.py``.
+_CORE_DIRECTIVE_OPTIONS: Final[frozenset[str]] = frozenset(
+    {
+        "id",
+        "jinja_content",
+        "status",
+        "tags",
+        "collapse",
+        "hide",
+        "style",
+        "layout",
+        "template",
+        "pre_template",
+        "post_template",
+        "constraints",
+    }
+)
+
 
 class NeedDirective(SphinxDirective):
     """Collect the specification for a requirement, validate it and store it."""

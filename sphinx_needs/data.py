@@ -65,6 +65,23 @@ class CoreFieldParameters(TypedDict):
     """Description of the field."""
     schema: dict[str, Any]
     """JSON schema for the field."""
+    namespace: Literal["core", "source", "content", "computed"]
+    """Which internal data partition (TypedDict) declares the field:
+    ``core`` (``NeedsInfoType``), ``source`` (``NeedsSourceInfoType``),
+    ``content`` (``NeedsContentInfoType``), or ``computed`` (``NeedsInfoComputedType``).
+    """
+    storage_class: Literal["authored", "captured", "artifact", "virtual"]
+    """The field-model storage classification (metadata only; drives nothing at runtime):
+    ``authored`` (supplied at the need site or import source),
+    ``captured`` (collect-time context not re-derivable from the record alone),
+    ``artifact`` (a phase's raw output object stored field-shaped),
+    or ``virtual`` (a pure projection over other data).
+    """
+    population_phase: Literal["authored", "collect", "extend", "resolve", "validate"]
+    """The build phase at which the field's value is initially populated
+    (later mutation is described by ``allow_extend`` and ``mutable_after_creation``):
+    ``authored``, ``collect``, ``extend``, ``resolve``, or ``validate``.
+    """
     add_to_field_schema: NotRequired[bool]
     """Whether to add the field to the field schema (False if not present)."""
     allow_default: NotRequired[bool]
@@ -80,6 +97,11 @@ class CoreFieldParameters(TypedDict):
     """Whether dynamic functions are deprecated for this field (False if not present)."""
     show_in_layout: NotRequired[bool]
     """Whether to show the field in the rendered layout of the need by default (False if not present)."""
+    settable_in_directive: NotRequired[bool]
+    """Whether the field can be set directly via a ``need`` directive option,
+    argument, or the directive name/type (False if not present)."""
+    mutable_after_creation: NotRequired[bool]
+    """Whether the field's value may be changed after the need item is created (False if not present)."""
     exclude_external: NotRequired[bool]
     """Whether field should be excluded when loading external needs (False if not present)."""
     exclude_import: NotRequired[bool]
@@ -89,22 +111,38 @@ class CoreFieldParameters(TypedDict):
 
 
 NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
-    "id": {"description": "ID of the data.", "schema": {"type": "string"}},
+    "id": {
+        "description": "ID of the data.",
+        "schema": {"type": "string"},
+        "namespace": "core",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
+    },
     "docname": {
         "description": "Name of the document where the need is defined (None if external).",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "source",
+        "storage_class": "virtual",
+        "population_phase": "collect",
         "exclude_external": True,
         "exclude_import": True,
     },
     "lineno": {
         "description": "Line number where the need is defined (None if external).",
         "schema": {"type": ["integer", "null"], "default": None},
+        "namespace": "source",
+        "storage_class": "captured",
+        "population_phase": "collect",
         "exclude_external": True,
         "exclude_import": True,
     },
     "lineno_content": {
         "description": "Line number on which the need content starts (None if external).",
         "schema": {"type": ["integer", "null"], "default": None},
+        "namespace": "source",
+        "storage_class": "captured",
+        "population_phase": "collect",
         "exclude_json": True,
         "exclude_external": True,
         "exclude_import": True,
@@ -112,6 +150,11 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "title": {
         "description": "Title of the need.",
         "schema": {"type": "string"},
+        "namespace": "core",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
+        "mutable_after_creation": True,
         "add_to_field_schema": True,
         "allow_df": True,
         "allow_variants": True,
@@ -119,6 +162,11 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "status": {
         "description": "Status of the need.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "core",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
+        "mutable_after_creation": True,
         "add_to_field_schema": True,
         "show_in_layout": True,
         "allow_default": True,
@@ -129,6 +177,11 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "tags": {
         "description": "List of tags.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "namespace": "core",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
+        "mutable_after_creation": True,
         "add_to_field_schema": True,
         "show_in_layout": True,
         "allow_default": True,
@@ -139,6 +192,11 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "collapse": {
         "description": "Hide the meta-data information of the need.",
         "schema": {"type": "boolean", "default": False},
+        "namespace": "core",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
+        "mutable_after_creation": True,
         "add_to_field_schema": True,
         "allow_df": True,
         "allow_variants": True,
@@ -150,6 +208,11 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "hide": {
         "description": "If true, the need is not rendered.",
         "schema": {"type": "boolean", "default": False},
+        "namespace": "core",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
+        "mutable_after_creation": True,
         "add_to_field_schema": True,
         "allow_df": True,
         "allow_variants": True,
@@ -161,6 +224,11 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "layout": {
         "description": "Key of the layout, which is used to render the need.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "core",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
+        "mutable_after_creation": True,
         "add_to_field_schema": True,
         "show_in_layout": True,
         "allow_default": True,
@@ -172,6 +240,11 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "style": {
         "description": "Comma-separated list of CSS classes (all appended by `needs_style_`).",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "core",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
+        "mutable_after_creation": True,
         "add_to_field_schema": True,
         "show_in_layout": True,
         "exclude_external": True,
@@ -187,22 +260,35 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
             "additionalProperties": {"type": "string"},
             "default": {},
         },
+        "namespace": "core",
+        "storage_class": "artifact",
+        "population_phase": "collect",
+        "mutable_after_creation": True,
     },
     "is_import": {
         "description": "If true, the need was derived from an import.",
         "schema": {"type": "boolean", "default": False},
+        "namespace": "source",
+        "storage_class": "virtual",
+        "population_phase": "collect",
         "exclude_external": True,
         "exclude_import": True,
     },
     "is_external": {
         "description": "If true, no node is created and need is referencing external url.",
         "schema": {"type": "boolean", "default": False},
+        "namespace": "source",
+        "storage_class": "virtual",
+        "population_phase": "collect",
         "exclude_external": True,
         "exclude_import": True,
     },
     "external_url": {
         "description": "URL of the need, if it is an external need.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "source",
+        "storage_class": "captured",
+        "population_phase": "collect",
         "show_in_layout": True,
         "exclude_external": True,
         "exclude_import": True,
@@ -210,17 +296,29 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "external_css": {
         "description": "CSS class name, added to the external reference.",
         "schema": {"type": "string", "default": ""},
+        "namespace": "core",
+        "storage_class": "virtual",
+        "population_phase": "authored",
+        "mutable_after_creation": True,
         "exclude_external": True,
         "exclude_import": True,
     },
     "type": {
         "description": "Type of the need.",
         "schema": {"type": "string", "default": ""},
+        "namespace": "core",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
         "deprecate_df": True,
     },
     "type_name": {
         "description": "Name of the type.",
         "schema": {"type": "string", "default": ""},
+        "namespace": "core",
+        "storage_class": "virtual",
+        "population_phase": "authored",
+        "mutable_after_creation": True,
         "exclude_external": True,
         "exclude_import": True,
         "deprecate_df": True,
@@ -228,6 +326,10 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "type_prefix": {
         "description": "Prefix of the type.",
         "schema": {"type": "string", "default": ""},
+        "namespace": "core",
+        "storage_class": "virtual",
+        "population_phase": "authored",
+        "mutable_after_creation": True,
         "exclude_json": True,
         "exclude_external": True,
         "exclude_import": True,
@@ -236,6 +338,10 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "type_color": {
         "description": "Hexadecimal color code of the type.",
         "schema": {"type": "string", "default": ""},
+        "namespace": "core",
+        "storage_class": "virtual",
+        "population_phase": "authored",
+        "mutable_after_creation": True,
         "exclude_json": True,
         "exclude_external": True,
         "exclude_import": True,
@@ -244,6 +350,10 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "type_style": {
         "description": "Style of the type.",
         "schema": {"type": "string", "default": ""},
+        "namespace": "core",
+        "storage_class": "virtual",
+        "population_phase": "authored",
+        "mutable_after_creation": True,
         "exclude_json": True,
         "exclude_external": True,
         "exclude_import": True,
@@ -252,18 +362,27 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "is_modified": {
         "description": "Whether the need was modified by needextend.",
         "schema": {"type": "boolean", "default": False},
+        "namespace": "computed",
+        "storage_class": "virtual",
+        "population_phase": "extend",
         "exclude_external": True,
         "exclude_import": True,
     },
     "modifications": {
         "description": "Number of modifications by needextend.",
         "schema": {"type": "integer", "default": 0},
+        "namespace": "computed",
+        "storage_class": "virtual",
+        "population_phase": "extend",
         "exclude_external": True,
         "exclude_import": True,
     },
     "is_need": {
         "description": "Whether the need is a need.",
         "schema": {"type": "boolean", "default": True},
+        "namespace": "computed",
+        "storage_class": "virtual",
+        "population_phase": "authored",
         "exclude_external": True,
         "exclude_import": True,
         "exclude_json": True,
@@ -271,6 +390,9 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "is_part": {
         "description": "Whether the need is a part.",
         "schema": {"type": "boolean", "default": False},
+        "namespace": "computed",
+        "storage_class": "virtual",
+        "population_phase": "authored",
         "exclude_external": True,
         "exclude_import": True,
         "exclude_json": True,
@@ -282,11 +404,17 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
             "additionalProperties": {"type": "object"},
             "default": {},
         },
+        "namespace": "computed",
+        "storage_class": "virtual",
+        "population_phase": "collect",
     },
     "id_parent": {
         "description": "<parent ID>, or <self ID> if not a part.",
         "exclude_json": True,
         "schema": {"type": "string", "default": ""},
+        "namespace": "computed",
+        "storage_class": "virtual",
+        "population_phase": "authored",
         "exclude_external": True,
         "exclude_import": True,
     },
@@ -294,17 +422,28 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
         "description": "<parent ID>.<self ID>, or <self ID> if not a part.",
         "exclude_json": True,
         "schema": {"type": "string", "default": ""},
+        "namespace": "computed",
+        "storage_class": "virtual",
+        "population_phase": "authored",
         "exclude_external": True,
         "exclude_import": True,
     },
     "jinja_content": {
         "description": "Whether the content was pre-processed by jinja.",
         "schema": {"type": "boolean", "default": False},
+        "namespace": "content",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
         "exclude_external": True,
     },
     "template": {
         "description": "The template key, if the content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "content",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
         "add_to_field_schema": True,
         "exclude_external": True,
         "allow_default": True,
@@ -312,6 +451,10 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "pre_template": {
         "description": "The template key, if the pre_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "content",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
         "add_to_field_schema": True,
         "exclude_external": True,
         "allow_default": True,
@@ -319,6 +462,10 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "post_template": {
         "description": "The template key, if the post_content was created from a jinja template.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "content",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
         "add_to_field_schema": True,
         "exclude_external": True,
         "allow_default": True,
@@ -326,34 +473,56 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
     "content": {
         "description": "The main content of the need.",
         "schema": {"type": "string", "default": ""},
+        "namespace": "content",
+        "storage_class": "authored",
+        "population_phase": "authored",
     },
     "pre_content": {
         "description": "Additional content before the need.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "content",
+        "storage_class": "authored",
+        "population_phase": "authored",
         "exclude_external": True,
         "exclude_import": True,
     },
     "post_content": {
         "description": "Additional content after the need.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "content",
+        "storage_class": "authored",
+        "population_phase": "authored",
         "exclude_external": True,
         "exclude_import": True,
     },
     "has_dead_links": {
         "description": "True if any links reference need ids that are not found in the need list.",
         "schema": {"type": "boolean", "default": False},
+        "namespace": "core",
+        "storage_class": "virtual",
+        "population_phase": "resolve",
+        "mutable_after_creation": True,
         "exclude_external": True,
         "exclude_import": True,
     },
     "has_forbidden_dead_links": {
         "description": "True if any links reference need ids that are not found in the need list, and the link type does not allow dead links.",
         "schema": {"type": "boolean", "default": False},
+        "namespace": "core",
+        "storage_class": "virtual",
+        "population_phase": "resolve",
+        "mutable_after_creation": True,
         "exclude_external": True,
         "exclude_import": True,
     },
     "constraints": {
         "description": "List of constraint names, which are defined for this need.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": []},
+        "namespace": "core",
+        "storage_class": "authored",
+        "population_phase": "authored",
+        "settable_in_directive": True,
+        "mutable_after_creation": True,  # mutable until constraints_results is computed
         "add_to_field_schema": True,
         "allow_default": True,
         "allow_df": True,
@@ -367,49 +536,156 @@ NeedsCoreFields: Final[Mapping[str, CoreFieldParameters]] = {
             "additionalProperties": {"type": "object"},
             "default": {},
         },
+        "namespace": "computed",
+        "storage_class": "artifact",
+        "population_phase": "validate",
         "exclude_external": True,
         "exclude_import": True,
     },
     "constraints_passed": {
         "description": "True if all constraints passed, False if any failed, None if not yet checked.",
         "schema": {"type": ["boolean", "null"], "default": True},
+        "namespace": "computed",
+        "storage_class": "virtual",
+        "population_phase": "validate",
         "exclude_external": True,
         "exclude_import": True,
     },
     "constraints_error": {
         "description": "An error message set if any constraint failed, and `error_message` field is set in config.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "computed",
+        "storage_class": "virtual",
+        "population_phase": "validate",
         "exclude_external": True,
         "exclude_import": True,
     },
     "doctype": {
         "description": "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
         "schema": {"type": "string", "default": ".rst"},
+        "namespace": "content",
+        "storage_class": "captured",
+        "population_phase": "collect",
     },
     "sections": {
         "description": "Sections of the need.",
         "schema": {"type": "array", "items": {"type": "string"}, "default": ()},
+        "namespace": "core",
+        "storage_class": "captured",
+        "population_phase": "collect",
+        "mutable_after_creation": True,
         "exclude_import": True,
     },
     "section_name": {
         "description": "Simply the first section.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "computed",
+        "storage_class": "virtual",
+        "population_phase": "collect",
         "exclude_external": True,
         "exclude_import": True,
     },
     "signature": {
         "description": "Derived from a docutils desc_name node.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "core",
+        "storage_class": "captured",
+        "population_phase": "collect",
+        "mutable_after_creation": True,
         "show_in_layout": True,
         "exclude_import": True,
     },
     "parent_need": {
         "description": "Simply the first parent id.",
         "schema": {"type": ["string", "null"], "default": None},
+        "namespace": "computed",
+        "storage_class": "virtual",
+        "population_phase": "resolve",
         "exclude_external": True,
         "exclude_import": True,
     },
 }
+
+
+# The boolean axes of ``CoreFieldParameters``, in a stable order.
+# These are ``NotRequired`` on the TypedDict (absent means ``False``),
+# but the manifest materializes each one explicitly.
+_CORE_FIELD_BOOL_AXES: Final = (
+    "add_to_field_schema",
+    "allow_default",
+    "allow_extend",
+    "allow_df",
+    "allow_variants",
+    "deprecate_df",
+    "show_in_layout",
+    "settable_in_directive",
+    "mutable_after_creation",
+    "exclude_external",
+    "exclude_import",
+    "exclude_json",
+)
+
+CORE_FIELDS_MANIFEST_VERSION: Final = 1
+"""Schema version of the :func:`core_fields_manifest` payload.
+
+Bump when the manifest's shape changes in a way external consumers must notice.
+"""
+
+
+def _jsonify(value: Any) -> Any:
+    """Recursively normalize a value to a JSON-serializable form.
+
+    Tuples (e.g. the ``()`` default of ``sections``) become lists;
+    mappings and sequences are normalized element-wise;
+    everything else (``str``, ``int``, ``bool``, ``None``) passes through.
+
+    :param value: The value to normalize.
+    :returns: A JSON-serializable copy of ``value``.
+    """
+    if isinstance(value, Mapping):
+        return {key: _jsonify(val) for key, val in value.items()}
+    if isinstance(value, list | tuple):
+        return [_jsonify(item) for item in value]
+    return value
+
+
+def core_fields_manifest() -> dict[str, Any]:
+    """Return the complete core-field catalog as a JSON-serializable manifest.
+
+    This is a versioned, machine-readable export of :data:`NeedsCoreFields`,
+    intended for external consumers (tooling, editors, alternative implementations)
+    that need the field model without importing sphinx-needs internals.
+
+    Every field entry materializes **all** axes explicitly:
+    the three required classification axes
+    (``namespace``, ``storage_class``, ``population_phase``),
+    every capability/exclusion boolean
+    (an axis absent from :data:`NeedsCoreFields` is emitted as ``False``),
+    and the field ``description`` and ``schema``.
+    Tuple defaults are normalized to lists so the result is JSON-serializable,
+    and both the fields and the axes within each field follow a stable order.
+
+    :returns: A mapping with ``manifest_version``, ``generator``, and ``fields``.
+    """
+    from sphinx_needs import __version__
+
+    fields: dict[str, dict[str, Any]] = {}
+    for name, params in NeedsCoreFields.items():
+        entry: dict[str, Any] = {
+            "namespace": params["namespace"],
+            "storage_class": params["storage_class"],
+            "population_phase": params["population_phase"],
+        }
+        for axis in _CORE_FIELD_BOOL_AXES:
+            entry[axis] = bool(params.get(axis, False))
+        entry["description"] = params["description"]
+        entry["schema"] = _jsonify(params["schema"])
+        fields[name] = entry
+    return {
+        "manifest_version": CORE_FIELDS_MANIFEST_VERSION,
+        "generator": f"sphinx-needs {__version__}",
+        "fields": fields,
+    }
 
 
 class NeedsSourceInfoType(TypedDict):

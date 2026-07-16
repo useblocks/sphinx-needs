@@ -331,6 +331,7 @@ needs_render_context = {
 from typing import get_args  # noqa: E402
 
 from docutils import nodes  # noqa: E402
+from docutils.parsers.rst import directives  # noqa: E402
 from docutils.statemachine import StringList  # noqa: E402
 from sphinx.application import Sphinx  # noqa: E402
 from sphinx.directives import SphinxDirective  # noqa: E402
@@ -393,52 +394,127 @@ class NeedExampleDirective(SphinxDirective):
         return [root]
 
 
+def _core_field_type(data) -> str:
+    """Render a core field's JSON type, with ``?`` appended when nullable."""
+    schema, nullable = _get_core_schema(data)
+    type_ = schema["type"]
+    item_type = schema.get("items", {}).get("type", "") if type_ == "array" else ""
+    rendered = type_ if not item_type else f"{type_}({item_type})"
+    return f"{rendered}?" if nullable else rendered
+
+
+def _csv_table(headers: list[str], rows: list[list[str]], css_class: str) -> list[str]:
+    """Build the lines of a ``csv-table`` directive (robust to empty/any cells)."""
+
+    def cell(value: str) -> str:
+        return '"' + value.replace('"', '""') + '"'
+
+    lines = [
+        ".. csv-table::",
+        "   :header: " + ", ".join(cell(h) for h in headers),
+        f"   :class: {css_class}",
+        "   :widths: auto",
+        "",
+    ]
+    lines.extend("   " + ", ".join(cell(c) for c in row) for row in rows)
+    return lines
+
+
 class NeedCoreFieldsDirective(SphinxDirective):
-    """Directive to list all core need fields."""
+    """Directive to list core need fields.
+
+    By default only the specializable fields (``add_to_field_schema``) are listed,
+    with a compact set of columns. With the ``:all:`` flag, every core field is
+    listed together with the full set of catalog axes.
+    """
+
+    option_spec = {"all": directives.flag}
 
     def run(self):
-        table: list[list[str]] = []
-        head = ["Name", "Type", "Nullable", "Default"]
-        lengths = [len(h) for h in head]
+        show_all = "all" in self.options
+        lines = self._all_table() if show_all else self._default_table()
+        parsed = nodes.container(classes=["needs-core-fields"])
+        self.state.nested_parse(StringList(lines), self.content_offset, parsed)
+        return [parsed]
 
+    def _default_table(self) -> list[str]:
+        headers = [
+            "Name",
+            "Type",
+            "Nullable",
+            "Default",
+            "Extendable",
+            "Dynamic functions",
+        ]
+        rows: list[list[str]] = []
         for name, data in NeedsCoreFields.items():
             if not data.get("add_to_field_schema", False):
                 continue
-            schema, nullable = _get_core_schema(data)
-            type_ = schema["type"]
-            item_type = (
-                schema.get("items", {}).get("type", "") if type_ == "array" else ""
-            )
+            _, nullable = _get_core_schema(data)
             default = data["schema"].get("default", None)
-            row = [
-                f"**{name}**",
-                type_ if not item_type else f"{type_}({item_type})",
-                str(nullable).lower(),
-                str(default) if default is not None else "",
-            ]
-            table.append(row)
-            lengths = [max(ln, len(col)) for col, ln in zip(row, lengths, strict=True)]
-
-        delimiter = " ".join(["=" * length for length in lengths]) + "\n"
-        content = delimiter
-        content += (
-            " ".join(f"{h:<{ln}}" for h, ln in zip(head, lengths, strict=True)) + "\n"
-        )
-        content += delimiter
-        for row in table:
-            content += (
-                " ".join(f"{col:<{ln}}" for col, ln in zip(row, lengths, strict=True))
-                + "\n"
+            rows.append(
+                [
+                    f"**{name}**",
+                    _core_field_type(data),
+                    str(nullable).lower(),
+                    str(default) if default is not None else "",
+                    str(bool(data.get("allow_extend", False))).lower(),
+                    str(bool(data.get("allow_df", False))).lower(),
+                ]
             )
-        content += delimiter
+        return _csv_table(headers, rows, "needs-core-fields-table")
 
-        # print(content)
+    def _all_table(self) -> list[str]:
+        def tick(name: str, axis: str) -> str:
+            return "✓" if NeedsCoreFields[name].get(axis, False) else ""
 
-        parsed = nodes.container(classes=["needs-core-fields"])
-        self.state.nested_parse(
-            StringList(content.splitlines()), self.content_offset, parsed
-        )
-        return [parsed]
+        headers = [
+            "Name",
+            "Namespace",
+            "Type",
+            "Storage class",
+            "Phase",
+            "Settable",
+            "Mutable",
+            "Extend",
+            "DF",
+            "Variants",
+            "Layout",
+            "Excluded",
+        ]
+        exclusions = [
+            ("exclude_json", "J"),
+            ("exclude_import", "I"),
+            ("exclude_external", "E"),
+        ]
+        rows: list[list[str]] = []
+        for name, data in NeedsCoreFields.items():
+            excluded = "/".join(
+                letter for axis, letter in exclusions if data.get(axis, False)
+            )
+            rows.append(
+                [
+                    f"**{name}**",
+                    data["namespace"],
+                    _core_field_type(data),
+                    data["storage_class"],
+                    data["population_phase"],
+                    tick(name, "settable_in_directive"),
+                    tick(name, "mutable_after_creation"),
+                    tick(name, "allow_extend"),
+                    tick(name, "allow_df"),
+                    tick(name, "allow_variants"),
+                    tick(name, "show_in_layout"),
+                    excluded,
+                ]
+            )
+        legend = [
+            "*Legend:* ``✓`` *marks an enabled capability;* ``Type`` *ends in* "
+            "``?`` *when nullable;* ``Excluded`` *lists exclusions —* "
+            "``J`` *(JSON output),* ``I`` *(import),* ``E`` *(external needs).*",
+            "",
+        ]
+        return legend + _csv_table(headers, rows, "needs-core-fields-table")
 
 
 class NeedConfigDefaultRole(SphinxRole):

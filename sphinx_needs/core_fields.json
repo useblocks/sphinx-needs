@@ -1,0 +1,1088 @@
+{
+  "manifest_version": 1,
+  "generator": "sphinx-needs 8.3.0",
+  "fields": {
+    "id": {
+      "namespace": "core",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": true,
+      "mutable_after_creation": false,
+      "exclude_external": false,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "ID of the data.",
+      "schema": {
+        "type": "string"
+      }
+    },
+    "docname": {
+      "namespace": "source",
+      "storage_class": "virtual",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Name of the document where the need is defined (None if external).",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "lineno": {
+      "namespace": "source",
+      "storage_class": "captured",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Line number where the need is defined (None if external).",
+      "schema": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "lineno_content": {
+      "namespace": "source",
+      "storage_class": "captured",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": true,
+      "description": "Line number on which the need content starts (None if external).",
+      "schema": {
+        "type": [
+          "integer",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "title": {
+      "namespace": "core",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": true,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": true,
+      "allow_variants": true,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": true,
+      "mutable_after_creation": true,
+      "exclude_external": false,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "Title of the need.",
+      "schema": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "namespace": "core",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": true,
+      "allow_default": true,
+      "allow_extend": true,
+      "allow_df": true,
+      "allow_variants": true,
+      "deprecate_df": false,
+      "show_in_layout": true,
+      "settable_in_directive": true,
+      "mutable_after_creation": true,
+      "exclude_external": false,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "Status of the need.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "tags": {
+      "namespace": "core",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": true,
+      "allow_default": true,
+      "allow_extend": true,
+      "allow_df": true,
+      "allow_variants": true,
+      "deprecate_df": false,
+      "show_in_layout": true,
+      "settable_in_directive": true,
+      "mutable_after_creation": true,
+      "exclude_external": false,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "List of tags.",
+      "schema": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": []
+      }
+    },
+    "collapse": {
+      "namespace": "core",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": true,
+      "allow_default": true,
+      "allow_extend": true,
+      "allow_df": true,
+      "allow_variants": true,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": true,
+      "mutable_after_creation": true,
+      "exclude_external": true,
+      "exclude_import": false,
+      "exclude_json": true,
+      "description": "Hide the meta-data information of the need.",
+      "schema": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "hide": {
+      "namespace": "core",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": true,
+      "allow_default": true,
+      "allow_extend": true,
+      "allow_df": true,
+      "allow_variants": true,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": true,
+      "mutable_after_creation": true,
+      "exclude_external": true,
+      "exclude_import": false,
+      "exclude_json": true,
+      "description": "If true, the need is not rendered.",
+      "schema": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "layout": {
+      "namespace": "core",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": true,
+      "allow_default": true,
+      "allow_extend": true,
+      "allow_df": true,
+      "allow_variants": true,
+      "deprecate_df": false,
+      "show_in_layout": true,
+      "settable_in_directive": true,
+      "mutable_after_creation": true,
+      "exclude_external": true,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "Key of the layout, which is used to render the need.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "style": {
+      "namespace": "core",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": true,
+      "allow_default": true,
+      "allow_extend": true,
+      "allow_df": true,
+      "allow_variants": true,
+      "deprecate_df": false,
+      "show_in_layout": true,
+      "settable_in_directive": true,
+      "mutable_after_creation": true,
+      "exclude_external": true,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "Comma-separated list of CSS classes (all appended by `needs_style_`).",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "arch": {
+      "namespace": "core",
+      "storage_class": "artifact",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": true,
+      "exclude_external": false,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "Mapping of uml key to uml content.",
+      "schema": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        },
+        "default": {}
+      }
+    },
+    "is_import": {
+      "namespace": "source",
+      "storage_class": "virtual",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "If true, the need was derived from an import.",
+      "schema": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "is_external": {
+      "namespace": "source",
+      "storage_class": "virtual",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "If true, no node is created and need is referencing external url.",
+      "schema": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "external_url": {
+      "namespace": "source",
+      "storage_class": "captured",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": true,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "URL of the need, if it is an external need.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "external_css": {
+      "namespace": "core",
+      "storage_class": "virtual",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": true,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "CSS class name, added to the external reference.",
+      "schema": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "type": {
+      "namespace": "core",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": true,
+      "show_in_layout": false,
+      "settable_in_directive": true,
+      "mutable_after_creation": false,
+      "exclude_external": false,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "Type of the need.",
+      "schema": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "type_name": {
+      "namespace": "core",
+      "storage_class": "virtual",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": true,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": true,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Name of the type.",
+      "schema": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "type_prefix": {
+      "namespace": "core",
+      "storage_class": "virtual",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": true,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": true,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": true,
+      "description": "Prefix of the type.",
+      "schema": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "type_color": {
+      "namespace": "core",
+      "storage_class": "virtual",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": true,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": true,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": true,
+      "description": "Hexadecimal color code of the type.",
+      "schema": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "type_style": {
+      "namespace": "core",
+      "storage_class": "virtual",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": true,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": true,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": true,
+      "description": "Style of the type.",
+      "schema": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "is_modified": {
+      "namespace": "computed",
+      "storage_class": "virtual",
+      "population_phase": "extend",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Whether the need was modified by needextend.",
+      "schema": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "modifications": {
+      "namespace": "computed",
+      "storage_class": "virtual",
+      "population_phase": "extend",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Number of modifications by needextend.",
+      "schema": {
+        "type": "integer",
+        "default": 0
+      }
+    },
+    "is_need": {
+      "namespace": "computed",
+      "storage_class": "virtual",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": true,
+      "description": "Whether the need is a need.",
+      "schema": {
+        "type": "boolean",
+        "default": true
+      }
+    },
+    "is_part": {
+      "namespace": "computed",
+      "storage_class": "virtual",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": true,
+      "description": "Whether the need is a part.",
+      "schema": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "parts": {
+      "namespace": "computed",
+      "storage_class": "virtual",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": false,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "Mapping of parts, a.k.a. sub-needs, IDs to data that overrides the need's data",
+      "schema": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object"
+        },
+        "default": {}
+      }
+    },
+    "id_parent": {
+      "namespace": "computed",
+      "storage_class": "virtual",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": true,
+      "description": "<parent ID>, or <self ID> if not a part.",
+      "schema": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "id_complete": {
+      "namespace": "computed",
+      "storage_class": "virtual",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": true,
+      "description": "<parent ID>.<self ID>, or <self ID> if not a part.",
+      "schema": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "jinja_content": {
+      "namespace": "content",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": true,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "Whether the content was pre-processed by jinja.",
+      "schema": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "template": {
+      "namespace": "content",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": true,
+      "allow_default": true,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": true,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "The template key, if the content was created from a jinja template.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "pre_template": {
+      "namespace": "content",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": true,
+      "allow_default": true,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": true,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "The template key, if the pre_content was created from a jinja template.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "post_template": {
+      "namespace": "content",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": true,
+      "allow_default": true,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": true,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "The template key, if the post_content was created from a jinja template.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "content": {
+      "namespace": "content",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": false,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "The main content of the need.",
+      "schema": {
+        "type": "string",
+        "default": ""
+      }
+    },
+    "pre_content": {
+      "namespace": "content",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Additional content before the need.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "post_content": {
+      "namespace": "content",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Additional content after the need.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "has_dead_links": {
+      "namespace": "core",
+      "storage_class": "virtual",
+      "population_phase": "resolve",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": true,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "True if any links reference need ids that are not found in the need list.",
+      "schema": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "has_forbidden_dead_links": {
+      "namespace": "core",
+      "storage_class": "virtual",
+      "population_phase": "resolve",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": true,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "True if any links reference need ids that are not found in the need list, and the link type does not allow dead links.",
+      "schema": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "constraints": {
+      "namespace": "core",
+      "storage_class": "authored",
+      "population_phase": "authored",
+      "add_to_field_schema": true,
+      "allow_default": true,
+      "allow_extend": true,
+      "allow_df": true,
+      "allow_variants": true,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": true,
+      "mutable_after_creation": true,
+      "exclude_external": false,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "List of constraint names, which are defined for this need.",
+      "schema": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": []
+      }
+    },
+    "constraints_results": {
+      "namespace": "computed",
+      "storage_class": "artifact",
+      "population_phase": "validate",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Mapping of constraint name, to check name, to result, None if not yet checked.",
+      "schema": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "additionalProperties": {
+          "type": "object"
+        },
+        "default": {}
+      }
+    },
+    "constraints_passed": {
+      "namespace": "computed",
+      "storage_class": "virtual",
+      "population_phase": "validate",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "True if all constraints passed, False if any failed, None if not yet checked.",
+      "schema": {
+        "type": [
+          "boolean",
+          "null"
+        ],
+        "default": true
+      }
+    },
+    "constraints_error": {
+      "namespace": "computed",
+      "storage_class": "virtual",
+      "population_phase": "validate",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "An error message set if any constraint failed, and `error_message` field is set in config.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "doctype": {
+      "namespace": "content",
+      "storage_class": "captured",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": false,
+      "exclude_import": false,
+      "exclude_json": false,
+      "description": "The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'.",
+      "schema": {
+        "type": "string",
+        "default": ".rst"
+      }
+    },
+    "sections": {
+      "namespace": "core",
+      "storage_class": "captured",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": true,
+      "exclude_external": false,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Sections of the need.",
+      "schema": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "default": []
+      }
+    },
+    "section_name": {
+      "namespace": "computed",
+      "storage_class": "virtual",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Simply the first section.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "signature": {
+      "namespace": "core",
+      "storage_class": "captured",
+      "population_phase": "collect",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": true,
+      "settable_in_directive": false,
+      "mutable_after_creation": true,
+      "exclude_external": false,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Derived from a docutils desc_name node.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    },
+    "parent_need": {
+      "namespace": "computed",
+      "storage_class": "virtual",
+      "population_phase": "resolve",
+      "add_to_field_schema": false,
+      "allow_default": false,
+      "allow_extend": false,
+      "allow_df": false,
+      "allow_variants": false,
+      "deprecate_df": false,
+      "show_in_layout": false,
+      "settable_in_directive": false,
+      "mutable_after_creation": false,
+      "exclude_external": true,
+      "exclude_import": true,
+      "exclude_json": false,
+      "description": "Simply the first parent id.",
+      "schema": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "default": null
+      }
+    }
+  }
+}
