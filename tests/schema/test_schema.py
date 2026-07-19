@@ -144,6 +144,57 @@ def test_schema_example(test_app: SphinxTestApp, snapshot) -> None:
                 (
                     "conf.py",
                     """
+extensions = ["sphinx_needs"]
+needs_fields = {"comment": {"schema": {"type": "string"}}}
+needs_schema_definitions = {
+    "schemas": [
+        {
+            "validate": {
+                "local": {
+                    "properties": {"status": {"const": "open"}},
+                    "additionalProperties": False,
+                }
+            }
+        }
+    ]
+}
+""",
+                ),
+                (
+                    "index.rst",
+                    """
+Test
+====
+
+.. req:: Requirement
+   :id: REQ_1
+   :status: open
+   :comment: unexpected
+""",
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_schema_additional_properties(test_app: SphinxTestApp) -> None:
+    """Check that additionalProperties is accepted and applied."""
+    test_app.build()
+    warnings = strip_colors(test_app._warning.getvalue())
+    assert (
+        "Additional properties are not allowed ('comment' was unexpected)" in warnings
+    )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    "conf.py",
+                    """
 
 extensions = ["sphinx_needs"]
 needs_schema_validation_enabled = False
