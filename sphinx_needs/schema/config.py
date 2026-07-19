@@ -374,6 +374,7 @@ class NeedFieldsSchemaType(AllOfSchemaType):
     properties: NotRequired[dict[str, FieldAndLinkSchemaTypes]]
     required: NotRequired[list[str]]
     """List of required fields in the need."""
+    additionalProperties: NotRequired[bool]
     unevaluatedProperties: NotRequired[bool]
 
 

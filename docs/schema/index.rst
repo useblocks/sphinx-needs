@@ -695,7 +695,27 @@ The ``validate`` section contains the actual validation rules:
 
 ``local`` validation also means all link fields are list of need ID strings, not need objects.
 
-**Unevaluated properties control**
+**Additional and unevaluated properties control**
+
+The ``additionalProperties`` property controls whether fields not listed in the
+same schema object's ``properties`` are allowed:
+
+.. code-block:: json
+
+   {
+     "validate": {
+       "local": {
+         "properties": {
+           "status": { "enum": ["open", "closed"] }
+         },
+         "additionalProperties": false
+       }
+     }
+   }
+
+For schemas composed with ``allOf``, prefer ``unevaluatedProperties``. Unlike
+``additionalProperties``, it also recognises properties evaluated by the other
+schemas in the composition.
 
 The ``unevaluatedProperties`` property controls whether properties not explicitly defined in the
 schema are allowed:

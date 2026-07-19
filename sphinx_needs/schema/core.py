@@ -623,7 +623,13 @@ def validate_object_schema_compiles(schema: Any) -> None:
             "type": "object",
             **{
                 k: schema[k]
-                for k in ("properties", "allOf", "required", "unevaluatedProperties")
+                for k in (
+                    "properties",
+                    "allOf",
+                    "required",
+                    "additionalProperties",
+                    "unevaluatedProperties",
+                )
                 if k in schema
             },
         },
@@ -646,7 +652,13 @@ def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:
         "type": "object",
         **{  # type: ignore[typeddict-item]
             k: schema[k]  # type: ignore[literal-required]
-            for k in ("properties", "allOf", "required", "unevaluatedProperties")
+            for k in (
+                "properties",
+                "allOf",
+                "required",
+                "additionalProperties",
+                "unevaluatedProperties",
+            )
             if k in schema
         },
     }

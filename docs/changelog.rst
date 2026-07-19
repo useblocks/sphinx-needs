@@ -4,6 +4,15 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+Bug fixes
+.........
+
+- 🐛 Support the standard JSON Schema ``additionalProperties`` keyword in
+  ``needs_schema_definitions`` (:issue:`1723`).
+
 .. _`release:8.3.0`:
 
 8.3.0

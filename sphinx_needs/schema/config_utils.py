@@ -417,10 +417,11 @@ def _process_need_fields_schema(
     # Cast to NeedFieldsSchemaType for property access (safe after $ref check)
     need_schema = cast(NeedFieldsSchemaType, schema)
 
-    # Inject 'object' type if properties/required/unevaluatedProperties exist
+    # Inject 'object' type if object-specific keywords exist
     if (
         "properties" in need_schema
         or "required" in need_schema
+        or "additionalProperties" in need_schema
         or "unevaluatedProperties" in need_schema
     ):
         if "type" not in need_schema:
