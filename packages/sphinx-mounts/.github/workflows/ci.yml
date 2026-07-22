@@ -21,7 +21,7 @@ jobs:
     name: Prek
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v7
       - run: uv run --frozen prek run --all-files --show-diff-on-failure
         env:
@@ -31,7 +31,7 @@ jobs:
     name: ty
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version-file: ".python-version"
@@ -69,7 +69,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version: "${{ matrix.python }}"
@@ -81,7 +81,7 @@ jobs:
     name: Bazel integration test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version-file: ".python-version"
@@ -117,7 +117,7 @@ jobs:
     name: Documentation build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
         with:
           python-version-file: ".python-version"
