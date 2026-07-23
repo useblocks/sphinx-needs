@@ -1,0 +1,6 @@
+2026 Q2
+=======
+
+RELEASE_NOTES_Q2_MARKER
+
+Second hand-picked release note.

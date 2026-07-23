@@ -1,12 +1,13 @@
 """End-to-end test of the full example under ``tests/example/``.
 
 The example is a complete, checked-in reference setup: a host Sphinx
-project, two Bazel-generated bundles (one RST, one Markdown), and nine
+project, two Bazel-generated bundles (one RST, one Markdown), nine
 checked-in "showcase" bundles — one folder per file-referencing
 directive (literalinclude, include, csv-table, raw, image, figure,
-graphviz, uml, mermaid) — all wired into the host's toctree via
-``attach_to``. This test runs the pipeline the example's README
-documents:
+graphviz, uml, mermaid) — and one checked-in "release notes" bundle
+mounted in file-list mode (``files``), all wired into the host's
+toctree via ``attach_to``. This test runs the pipeline the example's
+README documents:
 
 1. Copy the example to a tmp workspace (so the developer's real
    ``bazel-bin/`` is untouched).
@@ -113,6 +114,14 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert (workspace / "showcase" / "uml" / "sequence.puml").exists()
     assert (workspace / "showcase" / "csv-table" / "data.csv").exists()
 
+    # The "release notes" bundle is checked in too and mounted via file-list
+    # mode. ``2026-q3-draft.rst`` is present on disk but deliberately left out
+    # of the mount's ``files`` list (asserted absent from the output in 2d).
+    release_notes = workspace / "release-notes"
+    assert (release_notes / "index.rst").exists()
+    assert (release_notes / "notes" / "2026-q1.rst").exists()
+    assert (release_notes / "notes" / "2026-q3-draft.rst").exists()
+
     # Run sphinx-build against the host project. -W turns any unresolved
     # reference into a failure, so a broken mount surfaces here.
     docs = workspace / "docs"
@@ -197,6 +206,33 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert 'href="../../coverage/index.html"' in foo_cov
     assert 'src="../../coverage/index.html"' in foo_cov
 
+    # 2d) File-list mode (``files``): only the three explicitly listed files
+    #     were mounted, at a FLAT namespace under _generated/release-notes/
+    #     (each file's basename is the docname tail, so the source-side
+    #     ``notes/`` subdirectory is dropped). The entry doc is wired in via
+    #     attach_to, exactly like a directory mount.
+    rn_index = (html_out / "_generated" / "release-notes" / "index.html").read_text(
+        encoding="utf-8"
+    )
+    rn_q1 = (html_out / "_generated" / "release-notes" / "2026-q1.html").read_text(
+        encoding="utf-8"
+    )
+    rn_q2 = (html_out / "_generated" / "release-notes" / "2026-q2.html").read_text(
+        encoding="utf-8"
+    )
+    assert "RELEASE_NOTES_INDEX_MARKER" in rn_index
+    assert "RELEASE_NOTES_Q1_MARKER" in rn_q1
+    assert "RELEASE_NOTES_Q2_MARKER" in rn_q2
+    # Flat namespace: the source-side ``notes/`` subdirectory is not part of
+    # any docname, so no such directory exists in the output.
+    assert not (html_out / "_generated" / "release-notes" / "notes").exists()
+    # Selective pick: the draft file sits in the same source tree but was
+    # left out of the ``files`` list, so — unlike a directory mount — it was
+    # never discovered and produced no page.
+    assert not (
+        html_out / "_generated" / "release-notes" / "2026-q3-draft.html"
+    ).exists()
+
     # 3) Markdown bundle rendered.
     bar_index = (html_out / "_generated" / "api-bar" / "index.html").read_text(
         encoding="utf-8"
@@ -224,6 +260,10 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert "_generated/showcase" not in source_index_rst
     assert "_generated/showcase/literalinclude/index.html" in index_html
     assert "_generated/showcase/uml/index.html" in index_html
+    # The file-list release-notes bundle is wired via attach_to as well, so
+    # its entry doc appears in the host index toctree but never in the source.
+    assert "_generated/release-notes" not in source_index_rst
+    assert "_generated/release-notes/index.html" in index_html
 
     # 5) Nothing was copied into the host srcdir — neither the mounted
     #    bundles (_generated) nor the html_extra_path report (coverage).

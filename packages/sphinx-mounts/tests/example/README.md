@@ -32,11 +32,17 @@ end-to-end (marked `bazel`, skipped when no `bazel`/`bazelisk` is on
     │   ├── graphviz/                  # index.rst + graph.dot
     │   ├── uml/                       # index.rst + sequence.puml
     │   └── mermaid/                   # index.rst + flow.mmd
+    ├── release-notes/                 # checked-in bundle mounted via file-list mode (files=)
+    │   ├── index.rst                  # entry doc — toctree over the picked notes
+    │   └── notes/
+    │       ├── 2026-q1.rst            # mounted -> flat docname .../release-notes/2026-q1
+    │       ├── 2026-q2.rst            # mounted -> flat docname .../release-notes/2026-q2
+    │       └── 2026-q3-draft.rst      # on disk but NOT in the files list -> not mounted
     └── docs/
         ├── conf.py                    # host project + graphviz/plantuml/mermaid + html_extra_path
         ├── index.rst                  # host toctree — names api-bar only
         ├── installation.rst           # host-only page
-        └── ubproject.toml             # 2 Bazel mounts + 9 checked-in showcase mounts
+        └── ubproject.toml             # 2 Bazel mounts + 9 showcase mounts + 1 file-list mount
 
 ## Pipeline
 
@@ -148,6 +154,16 @@ Run the commands below from this directory (`tests/example/`).
   that pointed into the host (a leading `/`) or climbed out with `..`
   would fail the build instead. These are plain files mounted in place —
   not Bazel-generated — so each directive's usage is visible at a glance.
+- **Directory mode vs file-list mode.** Every mount above uses `dir` (walk a
+  whole tree). The `release-notes/` bundle instead uses `files` — a hand-picked
+  list of individual files. Two behaviours are visible only in this mode: (1)
+  `notes/2026-q3-draft.rst` sits right next to the mounted notes but is left
+  out of the `files` list, so it is never mounted — a `dir` mount would have
+  walked and mounted it; and (2) each file's *basename* becomes the docname
+  tail, so the source-side `notes/` subdirectory is dropped and the notes land
+  at the flat docnames `_generated/release-notes/2026-q1` / `.../2026-q2`.
+  `include` / `exclude` / `gitignore` do not apply in file-list mode — the
+  list itself is the filter.
 - **A pre-built HTML report, no copy of sources.** `//coverage_report`
   generates a small lcov-style HTML tree. The host `conf.py` lists it in
   Sphinx's `html_extra_path`, which copies it **verbatim into the build

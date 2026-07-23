@@ -55,6 +55,14 @@ if [ -d "${example_src}/showcase" ]; then
     cp -RL "${example_src}/showcase" "${stage}/showcase"
 fi
 
+# Stage the checked-in "release notes" bundle. Like ``showcase/`` it is a
+# plain source folder (not a Bazel output); ``ubproject.toml`` mounts
+# individual files under ``../release-notes/...`` (file-list mode), so the
+# tree must sit next to ``${stage}/docs`` too.
+if [ -d "${example_src}/release-notes" ]; then
+    cp -RL "${example_src}/release-notes" "${stage}/release-notes"
+fi
+
 # Stage each artefact under ``bazel-bin/`` so the workspace-relative
 # paths in the host config resolve from ``${stage}/docs/``:
 #   - source bundle files at ``bazel-bin/bundles/<bundle>/<file>``

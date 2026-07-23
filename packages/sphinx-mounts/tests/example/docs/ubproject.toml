@@ -81,3 +81,24 @@ attach_to = "index"
 dir = "../showcase/mermaid"
 mount_at = "_generated/showcase/mermaid"
 attach_to = "index"
+
+# ---------------------------------------------------------------------------
+# Checked-in "release notes" bundle demonstrating FILE-LIST mode (``files``)
+# instead of directory mode (``dir``). Only the three files named below are
+# mounted; ``../release-notes/notes/2026-q3-draft.rst`` sits in the same tree
+# but is left out of the list, so — unlike a ``dir`` mount, which walks the
+# whole tree — it is never discovered. Each file's *basename* (minus the
+# suffix) becomes the docname tail under ``mount_at``, so the source-side
+# ``notes/`` subdirectory is dropped and the notes land at the flat docnames
+# ``_generated/release-notes/2026-q1`` / ``…/2026-q2``. ``include`` /
+# ``exclude`` / ``gitignore`` do not apply in this mode — the list *is* the
+# filter. The entry doc is wired into the host ``index`` toctree via
+# ``attach_to``, exactly like the directory mounts above.
+[[mounts]]
+files = [
+  "../release-notes/index.rst",
+  "../release-notes/notes/2026-q1.rst",
+  "../release-notes/notes/2026-q2.rst",
+]
+mount_at = "_generated/release-notes"
+attach_to = "index"
