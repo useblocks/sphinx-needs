@@ -7,7 +7,7 @@ needpie
 
 ``needpie`` adds a pie-chart to your documentation.
 
-.. need-example::
+.. syntax-example::
 
    .. needpie:: My pie chart
 
@@ -32,7 +32,7 @@ Options
 
 **Example with all options used:**
 
-.. need-example::
+.. syntax-example::
 
    .. needpie:: Requirement status
       :labels: Open, In progress, Closed
@@ -56,7 +56,7 @@ Use ``:labels:`` to set labels for each value.
 ``:labels:`` must get a comma separated string and the amount of labels must match the amount of
 values/lines from content.
 
-.. need-example::
+.. syntax-example::
 
    .. needpie:: Requirement status
       :labels: Open, In progress, Closed
@@ -73,7 +73,7 @@ You can place a legend on the right side of the pie chart by setting the ``:lege
 
 The ``:legend:`` flag does not support any values.
 
-.. need-example::
+.. syntax-example::
 
    .. needpie:: Requirement status
       :labels: Open, In progress, Closed
@@ -94,7 +94,7 @@ The amount of values for ``:explode:`` must match the amount of values / content
 
 Useful values for ``:explode:`` are between ``0`` and ``0.3``
 
-.. need-example::
+.. syntax-example::
 
    .. needpie:: Requirement status
       :explode: 0,0.2,0
@@ -109,7 +109,7 @@ shadow
 
 ``:shadow:`` activates a shadow in the pie chart. It does not support any further values.
 
-.. need-example::
+.. syntax-example::
 
    .. needpie:: Requirement status
       :explode: 0,0.2,0
@@ -129,7 +129,7 @@ for a complete list of color names.
 
 But besides names, the ``:colors:`` option also supports hex-values like ``#ffcc00``.
 
-.. need-example::
+.. syntax-example::
 
    .. needpie:: Requirement status
       :colors: lightcoral, gold, #555555
@@ -145,7 +145,7 @@ text_color
 
 .. note:: Setting the ``:text_color:`` option does not change the legend and title color.
 
-.. need-example::
+.. syntax-example::
 
    .. needpie:: Requirement status
       :text_color: w
@@ -169,7 +169,7 @@ Useful styles are for example:
 * dark_background
 * grayscale
 
-.. need-example::
+.. syntax-example::
 
    .. needpie:: Requirement status
       :style: Solarize_Light2
@@ -189,7 +189,7 @@ In the past we had overlapping labels. See following diagram.
 
 Now overlapping labels are removed, and we automatically add a legend with removed information.
 
-.. need-example::
+.. syntax-example::
 
    .. needpie:: Requirement status
       :labels: New, Open, In progress, Closed, Outdated, Removed

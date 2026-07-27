@@ -421,7 +421,7 @@ Configuration example:
 
 The above example configuration allows the following usage:
 
-.. need-example::
+.. syntax-example::
 
    .. req:: My requirement
       :id: EXTRA_REQ_001
@@ -780,7 +780,7 @@ These configs can then be selected when using :ref:`needflow`.
 
 This configurations can then be used like this:
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :tags: flow_example
@@ -1030,7 +1030,7 @@ Generates needs ID from title. By default, this setting is set to **False**.
 When no need ID is given by the user, and ``needs_id_from_title`` is set to **True**, then a need ID
 will be calculated based on the current need directive prefix, title, and a hashed value from title.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Group big short
 
@@ -1101,7 +1101,7 @@ A title can be auto-generated for a requirement by either setting
 The resulting requirement would have the title derived from the first
 sentence of the requirement.
 
-.. need-example::
+.. syntax-example::
 
    .. req::
       :title_from_content:
@@ -1130,7 +1130,7 @@ setting (which is not limited by default).
 If a title is specified for an individual requirement, then that title
 will be used over the generated title.
 
-.. need-example::
+.. syntax-example::
 
    .. req::
       :id: R_ERROR_LOGGING
@@ -1918,7 +1918,7 @@ link name and url.
        }
    }
 
-.. need-example::
+.. syntax-example::
 
    .. spec:: Use needs_string_links
       :id: EXAMPLE_STRING_LINKS
@@ -2311,7 +2311,7 @@ The value can be any data type (string, integer, list, dict, etc.)
 The data passed via needs_render_context will be available as variable(s) when rendering Jinja templates or strings.
 You can use the data passed via needs_render_context as shown below:
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Need with jinja_content enabled
       :id: JINJA1D8913

@@ -7,7 +7,7 @@ needlist
 
 **needlist** creates a list of elements based on the result of given filters.
 
-.. need-example::
+.. syntax-example::
 
    .. needlist::
       :tags: main_example
@@ -29,7 +29,7 @@ Flag for adding status information to the needs list results filtered.
 
 If a filtered need has no status information, we write no status output for the need.
 
-.. need-example::
+.. syntax-example::
 
    .. needlist::
       :show_status:
@@ -44,7 +44,7 @@ Flag for adding tag information to the needs list results filtered.
 If a filtered need has no tag information, we write no tag output for the need.
 
 
-.. need-example::
+.. syntax-example::
 
    .. needlist::
       :show_tags:
@@ -58,7 +58,7 @@ show_filters
 If set, we add the used filter below the needlist results:
 
 
-.. need-example::
+.. syntax-example::
 
    .. needlist::
       :show_filters:

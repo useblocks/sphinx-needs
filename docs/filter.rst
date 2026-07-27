@@ -40,7 +40,7 @@ You can easily filter for multiple statuses by separating them by ";". Example: 
 
 .. dropdown:: Show example
 
-   .. need-example::
+   .. syntax-example::
 
       .. needlist::
          :status: open
@@ -57,7 +57,7 @@ To search for multiple tags, simply separate them by using ";".
 
 .. dropdown:: Show example
 
-   .. need-example::
+   .. syntax-example::
 
       .. needlist::
          :tags: main_example
@@ -71,7 +71,7 @@ For **:types:** the type itself or the human-readable type-title can be used as 
 
 .. dropdown:: Show example
 
-   .. need-example::
+   .. syntax-example::
 
       .. needtable::
          :types: test
@@ -84,7 +84,7 @@ Sorts the result list. Allowed values are ``status`` or any alphanumerical prope
 
 .. dropdown:: Show example
 
-   .. need-example::
+   .. syntax-example::
 
       .. needtable::
          :sort_by: id
@@ -117,7 +117,7 @@ The usage of a filter string is supported/required by:
 
 The filter string must be a valid Python expression:
 
-.. need-example::
+.. syntax-example::
 
    :need_count:`type=='spec' and status != 'open'`
 
@@ -133,7 +133,7 @@ This allows to perform searches for need_parts, where search options are based o
 
 The following filter will find all need_parts, which are part of a need, which has a tag called *important*.
 
-.. need-example::
+.. syntax-example::
 
    :need_count:`is_part and 'car' in tags`
 
@@ -158,7 +158,7 @@ If it is invalid or returns False, the related need is not taken into account fo
 
 .. dropdown:: Show example
 
-   .. need-example:: ``filter`` option
+   .. syntax-example:: ``filter`` option
 
       needs:
 
@@ -239,7 +239,7 @@ Additionally, to common :ref:`filter_string` variables,
 the ``c.this_doc()`` function is for most directives,
 to filter for needs only in the same document as the directive.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :filter: c.this_doc()
@@ -260,7 +260,7 @@ The second parameter should be one of the above variables(status, id, content, .
 
    This example uses a regular expressions to find all needs with an e-mail address in title.
 
-   .. need-example::
+   .. syntax-example::
 
       .. req:: Set admin e-mail to admin@mycompany.com
 
@@ -319,7 +319,7 @@ The used code must define a variable ``results``, which must be a list and conta
 
 The code also has access to a variable called ``needs``, which is a :class:`.NeedsAndPartsListView` instance.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :columns: id, title, type, links, links_back
@@ -462,7 +462,7 @@ More Examples
 
 .. dropdown:: Setup
 
-   .. need-example::
+   .. syntax-example::
 
       .. req:: My first requirement
          :status: open
@@ -493,13 +493,13 @@ More Examples
          Python 2.7 environment.
 
 
-.. need-example:: Filter result as table
+.. syntax-example:: Filter result as table
 
    .. needtable::
       :tags: test
       :status: implemented; open
 
-.. need-example:: Filter result as diagram
+.. syntax-example:: Filter result as diagram
 
    .. needflow::
       :filter: "More Examples" == section_name

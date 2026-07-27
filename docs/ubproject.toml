@@ -1,11 +1,11 @@
 "$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
 
-[parse.extend_directives.need-example]
-argument = true
-options = true
-content = true
-parse_content = true
-content_required = true
+[parse]
+# Enable the built-in extension ports used by these docs:
+# - sphinx_syntax_example: the `.. syntax-example::` directive (also declared in
+#   `extensions` in docs/conf.py), so the engine recognises it by module tag and
+#   renders the same source + rendered-result shape as the Sphinx build.
+extensions = ["sphinx_syntax_example"]
 
 [parse.extend_directives.grid-item-card]
 argument = false

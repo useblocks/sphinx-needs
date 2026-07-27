@@ -30,7 +30,7 @@ The argument of ``needextend`` will be taken as, by order of priority:
 ``needextend`` can modify all string-based and list-based options.
 Also, you can add links or delete tags.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: needextend Example 1
       :id: extend_test_001
@@ -103,14 +103,14 @@ to filter for needs only in the same document as the ``needextend``.
 The following example would set the status of all needs in the current document,
 which do not have the status set explicitly, to ``open``.
 
-.. need-example::
+.. syntax-example::
 
    .. needextend:: c.this_doc() and status is None
       :status: open
 
 To address all needs in the current document, use this syntax:
 
-.. need-example::
+.. syntax-example::
 
    .. needextend:: "c.this_doc()"
       :status: open
@@ -124,7 +124,7 @@ Options containing links get handled in two steps:
 1. Options for the need are set as above.
 2. The referenced need get updated as well and incoming links may get deleted, added or replaced.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: needextend Example 3
       :id: extend_test_003
@@ -182,7 +182,7 @@ To see these values, use ``:layout: debug`` on the need or by :ref:`own_layouts`
 
 Also filtering for these values is supported:
 
-.. need-example::
+.. syntax-example::
 
    We have :need_count:`is_modified` modified needs.
 

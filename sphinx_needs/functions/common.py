@@ -40,7 +40,7 @@ def test(
 
     Collects every given args and kwargs and returns a single string, which contains their values/keys.
 
-    .. need-example::
+    .. syntax-example::
 
         .. req:: test requirement
 
@@ -66,7 +66,7 @@ def echo(
     Just returns the given string back.
     Mostly useful for tests.
 
-    .. need-example::
+    .. syntax-example::
 
        A nice :ndf:`echo("first test")` for a dynamic function.
 
@@ -87,7 +87,7 @@ def copy(
     """
     Copies the value of one need option to another
 
-    .. need-example::
+    .. syntax-example::
 
         .. req:: copy-example
            :id: copy_1
@@ -193,7 +193,7 @@ def check_linked_values(
 
     **Needs used as input data**
 
-    .. need-example::
+    .. syntax-example::
 
         .. req:: Input A
            :id: clv_A
@@ -211,7 +211,7 @@ def check_linked_values(
 
     Status gets set to *progress*.
 
-    .. need-example::
+    .. syntax-example::
 
         .. spec:: result 1: Positive check
            :links: clv_A, clv_B
@@ -222,7 +222,7 @@ def check_linked_values(
 
     Status gets not set to *progress*, because status of linked need *clv_C* does not match *"in progress"*.
 
-    .. need-example::
+    .. syntax-example::
 
         .. spec:: result 2: Negative check
            :links: clv_A, clv_B, clv_C
@@ -233,7 +233,7 @@ def check_linked_values(
 
     status gets set to *progress*, because linked need *clv_C* is not part of the filter.
 
-    .. need-example::
+    .. syntax-example::
 
         .. spec:: result 3: Positive check thanks of used filter
            :links: clv_A, clv_B, clv_C
@@ -246,7 +246,7 @@ def check_linked_values(
     That's because ``one_hit`` is used so that only one linked need must have the searched
     value.
 
-    .. need-example::
+    .. syntax-example::
 
         .. spec:: result 4: Positive check thanks of one_hit option
            :links: clv_A, clv_B, clv_C
@@ -256,7 +256,7 @@ def check_linked_values(
     **Result 5: Two checks and a joint status**
     Two checks are performed and both are positive. So their results get joined.
 
-    .. need-example::
+    .. syntax-example::
 
         .. spec:: result 5: Two checks and a joint status
            :links: clv_A, clv_B, clv_C
@@ -335,7 +335,7 @@ def calc_sum(
 
     **Example 2**
 
-    .. need-example::
+    .. syntax-example::
 
        .. req:: Result 1
           :amount: [[calc_sum("hours")]]
@@ -344,7 +344,7 @@ def calc_sum(
 
     **Example 2**
 
-    .. need-example::
+    .. syntax-example::
 
        .. req:: Result 2
           :amount: [[calc_sum("hours", "hours is not None and hours > 10")]]
@@ -352,7 +352,7 @@ def calc_sum(
 
     **Example 3**
 
-    .. need-example::
+    .. syntax-example::
 
        .. req:: Result 3
           :links: sum_input_1; sum_input_3
@@ -361,7 +361,7 @@ def calc_sum(
 
     **Example 4**
 
-    .. need-example::
+    .. syntax-example::
 
        .. req:: Result 4
           :links: sum_input_1; sum_input_3

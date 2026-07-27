@@ -818,7 +818,7 @@ content_footer_side_right
 More Examples
 -------------
 
-.. need-example::
+.. syntax-example::
 
    .. req:: A normal requirement
       :id: EX_REQ_1
@@ -826,7 +826,7 @@ More Examples
 
       This is how a normal requirement looks like
 
-.. need-example::
+.. syntax-example::
 
    .. req:: A more complex and highlighted requirement
       :id: EX_REQ_2
@@ -838,7 +838,7 @@ More Examples
 
       More columns for better data structure and a red border.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: A focused requirement
       :id: EX_REQ_3
@@ -850,7 +850,7 @@ More Examples
       This also a requirement, but we focus on content here.
       All meta-data is hidden, except the need-id.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: A custom requirement with picture
       :author: daniel
@@ -863,7 +863,7 @@ More Examples
       This example uses the value from **author** to reference an image.
       See :ref:`layouts_styles` for the complete explanation.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: A requirement with a permalink
       :id: EX_REQ_5

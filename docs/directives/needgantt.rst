@@ -7,7 +7,7 @@ needgantt
 
 ``needgantt`` adds a gantt-chart to your documentation.
 
-.. need-example::
+.. syntax-example::
 
     .. needgantt:: Bug handling gantt
        :tags: gantt_example
@@ -113,7 +113,7 @@ List of link names used to define task relationship, ``starts_with``.
 
 Default: None
 
-.. need-example::
+.. syntax-example::
 
    .. needgantt:: Starts_with example
       :tags: gantt_ex_starts_with
@@ -147,7 +147,7 @@ List of link names used to define task relationship, ``starts_after``.
 
 Default: links
 
-.. need-example::
+.. syntax-example::
 
    .. needgantt:: Starts_after example
       :tags: gantt_ex_starts_after
@@ -175,7 +175,7 @@ List of link names used to define task relationship, ``ends_with``.
 
 Default: None
 
-.. need-example::
+.. syntax-example::
 
    .. needgantt:: Ends_with example
       :tags: gantt_ex_ends_with
@@ -204,7 +204,7 @@ We calculate all tasks and milestones dates based on the ``:start_date:`` option
 
 Date format must be ``YYYY-MM-DD``. Example: 2020-03-25
 
-.. need-example::
+.. syntax-example::
 
    .. needgantt:: Bug handling gantt
       :tags: gantt_example
@@ -224,7 +224,7 @@ Default: ``daily``
 
 Works only, if you set :ref:`needgantt_start_date` option.
 
-.. need-example::
+.. syntax-example::
 
    .. needgantt:: Bug handling gantt
       :tags: gantt_example
@@ -257,7 +257,7 @@ You can set the duration option globally by using :ref:`needs_duration_option` i
 
 Default: :ref:`need_duration`
 
-.. need-example::
+.. syntax-example::
 
    .. needgantt:: Duration example
       :tags: gantt_ex_duration
@@ -293,7 +293,7 @@ You can set the completion option globally by using :ref:`needs_completion_optio
 
 Default: :ref:`need_completion`
 
-.. need-example::
+.. syntax-example::
 
    .. needgantt:: Completion example
       :tags: gantt_ex_completion
