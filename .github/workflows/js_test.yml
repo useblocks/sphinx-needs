@@ -4,10 +4,11 @@ jobs:
   js_tests:
     runs-on: ubuntu-latest
     steps:
-      - name: Set Up Python 3.10.8
+      - name: Set Up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.10.8
+          # the docs extra requires python>=3.11 (sphinx-syntax-example)
+          python-version: "3.12"
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:

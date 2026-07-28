@@ -7,7 +7,7 @@ needbar
 
 ``needbar`` adds a bar-chart to your documentation:
 
-.. need-example::
+.. syntax-example::
 
    .. needbar::
 
@@ -29,7 +29,7 @@ Options
 
 Example with all options used:
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: Full bar chart
       :legend:
@@ -60,7 +60,7 @@ title
 
 You can specify the headline of the bar chart using the ``title`` argument.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: Title example
 
@@ -71,7 +71,7 @@ You can specify the headline of the bar chart using the ``title`` argument.
 
 It is possible to create bar charts without title.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar::
 
@@ -91,7 +91,7 @@ We get the bar chart's data (values) from the amount of **need** objects found b
 
 Below is a more realistic example with data fetched from filters, together with hardcoded data:
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: A more real bar chart
       :legend:
@@ -110,7 +110,7 @@ You can place a legend on the barchart by setting the ``:legend:`` flag.
 
 The ``:legend:`` flag does not support any values.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: Legend example
       :legend:
@@ -129,7 +129,7 @@ You can enable axis titles on the barchart by setting the ``:x_axis_title:`` or 
    If you use `horizontal`_ or `transpose`_, the meaning of ``:x_axis_title:`` and ``:y_axis_title:`` must be understandable.
    So you have to change the description accordingly.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: Axis title example
       :x_axis_title: types
@@ -155,7 +155,7 @@ Also, you can set the ``:xlabels:`` and/or ``:ylabels:`` value to ``FROM_DATA`` 
 
    But if you use `horizontal`_ or `transpose`_, the meaning of ``:x_axis_title:`` and ``:y_axis_title:`` will change automatically.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: Labels example 1
       :legend:
@@ -186,7 +186,7 @@ You can render the barchart in a stacked design by setting ``:stacked:`` flag.
 
 The ``:stacked:`` flag does not support any values.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: stacked example
       :stacked:
@@ -203,7 +203,7 @@ You can render the barchart with detailed information of the height of each bar 
 
 The ``:show_sum:`` flag does not support any values and it's useful with the ``stacked`` option  enabled.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: show_sum example 1
       :show_sum:
@@ -230,7 +230,7 @@ You can render the barchart with detailed information of the height of each bar 
 
 The ``:show_sum:`` flag does not support any values and it's useful with the ``stacked`` option  enabled.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: show_top_sum example 1
       :show_top_sum:
@@ -261,7 +261,7 @@ The ``:horizontal:`` flag does not support any values and it's useful with the `
    The meaning of `labels`_ will change automatically with the usage of ``:horizontal:``. We will use the
    ``:x_axis_title:`` as labels for the y-axis and use the ``:y_axis_title:`` as the values in the `legend`_.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: horizontal example 1
       :horizontal:
@@ -297,7 +297,7 @@ The ``:transpose:`` flag does not support any values and it's useful with big co
    * Using the ``:transpose:`` flag, transposes the ``:x_axis_title:`` and ``:y_axis_title:`` fetched from the content data or specified with `labels`_ but does not transpose the extra `axis title`_.
    * Remember that with the ``:transpose:`` flag, the length and height of the content data changes, not to think about the width of matching elements, like `colors`_. Please review the impact of ``:transpose:`` before using it.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: transpose example 1
       :transpose:
@@ -330,7 +330,7 @@ rotation
 | Use ``:sum_rotation:`` to set rotation of labels for bars on the diagram.
 
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: rotation example
       :legend:
@@ -355,7 +355,7 @@ This ensures the use of ``,`` (the default separator) in a filter rule. Other op
 
 The ``:separator:`` is a string that supports any symbols.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: separator example
       :separator: -
@@ -380,7 +380,7 @@ But besides names, ``:colors:`` options also supports hex-values like ``#ffcc00`
    When you use `horizontal`_ or `transpose`_, the bar's length must be equal to ``:xlabels:`` or ``:ylabels:``.
    If the length does not fit, it will fill the bar with the colors again and you will get a warning.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: colors example
       :legend:
@@ -399,7 +399,7 @@ text_color
 
 ``:text_color:`` defines the color for text inside the bar chart and the labels.
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: text_color example
       :legend:
@@ -428,7 +428,7 @@ Useful styles are for example:
 * dark_background
 * grayscale
 
-.. need-example::
+.. syntax-example::
 
    .. needbar:: style example
       :legend:

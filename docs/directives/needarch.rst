@@ -8,7 +8,7 @@ needarch
 ``needarch`` behaves exactly like :ref:`needuml`, but only works inside a need. It provides also additional exclusive
 jinja functions :ref:`needarch_jinja_need` and :ref:`needarch_jinja_import`.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Requirement arch
       :id: req_arch_001
@@ -35,7 +35,7 @@ need()
 
 The ``need()`` function provides you the need information the :ref:`needarch` is embedded in.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Req Arch four
       :id: req_arch_004
@@ -64,7 +64,7 @@ This function takes undefined amounts of current need links option names as argu
 
 Then it executes :ref:`needuml_jinja_uml` automatically for all links/need_ids defined from the given arguments.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Req Arch second
       :id: req_arch_002
@@ -102,7 +102,7 @@ you have, if so please create an issue and mention this chapter. The algorithm
 does detect different parameter sets and does import ``uml()`` calls with different
 :ref:`parameter <needuml_jinja_uml_args>` to the same need.
 
-.. need-example::
+.. syntax-example::
 
    .. comp:: COMP_T_001
       :id: COMP_T_001

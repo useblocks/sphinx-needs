@@ -19,7 +19,7 @@ With ``[[`` and ``]]`` you can refer to defined and set :ref:`extra fields <need
 
 The possible variables are listed in the configuration documentation for :ref:`needs_role_need_template`.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Sliced Bread
       :id: roles_req_1
@@ -56,7 +56,7 @@ need_outgoing
 ``:need_outgoing:`` adds a list of all outgoing links of the given need.
 The list contains the need IDs only, no title or any other information is printed.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Butter on Bread
       :id: roles_req_2
@@ -72,7 +72,7 @@ need_incoming
 
 ``:need_incoming:`` prints a list of IDs of needs which have set outgoing links to the given need.
 
-.. need-example::
+.. syntax-example::
 
    The realisation of **Sliced Bread** is really important because the needs :need_incoming:`roles_req_1` are based on
    it.
@@ -88,7 +88,7 @@ This sub-ids can be linked and referenced in other need functions like links and
 
 The used need_part id can be freely chosen, but should not contain any whitespaces or dots.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Car must be awesome
       :id: my_car_1
@@ -120,7 +120,7 @@ The used need_part id can be freely chosen, but should not contain any whitespac
 Links to need_parts are shown as dotted line to the upper need inside :ref:`needflow` diagrams.
 They are also getting the part_id as link description.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :filter: id in ["my_car_1","impl_my_car_1"]
@@ -129,7 +129,7 @@ They are also getting the part_id as link description.
 
 Please see :ref:`needtable_show_parts` of :ref:`needtable` configuration documentation.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :style: table
@@ -148,7 +148,7 @@ Counts found needs for a given filter and shows the final amount.
 The content of the role must be a valid filter-string as used e.g. by :ref:`needlist` in the ``:filter:`` option.
 See :ref:`filter_string` for more information.
 
-.. need-example::
+.. syntax-example::
 
    | All needs: :need_count:`True`
    | Specification needs: :need_count:`type=='spec'`
@@ -180,7 +180,7 @@ Ratio
 To calculate the ratio of one filter to another filter, you can define two filters separated by ``_?_``
 (question mark surrounded by one space on each side).
 
-.. need-example::
+.. syntax-example::
 
    :need_count:`status == open and type == "spec" ? type == "spec"` % of our specifications are open.
 
@@ -201,7 +201,7 @@ ndf
 
 Executes a :ref:`need dynamic function <dynamic_functions>` and uses the return values as content.
 
-.. need-example::
+.. syntax-example::
 
     A nice :ndf:`echo("first test")` for dynamic functions.
 

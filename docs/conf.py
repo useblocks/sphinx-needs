@@ -37,9 +37,13 @@ extensions = [
     "sphinx.ext.duration",
     "sphinx.ext.todo",
     "sphinx_ai_index",
+    "sphinx_syntax_example",
 ]
 if DOCS_THEME == "sphinx_immaterial":
     extensions.append("sphinx_immaterial")
+
+# number the `syntax-example` rubrics per document ("Example 1", "Example 2", ...)
+syntax_example_numbering = True
 
 suppress_warnings = ["needs.link_outgoing", "needs.github"]
 
@@ -360,39 +364,6 @@ class NeedsWarningsDirective(SphinxDirective):
         return [parsed]
 
 
-class NeedExampleDirective(SphinxDirective):
-    """Directive to add example content to the documentation.
-
-    It adds a container with a title, a code block, and a parsed content block.
-    """
-
-    optional_arguments = 1
-    final_argument_whitespace = True
-    has_content = True
-
-    def run(self):
-        count = self.env.temp_data.setdefault("needs-example-count", 0)
-        count += 1
-        self.env.temp_data["needs-example-count"] = count
-        root = nodes.container(classes=["needs-example"])
-        self.set_source_info(root)
-        title = f"Example {count}"
-        title_nodes, _ = (
-            self.state.inline_text(f"{title}: {self.arguments[0]}", self.lineno)
-            if self.arguments
-            else ([nodes.Text(title)], [])
-        )
-        root += nodes.rubric("", "", *title_nodes)
-        code = nodes.literal_block(
-            "", "\n".join(self.content), language="rst", classes=["needs-example-raw"]
-        )
-        root += code
-        parsed = nodes.container(classes=["needs-example-raw"])
-        root += parsed
-        self.state.nested_parse(self.content, self.content_offset, parsed)
-        return [root]
-
-
 class NeedCoreFieldsDirective(SphinxDirective):
     """Directive to list all core need fields."""
 
@@ -480,7 +451,6 @@ def suppress_linkcheck_warnings(app: Sphinx):
 
 
 def setup(app: Sphinx):
-    app.add_directive("need-example", NeedExampleDirective)
     app.add_directive("need-warnings", NeedsWarningsDirective)
     app.add_directive("need-core-fields", NeedCoreFieldsDirective)
     app.add_role("need_config_default", NeedConfigDefaultRole())

@@ -7,7 +7,7 @@ needtable
 
 **needtable** generates a table, based on the result of given filters.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable:: Example table
       :tags: main_example
@@ -37,7 +37,7 @@ For instance::
 
 This will show the columns *id*, *title* and *tags* in the order given.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :columns: id;title;tags
@@ -51,7 +51,7 @@ Tables with a lot of columns will get a horizontal scrollbar in HTML output.
 
 **DataTable style**
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test
@@ -59,7 +59,7 @@ Tables with a lot of columns will get a horizontal scrollbar in HTML output.
 
 **Normal style**
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test
@@ -78,7 +78,7 @@ A comma separated list of lengths or percentages used to define the width of eac
 It has the same meaning as the ``width options`` of
 `listtable <https://docutils.sourceforge.io/docs/ref/rst/directives.html#list-table>`_ directive.
 
-.. need-example::
+.. syntax-example::
 
   .. needtable::
      :tags: test
@@ -93,7 +93,7 @@ Custom column titles
 You can customize each column title by following this syntax for its definition: ``OPTION as "My custom title"``.
 The characters ``,`` or ``;`` are not allowed.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test
@@ -107,7 +107,7 @@ show_filters
 
 If set, we add the used filter above the table:
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test
@@ -130,7 +130,7 @@ Overrides config parameter :ref:`needs_table_style` if set.
 
 .. dropdown:: Show example
 
-   .. need-example::
+   .. syntax-example::
 
       .. needtable::
          :style: table
@@ -151,7 +151,7 @@ It adds the part rows directly under the related need’s row, and their id and 
 
 To change the prefix please read :ref:`needs_part_prefix`.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test_table
@@ -162,7 +162,7 @@ To change the prefix please read :ref:`needs_part_prefix`.
 
 .. dropdown:: Show above example's configuration
 
-   .. need-example::
+   .. syntax-example::
 
       .. req:: Test need with need parts
          :id: table_001
@@ -192,7 +192,7 @@ You can use the ``style_row`` option to set a specific class-attribute for the t
 
 Also, you can set specific layout for the row.
 
-.. need-example::
+.. syntax-example::
 
   .. needtable::
      :tags: ex_row_color
@@ -205,7 +205,7 @@ Row style based on specific need value
 You can use :ref:`dynamic_functions` to derive the value for ``style_row`` based on a specific value of the
 documented need in the row.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: ex_row_color
@@ -289,7 +289,7 @@ must have the type ``string``, ``float`` or ``int``.
 
 By default, we use ``id_complete`` if we don't set a sort option.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: ex_row_color
@@ -297,7 +297,7 @@ By default, we use ``id_complete`` if we don't set a sort option.
 
 In this case, we set the sort option to ``status``. So *EX_ROW_3* is above of *EX_ROW_2*.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: ex_row_color
@@ -340,7 +340,7 @@ It supports comma separated values and will add classes to the already set class
     }
 
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test

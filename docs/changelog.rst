@@ -4,6 +4,15 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- 📚 The documentation now uses the shared
+  `sphinx-syntax-example <https://github.com/sphinx-extensions2/sphinx-syntax-example>`__
+  ``syntax-example`` directive, in place of the bespoke ``need-example`` directive
+  that was defined in ``docs/conf.py``.
+  Consequently, the ``docs`` extra now requires Python >= 3.11.
+
 .. _`release:8.3.0`:
 
 8.3.0

@@ -7,7 +7,7 @@ needsequence
 
 ``needsequence`` adds a sequence-chart to your documentation.
 
-.. need-example::
+.. syntax-example::
 
     .. needsequence:: My sequence chart
        :start: USER_A, USER_D
@@ -149,7 +149,7 @@ Default: None (no active filtering)
 You can use this function to filter out a specific participant.
 As an example, we use the same ``needsequence`` from the beginning, but without ``USER_C / Expert``:
 
-.. need-example::
+.. syntax-example::
 
     .. needsequence:: My filtered sequence chart
        :start: USER_A, USER_D

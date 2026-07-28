@@ -26,7 +26,7 @@ To refer to a dynamic function, you can use the following syntax:
 - In a need directive option, wrap the function call in double square brackets: ``[[function_name(arg)]]``
 - In a need content, use the :ref:`ndf` role: ``:ndf:`function_name(arg)```
 
-.. need-example:: Dynamic function example
+.. syntax-example:: Dynamic function example
 
    .. req:: my test requirement
       :id: df_1
@@ -278,7 +278,7 @@ If a variant definition is true, then we set the *need option* to the value of t
 
 Below is an implementation of variants for need options:
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Variant options
       :id: VA_004

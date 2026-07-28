@@ -31,7 +31,7 @@ You can use the template file to customise the content generated  by ``needrepor
          "report_directive": "admonition",
       }
 
-.. need-example::
+.. syntax-example::
 
    .. needreport::
       :types:
@@ -48,7 +48,7 @@ types
 Flag for adding information about the :ref:`needs_types` configuration parameter.
 The flag does not require any values.
 
-.. need-example::
+.. syntax-example::
 
    .. needreport::
       :types:
@@ -62,7 +62,7 @@ links
 Flag for adding information about the :ref:`needs_links` configuration parameter.
 The flag does not require any values.
 
-.. need-example::
+.. syntax-example::
 
    .. needreport::
       :links:
@@ -76,7 +76,7 @@ options
 Flag for adding information about the :ref:`needs_fields` configuration parameter.
 The flag does not require any values.
 
-.. need-example::
+.. syntax-example::
 
    .. needreport::
       :options:
@@ -86,7 +86,7 @@ usage
 Flag for adding information about all the ``need`` objects in the current project.
 The flag does not require any values.
 
-.. need-example::
+.. syntax-example::
 
    .. needreport::
       :usage:
