@@ -43,6 +43,19 @@ def oneline_parser(  # noqa: PLR0912, PLR0911 # handel warnings
         # start or end sequences do not exist
         return None
 
+    # A marker whose end sequence is the newline extends to the end of the
+    # line, so an unanchored start sequence would swallow trailing prose. Anchor
+    # such a marker to the start of the comment content: everything preceding
+    # the start sequence must be comment decoration (`//`, `#`, `*`, ...) and
+    # whitespace. A word character before it means the start sequence is part of
+    # free-form prose (e.g. `// see @author, ...`) and the line is ignored
+    # (issue #88). Explicitly-bounded markers (e.g. `[[ ... ]]`) are
+    # self-delimiting and may appear anywhere, so they are exempt.
+    if oneline_config.end_sequence == UNIX_NEWLINE and any(
+        char.isalnum() for char in oneline[:start_idx]
+    ):
+        return None
+
     # extract the string wrapped by start and end
     start_idx = start_idx + len(oneline_config.start_sequence)
     string = oneline[start_idx:end_idx].strip()

@@ -527,3 +527,46 @@ def test_oneline_parser_default_config_negative(
 def test_oneline_schema_validator_negative(oneline_config, result):
     errors = oneline_config.check_fields_configuration()
     assert sorted(errors) == sorted(result)
+
+
+@pytest.mark.parametrize(
+    "oneline",
+    [
+        # A start sequence embedded in free-form prose (word chars before it)
+        # must not be treated as a one-line marker (issue #88).
+        f"// Some prose that mentions @@another-tag(item_1, item_2): more text{UNIX_NEWLINE}",
+        f"// See @author, check the example{UNIX_NEWLINE}",
+        f"// We parse things matching @pattern, then act{UNIX_NEWLINE}",
+    ],
+)
+def test_oneline_parser_ignores_start_sequence_in_prose(oneline: str) -> None:
+    """Issue #88: only anchor a marker at the start of the comment content."""
+    assert oneline_parser(oneline, ONELINE_COMMENT_STYLE_DEFAULT) is None
+
+
+@pytest.mark.parametrize(
+    "oneline, expected_id",
+    [
+        (f"// @My Title, IMPL_1{UNIX_NEWLINE}", "IMPL_1"),  # line-comment leader
+        (f"    // @My Title, IMPL_2{UNIX_NEWLINE}", "IMPL_2"),  # indented
+        (f"* @My Title, IMPL_3{UNIX_NEWLINE}", "IMPL_3"),  # block-comment continuation
+        (f"/// @My Title, IMPL_4{UNIX_NEWLINE}", "IMPL_4"),  # doc comment
+        (f"//! @My Title, IMPL_5{UNIX_NEWLINE}", "IMPL_5"),  # inner doc comment
+    ],
+)
+def test_oneline_parser_marker_preceded_only_by_comment_decoration(
+    oneline: str, expected_id: str
+) -> None:
+    """A marker preceded only by comment syntax/whitespace is still recognized."""
+    res = oneline_parser(oneline, ONELINE_COMMENT_STYLE_DEFAULT)
+    assert isinstance(res, dict)
+    assert res["id"] == expected_id
+
+
+def test_oneline_parser_bounded_marker_allowed_after_prose() -> None:
+    """Explicitly-bounded markers ([[ ... ]]) are self-delimiting, so they may
+    be embedded after prose; only newline-terminated markers are anchored."""
+    oneline = "// one-line comment style: [[IMPL_1, title 1]]"
+    res = oneline_parser(oneline, ONELINE_COMMENT_STYLE)
+    assert isinstance(res, dict)
+    assert res["id"] == "IMPL_1"
