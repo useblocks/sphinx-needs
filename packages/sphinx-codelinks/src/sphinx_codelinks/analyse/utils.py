@@ -26,6 +26,13 @@ SCOPE_NODE_TYPES = {
     # @C and C++ Scope Node Types, IMPL_C_2, impl, [FE_C_SUPPORT, FE_CPP]
     CommentType.cpp: {"function_definition", "class_specifier", "struct_specifier"},
     CommentType.cs: {"method_declaration", "class_declaration", "property_declaration"},
+    CommentType.ts: {
+        "function_declaration",
+        "class_declaration",
+        "method_definition",
+        "lexical_declaration",
+        "variable_declaration",
+    },
     # @Rust Scope Node Types, IMPL_RUST_2, impl, [FE_RUST]
     CommentType.rust: {
         "function_item",
@@ -64,6 +71,7 @@ PYTHON_QUERY = """
             """
 CPP_QUERY = """(comment) @comment"""
 C_SHARP_QUERY = """(comment) @comment"""
+TYPE_SCRIPT_QUERY = """(comment) @comment"""
 YAML_QUERY = """(comment) @comment"""
 RUST_QUERY = """
     (line_comment) @comment
@@ -122,6 +130,14 @@ def init_tree_sitter(comment_type: CommentType) -> tuple[Parser, Query]:
 
         parsed_language = Language(tree_sitter_c_sharp.language())
         query = Query(parsed_language, C_SHARP_QUERY)
+    elif comment_type == CommentType.ts:
+        import tree_sitter_typescript  # noqa: PLC0415
+
+        # The TSX grammar is a strict superset of the TypeScript grammar (it also
+        # parses plain .ts fine), so use it for both to support .tsx files without
+        # needing a per-file grammar choice.
+        parsed_language = Language(tree_sitter_typescript.language_tsx())
+        query = Query(parsed_language, TYPE_SCRIPT_QUERY)
     elif comment_type == CommentType.yaml:
         import tree_sitter_yaml
 
@@ -174,6 +190,38 @@ def extract_comments(
     return captures.get("comment")
 
 
+TS_FUNCTION_VALUE_TYPES = {"arrow_function", "function_expression"}
+
+
+def _is_function_like_lexical_declaration(node: TreeSitterNode) -> bool:
+    """True if a TS lexical/variable declaration's declarator is a function.
+
+    ``const``/``let``/``var`` declarations are only treated as scopes when they
+    assign a function or arrow function, so a leading comment doesn't bind to an
+    unrelated ``const`` that merely precedes the function it documents.
+    """
+    for declarator in node.named_children:
+        if declarator.type != "variable_declarator":
+            continue
+        value = declarator.child_by_field_name("value")
+        if value is not None and value.type in TS_FUNCTION_VALUE_TYPES:
+            return True
+    return False
+
+
+def _matches_scope(
+    node: TreeSitterNode, scope_types: set[str], comment_type: CommentType
+) -> bool:
+    if node.type not in scope_types:
+        return False
+    if comment_type == CommentType.ts and node.type in {
+        "lexical_declaration",
+        "variable_declaration",
+    }:
+        return _is_function_like_lexical_declaration(node)
+    return True
+
+
 def find_enclosing_scope(
     node: TreeSitterNode, comment_type: CommentType = CommentType.cpp
 ) -> TreeSitterNode | None:
@@ -181,7 +229,7 @@ def find_enclosing_scope(
     scope_types = SCOPE_NODE_TYPES.get(comment_type, SCOPE_NODE_TYPES[CommentType.cpp])
     current: TreeSitterNode = node
     while current:
-        if current.type in scope_types:
+        if _matches_scope(current, scope_types, comment_type):
             return current
         current: TreeSitterNode | None = current.parent  # required for node traversal
     return None
@@ -194,14 +242,14 @@ def find_next_scope(
     scope_types = SCOPE_NODE_TYPES.get(comment_type, SCOPE_NODE_TYPES[CommentType.cpp])
     current: TreeSitterNode = node
     while current:
-        if current.type in scope_types:
+        if _matches_scope(current, scope_types, comment_type):
             return current
         current: TreeSitterNode | None = (
             current.next_named_sibling
         )  # required for node traversal
-        if current and current.type == "block":
+        if current and current.type in {"block", "export_statement"}:
             for child in current.named_children:
-                if child.type in scope_types:
+                if _matches_scope(child, scope_types, comment_type):
                     return child
     return None
 

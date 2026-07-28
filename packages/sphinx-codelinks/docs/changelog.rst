@@ -117,6 +117,10 @@ New and Improved
   The row fix for marked-rst blocks below (#1982) landed days before this change replaced
   them; multi-line needs keep its rule, a block reported at the row of its open line.
 
+- ✨ TypeScript comment type: ``comment_type = "ts"`` analyses TypeScript sources, and source
+  discovery picks up ``.ts`` and ``.tsx`` files for it
+  (`#1890 <https://github.com/useblocks/sphinx-needs/issues/1890>`__).
+
 - 🐛 A source file added to a ``src-trace`` directive's scope is seen by the next
   incremental build, with no ``-E`` (`#2040 <https://github.com/useblocks/sphinx-needs/issues/2040>`__).
 

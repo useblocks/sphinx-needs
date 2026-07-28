@@ -9,6 +9,7 @@ COMMENT_FILETYPE = {
     "cpp": ["c", "ci", "cpp", "cc", "cxx", "h", "hpp", "hxx", "hh", "ihl"],
     "python": ["py"],
     "cs": ["cs"],
+    "ts": ["ts", "tsx"],
     "yaml": ["yml", "yaml"],
     "rust": ["rs"],
     "go": ["go"],
@@ -26,6 +27,7 @@ class CommentType(str, Enum):  # noqa: UP042  # StrEnum changes str(member), whi
     python = "python"
     cpp = "cpp"
     cs = "cs"
+    ts = "ts"
     yaml = "yaml"
     # @Support Rust style comments, IMPL_RUST_1, impl, [FE_RUST]
     rust = "rust"

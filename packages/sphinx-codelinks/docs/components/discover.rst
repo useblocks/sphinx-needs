@@ -38,3 +38,13 @@ Usage Examples
    include = []
    exclude = ["tests/**", "setup.py"]
    comment_type = "python"
+
+**TypeScript Project:**
+
+.. code-block:: toml
+
+   [source_discover]
+   src_dir = "./frontend"
+   include = ["**/*.ts", "**/*.tsx"]
+   exclude = ["**/*.test.ts", "**/*.spec.ts"]
+   comment_type = "ts"
