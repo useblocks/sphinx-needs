@@ -1,0 +1,31 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_HDR_BASE",
+      "title": "Header Base",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_HDR"
+        ]
+      },
+      "metadata": {},
+      "line": 2
+    },
+    {
+      "id": "IMPL_HDR_FEATURE",
+      "title": "Header Feature On",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_HDR_FEAT"
+        ]
+      },
+      "metadata": {},
+      "line": 6
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

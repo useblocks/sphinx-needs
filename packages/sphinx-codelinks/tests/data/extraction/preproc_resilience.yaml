@@ -1,0 +1,45 @@
+# Resilience of the libclang engine to broken / half-typed source.
+#
+# libclang parses with `incomplete` recovery and extracts markers at the TOKEN
+# level, so a file with syntax errors still yields the markers in its comments —
+# the parser must not abort or drop markers around the broken region. These
+# sources are self-contained (no #include) so they are recoverable (a valid, if
+# error-laden, translation unit) rather than a NULL TU; the NULL-TU / total
+# failure case is covered separately (warn-then-skip).
+
+syntax_error_recovers_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  source: |
+    // @Before the error, IMPL_BEFORE, impl, [REQ]
+    void before() { int ok = 1; }
+
+    struct Broken { int x        // missing ';' and closing brace
+    void dangling(               // unterminated parameter list
+
+    // @After the error, IMPL_AFTER, impl, [REQ]
+    void after() { int ok = 2; }
+  # Both markers survive despite the malformed declarations between them: the
+  # comment tokens are lexed regardless of the parser's error recovery.
+
+half_typed_declaration_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  source: |
+    // @Complete function, IMPL_COMPLETE, impl, [REQ]
+    void complete() { int x = 42; }
+
+    // @Half typed function, IMPL_HALF, impl, [REQ]
+    void half() {
+        if (cond
+
+    // @After half typed, IMPL_AFTER_HALF, impl, [REQ]
+    void after() { int y = 1; }
+  # The marker on the half-typed function (unterminated `if (`) and the one after
+  # it both survive at the token level.

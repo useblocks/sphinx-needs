@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_CPP17",
+      "title": "C++17 inline variable",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

@@ -1,0 +1,85 @@
+# Preprocessor-aware extraction: the same source under both engines.
+#
+# The tree-sitter engine sees every comment (all five markers). The libclang
+# engine evaluates the preprocessor with the given ``defines`` and excludes
+# markers in inactive #if/#ifdef branches, so IMPL_VAR_B (the #else branch) is
+# dropped and only the active set remains.
+
+variants_branching_treesitter:
+  lang: cpp
+  engine: treesitter
+  config: default
+  extract: [oneline]
+  source: |
+    // @Always Present, IMPL_ALWAYS, impl, [REQ_BASE]
+    void always() {}
+
+    #ifdef VARIANT_A
+    // @Variant A Feature, IMPL_VAR_A, impl, [REQ_FEAT_A]
+    void variant_a() {}
+    #else
+    // @Variant B Feature, IMPL_VAR_B, impl, [REQ_FEAT_B]
+    void variant_b() {}
+    #endif
+
+    #if PROTOCOL_VERSION >= 3
+    // @Protocol V3, IMPL_PROTO_3, impl, [REQ_PROTO]
+    void proto_v3() {}
+    #endif
+
+    #if defined(PLATFORM_LINUX) && defined(VARIANT_A)
+    // @Linux And A, IMPL_LINUX_A, impl, [REQ_COMBO]
+    void linux_and_a() {}
+    #endif
+
+variants_branching_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: ["VARIANT_A=1", "PLATFORM_LINUX=1", "PROTOCOL_VERSION=3"]
+  extract: [oneline]
+  source: |
+    // @Always Present, IMPL_ALWAYS, impl, [REQ_BASE]
+    void always() {}
+
+    #ifdef VARIANT_A
+    // @Variant A Feature, IMPL_VAR_A, impl, [REQ_FEAT_A]
+    void variant_a() {}
+    #else
+    // @Variant B Feature, IMPL_VAR_B, impl, [REQ_FEAT_B]
+    void variant_b() {}
+    #endif
+
+    #if PROTOCOL_VERSION >= 3
+    // @Protocol V3, IMPL_PROTO_3, impl, [REQ_PROTO]
+    void proto_v3() {}
+    #endif
+
+    #if defined(PLATFORM_LINUX) && defined(VARIANT_A)
+    // @Linux And A, IMPL_LINUX_A, impl, [REQ_COMBO]
+    void linux_and_a() {}
+    #endif
+
+# A C-extension header (.h) is never a compile_commands entry, so it is parsed
+# standalone with the global defines. libclang infers C from the .h extension, so
+# the engine pins -x to the -std (see defines_to_args); otherwise -std=c++17
+# yields a NULL translation unit and the header's markers would be lost. Inactive
+# branches are still excluded.
+header_c_extension_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: ["HEADER_FEATURE=1"]
+  extract: [oneline]
+  source: |
+    #pragma once
+    // @Header Base, IMPL_HDR_BASE, impl, [REQ_HDR]
+    inline int hdr_add(int a, int b) { return a + b; }
+
+    #ifdef HEADER_FEATURE
+    // @Header Feature On, IMPL_HDR_FEATURE, impl, [REQ_HDR_FEAT]
+    inline void hdr_feature() {}
+    #else
+    // @Header Feature Off, IMPL_HDR_NOFEATURE, impl, [REQ_HDR]
+    inline void hdr_no_feature() {}
+    #endif

@@ -16,6 +16,7 @@ from sphinx_codelinks.analyse.models import OneLineNeed
 from sphinx_codelinks.config import (
     CodeLinksConfig,
     CodeLinksProjectConfigType,
+    anchor_preproc_paths,
     file_lineno_href,
 )
 from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
@@ -113,19 +114,33 @@ class SourceTracingDirective(SphinxDirective):
         # time, forcing a full re-read. Build a per-directive copy instead so the
         # stored config value stays equal to what ``generate_project_configs`` yields.
         base_analyse_config = src_trace_conf["analyse_config"]
+        # Resolve the config file's directory once (used for git_root + preproc).
+        conf_dir = Path(self.env.app.confdir)
+        if src_trace_sphinx_config.config_from_toml:
+            src_trace_toml_path = Path(src_trace_sphinx_config.config_from_toml)
+            conf_dir = conf_dir / src_trace_toml_path.parent
         # git_root shall be relative to the config file's location (if provided)
         git_root = base_analyse_config.git_root
         if git_root:
-            conf_dir = Path(self.env.app.confdir)
-            if src_trace_sphinx_config.config_from_toml:
-                src_trace_toml_path = Path(src_trace_sphinx_config.config_from_toml)
-                conf_dir = conf_dir / src_trace_toml_path.parent
             git_root = (conf_dir / git_root).resolve()
+        # preprocessor compile_commands / include dirs are relative to the config
+        # file's location too (like src_dir / git_root).
+        preprocessor = base_analyse_config.preprocessor
+        if preprocessor is not None:
+            preprocessor = anchor_preproc_paths(preprocessor, conf_dir)
+            # Editing an explicitly-configured compile_commands.json changes the
+            # flags (hence which #if branches are active, hence the extracted
+            # markers), so register it as a build dependency to trigger a rebuild.
+            # (Auto-discovered databases are located per-file inside the analysis
+            # and are not tracked here.)
+            if preprocessor.compile_commands is not None:
+                self.env.note_dependency(str(preprocessor.compile_commands))
         analyse_config = replace(
             base_analyse_config,
             src_dir=src_dir,
             src_files=source_files,
             git_root=git_root,
+            preprocessor=preprocessor,
         )
         src_analyse = SourceAnalyse(analyse_config, name=project)
         src_analyse.run()

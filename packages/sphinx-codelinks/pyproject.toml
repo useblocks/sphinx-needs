@@ -34,6 +34,16 @@ dependencies = [
   "tree-sitter-json>=0.24.8",
 ]
 
+[project.optional-dependencies]
+# libclang enables the preprocessor-aware C/C++ engine (skips comments inside
+# inactive #if/#ifdef regions). Plain tree-sitter C/C++ extraction needs none of
+# this, so libclang stays optional. Named after the backend, not "cpp": the
+# engine handles C and Objective-C too, and tree-sitter already covers C++.
+# Floor 16 (not 18): the extraction snapshots are byte-identical on libclang 16,
+# 17 and 18 (the engine only uses get_all_skipped_ranges + comment tokenization,
+# stable since long before 16), so support older toolchains too. No upper bound.
+libclang = ["libclang>=16"]
+
 [build-system]
 requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
@@ -48,6 +58,7 @@ testing = [
   "moto ~= 5.0",
   "toml>=0.10.2",
   "furo>=2024.5.6",
+  "libclang>=18",
 ]
 docs = [
   "furo>=2024.5.6",
@@ -106,8 +117,11 @@ force-sort-within-sections = true
 "**/tests/*" = [
   "ARG001",  # unused-function-argument - fixtures
   "ARG005",  # unused-lambda-argument - monkeypatches
+  "E402",    # module-import-not-at-top - pytest.importorskip guard pattern
+  "PLC0415", # import-outside-top-level - inline imports in test bodies
   "PLR2004", # magic-value-comparison - valueable for tests
   "S101",    # assert - needed for tests
+  "SIM300",  # yoda-conditions - assert order in tests is intentional
 ]
 "src/sphinx_codelinks/sphinx_extension/debug.py" = [
   "T201",  # print - used for output
@@ -140,7 +154,8 @@ plugins = ["pydantic.mypy"]
 mypy_path = "typings"
 
 [[tool.mypy.overrides]]
-module = ["licensing.*", "tomlkit.*"]
+# clang.cindex ships no type stubs / py.typed; the libclang engine wraps it.
+module = ["licensing.*", "tomlkit.*", "clang.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

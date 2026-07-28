@@ -1,0 +1,100 @@
+# Preprocessor macro / conditional constructs under the libclang engine.
+#
+# Every case keeps markers in BOTH the taken and the untaken branches; only the
+# markers in active (non-skipped) regions must survive. The tree-sitter engine
+# would keep them all — these are libclang-only cases that prove the preprocessor
+# is actually evaluated (nesting, #elif chains, #if 0, defined()/boolean logic,
+# arithmetic comparisons, and an in-source #define driving a branch).
+
+nested_ifdef_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: ["OUTER=1", "INNER=1"]
+  extract: [oneline]
+  source: |
+    // @Top, IMPL_TOP, impl, [REQ]
+    #ifdef OUTER
+    // @Outer On, IMPL_OUTER, impl, [REQ]
+    #ifdef INNER
+    // @Inner On, IMPL_INNER, impl, [REQ]
+    #else
+    // @Inner Off, IMPL_INNER_OFF, impl, [REQ]
+    #endif
+    #else
+    // @Outer Off, IMPL_OUTER_OFF, impl, [REQ]
+    #endif
+
+elif_chain_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: ["MODE=2"]
+  extract: [oneline]
+  source: |
+    #if MODE == 1
+    // @Mode One, IMPL_M1, impl, [REQ]
+    #elif MODE == 2
+    // @Mode Two, IMPL_M2, impl, [REQ]
+    #elif MODE == 3
+    // @Mode Three, IMPL_M3, impl, [REQ]
+    #else
+    // @Mode Other, IMPL_MO, impl, [REQ]
+    #endif
+
+if_zero_dead_block_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  source: |
+    // @Live, IMPL_LIVE, impl, [REQ]
+    #if 0
+    // @Dead, IMPL_DEAD, impl, [REQ]
+    #endif
+
+defined_boolean_logic_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: ["HAS_A=1", "HAS_C=1"]
+  extract: [oneline]
+  source: |
+    #if defined(HAS_A) && defined(HAS_B)
+    // @A and B, IMPL_AB, impl, [REQ]
+    #endif
+    #if defined(HAS_A) || defined(HAS_B)
+    // @A or B, IMPL_AORB, impl, [REQ]
+    #endif
+    #if !defined(HAS_B)
+    // @Not B, IMPL_NOTB, impl, [REQ]
+    #endif
+
+arithmetic_compare_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: ["VER=3"]
+  extract: [oneline]
+  source: |
+    #if VER >= 3
+    // @V3 plus, IMPL_V3, impl, [REQ]
+    #endif
+    #if VER < 3
+    // @Pre V3, IMPL_PRE3, impl, [REQ]
+    #endif
+
+macro_object_drives_branch_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  source: |
+    #define FEATURE 1
+    #if FEATURE
+    // @Feature On, IMPL_FEAT, impl, [REQ]
+    #else
+    // @Feature Off, IMPL_FEAT_OFF, impl, [REQ]
+    #endif

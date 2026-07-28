@@ -570,3 +570,45 @@ Configuration for marked RST block extraction.
 
 - ``start_sequence`` (``str``) - Marker that begins an RST block
 - ``end_sequence`` (``str``) - Marker that ends an RST block
+
+.. _`preprocessor_config`:
+
+analyse.preprocessor
+^^^^^^^^^^^^^^^^^^^^^
+
+Opts in to the **preprocessor-aware C/C++ engine** (powered by libclang). When this
+table is present and ``comment_type`` is ``"cpp"``, **Sphinx-CodeLinks** parses each
+C/C++ file as a real translation unit and **drops comments that fall inside inactive
+preprocessor branches** (``#if`` / ``#ifdef`` / ``#else`` …). Without this table, the
+default tree-sitter engine is used, which extracts every comment regardless of
+preprocessor conditions.
+
+See :ref:`preprocessor_engine` for the conceptual overview, header handling, and
+limitations.
+
+**Type:** ``dict``
+**Default:** Not set (the tree-sitter engine is used)
+
+.. important:: The libclang engine requires an optional dependency. Install it with
+   ``pip install 'sphinx-codelinks[libclang]'``. The ``libclang`` wheel bundles the
+   native library, so no compiler or system toolchain is required.
+
+.. code-block:: toml
+
+   [codelinks.projects.my_project.analyse.preprocessor]
+   compile_commands = "build/compile_commands.json"
+   defines = ["VARIANT_A", "PLATFORM_LINUX"]
+   includes = ["include", "third_party/include"]
+
+**Configuration fields:**
+
+- ``compile_commands`` (``str``) - Path to a ``compile_commands.json`` compilation
+  database. Relative paths resolve against the TOML config file. If omitted,
+  **Sphinx-CodeLinks** walks up from each source file to find one, stopping at a
+  directory containing ``.git``, ``ubproject.toml``, or ``pyproject.toml``, or at the
+  filesystem root.
+- ``defines`` (``list[str]``) - ``-D`` macros used when a file has **no** entry in the
+  database. This is the fallback applied to every header file (headers never appear in a
+  database) and to all files when no database is found.
+- ``includes`` (``list[str]``) - ``-I`` include directories used together with
+  ``defines`` on the fallback path.

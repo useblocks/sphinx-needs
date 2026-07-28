@@ -41,6 +41,11 @@ custom_brackets_c:
   `[oneline, need_refs, rst]` (default: all three). Narrow it to keep a case
   focused: a need-reference case sets `extract: [need_refs]` so the `@`-prefixed
   `@need-ids:` marker isn't also parsed as a one-line need.
+- `engine` (optional): `treesitter` (default) sees every comment; `libclang`
+  evaluates the preprocessor and excludes markers in inactive `#if`/`#ifdef`
+  branches. libclang cases are skipped when the `clang` bindings are unavailable.
+- `defines` (optional, libclang only): preprocessor defines, e.g.
+  `["VARIANT_A=1", "PROTOCOL_VERSION=3"]`.
 
 ## Snapshot (expected output) — normalized contract
 

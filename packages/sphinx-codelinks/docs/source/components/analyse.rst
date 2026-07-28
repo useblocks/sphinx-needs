@@ -210,3 +210,110 @@ This single comment line creates a complete **Sphinx-Needs** item equivalent to:
    .. impl:: Function Implementation
        :id: IMPL_001
        :links: REQ_001, REQ_002
+
+.. _preprocessor_engine:
+
+Preprocessor-Aware C/C++ Extraction (libclang)
+----------------------------------------------
+
+By default, **Source Analyse** uses a tree-sitter parser that extracts **every** comment,
+regardless of the C preprocessor. For C/C++ projects that rely on conditional compilation
+(``#ifdef VARIANT_A`` …), this means needs from *all* branches are extracted — even
+branches that are never compiled.
+
+The optional **libclang engine** addresses this. When an
+:ref:`analyse.preprocessor <preprocessor_config>` table is configured and ``comment_type``
+is ``"cpp"``, each file is parsed as a real translation unit and **comments inside inactive
+preprocessor branches are dropped**. Active needs keep their original line numbers — no
+source transformation is performed.
+
+.. important:: The libclang engine requires an optional dependency:
+   ``pip install 'sphinx-codelinks[libclang]'``. The wheel bundles the native library, so
+   no compiler is required on the user's machine.
+
+How files are selected and parsed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+File **discovery** is unchanged — :ref:`SourceDiscover <discover>` still decides which
+files are candidates. A ``compile_commands.json`` database only determines *how* each
+discovered file is parsed:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 45 55
+
+   * - File
+     - How it is parsed
+   * - Listed in ``compile_commands.json``
+     - Parsed with the exact flags the compiler used for that translation unit.
+   * - A compiled source (``.c``, ``.cpp``, ``.cc``, ``.cxx``) **not** listed
+     - Skipped — assumed to be excluded from the build (e.g. another platform).
+   * - A **header** (``.h``, ``.hpp``, …) — never listed in a database
+     - Parsed **standalone** using ``defines`` and ``includes`` (see below).
+   * - Any file, when **no** database is found
+     - Parsed with ``defines`` and ``includes``.
+
+Header files
+~~~~~~~~~~~~~
+
+A ``compile_commands.json`` only ever lists compiled translation units (``.cpp`` files);
+headers are pulled in via ``#include`` and never appear as entries. **Sphinx-CodeLinks**
+therefore parses each discovered header **standalone**, using the ``defines`` and
+``includes`` you configure. Include guards resolve correctly, and ``#ifdef`` branches are
+evaluated against your ``defines``.
+
+.. note:: Because headers are parsed standalone, they see only the global ``defines`` —
+   **not** the per-file ``-D`` flags from ``compile_commands.json``. To extract a
+   particular variant's needs from headers, mirror that variant into ``defines``. Treat
+   one analysis run as **one variant**: set ``defines`` to the variant you want, and both
+   sources and headers evaluate their conditions consistently.
+
+Example
+~~~~~~~
+
+.. code-block:: cpp
+
+   // include/feature.hpp
+   #ifndef FEATURE_HPP
+   #define FEATURE_HPP
+
+   // @Always available, IMPL_BASE, impl, [REQ_BASE]
+   void base();
+
+   #ifdef VARIANT_A
+   // @Variant A only, IMPL_VAR_A, impl, [REQ_A]
+   void variant_a();
+   #endif
+
+   #endif
+
+With ``defines = ["VARIANT_A"]`` both ``IMPL_BASE`` and ``IMPL_VAR_A`` are extracted.
+With ``defines = []`` only ``IMPL_BASE`` is extracted — the ``#ifdef VARIANT_A`` block is
+inactive, so its need is dropped. The include guard (``#ifndef FEATURE_HPP``) is always
+active when the header is parsed on its own, so ``IMPL_BASE`` is never suppressed by it.
+
+Variant handling is the caller's job
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Which preprocessor branches are active — and therefore which need markers are in
+scope — is decided entirely by the ``-D`` macros libclang sees (from
+``compile_commands.json`` for a compiled source, or from ``defines`` for headers
+and the standalone path). **Sphinx-CodeLinks** does not model, generate, or
+reconcile build variants itself.
+
+For the result to be meaningful, the macros fed to the extractor and the macros
+that select the variant in the code must come from the **same source of truth** —
+whatever drives your variant management (Kconfig, pure::variants, a home-grown
+generator). Generate the ``compile_commands.json`` / ``defines`` for one variant
+from that source, run the analysis once, and the extracted markers are exactly
+the ones active in that variant. Keeping the inputs consistent is the caller's
+responsibility.
+
+Limitations
+~~~~~~~~~~~
+
+The command line of a ``compile_commands.json`` entry is parsed for Clang/GCC-style
+flags (``-D``, ``-I``, ``-std=`` …). MSVC ``cl.exe`` slash-style flags (``/D``,
+``/I``, ``/std:`` …) are **not** recognised, so a database generated for the MSVC
+compiler driver yields no defines or include dirs. Generate the database with
+``clang`` / ``clang-cl`` (which emit Clang-style flags) for use with this engine.

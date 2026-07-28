@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_CPP14",
+      "title": "C++14 variable template",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

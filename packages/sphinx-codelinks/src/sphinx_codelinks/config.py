@@ -1,5 +1,5 @@
 from collections import deque
-from dataclasses import MISSING, dataclass, field, fields
+from dataclasses import MISSING, dataclass, field, fields, replace
 from enum import Enum
 from pathlib import Path
 from typing import Any, Literal, TypedDict, cast
@@ -28,6 +28,10 @@ COMMENT_MARKERS = {
     CommentType.go: ["//", "/*"],
 }
 ESCAPE = "\\"
+
+# Default C/C++ standard for the standalone/defines parse path when no
+# compile_commands.json entry supplies one.
+DEFAULT_CPP_STD = "c++17"
 
 
 class CommentCategory(str, Enum):
@@ -118,6 +122,53 @@ class MarkedRstConfig:
 
     def check_fields_configuration(self) -> list[str]:
         return self.check_schema() + self.check_sequence_mutually_exclusive()
+
+
+@dataclass
+class PreprocessorConfig:
+    """Opt-in libclang engine config. Presence => libclang engine for C/C++."""
+
+    compile_commands: Path | None = field(
+        default=None, metadata={"schema": {"type": ["string", "null"]}}
+    )
+    """Explicit path to compile_commands.json. If None, walk-up auto-discovery."""
+
+    defines: list[str] = field(
+        default_factory=list,
+        metadata={"schema": {"type": "array", "items": {"type": "string"}}},
+    )
+    """Fallback -D defines applied globally when no compile_commands.json applies."""
+
+    includes: list[Path] = field(
+        default_factory=list,
+        metadata={"schema": {"type": "array", "items": {"type": "string"}}},
+    )
+    """Fallback -I include dirs for the defines path."""
+
+    std: str = field(
+        default=DEFAULT_CPP_STD,
+        metadata={"schema": {"type": "string"}},
+    )
+    """C/C++ standard for the standalone/defines parse path (e.g. ``c++17``,
+    ``c++20``, ``c11``); libclang pins ``-x`` to match it. Files resolved from a
+    ``compile_commands.json`` entry use that entry's own ``-std`` instead."""
+
+
+def anchor_preproc_paths(preproc: PreprocessorConfig, base: Path) -> PreprocessorConfig:
+    """Resolve a preprocessor config's ``compile_commands`` and ``includes``
+    against ``base`` (the config file's directory), so a relative path resolves
+    against the TOML file rather than the process CWD — matching ``src_dir`` /
+    ``git_root``. Absolute paths are left unchanged.
+    """
+    return replace(
+        preproc,
+        compile_commands=(
+            (base / preproc.compile_commands).resolve()
+            if preproc.compile_commands is not None
+            else None
+        ),
+        includes=[(base / inc).resolve() for inc in preproc.includes],
+    )
 
 
 class FieldConfig(TypedDict, total=False):
@@ -329,6 +380,7 @@ class AnalyseSectionConfigType(TypedDict, total=False):
     need_id_refs: NeedIdRefsConfigType
     marked_rst: MarkedRstConfigType
     oneline_comment_style: OneLineCommentStyleType
+    preprocessor: dict[str, object]
 
 
 class SourceAnalyseConfigType(TypedDict, total=False):
@@ -344,6 +396,7 @@ class SourceAnalyseConfigType(TypedDict, total=False):
     need_id_refs_config: NeedIdRefsConfig
     marked_rst_config: MarkedRstConfig
     oneline_comment_style: OneLineCommentStyle
+    preprocessor: PreprocessorConfig | None
 
 
 class ProjectsAnalyseConfigType(TypedDict, total=False):
@@ -399,6 +452,17 @@ class SourceAnalyseConfig:
         default_factory=OneLineCommentStyle
     )
     """Configuration for extracting oneline needs from comments."""
+
+    preprocessor: PreprocessorConfig | None = field(default=None)
+    """Opt-in libclang preprocessor engine. None => tree-sitter (default).
+
+    No flat ``metadata["schema"]`` here: this is a nested dataclass, like the
+    sibling ``need_id_refs_config`` / ``marked_rst_config`` /
+    ``oneline_comment_style`` fields. ``check_schema`` only validates fields that
+    declare a flat schema; giving this field one made it validate the constructed
+    ``PreprocessorConfig`` instance against JSON type ``object`` and fail at
+    ``config-inited``. Its structure is enforced by ``convert_analyse_config``.
+    """
 
     @classmethod
     def get_schema(cls, name: str) -> dict[str, Any] | None:  # type: ignore[explicit-any]
@@ -785,6 +849,35 @@ def convert_src_discovery_config(
     return src_discover_config
 
 
+def _validate_preprocessor_dict(preproc: dict[str, object]) -> None:
+    """Validate the schema-less ``[preprocessor]`` TOML section.
+
+    The section has no ``TypedDict``, so a mistyped scalar would otherwise be
+    coerced into garbage instead of reported: e.g. ``defines = "X"`` (a bare
+    string) becomes ``list("X") == ["X"]`` — or worse, ``defines = "cpp17"``
+    becomes ``["c", "p", "p", "1", "7"]`` → five bogus ``-D`` flags. Fail loud.
+
+    :param preproc: the raw ``[preprocessor]`` mapping from TOML.
+    :raises TypeError: if a key has the wrong type.
+    """
+    for key in ("defines", "includes"):
+        value = preproc.get(key)
+        if value is not None and (
+            not isinstance(value, list) or not all(isinstance(x, str) for x in value)
+        ):
+            raise TypeError(
+                f"[preprocessor] {key} must be a list of strings, "
+                f"got {type(value).__name__}: {value!r}"
+            )
+    for key in ("compile_commands", "std"):
+        value = preproc.get(key)
+        if value is not None and not isinstance(value, str):
+            raise TypeError(
+                f"[preprocessor] {key} must be a string, "
+                f"got {type(value).__name__}: {value!r}"
+            )
+
+
 def convert_analyse_config(
     config_dict: AnalyseSectionConfigType | None,
     src_discover: SourceDiscover | None = None,
@@ -792,7 +885,12 @@ def convert_analyse_config(
     analyse_config_dict: SourceAnalyseConfigType = {}
     if config_dict:
         for k, v in config_dict.items():
-            if k not in {"online_comment_style", "need_id_refs", "marked_rst"}:
+            if k not in {
+                "online_comment_style",
+                "need_id_refs",
+                "marked_rst",
+                "preprocessor",
+            }:
                 # Convert string paths to Path objects
                 if k in {"src_dir", "git_root"} and isinstance(v, str):
                     analyse_config_dict[k] = Path(v)  # type: ignore[literal-required]
@@ -822,6 +920,24 @@ def convert_analyse_config(
         analyse_config_dict["need_id_refs_config"] = need_id_refs_config
         analyse_config_dict["marked_rst_config"] = marked_rst_config
         analyse_config_dict["oneline_comment_style"] = oneline_comment_style
+
+        preprocessor_dict = config_dict.get("preprocessor")
+        if preprocessor_dict is not None:
+            # The preprocessor section has no TypedDict; its values are dynamic
+            # TOML (typed ``object``), so validate the shapes up front (a mistyped
+            # scalar would otherwise coerce into garbage flags) and keep the
+            # targeted ignores matching the concrete errors mypy reports.
+            _validate_preprocessor_dict(preprocessor_dict)
+            analyse_config_dict["preprocessor"] = PreprocessorConfig(
+                compile_commands=(
+                    Path(str(preprocessor_dict["compile_commands"]))
+                    if preprocessor_dict.get("compile_commands")
+                    else None
+                ),
+                defines=list(preprocessor_dict.get("defines", [])),  # type: ignore[call-overload]
+                includes=[Path(str(p)) for p in preprocessor_dict.get("includes", [])],  # type: ignore[attr-defined]
+                std=str(preprocessor_dict.get("std", DEFAULT_CPP_STD)),
+            )
 
     if src_discover:
         analyse_config_dict["src_files"] = src_discover.source_paths

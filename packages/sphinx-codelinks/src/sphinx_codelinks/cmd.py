@@ -12,6 +12,7 @@ from sphinx_codelinks.config import (
     CodeLinksConfig,
     CodeLinksConfigType,
     CodeLinksProjectConfigType,
+    anchor_preproc_paths,
     generate_project_configs,
 )
 from sphinx_codelinks.logger import configure_cli, logger
@@ -149,6 +150,13 @@ def analyse(  # noqa: PLR0912   # for CLI, so it needs the branches
             analyse_config.git_root = (
                 config.parent / analyse_config.git_root
             ).resolve()
+
+        # preprocessor compile_commands / include dirs are relative to the config
+        # file's location too (like src_dir / git_root).
+        if analyse_config.preprocessor is not None:
+            analyse_config.preprocessor = anchor_preproc_paths(
+                analyse_config.preprocessor, config.parent
+            )
 
         analyse_errors = analyse_config.check_fields_configuration()
         errors.extend(analyse_errors)
