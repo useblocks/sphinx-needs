@@ -240,6 +240,14 @@ and never neither.
      - no
      - Mount-relative docname of the entry file to wire into the host
        toctree. Defaults to ``"index"``.
+   * - ``attach_each``
+     - no
+     - File-list mode only. When ``true``, ``attach_to`` wires *every*
+       listed file into the host toctree (in ``files`` order) instead of
+       just ``entry_doc`` — so a set of loose files needs no index doc to
+       stitch them together. Requires ``attach_to``, is mutually exclusive
+       with ``entry_doc``, and is rejected in directory mode. Defaults to
+       ``false``. See :ref:`attach-each` below.
    * - ``strict_mount_at``
      - no
      - Whether to fail the build if the host project has a directory
@@ -401,6 +409,46 @@ different entry point (say ``overview.rst``), set ``entry_doc``:
 The resulting docname inserted into the toctree is then
 ``_generated/api-bar/overview``.
 
+.. _attach-each:
+
+Attaching every file: mounts without an entry doc
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``attach_to`` normally wires a single entry doc into the host toctree,
+and that entry doc's own toctree is expected to reach the rest of the
+bundle. That fits a directory bundle with a natural ``index``, but not
+a hand-picked set of *loose* files with no index — those files would be
+orphaned (Sphinx warns, and the build fails under ``-W``) unless you
+author an ``index`` just to list them.
+
+``attach_each`` removes that requirement. On a **file-list** mount it
+makes ``attach_to`` append *every* listed file to the host toctree, in
+``files`` order:
+
+.. code-block:: toml
+
+   [[mounts]]
+   files = [
+     "../fragments/note-one.rst",
+     "../fragments/note-two.rst",
+   ]
+   mount_at = "_generated/fragments"
+   attach_to = "index"
+   attach_each = true
+
+Both files become direct entries in ``attach_to``'s toctree
+(``_generated/fragments/note-one`` and ``_generated/fragments/note-two``);
+no index doc is needed and nothing is orphaned. Three constraints are
+enforced at config validation:
+
+- **File-list mode only.** A directory mount already has a natural entry
+  doc (its ``index``) and would otherwise attach an unbounded, flat list
+  of every walked file; ``attach_each`` on a ``dir`` mount is rejected.
+- **Requires ``attach_to``.** Without a host toctree to attach into, the
+  flag has nothing to do.
+- **Mutually exclusive with ``entry_doc``.** ``attach_each`` attaches all
+  files, so a single entry doc is meaningless; setting both is an error.
+
 .. _conf-py-fallback:
 
 Fallback: ``mounts`` in ``conf.py``
@@ -545,7 +593,9 @@ For a directory mount this is usually the mount's ``index.rst`` /
 listed files plays the same role and explicitly references the
 others. If a doc inside the mount is not reachable from the entry
 doc, Sphinx will warn about an orphan; that warning is the contract,
-not the extension's job to suppress.
+not the extension's job to suppress. The one exception is a file-list
+mount with :ref:`attach_each <attach-each>`, which attaches every listed
+file directly and so needs no entry doc to reach them.
 
 .. _path-confinement:
 

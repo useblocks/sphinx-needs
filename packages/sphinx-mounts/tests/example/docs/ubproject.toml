@@ -102,3 +102,17 @@ files = [
 ]
 mount_at = "_generated/release-notes"
 attach_to = "index"
+
+# ---------------------------------------------------------------------------
+# Checked-in "fragments" bundle demonstrating ``attach_each``. Unlike the
+# release-notes bundle above (file-list mode with a hand-written index.rst
+# that toctrees its notes), this is a set of LOOSE files with no index at
+# all. ``attach_each = true`` makes ``attach_to`` wire *every* listed file
+# into the host ``index`` toctree (in list order) instead of a single entry
+# doc — so the fragments need no index to stitch them together and raise no
+# orphan warnings. ``attach_each`` is file-list mode only.
+[[mounts]]
+files = ["../fragments/note-one.rst", "../fragments/note-two.rst"]
+mount_at = "_generated/fragments"
+attach_to = "index"
+attach_each = true

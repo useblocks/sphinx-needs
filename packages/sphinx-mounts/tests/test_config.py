@@ -220,6 +220,48 @@ class TestMountConfig:
         with pytest.raises(MountConfigError, match="entry_doc must not start with"):
             MountConfig(dir=tmp_path, mount_at="x", entry_doc="/abs")
 
+    def test_attach_each_defaults_to_false(self, tmp_path: Path) -> None:
+        m = MountConfig(files=(tmp_path / "a.rst",), mount_at="x")
+        assert m.attach_each is False
+
+    def test_attach_each_valid_for_file_list(self, tmp_path: Path) -> None:
+        m = MountConfig.from_dict(
+            {
+                "files": [str(tmp_path / "a.rst")],
+                "mount_at": "x",
+                "attach_to": "index",
+                "attach_each": True,
+            }
+        )
+        assert m.attach_each is True
+
+    def test_attach_each_non_bool_rejected(self, tmp_path: Path) -> None:
+        with pytest.raises(MountConfigError, match="attach_each must be a boolean"):
+            MountConfig(
+                files=(tmp_path / "a.rst",),
+                mount_at="x",
+                attach_to="index",
+                attach_each="yes",  # type: ignore[arg-type]
+            )
+
+    def test_attach_each_requires_file_list_mode(self, tmp_path: Path) -> None:
+        with pytest.raises(MountConfigError, match="only valid in file-list mode"):
+            MountConfig(dir=tmp_path, mount_at="x", attach_to="index", attach_each=True)
+
+    def test_attach_each_requires_attach_to(self, tmp_path: Path) -> None:
+        with pytest.raises(MountConfigError, match="attach_each requires attach_to"):
+            MountConfig(files=(tmp_path / "a.rst",), mount_at="x", attach_each=True)
+
+    def test_attach_each_conflicts_with_entry_doc(self, tmp_path: Path) -> None:
+        with pytest.raises(MountConfigError, match="entry_doc"):
+            MountConfig(
+                files=(tmp_path / "a.rst",),
+                mount_at="x",
+                attach_to="index",
+                attach_each=True,
+                entry_doc="intro",
+            )
+
     def test_strict_mount_at_defaults_to_false(self, tmp_path: Path) -> None:
         m = MountConfig(dir=tmp_path, mount_at="x")
         assert m.strict_mount_at is False

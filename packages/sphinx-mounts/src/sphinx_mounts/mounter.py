@@ -61,6 +61,11 @@ class _MountAwareProject(Project):
         # Maps each mounted docname to (bundle_root, path_check) for the
         # path-confinement check in the extension. Rebuilt each discover().
         self._doc_roots: dict[str, tuple[Path, str]] = {}
+        # Ordered docnames produced by each mount, keyed by its index in
+        # ``self._mounts``. Consumed by the extension's ``attach_each``
+        # wiring, which attaches every file rather than only the entry doc.
+        # Rebuilt each discover().
+        self._mount_entry_docnames: dict[int, list[str]] = {}
 
     def discover(
         self,
@@ -70,9 +75,12 @@ class _MountAwareProject(Project):
         """Discover host srcdir docs plus all mounted external trees."""
         docs = super().discover(exclude_paths, include_paths)
         self._doc_roots = {}
-        for mount in self._mounts:
+        self._mount_entry_docnames = {}
+        for index, mount in enumerate(self._mounts):
             _enforce_strict_mount_at(Path(self.srcdir), mount)
-            docs |= _attach_mount(self, mount)
+            added = _attach_mount(self, mount)
+            docs.update(added)
+            self._mount_entry_docnames[index] = added
         return docs
 
 
@@ -102,7 +110,7 @@ def _enforce_strict_mount_at(srcdir: Path, mount: MountConfig) -> None:
         raise ValueError(msg)
 
 
-def _attach_mount(project: _MountAwareProject, mount: MountConfig) -> set[str]:
+def _attach_mount(project: _MountAwareProject, mount: MountConfig) -> list[str]:
     """Inject ``mount`` into ``project`` — either a directory or a file list.
 
     Directory mode (``mount.dir`` set): walk the directory and pick up
@@ -117,7 +125,9 @@ def _attach_mount(project: _MountAwareProject, mount: MountConfig) -> set[str]:
 
     :param project: The Sphinx :class:`Project` to inject into.
     :param mount: Validated mount configuration.
-    :return: The set of docnames added by this mount.
+    :return: The docnames added by this mount, in a deterministic order
+        (sorted by path for a directory mount, ``files`` order for a
+        file-list mount).
     :raises ValueError: If a constructed docname collides with an existing
         docname already in the project (host shadowing or two mounts
         producing the same docname), or — in file-list mode — if a file's
@@ -136,7 +146,7 @@ def _attach_mount(project: _MountAwareProject, mount: MountConfig) -> set[str]:
 
 def _attach_mount_dir(
     project: _MountAwareProject, mount: MountConfig, mount_dir: Path
-) -> set[str]:
+) -> list[str]:
     """Walk ``mount_dir`` with the ``ignore-python`` walker (a Rust
     binding to the same crate used by ``sphinx-codelinks`` and ubCode).
 
@@ -148,7 +158,7 @@ def _attach_mount_dir(
     directory whose parent gitignores it (the canonical
     ``bazel-bin/...`` case) would silently produce zero files.
     """
-    added: set[str] = set()
+    added: list[str] = []
     suffixes = tuple(project.source_suffix)
 
     walker = _build_walker(
@@ -178,7 +188,7 @@ def _attach_mount_dir(
         docname = _join_mount(mount.mount_at, docname_tail)
         _register(project, docname, abs_path, mount.mount_at)
         project._doc_roots[docname] = (mount_dir, mount.path_check)
-        added.add(docname)
+        added.append(docname)
     return added
 
 
@@ -233,8 +243,8 @@ def _build_walker(
 
 def _attach_mount_files(
     project: _MountAwareProject, mount: MountConfig, files: Iterable[Path]
-) -> set[str]:
-    added: set[str] = set()
+) -> list[str]:
+    added: list[str] = []
     suffixes = tuple(project.source_suffix)
 
     for abs_path in files:
@@ -251,7 +261,7 @@ def _attach_mount_files(
         docname = _join_mount(mount.mount_at, docname_tail)
         _register(project, docname, abs_path, mount.mount_at)
         project._doc_roots[docname] = (abs_path.parent, mount.path_check)
-        added.add(docname)
+        added.append(docname)
     return added
 
 

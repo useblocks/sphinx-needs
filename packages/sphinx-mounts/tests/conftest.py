@@ -99,12 +99,10 @@ def write_ubproject_toml(
             if values:
                 rendered = ", ".join(_toml_string(p) for p in values)
                 lines.append(f"{list_field} = [{rendered}]")
-        if "gitignore" in mount:
-            lines.append(f"gitignore = {'true' if mount['gitignore'] else 'false'}")
-        if "strict_mount_at" in mount:
-            lines.append(
-                f"strict_mount_at = {'true' if mount['strict_mount_at'] else 'false'}"
-            )
+        for bool_field in ("gitignore", "strict_mount_at", "attach_each"):
+            if bool_field in mount:
+                value = "true" if mount[bool_field] else "false"
+                lines.append(f"{bool_field} = {value}")
         if "path_check" in mount:
             lines.append(f"path_check = {_toml_string(mount['path_check'])}")
         if mount.get("attach_to") is not None:

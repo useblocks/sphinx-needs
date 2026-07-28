@@ -38,11 +38,14 @@ end-to-end (marked `bazel`, skipped when no `bazel`/`bazelisk` is on
     │       ├── 2026-q1.rst            # mounted -> flat docname .../release-notes/2026-q1
     │       ├── 2026-q2.rst            # mounted -> flat docname .../release-notes/2026-q2
     │       └── 2026-q3-draft.rst      # on disk but NOT in the files list -> not mounted
+    ├── fragments/                     # loose files mounted with attach_each (NO index)
+    │   ├── note-one.rst               # attached directly -> .../fragments/note-one
+    │   └── note-two.rst               # attached directly -> .../fragments/note-two
     └── docs/
         ├── conf.py                    # host project + graphviz/plantuml/mermaid + html_extra_path
         ├── index.rst                  # host toctree — names api-bar only
         ├── installation.rst           # host-only page
-        └── ubproject.toml             # 2 Bazel mounts + 9 showcase mounts + 1 file-list mount
+        └── ubproject.toml             # 2 Bazel + 9 showcase + 1 file-list + 1 attach_each mount
 
 ## Pipeline
 
@@ -164,6 +167,13 @@ Run the commands below from this directory (`tests/example/`).
   at the flat docnames `_generated/release-notes/2026-q1` / `.../2026-q2`.
   `include` / `exclude` / `gitignore` do not apply in file-list mode — the
   list itself is the filter.
+- **`attach_each`: loose files without an index.** The `fragments/` bundle is
+  a file-list mount of loose files with **no `index.rst`**. Setting
+  `attach_each = true` makes `attach_to` wire *every* listed file into the
+  host toctree (in `files` order) instead of a single entry doc — so the
+  fragments need no index to stitch them together and raise no orphan
+  warnings. Contrast with `release-notes/`, which keeps an `index.rst` to
+  group its notes under one page. `attach_each` is file-list mode only.
 - **A pre-built HTML report, no copy of sources.** `//coverage_report`
   generates a small lcov-style HTML tree. The host `conf.py` lists it in
   Sphinx's `html_extra_path`, which copies it **verbatim into the build

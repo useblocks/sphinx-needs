@@ -3,6 +3,22 @@
 Changelog
 =========
 
+.. _`release:0.1.2`:
+
+0.1.2
+-----
+
+:Released: unreleased
+
+- New per-mount ``attach_each`` option (file-list mode only). With
+  ``attach_to`` set, ``attach_each = true`` wires *every* listed file into
+  the host toctree — in ``files`` order — instead of only ``entry_doc``, so
+  a hand-picked set of loose files can be mounted without authoring an
+  ``index`` doc to stitch them together (and without the orphan warnings
+  that would otherwise fail a ``-W`` build). Requires ``attach_to``, is
+  mutually exclusive with ``entry_doc``, and is rejected in directory mode;
+  all three are enforced at config validation. See :ref:`attach-each`.
+
 .. _`release:0.1.1`:
 
 0.1.1

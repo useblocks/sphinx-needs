@@ -89,6 +89,13 @@ class MountConfig:
             ``entry_doc`` when ``mount_at`` is ``None``. This is the
             *only* doc auto-attached; any other docs in the mount must
             be reachable from the entry doc via its own toctree / refs.
+        attach_each: File-list mode only. When ``True``, ``attach_to``
+            wires *every* listed file into the host toctree (in ``files``
+            order) instead of only ``entry_doc`` — so a set of loose files
+            can be mounted without an index doc to stitch them together.
+            Requires ``attach_to``; mutually exclusive with a non-default
+            ``entry_doc``; rejected in directory mode. Defaults to
+            ``False``.
         strict_mount_at: When ``True``, fail the build if the host
             project already has a directory at ``<srcdir>/<mount_at>/``.
             Defaults to ``False`` — the existing per-docname collision
@@ -121,6 +128,7 @@ class MountConfig:
     attach_to: str | None = None
     toctree_index: int = 0
     entry_doc: str = "index"
+    attach_each: bool = False
     strict_mount_at: bool = False
     path_check: str = "error"
 
@@ -159,6 +167,10 @@ class MountConfig:
             raise MountConfigError(msg)
 
         _validate_relative_docname("entry_doc", self.entry_doc)
+
+        _validate_attach_each(
+            self.attach_each, self.files, self.attach_to, self.entry_doc
+        )
 
         if not isinstance(self.strict_mount_at, bool):
             msg = (
@@ -230,6 +242,7 @@ class MountConfig:
             attach_to=entry.get("attach_to"),
             toctree_index=entry.get("toctree_index", 0),
             entry_doc=entry.get("entry_doc", "index"),
+            attach_each=entry.get("attach_each", False),
             strict_mount_at=entry.get("strict_mount_at", False),
             path_check=entry.get("path_check", "error"),
         )
@@ -324,6 +337,44 @@ def _validate_dir_or_files(dir_: Path | None, files: tuple[Path, ...] | None) ->
             raise MountConfigError(msg)
 
 
+def _validate_attach_each(
+    attach_each: bool,
+    files: tuple[Path, ...] | None,
+    attach_to: str | None,
+    entry_doc: str,
+) -> None:
+    """Enforce the type and constraints on ``attach_each``.
+
+    ``attach_each`` only makes sense for a file-list mount that wires every
+    listed file into a host toctree. Extracted from
+    ``MountConfig.__post_init__`` to keep its complexity within ruff's
+    threshold.
+    """
+    if not isinstance(attach_each, bool):
+        msg = f"attach_each must be a boolean; got {type(attach_each).__name__}."
+        raise MountConfigError(msg)
+    if not attach_each:
+        return
+    if files is None:
+        msg = (
+            "attach_each is only valid in file-list mode (files = [...]); a "
+            "directory mount has a single entry doc that toctrees its tree."
+        )
+        raise MountConfigError(msg)
+    if attach_to is None:
+        msg = (
+            "attach_each requires attach_to — it wires every listed file into "
+            "that host doc's toctree."
+        )
+        raise MountConfigError(msg)
+    if entry_doc != "index":
+        msg = (
+            "attach_each attaches every listed file, so entry_doc is "
+            "meaningless; set attach_each or entry_doc, not both."
+        )
+        raise MountConfigError(msg)
+
+
 def _validate_relative_docname(field_name: str, value: object) -> None:
     """Validate a relative docname-shaped string field.
 
@@ -390,6 +441,7 @@ def parse_mounts(raw: Any, confdir: Path) -> tuple[MountConfig, ...]:
                 attach_to=mount.attach_to,
                 toctree_index=mount.toctree_index,
                 entry_doc=mount.entry_doc,
+                attach_each=mount.attach_each,
                 strict_mount_at=mount.strict_mount_at,
                 path_check=mount.path_check,
             )

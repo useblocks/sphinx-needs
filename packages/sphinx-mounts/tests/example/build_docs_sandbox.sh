@@ -63,6 +63,13 @@ if [ -d "${example_src}/release-notes" ]; then
     cp -RL "${example_src}/release-notes" "${stage}/release-notes"
 fi
 
+# Stage the checked-in "fragments" bundle (loose files mounted with
+# attach_each). Same rationale as release-notes/ above — ``ubproject.toml``
+# mounts ``../fragments/...``, so the tree must sit next to ``${stage}/docs``.
+if [ -d "${example_src}/fragments" ]; then
+    cp -RL "${example_src}/fragments" "${stage}/fragments"
+fi
+
 # Stage each artefact under ``bazel-bin/`` so the workspace-relative
 # paths in the host config resolve from ``${stage}/docs/``:
 #   - source bundle files at ``bazel-bin/bundles/<bundle>/<file>``

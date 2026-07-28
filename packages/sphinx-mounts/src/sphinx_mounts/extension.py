@@ -99,63 +99,96 @@ def _on_doctree_read(app: Sphinx, doctree: nodes.document) -> None:
 
     For every mount whose ``attach_to`` equals the doc currently being
     read, locate the configured toctree (by ``toctree_index``, 0-based)
-    and append ``{mount_at}/{entry_doc}`` to it. If the host doc contains
-    no toctree at all, a new one is added beneath the first section. If
-    ``toctree_index`` exceeds the number of toctrees in the doc, raise
-    :class:`ExtensionError` — silent misconfiguration would leave the
-    mount unreferenced.
+    and append the mount's entry docname(s) to it. Normally that is the
+    single ``{mount_at}/{entry_doc}``; when ``attach_each`` is set on a
+    file-list mount, *every* docname the mount produced is appended, in
+    ``files`` order. If the host doc contains no toctree at all, a new
+    one is added beneath the first section. If ``toctree_index`` exceeds
+    the number of toctrees in the doc, raise :class:`ExtensionError` —
+    silent misconfiguration would leave the mount unreferenced.
     """
     parsed: tuple[MountConfig, ...] = getattr(app, _CACHED_KEY, ())
     if not parsed:
         return
     docname = app.env.docname
-    targets = [m for m in parsed if m.attach_to == docname]
+    targets = [(i, m) for i, m in enumerate(parsed) if m.attach_to == docname]
     if not targets:
         return
 
+    mount_docnames: dict[int, list[str]] = getattr(
+        getattr(app.env, "project", None), "_mount_entry_docnames", {}
+    )
     toctrees: list[addnodes.toctree] = list(doctree.findall(addnodes.toctree))
 
-    for mount in targets:
-        entry_docname = (
-            mount.entry_doc
-            if mount.mount_at is None
-            else f"{mount.mount_at}/{mount.entry_doc}"
+    for index, mount in targets:
+        entries = _mount_toctree_entries(mount, index, mount_docnames)
+        if not entries:
+            continue
+        target = _select_or_create_toctree(
+            doctree, toctrees, docname, mount, entries[0]
         )
-
-        if not toctrees:
-            new_node = _build_toctree_node(docname, entry_docname)
-            _attach_to_first_section(doctree, new_node)
-            toctrees.append(new_node)
-            logger.info(
-                "sphinx-mounts: added toctree to %r referencing %r",
-                docname,
-                entry_docname,
-            )
-            continue
-
-        if mount.toctree_index >= len(toctrees):
-            mount_label = "<root>" if mount.mount_at is None else repr(mount.mount_at)
-            msg = (
-                f"sphinx-mounts: mount {mount_label} requested "
-                f"toctree_index={mount.toctree_index} in host doc "
-                f"{docname!r}, but only {len(toctrees)} toctree(s) exist."
-            )
-            raise ExtensionError(msg)
-
-        target = toctrees[mount.toctree_index]
-        if entry_docname in target["includefiles"]:
-            # Already referenced (e.g. the host author wrote the entry by
-            # hand). Skip silently so attach_to is idempotent next to a
-            # static toctree.
-            continue
-        target["entries"].append((None, entry_docname))
-        target["includefiles"].append(entry_docname)
+        added: list[str] = []
+        for entry in entries:
+            if entry in target["includefiles"]:
+                # Already referenced — the host author wrote it by hand, or
+                # a freshly created toctree was seeded with the first entry.
+                # Skip so attach_to stays idempotent.
+                continue
+            target["entries"].append((None, entry))
+            target["includefiles"].append(entry)
+            added.append(entry)
         logger.info(
-            "sphinx-mounts: extended toctree #%d in %r with %r",
-            mount.toctree_index,
+            "sphinx-mounts: wired %r into toctree of %r",
+            added or entries,
             docname,
-            entry_docname,
         )
+
+
+def _mount_toctree_entries(
+    mount: MountConfig, index: int, mount_docnames: dict[int, list[str]]
+) -> list[str]:
+    """Return the docname(s) ``mount`` should wire into the host toctree.
+
+    Normally the single ``{mount_at}/{entry_doc}`` (or bare ``entry_doc``
+    for a root mount). With ``attach_each`` set, every docname the mount
+    produced, in discovery order.
+    """
+    if mount.attach_each:
+        return list(mount_docnames.get(index, []))
+    if mount.mount_at is None:
+        return [mount.entry_doc]
+    return [f"{mount.mount_at}/{mount.entry_doc}"]
+
+
+def _select_or_create_toctree(
+    doctree: nodes.document,
+    toctrees: list[addnodes.toctree],
+    docname: str,
+    mount: MountConfig,
+    seed_entry: str,
+) -> addnodes.toctree:
+    """Return the toctree in ``doctree`` that ``mount`` should extend.
+
+    If the doc has no toctree yet, build one (seeded with ``seed_entry``),
+    attach it at the end of the first section, and register it in
+    ``toctrees`` so later mounts targeting the same doc reuse it. Otherwise
+    return the toctree selected by ``mount.toctree_index``, raising
+    :class:`ExtensionError` when the index is out of range.
+    """
+    if not toctrees:
+        node = _build_toctree_node(docname, seed_entry)
+        _attach_to_first_section(doctree, node)
+        toctrees.append(node)
+        return node
+    if mount.toctree_index >= len(toctrees):
+        mount_label = "<root>" if mount.mount_at is None else repr(mount.mount_at)
+        msg = (
+            f"sphinx-mounts: mount {mount_label} requested "
+            f"toctree_index={mount.toctree_index} in host doc "
+            f"{docname!r}, but only {len(toctrees)} toctree(s) exist."
+        )
+        raise ExtensionError(msg)
+    return toctrees[mount.toctree_index]
 
 
 def _on_check_consistency(app: Sphinx, env: Any) -> None:

@@ -779,6 +779,82 @@ def test_mount_files_with_attach_to_wires_entry_doc(
     assert "_generated/api/intro.html" in index_html
 
 
+def test_attach_each_wires_every_file_without_entry_doc(
+    make_app, make_host_project, bundle_simple
+):
+    """attach_each attaches *every* listed file to the host toctree, so a
+    file-list mount needs no index / entry doc and produces no orphans."""
+    host = make_host_project()
+    _set_index_rst(host, "Host\n====\n\n.. toctree::\n   :maxdepth: 2\n")
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "files": [
+                    str(bundle_simple / "intro.rst"),
+                    str(bundle_simple / "details.rst"),
+                ],
+                "mount_at": "_generated/api",
+                "attach_to": "index",
+                "attach_each": True,
+            }
+        ],
+    )
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    # Every listed file is wired into the host toctree, in files order, and
+    # no phantom "index" entry doc is invented.
+    doctree = app.env.get_doctree("index")
+    toctrees = list(doctree.findall(addnodes.toctree))
+    assert len(toctrees) == 1
+    includefiles = toctrees[0]["includefiles"]
+    assert "_generated/api/intro" in includefiles
+    assert "_generated/api/details" in includefiles
+    assert "_generated/api/index" not in includefiles
+    assert includefiles.index("_generated/api/intro") < includefiles.index(
+        "_generated/api/details"
+    )
+    # Both pages built — they are reachable, hence not orphaned.
+    outdir = Path(app.outdir)
+    assert (outdir / "_generated/api/intro.html").exists()
+    assert (outdir / "_generated/api/details.html").exists()
+
+
+def test_attach_each_creates_toctree_when_absent(
+    make_app, make_host_project, bundle_simple
+):
+    """With no host toctree present, attach_each creates one and fills it
+    with every listed file."""
+    host = make_host_project()
+    _set_index_rst(host, "Host\n====\n\nJust a paragraph, no toctree.\n")
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "files": [
+                    str(bundle_simple / "intro.rst"),
+                    str(bundle_simple / "details.rst"),
+                ],
+                "mount_at": "_generated/api",
+                "attach_to": "index",
+                "attach_each": True,
+            }
+        ],
+    )
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    doctree = app.env.get_doctree("index")
+    toctrees = list(doctree.findall(addnodes.toctree))
+    assert len(toctrees) == 1
+    includefiles = toctrees[0]["includefiles"]
+    assert "_generated/api/intro" in includefiles
+    assert "_generated/api/details" in includefiles
+
+
 def test_mount_files_unknown_suffix_raises(make_app, make_host_project, tmp_path):
     """A listed file whose extension is not in source_suffix is an error —
     the user explicitly asked for it to be mounted, so silently skipping

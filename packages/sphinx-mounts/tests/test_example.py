@@ -4,8 +4,9 @@ The example is a complete, checked-in reference setup: a host Sphinx
 project, two Bazel-generated bundles (one RST, one Markdown), nine
 checked-in "showcase" bundles — one folder per file-referencing
 directive (literalinclude, include, csv-table, raw, image, figure,
-graphviz, uml, mermaid) — and one checked-in "release notes" bundle
-mounted in file-list mode (``files``), all wired into the host's
+graphviz, uml, mermaid), one checked-in "release notes" bundle mounted
+in file-list mode (``files``), and one checked-in "fragments" bundle of
+loose files mounted with ``attach_each`` — all wired into the host's
 toctree via ``attach_to``. This test runs the pipeline the example's
 README documents:
 
@@ -122,6 +123,13 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert (release_notes / "notes" / "2026-q1.rst").exists()
     assert (release_notes / "notes" / "2026-q3-draft.rst").exists()
 
+    # The "fragments" bundle is a set of loose files with NO index, mounted
+    # with attach_each (asserted in 2e).
+    fragments = workspace / "fragments"
+    assert (fragments / "note-one.rst").exists()
+    assert (fragments / "note-two.rst").exists()
+    assert not (fragments / "index.rst").exists()
+
     # Run sphinx-build against the host project. -W turns any unresolved
     # reference into a failure, so a broken mount surfaces here.
     docs = workspace / "docs"
@@ -233,6 +241,21 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
         html_out / "_generated" / "release-notes" / "2026-q3-draft.html"
     ).exists()
 
+    # 2e) attach_each: the "fragments" bundle is a file-list mount of loose
+    #     files with NO index. attach_each wires *every* listed file into the
+    #     host toctree, so both pages render and neither is orphaned — without
+    #     any index doc authored for the bundle.
+    frag_one = (html_out / "_generated" / "fragments" / "note-one.html").read_text(
+        encoding="utf-8"
+    )
+    frag_two = (html_out / "_generated" / "fragments" / "note-two.html").read_text(
+        encoding="utf-8"
+    )
+    assert "FRAGMENT_ONE_MARKER" in frag_one
+    assert "FRAGMENT_TWO_MARKER" in frag_two
+    # No index doc exists or was invented for the fragments bundle.
+    assert not (html_out / "_generated" / "fragments" / "index.html").exists()
+
     # 3) Markdown bundle rendered.
     bar_index = (html_out / "_generated" / "api-bar" / "index.html").read_text(
         encoding="utf-8"
@@ -264,6 +287,11 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     # its entry doc appears in the host index toctree but never in the source.
     assert "_generated/release-notes" not in source_index_rst
     assert "_generated/release-notes/index.html" in index_html
+    # attach_each wires *every* fragment into the host index toctree (no
+    # entry doc), and the host source RST never references the mount path.
+    assert "_generated/fragments" not in source_index_rst
+    assert "_generated/fragments/note-one.html" in index_html
+    assert "_generated/fragments/note-two.html" in index_html
 
     # 5) Nothing was copied into the host srcdir — neither the mounted
     #    bundles (_generated) nor the html_extra_path report (coverage).
