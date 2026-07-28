@@ -6,6 +6,9 @@
 #   `extensions` in docs/conf.py), so the engine recognises it by module tag and
 #   renders the same source + rendered-result shape as the Sphinx build.
 extensions = ["sphinx_syntax_example"]
+# Number the `syntax-example` rubrics per document ("Example 1", "Example 2", ...),
+# mirroring the `syntax_example_numbering` confval in docs/conf.py.
+syntax_example_numbering = true
 
 [parse.extend_directives.grid-item-card]
 argument = false
