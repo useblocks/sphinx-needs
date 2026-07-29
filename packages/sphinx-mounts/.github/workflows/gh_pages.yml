@@ -33,7 +33,7 @@ jobs:
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version-file: ".python-version"
       - run: python -m pip install tox tox-uv
