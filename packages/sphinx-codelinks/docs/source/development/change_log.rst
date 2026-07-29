@@ -3,6 +3,19 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+New and Improved
+................
+
+- ✨ Added Bash language support for the ``analyse`` module.
+
+  Comments in shell scripts are now parsed for need ID references and one-line need
+  definitions. ``.sh``, ``.bash``, ``.zsh``, and ``.ksh`` files are discovered when
+  ``comment_type = "bash"``. The supported comment style is ``#``. Fish shell is not
+  supported (no ``tree-sitter-fish`` grammar is published for the Python package).
+
 .. _`release:1.3.0`:
 
 1.3.0

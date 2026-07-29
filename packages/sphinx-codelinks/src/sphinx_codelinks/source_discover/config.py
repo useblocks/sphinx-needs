@@ -13,6 +13,12 @@ COMMENT_FILETYPE = {
     "rust": ["rs"],
     "go": ["go"],
     "jsonc": ["jsonc", "json"],
+    # Bash uses `#` line comments; zsh and ksh share the same comment syntax and
+    # are scanned with the bash grammar. Fish is intentionally excluded: it is
+    # not POSIX-compatible and no tree-sitter-fish distribution is published on
+    # PyPI, so it cannot be wired in here. Track fish separately if a PyPI
+    # grammar becomes available.
+    "bash": ["sh", "bash", "zsh", "ksh"],
 }
 
 
@@ -27,6 +33,8 @@ class CommentType(str, Enum):
     go = "go"
     # @Support JSONC style comments, IMPL_JSONC_1, impl, [FE_JSONC];
     jsonc = "jsonc"
+    # @Support Bash style comments, IMPL_BASH_1, impl, [FE_BASH];
+    bash = "bash"
 
 
 class SourceDiscoverSectionConfigType(TypedDict, total=False):

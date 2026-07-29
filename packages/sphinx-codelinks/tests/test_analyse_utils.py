@@ -6,6 +6,7 @@ import subprocess
 import pytest
 from tree_sitter import Language, Parser, Query
 from tree_sitter import Node as TreeSitterNode
+import tree_sitter_bash
 import tree_sitter_c_sharp
 import tree_sitter_cpp
 import tree_sitter_go
@@ -71,6 +72,14 @@ def init_go_tree_sitter() -> tuple[Parser, Query]:
 def init_jsonc_tree_sitter() -> tuple[Parser, Query]:
     parsed_language = Language(tree_sitter_json.language())
     query = Query(parsed_language, utils.JSONC_QUERY)
+    parser = Parser(parsed_language)
+    return parser, query
+
+
+@pytest.fixture(scope="session")
+def init_bash_tree_sitter() -> tuple[Parser, Query]:
+    parsed_language = Language(tree_sitter_bash.language())
+    query = Query(parsed_language, utils.BASH_QUERY)
     parser = Parser(parsed_language)
     return parser, query
 
@@ -423,6 +432,53 @@ def test_find_associated_scope_jsonc(code, result, init_jsonc_tree_sitter):
     assert node.text
     jsonc_structure = node.text.decode("utf-8")
     assert result in jsonc_structure
+
+
+@pytest.mark.parametrize(
+    ("code", "result"),
+    [
+        # comment above a POSIX-style function definition
+        (
+            b"""
+                # @req-id: need_001
+                greet() {
+                    echo hi
+                }
+            """,
+            "greet()",
+        ),
+        # comment above the `function` keyword form
+        (
+            b"""
+                # @req-id: need_002
+                function greet {
+                    echo hi
+                }
+            """,
+            "function greet",
+        ),
+        # comment inside a function body falls back to the enclosing function
+        (
+            b"""
+                greet() {
+                    # @req-id: need_003
+                    echo hi
+                }
+            """,
+            "greet()",
+        ),
+    ],
+)
+def test_find_associated_scope_bash(code, result, init_bash_tree_sitter):
+    parser, query = init_bash_tree_sitter
+    comments = utils.extract_comments(code, parser, query)
+    node: TreeSitterNode | None = utils.find_associated_scope(
+        comments[0], CommentType.bash
+    )
+    assert node
+    assert node.text
+    func_def = node.text.decode("utf-8")
+    assert func_def.startswith(result)
 
 
 @pytest.mark.parametrize(

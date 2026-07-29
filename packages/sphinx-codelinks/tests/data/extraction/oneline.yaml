@@ -40,3 +40,20 @@ default_oneliner_yaml:
   source: |
     # @Yaml Title, IMPL_YAML, impl, [REQ_YAML]
     key: value
+
+default_oneliner_bash:
+  lang: bash
+  config: default
+  source: |
+    # @Bash Title, IMPL_BASH, impl, [REQ_BASH]
+    greet() { echo hi; }
+
+# the shebang is a comment node but must not yield a marker or warning;
+# the marker anchors to line 2 and the `function` keyword form also parses
+shebang_oneliner_bash:
+  lang: bash
+  config: default
+  source: |
+    #!/bin/bash
+    # @Bash Title, IMPL_BASH_SHEBANG, impl, [REQ_BASH]
+    function greet { echo hi; }

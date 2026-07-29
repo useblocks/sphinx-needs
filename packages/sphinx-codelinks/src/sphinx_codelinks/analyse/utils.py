@@ -44,6 +44,8 @@ SCOPE_NODE_TYPES = {
         "type_declaration",
         "type_spec",
     },
+    # @Bash Scope Node Types, IMPL_BASH_2, impl, [FE_BASH]
+    CommentType.bash: {"function_definition"},
 }
 
 logger = get_logger(__name__)
@@ -74,6 +76,8 @@ GO_QUERY = """
     (comment) @comment
 """
 JSONC_QUERY = """(comment) @comment"""
+# @Bash comment query for tree-sitter, IMPL_BASH_3, impl, [FE_BASH]
+BASH_QUERY = """(comment) @comment"""
 
 # JSON value node types that can be associated with a comment.
 JSON_STRUCTURE_TYPES = {
@@ -103,7 +107,7 @@ def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
         return False
 
 
-# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC]
+# @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH]
 def init_tree_sitter(comment_type: CommentType) -> tuple[Parser, Query]:
     if comment_type == CommentType.cpp:
         import tree_sitter_cpp  # noqa: PLC0415
@@ -140,6 +144,11 @@ def init_tree_sitter(comment_type: CommentType) -> tuple[Parser, Query]:
 
         parsed_language = Language(tree_sitter_json.language())
         query = Query(parsed_language, JSONC_QUERY)
+    elif comment_type == CommentType.bash:
+        import tree_sitter_bash  # noqa: PLC0415
+
+        parsed_language = Language(tree_sitter_bash.language())
+        query = Query(parsed_language, BASH_QUERY)
     else:
         raise ValueError(f"Unsupported comment style: {comment_type}")
     parser = Parser(parsed_language)

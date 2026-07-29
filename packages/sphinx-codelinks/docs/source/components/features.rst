@@ -234,6 +234,38 @@ Features
    .. fault:: Sphinx-codelinks hallucinates traceability objects in JSONC
       :id: FAULT_JSONC_2
 
+.. feature:: Bash Language Support
+   :id: FE_BASH
+
+   Support for defining traceability objects in Bash and POSIX-shell scripts.
+
+   The Bash language parser leverages tree-sitter to identify and extract
+   single-line (``#``) comments from shell scripts, associating each marker with
+   the surrounding function definition it annotates.
+
+   ``.sh``, ``.bash``, ``.zsh``, and ``.ksh`` files are auto-discovered when
+   ``comment_type = "bash"``. zsh and ksh share Bash's ``#`` comment syntax and
+   are parsed with the same grammar.
+
+   Key capabilities:
+
+   * Hash-style comment (``#``) detection
+   * Association of comments with function definitions
+   * Support for standard shell comment conventions
+   * Shebang lines (``#!/bin/bash``) never produce spurious markers
+
+   .. note::
+
+      Fish shell is not supported. Fish is not POSIX-compatible and no
+      ``tree-sitter-fish`` grammar is published on PyPI, so it cannot be wired
+      into the Python package.
+
+   .. fault:: Traceability objects are not detected in Bash language
+      :id: FAULT_BASH_1
+
+   .. fault:: Sphinx-codelinks hallucinates traceability objects in Bash
+      :id: FAULT_BASH_2
+
 .. feature:: Customized comment styles
    :id: FE_CMT
 

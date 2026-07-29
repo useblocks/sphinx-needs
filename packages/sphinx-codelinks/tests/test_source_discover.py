@@ -49,7 +49,7 @@ FIXTURES_PATH = Path(__file__).parent / "data" / "discover_fixtures.json"
                 "comment_type": "java",
             },
             [
-                "Schema validation error in field 'comment_type': 'java' is not one of ['cpp', 'cs', 'go', 'jsonc', 'python', 'rust', 'yaml']"
+                "Schema validation error in field 'comment_type': 'java' is not one of ['bash', 'cpp', 'cs', 'go', 'jsonc', 'python', 'rust', 'yaml']"
             ],
         ),
         (
@@ -182,6 +182,7 @@ def create_source_files(tmp_path: Path) -> Path:
     [
         ("cpp", len(COMMENT_FILETYPE["cpp"])),
         ("python", len(COMMENT_FILETYPE["python"])),
+        ("bash", len(COMMENT_FILETYPE["bash"])),
     ],
 )
 def test_comment_filetype(

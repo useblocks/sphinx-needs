@@ -12,7 +12,7 @@ Each `*.yaml` file in this directory is a map of `case_name → case`:
 
 ```yaml
 default_oneliner_cpp:
-  lang: cpp                 # cpp | c | python | csharp | rust | yaml | go | jsonc
+  lang: cpp                 # cpp | c | python | csharp | rust | yaml | go | jsonc | bash
   config: default          # "default", or an inline config block (see below)
   source: |
     // @My Title, IMPL_1, impl, [REQ_1]
