@@ -8,7 +8,7 @@ Changelog
 0.1.2
 -----
 
-:Released: unreleased
+:Released: 2026-07-29
 
 - New per-mount ``attach_each`` option (file-list mode only). With
   ``attach_to`` set, ``attach_each = true`` wires *every* listed file into
