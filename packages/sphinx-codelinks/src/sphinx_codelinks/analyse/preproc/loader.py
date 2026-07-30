@@ -17,6 +17,7 @@ _INSTALL_HINT = (
 )
 
 
+# @Guard the optional libclang dependency with an install hint, IMPL_PREPROC_6, impl, [FE_PREPROC]
 def load_clang_cindex() -> Any:  # type: ignore[explicit-any]
     """Return the clang.cindex module or raise a clear install error."""
     try:

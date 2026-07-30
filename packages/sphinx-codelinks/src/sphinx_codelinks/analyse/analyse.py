@@ -184,6 +184,7 @@ class SourceAnalyse:
             preproc.defines, preproc.includes, preproc.std
         )
 
+    # @Extract traceability objects with the preprocessor-aware libclang engine, IMPL_PREPROC_1, impl, [FE_PREPROC]
     def create_src_objects_libclang(self) -> None:
         from sphinx_codelinks.analyse.preproc import (  # noqa: PLC0415
             libclang_parser,

@@ -56,6 +56,7 @@ def _is_in_skipped(
     )
 
 
+# @Drop comments inside inactive preprocessor branches, IMPL_PREPROC_2, impl, [FE_PREPROC]
 def extract_active_comments(file_path: Path, args: list[str]) -> list[LibclangComment]:
     """Return one LibclangComment per ACTIVE comment token in ``file_path``.
 

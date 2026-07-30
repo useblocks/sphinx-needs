@@ -35,6 +35,7 @@ _MIN_JOINED_FLAG_LEN = 3
 TU_SOURCE_SUFFIXES = {".c", ".cpp", ".cc", ".cxx"}
 
 
+# @Discover compile_commands.json by walking up from the source file, IMPL_PREPROC_3, impl, [FE_PREPROC]
 def find_compile_db(start: Path, project_root: Path | None = None) -> Path | None:
     """Walk up from ``start`` looking for compile_commands.json.
 
@@ -103,6 +104,7 @@ def filter_args(argv: list[str], input_file: str) -> list[str]:
     return out
 
 
+# @Resolve per-file compiler flags from the compilation database, IMPL_PREPROC_4, impl, [FE_PREPROC]
 def load_flags_map(db_path: Path) -> dict[Path, list[str]]:
     """Parse compile_commands.json -> {absolute file path: filtered args}."""
     entries = json.loads(db_path.read_text())
@@ -123,6 +125,7 @@ def load_flags_map(db_path: Path) -> dict[Path, list[str]]:
     return flags
 
 
+# @Parse headers standalone from configured defines and includes, IMPL_PREPROC_5, impl, [FE_PREPROC]
 def defines_to_args(
     defines: list[str], includes: list[Path], std: str = DEFAULT_CPP_STD
 ) -> list[str]:
