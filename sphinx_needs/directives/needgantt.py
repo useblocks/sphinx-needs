@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import re
 from collections.abc import Sequence
 from datetime import datetime
@@ -18,6 +17,7 @@ from sphinx_needs.diagrams_common import (
     get_debug_container,
     get_filter_para,
     no_plantuml,
+    set_plantuml_paths,
 )
 from sphinx_needs.directives.utils import (
     SphinxNeedsLinkTypeException,
@@ -351,10 +351,7 @@ def process_needgantt(
             puml_node["uml"] += create_legend(needs_config.types)
 
         puml_node["uml"] += "\n@endgantt"
-        puml_node["incdir"] = os.path.dirname(current_needgantt["docname"])
-        puml_node["filename"] = os.path.split(current_needgantt["docname"])[
-            1
-        ]  # Needed for plantuml >= 0.9
+        set_plantuml_paths(puml_node, env, current_needgantt["docname"])
 
         scale = int(current_needgantt["scale"])
         # if scale != 100:

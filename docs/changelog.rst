@@ -7,6 +7,18 @@ Changelog
 Unreleased
 ----------
 
+- 🐛 Generated PlantUML diagrams (:ref:`needuml`, :ref:`needarch`,
+  :ref:`needflow`, :ref:`needsequence`, :ref:`needgantt`) now derive PlantUML's
+  working directory from the *physical* path of the source document instead of
+  its logical docname (:issue:`1749`).
+
+  Relative ``!include`` paths therefore also resolve for documents whose source
+  file does not live under ``srcdir`` — e.g. documents contributed by
+  `sphinx-mounts <https://github.com/useblocks/sphinx-mounts>`__ — which
+  previously failed with a misleading
+  ``WARNING: plantuml command '...' cannot be run``.
+  Ordinary documents keep the exact working directory they had before.
+
 - 📚 The documentation now uses the shared
   `sphinx-syntax-example <https://github.com/sphinx-extensions2/sphinx-syntax-example>`__
   ``syntax-example`` directive, in place of the bespoke ``need-example`` directive
