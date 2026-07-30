@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:1.4.0`:
+
+1.4.0
+-----
+
+:Released: 30.07.2026
 
 New and Improved
 ................
@@ -15,6 +19,51 @@ New and Improved
   definitions. ``.sh``, ``.bash``, ``.zsh``, and ``.ksh`` files are discovered when
   ``comment_type = "bash"``. The supported comment style is ``#``. Fish shell is not
   supported (no ``tree-sitter-fish`` grammar is published for the Python package).
+
+- ✨ Added an opt-in preprocessor-aware C/C++ extraction engine, powered by libclang.
+
+  The default tree-sitter engine sees every comment in a file, regardless of conditional
+  compilation. Configuring the new :ref:`analyse.preprocessor <preprocessor_config>` table
+  switches C/C++ extraction to libclang, which evaluates the preprocessor and emits only
+  the markers in **active** branches — a need behind an inactive ``#if`` / ``#else`` is
+  dropped. Compiler flags are resolved per file from a ``compile_commands.json``
+  compilation database, with an explicit ``defines`` list for headers, which are not
+  listed in such a database. Active markers keep their original line numbers.
+
+  The engine requires the optional ``libclang`` dependency
+  (``pip install 'sphinx-codelinks[libclang]'``). Plain tree-sitter C/C++ extraction is
+  unaffected when it is not installed. See :ref:`preprocessor_engine` for details.
+
+- 📚 Traced the preprocessor-aware C/C++ engine in the feature documentation.
+
+  ``features.rst`` now declares the engine as a feature with its fault children, and the
+  implementation carries the one-line markers that link back to it. The engine is therefore
+  covered by the project's own traceability report, like every supported language.
+
+- 🧪 Added a declarative fixture and snapshot test layer for marker extraction.
+
+  Extraction cases are now data (a YAML fixture plus a captured JSON snapshot) instead of
+  bespoke test functions, covering the one-line, need-ID-reference and ``@rst`` block
+  surfaces across all supported languages.
+
+Fixes
+.....
+
+- 🐛 Anchor newline-terminated one-line markers to the start of the comment.
+
+  A start sequence (default ``@``) that appeared in free-form prose was matched anywhere in
+  a comment, so a line such as ``// See @author, check the example`` was parsed as a need
+  definition and the bogus ID raised ``InvalidNeedException`` in Sphinx-Needs. Markers that
+  run to the end of the line now only match when nothing but comment decoration (``//``,
+  ``#``, ``*``, ``///``, ``//!``, …) and whitespace precedes the start sequence. Markers
+  with an explicit ``end_sequence`` (e.g. ``[[ … ]]``) are self-delimiting and remain
+  position-independent, so they may still follow prose.
+
+- 🐛 Pinned ``typer`` and ``sphinxcontrib-typer`` to keep the documentation build working.
+
+  ``typer 0.26.8`` removed ``rich_utils.STYLE_METAVAR`` and ``sphinxcontrib-typer 0.9.1``
+  requires ``rich_utils.STYLE_TYPES``; either combination broke ``sphinx-build``. The
+  dependencies are now capped at ``typer<0.26.8`` and ``sphinxcontrib-typer<0.9.1``.
 
 .. _`release:1.3.0`:
 
