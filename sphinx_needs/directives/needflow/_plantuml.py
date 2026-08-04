@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import html
-import os
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -10,7 +9,11 @@ from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.diagrams_common import calculate_link, create_legend
+from sphinx_needs.diagrams_common import (
+    calculate_link,
+    create_legend,
+    set_plantuml_paths,
+)
 from sphinx_needs.directives.needflow._directive import NeedflowPlantuml
 from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import filter_single_need, process_filters
@@ -319,10 +322,7 @@ def process_needflow_plantuml(
                 puml_node["uml"] += create_legend(needs_config.types)
 
             puml_node["uml"] += "\n@enduml"
-            puml_node["incdir"] = os.path.dirname(current_needflow["docname"])
-            puml_node["filename"] = os.path.split(current_needflow["docname"])[
-                1
-            ]  # Needed for plantuml >= 0.9
+            set_plantuml_paths(puml_node, env, current_needflow["docname"])
 
             scale = int(current_needflow["scale"])
             # if scale != 100:

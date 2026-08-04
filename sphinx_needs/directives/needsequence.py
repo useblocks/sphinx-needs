@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import re
 from collections.abc import Sequence
 from typing import Any
@@ -18,6 +17,7 @@ from sphinx_needs.diagrams_common import (
     get_debug_container,
     get_filter_para,
     no_plantuml,
+    set_plantuml_paths,
 )
 from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.filter_common import FilterBase
@@ -191,10 +191,7 @@ def process_needsequence(
             puml_node["uml"] += create_legend(needs_types)
 
         puml_node["uml"] += "\n@enduml"
-        puml_node["incdir"] = os.path.dirname(current_needsequence["docname"])
-        puml_node["filename"] = os.path.split(current_needsequence["docname"])[
-            1
-        ]  # Needed for plantuml >= 0.9
+        set_plantuml_paths(puml_node, env, current_needsequence["docname"])
 
         scale = int(current_needsequence["scale"])
         # if scale != 100:

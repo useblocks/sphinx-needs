@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import html
-import os
 import time
 from collections.abc import Sequence
 from pathlib import PurePosixPath
@@ -16,7 +15,7 @@ from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.diagrams_common import calculate_link
+from sphinx_needs.diagrams_common import calculate_link, set_plantuml_paths
 from sphinx_needs.directives.needflow._plantuml import make_entity_name
 from sphinx_needs.filter_common import filter_needs_view
 from sphinx_needs.logging import log_warning
@@ -646,10 +645,7 @@ def process_needuml(
         else:
             puml_node["align"] = "center"
 
-        puml_node["incdir"] = os.path.dirname(current_needuml["docname"])
-        puml_node["filename"] = os.path.split(current_needuml["docname"])[
-            1
-        ]  # Needed for plantuml >= 0.9
+        set_plantuml_paths(puml_node, env, current_needuml["docname"])
 
         content.append(puml_node)
 
