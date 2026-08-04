@@ -52,6 +52,13 @@ class MountAwareProject(Project):
         for src in sorted(self.bundle.glob("*.rst")):
             docname = f"mounted/{src.stem}"
             self.docnames.add(docname)
+            # ``str``, deliberately -- do not "modernise" this to ``Path``.
+            # Sphinx stores ``_StrPath`` here, a ``Path`` subclass that still
+            # supports string slicing, because its own HTML builder does
+            # ``env.doc2path(docname, False)[len(docname):]`` to recover the
+            # source suffix. A plain ``pathlib.Path`` raises ``TypeError:
+            # 'PosixPath' object is not subscriptable`` there on Sphinx 7.4.
+            # ``str`` is the one type that works across sphinx>=7.4,<10.
             self._docname_to_path[docname] = str(src)
             self._path_to_docname[str(src)] = docname
             docs.add(docname)
@@ -84,8 +91,8 @@ def mount_stub_setup(app: Sphinx) -> dict[str, Any]:
     """``setup()`` body for the fixture project's ``conf.py``.
 
     ``_collect_incdirs`` runs at priority 900, i.e. *after* sphinx-needs' own
-    ``doctree-resolved`` handlers (default 500) have replaced the needuml and
-    needflow nodes with generated PlantUML ones.
+    ``doctree-resolved`` handlers (default 500) have replaced the needuml,
+    needflow, needsequence and needgantt nodes with generated PlantUML ones.
     """
     app.collected_incdirs = {}  # type: ignore[attr-defined]
     app.connect("builder-inited", _install_project)
@@ -126,14 +133,31 @@ Host subdirectory page
    class HostLocal
 """
 
-# The mounted document. Two generated-PlantUML directives are exercised, and the
-# ``!include`` resolves only when ``incdir`` points at the bundle on disk.
+# The mounted document. It exercises all four directives that route through
+# ``set_plantuml_paths()``, so a site-specific mistake in any of them is caught.
+# The ``!include`` resolves only when ``incdir`` points at the bundle on disk.
+#
+# The three needs form a sender -> message -> receiver chain, because
+# needsequence throws its PlantUML node away and emits "no needs found" unless
+# it can draw at least one connection (see ``process_needsequence``). Every need
+# also carries ``:duration:``, without which needgantt warns.
 BUNDLE_INDEX = """
 Mounted bundle
 ==============
 
-.. req:: A mounted requirement
+.. req:: A mounted sender
    :id: MOUNTED_REQ
+   :duration: 3
+   :links: MOUNTED_MSG
+
+.. req:: A mounted message
+   :id: MOUNTED_MSG
+   :duration: 2
+   :links: MOUNTED_RCV
+
+.. req:: A mounted receiver
+   :id: MOUNTED_RCV
+   :duration: 1
 
 .. needuml::
 
@@ -142,7 +166,12 @@ Mounted bundle
    MountedIncludeWorked -> MountedLocal
 
 .. needflow::
-   :filter: id == "MOUNTED_REQ"
+
+.. needsequence::
+   :start: MOUNTED_REQ
+   :link_types: links
+
+.. needgantt::
 """
 
 BUNDLE_LIB_PUML = """
@@ -187,8 +216,10 @@ def test_incdir_uses_physical_source_dir(
 
     # Mounted document -- the bundle's physical directory, not the logical
     # docname dir ``mounted``, which does not exist under srcdir at all.
-    # Two entries: one for the needuml, one for the needflow.
-    assert incdirs["mounted/index"] == [str(bundle), str(bundle)]
+    # One entry per generated-PlantUML directive, in document order: needuml,
+    # needflow, needsequence, needgantt -- i.e. every ``set_plantuml_paths()``
+    # call site except needarch, which shares needuml's.
+    assert incdirs["mounted/index"] == [str(bundle)] * 4
 
     # End-to-end proof that PlantUML ran and resolved the bundle-relative
     # ``!include``. Before the fix this failed with "plantuml command cannot be
