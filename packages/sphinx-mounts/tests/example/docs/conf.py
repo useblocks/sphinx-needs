@@ -2,9 +2,9 @@
 
 All mount declarations live in ``ubproject.toml`` next to this file;
 ``conf.py`` registers ``sphinx_mounts`` plus the parsers/renderers the
-mounted bundles use: ``myst_parser`` for the Markdown bundle, and
+mounted bundles use: ``myst_parser`` for the Markdown bundle,
 graphviz / plantuml / mermaid for the api-foo "directives showcase"
-page.
+page, and ``sphinx_needs`` for the Sphinx-Needs showcase bundle.
 """
 
 from pathlib import Path
@@ -17,15 +17,31 @@ extensions = [
     "sphinx.ext.graphviz",
     "sphinxcontrib.plantuml",
     "sphinxcontrib.mermaid",
+    "sphinx_needs",
 ]
 exclude_patterns: list[str] = ["_build"]
 master_doc = "index"
+
+# Sphinx-Needs reads its own options from the ``[needs]`` table of the very
+# same ``ubproject.toml`` that declares the mounts — so this one line is all
+# the host ``conf.py`` needs to say about it. Two sibling tools, one
+# declarative file, neither having to parse the other's section. The path is
+# resolved relative to confdir, i.e. this directory.
+needs_from_toml = "ubproject.toml"
 
 # Mermaid renders client-side ("raw"), so the build needs no ``mmdc``
 # binary. Graphviz and PlantUML do shell out at build time — to ``dot``
 # and ``plantuml`` (Java) respectively — so building this example
 # requires those on PATH (see this directory's README).
 mermaid_output_format = "raw"
+
+# SVG rather than the PlantUML default of PNG. Sphinx-Needs always stamps a
+# ``scale`` attribute onto the diagram nodes it generates (100, i.e. no
+# scaling), and sphinxcontrib-plantuml's PNG path warns about any scaling
+# attribute unless Pillow is installed — which would fail this ``-nW`` build
+# over a no-op. The SVG path applies no such scaling, so this keeps the
+# example's dependency set to the binaries it already documents.
+plantuml_output_format = "svg_img"
 
 # Ship a pre-built HTML coverage report alongside the docs **without
 # copying it into the source tree**. ``html_extra_path`` makes Sphinx copy

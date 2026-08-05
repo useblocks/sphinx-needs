@@ -8,6 +8,16 @@
 [server]
 index_on_save = true
 
+# Sphinx-Needs configuration, owned by Sphinx-Needs — not by sphinx-mounts.
+# The host ``conf.py`` only points at this file with
+# ``needs_from_toml = "ubproject.toml"``; Sphinx-Needs then reads the ``[needs]``
+# table (keys are its ``needs_*`` options with the prefix dropped) and ignores
+# everything else here, exactly as sphinx-mounts ignores this table. That is the
+# shared-``ubproject.toml`` convention in practice: one declarative file, one
+# table per tool, no ``conf.py`` evaluation required to read either.
+[needs]
+id_required = true
+
 # Bazel-generated RST bundle. Source is resolved relative to *this*
 # file's directory (docs/), so ``../bazel-bin/bundles/api-foo`` lands
 # at ``tests/example/bazel-bin/bundles/api-foo`` regardless of which
@@ -81,6 +91,24 @@ attach_to = "index"
 dir = "../showcase/mermaid"
 mount_at = "_generated/showcase/mermaid"
 attach_to = "index"
+
+# Sphinx-Needs kitchen sink — the only showcase bundle covering more than one
+# directive, because Sphinx-Needs contributes three doc-relative file
+# references: the PlantUML ``!include`` shared by ``needuml`` / ``needarch``,
+# ``needimport``'s ``needs.json``, and ``needreport``'s ``:template:``. One page
+# per directive, each sitting next to the file it reads.
+#
+# ``exclude`` keeps ``report-template.rst`` out of the doc set. It is Jinja
+# *input* for ``needreport``, not a document, but it carries the conventional
+# ``.rst`` suffix — so a directory mount would otherwise walk it and publish an
+# orphan page of unrendered Jinja. The bundle's other referenced files
+# (``.puml``, ``.json``) need no exclude: their suffixes are not in
+# ``source_suffix``, so discovery never picks them up.
+[[mounts]]
+dir = "../showcase/needs"
+mount_at = "_generated/showcase/needs"
+attach_to = "index"
+exclude = ["report-template.rst"]
 
 # ---------------------------------------------------------------------------
 # Checked-in "release notes" bundle demonstrating FILE-LIST mode (``files``)

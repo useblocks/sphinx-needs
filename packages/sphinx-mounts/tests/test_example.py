@@ -1,14 +1,15 @@
 """End-to-end test of the full example under ``tests/example/``.
 
 The example is a complete, checked-in reference setup: a host Sphinx
-project, two Bazel-generated bundles (one RST, one Markdown), nine
+project, two Bazel-generated bundles (one RST, one Markdown), ten
 checked-in "showcase" bundles — one folder per file-referencing
 directive (literalinclude, include, csv-table, raw, image, figure,
-graphviz, uml, mermaid), one checked-in "release notes" bundle mounted
-in file-list mode (``files``), and one checked-in "fragments" bundle of
-loose files mounted with ``attach_each`` — all wired into the host's
-toctree via ``attach_to``. This test runs the pipeline the example's
-README documents:
+graphviz, uml, mermaid) plus a Sphinx-Needs kitchen sink covering all
+three of its doc-relative file references, one checked-in "release
+notes" bundle mounted in file-list mode (``files``), and one checked-in
+"fragments" bundle of loose files mounted with ``attach_each`` — all
+wired into the host's toctree via ``attach_to``. This test runs the
+pipeline the example's README documents:
 
 1. Copy the example to a tmp workspace (so the developer's real
    ``bazel-bin/`` is untouched).
@@ -56,6 +57,7 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     # ``mmdc`` binary is required.
     pytest.importorskip("sphinxcontrib.plantuml")
     pytest.importorskip("sphinxcontrib.mermaid")
+    pytest.importorskip("sphinx_needs")
     for tool in ("dot", "java", "plantuml"):
         if shutil.which(tool) is None:
             pytest.skip(
@@ -114,6 +116,11 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert (workspace / "showcase" / "literalinclude" / "greeter.py").exists()
     assert (workspace / "showcase" / "uml" / "sequence.puml").exists()
     assert (workspace / "showcase" / "csv-table" / "data.csv").exists()
+    # The Sphinx-Needs bundle ships the three files its directives read.
+    needs_bundle = workspace / "showcase" / "needs"
+    assert (needs_bundle / "arch-common.puml").exists()
+    assert (needs_bundle / "imported-needs.json").exists()
+    assert (needs_bundle / "report-template.rst").exists()
 
     # The "release notes" bundle is checked in too and mounted via file-list
     # mode. ``2026-q3-draft.rst`` is present on disk but deliberately left out
@@ -197,6 +204,52 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert "SHOWCASE_GRAPHVIZ" in _showcase("graphviz")
     assert "SHOWCASE_UML" in _showcase("uml")
     assert (html_out / "_images").is_dir()
+
+    # 2b-bis) The Sphinx-Needs bundle is the one showcase covering several
+    #     directives, so it has a page per directive rather than a single
+    #     index. Each reads a different bundle-local file through a different
+    #     mechanism; all three must resolve against the bundle root.
+    needs_out = html_out / "_generated" / "showcase" / "needs"
+
+    def _needs_page(name: str) -> str:
+        return (needs_out / f"{name}.html").read_text(encoding="utf-8")
+
+    assert "SHOWCASE_NEEDS_INDEX" in _needs_page("index")
+
+    # needimport: the needs.json is addressed bundle-relative via relfn2path,
+    # and its needs become real needs in the host build.
+    needimport_html = _needs_page("needimport")
+    assert "SHOWCASE_NEEDIMPORT" in needimport_html
+    assert "SHOWCASE_NEEDIMPORT_TITLE" in needimport_html
+    assert "SN_IMP_SPEC" in needimport_html
+
+    # needreport: the Jinja template is addressed bundle-relative too, and the
+    # bundle ships its own so it needs nothing from the host but sphinx-needs.
+    needreport_html = _needs_page("needreport")
+    assert "SHOWCASE_NEEDREPORT" in needreport_html
+    assert "SHOWCASE_NEEDREPORT_TEMPLATE" in needreport_html
+
+    # needuml / needarch: PlantUML resolves ``!include`` against the working
+    # directory sphinx-needs derives from the document's *source file*. The
+    # marker only reaches the rendered SVG if the bundle-local .puml was found,
+    # so this is the assertion that would fail were that directory taken from
+    # the logical docname instead (sphinx-needs #1749).
+    assert "SHOWCASE_NEEDUML" in _needs_page("needuml")
+    assert "SHOWCASE_NEEDARCH" in _needs_page("needarch")
+    included_in = [
+        svg.name
+        for svg in (html_out / "_images").glob("*.svg")
+        if "SHOWCASE_NEEDS_PUML_INCLUDE" in svg.read_text(encoding="utf-8")
+    ]
+    assert len(included_in) == 2, (
+        "expected the bundle-local arch-common.puml to be !include-d into both "
+        f"the needuml and the needarch diagram, got {included_in}"
+    )
+
+    # ``report-template.rst`` is Jinja input, not a document: the mount's
+    # ``exclude`` keeps it out of the doc set despite its .rst suffix, so no
+    # orphan page of unrendered Jinja is published.
+    assert not (needs_out / "report-template.html").exists()
 
     # 2c) The pre-built HTML coverage report is shipped into the site by
     #     html_extra_path — so the built output is self-contained and
@@ -283,6 +336,7 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     assert "_generated/showcase" not in source_index_rst
     assert "_generated/showcase/literalinclude/index.html" in index_html
     assert "_generated/showcase/uml/index.html" in index_html
+    assert "_generated/showcase/needs/index.html" in index_html
     # The file-list release-notes bundle is wired via attach_to as well, so
     # its entry doc appears in the host index toctree but never in the source.
     assert "_generated/release-notes" not in source_index_rst

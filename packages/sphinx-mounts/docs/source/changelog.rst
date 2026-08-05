@@ -3,6 +3,23 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- Documented how `Sphinx-Needs <https://sphinx-needs.readthedocs.io/>`__
+  directives resolve file paths inside a mounted bundle, and which of those
+  references ``path_check`` and Sphinx's incremental rebuild can see — see
+  :ref:`needs-file-references`. No behaviour change in the extension itself.
+
+  The example project gained a ``showcase/needs`` bundle covering all three
+  doc-relative references (``needimport``, ``needreport`` ``:template:``, and
+  the PlantUML ``!include`` shared by ``needuml`` / ``needarch``), one page per
+  directive, plus matching non-Bazel tests in
+  ``tests/test_path_directives.py``. The example's host project also reads its
+  Sphinx-Needs options from the ``[needs]`` table of the same
+  ``ubproject.toml`` that declares the mounts, demonstrating the shared-TOML
+  convention end to end.
+
 .. _`release:0.1.2`:
 
 0.1.2

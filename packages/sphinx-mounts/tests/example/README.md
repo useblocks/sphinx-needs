@@ -31,7 +31,16 @@ end-to-end (marked `bazel`, skipped when no `bazel`/`bazelisk` is on
     │   ├── figure/                    # index.rst + chart.png
     │   ├── graphviz/                  # index.rst + graph.dot
     │   ├── uml/                       # index.rst + sequence.puml
-    │   └── mermaid/                   # index.rst + flow.mmd
+    │   ├── mermaid/                   # index.rst + flow.mmd
+    │   └── needs/                     # Sphinx-Needs kitchen sink — page per directive
+    │       ├── index.rst              # entry doc — the bundle's own needs + toctree
+    │       ├── needuml.rst            # !include arch-common.puml
+    │       ├── needarch.rst           # !include arch-common.puml, inside a need
+    │       ├── needimport.rst         # needimport:: imported-needs.json
+    │       ├── needreport.rst         # needreport:: :template: report-template.rst
+    │       ├── arch-common.puml       # bundle-local PlantUML library
+    │       ├── imported-needs.json    # vendored needs.json export
+    │       └── report-template.rst    # Jinja input, NOT a doc -> mount `exclude`
     ├── release-notes/                 # checked-in bundle mounted via file-list mode (files=)
     │   ├── index.rst                  # entry doc — toctree over the picked notes
     │   └── notes/
@@ -42,10 +51,11 @@ end-to-end (marked `bazel`, skipped when no `bazel`/`bazelisk` is on
     │   ├── note-one.rst               # attached directly -> .../fragments/note-one
     │   └── note-two.rst               # attached directly -> .../fragments/note-two
     └── docs/
-        ├── conf.py                    # host project + graphviz/plantuml/mermaid + html_extra_path
+        ├── conf.py                    # host project + graphviz/plantuml/mermaid/needs + html_extra_path
         ├── index.rst                  # host toctree — names api-bar only
         ├── installation.rst           # host-only page
-        └── ubproject.toml             # 2 Bazel + 9 showcase + 1 file-list + 1 attach_each mount
+        └── ubproject.toml             # 2 Bazel + 10 showcase + 1 file-list + 1 attach_each mount
+                                       #   … plus the [needs] table sphinx-needs reads
 
 ## Pipeline
 
@@ -109,9 +119,9 @@ Run the commands below from this directory (`tests/example/`).
    = 1` and calls `uv` from `PATH`. The umbrella project's `sphinx`
    and `sphinx-mounts` come from its default dependencies in the
    uv-managed environment at `../../`; the host `conf.py`'s extra
-   extensions (`myst-parser`, `sphinxcontrib-plantuml` / `-mermaid`)
-   live in that project's `testing` dependency group, so the wrapper
-   passes `--group testing`. Projects that need a fully sandboxed,
+   extensions (`myst-parser`, `sphinxcontrib-plantuml` / `-mermaid`,
+   `sphinx-needs`) live in that project's `testing` dependency group,
+   so the wrapper passes `--group testing`. Projects that need a fully sandboxed,
    hermetic build can swap the wrapper for a `rules_python`
    `py_binary` with a pinned `requirements.txt`; the genrule shape
    stays the same.
@@ -148,15 +158,36 @@ Run the commands below from this directory (`tests/example/`).
   [Integration → Anti-pattern: mounted sources linking back to the
   host](../../docs/source/integration.rst) for why.
 - **File references stay inside the bundle.** The `showcase/` folder holds
-  nine **checked-in** bundles — one per file-referencing directive
+  ten **checked-in** bundles — one per file-referencing directive
   (`literalinclude`, `include`, `csv-table` / `raw` with `:file:`,
-  `image`, `figure`, `graphviz`, `uml`, `mermaid`). Open a folder to see
+  `image`, `figure`, `graphviz`, `uml`, `mermaid`), plus a Sphinx-Needs
+  kitchen sink (below). Open a folder to see
   the directive sitting next to the file it references. Every path is
   relative to the bundle root, so each bundle is self-contained and passes
   `sphinx-mounts`' `path_check` (default `"error"`) once mounted; a path
   that pointed into the host (a leading `/`) or climbed out with `..`
   would fail the build instead. These are plain files mounted in place —
   not Bazel-generated — so each directive's usage is visible at a glance.
+- **Sphinx-Needs, and the limits of `path_check`.** `showcase/needs/` is the
+  one showcase covering several directives, because
+  [Sphinx-Needs](https://sphinx-needs.readthedocs.io/) contributes three
+  doc-relative file references that do *not* behave alike — one page each:
+  `needimport` (a vendored `needs.json`), `needreport` (a bundle-local Jinja
+  `:template:`), and the PlantUML `!include` shared by `needuml` /
+  `needarch`. Only `needimport` registers its file as a Sphinx dependency, so
+  it is the only one `path_check` and incremental rebuilds can see; the other
+  two must stay bundle-relative by convention. The `!include` is also what
+  needs **sphinx-needs > 8.3.0**: PlantUML runs in a working directory that
+  has to come from the document's physical source file, not its logical
+  docname ([sphinx-needs#1749](https://github.com/useblocks/sphinx-needs/issues/1749)).
+  Note `report-template.rst` in the mount's `exclude` list — it is Jinja input
+  wearing an `.rst` suffix, and without the exclude a directory mount would
+  publish it as an orphan page of unrendered Jinja.
+- **Two tools, one `ubproject.toml`.** The host `conf.py` says
+  `needs_from_toml = "ubproject.toml"`, so Sphinx-Needs reads its options from
+  the `[needs]` table of the very same file whose `[[mounts]]` array
+  `sphinx-mounts` reads. Neither tool parses the other's section, and no tool
+  has to evaluate `conf.py` to find either.
 - **Directory mode vs file-list mode.** Every mount above uses `dir` (walk a
   whole tree). The `release-notes/` bundle instead uses `files` — a hand-picked
   list of individual files. Two behaviours are visible only in this mode: (1)

@@ -2,17 +2,22 @@
 the bundle root; the build fails when a reference escapes that root.
 
 Covers literalinclude, include, csv-table :file:, raw :file:, image,
-figure, graphviz, uml, mermaid, plus the path_check enforcement. The tests
-are renderer-independent: mermaid uses 'raw' output, and graphviz/uml are
-asserted via the recorded dependency rather than the rendered image, so no
-mmdc/java/dot binary is required.
+figure, graphviz, uml, mermaid, the three Sphinx-Needs directives that take a
+doc-relative path (needimport, needreport, needuml), plus the path_check
+enforcement. The tests are renderer-independent: mermaid uses 'raw' output, and
+graphviz/uml are asserted via the recorded dependency rather than the rendered
+image, so no mmdc/java/dot binary is required. The one exception is the needuml
+``!include`` test — PlantUML resolves that path itself and records no Sphinx
+dependency, so it must render for real and skips without java/plantuml.
 """
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 import re
+import shutil
 import struct
 from typing import TYPE_CHECKING
 import zlib
@@ -315,6 +320,173 @@ def test_mermaid_file_resolves_within_bundle(make_app, make_host_project, tmp_pa
     assert "not found" not in app._warning.getvalue()
     html = (Path(app.outdir) / "_g" / "api" / "index.html").read_text(encoding="utf-8")
     assert "MERMAID_MARKER" in html
+
+
+# ---------- Sphinx-Needs: its three doc-relative file references ----------
+#
+# Sphinx-Needs is what the ``showcase/needs`` bundle exercises, and it resolves
+# paths in two different ways. ``needimport`` and ``needreport`` go through
+# Sphinx's ``relfn2path``, like the directives above. ``needuml`` / ``needarch``
+# do not: ``!include`` is handled inside the PlantUML process, whose working
+# directory Sphinx-Needs derives from the document's source file — so it needs
+# its own coverage, and it is the one case that records no Sphinx dependency
+# (hence no ``_resolved_deps`` assertion for it).
+
+
+def _needs_host(
+    make_host_project,
+    *extra_extensions: str,
+    conf_lines: tuple[str, ...] = (),
+) -> Path:
+    """A host project with sphinx-needs loaded and explicit need IDs required.
+
+    ``_add_extensions`` rewrites the pristine ``extensions = ["sphinx_mounts"]``
+    line, so it works only once per project — every extension this host needs
+    must be passed in the same call.
+    """
+    host = make_host_project()
+    _add_extensions(host, "sphinx_needs", *extra_extensions)
+    _append_conf(host, "needs_id_required = True")
+    for line in conf_lines:
+        _append_conf(host, line)
+    return host
+
+
+def test_needimport_resolves_needs_json_within_bundle(
+    make_app, make_host_project, tmp_path
+):
+    """``needimport`` addresses its needs.json relative to the importing doc."""
+    pytest.importorskip("sphinx_needs")
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    (bundle / "needs.json").write_text(
+        json.dumps(
+            {
+                "project": "upstream",
+                "current_version": "1.0",
+                "versions": {
+                    "1.0": {
+                        "needs": {
+                            "IMPORTED_REQ": {
+                                "id": "IMPORTED_REQ",
+                                "type": "req",
+                                "title": "NEEDIMPORT_MARKER",
+                                "docname": "index",
+                            }
+                        }
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (bundle / "index.rst").write_text(
+        "Bundle\n======\n\n.. needimport:: needs.json\n", encoding="utf-8"
+    )
+
+    host = _needs_host(make_host_project)
+    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_g/api"}])
+    _replace_index_toctree(host, "_g/api/index")
+
+    app = _build(make_app, host)
+
+    html = (Path(app.outdir) / "_g" / "api" / "index.html").read_text(encoding="utf-8")
+    assert "NEEDIMPORT_MARKER" in html
+    # needimport notes the file as a dependency, so path_check can see it too.
+    assert (bundle / "needs.json").resolve() in _resolved_deps(app, "_g/api/index")
+
+
+def test_needreport_resolves_template_within_bundle(
+    make_app, make_host_project, tmp_path
+):
+    """``needreport``'s ``:template:`` is relfn2path'd like needimport's arg."""
+    pytest.importorskip("sphinx_needs")
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    # Kept out of the doc set by ``exclude``: Jinja input, not a page — but it
+    # carries the conventional .rst suffix a directory mount would walk.
+    (bundle / "report-template.rst").write_text(
+        "NEEDREPORT_MARKER\n\n{% for t in types %}* {{ t.directive }}\n{% endfor %}\n",
+        encoding="utf-8",
+    )
+    (bundle / "index.rst").write_text(
+        "Bundle\n======\n\n.. needreport::\n   :types:\n"
+        "   :template: report-template.rst\n",
+        encoding="utf-8",
+    )
+
+    host = _needs_host(make_host_project)
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "dir": str(bundle),
+                "mount_at": "_g/api",
+                "exclude": ["report-template.rst"],
+            }
+        ],
+    )
+    _replace_index_toctree(host, "_g/api/index")
+
+    app = _build(make_app, host)
+
+    html = (Path(app.outdir) / "_g" / "api" / "index.html").read_text(encoding="utf-8")
+    assert "NEEDREPORT_MARKER" in html
+    # The excluded template is input, not a document: no page was published.
+    assert not (Path(app.outdir) / "_g" / "api" / "report-template.html").exists()
+
+
+def test_needuml_include_resolves_within_bundle(make_app, make_host_project, tmp_path):
+    """``needuml``'s PlantUML ``!include`` resolves against the bundle root.
+
+    The reference case for sphinx-needs
+    `#1749 <https://github.com/useblocks/sphinx-needs/issues/1749>`__: the
+    working directory PlantUML runs in must come from the document's physical
+    source file, not from its logical docname, which does not exist on disk for
+    a mounted document. Requires sphinx-needs > 8.3.0 to pass.
+
+    The marker has to travel through the real PlantUML process into the
+    rendered SVG, so unlike the other tests here this one needs ``java`` and
+    ``plantuml`` on PATH.
+    """
+    pytest.importorskip("sphinx_needs")
+    pytest.importorskip("sphinxcontrib.plantuml")
+    for tool in ("java", "plantuml"):
+        if shutil.which(tool) is None:
+            pytest.skip(f"{tool!r} not on PATH — needed to render the !include")
+
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    (bundle / "lib.puml").write_text(
+        'component "NEEDUML_INCLUDE_MARKER" as Lib\n', encoding="utf-8"
+    )
+    (bundle / "index.rst").write_text(
+        "Bundle\n======\n\n.. needuml::\n\n   !include lib.puml\n", encoding="utf-8"
+    )
+
+    host = _needs_host(
+        make_host_project,
+        "sphinxcontrib.plantuml",
+        # The SVG path applies no scaling, so Pillow is not needed for the
+        # ``scale`` attribute sphinx-needs stamps onto every diagram node.
+        conf_lines=("plantuml_output_format = 'svg_img'",),
+    )
+    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_g/api"}])
+    _replace_index_toctree(host, "_g/api/index")
+
+    app = _build(make_app, host)
+
+    html = (Path(app.outdir) / "_g" / "api" / "index.html").read_text(encoding="utf-8")
+    assert "PlantUML is not available" not in html
+    assert "cannot be run" not in app._warning.getvalue()
+    rendered = "\n".join(
+        svg.read_text(encoding="utf-8")
+        for svg in (Path(app.outdir) / "_images").glob("*.svg")
+    )
+    assert "NEEDUML_INCLUDE_MARKER" in rendered, (
+        "the bundle-local lib.puml was not !include-d — PlantUML's working "
+        "directory did not point at the bundle root"
+    )
 
 
 # ---------- Task 5: enforcement (path_check) ----------

@@ -642,3 +642,63 @@ The check is directive-agnostic: it inspects the files Sphinx records as
 dependencies of each mounted doc, so it covers every file-referencing
 directive — including ones from third-party extensions — without
 enumerating them.
+
+.. _needs-file-references:
+
+File references from Sphinx-Needs directives
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`Sphinx-Needs <https://sphinx-needs.readthedocs.io/>`__ contributes three
+doc-relative file references, and they do not all behave alike. The example
+project's ``showcase/needs`` bundle exercises all three, one page per
+directive.
+
+.. list-table::
+   :widths: 26 22 26 26
+   :header-rows: 1
+
+   * - Reference
+     - Resolved by
+     - Sphinx dependency
+     - Covered by ``path_check``
+   * - ``needimport:: needs.json``
+     - Sphinx ``relfn2path``
+     - yes
+     - yes
+   * - ``needreport`` ``:template:``
+     - Sphinx ``relfn2path``
+     - no
+     - no
+   * - ``needuml`` / ``needarch`` PlantUML ``!include``
+     - the PlantUML process
+     - no
+     - no
+
+Only ``needimport`` records its file as a dependency, so only it is visible to
+``path_check`` and to Sphinx's incremental rebuild. For the other two, keep
+references bundle-relative by convention, and be aware that editing the
+referenced file alone does not mark the page outdated — touch the ``.rst`` or
+build with ``-E``.
+
+The ``!include`` case has one further requirement. PlantUML resolves it in its
+own working directory, which Sphinx-Needs must derive from the document's
+**physical** source file; deriving it from the logical docname yields a
+directory that does not exist for a mounted document, and the build fails with
+the misleading ``plantuml command '...' cannot be run``. That needs
+**sphinx-needs > 8.3.0** (see
+`sphinx-needs#1749 <https://github.com/useblocks/sphinx-needs/issues/1749>`__).
+
+One packaging note, unrelated to mounting: a ``needreport`` template is Jinja
+*input*, not a document, yet conventionally carries an ``.rst`` suffix — so a
+directory mount would walk it and publish an orphan page of unrendered Jinja.
+List it under ``exclude``:
+
+.. code-block:: toml
+
+   [[mounts]]
+   dir = "../showcase/needs"
+   mount_at = "_generated/showcase/needs"
+   exclude = ["report-template.rst"]
+
+Files whose suffix is outside ``source_suffix`` — ``.puml``, ``.json`` — need no
+exclude, since discovery never picks them up.

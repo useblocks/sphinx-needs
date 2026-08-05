@@ -54,6 +54,25 @@ testing = [
   # via the recorded dependency), so mmdc/java/dot are not required.
   "sphinxcontrib-plantuml>=0.30",
   "sphinxcontrib-mermaid>=1.0.0",
+  # Exercised by the Sphinx-Needs showcase bundle, which covers all three of
+  # its doc-relative file references (PlantUML `!include` from
+  # `needuml`/`needarch`, `needimport`'s needs.json, `needreport`'s
+  # `:template:`).
+  #
+  # TODO: swap for `"sphinx-needs>8.3.0"` once that version is released.
+  # The `!include` needs a fix that is merged on sphinx-needs `master` but is in
+  # no release yet: releases up to 8.3.0 derive PlantUML's working directory from
+  # the logical docname, which does not exist on disk for a mounted document, so
+  # the build fails with the misleading "plantuml command '...' cannot be run".
+  # Merged as useblocks/sphinx-needs#1750; see
+  # https://github.com/useblocks/sphinx-needs/issues/1749.
+  #
+  # Tracking `master` keeps this branch testable against the real fix before the
+  # release, which is the point of the git pin. `uv.lock` records the exact
+  # commit, so refreshing means `uv lock --upgrade-package sphinx-needs` — the
+  # `prek` CI job runs `uv run --frozen` and needs the lock consistent with this
+  # file.
+  "sphinx-needs @ git+https://github.com/useblocks/sphinx-needs.git@master",
 ]
 docs = ["furo>=2024.5.6", "myst-parser>=4.0.0", "sphinx-design>=0.6.1"]
 ty = ["ty>=0.0.37"]
