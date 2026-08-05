@@ -6,6 +6,20 @@ Changelog
 Unreleased
 ----------
 
+- Mounted paths are now registered with the same type the running Sphinx uses
+  for its own documents — ``str`` on Sphinx 7.4, ``pathlib.Path`` from Sphinx
+  8.0 on. Sphinx changed the type it keeps in ``Project._docname_to_path`` /
+  ``_path_to_docname`` in 8.0, and each version reads those maps back assuming
+  its own type, so no single stored type is correct across the supported
+  range. Storing ``Path`` unconditionally crashed every HTML build with a
+  mount on Sphinx 7.4 (``TypeError: 'PosixPath' object is not subscriptable``,
+  raised while writing output); storing ``str`` unconditionally would instead
+  make ``env.path2doc()`` silently return the absolute path minus its suffix
+  rather than the docname on Sphinx 8.0+, which surfaces as spurious
+  "document isn't included in any toctree" warnings for mounted documents
+  pulled in via ``include::``. See `issue #21
+  <https://github.com/useblocks/sphinx-mounts/issues/21>`__.
+
 - Documented how `Sphinx-Needs <https://sphinx-needs.readthedocs.io/>`__
   directives resolve file paths inside a mounted bundle, and which of those
   references ``path_check`` and Sphinx's incremental rebuild can see — see

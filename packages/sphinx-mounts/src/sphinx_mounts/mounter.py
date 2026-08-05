@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING
 
 from ignore import Walk, WalkBuilder
 from ignore.overrides import OverrideBuilder
+from sphinx import version_info as _sphinx_version_info
 from sphinx.project import Project
 from sphinx.util import logging
 
@@ -30,6 +31,22 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 logger = logging.getLogger(__name__)
+
+#: Type to store paths as in ``Project._docname_to_path``/``_path_to_docname``.
+#:
+#: Must match what the running Sphinx stores itself, because both directions of
+#: the mapping are read by core code that assumes its own type:
+#:
+#: * Sphinx <8.0 stores ``str`` and ``Project.doc2path`` returns the stored
+#:   value *verbatim*, so a ``Path`` leaks out to callers that treat it as a
+#:   string -- the HTML builder slices it to recover the source suffix and
+#:   raises ``TypeError: 'PosixPath' object is not subscriptable``.
+#: * Sphinx >=8.0 stores ``Path``, keys ``_path_to_docname`` by ``Path``, and
+#:   ``Project.path2doc`` normalises its argument with ``Path(filename)``
+#:   before the lookup -- so a ``str`` key never matches and ``path2doc``
+#:   silently falls through to returning the absolute path minus its suffix
+#:   instead of the docname.
+_PathKey = str if _sphinx_version_info < (8, 0) else Path
 
 
 def _join_mount(mount_at: str | None, tail: str) -> str:
@@ -280,8 +297,9 @@ def _register(
         )
         raise ValueError(msg)
     project.docnames.add(docname)
-    project._docname_to_path[docname] = abs_path
-    project._path_to_docname[abs_path] = docname
+    path_key = _PathKey(abs_path)
+    project._docname_to_path[docname] = path_key
+    project._path_to_docname[path_key] = docname
     logger.debug("sphinx-mounts: mounted %s -> %s", docname, abs_path)
 
 

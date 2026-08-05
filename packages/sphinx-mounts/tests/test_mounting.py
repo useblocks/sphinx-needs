@@ -23,6 +23,7 @@ import zlib
 
 from docutils import nodes
 import pytest
+import sphinx
 from sphinx import addnodes
 from sphinx.testing.fixtures import SharedResult  # noqa: F401  (registers fixture)
 
@@ -1702,3 +1703,97 @@ def test_incremental_rereads_changed_file_in_file_list_mount(
     assert "_generated/m/page_b" not in read, (
         f"unchanged file-list doc re-read; read={read}"
     )
+
+
+# ---------- stored path type ----------
+
+
+def test_mounted_path_type_matches_host_path_type(
+    make_app, make_host_project, bundle_simple
+):
+    """A mounted docname must map to the same type as a host docname.
+
+    Sphinx changed what it keeps in ``Project._docname_to_path`` in 8.0 --
+    ``str`` before, ``Path`` from 8.0 on -- and each version reads the maps
+    back assuming its own type, so mounts have to store whatever the running
+    Sphinx stores. Asserting type *parity* with a host document rather than a
+    literal type keeps this check correct on every supported version, and
+    catches both directions of the mismatch (see issue #21).
+    """
+    host = make_host_project()
+    write_ubproject_toml(host, [{"dir": str(bundle_simple), "mount_at": "_g/m"}])
+    _replace_index_toctree(host, "_g/m/index", "_g/m/intro", "_g/m/details")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    stored = app.project._docname_to_path
+    host_type = type(stored["index"])
+    assert type(stored["_g/m/index"]) is host_type, (
+        f"mounted path stored as {type(stored['_g/m/index']).__name__}, "
+        f"but Sphinx stores host paths as {host_type.__name__}"
+    )
+    # ``_path_to_docname`` is keyed by the same value, so it must agree too.
+    assert all(type(k) is host_type for k in app.project._path_to_docname), (
+        "mixed key types in _path_to_docname: "
+        f"{sorted({type(k).__name__ for k in app.project._path_to_docname})}"
+    )
+
+
+def test_doc2path_result_is_usable_as_a_string(
+    make_app, make_host_project, bundle_simple
+):
+    """``env.doc2path()`` on a mounted doc must survive string-style use.
+
+    Sphinx <8.0 returns the stored value verbatim, and its own HTML builder
+    slices it to recover the source suffix. Storing a bare ``Path`` there
+    raises ``TypeError: 'PosixPath' object is not subscriptable`` mid-write.
+    """
+    host = make_host_project()
+    write_ubproject_toml(host, [{"dir": str(bundle_simple), "mount_at": "_g/m"}])
+    _replace_index_toctree(host, "_g/m/index", "_g/m/intro", "_g/m/details")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    docname = "_g/m/index"
+    path = app.env.doc2path(docname, False)
+    assert str(path).endswith(".rst")
+    if sphinx.version_info < (8, 0):
+        # The literal operation sphinx<8.0's HTML builder performs to derive
+        # ``source_suffix``. Its *result* is not meaningful for a mounted doc --
+        # the stored path is the absolute external one, not ``docname + suffix``
+        # -- so only the absence of ``TypeError`` is asserted. From 8.0 on
+        # ``doc2path`` wraps its return value, so slicing it would exercise
+        # Sphinx's own deprecated str-compat shim rather than what was stored.
+        assert isinstance(path[len(docname) :], str)
+
+
+def test_path2doc_round_trips_a_mounted_source_path(
+    make_app, make_host_project, bundle_simple
+):
+    """``env.path2doc()`` must map a mounted source file back to its docname.
+
+    From Sphinx 8.0 ``path2doc`` normalises its argument to ``Path`` before the
+    ``_path_to_docname`` lookup, so a ``str`` key never matches and the method
+    silently falls through to returning the absolute path minus its suffix.
+    That feeds ``note_included()``, which drives the "not included in any
+    toctree" orphan check, so the failure surfaces as a spurious warning.
+
+    The ``str`` call form is asserted because it is the one that works on every
+    supported version: Sphinx>=8.0 normalises it, and Sphinx 7.4 looks the raw
+    argument up in its ``str``-keyed map. It also fails for *either* direction
+    of a stored-type mismatch, which is what makes it a useful regression net.
+    Passing a ``Path`` is deliberately not asserted -- Sphinx 7.4's
+    ``path2doc`` does not normalise its argument, so that form cannot work
+    there no matter what mounts store.
+    """
+    host = make_host_project()
+    write_ubproject_toml(host, [{"dir": str(bundle_simple), "mount_at": "_g/m"}])
+    _replace_index_toctree(host, "_g/m/index", "_g/m/intro", "_g/m/details")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    source = bundle_simple / "intro.rst"
+    assert app.env.path2doc(str(source)) == "_g/m/intro"
