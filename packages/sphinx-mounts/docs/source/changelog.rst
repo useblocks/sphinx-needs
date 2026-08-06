@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:0.1.3`:
+
+0.1.3
+-----
+
+:Released: 2026-08-06
 
 - Mounted paths are now registered with the same type the running Sphinx uses
   for its own documents — ``str`` on Sphinx 7.4, ``pathlib.Path`` from Sphinx
