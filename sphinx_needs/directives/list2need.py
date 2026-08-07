@@ -113,7 +113,9 @@ class List2NeedDirective(SphinxDirective):
         # Retrieve tags defined at list level
         tags = self.options.get("tags", "")
 
-        _, content_first_line = self.state_machine.get_source_and_line(self.content_offset+1)
+        _, content_first_line = self.state_machine.get_source_and_line(
+            self.content_offset + 1
+        )
 
         list_needs = []
         # Storing the data in a sorted list
@@ -173,7 +175,7 @@ class List2NeedDirective(SphinxDirective):
                     "content": content.lstrip(),
                     "level": level,
                     "options": {},
-                    "lineno": content_first_line + content_lineno
+                    "lineno": content_first_line + content_lineno,
                 }
                 list_needs.append(need)
             else:
@@ -223,7 +225,7 @@ class List2NeedDirective(SphinxDirective):
             else:
                 data["set_links_down"] = False
 
-            lineno_mapping.append(f'{len(overall_text)+1}:{list_need["lineno"]}')
+            lineno_mapping.append(f"{len(overall_text) + 1}:{list_need['lineno']}")
 
             text = render_template_string(NEED_TEMPLATE, list_need, autoescape=False)
             text_list = text.split("\n")
@@ -233,7 +235,9 @@ class List2NeedDirective(SphinxDirective):
             overall_text += text_list
 
         self.state_machine.insert_input(
-            overall_text, self.state_machine.document.attributes["source"] + ''.join(f"\0{x}" for x in lineno_mapping)
+            overall_text,
+            self.state_machine.document.attributes["source"]
+            + "".join(f"\0{x}" for x in lineno_mapping),
         )
 
         return []
