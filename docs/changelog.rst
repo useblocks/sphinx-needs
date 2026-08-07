@@ -4,8 +4,19 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:8.3.1`:
+
+8.3.1
+-----
+
+:Released: 11.08.2026
+:Full Changelog: `v8.3.0...v8.3.1 <https://github.com/useblocks/sphinx-needs/compare/8.3.0...8.3.1>`__
+
+This is a patch release with a PlantUML bug fix and a documentation
+restructuring.
+
+Bug fixes
+.........
 
 - 🐛 Generated PlantUML diagrams (:ref:`needuml`, :ref:`needarch`,
   :ref:`needflow`, :ref:`needsequence`, :ref:`needgantt`) now derive PlantUML's
@@ -18,6 +29,9 @@ Unreleased
   previously failed with a misleading
   ``WARNING: plantuml command '...' cannot be run``.
   Ordinary documents keep the exact working directory they had before.
+
+Documentation
+.............
 
 - 📚 The documentation now uses the shared
   `sphinx-syntax-example <https://github.com/sphinx-extensions2/sphinx-syntax-example>`__
