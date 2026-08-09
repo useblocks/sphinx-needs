@@ -424,6 +424,8 @@ def create_tutorial_needs(app: Sphinx, _env, _docnames):
     """Create a JSON to import in the tutorial.
 
     We do this dynamically, to avoid having to maintain the JSON file manually.
+    The file is generated on every build and is not tracked in git (see
+    ``.gitignore``), so it never needs a manual update on release.
     """
     needs_config = NeedsSphinxConfig(app.config)
     writer = NeedsList(app.env, outdir=app.confdir, confdir=app.confdir)
