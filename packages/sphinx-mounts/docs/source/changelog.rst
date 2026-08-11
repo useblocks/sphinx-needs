@@ -3,8 +3,12 @@
 Changelog
 =========
 
-Unreleased
-----------
+.. _`release:0.1.4`:
+
+0.1.4
+-----
+
+:Released: 2026-08-11
 
 .. note::
 
