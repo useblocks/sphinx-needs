@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.10"
       - name: install flit
-        run: pip install flit~=3.4
+        run: pip install flit
       - name: Build and publish
         run: flit publish
         env:
