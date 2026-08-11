@@ -27,7 +27,12 @@ import sphinx
 from sphinx import addnodes
 from sphinx.testing.fixtures import SharedResult  # noqa: F401  (registers fixture)
 
-from tests.conftest import patch_conf_py, write_ubproject_toml
+from tests.conftest import (
+    count_mount_warnings,
+    count_warnings,
+    patch_conf_py,
+    write_ubproject_toml,
+)
 
 if TYPE_CHECKING:
     pass
@@ -38,10 +43,18 @@ def _read_html(outdir: Path, docname: str) -> str:
     return (outdir / f"{docname}.html").read_text(encoding="utf-8")
 
 
-def _build(make_app, host_dir: Path) -> Path:
-    """Build the host project and return its ``outdir``."""
+def _build_clean(make_app, host_dir: Path) -> Path:
+    """Build the host project expecting a warning-free build and return its ``outdir``.
+
+    The strict warning contract: a build that is expected to succeed must
+    emit **zero** Sphinx warnings of any kind — if sphinx-mounts handled
+    every mount correctly, nothing (not even ``toc.*`` noise) warns. Any
+    warning here means a mount modified the host project despite being
+    handled, which is a bug.
+    """
     app = make_app(srcdir=host_dir, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0, app._warning.getvalue()
     return Path(app.outdir)
 
 
@@ -57,7 +70,7 @@ def test_basic_mount_makes_external_files_readable(
         [{"dir": str(bundle_simple), "mount_at": "_generated/api-foo"}],
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     html = _read_html(outdir, "_generated/api-foo/details")
     assert "BUNDLE_SIMPLE_DETAILS_MARKER" in html
@@ -89,7 +102,7 @@ def test_bundle_internal_toctree_is_navigable_from_host(
     )
     _replace_index_toctree(host, "_generated/api-foo/index")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # 1) The host's toctree (maxdepth=2) nests the bundle's siblings
     #    transitively, so the host's index.html already links to all
@@ -136,7 +149,7 @@ def test_internal_doc_reference_within_bundle_resolves(
         [{"dir": str(bundle_simple), "mount_at": "_generated/api-foo"}],
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # intro.rst has `:doc:\`details\`` which should resolve to the sibling
     # mounted doc and produce a hyperlink in the HTML.
@@ -152,7 +165,7 @@ def test_nested_subdirectory_docnames(make_app, make_host_project, bundle_nested
     )
     _replace_index_toctree(host, "_generated/nested/index")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     page_a = _read_html(outdir, "_generated/nested/subdir/page_a")
     page_b = _read_html(outdir, "_generated/nested/subdir/page_b")
@@ -195,11 +208,12 @@ def test_rst_host_mounts_rst_and_markdown_bundles_together(
         ".. toctree::\n"
         "   :maxdepth: 2\n\n"
         "   _generated/rst/index\n"
-        "   _generated/md/index\n",
+        "   _generated/md/index\n"
+        "   _generated/md/page\n",
         encoding="utf-8",
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # 1) Host's own RST content renders.
     host_html = (outdir / "index.html").read_text(encoding="utf-8")
@@ -245,7 +259,7 @@ def test_markdown_mount_with_myst_parser(make_app, make_host_project, bundle_mar
     )
     _replace_index_toctree(host, "_generated/md/index", "_generated/md/page")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     idx = _read_html(outdir, "_generated/md/index")
     page = _read_html(outdir, "_generated/md/page")
@@ -270,7 +284,7 @@ def test_two_mounts_coexist(make_app, make_host_project, bundle_simple, bundle_n
         "_generated/api-bar/index",
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     foo = _read_html(outdir, "_generated/api-foo/details")
     bar = _read_html(outdir, "_generated/api-bar/subdir/page_a")
@@ -292,7 +306,7 @@ def test_mount_at_omitted_places_bundle_at_root(
     # toctree (no prefix, because the mount is at root).
     _replace_index_toctree(host, "intro", "details")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # Bundle files render at the top level, without any prefix.
     assert (outdir / "intro.html").exists()
@@ -303,21 +317,38 @@ def test_mount_at_omitted_places_bundle_at_root(
     assert not (host / "_generated").exists()
 
 
-def test_root_mount_shadowing_host_doc_raises(
+def test_root_mount_shadowing_host_doc_warns(
     make_app, make_host_project, bundle_simple
 ):
     """When a root-mounted bundle would shadow a host doc that already
-    exists at that docname, the existing collision check fires. The
-    error message must label the mount as ``<root>`` (not as the
-    string representation of None)."""
+    exists at that docname, the WHOLE mount is skipped with a single
+    ``mounts.docname_conflict`` warning and the host doc wins. The warning
+    must identify the mount by its config index and source path — not by a
+    bare ``<root>`` object representation. Skipping the whole mount — not
+    just the colliding file — leaves the host project completely
+    untouched (no orphaned siblings)."""
     host = make_host_project()
     # host_project's index.rst exists; bundle_simple ships an index.rst
     # too. Without a prefix the two docnames collide at "index".
+    # The host doc must not reference the mount (it is skipped), so no
+    # stray toc.* warnings fire.
+    (host / "index.rst").write_text(
+        "Host\n====\n\nOnly page, no dangling reference.\n", encoding="utf-8"
+    )
     write_ubproject_toml(host, [{"dir": str(bundle_simple)}])
 
-    with pytest.raises(Exception, match=r"docname conflict.*mount <root>"):
-        app = make_app(srcdir=host, freshenv=True)
-        app.build()
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "docname conflict" in warnings
+    assert "mounts[0]" in warnings
+    assert f"dir={bundle_simple}" in warnings
+    assert "mounts.docname_conflict" in warnings
+    # The whole mount was removed: no sibling docs were mounted.
+    assert not (Path(app.outdir) / "intro.html").exists()
+    assert count_warnings(app) == 1  # only the docname conflict
+    assert count_mount_warnings(app) == 1
 
 
 def test_root_mount_with_attach_to_wires_bare_entry_doc(
@@ -346,7 +377,7 @@ def test_root_mount_with_attach_to_wires_bare_entry_doc(
         ],
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # The mount produced a bare docname.
     assert (outdir / "tutorial.html").exists()
@@ -417,7 +448,7 @@ def test_directory_mount_carries_image_assets(make_app, make_host_project, tmp_p
     write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_generated/m"}])
     _replace_index_toctree(host, "_generated/m/index")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # Both images land in Sphinx's _images/ output dir. The names may
     # be deduplicated/suffixed by Sphinx if collisions occur, so check
@@ -465,7 +496,7 @@ def test_markdown_mount_carries_image_assets(make_app, make_host_project, tmp_pa
     write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_generated/m"}])
     _replace_index_toctree(host, "_generated/m/index")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     images_dir = outdir / "_images"
     assert images_dir.is_dir()
@@ -531,7 +562,7 @@ def test_mounted_bundle_links_html_extra_path_report(
     write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_generated/m"}])
     _replace_index_toctree(host, "_generated/m/index")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # 1) The report was copied verbatim into the OUTPUT → self-contained.
     assert (outdir / "coverage" / "index.html").exists()
@@ -578,7 +609,7 @@ def test_include_allowlist_restricts_walk(make_app, make_host_project, tmp_path)
     )
     _replace_index_toctree(host, "_generated/m/public")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     assert (outdir / "_generated" / "m" / "public.html").exists()
     assert not (outdir / "_generated" / "m" / "internal.html").exists()
@@ -612,7 +643,7 @@ def test_directory_mount_can_disable_gitignore(make_app, make_host_project, tmp_
     )
     _replace_index_toctree(host, "_generated/m/kept", "_generated/m/release-notes")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # Both files render — the gitignore rule is suppressed.
     assert (outdir / "_generated" / "m" / "kept.html").exists()
@@ -652,7 +683,7 @@ def test_directory_mount_respects_in_bundle_gitignore(
     )
     _replace_index_toctree(host, "_generated/api/index")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # Survivor renders.
     assert (outdir / "_generated/api/keep.html").exists()
@@ -685,7 +716,7 @@ def test_directory_mount_ignores_parent_gitignore(
     )
     _replace_index_toctree(host, "_generated/api/index")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # The generated doc must render despite workspace/.gitignore
     # excluding "bin/" — the walker only honours gitignore inside the
@@ -698,27 +729,30 @@ def test_directory_mount_ignores_parent_gitignore(
 # ---------- file-list mode ----------
 
 
-def test_mount_single_file_via_files(make_app, make_host_project, bundle_simple):
+def test_mount_single_file_via_files(make_app, make_host_project, tmp_path):
     """A `files = [...]` mount with one entry registers exactly that doc."""
+    # Self-contained file: bundle_simple's intro.rst cross-references
+    # details.rst, which would emit a ref.doc warning when left unmounted.
+    single = tmp_path / "single.rst"
+    single.write_text("Single\n======\n\nSINGLE_FILE_MARKER\n", encoding="utf-8")
     host = make_host_project()
     write_ubproject_toml(
         host,
         [
             {
-                "files": [str(bundle_simple / "intro.rst")],
+                "files": [str(single)],
                 "mount_at": "_generated/api",
             }
         ],
     )
-    _replace_index_toctree(host, "_generated/api/intro")
+    _replace_index_toctree(host, "_generated/api/single")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
-    intro = _read_html(outdir, "_generated/api/intro")
-    # The intro section title from the source RST should render.
-    assert "Introduction" in intro
-    # Only the listed file should have rendered; details.rst and index.rst
-    # are siblings in the bundle but were not listed.
+    html = _read_html(outdir, "_generated/api/single")
+    assert "SINGLE_FILE_MARKER" in html
+    # Only the listed file should have rendered; bundle_simple siblings
+    # were never listed.
     assert not (outdir / "_generated/api/details.html").exists()
     assert not (outdir / "_generated/api/index.html").exists()
 
@@ -741,7 +775,7 @@ def test_mount_multiple_files_via_files(make_app, make_host_project, bundle_simp
     )
     _replace_index_toctree(host, "_generated/api/intro", "_generated/api/details")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     intro = _read_html(outdir, "_generated/api/intro")
     details = _read_html(outdir, "_generated/api/details")
@@ -758,26 +792,25 @@ def test_mount_files_with_attach_to_wires_entry_doc(
     """File-list mode honors attach_to + entry_doc just like directory mode."""
     host = make_host_project()
     _set_index_rst(host, "Host\n====\n\n.. toctree::\n   :maxdepth: 2\n")
+    # details.rst is self-contained (no cross-references), so wiring it
+    # as the entry doc leaves no orphaned siblings behind.
     write_ubproject_toml(
         host,
         [
             {
-                "files": [
-                    str(bundle_simple / "intro.rst"),
-                    str(bundle_simple / "details.rst"),
-                ],
+                "files": [str(bundle_simple / "details.rst")],
                 "mount_at": "_generated/api",
                 "attach_to": "index",
-                "entry_doc": "intro",
+                "entry_doc": "details",
             }
         ],
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # The host toctree should now contain the wired-up entry doc.
     index_html = (outdir / "index.html").read_text(encoding="utf-8")
-    assert "_generated/api/intro.html" in index_html
+    assert "_generated/api/details.html" in index_html
 
 
 def test_attach_each_wires_every_file_without_entry_doc(
@@ -804,6 +837,7 @@ def test_attach_each_wires_every_file_without_entry_doc(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
 
     # Every listed file is wired into the host toctree, in files order, and
     # no phantom "index" entry doc is invented.
@@ -847,6 +881,7 @@ def test_attach_each_creates_toctree_when_absent(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
 
     doctree = app.env.get_doctree("index")
     toctrees = list(doctree.findall(addnodes.toctree))
@@ -856,11 +891,14 @@ def test_attach_each_creates_toctree_when_absent(
     assert "_generated/api/details" in includefiles
 
 
-def test_mount_files_unknown_suffix_raises(make_app, make_host_project, tmp_path):
-    """A listed file whose extension is not in source_suffix is an error —
-    the user explicitly asked for it to be mounted, so silently skipping
-    would be the wrong behaviour."""
+def test_mount_files_unknown_suffix_warns(make_app, make_host_project, tmp_path):
+    """A listed file whose extension is not in source_suffix causes the
+    whole mount to be skipped with a ``mounts.unknown_suffix`` warning.
+    The user explicitly asked for the file, so a silent skip would be
+    wrong — but the rest of the build can still proceed."""
     host = make_host_project()
+    # Self-contained host: it must not reference the skipped mount.
+    (host / "index.rst").write_text("Host\n====\n\nOnly page.\n", encoding="utf-8")
     odd = tmp_path / "notes.adoc"
     odd.write_text("= AsciiDoc not configured\n", encoding="utf-8")
     write_ubproject_toml(
@@ -868,13 +906,22 @@ def test_mount_files_unknown_suffix_raises(make_app, make_host_project, tmp_path
         [{"files": [str(odd)], "mount_at": "_generated/api"}],
     )
 
-    with pytest.raises(Exception, match="source_suffix"):
-        app = make_app(srcdir=host, freshenv=True)
-        app.build()
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "source_suffix" in warnings
+    assert "mounts.unknown_suffix" in warnings
+    assert count_warnings(app) == 1  # only the unknown_suffix warning
+    assert count_mount_warnings(app) == 1
 
 
-def test_mount_files_missing_file_raises(make_app, make_host_project, tmp_path):
+def test_mount_files_missing_file_warns(make_app, make_host_project, tmp_path):
+    """A listed file that does not exist causes the whole mount to be
+    skipped with a ``mounts.missing_path`` warning instead of failing
+    the build."""
     host = make_host_project()
+    (host / "index.rst").write_text("Host\n====\n\nOnly page.\n", encoding="utf-8")
     write_ubproject_toml(
         host,
         [
@@ -885,46 +932,116 @@ def test_mount_files_missing_file_raises(make_app, make_host_project, tmp_path):
         ],
     )
 
-    with pytest.raises(Exception, match="does not exist or is not a file"):
-        make_app(srcdir=host, freshenv=True)
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "does not exist" in warnings
+    assert "mounts.missing_path" in warnings
+    assert count_warnings(app) == 1  # only the missing_path warning
+    assert count_mount_warnings(app) == 1
 
 
-def test_missing_mount_dir_raises(make_app, make_host_project, tmp_path):
+def test_missing_mount_dir_warns(make_app, make_host_project, tmp_path):
+    """A configured mount dir that does not exist is skipped with a
+    ``mounts.missing_path`` warning and the host project still builds —
+    the resilience story for builds whose upstream bundle is absent (CI
+    has not run the Bazel build yet)."""
     host = make_host_project()
+    (host / "index.rst").write_text("Host\n====\n\nOnly page.\n", encoding="utf-8")
     missing = tmp_path / "does_not_exist"
     write_ubproject_toml(
         host,
         [{"dir": str(missing), "mount_at": "_generated/api-foo"}],
     )
 
-    # Sphinx wraps handler exceptions in ExtensionError; match on the
-    # underlying message instead of the exception type.
-    with pytest.raises(Exception, match="does not exist"):
-        make_app(srcdir=host, freshenv=True)
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "does not exist" in warnings
+    assert "mounts.missing_path" in warnings
+    assert (Path(app.outdir) / "index.html").exists()
+    assert count_warnings(app) == 1  # only the missing_path warning
+    assert count_mount_warnings(app) == 1
 
 
-def test_exclude_filter_bundle_files(make_app, make_host_project, bundle_simple):
+def test_missing_mount_dir_with_attach_to_does_not_wire_dangling_ref(
+    make_app, make_host_project, tmp_path
+):
+    """A mount that produced no docnames (missing bundle) must not wire its
+    entry doc into the host toctree. Wiring it would inject a dangling
+    ``toc.not_readable`` reference that is not suppressible via
+    ``mounts.*`` and defeats the absent-bundle resilience story."""
+    host = make_host_project()
+    (host / "index.rst").write_text(
+        "Host\n====\n\n.. toctree::\n   :maxdepth: 1\n\n",
+        encoding="utf-8",
+    )
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "dir": str(tmp_path / "does_not_exist"),
+                "mount_at": "_generated/api-foo",
+                "attach_to": "index",
+            }
+        ],
+    )
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    doctree = app.env.get_doctree("index")
+    toctrees = list(doctree.findall(addnodes.toctree))
+    assert all("_generated/api-foo/index" not in t["includefiles"] for t in toctrees)
+    warnings = app._warning.getvalue()
+    assert "toc.not_readable" not in warnings
+    assert count_warnings(app) == 1  # only the mounts.missing_path warning
+    assert count_mount_warnings(app) == 1
+
+
+def test_exclude_filter_bundle_files(make_app, make_host_project, tmp_path):
+    """``exclude`` filters a directory mount's walk."""
+    # Custom bundle whose index toctree references only the kept file, so
+    # excluding details.rst leaves no dangling reference behind.
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    (bundle / "index.rst").write_text(
+        "Idx\n===\n\n.. toctree::\n\n   intro\n", encoding="utf-8"
+    )
+    (bundle / "intro.rst").write_text(
+        "Intro\n=====\n\nINTRO_MARKER\n", encoding="utf-8"
+    )
+    (bundle / "details.rst").write_text(
+        "Details\n=======\n\nDETAILS_MARKER\n", encoding="utf-8"
+    )
     host = make_host_project()
     write_ubproject_toml(
         host,
         [
             {
-                "dir": str(bundle_simple),
+                "dir": str(bundle),
                 "mount_at": "_generated/api-foo",
                 "exclude": ["details.rst"],
             },
         ],
     )
-    _replace_index_toctree(host, "_generated/api-foo/intro")
+    _replace_index_toctree(host, "_generated/api-foo/index")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
+    assert (outdir / "_generated/api-foo/index.html").exists()
     assert (outdir / "_generated/api-foo/intro.html").exists()
     assert not (outdir / "_generated/api-foo/details.html").exists()
 
 
-def test_docname_conflict_raises(make_app, make_host_project, bundle_simple, tmp_path):
-    """Two mounts producing the same docname must be rejected."""
+def test_docname_conflict_warns_and_first_mount_wins(
+    make_app, make_host_project, bundle_simple, tmp_path
+):
+    """Two mounts producing the same docname: the first mount wins, the
+    second is skipped with a ``mounts.docname_conflict`` warning. The
+    conflict is detected during discover(), which runs as part of build()."""
     host = make_host_project()
     # Duplicate the bundle at a second source dir; both mount at the same
     # prefix so docnames collide.
@@ -938,20 +1055,131 @@ def test_docname_conflict_raises(make_app, make_host_project, bundle_simple, tmp
             {"dir": str(second), "mount_at": "_generated/clash"},
         ],
     )
+    _replace_index_toctree(host, "_generated/clash/index")
 
-    # Conflict is raised during discover(), which runs as part of build();
-    # Sphinx wraps it in ExtensionError.
-    with pytest.raises(Exception, match="docname conflict"):
-        app = make_app(srcdir=host, freshenv=True)
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "docname conflict" in warnings
+    assert "mounts.docname_conflict" in warnings
+    # bundle_simple (the first mount) provided the docname.
+    html = (Path(app.outdir) / "_generated/clash/index.html").read_text(
+        encoding="utf-8"
+    )
+    assert "API Foo" in html
+    assert "Dup" not in html
+    assert count_warnings(app) == 1  # only the docname conflict
+    assert count_mount_warnings(app) == 1
+
+
+def test_docname_conflict_warning_is_suppressible(
+    make_app, make_host_project, bundle_simple
+):
+    """A mount-specific problem can be silenced via Sphinx's
+    ``suppress_warnings`` — the typed ``mounts.docname_conflict`` warning
+    is the handle users opt out of. The whole mount is skipped, so with
+    the warning suppressed the build is completely clean."""
+    host = make_host_project()
+    (host / "index.rst").write_text(
+        "Host\n====\n\nOnly page, no dangling reference.\n", encoding="utf-8"
+    )
+    write_ubproject_toml(host, [{"dir": str(bundle_simple)}])
+    conf = host / "conf.py"
+    conf.write_text(
+        conf.read_text(encoding="utf-8")
+        + '\nsuppress_warnings = ["mounts.docname_conflict"]\n',
+        encoding="utf-8",
+    )
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    assert "docname conflict" not in app._warning.getvalue()
+    assert count_warnings(app) == 0
+    assert count_mount_warnings(app) == 0
+
+
+def test_docname_conflict_warning_group_suppressible(
+    make_app, make_host_project, bundle_simple
+):
+    """``type="mounts"`` lets ``suppress_warnings = ["mounts"]`` silence
+    *every* sphinx-mounts warning at once — group suppression the flat
+    per-problem types would not provide."""
+    host = make_host_project()
+    (host / "index.rst").write_text(
+        "Host\n====\n\nOnly page, no dangling reference.\n", encoding="utf-8"
+    )
+    write_ubproject_toml(host, [{"dir": str(bundle_simple)}])
+    conf = host / "conf.py"
+    conf.write_text(
+        conf.read_text(encoding="utf-8") + '\nsuppress_warnings = ["mounts"]\n',
+        encoding="utf-8",
+    )
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    assert "docname conflict" not in app._warning.getvalue()
+    assert count_warnings(app) == 0
+    assert count_mount_warnings(app) == 0
+
+
+def test_docname_conflict_fails_under_warningiserror(
+    make_app, make_host_project, tmp_path
+):
+    """Under ``sphinx-build -W`` (warningiserror) the ``mounts.docname_
+    conflict`` warning fails the build.
+
+    The scenario is constructed so the docname conflict is the *only*
+    warning emitted — a single-file bundle whose root mount collides with
+    the host ``index`` doc, with no stray toctree references — so the
+    failure is attributable to the mount warning and not to unrelated
+    ``toc.not_readable`` / ``toc.not_included`` warnings. Sphinx < 9 raises
+    ``SphinxWarning`` immediately; Sphinx 9 sets a non-zero status code at
+    the end of the build and records the warnings, which we assert to prove
+    the escalation came from the mount warning.
+    """
+    host = make_host_project()
+    # The fixture index references ``_generated/api-foo/index``; a minimal
+    # doc keeps ``toc.not_readable`` from firing as an unrelated warning.
+    (host / "index.rst").write_text(
+        "Host\n====\n\nOnly page, no dangling reference.\n",
+        encoding="utf-8",
+    )
+    single = tmp_path / "single"
+    single.mkdir()
+    (single / "index.rst").write_text(
+        "= Shadow\n\nShould be skipped.\n", encoding="utf-8"
+    )
+    write_ubproject_toml(host, [{"dir": str(single)}])
+
+    app = make_app(srcdir=host, freshenv=True, warningiserror=True)
+    try:
         app.build()
+    except Exception as exc:
+        # Sphinx < 9 raises on the first warning — the mount conflict, as
+        # it is the only warning the scenario can emit.
+        assert "docname conflict" in str(exc)
+    else:
+        # Sphinx 9 fails at the end of the build; prove the failure is the
+        # mount warning and not stray toctree noise from the scenario.
+        assert app.statuscode != 0
+        warnings = app._warning.getvalue()
+        assert "docname conflict" in warnings
+        assert "toc.not_readable" not in warnings
+        assert "toc.not_included" not in warnings
+        assert count_warnings(app) == 1  # only the docname conflict
+        assert count_mount_warnings(app) == 1
 
 
-def test_strict_mount_at_rejects_preexisting_host_dir(
+def test_strict_mount_at_warns_on_preexisting_host_dir(
     make_app, make_host_project, bundle_simple
 ):
     """With ``strict_mount_at = true``, a host directory at the mount
-    point is a misconfiguration even when no concrete docname collides.
-    """
+    point makes the whole mount skipped with a single
+    ``mounts.mount_at_occupied`` warning — the mount point being occupied
+    means the bundle cannot be attached without modifying the host."""
     host = make_host_project()
     (host / "_generated" / "api-foo").mkdir(parents=True)
     write_ubproject_toml(
@@ -964,10 +1192,19 @@ def test_strict_mount_at_rejects_preexisting_host_dir(
             }
         ],
     )
+    # The host doc must not reference the skipped mount.
+    (host / "index.rst").write_text("Host\n====\n\nOnly page.\n", encoding="utf-8")
 
-    with pytest.raises(Exception, match=r"strict_mount_at.*_generated/api-foo"):
-        app = make_app(srcdir=host, freshenv=True)
-        app.build()
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "strict_mount_at" in warnings
+    assert "mounts.mount_at_occupied" in warnings
+    # The whole mount was removed: no bundle doc was mounted.
+    assert not (Path(app.outdir) / "_generated" / "api-foo" / "index.html").exists()
+    assert count_warnings(app) == 1  # only the mount_at_occupied warning
+    assert count_mount_warnings(app) == 1
 
 
 def test_strict_mount_at_passes_when_no_host_dir(
@@ -988,7 +1225,7 @@ def test_strict_mount_at_passes_when_no_host_dir(
         ],
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
     assert (outdir / "_generated" / "api-foo" / "details.html").exists()
 
 
@@ -1010,15 +1247,16 @@ def test_strict_mount_at_default_permissive_allows_host_dir(
         [{"dir": str(bundle_simple), "mount_at": "_generated/api-foo"}],
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
     assert (outdir / "_generated" / "api-foo" / "details.html").exists()
 
 
-def test_strict_mount_at_rejects_preexisting_host_dir_in_files_mode(
+def test_strict_mount_at_warns_on_preexisting_host_dir_in_files_mode(
     make_app, make_host_project, bundle_simple
 ):
     """The strict check is mode-agnostic — file-list mounts honour it
-    the same way directory mounts do."""
+    the same way directory mounts do, and the violation skips the whole
+    mount with a ``mounts.mount_at_occupied`` warning."""
     host = make_host_project()
     (host / "_generated" / "release-notes").mkdir(parents=True)
     write_ubproject_toml(
@@ -1031,10 +1269,16 @@ def test_strict_mount_at_rejects_preexisting_host_dir_in_files_mode(
             }
         ],
     )
+    (host / "index.rst").write_text("Host\n====\n\nOnly page.\n", encoding="utf-8")
 
-    with pytest.raises(Exception, match=r"strict_mount_at.*_generated/release-notes"):
-        app = make_app(srcdir=host, freshenv=True)
-        app.build()
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "strict_mount_at" in warnings
+    assert "mounts.mount_at_occupied" in warnings
+    assert count_warnings(app) == 1  # only the mount_at_occupied warning
+    assert count_mount_warnings(app) == 1
 
 
 def test_toml_overrides_conf_py_mounts(
@@ -1053,8 +1297,9 @@ def test_toml_overrides_conf_py_mounts(
         host,
         [{"dir": str(bundle_simple), "mount_at": "_generated/from-toml"}],
     )
+    _replace_index_toctree(host, "_generated/from-toml/index")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     assert (outdir / "_generated/from-toml/details.html").exists()
     assert not (outdir / "_generated/from-py/index.html").exists()
@@ -1093,7 +1338,7 @@ def test_toml_in_subdir_anchors_paths_to_toml_directory(
         encoding="utf-8",
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     # The bundle's docs rendered, proving the relative path resolved
     # against the TOML's directory (configs/), not against confdir.
@@ -1115,7 +1360,7 @@ def test_custom_toml_path(make_app, make_host_project, bundle_simple):
         encoding="utf-8",
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     assert (outdir / "_generated/api-foo/details.html").exists()
 
@@ -1133,7 +1378,7 @@ def test_conf_py_mounts_used_when_no_toml(make_app, make_host_project, bundle_si
     # Ensure no ubproject.toml exists in confdir.
     assert not (host / "ubproject.toml").exists()
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     assert (outdir / "_generated/api-foo/details.html").exists()
 
@@ -1155,8 +1400,9 @@ def test_mounts_from_toml_disabled_with_none(
         + f"\nmounts = [{{'dir': r'{bundle_simple}', 'mount_at': '_generated/from-py'}}]\n",
         encoding="utf-8",
     )
+    _replace_index_toctree(host, "_generated/from-py/index")
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     assert (outdir / "_generated/from-py/details.html").exists()
     assert not (outdir / "_generated/ignored/details.html").exists()
@@ -1180,7 +1426,7 @@ def test_attach_to_extends_existing_toctree(make_app, make_host_project, bundle_
         ],
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     assert (outdir / "_generated/api-foo/index.html").exists()
     index_html = (outdir / "index.html").read_text(encoding="utf-8")
@@ -1214,6 +1460,7 @@ def test_attach_to_targets_specific_toctree_by_index(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
 
     # Inspect the parsed doctree directly: the mount entry must be in
     # the *second* toctree node (index 1, the SecondCaption one), not
@@ -1233,10 +1480,15 @@ def test_attach_to_targets_specific_toctree_by_index(
     )
 
 
-def test_attach_to_index_out_of_range_raises(
+def test_attach_to_index_out_of_range_warns_and_skips(
     make_app, make_host_project, bundle_simple
 ):
-    """Asking for a toctree that doesn't exist must fail loudly."""
+    """Asking for a toctree that doesn't exist emits exactly one
+    ``mounts.toctree_index`` warning and leaves the host doc untouched
+    instead of failing the build. The mount is left unwired and its docs
+    are marked as orphans, so — even though the host references nothing —
+    no ``toc.not_included`` warning follows: the induced error must leave
+    the host project completely untouched."""
     host = make_host_project()
     _set_index_rst(host, "Host\n====\n\n.. toctree::\n   :maxdepth: 1\n")
     write_ubproject_toml(
@@ -1251,8 +1503,22 @@ def test_attach_to_index_out_of_range_raises(
         ],
     )
 
-    with pytest.raises(Exception, match="only 1 toctree"):
-        _build(make_app, host)
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "toctree_index" in warnings
+    assert "mounts.toctree_index" in warnings
+    assert count_warnings(app) == 1  # only the toctree_index warning
+    assert count_mount_warnings(app) == 1
+    # The host toctree is untouched: still empty, nothing wired on top.
+    doctree = app.env.get_doctree("index")
+    toctrees = list(doctree.findall(addnodes.toctree))
+    assert len(toctrees) == 1
+    assert toctrees[0]["includefiles"] == []
+    # The mount's entry doc is marked orphan — that is what keeps the
+    # unreferenced mount from producing toc.not_included noise.
+    assert app.env.metadata["_generated/api-foo/index"].get("orphan")
 
 
 def test_attach_to_creates_toctree_when_absent(
@@ -1275,7 +1541,7 @@ def test_attach_to_creates_toctree_when_absent(
         ],
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     assert (outdir / "_generated/api-foo/index.html").exists()
     index_html = (outdir / "index.html").read_text(encoding="utf-8")
@@ -1314,6 +1580,7 @@ def test_attach_to_appends_new_toctree_at_section_end(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
 
     doctree = app.env.get_doctree("index")
     first_section = next(doctree.findall(nodes.section))
@@ -1335,8 +1602,13 @@ def test_attach_to_appends_new_toctree_at_section_end(
 def test_attach_to_with_custom_entry_doc(make_app, make_host_project, bundle_simple):
     """entry_doc selects which file inside the mount to wire up."""
     host = make_host_project()
-    _set_index_rst(host, "Host\n====\n\n.. toctree::\n   :maxdepth: 1\n")
-    # bundle_simple has intro.rst alongside index.rst — point at it.
+    # The host references the bundle index by hand; attach_to wires the
+    # custom entry doc (intro) into the same toctree, so every mounted
+    # doc stays reachable.
+    _set_index_rst(
+        host,
+        "Host\n====\n\n.. toctree::\n   :maxdepth: 1\n\n   _generated/api-foo/index\n",
+    )
     write_ubproject_toml(
         host,
         [
@@ -1349,7 +1621,7 @@ def test_attach_to_with_custom_entry_doc(make_app, make_host_project, bundle_sim
         ],
     )
 
-    outdir = _build(make_app, host)
+    outdir = _build_clean(make_app, host)
 
     index_html = (outdir / "index.html").read_text(encoding="utf-8")
     assert "_generated/api-foo/intro.html" in index_html
@@ -1377,6 +1649,7 @@ def test_attach_to_idempotent_with_static_entry(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
 
     # Inspect the env's resolved toctree includes — the dedup guarantee is
     # that ``_generated/api-foo/index`` appears once for the host index doc,
@@ -1413,6 +1686,8 @@ def test_attach_to_warns_when_target_docname_missing(
     warnings = app._warning.getvalue()
     assert "nonexistent_host_doc" in warnings
     assert "attach_to" in warnings
+    assert count_warnings(app) == 1  # only the attach_to_missing warning
+    assert count_mount_warnings(app) == 1
 
 
 # ---------- helpers ----------
@@ -1526,10 +1801,12 @@ def test_incremental_skips_mount_when_nothing_changed(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
     offset = len(app._status.getvalue())
 
     # Rebuild without changing anything.
     app.build()
+    assert count_warnings(app) == 0
     warm_log = app._status.getvalue()[offset:]
 
     read = _docs_read_in_log(warm_log)
@@ -1555,34 +1832,37 @@ def test_host_toctree_change_does_not_reparse_mount_files(
     Sphinx incremental builds work, and it is the right design —
     re-parsing unchanged files would defeat the cache.)
     """
-    # Custom flat bundle with two independent files (no internal
-    # toctree, no cross-refs). Lets us toggle each as a host-toctree
-    # entry without worrying about transitive inclusion via the mount's
-    # own ``index.rst``.
+    # Custom flat bundle with an index that toctrees both files. Lets us
+    # toggle which files the host references without leaving orphans.
     bundle = tmp_path / "bundle"
     bundle.mkdir()
+    (bundle / "index.rst").write_text(
+        "Idx\n===\n\n.. toctree::\n\n   foo\n   bar\n", encoding="utf-8"
+    )
     (bundle / "foo.rst").write_text("Foo\n===\n\nFOO_MARKER\n", encoding="utf-8")
     (bundle / "bar.rst").write_text("Bar\n===\n\nBAR_MARKER\n", encoding="utf-8")
 
     host = make_host_project()
     write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_generated/m"}])
-    # Cold: host toctree references foo only (bar is mounted but
-    # orphan — Sphinx logs the standard ``toc.not_included`` warning,
-    # which is fine without ``-W``).
-    _replace_index_toctree(host, "_generated/m/foo")
+    # Cold: host toctree references the bundle index, which pulls in both
+    # files — no orphans, a completely clean build.
+    _replace_index_toctree(host, "_generated/m/index")
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
     cold_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
     assert "_generated/m/foo.html" in cold_html
 
     offset = len(app._status.getvalue())
 
-    # Edit host index.rst — toctree now references foo AND bar.
-    _replace_index_toctree(host, "_generated/m/foo", "_generated/m/bar")
+    # Edit host index.rst — toctree now references the index plus bar
+    # directly. The bundle index stays referenced, so nothing orphans.
+    _replace_index_toctree(host, "_generated/m/index", "_generated/m/bar")
     _bump_mtime(host / "index.rst")
 
     app.build()
+    assert count_warnings(app) == 0
     warm_log = app._status.getvalue()[offset:]
     warm_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
 
@@ -1630,6 +1910,7 @@ def test_incremental_rereads_mount_doc_when_dependency_changes(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
 
     # Precondition: the include target is a recorded dependency of the
     # mounted doc, pointing at the external file (not into the host srcdir).
@@ -1652,6 +1933,7 @@ def test_incremental_rereads_mount_doc_when_dependency_changes(
     _bump_mtime(snippet)
 
     app.build()
+    assert count_warnings(app) == 0
     warm_log = app._status.getvalue()[offset:]
     read = _docs_read_in_log(warm_log)
 
@@ -1688,12 +1970,14 @@ def test_incremental_rereads_changed_file_in_file_list_mount(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
     offset = len(app._status.getvalue())
 
     page_a.write_text("Page A\n======\n\nA_MARKER_MODIFIED\n", encoding="utf-8")
     _bump_mtime(page_a)
 
     app.build()
+    assert count_warnings(app) == 0
     warm_log = app._status.getvalue()[offset:]
     read = _docs_read_in_log(warm_log)
 
@@ -1726,6 +2010,7 @@ def test_mounted_path_type_matches_host_path_type(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
 
     stored = app.project._docname_to_path
     host_type = type(stored["index"])
@@ -1755,6 +2040,7 @@ def test_doc2path_result_is_usable_as_a_string(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
 
     docname = "_g/m/index"
     path = app.env.doc2path(docname, False)
@@ -1794,6 +2080,7 @@ def test_path2doc_round_trips_a_mounted_source_path(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
+    assert count_warnings(app) == 0
 
     source = bundle_simple / "intro.rst"
     assert app.env.path2doc(str(source)) == "_g/m/intro"

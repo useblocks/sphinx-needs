@@ -121,3 +121,24 @@ def _toml_string(value: str) -> str:
     """Encode a Python string as a TOML basic string literal."""
     escaped = value.replace("\\", "\\\\").replace('"', '\\"')
     return f'"{escaped}"'
+
+
+def count_warnings(app) -> int:
+    """Total number of warning records in the captured Sphinx warning stream.
+
+    Each Sphinx warning is emitted as a single ``WARNING:`` record, so
+    counting them pins the *exact* number of warnings a scenario may emit.
+    """
+    return app._warning.getvalue().count("WARNING:")
+
+
+def count_mount_warnings(app) -> int:
+    """Number of sphinx-mounts warnings (``mounts.*`` types) captured.
+
+    Every sphinx-mounts warning carries the ``[mounts.<subtype>]`` type
+    suffix on Sphinx 8/9 natively and Sphinx 7 via the manual append, so
+    counting those occurrences pins exactly how many of *our* warnings a
+    scenario emits — independent of unrelated Sphinx toctree noise and
+    stable across supported Sphinx versions.
+    """
+    return app._warning.getvalue().count("[mounts.")

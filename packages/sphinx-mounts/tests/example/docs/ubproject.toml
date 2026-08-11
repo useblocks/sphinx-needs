@@ -144,3 +144,91 @@ files = ["../fragments/note-one.rst", "../fragments/note-two.rst"]
 mount_at = "_generated/fragments"
 attach_to = "index"
 attach_each = true
+
+# ---------------------------------------------------------------------------
+# Warning showcase (all commented out)
+# ---------------------------------------------------------------------------
+#
+# Every warning sphinx-mounts can emit, one commented-out [[mounts]] block
+# per warning. Uncomment the [[mounts]] lines of ONE block at a time (keep
+# the explanation comments above them) and rebuild to see that warning —
+# the blocks above this section are the example's real mounts and stay
+# active. See the extension's docs for how to suppress (``suppress_warnings``)
+# or escalate (``sphinx-build -W``) these warnings.
+
+# 1. mounts.docname_conflict
+#    The mount would shadow a docname already provided by the host project:
+#    ../warnings/bundles/conflicts/index.rst collides with the host's own
+#    index.rst because this mount has no mount_at (a root mount). The WHOLE
+#    mount is skipped — nothing is mounted, so no orphaned docs follow.
+# [[mounts]]
+# dir = "../warnings/bundles/conflicts"
+
+# 2. mounts.missing_path
+#    The configured dir does not exist on disk (../warnings/bundles/absent
+#    is not checked in). The whole mount is skipped, so a build whose
+#    upstream bundle is absent (e.g. CI that has not run the Bazel build
+#    yet) can still proceed.
+# [[mounts]]
+# dir = "../warnings/bundles/absent"
+# mount_at = "_generated/warnings-absent"
+
+# 3. mounts.unknown_suffix
+#    A file-list entry has no extension registered in Sphinx's
+#    source_suffix (``.adoc`` is not parsed). The whole mount is skipped;
+#    add a parser extension (e.g. myst_parser for ``.md``) or remove the
+#    file from the list.
+# [[mounts]]
+# files = ["../warnings/bundles/suffix/notes.adoc"]
+# mount_at = "_generated/warnings-suffix"
+
+# 4. mounts.mount_at_occupied
+#    strict_mount_at = true, but the host already has a directory at the
+#    mount point. Create one first, then uncomment this block and rebuild:
+#
+#      mkdir _generated/warnings-occupied
+#
+#    An occupied mount point means the bundle cannot be attached without
+#    modifying the host, so the whole mount is skipped. Remove the
+#    directory afterwards (``rmdir _generated/warnings-occupied``) so the
+#    example stays warning-clean.
+# [[mounts]]
+# dir = "../warnings/bundles/conflicts"
+# mount_at = "_generated/warnings-occupied"
+# strict_mount_at = true
+
+# 5. mounts.attach_to_missing
+#    attach_to names a docname that does not exist in the project, so
+#    nothing is wired into a host toctree. This mount is empty
+#    (../warnings/bundles/empty holds only non-source files), so the demo
+#    shows exactly this warning; a real mount would additionally report its
+#    docs as not included in any toctree (toc.not_included) unless the host
+#    references them.
+# [[mounts]]
+# dir = "../warnings/bundles/empty"
+# mount_at = "_generated/warnings-attached"
+# attach_to = "no_such_doc"
+
+# 6. mounts.toctree_index
+#    attach_to's toctree_index exceeds the number of toctrees in the
+#    attach_to document (the host index has one toctree). The mount is
+#    left unwired and its docs are marked as orphans, so exactly this one
+#    warning appears — the host project is left completely untouched.
+# [[mounts]]
+# dir = "../warnings/bundles/single"
+# mount_at = "_generated/warnings-single"
+# attach_to = "index"
+# toctree_index = 3
+
+# 7. mounts.path_escape
+#    A mounted doc references a file outside its bundle root:
+#    ../warnings/bundles/escape/index.rst literalincludes ../secret.txt,
+#    which lives in ../warnings/bundles/, not in the escape/ subdir. With
+#    path_check = "warn" this is a warning; the default "error" would fail
+#    the build. attach_to wires the entry doc into the host toctree, so no
+#    orphan noise appears.
+# [[mounts]]
+# dir = "../warnings/bundles/escape"
+# mount_at = "_generated/warnings-escape"
+# attach_to = "index"
+# path_check = "warn"

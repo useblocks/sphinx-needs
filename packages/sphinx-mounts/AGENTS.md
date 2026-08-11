@@ -59,6 +59,7 @@ src/sphinx_mounts/
 ├── extension.py        # Sphinx event handlers, including the TOML loader
 ├── config.py           # MountConfig dataclass, hand-rolled validation,
 │                       # and the TOML loader for the `mounts` config
+├── logging.py          # Typed `mounts.*` warning helpers (suppress_warnings)
 └── mounter.py          # Core logic — discovers external files and
                         # injects them into app.project
 

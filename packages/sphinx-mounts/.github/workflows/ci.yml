@@ -74,6 +74,27 @@ jobs:
         with:
           python-version: "${{ matrix.python }}"
           allow-prereleases: true
+      # The diagram-directive tests (graphviz/uml) render at build time and
+      # hard-require their renderer binaries; the strict zero-warning
+      # contract needs them present on every runner OS. (Ubuntu/macOS use
+      # the distro packages; on Windows the chocolatey plantuml package
+      # pulls in graphviz and a JRE as dependencies — its non-blocking
+      # `plantuml` shim is why the tests use `plantumlc` there.)
+      - name: Install diagram renderers (dot, java, plantuml)
+        shell: bash
+        run: |
+          case "$RUNNER_OS" in
+            Linux)
+              sudo apt-get update
+              sudo apt-get install -y graphviz default-jre plantuml
+              ;;
+            macOS)
+              brew install graphviz plantuml
+              ;;
+            Windows)
+              choco install -y plantuml
+              ;;
+          esac
       - run: python -m pip install tox tox-uv
       - run: tox -e "${{ matrix.tox-env }}"
 

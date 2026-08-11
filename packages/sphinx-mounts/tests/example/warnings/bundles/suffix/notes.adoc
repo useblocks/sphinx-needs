@@ -1,0 +1,1 @@
+= AsciiDoc is not configured

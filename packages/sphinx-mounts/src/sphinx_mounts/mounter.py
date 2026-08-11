@@ -22,10 +22,12 @@ from typing import TYPE_CHECKING
 from ignore import Walk, WalkBuilder
 from ignore.overrides import OverrideBuilder
 from sphinx import version_info as _sphinx_version_info
+from sphinx.errors import ExtensionError
 from sphinx.project import Project
 from sphinx.util import logging
 
-from sphinx_mounts.config import MountConfig
+from sphinx_mounts.config import MountConfig, mount_label
+from sphinx_mounts.logging import log_warning
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -94,16 +96,20 @@ class _MountAwareProject(Project):
         self._doc_roots = {}
         self._mount_entry_docnames = {}
         for index, mount in enumerate(self._mounts):
-            _enforce_strict_mount_at(Path(self.srcdir), mount)
-            added = _attach_mount(self, mount)
+            if _enforce_strict_mount_at(Path(self.srcdir), mount, index):
+                # strict_mount_at violation — the whole mount is skipped,
+                # so the host project stays completely untouched.
+                self._mount_entry_docnames[index] = []
+                continue
+            added = _attach_mount(self, mount, index)
             docs.update(added)
             self._mount_entry_docnames[index] = added
         return docs
 
 
-def _enforce_strict_mount_at(srcdir: Path, mount: MountConfig) -> None:
-    """Raise if ``mount.strict_mount_at`` is set and the host srcdir
-    already contains a directory at ``mount.mount_at``.
+def _enforce_strict_mount_at(srcdir: Path, mount: MountConfig, index: int) -> bool:
+    """Warn (and report "skip") if ``mount.strict_mount_at`` is set and
+    the host srcdir already contains a directory at ``mount.mount_at``.
 
     The check is intentionally a no-op when ``strict_mount_at`` is
     false (the default per-docname collision detector remains the only
@@ -111,23 +117,38 @@ def _enforce_strict_mount_at(srcdir: Path, mount: MountConfig) -> None:
     this branch is defensive). It does not fire for stray files at the
     path — files are left to the per-docname check, which catches the
     only case Sphinx actually cares about.
+
+    The violation is a ``mounts.mount_at_occupied`` warning and the
+    mount is **not mounted at all**: the mount point being occupied
+    means the bundle cannot be attached without modifying the host, so
+    the only clean reaction is to skip it. Users who want a hard
+    failure can escalate with ``sphinx-build -W``.
+
+    :param index: The mount's position in the ``mounts`` config list,
+        used in the warning's :func:`mount_label`.
+    :return: ``True`` when the mount must be skipped, ``False`` to
+        proceed.
     """
     if not mount.strict_mount_at or mount.mount_at is None:
-        return
+        return False
     candidate = srcdir / mount.mount_at
     if candidate.is_dir():
         msg = (
             f"sphinx-mounts: strict_mount_at violation: host project "
-            f"already has a directory at {candidate}, but mount "
-            f"{mount.mount_at!r} requires the path to be free. "
-            f"Rename or remove the host directory, or set "
-            f"strict_mount_at = false to fall back to per-docname "
-            f"collision checking."
+            f"already has a directory at {candidate}, but "
+            f"{mount_label(mount, index)} requires the path to be free "
+            f"— the whole mount is skipped. Rename or remove the host "
+            f"directory, or set strict_mount_at = false to fall back "
+            f"to per-docname collision checking."
         )
-        raise ValueError(msg)
+        log_warning(logger, msg, "mount_at_occupied")
+        return True
+    return False
 
 
-def _attach_mount(project: _MountAwareProject, mount: MountConfig) -> list[str]:
+def _attach_mount(
+    project: _MountAwareProject, mount: MountConfig, index: int
+) -> list[str]:
     """Inject ``mount`` into ``project`` — either a directory or a file list.
 
     Directory mode (``mount.dir`` set): walk the directory and pick up
@@ -142,27 +163,30 @@ def _attach_mount(project: _MountAwareProject, mount: MountConfig) -> list[str]:
 
     :param project: The Sphinx :class:`Project` to inject into.
     :param mount: Validated mount configuration.
+    :param index: The mount's position in the ``mounts`` config list,
+        used in the warning's :func:`mount_label`.
     :return: The docnames added by this mount, in a deterministic order
         (sorted by path for a directory mount, ``files`` order for a
-        file-list mount).
-    :raises ValueError: If a constructed docname collides with an existing
-        docname already in the project (host shadowing or two mounts
-        producing the same docname), or — in file-list mode — if a file's
-        suffix is not registered with Sphinx.
+        file-list mount). ``[]`` when the mount was skipped entirely —
+        missing paths, unregistered suffixes, and docname conflicts all
+        drop the whole mount with a single typed warning (see
+        :func:`log_warning`), leaving the host project untouched.
+    :raises ExtensionError: If the mount has neither ``dir`` nor ``files``
+        — unreachable in practice because :class:`MountConfig` validation
+        guarantees exactly one is set.
     """
     if mount.dir is not None:
-        return _attach_mount_dir(project, mount, mount.dir)
+        return _attach_mount_dir(project, mount, mount.dir, index)
     if mount.files is not None:
-        return _attach_mount_files(project, mount, mount.files)
+        return _attach_mount_files(project, mount, mount.files, index)
     # MountConfig.__post_init__ guarantees exactly one of dir/files is
     # set, so this branch is unreachable in practice.
-    mount_label = "<root>" if mount.mount_at is None else repr(mount.mount_at)
-    msg = f"sphinx-mounts: mount {mount_label} has neither dir nor files."
-    raise ValueError(msg)
+    msg = f"sphinx-mounts: {mount_label(mount, index)} has neither dir nor files."
+    raise ExtensionError(msg)
 
 
 def _attach_mount_dir(
-    project: _MountAwareProject, mount: MountConfig, mount_dir: Path
+    project: _MountAwareProject, mount: MountConfig, mount_dir: Path, index: int
 ) -> list[str]:
     """Walk ``mount_dir`` with the ``ignore-python`` walker (a Rust
     binding to the same crate used by ``sphinx-codelinks`` and ubCode).
@@ -174,8 +198,18 @@ def _attach_mount_dir(
     NOT consulted regardless of the setting — otherwise mounting a
     directory whose parent gitignores it (the canonical
     ``bazel-bin/...`` case) would silently produce zero files.
+
+    A missing directory is reported as a ``mounts.missing_path``
+    warning and skipped, so a build whose upstream bundle is absent
+    can still proceed (see :func:`parse_mounts`).
     """
-    added: list[str] = []
+    if not mount_dir.is_dir():
+        msg = (
+            f"sphinx-mounts: mount directory does not exist and the whole "
+            f"mount is skipped: {mount_dir}"
+        )
+        log_warning(logger, msg, "missing_path")
+        return []
     suffixes = tuple(project.source_suffix)
 
     walker = _build_walker(
@@ -198,15 +232,14 @@ def _attach_mount_dir(
         matched.append((p, suffix))
     matched.sort(key=lambda pair: pair[0].as_posix())
 
+    entries: list[tuple[str, Path, Path]] = []
     for abs_path, suffix in matched:
         rel_path = abs_path.relative_to(mount_dir)
         # Strip the matched suffix (which may be multi-dot like ".rst.txt").
         docname_tail = rel_path.as_posix()[: -len(suffix)]
         docname = _join_mount(mount.mount_at, docname_tail)
-        _register(project, docname, abs_path, mount.mount_at)
-        project._doc_roots[docname] = (mount_dir, mount.path_check)
-        added.append(docname)
-    return added
+        entries.append((docname, abs_path, mount_dir))
+    return _attach_entries(project, mount, entries, index)
 
 
 def _build_walker(
@@ -259,48 +292,82 @@ def _build_walker(
 
 
 def _attach_mount_files(
-    project: _MountAwareProject, mount: MountConfig, files: Iterable[Path]
+    project: _MountAwareProject, mount: MountConfig, files: Iterable[Path], index: int
 ) -> list[str]:
-    added: list[str] = []
     suffixes = tuple(project.source_suffix)
-
+    entries: list[tuple[str, Path, Path]] = []
     for abs_path in files:
+        if not abs_path.is_file():
+            msg = (
+                f"sphinx-mounts: listed file does not exist and the whole "
+                f"mount is skipped: {abs_path}"
+            )
+            log_warning(logger, msg, "missing_path")
+            return []
         suffix = _match_suffix(abs_path.name, suffixes)
         if suffix is None:
             msg = (
                 f"sphinx-mounts: file {abs_path} has no extension matching "
-                f"the project's source_suffix {list(suffixes)!r}. Add a "
-                f"parser extension (e.g. myst_parser for .md) or remove "
-                f"the file from the mount's `files` list."
+                f"the project's source_suffix {list(suffixes)!r} — the "
+                f"whole mount is skipped. Add a parser extension (e.g. "
+                f"myst_parser for .md) or remove the file from the "
+                f"mount's `files` list."
             )
-            raise ValueError(msg)
+            log_warning(logger, msg, "unknown_suffix")
+            return []
         docname_tail = abs_path.name[: -len(suffix)]
         docname = _join_mount(mount.mount_at, docname_tail)
-        _register(project, docname, abs_path, mount.mount_at)
-        project._doc_roots[docname] = (abs_path.parent, mount.path_check)
+        entries.append((docname, abs_path, abs_path.parent))
+    return _attach_entries(project, mount, entries, index)
+
+
+def _attach_entries(
+    project: _MountAwareProject,
+    mount: MountConfig,
+    entries: list[tuple[str, Path, Path]],
+    index: int,
+) -> list[str]:
+    """Register a mount's ``(docname, abs_path, root)`` entries.
+
+    Every docname is checked for collisions **before** anything is
+    registered: if any is already provided by the host project or an
+    earlier mount, the whole mount is skipped with a single
+    ``mounts.docname_conflict`` warning. Skipping the whole mount rather
+    than the colliding file is deliberate — a partially mounted bundle
+    would leave its sibling files dangling (``toc.not_included``) and
+    could wire broken toctrees, i.e. modify the host project despite the
+    problem. The first provider of a docname wins, so the outcome is
+    deterministic.
+
+    :param project: The Sphinx :class:`Project` to inject into.
+    :param mount: The mount these entries belong to.
+    :param entries: ``(docname, abs_path, path_check_root)`` triples.
+    :param index: The mount's position in the ``mounts`` config list,
+        used in the warning's :func:`mount_label`.
+    :return: The docnames actually registered (``[]`` when the whole
+        mount was skipped).
+    """
+    for docname, abs_path, _root in entries:
+        if docname in project.docnames:
+            existing = project._docname_to_path.get(docname)
+            msg = (
+                f"sphinx-mounts: docname conflict for {docname!r}: "
+                f"{mount_label(mount, index)} would supply {abs_path}, "
+                f"but {existing} already provides it — the whole mount "
+                f"is skipped."
+            )
+            log_warning(logger, msg, "docname_conflict")
+            return []
+    added: list[str] = []
+    for docname, abs_path, root in entries:
+        project.docnames.add(docname)
+        path_key = _PathKey(abs_path)
+        project._docname_to_path[docname] = path_key
+        project._path_to_docname[path_key] = docname
+        project._doc_roots[docname] = (root, mount.path_check)
         added.append(docname)
+        logger.debug("sphinx-mounts: mounted %s -> %s", docname, abs_path)
     return added
-
-
-def _register(
-    project: Project, docname: str, abs_path: Path, mount_at: str | None
-) -> None:
-    """Add a single (docname, abs_path) entry to the project, checking for
-    collisions with already-registered docnames."""
-    if docname in project.docnames:
-        existing = project._docname_to_path.get(docname)
-        mount_label = "<root>" if mount_at is None else repr(mount_at)
-        msg = (
-            f"sphinx-mounts: docname conflict for {docname!r}: "
-            f"mount {mount_label} would supply {abs_path}, "
-            f"but {existing} already provides it."
-        )
-        raise ValueError(msg)
-    project.docnames.add(docname)
-    path_key = _PathKey(abs_path)
-    project._docname_to_path[docname] = path_key
-    project._path_to_docname[path_key] = docname
-    logger.debug("sphinx-mounts: mounted %s -> %s", docname, abs_path)
 
 
 def _match_suffix(filename: str, suffixes: Iterable[str]) -> str | None:

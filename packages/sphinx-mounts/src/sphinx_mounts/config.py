@@ -13,13 +13,34 @@ from pathlib import Path
 import tomllib
 from typing import Any
 
-
-class TomlConfigError(Exception):
-    """Raised when the TOML config file cannot be parsed or is malformed."""
+from sphinx.errors import ExtensionError
 
 
-class MountConfigError(ValueError):
-    """Raised when a mount configuration entry is invalid."""
+class TomlConfigError(ExtensionError):
+    """Raised when the TOML config file cannot be parsed or is malformed.
+
+    Subclasses :class:`sphinx.errors.ExtensionError`, so Sphinx aborts the
+    build with a concise ``Extension error`` message instead of a raw
+    traceback (the crash report on Sphinx ≥ 8 also names this extension via
+    its ``modname``). Config errors are deliberately *not* suppressible:
+    sphinx-mounts cannot proceed at all when the configuration is
+    unreadable.
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, modname="sphinx_mounts")
+
+
+class MountConfigError(ExtensionError):
+    """Raised when a mount configuration entry is invalid.
+
+    Subclasses :class:`sphinx.errors.ExtensionError` for the same reason as
+    :class:`TomlConfigError` — a malformed entry means the build cannot
+    proceed, and users must not be able to suppress it away.
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, modname="sphinx_mounts")
 
 
 @dataclass(frozen=True, slots=True)
@@ -82,7 +103,8 @@ class MountConfig:
             to ``0`` (the first toctree). Ignored when ``attach_to`` is
             ``None``. If the document contains no toctree, a new one is
             created and the entry is appended; if the index exceeds the
-            number of toctrees present, the build fails loudly.
+            number of toctrees present, a ``mounts.toctree_index`` warning
+            is emitted and the mount is left unwired.
         entry_doc: Mount-relative docname of the entry document to wire
             into the host toctree. Defaults to ``"index"``. The resulting
             docname is ``f"{mount_at}/{entry_doc}"`` — or just
@@ -96,14 +118,17 @@ class MountConfig:
             Requires ``attach_to``; mutually exclusive with a non-default
             ``entry_doc``; rejected in directory mode. Defaults to
             ``False``.
-        strict_mount_at: When ``True``, fail the build if the host
-            project already has a directory at ``<srcdir>/<mount_at>/``.
+        strict_mount_at: When ``True``, emit a ``mounts.mount_at_occupied``
+            warning (escalating to a failure under ``sphinx-build -W``) if
+            the host project already has a directory at
+            ``<srcdir>/<mount_at>/``.
             Defaults to ``False`` — the existing per-docname collision
             check is the only gate, which lets a mount slot under a
             host-owned staging directory that holds non-source siblings
             (assets, READMEs). Set to ``True`` to treat any host
             directory at ``mount_at`` as a misconfiguration, catching
-            the mistake earlier than per-docname collisions would.
+            the mistake earlier than per-docname collisions would (the
+            check fires even when no concrete docname collides).
             Incompatible with a root mount (``mount_at = None``), since
             the host srcdir always exists; that combination is rejected
             at config validation.
@@ -246,6 +271,21 @@ class MountConfig:
             strict_mount_at=entry.get("strict_mount_at", False),
             path_check=entry.get("path_check", "error"),
         )
+
+
+def mount_label(mount: MountConfig, index: int) -> str:
+    """Human-readable identifier for a mount, used in warning messages.
+
+    Names the mount's position in the ``mounts`` config list plus its
+    source path, so a warning is actionable without counting config
+    blocks: ``mounts[0] (dir=/abs/path)`` in directory mode, or
+    ``mounts[1] (files=/a.rst, /b.rst)`` in file-list mode.
+    """
+    if mount.dir is not None:
+        source = f"dir={mount.dir}"
+    else:
+        source = f"files={', '.join(map(str, mount.files or ()))}"
+    return f"mounts[{index}] ({source})"
 
 
 def _coerce_path(raw: Any) -> Path:
@@ -409,26 +449,29 @@ def parse_mounts(raw: Any, confdir: Path) -> tuple[MountConfig, ...]:
         of mappings or :class:`MountConfig` instances.
     :param confdir: Confdir path, used to resolve relative ``dir`` paths.
     :return: Tuple of validated mount configs with absolute ``dir`` paths.
-    :raises TypeError: If ``raw`` is not a sequence of mappings.
-    :raises MountConfigError: If a mapping fails validation.
-    :raises FileNotFoundError: If a ``dir`` directory does not exist.
+    :raises MountConfigError: If ``raw`` is not a sequence of mappings, a
+        mapping fails validation, or a ``dir``/``files`` path cannot be
+        resolved. These are hard, non-suppressible errors — the build
+        cannot proceed with an unreadable configuration. A path that
+        resolves but does *not exist on disk* is not an error here: it is
+        reported as a ``mounts.missing_path`` warning at mount time, so a
+        build whose upstream bundle is absent (e.g. CI that has not run the
+        Bazel build yet) can still proceed.
     """
     if raw is None:
         return ()
     if not isinstance(raw, list | tuple):
         msg = f"`mounts` must be a list of mappings; got {type(raw).__name__}."
-        raise TypeError(msg)
+        raise MountConfigError(msg)
 
     resolved: list[MountConfig] = []
     for index, entry in enumerate(raw):
         mount = _entry_to_mount_config(entry, index)
         resolved_dir = (
-            _resolve_dir(mount.dir, confdir, index) if mount.dir is not None else None
+            _resolve_dir(mount.dir, confdir) if mount.dir is not None else None
         )
         resolved_files = (
-            _resolve_files(mount.files, confdir, index)
-            if mount.files is not None
-            else None
+            _resolve_files(mount.files, confdir) if mount.files is not None else None
         )
         resolved.append(
             MountConfig(
@@ -458,39 +501,27 @@ def _entry_to_mount_config(entry: Any, index: int) -> MountConfig:
         f"`mounts[{index}]` must be a mapping or MountConfig; "
         f"got {type(entry).__name__}."
     )
-    raise TypeError(msg)
+    raise MountConfigError(msg)
 
 
-def _resolve_dir(mount_dir: Path, confdir: Path, index: int) -> Path:
-    resolved = (
+def _resolve_dir(mount_dir: Path, confdir: Path) -> Path:
+    # Existence is checked at mount time (warn + skip), so a missing
+    # directory does not fail the whole build here.
+    return (
         (confdir / mount_dir).resolve()
         if not mount_dir.is_absolute()
         else mount_dir.resolve()
     )
-    if not resolved.is_dir():
-        msg = f"`mounts[{index}].dir` does not exist or is not a directory: {resolved}"
-        raise FileNotFoundError(msg)
-    return resolved
 
 
-def _resolve_files(
-    files: tuple[Path, ...], confdir: Path, index: int
-) -> tuple[Path, ...]:
-    file_list: list[Path] = []
-    for file_index, raw_file in enumerate(files):
-        f = (
-            (confdir / raw_file).resolve()
-            if not raw_file.is_absolute()
-            else raw_file.resolve()
-        )
-        if not f.is_file():
-            msg = (
-                f"`mounts[{index}].files[{file_index}]` does not exist or is "
-                f"not a file: {f}"
-            )
-            raise FileNotFoundError(msg)
-        file_list.append(f)
-    return tuple(file_list)
+def _resolve_files(files: tuple[Path, ...], confdir: Path) -> tuple[Path, ...]:
+    # Existence is checked per file at mount time (warn + skip).
+    return tuple(
+        (confdir / raw_file).resolve()
+        if not raw_file.is_absolute()
+        else raw_file.resolve()
+        for raw_file in files
+    )
 
 
 def load_mounts_from_toml(toml_path: Path) -> list[dict[str, Any]] | None:

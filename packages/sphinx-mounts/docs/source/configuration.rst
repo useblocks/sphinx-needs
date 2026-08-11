@@ -96,11 +96,14 @@ discovery.
 
 **Mounting never shadows host files.** On Linux, mounting onto a
 non-empty directory hides the original contents until you unmount.
-In sphinx-mounts, a mounted file that would produce the same docname
-as a host file is **rejected at build time** with a
-``docname conflict`` error. Nothing is silently hidden; conflicts
-have to be resolved by the author (rename one side, narrow the
-mount's ``include`` / ``exclude``, or move the host file).
+In sphinx-mounts, a mount that would produce a docname already
+provided by the host project (or by an earlier mount) is **skipped
+entirely** with a ``docname conflict`` warning — the colliding file
+*and* its siblings, so the host project stays completely untouched.
+Nothing is silently hidden; conflicts have to be resolved by the
+author (rename one side, narrow the mount's ``include`` /
+``exclude``, or move the host file). See :ref:`warnings-and-errors`
+for how to suppress or escalate the warning.
 
 **There is no "unmount".** The mount mapping is read once per
 ``sphinx-build`` invocation and has no runtime lifecycle. Removing a
@@ -183,10 +186,12 @@ and never neither.
      - one of
      - **File-list mode.** Array of paths to individual source files.
        May be absolute, or relative to the
-       :ref:`path anchor <path-anchoring>`. Each listed file must
+       :ref:`path anchor <path-anchoring>`. Each listed file should
        exist at build time and have an extension Sphinx knows about;
-       an unrecognised extension is an error (the user explicitly
-       asked for the file, so silently skipping it would be wrong).
+       a file that does not exist or has an unrecognised extension
+       makes the **whole mount skipped** with a warning (the user
+       explicitly asked for the files, so a silent skip would be wrong
+       — see :ref:`warnings-and-errors`).
        Each file's *basename* (minus the matched suffix) becomes the
        docname tail under ``mount_at`` — subdirectories in the file
        paths are ignored, the result is a flat namespace. May contain
@@ -278,7 +283,8 @@ project as-is, with no prefix renaming:
 
 The host project is responsible for ensuring no docname collides with
 its own files. If a bundle file would shadow a host doc, sphinx-mounts
-raises a ``docname conflict`` error at build time.
+skips the **whole mount** and emits a ``docname conflict`` warning at
+build time — see :ref:`warnings-and-errors`.
 
 .. _strict-mount-at:
 
@@ -303,7 +309,8 @@ to share with mounted content — but in tightly-disciplined
 projects, the silent-pass case is the wrong default.
 
 Set ``strict_mount_at = true`` on a mount to make any host
-directory at ``<srcdir>/<mount_at>/`` an immediate build error:
+directory at ``<srcdir>/<mount_at>/`` skip the whole mount with a
+``mount_at_occupied`` warning (see :ref:`warnings-and-errors`):
 
 .. code-block:: toml
 
@@ -313,12 +320,15 @@ directory at ``<srcdir>/<mount_at>/`` an immediate build error:
    strict_mount_at = true
 
 The check fires before any file discovery, with a message naming
-the offending host path. Only the leaf path is inspected; a host
-directory at a *parent* of ``mount_at`` (e.g. ``_generated/``) is
-fine — the mount slots a virtual subdirectory under a real host
-section dir, which is a normal pattern. The flag is mode-agnostic:
-file-list mounts honour it the same way directory mounts do, since
-both share the ``mount_at`` docname prefix.
+the offending host path, and nothing of the mount is attached —
+an occupied mount point means the bundle cannot be added without
+modifying the host, so the only clean reaction is to skip it. Only
+the leaf path is inspected; a host directory at a *parent* of
+``mount_at`` (e.g. ``_generated/``) is fine — the mount slots a
+virtual subdirectory under a real host section dir, which is a normal
+pattern. The flag is mode-agnostic: file-list mounts honour it the
+same way directory mounts do, since both share the ``mount_at``
+docname prefix.
 
 ``strict_mount_at = true`` paired with a root mount (``mount_at``
 omitted) is rejected at config validation — the host srcdir always
@@ -702,3 +712,80 @@ List it under ``exclude``:
 
 Files whose suffix is outside ``source_suffix`` — ``.puml``, ``.json`` — need no
 exclude, since discovery never picks them up.
+
+.. _warnings-and-errors:
+
+Warnings and errors
+-------------------
+
+sphinx-mounts distinguishes two classes of problems:
+
+**Hard errors — the configuration is unreadable.** Malformed TOML, wrong
+types, unknown keys, and contradictory options are reported as
+``Extension error`` messages and abort the build. sphinx-mounts cannot
+proceed at all when the configuration is uninterpretable, so these
+errors are deliberately *not* suppressible.
+
+**Warnings — mount-specific problems.** Everything that affects a single
+mount is reported as a warning, the build continues with the **whole
+mount skipped** (so the host project is left completely untouched — no
+partial mounts, no orphaned siblings, no dangling toctree references),
+and the first provider of a docname wins. Every such warning carries the
+warning ``type`` ``mounts`` with a per-problem ``subtype``, so it can be
+identified as coming from sphinx-mounts, suppressed selectively (or all
+at once), and escalated to a failed build:
+
+.. list-table::
+   :widths: 30 70
+   :header-rows: 1
+
+   * - Warning type
+     - Meaning
+   * - ``mounts.attach_to_missing``
+     - ``attach_to`` references a docname that does not exist
+   * - ``mounts.docname_conflict``
+     - a mount would shadow a docname already provided by the host
+       project or an earlier mount; the whole mount is skipped
+   * - ``mounts.missing_path``
+     - a configured ``dir`` / ``files`` path does not exist on disk;
+       the whole mount is skipped
+   * - ``mounts.mount_at_occupied``
+     - ``strict_mount_at`` is set and the host already has a directory
+       at the mount point; the whole mount is skipped
+   * - ``mounts.path_escape``
+     - a mounted doc references a file outside its bundle root (with
+       ``path_check = "warn"``)
+   * - ``mounts.toctree_index``
+     - ``toctree_index`` exceeds the number of toctrees in the
+       ``attach_to`` document; the mount is left unwired and its docs are
+       marked as orphans, so no ``toc.not_included`` follows
+   * - ``mounts.unknown_suffix``
+     - a file-list entry has no extension registered in
+       ``source_suffix``; the whole mount is skipped
+
+.. _suppressing-mount-warnings:
+
+Suppressing and escalating mount warnings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Mount warnings are regular Sphinx warnings, so the standard Sphinx
+mechanisms apply. Suppress one problem (or all of them) in ``conf.py``
+via :confval:`suppress_warnings <sphinx:suppress_warnings>`:
+
+.. code-block:: python
+
+   suppress_warnings = [
+       "mounts",                  # every sphinx-mounts warning
+       "mounts.docname_conflict", # …or just this one problem
+   ]
+
+Sphinx matches warning types exactly (``type``, ``type.*``, or
+``type.subtype``). Listing ``"mounts"`` silences every sphinx-mounts
+warning at once, while ``"mounts.docname_conflict"`` silences only that
+one; individual subtypes and the whole extension can be mixed freely.
+
+To turn any mount problem into a hard build failure instead, build with
+``sphinx-build -W`` (warnings as errors) — the warning then fails the
+build exactly where the problem occurs. This is the escalation path for
+users who want mount conflicts or missing bundles to break CI rather
+than degrade the docs.

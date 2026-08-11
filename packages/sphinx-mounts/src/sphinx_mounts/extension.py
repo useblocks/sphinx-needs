@@ -13,7 +13,13 @@ from sphinx.errors import ExtensionError
 from sphinx.util import logging
 
 from sphinx_mounts import __version__
-from sphinx_mounts.config import MountConfig, load_mounts_from_toml, parse_mounts
+from sphinx_mounts.config import (
+    MountConfig,
+    load_mounts_from_toml,
+    mount_label,
+    parse_mounts,
+)
+from sphinx_mounts.logging import log_warning
 from sphinx_mounts.mounter import _MountAwareProject, install_mount_aware_project
 
 logger = logging.getLogger(__name__)
@@ -104,8 +110,9 @@ def _on_doctree_read(app: Sphinx, doctree: nodes.document) -> None:
     file-list mount, *every* docname the mount produced is appended, in
     ``files`` order. If the host doc contains no toctree at all, a new
     one is added beneath the first section. If ``toctree_index`` exceeds
-    the number of toctrees in the doc, raise :class:`ExtensionError` —
-    silent misconfiguration would leave the mount unreferenced.
+    the number of toctrees in the doc, a ``mounts.toctree_index`` warning
+    is emitted and the mount is left unwired — the host doc is never
+    modified against the author's layout.
     """
     parsed: tuple[MountConfig, ...] = getattr(app, _CACHED_KEY, ())
     if not parsed:
@@ -115,18 +122,36 @@ def _on_doctree_read(app: Sphinx, doctree: nodes.document) -> None:
     if not targets:
         return
 
-    mount_docnames: dict[int, list[str]] = getattr(
-        getattr(app.env, "project", None), "_mount_entry_docnames", {}
-    )
+    project = getattr(app.env, "project", None)
+    mount_docnames: dict[int, list[str]] = getattr(project, "_mount_entry_docnames", {})
     toctrees: list[addnodes.toctree] = list(doctree.findall(addnodes.toctree))
 
     for index, mount in targets:
         entries = _mount_toctree_entries(mount, index, mount_docnames)
+        # Gate on what THIS mount actually produced: a mount that was
+        # skipped entirely (missing bundle, docname conflict, strict
+        # mount_at violation) or whose entry doc is not among its files
+        # must not inject a reference into the host toctree — a dangling
+        # entry would be an un-suppressible ``toc.not_readable`` /
+        # ``toc.circular`` warning that modifies the host project despite
+        # the problem.
+        produced = set(mount_docnames.get(index, []))
+        entries = [e for e in entries if e in produced]
         if not entries:
             continue
         target = _select_or_create_toctree(
-            doctree, toctrees, docname, mount, entries[0]
+            doctree, toctrees, docname, mount, index, entries[0]
         )
+        if target is None:
+            # toctree_index was out of range — the mount is left unwired.
+            # Mark its docs as orphans so the build emits exactly one
+            # warning (mounts.toctree_index) instead of additionally
+            # reporting each of them as not included in any toctree
+            # (toc.not_included) — the induced error must leave the host
+            # project untouched.
+            for entry in entries:
+                app.env.metadata[entry]["orphan"] = True
+            continue
         added: list[str] = []
         for entry in entries:
             if entry in target["includefiles"]:
@@ -160,20 +185,25 @@ def _mount_toctree_entries(
     return [f"{mount.mount_at}/{mount.entry_doc}"]
 
 
-def _select_or_create_toctree(
+def _select_or_create_toctree(  # noqa: PLR0913
     doctree: nodes.document,
     toctrees: list[addnodes.toctree],
     docname: str,
     mount: MountConfig,
+    index: int,
     seed_entry: str,
-) -> addnodes.toctree:
+) -> addnodes.toctree | None:
     """Return the toctree in ``doctree`` that ``mount`` should extend.
 
     If the doc has no toctree yet, build one (seeded with ``seed_entry``),
     attach it at the end of the first section, and register it in
     ``toctrees`` so later mounts targeting the same doc reuse it. Otherwise
-    return the toctree selected by ``mount.toctree_index``, raising
-    :class:`ExtensionError` when the index is out of range.
+    return the toctree selected by ``mount.toctree_index``. When the index
+    is out of range, emit a ``mounts.toctree_index`` warning and return
+    ``None`` — the mount is left unwired instead of failing the build.
+
+    :param index: The mount's position in the ``mounts`` config list,
+        used in the warning's :func:`mount_label`.
     """
     if not toctrees:
         node = _build_toctree_node(docname, seed_entry)
@@ -181,13 +211,14 @@ def _select_or_create_toctree(
         toctrees.append(node)
         return node
     if mount.toctree_index >= len(toctrees):
-        mount_label = "<root>" if mount.mount_at is None else repr(mount.mount_at)
         msg = (
-            f"sphinx-mounts: mount {mount_label} requested "
+            f"sphinx-mounts: {mount_label(mount, index)} requested "
             f"toctree_index={mount.toctree_index} in host doc "
-            f"{docname!r}, but only {len(toctrees)} toctree(s) exist."
+            f"{docname!r}, but only {len(toctrees)} toctree(s) exist — "
+            f"the mount is not wired into any toctree."
         )
-        raise ExtensionError(msg)
+        log_warning(logger, msg, "toctree_index", location=docname)
+        return None
     return toctrees[mount.toctree_index]
 
 
@@ -197,18 +228,16 @@ def _on_check_consistency(app: Sphinx, env: Any) -> None:
     if not parsed:
         return
     found = set(env.found_docs)
-    for mount in parsed:
+    for index, mount in enumerate(parsed):
         if mount.attach_to is None:
             continue
         if mount.attach_to not in found:
-            mount_label = "<root>" if mount.mount_at is None else repr(mount.mount_at)
-            logger.warning(
-                "sphinx-mounts: mount %s has attach_to=%r, but that "
-                "docname does not exist in the project — nothing was "
-                "extended.",
-                mount_label,
-                mount.attach_to,
+            msg = (
+                f"sphinx-mounts: {mount_label(mount, index)} has "
+                f"attach_to={mount.attach_to!r}, but that docname does "
+                f"not exist in the project — nothing was extended."
             )
+            log_warning(logger, msg, "attach_to_missing")
 
 
 def _on_check_path_confinement(app: Sphinx, env: Any) -> None:  # noqa: ARG001
@@ -249,7 +278,7 @@ def _on_check_path_confinement(app: Sphinx, env: Any) -> None:  # noqa: ARG001
             )
             if mode == "error":
                 raise ExtensionError(msg)
-            logger.warning("%s", msg)
+            log_warning(logger, msg, "path_escape", location=docname)
 
 
 def _build_toctree_node(parent: str, entry: str) -> addnodes.toctree:

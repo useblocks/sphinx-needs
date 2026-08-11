@@ -3,6 +3,58 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+.. note::
+
+   **Breaking behavior change:** problems that previously failed the build
+   outright — a ``docname conflict``, a ``strict_mount_at`` violation, an
+   out-of-range ``toctree_index``, a missing ``dir``/``files`` path, or a
+   file with an unrecognised suffix — are now **warnings**. The affected
+   **whole mount** is skipped — nothing of it is mounted, so the host
+   project stays completely untouched (no partial mounts, no orphaned
+   docs, no dangling toctree references) — and the build continues. To
+   keep treating any of them as a hard failure, build with
+   ``sphinx-build -W`` (warnings as errors).
+
+- Expected configuration problems are now reported through Sphinx's
+  warning/error machinery instead of as ``ValueError`` tracebacks (`issue
+  #25 <https://github.com/useblocks/sphinx-mounts/issues/25>`__):
+
+  - **Hard errors** (unreadable configuration — malformed TOML, wrong
+    types, unknown keys) abort the build as an ``Extension error`` issued
+    by :class:`sphinx.errors.ExtensionError` (attributed to this extension
+    via its ``modname``). They are deliberately not suppressible:
+    sphinx-mounts cannot proceed at all.
+  - **Mount-specific problems** are warnings and each skips the **whole
+    mount**: a ``docname conflict``, a missing ``dir``/``files`` path, a
+    file with an unregistered suffix, and a ``strict_mount_at`` violation
+    all drop the entire mount with exactly one warning — the build then
+    emits *no* further warnings (no ``toc.not_included`` orphans, no
+    ``toc.circular`` toctree noise), proving the host was left untouched.
+    An out-of-range ``toctree_index`` skips only the toctree wiring and
+    marks the mount's docs as orphans (no ``toc.not_included`` follows),
+    and the existing ``attach_to``/``path_check`` warnings are typed too.
+    Each
+    warning names the offending mount by its config index and source path
+    (e.g. ``mounts[0] (dir=/abs/path/to/bundle)``) and carries a
+    ``mounts.<subtype>`` type, so users can suppress one problem
+    (``"mounts.docname_conflict"``) or all of them at once
+    (``"mounts"``) via
+    :confval:`suppress_warnings <sphinx:suppress_warnings>` and escalate
+    it to a build failure with ``sphinx-build -W``. See
+    :ref:`warnings-and-errors`.
+
+- The example project (``tests/example/docs``) gained a **warning
+  showcase**: its ``ubproject.toml`` ends with one commented-out
+  ``[[mounts]]`` block per warning the extension can emit, each with a
+  comment explaining why it fires, backed by the demo bundles in
+  ``tests/example/warnings/bundles/``. Uncomment a block and rebuild to
+  see that warning in isolation; with all blocks commented the example
+  builds warning-clean. See the "Warning showcase" section in
+  ``tests/example/docs/ubproject.toml``.
+
 .. _`release:0.1.3`:
 
 0.1.3

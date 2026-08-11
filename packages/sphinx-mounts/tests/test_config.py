@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from sphinx.errors import ExtensionError
 
 from sphinx_mounts.config import (
     MountConfig,
@@ -13,6 +14,23 @@ from sphinx_mounts.config import (
     load_mounts_from_toml,
     parse_mounts,
 )
+
+
+class TestErrorTaxonomy:
+    """Config validation failures are hard, non-suppressible Sphinx errors.
+
+    They subclass :class:`sphinx.errors.ExtensionError` (a ``SphinxError``),
+    so Sphinx aborts the build with a concise ``Extension error`` message.
+    Users cannot suppress them via ``suppress_warnings`` — an unreadable
+    config means sphinx-mounts cannot proceed at all. This is the counter-
+    part to the soft ``mounts.*`` warnings used for mount-specific problems.
+    """
+
+    def test_mount_config_error_is_extension_error(self) -> None:
+        assert issubclass(MountConfigError, ExtensionError)
+
+    def test_toml_config_error_is_extension_error(self) -> None:
+        assert issubclass(TomlConfigError, ExtensionError)
 
 
 class TestMountConfig:
@@ -328,19 +346,24 @@ class TestParseMounts:
         mounts = parse_mounts([{"dir": str(bundle), "mount_at": "_g/x"}], tmp_path)
         assert mounts[0].dir == bundle.resolve()
 
-    def test_missing_dir_raises(self, tmp_path: Path) -> None:
-        with pytest.raises(FileNotFoundError):
-            parse_mounts(
-                [{"dir": "does_not_exist", "mount_at": "_g/x"}],
-                tmp_path,
-            )
+    def test_missing_dir_resolves_without_raising(self, tmp_path: Path) -> None:
+        """A missing directory is *not* a config error: it resolves to an
+        absolute path and is reported as a ``mounts.missing_path`` warning
+        at mount time, so a build whose upstream bundle is absent (e.g. CI
+        that has not run the Bazel build yet) can still proceed."""
+        mounts = parse_mounts(
+            [{"dir": "does_not_exist", "mount_at": "_g/x"}],
+            tmp_path,
+        )
+        assert len(mounts) == 1
+        assert mounts[0].dir == (tmp_path / "does_not_exist").resolve()
 
     def test_non_list_raises(self, tmp_path: Path) -> None:
-        with pytest.raises(TypeError, match="must be a list"):
+        with pytest.raises(MountConfigError, match="must be a list"):
             parse_mounts({"a": 1}, tmp_path)
 
     def test_non_dict_entry_raises(self, tmp_path: Path) -> None:
-        with pytest.raises(TypeError, match="must be a mapping"):
+        with pytest.raises(MountConfigError, match="must be a mapping"):
             parse_mounts(["not_a_dict"], tmp_path)
 
     def test_accepts_mountconfig_instance(self, tmp_path: Path) -> None:
