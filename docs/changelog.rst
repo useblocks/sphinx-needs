@@ -24,6 +24,21 @@ Improvements
   the ``needs.json`` file. See :ref:`ubCode compatibility <ubcode_compat_options>` for the
   exact per-directive list.
 
+- ✨ The ``max_items`` option on :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and
+  :ref:`needsequence` now limits how many items a view shows (:pr:`1761`)
+
+  The limit is applied after filtering and sorting, so a view keeps the first items it would
+  otherwise have rendered; on :ref:`needsequence` it counts messages rather than needs.
+  ``:max_items: 0`` means no limit, and a view without the option falls back to the new
+  :ref:`needs_views_max_items` configuration, which defaults to ``0`` — so nothing is limited
+  until you ask for it, and existing projects render exactly as before. A view that was
+  truncated says so, instead of silently dropping needs.
+
+  Previously the option was accepted and ignored for `ubCode`_ compatibility, which was only
+  ever in an unreleased state, so no released behaviour changes.
+  The stored environment version is bumped for the new directive option, so the first build
+  after upgrading re-reads every document.
+
 Documentation
 .............
 
