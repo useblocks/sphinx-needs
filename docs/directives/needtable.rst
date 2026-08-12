@@ -367,9 +367,9 @@ so that a build does not have to be read page by page to find it;
 a project that caps deliberately can silence the warning with
 ``suppress_warnings = ["needs.max_items"]``.
 
-The limit counts the needs that passed the filter.
-A table that also sets :ref:`show_parts <needtable_show_parts>` can therefore render more rows than that,
-since the part rows of a kept need are all shown.
+The limit counts the entries the filter returned, which are needs and need parts alike.
+A table that also sets :ref:`show_parts <needtable_show_parts>` can therefore render more rows than the limit,
+since the part rows of a kept entry are all still expanded.
 
 ``:max_items: 0`` means no limit, also for a project that sets :ref:`needs_views_max_items`.
 Without the option, the table shows as many needs as that configuration allows.

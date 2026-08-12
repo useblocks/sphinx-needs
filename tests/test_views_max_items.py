@@ -144,6 +144,51 @@ NEEDS
    :id: USER_E
 """
 
+DIAMOND_NEEDS = """\
+NEEDS
+=====
+
+.. req:: User A
+   :id: USER_A
+   :links: MSG_1
+
+.. spec:: Message 1
+   :id: MSG_1
+   :links: USER_B, USER_C
+
+.. req:: User B
+   :id: USER_B
+   :links: MSG_2
+
+.. spec:: Message 2
+   :id: MSG_2
+   :links: USER_D
+
+.. req:: User C
+   :id: USER_C
+   :links: MSG_3
+
+.. spec:: Message 3
+   :id: MSG_3
+   :links: USER_D
+
+.. req:: User D
+   :id: USER_D
+   :links: MSG_4
+
+.. spec:: Message 4
+   :id: MSG_4
+   :links: USER_E
+
+.. req:: User E
+   :id: USER_E
+"""
+"""A walk that branches and re-converges, so a cap can fall in the middle of a branch.
+
+Uncapped it draws five messages -- A to B, B to D, D to E, A to C, C to D -- declaring
+USER_A, USER_B, USER_D and USER_C, and leaving only the leaf USER_E to PlantUML.
+"""
+
 NOTICE_CLASS = "needs_max_items_notice"
 
 
@@ -218,6 +263,33 @@ def diagram_ids(source: str) -> set[str]:
     return {need_id for need_id in NEED_IDS if need_id in source}
 
 
+def arrows(uml: str) -> list[str]:
+    """The messages a generated sequence diagram draws, in order."""
+    return [line for line in uml.splitlines() if " -> " in line]
+
+
+def declared(uml: str) -> set[str]:
+    """The ids a generated sequence diagram declares a participant for."""
+    return {
+        line.split(" as ")[1].strip()
+        for line in uml.splitlines()
+        if line.startswith("participant ")
+    }
+
+
+def auto_declared(uml: str) -> set[str]:
+    """The ids that a drawn message refers to without a participant declaration.
+
+    PlantUML creates a lifeline for these itself, labelled with the raw need id rather
+    than the need title. Sphinx-Needs has always left leaf receivers in this state; what
+    matters for ``max_items`` is that truncating a diagram does not add to the set.
+    """
+    referenced = {
+        id_ for arrow in arrows(uml) for id_ in arrow.split(":")[0].split(" -> ")
+    }
+    return {id_.strip() for id_ in referenced} - declared(uml)
+
+
 # 1. the option caps each of the four view directives
 
 
@@ -239,32 +311,50 @@ def test_option_caps_list_and_table(test_app: SphinxTestApp):
 
 
 @pytest.mark.parametrize(
-    "test_app",
+    ("test_app", "expected_ids"),
     [
-        params(
-            ".. needflow::\n   :types: req\n   :max_items: 2\n",
-            plantuml=True,
+        (
+            params(
+                ".. needflow::\n   :types: req\n   :max_items: 2\n",
+                plantuml=True,
+            ),
+            {"REQ_1", "REQ_2"},
         ),
-        params(
-            ".. needflow::\n   :types: req\n   :max_items: 2\n",
-            plantuml=True,
-            needs_flow_engine="graphviz",
+        (
+            params(
+                ".. needflow::\n   :types: req\n   :max_items: 2\n",
+                plantuml=True,
+                needs_flow_engine="graphviz",
+            ),
+            {"REQ_1", "REQ_2"},
         ),
-        params(
-            ".. needsequence::\n   :start: USER_A\n   :max_items: 2\n",
-            needs=SEQUENCE_NEEDS,
-            plantuml=True,
+        (
+            params(
+                ".. needsequence::\n   :start: USER_A\n   :max_items: 2\n",
+                needs=SEQUENCE_NEEDS,
+                plantuml=True,
+            ),
+            None,
         ),
     ],
     ids=["needflow-plantuml", "needflow-graphviz", "needsequence"],
-    indirect=True,
+    indirect=["test_app"],
 )
-def test_option_caps_diagrams(test_app: SphinxTestApp):
-    """A diagram with ``:max_items:`` is truncated, and says what it hides."""
+def test_option_caps_diagrams(test_app: SphinxTestApp, expected_ids: set[str] | None):
+    """A diagram with ``:max_items:`` draws that many items, and says what it hides.
+
+    The generated diagram source is asserted on, not just the notice: a bug that
+    counted correctly whilst drawing everything would otherwise pass.
+    """
     app = test_app
     sources = capture_diagrams(app)
     app.build()
     assert len(sources) == 1
+    source = sources[0]
+    if expected_ids is None:
+        assert len(arrows(source)) == 2
+    else:
+        assert diagram_ids(source) == expected_ids
     html = index_html(app)
     assert NOTICE_CLASS in html
     assert "Showing the first 2 of" in html
@@ -291,35 +381,53 @@ def test_config_caps_list_and_table(test_app: SphinxTestApp):
 
 
 @pytest.mark.parametrize(
-    "test_app",
+    ("test_app", "expected_ids"),
     [
-        params(
-            ".. needflow::\n   :types: req\n",
-            plantuml=True,
-            needs_views_max_items=2,
+        (
+            params(
+                ".. needflow::\n   :types: req\n",
+                plantuml=True,
+                needs_views_max_items=2,
+            ),
+            {"REQ_1", "REQ_2"},
         ),
-        params(
-            ".. needflow::\n   :types: req\n",
-            plantuml=True,
-            needs_flow_engine="graphviz",
-            needs_views_max_items=2,
+        (
+            params(
+                ".. needflow::\n   :types: req\n",
+                plantuml=True,
+                needs_flow_engine="graphviz",
+                needs_views_max_items=2,
+            ),
+            {"REQ_1", "REQ_2"},
         ),
-        params(
-            ".. needsequence::\n   :start: USER_A\n",
-            needs=SEQUENCE_NEEDS,
-            plantuml=True,
-            needs_views_max_items=2,
+        (
+            params(
+                ".. needsequence::\n   :start: USER_A\n",
+                needs=SEQUENCE_NEEDS,
+                plantuml=True,
+                needs_views_max_items=2,
+            ),
+            None,
         ),
     ],
     ids=["needflow-plantuml", "needflow-graphviz", "needsequence"],
-    indirect=True,
+    indirect=["test_app"],
 )
-def test_config_caps_diagrams(test_app: SphinxTestApp):
-    """Without the option, the diagram is capped by ``needs_views_max_items``."""
+def test_config_caps_diagrams(test_app: SphinxTestApp, expected_ids: set[str] | None):
+    """Without the option, the diagram is capped by ``needs_views_max_items``.
+
+    The diagram source is asserted on, so that the configuration path is pinned to
+    actually truncating the drawing, and not only to reporting that it did.
+    """
     app = test_app
     sources = capture_diagrams(app)
     app.build()
     assert len(sources) == 1
+    source = sources[0]
+    if expected_ids is None:
+        assert len(arrows(source)) == 2
+    else:
+        assert diagram_ids(source) == expected_ids
     assert "Showing the first 2 of" in index_html(app)
 
 
@@ -545,22 +653,17 @@ def test_needsequence_caps_messages(test_app: SphinxTestApp):
     assert len(sources) == 1
     uml = sources[0]
 
-    messages = [line for line in uml.splitlines() if " -> " in line]
-    assert messages == [
+    assert arrows(uml) == [
         "USER_A -> USER_B: Message 1",
         "USER_B -> USER_D: Message 2",
     ]
-
-    declared = {
-        line.split(" as ")[1].strip()
-        for line in uml.splitlines()
-        if line.startswith("participant ")
-    }
-    assert declared == {"USER_A", "USER_B"}
-    for participant in declared:
-        assert any(participant in message for message in messages), (
-            f"{participant} is declared but sends and receives nothing"
-        )
+    # USER_C, whose message was dropped, must not be declared: a declared participant
+    # with no arrows is output that truncation added rather than removed
+    assert declared(uml) == {"USER_A", "USER_B"}
+    # and USER_D, which the kept second arrow points at, must not have become
+    # auto-declared by the truncation -- it is a leaf, so it is auto-declared uncapped
+    # too, which is what the companion test pins
+    assert auto_declared(uml) == {"USER_D"}
 
     # the walk keeps counting past the cap, so the total is over all four messages
     assert notice_text(2, 4, "messages") in index_html(app)
@@ -582,14 +685,115 @@ def test_needsequence_caps_messages(test_app: SphinxTestApp):
     indirect=True,
 )
 def test_needsequence_without_a_cap(test_app: SphinxTestApp):
-    """Without a cap the same corpus draws all four messages and no notice."""
+    """Without a cap the same corpus draws all four messages and no notice.
+
+    This also pins what truncation is allowed to change: uncapped, USER_D and USER_E
+    are the leaves that PlantUML auto-creates, and a capped build of the same corpus
+    may not add to that set.
+    """
     app = test_app
     sources = capture_diagrams(app)
     app.build()
     uml = sources[0]
-    assert len([line for line in uml.splitlines() if " -> " in line]) == 4
+    assert len(arrows(uml)) == 4
+    assert declared(uml) == {"USER_A", "USER_B", "USER_C"}
+    assert auto_declared(uml) == {"USER_D", "USER_E"}
     assert NOTICE_CLASS not in index_html(app)
     assert "max_items" not in app._warning.getvalue()
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        params(
+            ".. needsequence::\n   :start: USER_A\n   :max_items: 1\n",
+            needs=SEQUENCE_NEEDS,
+            plantuml=True,
+        )
+    ],
+    indirect=True,
+)
+def test_needsequence_declares_the_receiver_at_the_cap(test_app: SphinxTestApp):
+    """The participant the last drawn message points at keeps its declaration.
+
+    The cap is exhausted *by* that message, so the receiver reaches its declaration
+    with no room left. Suppressing it there would leave PlantUML to auto-create the
+    lifeline and label it ``USER_B`` instead of ``User B`` -- truncation would have
+    changed a participant that is still drawn, instead of only removing ones that are
+    not. Uncapped, USER_B is declared, so this is exactly the set the cap may not grow.
+    """
+    app = test_app
+    sources = capture_diagrams(app)
+    app.build()
+    uml = sources[0]
+
+    assert arrows(uml) == ["USER_A -> USER_B: Message 1"]
+    assert declared(uml) == {"USER_A", "USER_B"}
+    assert 'participant "User B" as USER_B' in uml
+    # nothing is auto-created that would not have been uncapped
+    assert auto_declared(uml) == set()
+    assert notice_text(1, 4, "messages") in index_html(app)
+
+
+@pytest.mark.parametrize(
+    ("test_app", "cap", "expected_arrows", "expected_declared", "expected_auto"),
+    [
+        (
+            params(
+                ".. needsequence::\n   :start: USER_A\n   :max_items: 1\n",
+                needs=DIAMOND_NEEDS,
+                plantuml=True,
+            ),
+            1,
+            ["USER_A -> USER_B: Message 1"],
+            {"USER_A", "USER_B"},
+            set(),
+        ),
+        (
+            params(
+                ".. needsequence::\n   :start: USER_A\n   :max_items: 3\n",
+                needs=DIAMOND_NEEDS,
+                plantuml=True,
+            ),
+            3,
+            [
+                "USER_A -> USER_B: Message 1",
+                "USER_B -> USER_D: Message 2",
+                "USER_D -> USER_E: Message 4",
+            ],
+            {"USER_A", "USER_B", "USER_D"},
+            {"USER_E"},
+        ),
+    ],
+    ids=["cap-1", "cap-3"],
+    indirect=["test_app"],
+)
+def test_needsequence_restores_only_drawn_participants(
+    test_app: SphinxTestApp,
+    cap: int,
+    expected_arrows: list[str],
+    expected_declared: set[str],
+    expected_auto: set[str],
+):
+    """Restoring a suppressed declaration is selective, not a blanket undo.
+
+    On a walk that branches and re-converges, a cap of one suppresses USER_B, USER_D
+    and USER_C in that order, and only USER_B is on the receiving end of the single
+    message drawn -- so only USER_B comes back. At a cap of three, USER_C is still
+    suppressed because its own message was dropped, whilst USER_D is declared because
+    a drawn message points at it. In neither case is a participant declared that no
+    drawn message refers to.
+    """
+    app = test_app
+    sources = capture_diagrams(app)
+    app.build()
+    uml = sources[0]
+
+    assert arrows(uml) == expected_arrows
+    assert declared(uml) == expected_declared
+    # USER_E is the only leaf, so it is auto-created uncapped as well
+    assert auto_declared(uml) == expected_auto
+    assert notice_text(cap, 5, "messages") in index_html(app)
 
 
 # 9. the boundary between capped and not capped
@@ -626,12 +830,17 @@ def test_cap_boundary(test_app: SphinxTestApp, expected_shown: int):
         params(".. needlist::\n   :types: req\n   :max_items: many\n"),
         params(".. needlist::\n   :types: req\n   :max_items: -1\n"),
         params(".. needlist::\n   :types: req\n   :max_items: 1.5\n"),
+        params(".. needlist::\n   :types: req\n   :max_items:\n"),
     ],
-    ids=["not-a-number", "negative", "not-an-integer"],
+    ids=["not-a-number", "negative", "not-an-integer", "no-value"],
     indirect=True,
 )
 def test_invalid_option_value_is_an_error(test_app: SphinxTestApp):
-    """A value that is not a non-negative integer is reported, and nothing is shown."""
+    """A value that is not a non-negative integer is reported, and nothing is shown.
+
+    ``max_items`` takes a value, so the flag-style spelling is refused as well, which
+    is the same contract ``root_depth`` has carried since it was added.
+    """
     app = test_app
     app.build()
     warnings = app._warning.getvalue()

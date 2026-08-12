@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from docutils import nodes
@@ -196,6 +196,8 @@ def process_needsequence(
             p_string += p_string_new
             c_string += c_string_new
 
+        p_string += counter.declarations_to_restore()
+
         puml_node["uml"] += p_string
 
         puml_node["uml"] += "\n' Connection definition \n\n"
@@ -284,14 +286,21 @@ class _MessageCounter:
     """The number of messages the walk would draw, were there no limit."""
     shown: int = 0
     """The number of messages the walk actually drew."""
+    drawn_ids: set[str] = field(default_factory=set)
+    """The ids of the participants that a drawn message refers to."""
+    suppressed: list[tuple[str, str]] = field(default_factory=list)
+    """Participant declarations the cap suppressed, in walk order, as (id, line)."""
 
     @property
     def has_room(self) -> bool:
         """Whether a further message may still be drawn."""
         return self.limit <= 0 or self.shown < self.limit
 
-    def add_message(self) -> bool:
+    def add_message(self, sender_id: str, receiver_id: str) -> bool:
         """Count a message that the walk would draw.
+
+        :param sender_id: the id of the need the message is drawn from.
+        :param receiver_id: the id of the need the message is drawn to.
 
         :return: True if the message is within the cap and should be drawn.
         """
@@ -299,7 +308,26 @@ class _MessageCounter:
         if not self.has_room:
             return False
         self.shown += 1
+        self.drawn_ids.update((sender_id, receiver_id))
         return True
+
+    def declarations_to_restore(self) -> str:
+        """The suppressed declarations of participants that a drawn message refers to.
+
+        The cap is exhausted *by* the last message that is drawn, so the participant on
+        the receiving end of it reaches its declaration after there is no room left.
+        Without restoring it, PlantUML auto-creates that lifeline and labels it with the
+        raw need id, whilst every other lifeline shows a title -- truncation would then
+        have altered a participant that is still drawn, rather than only removing ones
+        that are not.
+
+        Restoring is strictly additive, and only ever undoes the cap's own suppression:
+        nothing is suppressed when there is no limit, and a suppressed declaration is
+        restored only if a message that was drawn refers to it.
+
+        :return: the declarations to append, in walk order.
+        """
+        return "".join(line for id_, line in self.suppressed if id_ in self.drawn_ids)
 
 
 def get_message_needs(
@@ -328,12 +356,16 @@ def get_message_needs(
             "receivers": {},
         }
         if sender["id"] not in tracked_receivers:
+            declaration = 'participant "{}" as {}\n'.format(
+                sender["title"], sender["id"]
+            )
             if counter.has_room:
+                p_string += declaration
+            else:
                 # a participant is only declared whilst the cap has room, so that
-                # truncation can never add a participant that sends no message
-                p_string += 'participant "{}" as {}\n'.format(
-                    sender["title"], sender["id"]
-                )
+                # truncation can never add a participant that sends no message; it is
+                # held here in case a message that was drawn turns out to refer to it
+                counter.suppressed.append((sender["id"], declaration))
             # the sender is tracked even when it was not declared, so that the shape
             # of the walk, and hence the message total, does not depend on the cap
             tracked_receivers.append(sender["id"])
@@ -357,7 +389,7 @@ def get_message_needs(
                     "messages": [],
                 }
 
-                if counter.add_message():
+                if counter.add_message(sender["id"], rec_id):
                     c_string += "{} -> {}: {}\n".format(
                         sender["id"], rec_data["id"], msg_need["title"]
                     )

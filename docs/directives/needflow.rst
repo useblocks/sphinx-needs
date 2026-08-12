@@ -526,6 +526,7 @@ A truncated view says so in the page and emits a ``needs.max_items`` warning,
 so that a build does not have to be read page by page to find it;
 a project that caps deliberately can silence the warning with
 ``suppress_warnings = ["needs.max_items"]``.
+The limit counts the entries the filter returned, which are needs and need parts alike.
 Since the limit is applied before the diagram is built,
 a link to a dropped need is not drawn at all,
 and a need whose parent was dropped is drawn as a root instead of nested.
