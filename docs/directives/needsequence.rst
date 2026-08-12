@@ -170,6 +170,10 @@ The maximum number of messages to show.
 The limit counts messages, that is the arrows of the diagram, and not participants:
 a message need that is linked to three receivers draws three arrows and so counts three times.
 We stop the diagram once it has that many messages, and tell the reader how many messages it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
 A participant is only drawn if it sends one of the messages that are shown.
 
 ``:max_items: 0`` means no limit, also for a project that sets :ref:`needs_views_max_items`.

@@ -21,8 +21,8 @@ from sphinx_needs.diagrams_common import (
     set_plantuml_paths,
 )
 from sphinx_needs.directives.utils import (
-    max_items_paragraph,
     no_needs_found_paragraph,
+    report_max_items,
 )
 from sphinx_needs.filter_common import FilterBase, resolve_max_items
 from sphinx_needs.logging import get_logger, log_warning
@@ -253,7 +253,13 @@ def process_needsequence(
             ]
         if counter.shown < counter.total:
             content.append(
-                max_items_paragraph(counter.shown, counter.total, "messages")  # type: ignore[arg-type]
+                report_max_items(  # type: ignore[arg-type]
+                    counter.shown,
+                    counter.total,
+                    origin="needsequence",
+                    location=node,
+                    unit="messages",
+                )
             )
         if current_needsequence["show_filters"]:
             content.append(get_filter_para(current_needsequence))  # type: ignore[arg-type]

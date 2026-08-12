@@ -77,6 +77,10 @@ The maximum number of needs to show.
 
 We apply the limit after filtering and sorting, so the list keeps the first needs it would otherwise have shown,
 and tells the reader how many needs it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
 
 ``:max_items: 0`` means no limit, also for a project that sets :ref:`needs_views_max_items`.
 Without the option, the list shows as many needs as that configuration allows.

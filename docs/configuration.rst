@@ -709,6 +709,10 @@ It applies to :ref:`needlist`, :ref:`needtable` and :ref:`needflow`, which count
 and to :ref:`needsequence`, which counts messages.
 The limit is applied after filtering and sorting, so a view keeps the first items it would otherwise have shown,
 and reports how many it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
 
 A value of ``0`` means that nothing is limited.
 A single view can opt out of a project-wide limit again with ``:max_items: 0``.

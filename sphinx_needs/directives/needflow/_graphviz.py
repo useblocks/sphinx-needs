@@ -20,7 +20,7 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
-from sphinx_needs.directives.utils import max_items_paragraph, no_needs_found_paragraph
+from sphinx_needs.directives.utils import no_needs_found_paragraph, report_max_items
 from sphinx_needs.errors import NoUri
 from sphinx_needs.filter_common import (
     apply_max_items,
@@ -144,7 +144,12 @@ def process_needflow_graphviz(
             filtered_needs, attributes.get("max_items"), needs_config
         )
         if len(filtered_needs) < total_needs:
-            para = max_items_paragraph(len(filtered_needs), total_needs)
+            para = report_max_items(
+                len(filtered_needs),
+                total_needs,
+                origin="needflow",
+                location=node,
+            )
             # add the paragraph to after the surrounding figure
             node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, para)
 

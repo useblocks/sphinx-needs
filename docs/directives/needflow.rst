@@ -522,6 +522,10 @@ The maximum number of needs to show, applied identically by both engines.
 
 We apply the limit after filtering and sorting, so the diagram keeps the first needs it would otherwise have shown,
 and tells the reader how many needs it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
 Since the limit is applied before the diagram is built,
 a link to a dropped need is not drawn at all,
 and a need whose parent was dropped is drawn as a root instead of nested.

@@ -14,8 +14,8 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import (
     get_option_list,
     get_title,
-    max_items_paragraph,
     no_needs_found_paragraph,
+    report_max_items,
     used_filter_paragraph,
 )
 from sphinx_needs.exceptions import NeedsInvalidException
@@ -393,7 +393,15 @@ def process_needtables(
             # the notice goes after the table, rather than inside it like the filter
             # information, since the table node is what the table styles initialise on
             node.replace_self(
-                [content, max_items_paragraph(len(filtered_needs), total_needs)]
+                [
+                    content,
+                    report_max_items(
+                        len(filtered_needs),
+                        total_needs,
+                        origin="needtable",
+                        location=node,
+                    ),
+                ]
             )
         else:
             node.replace_self(content)

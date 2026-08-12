@@ -9,8 +9,8 @@ from sphinx.application import Sphinx
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsListType, SphinxNeedsData
 from sphinx_needs.directives.utils import (
-    max_items_paragraph,
     no_needs_found_paragraph,
+    report_max_items,
     used_filter_paragraph,
 )
 from sphinx_needs.filter_common import FilterBase, apply_max_items, process_filters
@@ -151,7 +151,14 @@ def process_needlist(
                 no_needs_found_paragraph(current_needfilter.get("filter_warning"))
             )
         if len(found_needs) < total_needs:
-            content.append(max_items_paragraph(len(found_needs), total_needs))
+            content.append(
+                report_max_items(
+                    len(found_needs),
+                    total_needs,
+                    origin="needlist",
+                    location=node,
+                )
+            )
         if current_needfilter["show_filters"]:
             content.append(used_filter_paragraph(current_needfilter))
 

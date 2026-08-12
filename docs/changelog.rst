@@ -32,7 +32,9 @@ Improvements
   ``:max_items: 0`` means no limit, and a view without the option falls back to the new
   :ref:`needs_views_max_items` configuration, which defaults to ``0`` — so nothing is limited
   until you ask for it, and existing projects render exactly as before. A view that was
-  truncated says so, instead of silently dropping needs.
+  truncated says so, instead of silently dropping needs: it adds a notice to the page and
+  emits a ``needs.max_items`` warning, which a project that caps deliberately can silence
+  with ``suppress_warnings = ["needs.max_items"]``.
 
   Previously the option was accepted and ignored for `ubCode`_ compatibility, which was only
   ever in an unreleased state, so no released behaviour changes.

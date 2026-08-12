@@ -415,26 +415,62 @@ def test_zero_means_unlimited(test_app: SphinxTestApp, expected: set[str]):
         assert notice_text(len(expected), 5) in html
 
 
-# 6. the notice appears only when the cap actually bit
+# 6. the notice and the warning appear only when the cap actually bit
 
 
 @pytest.mark.parametrize(
-    "test_app",
+    ("test_app", "origin"),
     [
-        params(".. needlist::\n   :types: req\n   :max_items: 2\n"),
-        params(".. needtable::\n   :types: req\n   :max_items: 2\n"),
+        (params(".. needlist::\n   :types: req\n   :max_items: 2\n"), "needlist"),
+        (params(".. needtable::\n   :types: req\n   :max_items: 2\n"), "needtable"),
+        (
+            params(".. needlist::\n   :types: req\n", needs_views_max_items=2),
+            "needlist",
+        ),
     ],
-    ids=["needlist", "needtable"],
-    indirect=True,
+    ids=["option-needlist", "option-needtable", "config-needlist"],
+    indirect=["test_app"],
 )
-def test_notice_is_rendered_without_a_warning(test_app: SphinxTestApp):
-    """The notice is a rendered node, so that a ``-W`` build still succeeds."""
+def test_truncation_is_reported_twice(test_app: SphinxTestApp, origin: str):
+    """Truncation is reported to the reader and to whoever runs the build.
+
+    The notice is for the page, the warning is for the log, since a notice alone
+    would have to be hunted for across the whole built site. Both fire on the same
+    condition, whether the limit came from the option or from the configuration.
+    """
     app = test_app
     app.build()
     html = index_html(app)
     assert f'class="{NOTICE_CLASS}"' in html
     assert notice_text(2, 5) in html
+
+    warnings = app._warning.getvalue()
+    assert f"{origin}: showing the first 2 of 5 needs, due to the max_items limit." in (
+        warnings
+    )
+    assert "[needs.max_items]" in warnings
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        params(
+            ".. needlist::\n   :types: req\n   :max_items: 2\n",
+            suppress_warnings=["needs.max_items"],
+        )
+    ],
+    indirect=True,
+)
+def test_warning_can_be_suppressed(test_app: SphinxTestApp):
+    """A project that caps deliberately can silence the warning, and keep the notice.
+
+    This is why the warning has its own sub-type: without one, capping a view on
+    purpose would make a ``-W`` build unbuildable.
+    """
+    app = test_app
+    app.build()
     assert app._warning.getvalue() == ""
+    assert notice_text(2, 5) in index_html(app)
 
 
 @pytest.mark.parametrize(
@@ -443,11 +479,12 @@ def test_notice_is_rendered_without_a_warning(test_app: SphinxTestApp):
     indirect=True,
 )
 def test_no_notice_when_nothing_is_hidden(test_app: SphinxTestApp):
-    """A limit that is not reached leaves no trace in the output."""
+    """A limit that is not reached leaves no trace in the output, nor in the log."""
     app = test_app
     app.build()
     assert shown_ids(app) == set(NEED_IDS)
     assert NOTICE_CLASS not in index_html(app)
+    assert app._warning.getvalue() == ""
 
 
 # 7. both needflow engines cap identically
@@ -527,6 +564,10 @@ def test_needsequence_caps_messages(test_app: SphinxTestApp):
 
     # the walk keeps counting past the cap, so the total is over all four messages
     assert notice_text(2, 4, "messages") in index_html(app)
+    assert (
+        "needsequence: showing the first 2 of 4 messages, due to the max_items limit."
+        in app._warning.getvalue()
+    )
 
 
 @pytest.mark.parametrize(
@@ -548,6 +589,7 @@ def test_needsequence_without_a_cap(test_app: SphinxTestApp):
     uml = sources[0]
     assert len([line for line in uml.splitlines() if " -> " in line]) == 4
     assert NOTICE_CLASS not in index_html(app)
+    assert "max_items" not in app._warning.getvalue()
 
 
 # 9. the boundary between capped and not capped

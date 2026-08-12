@@ -362,6 +362,10 @@ The maximum number of needs to show.
 We apply the limit after filtering and after the :ref:`sort <needtable_sort>`,
 so the table keeps the first rows it would otherwise have shown,
 and tells the reader how many needs it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
 
 The limit counts the needs that passed the filter.
 A table that also sets :ref:`show_parts <needtable_show_parts>` can therefore render more rows than that,

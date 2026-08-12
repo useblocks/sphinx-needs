@@ -15,7 +15,7 @@ from sphinx_needs.diagrams_common import (
     set_plantuml_paths,
 )
 from sphinx_needs.directives.needflow._directive import NeedflowPlantuml
-from sphinx_needs.directives.utils import max_items_paragraph, no_needs_found_paragraph
+from sphinx_needs.directives.utils import no_needs_found_paragraph, report_max_items
 from sphinx_needs.filter_common import (
     apply_max_items,
     filter_single_need,
@@ -375,7 +375,14 @@ def process_needflow_plantuml(
             )
 
         if len(found_needs) < total_needs:
-            content.append(max_items_paragraph(len(found_needs), total_needs))
+            content.append(
+                report_max_items(
+                    len(found_needs),
+                    total_needs,
+                    origin="needflow",
+                    location=node,
+                )
+            )
 
         if current_needflow["show_filters"]:
             para = create_filter_paragraph(current_needflow)
