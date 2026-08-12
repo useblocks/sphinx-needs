@@ -323,6 +323,9 @@ To debug which filters are being used across your project and their run times, y
    This includes ``width`` and ``height``: a diagram is rendered at its usual size and no warning is emitted,
    so nothing reports that the requested size had no effect.
 
+   These options may gain native implementations in future Sphinx-Needs releases,
+   in which case they would take effect here as well rather than being ignored.
+
 .. _filter_code:
 
 Filter code
