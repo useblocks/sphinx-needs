@@ -730,6 +730,9 @@ def test_needsequence_declares_the_receiver_at_the_cap(test_app: SphinxTestApp):
     assert arrows(uml) == ["USER_A -> USER_B: Message 1"]
     assert declared(uml) == {"USER_A", "USER_B"}
     assert 'participant "User B" as USER_B' in uml
+    # the declaration must precede the arrow's first mention of the id: PlantUML
+    # auto-creates a lifeline on first mention, so a later declaration is dead
+    assert uml.index('participant "User B" as USER_B') < uml.index("USER_A -> USER_B")
     # nothing is auto-created that would not have been uncapped
     assert auto_declared(uml) == set()
     assert notice_text(1, 4, "messages") in index_html(app)
