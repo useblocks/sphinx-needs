@@ -305,6 +305,27 @@ To debug which filters are being used across your project and their run times, y
    This is deprecated and will be removed in a future version.
    Instead use the above :ref:`needs_debug_filters` configuration option.
 
+.. _ubcode_compat_options:
+.. note::
+
+   **Options accepted for ubCode compatibility.**
+   The `ubCode <https://ubcode.useblocks.com>`__ editor extension supports a few directive options that Sphinx-Needs
+   has no equivalent for:
+
+   * ``cypher`` and ``max_items`` on :ref:`needlist`, :ref:`needtable` and :ref:`needflow`
+   * ``max_items`` on :ref:`needsequence`
+   * ``width`` and ``height`` on :ref:`needflow` and :ref:`needsequence`
+
+   Sphinx-Needs accepts all of these options and then ignores them, so that a document authored for ubCode also
+   builds with Sphinx-Needs instead of failing with an ``unknown option`` error.
+   They never reach the rendered output, the ``needs.json`` file, or any filter.
+
+   This includes ``width`` and ``height``: a diagram is rendered at its usual size and no warning is emitted,
+   so nothing reports that the requested size had no effect.
+
+   These options may gain native implementations in future Sphinx-Needs releases,
+   in which case they would take effect here as well rather than being ignored.
+
 .. _filter_code:
 
 Filter code

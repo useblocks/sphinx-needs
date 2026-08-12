@@ -4,6 +4,38 @@
 Changelog
 =========
 
+.. _`release:unreleased`:
+
+Unreleased
+----------
+
+:Released: Unreleased
+
+Improvements
+............
+
+- ✨ The ``cypher``, ``max_items``, ``width`` and ``height`` directive options are now
+  accepted for `ubCode`_ compatibility (:pr:`1760`)
+
+  :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and :ref:`needsequence` accept these
+  ubCode-only options and then ignore them, so that a document authored for ubCode also
+  builds with Sphinx-Needs, instead of failing with an ``unknown option`` error.
+  Nothing about the build changes: the options never reach a node, the rendered output, or
+  the ``needs.json`` file. See :ref:`ubCode compatibility <ubcode_compat_options>` for the
+  exact per-directive list.
+
+Documentation
+.............
+
+- 📚 ``docs/ubproject.toml``, the `ubCode`_ configuration of this documentation, is brought
+  up to date with current ubCode releases
+
+  It now mirrors the parts of ``conf.py`` that ubCode also understands (the ``|br|``
+  substitution, the ``:pr:`` / ``:issue:`` roles and the intersphinx projects), and drops
+  five ``extend_directives`` entries for directives that ubCode now supports natively.
+  Sphinx is unaffected: ``needs_from_toml`` reads only the ``[needs]`` table, which is
+  unchanged.
+
 .. _`release:8.3.1`:
 
 8.3.1

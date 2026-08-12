@@ -46,6 +46,9 @@ class NeedtableDirective(FilterBase):
         "style_col": directives.unchanged_required,
         "sort": directives.unchanged_required,
         "class": directives.unchanged_required,
+        # ubCode compatibility: accepted and ignored by Sphinx-Needs.
+        "cypher": directives.unchanged,
+        "max_items": directives.unchanged,
     }
 
     # Update the options_spec with values defined in the FilterBase class
