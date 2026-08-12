@@ -380,9 +380,6 @@ def process_needtables(
                 content = table_wrapper
             else:
                 content = table_node
-        # add truncation information to output
-        if len(filtered_needs) < total_needs:
-            content.append(max_items_paragraph(len(filtered_needs), total_needs))
         # add filter information to output
         if current_needtable["show_filters"]:
             table_node.append(used_filter_paragraph(current_needtable))
@@ -392,4 +389,11 @@ def process_needtables(
             title_node = nodes.title(title_text, "", nodes.Text(title_text))
             table_node.insert(0, title_node)
 
-        node.replace_self(content)
+        if len(filtered_needs) < total_needs:
+            # the notice goes after the table, rather than inside it like the filter
+            # information, since the table node is what the table styles initialise on
+            node.replace_self(
+                [content, max_items_paragraph(len(filtered_needs), total_needs)]
+            )
+        else:
+            node.replace_self(content)
