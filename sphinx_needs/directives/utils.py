@@ -48,6 +48,25 @@ def used_filter_paragraph(current_needfilter: NeedsFilteredBaseType) -> nodes.pa
     return para
 
 
+def max_items_paragraph(shown: int, total: int, unit: str = "needs") -> nodes.paragraph:
+    """Create the notice shown when a view was truncated by ``max_items``.
+
+    :param shown: the number of items that are rendered.
+    :param total: the number of items the view would have rendered without a limit.
+    :param unit: the name of the items being counted.
+
+    :return: the notice paragraph.
+    """
+    para = nodes.paragraph()
+    para["classes"].append("needs_max_items_notice")
+    text = (
+        f"Showing the first {shown} of {total} {unit};"
+        " refine the filter or set :max_items: (0 for all)."
+    )
+    para += nodes.emphasis(text, text)
+    return para
+
+
 def get_title(option_string: str) -> tuple[str, str]:
     """
     Returns a tuple of uppercase option and calculated title of given option string.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Any
 
 from docutils import nodes
@@ -19,8 +20,11 @@ from sphinx_needs.diagrams_common import (
     no_plantuml,
     set_plantuml_paths,
 )
-from sphinx_needs.directives.utils import no_needs_found_paragraph
-from sphinx_needs.filter_common import FilterBase
+from sphinx_needs.directives.utils import (
+    max_items_paragraph,
+    no_needs_found_paragraph,
+)
+from sphinx_needs.filter_common import FilterBase, resolve_max_items
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.utils import add_doc, remove_node_from_tree
@@ -43,8 +47,8 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
     option_spec = {
         "start": directives.unchanged,
         "link_types": directives.unchanged,
+        "max_items": directives.nonnegative_int,
         # ubCode compatibility: accepted and ignored by Sphinx-Needs.
-        "max_items": directives.unchanged,
         "width": directives.unchanged,
         "height": directives.unchanged,
     }
@@ -70,6 +74,7 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
             "lineno": self.lineno,
             "target_id": targetid,
             "start": self.options.get("start", ""),
+            "max_items": self.options.get("max_items"),
             **self.collect_filter_attributes(),
             **self.collect_diagram_attributes(),
         }
@@ -162,6 +167,11 @@ def process_needsequence(
         # Add  start participants
         p_string = ""
         c_string = ""
+        # the cap counts messages (arrows), and is shared by all start needs,
+        # since it applies to the diagram as a whole
+        counter = _MessageCounter(
+            resolve_max_items(current_needsequence.get("max_items"), needs_config)
+        )
         for need_id in start_needs_id:
             try:
                 need = all_needs_dict[need_id.strip()]
@@ -181,6 +191,7 @@ def process_needsequence(
                 current_needsequence["link_types"],
                 all_needs_dict,
                 filter=current_needsequence["filter"],
+                counter=counter,
             )
             p_string += p_string_new
             c_string += c_string_new
@@ -240,6 +251,10 @@ def process_needsequence(
             content = [
                 (no_needs_found_paragraph(current_needsequence.get("filter_warning")))  # type: ignore[list-item]
             ]
+        if counter.shown < counter.total:
+            content.append(
+                max_items_paragraph(counter.shown, counter.total, "messages")  # type: ignore[arg-type]
+            )
         if current_needsequence["show_filters"]:
             content.append(get_filter_para(current_needsequence))  # type: ignore[arg-type]
 
@@ -249,6 +264,38 @@ def process_needsequence(
         node.replace_self(content)
 
 
+@dataclass
+class _MessageCounter:
+    """Counts the messages of a sequence diagram, against the ``max_items`` cap.
+
+    The walk keeps counting messages after the cap has been reached,
+    so that the truncation notice can report an honest total.
+    """
+
+    limit: int
+    """The maximum number of messages to draw, zero or less meaning no limit."""
+    total: int = 0
+    """The number of messages the walk would draw, were there no limit."""
+    shown: int = 0
+    """The number of messages the walk actually drew."""
+
+    @property
+    def has_room(self) -> bool:
+        """Whether a further message may still be drawn."""
+        return self.limit <= 0 or self.shown < self.limit
+
+    def add_message(self) -> bool:
+        """Count a message that the walk would draw.
+
+        :return: True if the message is within the cap and should be drawn.
+        """
+        self.total += 1
+        if not self.has_room:
+            return False
+        self.shown += 1
+        return True
+
+
 def get_message_needs(
     app: Sphinx,
     sender: NeedItem,
@@ -256,6 +303,8 @@ def get_message_needs(
     all_needs_dict: NeedsView,
     tracked_receivers: list[str] | None = None,
     filter: str | None = None,
+    *,
+    counter: _MessageCounter,
 ) -> tuple[dict[str, dict[str, Any]], str, str]:
     msg_needs: list[dict[str, Any]] = []
     if tracked_receivers is None:
@@ -273,7 +322,14 @@ def get_message_needs(
             "receivers": {},
         }
         if sender["id"] not in tracked_receivers:
-            p_string += 'participant "{}" as {}\n'.format(sender["title"], sender["id"])
+            if counter.has_room:
+                # a participant is only declared whilst the cap has room, so that
+                # truncation can never add a participant that sends no message
+                p_string += 'participant "{}" as {}\n'.format(
+                    sender["title"], sender["id"]
+                )
+            # the sender is tracked even when it was not declared, so that the shape
+            # of the walk, and hence the message total, does not depend on the cap
             tracked_receivers.append(sender["id"])
         for link_type in link_types:
             receiver_ids = msg_need[link_type]
@@ -295,9 +351,10 @@ def get_message_needs(
                     "messages": [],
                 }
 
-                c_string += "{} -> {}: {}\n".format(
-                    sender["id"], rec_data["id"], msg_need["title"]
-                )
+                if counter.add_message():
+                    c_string += "{} -> {}: {}\n".format(
+                        sender["id"], rec_data["id"], msg_need["title"]
+                    )
 
                 if rec_id not in tracked_receivers:
                     rec_messages, p_string_new, c_string_new = get_message_needs(
@@ -307,6 +364,7 @@ def get_message_needs(
                         all_needs_dict,
                         tracked_receivers,
                         filter=filter,
+                        counter=counter,
                     )
                     p_string += p_string_new
                     c_string += c_string_new
