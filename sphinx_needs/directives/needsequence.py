@@ -43,6 +43,10 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
     option_spec = {
         "start": directives.unchanged,
         "link_types": directives.unchanged,
+        # ubCode compatibility: accepted and ignored by Sphinx-Needs.
+        "max_items": directives.unchanged,
+        "width": directives.unchanged,
+        "height": directives.unchanged,
     }
 
     # Update the options_spec with values defined in the FilterBase class

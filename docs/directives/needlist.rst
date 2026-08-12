@@ -20,6 +20,8 @@ Options
     **needlist** supports the full filtering possibilities of **Sphinx-Needs**.
     Please see :ref:`filter` for more information.
 
+Some further options are accepted only for :ref:`ubCode compatibility <ubcode_compat_options>`, and are otherwise ignored.
+
 
 .. _needlist_show_status:
 

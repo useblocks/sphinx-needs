@@ -33,6 +33,9 @@ class NeedlistDirective(FilterBase):
         "show_status": directives.flag,
         "show_tags": directives.flag,
         "show_filters": directives.flag,
+        # ubCode compatibility: accepted and ignored by Sphinx-Needs.
+        "cypher": directives.unchanged,
+        "max_items": directives.unchanged,
     }
 
     # Update the options_spec with values defined in the FilterBase class

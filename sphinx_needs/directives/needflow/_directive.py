@@ -61,6 +61,11 @@ class NeedflowDirective(FilterBase):
         "show_filters": directives.flag,
         "show_link_names": directives.flag,
         "config": directives.unchanged_required,
+        # ubCode compatibility: accepted and ignored by Sphinx-Needs.
+        "cypher": directives.unchanged,
+        "max_items": directives.unchanged,
+        "width": directives.unchanged,
+        "height": directives.unchanged,
     }
 
     # Update the options_spec with values defined in the FilterBase class

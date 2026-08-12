@@ -118,6 +118,8 @@ The above, linked example gets interpreted for ``needsequence`` as follows:
 Options
 -------
 
+Some further options are accepted only for :ref:`ubCode compatibility <ubcode_compat_options>`, and are otherwise ignored.
+
 start
 ~~~~~
 
