@@ -14,7 +14,7 @@ Unreleased
 Improvements
 ............
 
-- ✨ The ``cypher``, ``max_items``, ``width`` and ``height`` directive options are now
+- ✨ The ``cypher``, ``width`` and ``height`` directive options are now
   accepted for `ubCode`_ compatibility (:pr:`1760`)
 
   :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and :ref:`needsequence` accept these

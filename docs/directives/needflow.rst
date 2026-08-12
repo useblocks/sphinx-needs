@@ -511,6 +511,37 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       :config: default,lefttoright
       :debug:
 
+.. _needflow_max_items:
+
+max_items
+~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The maximum number of needs to show, applied identically by both engines.
+
+We apply the limit after filtering and sorting, so the diagram keeps the first needs it would otherwise have shown,
+and tells the reader how many needs it is hiding.
+Since the limit is applied before the diagram is built,
+a link to a dropped need is not drawn at all,
+and a need whose parent was dropped is drawn as a root instead of nested.
+
+``:max_items: 0`` means no limit, also for a project that sets :ref:`needs_views_max_items`.
+Without the option, the diagram shows as many needs as that configuration allows.
+
+.. syntax-example::
+
+   .. needflow::
+      :tags: flow_example
+      :max_items: 2
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
+      :max_items: 2
+
 common filters
 ~~~~~~~~~~~~~~
 

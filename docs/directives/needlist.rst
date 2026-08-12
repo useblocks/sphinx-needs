@@ -66,6 +66,27 @@ If set, we add the used filter below the needlist results:
       :show_filters:
       :status: done; implemented
 
+.. _needlist_max_items:
+
+max_items
+~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The maximum number of needs to show.
+
+We apply the limit after filtering and sorting, so the list keeps the first needs it would otherwise have shown,
+and tells the reader how many needs it is hiding.
+
+``:max_items: 0`` means no limit, also for a project that sets :ref:`needs_views_max_items`.
+Without the option, the list shows as many needs as that configuration allows.
+
+.. syntax-example::
+
+   .. needlist::
+      :tags: flow_example
+      :max_items: 2
+
 common filters
 ~~~~~~~~~~~~~~
 

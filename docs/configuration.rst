@@ -696,6 +696,29 @@ needs_filter_max_time
 
 If set, warn if any :ref:`filter processing <filter>` call takes longer than the given time in seconds.
 
+.. _`needs_views_max_items`:
+
+needs_views_max_items
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The maximum number of items a view directive shows, when it does not set its own ``max_items`` option.
+
+It applies to :ref:`needlist`, :ref:`needtable` and :ref:`needflow`, which count needs (and need parts),
+and to :ref:`needsequence`, which counts messages.
+The limit is applied after filtering and sorting, so a view keeps the first items it would otherwise have shown,
+and reports how many it is hiding.
+
+A value of ``0`` means that nothing is limited.
+A single view can opt out of a project-wide limit again with ``:max_items: 0``.
+
+.. code-block:: python
+
+   needs_views_max_items = 50
+
+Default: :need_config_default:`views_max_items`
+
 .. _`needs_uml_process_max_time`:
 
 needs_uml_process_max_time
