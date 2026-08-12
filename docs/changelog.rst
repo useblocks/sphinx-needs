@@ -24,6 +24,18 @@ Improvements
   the ``needs.json`` file. See :ref:`ubCode compatibility <ubcode_compat_options>` for the
   exact per-directive list.
 
+Documentation
+.............
+
+- 📚 ``docs/ubproject.toml``, the `ubCode`_ configuration of this documentation, is brought
+  up to date with current ubCode releases
+
+  It now mirrors the parts of ``conf.py`` that ubCode also understands (the ``|br|``
+  substitution, the ``:pr:`` / ``:issue:`` roles and the intersphinx projects), and drops
+  five ``extend_directives`` entries for directives that ubCode now supports natively.
+  Sphinx is unaffected: ``needs_from_toml`` reads only the ``[needs]`` table, which is
+  unchanged.
+
 .. _`release:8.3.1`:
 
 8.3.1
