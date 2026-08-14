@@ -219,6 +219,7 @@ def row_col_maker(
                     need_key,
                     matching_link_confs,
                     render_context=needs_config.render_context,
+                    location=(need_info["docname"], need_info["lineno"]),
                 )
             else:
                 para_col += text_col
@@ -482,7 +483,20 @@ def match_string_link(
     need_key: str,
     matching_link_confs: list[CompiledStringLink],
     render_context: dict[str, Any],
-) -> Any:
+    location: str | tuple[str | None, int | None] | nodes.Node | None = None,
+) -> nodes.Node:
+    """Turn a single field value into a link, if a string link applies to it.
+
+    :param text_item: The text to fall back to, if no link can be created.
+    :param data: The value to search with the string link's regular expression.
+    :param need_key: The name of the need field, used in messages.
+    :param matching_link_confs: The compiled entries naming ``need_key``;
+        only the first is ever used.
+    :param render_context: The ``needs_render_context``, which is merged over
+        the regular expression's named groups.
+    :param location: Where to point a warning, if rendering fails.
+    :return: The link, or the plain text if no link could be created.
+    """
     try:
         link_name = None
         link_url = None
@@ -512,8 +526,11 @@ def match_string_link(
             f'Problems dealing with string to link transformation for value "{data}" of '
             f'option "{need_key}". Error: {e}',
             "layout",
-            None,
+            location,
         )
+        # fall back to the plain text: a template that fails at render time
+        # (an unknown filter, say) must not make the value disappear from the page
+        return nodes.Text(text_item)
     else:
         return ref_item
 

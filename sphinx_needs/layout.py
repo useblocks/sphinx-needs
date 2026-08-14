@@ -526,6 +526,7 @@ class LayoutHandler:
                         need_key=name,
                         matching_link_confs=matching_link_confs,
                         render_context=self.needs_config.render_context,
+                        location=(self.need["docname"], self.need["lineno"]),
                     )
                 else:
                     # Normal text handling

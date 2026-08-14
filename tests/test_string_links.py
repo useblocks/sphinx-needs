@@ -12,6 +12,7 @@ tests come in three flavours:
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -83,6 +84,15 @@ def need_html(app: Any) -> str:
 def warnings_of(app: Any) -> str:
     """Every warning the build emitted, as one string."""
     return strip_colors(app._warning.getvalue())
+
+
+def _meta_span(html: str, field: str) -> str:
+    """Extract the meta-area markup of one field from a rendered page."""
+    match = re.search(
+        rf'<span class="needs_{field}">.*?</span></span>', html, flags=re.DOTALL
+    )
+    assert match is not None, f"no meta area for {field!r} in\n{html}"
+    return match.group(0)
 
 
 # --------------------------------------------------------------------------
@@ -354,3 +364,31 @@ def test_render_context_shadows_capture_groups(
         extra="needs_render_context = {'value': 'CLOBBER'}\n",
     )
     assert 'href="https://tracker.example.com/CLOBBER"' in need_html(app)
+
+
+# --------------------------------------------------------------------------
+# regressions
+# --------------------------------------------------------------------------
+
+
+def test_template_failure_keeps_the_value(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A template that fails at *render* time must not eat the field value.
+
+    An unknown filter only fails once it is rendered, so it escapes the
+    configuration-time check. The value used to vanish from the page entirely.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": {**GOOD_LINK, "link_name": "{{value | no_such_filter}}"}},
+    )
+    warnings = warnings_of(app)
+    assert "Problems dealing with string to link transformation" in warnings
+    # and the warning now says where, rather than only which field
+    assert "index.rst:" in warnings, warnings
+
+    meta = _meta_span(need_html(app), "ticket")
+    assert "AB-1" in meta, meta
+    assert "<a " not in meta, meta
