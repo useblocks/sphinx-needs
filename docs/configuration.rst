@@ -2059,17 +2059,31 @@ template that does not parse, ``options`` that is none of the accepted collectio
 entry still applies. Previously such an entry aborted the build the moment the first need was
 rendered.
 
-The same subtype reports the two cases that used to pass in silence: an unknown key inside an
-entry, and an ``options`` entry naming a field that is registered nowhere. Neither skips the entry.
+The same subtype reports three cases that used to pass in silence: an unknown key inside an
+entry, an ``options`` entry naming a field that is registered nowhere, and an empty ``options``.
+None of them skips the entry.
 
 A template can still fail while it is *rendered* -- an unknown filter, for instance, only fails
-then -- which is reported as a ``needs.layout`` warning; the value renders as plain text.
+then -- which is reported as a ``needs.layout`` warning; the value renders as plain text. Every
+render-time failure uses that subtype, on every surface.
 
-To silence these warnings, add them to Sphinx's ``suppress_warnings``:
+The two subtypes therefore divide as follows, and both take a Sphinx ``suppress_warnings`` entry:
+
+:``needs.string_link``: the configuration is unusable, or contains something that can never
+   apply. Emitted once per problem when the configuration is loaded.
+:``needs.layout``: a template failed while rendering a particular value. Emitted per value, and
+   shared with the other layout-rendering warnings.
 
 .. code-block:: python
 
-   suppress_warnings = ["needs.string_link"]
+   suppress_warnings = ["needs.string_link", "needs.layout"]
+
+.. note::
+
+   If you build with ``-W``, the three silent-no-op cases above and the list-field fix in 8.4.0
+   can turn a build that passed before into one that fails. In particular, a template that fails
+   at render time on a **list** field is now reported (as ``needs.layout``), where the meta area
+   previously failed silently.
 
 .. _`needs_build_json`:
 

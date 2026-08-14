@@ -79,9 +79,15 @@ Improvements
   Every entry is now validated once, during configuration. A problem is reported as a new
   ``needs.string_link`` warning naming the entry, and only that entry is skipped, so a
   configuration that used to fail the build now builds and renders everything else. The same
-  warning covers two cases that previously passed in silence: an unknown key inside an entry,
-  and an ``options`` entry naming a field that is registered nowhere. Neither of those skips
-  the entry. Silence them with ``suppress_warnings = ["needs.string_link"]``.
+  warning covers three cases that previously passed in silence: an unknown key inside an
+  entry, an ``options`` entry naming a field that is registered nowhere, and an empty
+  ``options``. None of those skips the entry.
+
+  **If you build with** ``-W``, note that those three cases turn a build that passes today
+  into one that fails, and so does the list-field fix below. Silence the configuration
+  warnings with ``suppress_warnings = ["needs.string_link"]``; render-time failures keep the
+  existing ``needs.layout`` subtype, so covering both takes
+  ``suppress_warnings = ["needs.string_link", "needs.layout"]``.
 
   Two spellings of ``options`` are now skipped with a warning, and both used to render
   links, so **if your links have disappeared this is the paragraph to read**. A **bare
@@ -114,6 +120,13 @@ Bug fixes
   A field holding a list (``tags``, or any array field) was linked element by element in a
   :ref:`needtable` but rendered as plain text in the need itself. Both surfaces now link the
   elements, so the same field no longer renders differently depending on where you look at it.
+  Empty elements are left alone on both surfaces, rather than linked to the bare url.
+
+  One consequence is worth calling out for ``-W`` builds: a template that fails at render
+  time on a **list** field is now reported (as a ``needs.layout`` warning, the subtype every
+  render-time failure uses), where the meta area previously failed silently. A project whose
+  list-field template is broken and which has no :ref:`needtable` rendering that field emitted
+  no warning at all before.
 
 - 🐛 :ref:`needs_string_links` drops items that are empty once stripped, so ``AB-1, , AB-2``
   is two items rather than three with an empty one in the middle.
