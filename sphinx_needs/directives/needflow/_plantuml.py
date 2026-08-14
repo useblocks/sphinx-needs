@@ -15,8 +15,12 @@ from sphinx_needs.diagrams_common import (
     set_plantuml_paths,
 )
 from sphinx_needs.directives.needflow._directive import NeedflowPlantuml
-from sphinx_needs.directives.utils import no_needs_found_paragraph
-from sphinx_needs.filter_common import filter_single_need, process_filters
+from sphinx_needs.directives.utils import no_needs_found_paragraph, report_max_items
+from sphinx_needs.filter_common import (
+    apply_max_items,
+    filter_single_need,
+    process_filters,
+)
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.needs_schema import LinkSchema
@@ -279,6 +283,9 @@ def process_needflow_plantuml(
             origin="needflow",
             location=node,
         )
+        found_needs, total_needs = apply_max_items(
+            found_needs, current_needflow.get("max_items"), needs_config
+        )
 
         if found_needs:
             plantuml_block_text = ".. plantuml::\n\n   @startuml   @enduml"
@@ -365,6 +372,16 @@ def process_needflow_plantuml(
         else:  # no needs found
             content.append(
                 no_needs_found_paragraph(current_needflow.get("filter_warning"))
+            )
+
+        if len(found_needs) < total_needs:
+            content.append(
+                report_max_items(
+                    len(found_needs),
+                    total_needs,
+                    origin="needflow",
+                    location=node,
+                )
             )
 
         if current_needflow["show_filters"]:

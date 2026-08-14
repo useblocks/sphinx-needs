@@ -350,6 +350,38 @@ It supports comma separated values and will add classes to the already set class
       :style: table
       :class: class_red_border
 
+.. _needtable_max_items:
+
+max_items
+~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The maximum number of needs to show.
+
+We apply the limit after filtering and after the :ref:`sort <needtable_sort>`,
+so the table keeps the first rows it would otherwise have shown,
+and tells the reader how many needs it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
+
+The limit counts the entries the filter returned, which are needs and need parts alike.
+A table that also sets :ref:`show_parts <needtable_show_parts>` can therefore render more rows than the limit,
+since the part rows of a kept entry are all still expanded.
+
+``:max_items: 0`` means no limit, also for a project that sets :ref:`needs_views_max_items`.
+Without the option, the table shows as many needs as that configuration allows.
+
+.. syntax-example::
+
+   .. needtable::
+      :tags: flow_example
+      :style: table
+      :sort: id
+      :max_items: 2
+
 common filters
 ~~~~~~~~~~~~~~
 

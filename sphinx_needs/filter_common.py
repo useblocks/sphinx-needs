@@ -275,6 +275,40 @@ def process_filters(
     return found_needs
 
 
+def resolve_max_items(max_items: int | None, config: NeedsSphinxConfig) -> int:
+    """Resolve the effective item limit of a view directive.
+
+    Note that only an unset option falls back to the configuration,
+    so an explicit ``:max_items: 0`` means "no limit" whatever the configuration says.
+
+    :param max_items: the directive option value, or None if the option was not given.
+    :param config: used for the ``needs_views_max_items`` fallback.
+
+    :return: the effective limit, where zero or less means no limit.
+    """
+    return config.views_max_items if max_items is None else max_items
+
+
+def apply_max_items(
+    needs: list[NeedItem | NeedPartItem],
+    max_items: int | None,
+    config: NeedsSphinxConfig,
+) -> tuple[list[NeedItem | NeedPartItem], int]:
+    """Apply the ``max_items`` cap to an already filtered and sorted list of needs.
+
+    :param needs: the filtered, sorted needs.
+    :param max_items: the directive option value, or None if the option was not given.
+    :param config: used for the ``needs_views_max_items`` fallback.
+
+    :return: the (possibly truncated) needs, and the total before any truncation.
+    """
+    total = len(needs)
+    limit = resolve_max_items(max_items, config)
+    if limit <= 0 or total <= limit:
+        return needs, total
+    return needs[:limit], total
+
+
 def filter_needs_mutable(
     needs: NeedsMutable,
     config: NeedsSphinxConfig,

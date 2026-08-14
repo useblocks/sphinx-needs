@@ -45,7 +45,8 @@ if DOCS_THEME == "sphinx_immaterial":
 # number the `syntax-example` rubrics per document ("Example 1", "Example 2", ...)
 syntax_example_numbering = True
 
-suppress_warnings = ["needs.link_outgoing", "needs.github"]
+# needs.max_items: the max_items examples truncate on purpose
+suppress_warnings = ["needs.link_outgoing", "needs.github", "needs.max_items"]
 
 nitpicky = True
 nitpick_ignore = [
