@@ -445,3 +445,69 @@ def test_border_color_handling(test_app):
         assert "##00FF00" not in prefixed
         assert _outline_colors(unmatched) == []
         assert "#None" not in unmatched
+
+
+HIGHLIGHT_WITH_NEEDS = """\
+Highlight consulting other needs
+================================
+
+.. spec:: Parent
+   :id: PARENT
+
+   .. spec:: Child
+      :id: CHILD
+
+.. needflow::
+   :highlight: len(needs) > 1
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), HIGHLIGHT_WITH_NEEDS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), HIGHLIGHT_WITH_NEEDS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_highlight_can_consult_other_needs(test_app):
+    """A ``:highlight:`` filter sees all needs, whether or not a need has children.
+
+    The graphviz subgraph path (taken by a need with parts or children) used to
+    evaluate the filter without the needs list, so an expression referencing
+    ``needs`` behaved differently -- here it would fail the whole build -- for a
+    parent need than for a leaf one.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert debug.count("line:FF0000") == 2
+    else:
+        # the parent is a subgraph and the child a plain node
+        assert "  color=red;" in debug
+        assert ", color=red]" in debug
