@@ -20,6 +20,12 @@ hide_title = true
 favicon = "_static/sphinx-needs-logo-square-dark.svg"
 # conf.py computes `2017-{now.year}`; TOML is static, so the year is written out.
 copyright = "2017-2026, team useblocks"
+# The furo triple from conf.py's `html_theme_options` (source_repository /
+# source_branch / source_directory), so the built site's view/edit buttons
+# point at the same files the Sphinx build's do.
+source_repository = "https://github.com/useblocks/sphinx-needs"
+source_branch = "master"
+source_directory = "docs/"
 
 [parse]
 # Enable the built-in extension ports used by these docs:
