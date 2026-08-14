@@ -3,6 +3,10 @@
 ubCode understands a handful of directive options that Sphinx-Needs has no
 equivalent for. Sphinx-Needs accepts them, so that documents authored for ubCode
 still build, but they must never influence the Sphinx build in any way.
+
+``max_items`` used to be one of them and is now implemented natively, see
+``test_views_max_items.py``. The fixture still sets it, since a cap that is
+larger than the number of needs must leave the output untouched.
 """
 
 from pathlib import Path
@@ -18,7 +22,7 @@ from sphinx_needs.directives.needlist import Needlist
 from sphinx_needs.directives.needsequence import Needsequence
 from sphinx_needs.directives.needtable import Needtable
 
-COMPAT_OPTIONS = ("cypher", "max_items", "width", "height")
+COMPAT_OPTIONS = ("cypher", "width", "height")
 """All options that are accepted for ubCode compatibility and then ignored."""
 
 VIEW_NODES = (Needlist, Needtable, NeedflowPlantuml, NeedflowGraphiz, Needsequence)

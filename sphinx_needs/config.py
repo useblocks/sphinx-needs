@@ -777,6 +777,10 @@ class NeedsSphinxConfig:
         default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
     )
     """Warn if process_filter runs for longer than this time (in seconds)."""
+    views_max_items: int = field(
+        default=0, metadata={"rebuild": "html", "types": (int,)}
+    )
+    """Maximum number of items shown by a view directive (0, the default, means no limit)."""
     uml_process_max_time: int | float | None = field(
         default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
     )
