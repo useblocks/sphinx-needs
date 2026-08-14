@@ -511,3 +511,53 @@ def test_highlight_can_consult_other_needs(test_app):
         # the parent is a subgraph and the child a plain node
         assert "  color=red;" in debug
         assert ", color=red]" in debug
+
+
+UNKNOWN_CONFIG = """\
+Unknown config
+==============
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :config: nonexistent_cfg
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), UNKNOWN_CONFIG)],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), UNKNOWN_CONFIG)],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_unknown_config_names_its_config_value(test_app):
+    """An unknown ``:config:`` name must point at the config value that holds them.
+
+    Each engine reads its own config value, and the plantuml message used to
+    misspell it as ``need_flows_configs``, which does not exist.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert "config key 'nonexistent_cfg' not in 'needs_flow_configs'" in warnings
+    else:
+        assert "config key 'nonexistent_cfg' not in 'needs_graphviz_styles'" in warnings
+    assert "need_flows_configs" not in warnings
