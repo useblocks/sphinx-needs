@@ -27,11 +27,12 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Final, cast
 
 from sphinx_needs._jinja import CompiledTemplate, compile_template
-from sphinx_needs.config import NeedsSphinxConfig, StringLinkConf
+from sphinx_needs.config import _NEEDS_CONFIG, NeedsSphinxConfig, StringLinkConf
+from sphinx_needs.data import NeedsCoreFields
 from sphinx_needs.logging import get_logger, log_warning
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Container
 
     from sphinx.application import Sphinx
     from sphinx.config import Config
@@ -147,11 +148,13 @@ def split_string_link_value(value: str) -> list[str]:
 def _validate_conf(
     conf: Any,
     *,
+    known_fields: Container[str],
     warn: Callable[[str], None],
 ) -> StringLinkConf | None:
     """Validate a single ``needs_string_links`` entry.
 
     :param conf: The raw entry, as written by the user.
+    :param known_fields: The registered need field names.
     :param warn: Called with a message for every problem found.
     :return: The validated entry, or ``None`` if it must be skipped.
     """
@@ -166,6 +169,14 @@ def _validate_conf(
         )
         return None
 
+    if unknown := sorted(set(conf) - _CONF_KEYS):
+        # warn, but keep the entry: a typo in an extra key must not silently
+        # take a working link away with it
+        warn(
+            f"unknown key(s) {', '.join(repr(k) for k in unknown)} "
+            f"(allowed: {', '.join(sorted(_CONF_KEYS))}), ignored."
+        )
+
     for key in ("regex", "link_url", "link_name"):
         if not isinstance(conf[key], str):
             warn(f"{key!r} must be a string, got {conf[key]!r}, skipping.")
@@ -179,6 +190,13 @@ def _validate_conf(
         # accepted by neither of the two membership tests it has to pass.
         warn(f"'options' must be a list of strings, got {options!r}, skipping.")
         return None
+
+    for option in options:
+        if option not in known_fields:
+            warn(
+                f"'options' names {option!r}, which is not a registered need field, "
+                "so it can never match."
+            )
 
     try:
         re.compile(conf["regex"])
@@ -223,6 +241,7 @@ def compile_string_links(_app: Sphinx, config: Config) -> None:
         needs_config.string_links = {}
         return
 
+    known_fields = {*NeedsCoreFields, *_NEEDS_CONFIG.fields}
     validated: dict[str, StringLinkConf] = {}
     for name, conf in confs.items():
 
@@ -234,7 +253,9 @@ def compile_string_links(_app: Sphinx, config: Config) -> None:
                 None,
             )
 
-        if (checked := _validate_conf(conf, warn=warn)) is not None:
+        if (
+            checked := _validate_conf(conf, known_fields=known_fields, warn=warn)
+        ) is not None:
             validated[name] = checked
 
     if validated != confs:

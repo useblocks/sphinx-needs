@@ -424,3 +424,56 @@ def test_whitespace_only_items_are_dropped(
     meta = _meta_span(need_html(app), "tickets")
     assert meta.count("<a ") == 2, meta
     assert "<em>; </em><em>; </em>" not in meta, meta
+
+
+def test_unknown_key_warns_but_keeps_the_entry(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A misspelled key was swallowed in silence, leaving a working-but-wrong link.
+
+    The entry is kept, so nobody's links vanish over a stray key.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": {**GOOD_LINK, "link_naem": "typo"}},
+    )
+    warnings = warnings_of(app)
+    assert "unknown key(s) 'link_naem'" in warnings, warnings
+    assert "needs.string_link" in warnings, warnings
+    assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
+
+
+def test_undeclared_field_in_options_warns(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """``options`` naming a field that is not registered can never match."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": {**GOOD_LINK, "options": ["ticket", "no_such_field"]}},
+    )
+    warnings = warnings_of(app)
+    assert "'options' names 'no_such_field'" in warnings, warnings
+    assert "not a registered need field" in warnings, warnings
+    # warn only: the entry is still applied to the field that *is* registered
+    assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
+
+
+def test_core_fields_are_accepted_in_options(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A core field is a legitimate string-link target, and must not warn."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "t": {
+                "regex": r"^(?P<value>\w+)$",
+                "link_url": "https://s.example.com/{{value}}",
+                "link_name": "S:{{value}}",
+                "options": ["status"],
+            }
+        },
+    )
+    assert warnings_of(app) == "", warnings_of(app)
