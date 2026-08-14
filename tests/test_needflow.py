@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path, PurePosixPath
 
 import pytest
@@ -27,7 +28,20 @@ needs_types = [
 """
 
 
-def _debug_source(outdir: Path, file: str) -> str:
+#: The graphviz outline color attribute, i.e. ``color`` but not ``fillcolor``.
+_OUTLINE_COLOR = re.compile(r'(?<!fill)color="([^"]*)"')
+
+
+def _outline_colors(source: str) -> list[str]:
+    """Return every graphviz outline color in a diagram source.
+
+    :param source: The generated graphviz source.
+    :return: The value of each ``color`` attribute, in order of appearance.
+    """
+    return _OUTLINE_COLOR.findall(source)
+
+
+def _debug_source(outdir: Path, file: str, index: int = 0) -> str:
     """Return the diagram source emitted by the needflow ``:debug:`` option.
 
     Both engines render it inside a ``<pre>``, but only graphviz syntax highlights
@@ -35,10 +49,11 @@ def _debug_source(outdir: Path, file: str) -> str:
 
     :param outdir: The build output directory.
     :param file: The name of the built HTML page holding the needflow.
-    :return: The concatenated text of every ``<pre>`` block on the page.
+    :param index: The position of the needflow on the page.
+    :return: The text of the requested ``<pre>`` block.
     """
     tree = html_parser.parse(outdir / file)
-    return "\n".join(pre.text_content() for pre in tree.xpath("//pre"))
+    return tree.xpath("//pre")[index].text_content()
 
 
 def _get_svg(config: Config, outdir: Path, file: str, id: str) -> str:
@@ -348,3 +363,85 @@ def test_node_ids_are_injective(test_app):
         assert debug.count('"R-1" [label=') == 1
         assert debug.count('"R=1" [label=') == 1
         assert '"R=1" -> "R-1" [' in debug
+
+
+BORDER_COLORS = """\
+Border colors
+=============
+
+.. spec:: Parent
+   :id: PARENT
+
+   .. spec:: Child
+      :id: CHILD
+
+.. needflow::
+   :border_color: FF0000
+   :debug:
+
+.. needflow::
+   :border_color: #00FF00
+   :debug:
+
+.. needflow::
+   :border_color: [status == 'nonexistent']:0000FF
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), BORDER_COLORS)],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), BORDER_COLORS)],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_border_color_handling(test_app):
+    """``:border_color:`` accepts an optional leading ``#`` and may resolve to nothing.
+
+    Each engine has its own syntax for an outline color, so the option value is
+    normalised before either adds its own prefix -- previously a value written with
+    a ``#`` produced ``##RRGGBB`` (graphviz) or ``line:#RRGGBB`` (plantuml), and a
+    variant expression matching nothing produced the literal color ``#None``
+    (graphviz only).
+
+    The project deliberately holds a need with a child, so that both graphviz node
+    paths -- the plain node and the subgraph -- are covered and must agree.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    outdir = Path(app.outdir)
+    bare = _debug_source(outdir, "index.html", 0)
+    prefixed = _debug_source(outdir, "index.html", 1)
+    unmatched = _debug_source(outdir, "index.html", 2)
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert bare.count("line:FF0000") == 2
+        assert prefixed.count("line:00FF00") == 2
+        assert "line:#00FF00" not in prefixed
+        assert "line:" not in unmatched
+    else:
+        # once for the subgraph (the parent) and once for the plain node (the child),
+        # so the two graphviz node paths are pinned to the same handling
+        assert _outline_colors(bare) == ["#FF0000", "#FF0000"]
+        assert _outline_colors(prefixed) == ["#00FF00", "#00FF00"]
+        assert "##00FF00" not in prefixed
+        assert _outline_colors(unmatched) == []
+        assert "#None" not in unmatched
