@@ -51,7 +51,7 @@ Improvements
   exact per-directive list.
 
 - ✨ The ``max_items`` option on :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and
-  :ref:`needsequence` now limits how many items a view shows (:pr:`1765`)
+  :ref:`needsequence` now limits how many items a view shows (:pr:`1761`)
 
   The limit is applied after filtering and sorting, so a view keeps the first items it would
   otherwise have rendered; on :ref:`needsequence` it counts messages rather than needs.
