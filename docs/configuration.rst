@@ -1623,6 +1623,36 @@ Example:
    **Sphinx-Needs** provides some default layouts. These layouts cannot be overwritten.
    See :ref:`layout list <layouts>` for more information.
 
+.. _`needs_card_layouts`:
+
+needs_card_layouts
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+``needs_card_layouts`` describes layouts declaratively, as a dictionary of *card
+specifications*, and is the recommended way to adjust how needs are rendered.
+Each specification is compiled into a :ref:`needs_layouts` entry of the same name, so a
+card can be used wherever a layout name is accepted.
+
+Please read :ref:`card_layouts` for the full specification vocabulary.
+
+Example:
+
+.. code-block:: python
+
+   needs_card_layouts = {
+       'my_card': {
+           'meta': {'include': ['status', 'tags']},
+           'footer': ['id', 'type'],
+           'collapse': 'closed',
+       }
+   }
+
+A specification that cannot be compiled, or whose name is already taken by a built-in
+layout or a ``needs_layouts`` entry, is reported as a ``needs.card_layout`` warning and
+skipped; the rest of the build is unaffected.
+
 .. _`needs_default_layout`:
 
 needs_default_layout

@@ -14,6 +14,32 @@ Unreleased
 Improvements
 ............
 
+- ✨ New :ref:`needs_card_layouts` configuration, for describing layouts declaratively
+  (:pr:`1765`)
+
+  A *card specification* states what a need should show — ``header``, ``meta``, ``footer``,
+  ``side`` and ``collapse`` — as a small dictionary, instead of as hand-written layout
+  strings. Specifications are compiled into :ref:`needs_layouts` entries during
+  configuration, so a card works wherever a layout name is accepted, and can inherit from
+  another card or from a built-in layout via ``extends``:
+
+  .. code-block:: python
+
+     needs_card_layouts = {
+         "product": {
+             "extends": "clean",
+             "meta": {"include": ["status", "tags"]},
+             "footer": ["id", "type"],
+             "collapse": "closed",
+         }
+     }
+
+  ``needs_layouts`` is unchanged and remains supported for layouts the card vocabulary
+  cannot express. A specification that cannot be compiled, or whose name is already taken
+  by an existing layout, is reported as a new ``needs.card_layout`` warning and skipped,
+  leaving the rest of the build untouched. See :ref:`card_layouts` for the full vocabulary
+  and its documented limits.
+
 - ✨ The ``cypher``, ``width`` and ``height`` directive options are now
   accepted for `ubCode`_ compatibility (:pr:`1760`)
 

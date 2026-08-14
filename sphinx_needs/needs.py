@@ -29,6 +29,7 @@ from sphinx_needs.builder import (
     build_needs_json,
     build_needumls_pumls,
 )
+from sphinx_needs.card_layouts import compile_card_layouts
 from sphinx_needs.config import (
     _NEEDS_CONFIG,
     LinkOptionsType,
@@ -324,6 +325,8 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", load_config_from_toml, priority=10)  # runs early
     app.connect("config-inited", load_config)
     app.connect("config-inited", merge_default_configs)
+    # runs after the built-in layouts are merged in, and before the config is checked
+    app.connect("config-inited", compile_card_layouts, priority=550)
     app.connect("config-inited", check_configuration, priority=600)  # runs late
 
     app.connect("env-before-read-docs", prepare_env)
