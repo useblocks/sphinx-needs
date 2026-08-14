@@ -702,6 +702,9 @@ def test_clean_round_trip_differs_only_in_whitespace() -> None:
         pytest.param({"meta": 3}, "'meta' must be a dict or false", id="bad-meta"),
         pytest.param({"side": 3}, "'side' must be a dict or false", id="bad-side"),
         pytest.param({"side": True}, "'side' must be a dict or false", id="side-true"),
+        # 0 is falsy but is not False: the opt-out is an identity check, and a
+        # truthiness regression would silently accept every falsy value here.
+        pytest.param({"side": 0}, "'side' must be a dict or false", id="side-zero"),
         pytest.param(
             {"content": False}, "'content' cannot be disabled", id="content-false"
         ),
