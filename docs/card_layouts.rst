@@ -262,6 +262,74 @@ Which :ref:`grid <grids>` a card compiles to follows from the regions it declare
      - :ref:`grid_content_footer_side_left` /
        :ref:`grid_content_footer_side_right`
 
+.. _card_layouts_examples:
+
+Rendered examples
+-----------------
+
+The two cards below are declared in this documentation's own ``ubproject.toml`` and read
+through :ref:`needs_from_toml`, so what follows is this page rendering its own
+configuration.
+
+``card_profile`` extends the built-in ``clean`` with a side region holding the need's image
+and id. Since ``span`` is ``"partial"``, the side column stops after the meta region and the
+content runs the full width below it — the :ref:`grid_simple_side_left_partial` grid.
+
+.. code-block:: toml
+
+   [needs.card_layouts.card_profile]
+   extends = "clean"
+
+   [needs.card_layouts.card_profile.meta]
+   exclude = ["layout", "style"]
+
+   [needs.card_layouts.card_profile.side]
+   elements = ["image:image", "id"]
+   position = "left"
+   span = "partial"
+
+.. syntax-example::
+
+   .. spec:: A specification with a picture
+      :id: EX_CARD_PROFILE
+      :author: daniel
+      :image: _images/daniel.png
+      :status: open
+      :tags: example
+      :layout: card_profile
+
+      The side region shows the value of the ``image`` field, then the need's id.
+
+Compare this with the hand-written ``example`` layout in :ref:`own_layouts`, which builds its
+image path out of the ``author`` value with a ``{{author}}`` placeholder. A card names the
+*field* holding the path instead, because a specification is never interpolated into a layout
+string — which is also why the hand-written layout stays the right tool for that job.
+
+``card_summary`` shows two named fields and no links, and puts the id, the type and the layout
+name in a footer — the :ref:`grid_simple_footer` grid. ``collapse = "closed"`` starts the meta
+region collapsed, so the card opens as a title bar above a footer.
+
+.. code-block:: toml
+
+   [needs.card_layouts.card_summary]
+   collapse = "closed"
+   footer = ["id", "type", "layout-echo"]
+
+   [needs.card_layouts.card_summary.meta]
+   include = ["status", "author"]
+   links = false
+
+.. syntax-example::
+
+   .. req:: A requirement summarised on a card
+      :id: EX_CARD_SUMMARY
+      :author: daniel
+      :status: open
+      :tags: example
+      :layout: card_summary
+
+      Use the chevron in the header to open the meta region.
+
 .. _card_layouts_limits:
 
 Limits

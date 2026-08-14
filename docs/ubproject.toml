@@ -407,6 +407,38 @@ head = [
 ]
 meta = ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"]
 
+# Card specifications, rendered live on the `card_layouts` page.
+#
+# The three `[needs.layouts]` entries above stay hand-written on purpose: each
+# uses something the card vocabulary deliberately does not cover -- prose in the
+# head, `permalink()`, `sidebar()` -- which is exactly what makes them the
+# escape-hatch examples on the layout page. The two below are the cases the card
+# vocabulary is for, and they are declared here rather than in `conf.py` so that
+# the `needs_from_toml` path is exercised by this project's own build.
+
+# `clean` plus the need's image beside the header and meta, with the body running
+# full width underneath it (`span = "partial"`).
+[needs.card_layouts.card_profile]
+extends = "clean"
+
+[needs.card_layouts.card_profile.meta]
+exclude = ["layout", "style"]
+
+[needs.card_layouts.card_profile.side]
+elements = ["image:image", "id"]
+position = "left"
+span = "partial"
+
+# A compact card: two named fields, no links, a footer, and the meta region
+# collapsed until the reader opens it.
+[needs.card_layouts.card_summary]
+collapse = "closed"
+footer = ["id", "type", "layout-echo"]
+
+[needs.card_layouts.card_summary.meta]
+include = ["status", "author"]
+links = false
+
 [needs.string_links.config_link]
 regex = "^(?P<value>\\w+)$"
 link_url = "https://sphinxcontrib-needs.readthedocs.io/en/latest/configuration.html#{{value | replace(\"_\", \"-\")}}"
