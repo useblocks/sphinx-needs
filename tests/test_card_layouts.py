@@ -135,6 +135,8 @@ VALID_SPECS: dict[str, dict[str, Any]] = {
         "side": {"elements": ["id"], "position": "right", "span": "partial"}
     },
     "side_empty": {"side": {"elements": []}},
+    "side_false": {"side": False},
+    "extends_side_false": {"extends": "clean_l", "side": False},
     "headerless_side": {
         "header": False,
         "meta": False,
@@ -448,6 +450,7 @@ def test_at_most_one_collapse_button() -> None:
             "simple",
             id="empty-side-is-no-side",
         ),
+        pytest.param({"side": False}, "simple", id="false-side-is-no-side"),
     ],
 )
 def test_grid_selection(spec: dict[str, Any], grid: str) -> None:
@@ -456,6 +459,47 @@ def test_grid_selection(spec: dict[str, Any], grid: str) -> None:
     assert messages == []
     assert compiled is not None
     assert compiled["grid"] == grid
+
+
+@pytest.mark.parametrize(
+    "no_side",
+    [
+        pytest.param(False, id="false"),
+        pytest.param({"elements": []}, id="empty-elements"),
+    ],
+)
+@pytest.mark.parametrize(
+    "spec",
+    [
+        pytest.param({}, id="direct"),
+        pytest.param({"extends": "clean_l"}, id="extends-side-left"),
+        pytest.param({"extends": "clean_rp"}, id="extends-side-right-partial"),
+    ],
+)
+def test_side_opt_out_spellings(spec: dict[str, Any], no_side: Any) -> None:
+    """``side = false`` and an empty ``elements`` list both mean "no side region".
+
+    Both spellings are legal, and both must also work as an opt-out from a base
+    that does carry a side region -- otherwise a card could inherit a side region
+    it has no way to decline.
+    """
+    compiled, messages = compile_spec({**spec, "side": no_side})
+    assert messages == []
+    assert compiled is not None
+    assert compiled["grid"] == "simple"
+    assert "side" not in compiled["layout"]
+
+
+def test_side_opt_out_leaves_the_rest_of_the_base_intact() -> None:
+    """Declining the side region does not decline anything else it inherited."""
+    with_side, _ = compile_spec({"extends": "clean_rp"})
+    without_side, messages = compile_spec({"extends": "clean_rp", "side": False})
+    assert messages == []
+    assert with_side is not None
+    assert without_side is not None
+    assert without_side["layout"]["head"] == with_side["layout"]["head"]
+    assert without_side["layout"]["meta"] == with_side["layout"]["meta"]
+    assert set(with_side["layout"]) - set(without_side["layout"]) == {"side"}
 
 
 @pytest.mark.parametrize(
@@ -656,7 +700,8 @@ def test_clean_round_trip_differs_only_in_whitespace() -> None:
             {"footer": "id"}, "'footer' must be a list of strings", id="bad-footer"
         ),
         pytest.param({"meta": 3}, "'meta' must be a dict or false", id="bad-meta"),
-        pytest.param({"side": 3}, "'side' must be a dict", id="bad-side"),
+        pytest.param({"side": 3}, "'side' must be a dict or false", id="bad-side"),
+        pytest.param({"side": True}, "'side' must be a dict or false", id="side-true"),
         pytest.param(
             {"content": False}, "'content' cannot be disabled", id="content-false"
         ),

@@ -324,15 +324,20 @@ def _parse_meta(
     )
 
 
-def _parse_side(value: Any, warn: Callable[[str], None]) -> SideSpec | None:
+def _parse_side(
+    value: Any, warn: Callable[[str], None]
+) -> SideSpec | None | Literal[False]:
     """Validate the ``side`` key of a specification.
 
     :param value: The raw value of the ``side`` key.
     :param warn: Called with a message for every problem found.
-    :return: The validated region, or ``None`` if the value was invalid.
+    :return: The validated region, ``False`` for "no side region",
+        or ``None`` if the value was invalid.
     """
+    if value is False:
+        return False
     if not isinstance(value, dict):
-        warn(f"'side' must be a dict, got {value!r}, skipping.")
+        warn(f"'side' must be a dict or false, got {value!r}, skipping.")
         return None
     if unknown := sorted(set(value) - _SIDE_KEYS):
         warn(
@@ -464,11 +469,14 @@ def _parse_spec(
         warn(f"'footer' must be a list of strings, got {footer!r}, skipping.")
         return None
 
-    side = None
+    side: SideSpec | None = None
     if (raw_side := merged.get("side")) is not None:
-        side = _parse_side(raw_side, warn)
-        if side is None:
+        # ``side = false`` and ``side = {"elements": []}`` are both spellings of
+        # "no side region"; either one opts a card out of a base's side region.
+        parsed_side = _parse_side(raw_side, warn)
+        if parsed_side is None:
             return None
+        side = None if parsed_side is False else parsed_side
 
     # The built-in-inheritance exemption is deliberately side-only: `clean_l` and its three
     # siblings are the only built-in specifications carrying a field element, and it sits in

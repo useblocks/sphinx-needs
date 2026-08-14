@@ -121,11 +121,13 @@ the need's content.
 ``side``
 ~~~~~~~~
 
-A table describing a column beside the need:
+Either ``False``, for a card without a side region, or a table describing a column beside
+the need:
 
 ``elements``
    An ordered list of :ref:`elements <card_layouts_elements>`. An empty list means no side
-   region.
+   region, exactly as ``side = False`` does — either spelling declines a side region a card
+   would otherwise inherit through ``extends``.
 
 ``position``
    ``"left"`` or ``"right"``, ``"left"`` by default.
