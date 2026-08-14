@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 4
+ENV_DATA_VERSION: Final = 5
 """Version of the data stored in the environment.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
@@ -682,6 +682,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     graphviz_style: GraphvizStyleType
     """Graphviz style configuration."""
 
+    max_items: int | None
+    """Maximum number of needs to show, ``None`` if the option was not given."""
+
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) gantt chart."""
@@ -703,6 +706,9 @@ class NeedsListType(NeedsFilteredBaseType):
     show_tags: bool
     show_status: bool
     show_filters: bool
+
+    max_items: int | None
+    """Maximum number of needs to show, ``None`` if the option was not given."""
 
 
 class NeedsPieType(NeedsBaseDataType):
@@ -726,6 +732,9 @@ class NeedsSequenceType(NeedsFilteredDiagramBaseType):
 
     start: str
 
+    max_items: int | None
+    """Maximum number of messages to show, ``None`` if the option was not given."""
+
 
 class NeedsTableType(NeedsFilteredBaseType):
     """Data for a single (filtered) needs table."""
@@ -741,6 +750,9 @@ class NeedsTableType(NeedsFilteredBaseType):
     sort: str
     show_filters: bool
     show_parts: bool
+
+    max_items: int | None
+    """Maximum number of needs to show, ``None`` if the option was not given."""
 
 
 class NeedsUmlType(NeedsBaseDataType):

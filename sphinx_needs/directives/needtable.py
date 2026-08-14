@@ -15,10 +15,11 @@ from sphinx_needs.directives.utils import (
     get_option_list,
     get_title,
     no_needs_found_paragraph,
+    report_max_items,
     used_filter_paragraph,
 )
 from sphinx_needs.exceptions import NeedsInvalidException
-from sphinx_needs.filter_common import FilterBase, process_filters
+from sphinx_needs.filter_common import FilterBase, apply_max_items, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.needs_schema import LinkSchema
@@ -46,9 +47,9 @@ class NeedtableDirective(FilterBase):
         "style_col": directives.unchanged_required,
         "sort": directives.unchanged_required,
         "class": directives.unchanged_required,
+        "max_items": directives.nonnegative_int,
         # ubCode compatibility: accepted and ignored by Sphinx-Needs.
         "cypher": directives.unchanged,
-        "max_items": directives.unchanged,
     }
 
     # Update the options_spec with values defined in the FilterBase class
@@ -113,6 +114,7 @@ class NeedtableDirective(FilterBase):
             # If not set, the options.get() method returns False
             "show_filters": "show_filters" in self.options,
             "show_parts": self.options.get("show_parts", False) is None,
+            "max_items": self.options.get("max_items"),
             **self.collect_filter_attributes(),
         }
         node = Needtable("", **attributes)
@@ -248,6 +250,12 @@ def process_needtables(
 
         filtered_needs.sort(key=get_sorter(current_needtable["sort"]))
 
+        # the cap is applied after the sort, so that it keeps the first N rows
+        # of the table as it would otherwise have been rendered
+        filtered_needs, total_needs = apply_max_items(
+            filtered_needs, current_needtable.get("max_items"), needs_config
+        )
+
         for need_info in filtered_needs:
             style_row = check_and_get_content(
                 current_needtable["style_row"], need_info, env, node
@@ -381,4 +389,19 @@ def process_needtables(
             title_node = nodes.title(title_text, "", nodes.Text(title_text))
             table_node.insert(0, title_node)
 
-        node.replace_self(content)
+        if len(filtered_needs) < total_needs:
+            # the notice goes after the table, rather than inside it like the filter
+            # information, since the table node is what the table styles initialise on
+            node.replace_self(
+                [
+                    content,
+                    report_max_items(
+                        len(filtered_needs),
+                        total_needs,
+                        origin="needtable",
+                        location=node,
+                    ),
+                ]
+            )
+        else:
+            node.replace_self(content)

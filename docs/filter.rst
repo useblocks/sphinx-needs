@@ -312,8 +312,7 @@ To debug which filters are being used across your project and their run times, y
    The `ubCode <https://ubcode.useblocks.com>`__ editor extension supports a few directive options that Sphinx-Needs
    has no equivalent for:
 
-   * ``cypher`` and ``max_items`` on :ref:`needlist`, :ref:`needtable` and :ref:`needflow`
-   * ``max_items`` on :ref:`needsequence`
+   * ``cypher`` on :ref:`needlist`, :ref:`needtable` and :ref:`needflow`
    * ``width`` and ``height`` on :ref:`needflow` and :ref:`needsequence`
 
    Sphinx-Needs accepts all of these options and then ignores them, so that a document authored for ubCode also
@@ -325,6 +324,8 @@ To debug which filters are being used across your project and their run times, y
 
    These options may gain native implementations in future Sphinx-Needs releases,
    in which case they would take effect here as well rather than being ignored.
+   ``max_items`` was such a case: it is no longer ignored, but limits how many items a view shows,
+   see :ref:`needs_views_max_items`.
 
 .. _filter_code:
 

@@ -10,9 +10,10 @@ from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsListType, SphinxNeedsData
 from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
+    report_max_items,
     used_filter_paragraph,
 )
-from sphinx_needs.filter_common import FilterBase, process_filters
+from sphinx_needs.filter_common import FilterBase, apply_max_items, process_filters
 from sphinx_needs.utils import (
     add_doc,
     check_and_calc_base_url_rel_path,
@@ -33,9 +34,9 @@ class NeedlistDirective(FilterBase):
         "show_status": directives.flag,
         "show_tags": directives.flag,
         "show_filters": directives.flag,
+        "max_items": directives.nonnegative_int,
         # ubCode compatibility: accepted and ignored by Sphinx-Needs.
         "cypher": directives.unchanged,
-        "max_items": directives.unchanged,
     }
 
     # Update the options_spec with values defined in the FilterBase class
@@ -56,6 +57,7 @@ class NeedlistDirective(FilterBase):
             "show_tags": "show_tags" in self.options,
             "show_status": "show_status" in self.options,
             "show_filters": "show_filters" in self.options,
+            "max_items": self.options.get("max_items"),
             **self.collect_filter_attributes(),
         }
         list_node = Needlist("", **attributes)
@@ -79,7 +81,8 @@ def process_needlist(
     builder = app.builder
     env = app.env
 
-    include_needs = NeedsSphinxConfig(env.config).include_needs
+    needs_config = NeedsSphinxConfig(env.config)
+    include_needs = needs_config.include_needs
     # for node in doctree.findall(Needlist):
     for node in found_nodes:
         if not include_needs:
@@ -94,6 +97,9 @@ def process_needlist(
             current_needfilter,
             origin="needlist",
             location=node,
+        )
+        found_needs, total_needs = apply_max_items(
+            found_needs, current_needfilter.get("max_items"), needs_config
         )
 
         if len(found_needs) > 0:
@@ -143,6 +149,15 @@ def process_needlist(
         if len(content) == 0:
             content.append(
                 no_needs_found_paragraph(current_needfilter.get("filter_warning"))
+            )
+        if len(found_needs) < total_needs:
+            content.append(
+                report_max_items(
+                    len(found_needs),
+                    total_needs,
+                    origin="needlist",
+                    location=node,
+                )
             )
         if current_needfilter["show_filters"]:
             content.append(used_filter_paragraph(current_needfilter))
