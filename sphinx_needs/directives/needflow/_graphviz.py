@@ -625,8 +625,12 @@ def _create_legend(
 
     for need_type in need_types:
         title = html.escape(need_type["title"])
-        color = _quote(need_type["color"])
-        label += f'\n<TR><TD align="left" bgcolor={color}>{title}</TD></TR>'
+        # 'color' is optional, and a type without one keeps its row,
+        # without a background color, rather than being dropped from the legend
+        if color := need_type.get("color"):
+            label += f'\n<TR><TD align="left" bgcolor={_quote(color)}>{title}</TD></TR>'
+        else:
+            label += f'\n<TR><TD align="left">{title}</TD></TR>'
 
     label += "\n</TABLE>>"
 
