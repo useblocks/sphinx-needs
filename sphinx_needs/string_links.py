@@ -131,6 +131,19 @@ def string_link_field_names(needs_config: NeedsSphinxConfig) -> set[str]:
     return names
 
 
+def split_string_link_value(value: str) -> list[str]:
+    """Split a field value into the items string links are applied to.
+
+    The value is split on ``,`` and ``;`` and each item is stripped;
+    items that are empty once stripped are dropped, so that ``AB-1, , AB-2``
+    is two items rather than three.
+
+    :param value: The raw field value.
+    :return: The items to render.
+    """
+    return [item for raw in re.split(r",|;", value) if (item := raw.strip())]
+
+
 def _validate_conf(
     conf: Any,
     *,

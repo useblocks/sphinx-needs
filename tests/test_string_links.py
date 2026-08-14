@@ -392,3 +392,35 @@ def test_template_failure_keeps_the_value(
     meta = _meta_span(need_html(app), "ticket")
     assert "AB-1" in meta, meta
     assert "<a " not in meta, meta
+
+
+BLANK_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+   :tickets: AB-1, , AB-2
+
+   Body.
+"""
+
+
+def test_whitespace_only_items_are_dropped(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """``AB-1, , AB-2`` is two items, not three.
+
+    The emptiness test ran on the *unstripped* item, so a whitespace-only
+    item survived it and then stripped to nothing, rendering as a phantom
+    item between two separators.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": {**GOOD_LINK, "options": ["tickets"]}},
+        index=BLANK_INDEX,
+    )
+    meta = _meta_span(need_html(app), "tickets")
+    assert meta.count("<a ") == 2, meta
+    assert "<em>; </em><em>; </em>" not in meta, meta

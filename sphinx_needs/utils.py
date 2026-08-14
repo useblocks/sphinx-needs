@@ -25,6 +25,7 @@ from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.string_links import (
     CompiledStringLink,
     compiled_string_links,
+    split_string_link_value,
     string_link_field_names,
 )
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
@@ -136,8 +137,7 @@ def row_col_maker(
         if isinstance(value, list | set):
             data = value
         elif isinstance(value, str) and need_key in needs_string_links_option:
-            data = re.split(r",|;", value)
-            data = [i.strip() for i in data if len(i) != 0]
+            data = split_string_link_value(value)
         else:
             data = [value]
 

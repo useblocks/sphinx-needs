@@ -31,7 +31,11 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.nodes import Need
-from sphinx_needs.string_links import compiled_string_links, string_link_field_names
+from sphinx_needs.string_links import (
+    compiled_string_links,
+    split_string_link_value,
+    string_link_field_names,
+)
 from sphinx_needs.utils import match_string_link
 
 LOGGER = getLogger(__name__)
@@ -506,7 +510,7 @@ class LayoutHandler:
             needs_string_links_option = string_link_field_names(self.needs_config)
 
             data_list: list[str] = (
-                [i.strip() for i in re.split(r",|;", data) if len(i) != 0]
+                split_string_link_value(data)
                 if name in needs_string_links_option
                 else [data]
             )
