@@ -216,7 +216,11 @@ always compiles to a new, separately named entry.
      - ``meta`` on the ``effective`` tier excluding ``layout`` and ``style``, plus a footer
        echoing both
    * - ``focus``
-     - no header, no meta, a footer showing the id
+     - no header, no meta, a footer showing the id — note that this corresponds to the
+       built-in ``focus_f`` layout, not to the built-in ``focus``, which has no footer at
+       all. The naming is deliberate and shared with the same vocabulary in ubCode; the
+       bare built-in ``focus`` is written ``header = False``, ``meta = False``,
+       ``footer = []``.
    * - ``focus_l`` / ``focus_r``
      - no header, no meta, the id in a side region on the left or right
    * - ``debug``
@@ -297,13 +301,19 @@ A header without a meta region leaves an empty band
    selected on those layout names. A card compiles to its own name and therefore renders the
    id in the normal reading direction.
 
+Layouts registered by services are not part of the collision set
+   Services register their layouts later in the build than card layouts are compiled, so a
+   card named after one of them — ``github``, for the :ref:`GitHub service <github_service>`
+   — takes precedence over it silently, exactly as a :ref:`needs_layouts` entry of that name
+   does today.
+
 Invalid specifications
 ----------------------
 
 A specification that cannot be compiled is reported as a ``needs.card_layout`` warning and
 skipped. The build continues, and every other card still compiles. A card is also skipped,
 rather than used, when its name is already taken by a built-in layout or by a
-:ref:`needs_layouts` entry, so that a card can never shadow an existing layout.
+:ref:`needs_layouts` entry.
 
 To silence these warnings, add them to Sphinx's ``suppress_warnings``:
 

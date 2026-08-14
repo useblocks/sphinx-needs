@@ -470,10 +470,15 @@ def _parse_spec(
         if side is None:
             return None
 
+    # The built-in-inheritance exemption is deliberately side-only: `clean_l` and its three
+    # siblings are the only built-in specifications carrying a field element, and it sits in
+    # their `side` region (upstream's `image` field, which nobody has to register). A footer
+    # element is therefore always user-authored and always validated. Overriding an
+    # inherited region re-keys its origin to the card, which restores validation there too.
     valid = _check_elements(
         footer,
         "footer",
-        validate_fields=origins.get("footer") not in BUILTIN_CARD_SPECS,
+        validate_fields=True,
         known_fields=known_fields,
         warn=warn,
     )

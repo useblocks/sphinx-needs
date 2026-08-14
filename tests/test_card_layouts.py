@@ -551,6 +551,35 @@ def test_builtin_specs_are_never_mutated(name: str) -> None:
     assert BUILTIN_CARD_SPECS[name] == before
 
 
+def test_resolved_spec_shares_no_state_with_its_base() -> None:
+    """A resolved specification must not alias the table it inherited from.
+
+    Reading a resolved specification cannot reveal aliasing, so this writes to it:
+    if the ``extends`` base were taken by reference rather than copied, the write
+    would land in ``BUILTIN_CARD_SPECS`` — and, through the same class of bug, in
+    the layout registry's shared ``LAYOUT_COMMON_SIDE`` object, which four built-in
+    layouts alias.
+    """
+    from sphinx_needs.card_layouts import _resolve_extends
+
+    specs_before = copy.deepcopy(BUILTIN_CARD_SPECS)
+    layouts_before = copy.deepcopy(LAYOUTS)
+
+    messages: list[str] = []
+    resolved = _resolve_extends("card", {"extends": "clean_l"}, {}, messages.append)
+    assert messages == []
+    assert resolved is not None
+    merged, _ = resolved
+
+    # write through every level of the resolved specification
+    merged["collapse"] = "closed"
+    merged["side"]["position"] = "right"
+    merged["side"]["elements"].append("id")
+
+    assert specs_before == BUILTIN_CARD_SPECS
+    assert layouts_before == LAYOUTS
+
+
 @pytest.mark.parametrize(
     "name",
     ["clean_l", "clean_lp", "clean_r", "clean_rp", "focus_f", "focus_l", "focus_r"],
@@ -1182,6 +1211,85 @@ def test_unregistered_field_warns_at_build_time(test_app: Any) -> None:
     )
     html = (app.outdir / "index.html").read_text()
     assert "needs_layout_my_card" in html
+
+
+LAYOUTS_PROBE_CONF = """\
+from pathlib import Path
+
+MY_LAYOUTS = {'mine': {'grid': 'simple', 'layout': {}}}
+needs_layouts = MY_LAYOUTS
+
+
+def setup(app):
+    def _dump(app, exception):
+        Path(app.outdir, 'layouts_probe.txt').write_text(','.join(sorted(MY_LAYOUTS)))
+
+    app.connect('build-finished', _dump)
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (
+                    Path("conf.py"),
+                    conf_py({"my_card": {"footer": ["id"]}}, LAYOUTS_PROBE_CONF),
+                ),
+                (Path("index.rst"), INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_user_layouts_object_survives_a_build(test_app: Any) -> None:
+    """The dict a ``conf.py`` hands over must not collect generated entries.
+
+    A ``conf.py`` module can outlive a single build, so an entry written into its
+    own dict would leak into the next one. The probe holds the reference across
+    the build and reports what it ended up containing.
+    """
+    app = test_app
+    app.build()
+    assert app.warning_list == []
+
+    # the object conf.py handed over still holds exactly what conf.py put in it
+    assert (app.outdir / "layouts_probe.txt").read_text() == "mine"
+    # while the configuration did receive the compiled card
+    assert {"mine", "my_card"} <= set(app.config.needs_layouts)
+    assert "needs_layout_my_card" in (app.outdir / "index.html").read_text()
+
+
+class _StubConfig:
+    """The two configuration values ``compile_card_layouts`` reads and writes."""
+
+    def __init__(self, card_layouts: dict[str, Any], layouts: dict[str, Any]) -> None:
+        self.needs_card_layouts = card_layouts
+        self.needs_layouts = layouts
+
+
+def test_compile_card_layouts_rebinds_instead_of_mutating() -> None:
+    """The compiler must never write into the layouts mapping it was handed.
+
+    Called through a real build this is masked, because ``merge_default_configs``
+    has already rebound ``needs_layouts`` to a fresh dict by the time the compiler
+    runs — so the driver is exercised directly here, on a mapping whose identity
+    the test owns. The guard matters because that mapping is the user's own
+    ``conf.py`` object whenever the upstream ordering changes.
+    """
+    from sphinx_needs.card_layouts import compile_card_layouts
+
+    existing = {"mine": {"grid": "simple", "layout": {}}}
+    config = _StubConfig({"my_card": {"footer": ["id"]}}, existing)
+
+    compile_card_layouts(None, config)  # type: ignore[arg-type]
+
+    assert list(existing) == ["mine"]
+    assert config.needs_layouts is not existing
+    assert set(config.needs_layouts) == {"mine", "my_card"}
 
 
 @pytest.mark.parametrize(
