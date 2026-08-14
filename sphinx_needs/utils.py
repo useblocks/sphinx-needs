@@ -147,7 +147,7 @@ def row_col_maker(
                 link_list.append(link_field.name + "_back")
 
             # For needs_string_links
-            link_string_list = {}
+            link_string_list: dict[str, dict[str, Any]] = {}
             for link_name, link_conf in needs_config.string_links.items():
                 link_string_list[link_name] = {
                     "url_template": compile_template(
@@ -162,9 +162,9 @@ def row_col_maker(
                 }
 
             matching_link_confs = []
-            for link_conf in link_string_list.values():
-                if need_key in link_conf["options"] and len(datum) != 0:
-                    matching_link_confs.append(link_conf)
+            for compiled_conf in link_string_list.values():
+                if need_key in compiled_conf["options"] and len(datum) != 0:
+                    matching_link_confs.append(compiled_conf)
 
             if need_key in link_list and "." in datum:
                 link_id = datum.split(".")[0]

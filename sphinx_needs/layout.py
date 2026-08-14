@@ -14,6 +14,7 @@ from contextlib import suppress
 from functools import lru_cache
 from optparse import Values
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlparse
 
 import requests
@@ -298,7 +299,7 @@ class LayoutHandler:
         # Do not set needs_string_links here and update it.
         # This would lead to deepcopy()-errors, as needs_string_links gets some "pickled" and complex objects are
         # too complex for this.
-        self.string_links = {}
+        self.string_links: dict[str, dict[str, Any]] = {}
         for link_name, link_conf in self.needs_config.string_links.items():
             self.string_links[link_name] = {
                 "url_template": compile_template(
