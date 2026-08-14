@@ -99,8 +99,10 @@ def compiled_string_links(
 ) -> dict[str, CompiledStringLink]:
     """Get the compiled form of every usable ``needs_string_links`` entry.
 
-    Entries that cannot be compiled are skipped silently, because
-    :func:`compile_string_links` has already reported them at ``config-inited``.
+    :func:`compile_string_links` has already validated and compiled each of these at
+    ``config-inited``, so a failure here means the two disagreed. That should be
+    impossible -- both paths compile the same strings -- but it decides whether a
+    user's links render, so it is reported rather than swallowed.
 
     :param needs_config: The sphinx-needs configuration.
     :return: The compiled entries, keyed by their configuration name.
@@ -115,7 +117,14 @@ def compiled_string_links(
                 conf["link_name"],
                 tuple(conf["options"]),
             )
-        except Exception:
+        except Exception as exc:
+            log_warning(
+                LOGGER,
+                f"needs_string_links[{name!r}]: passed validation but failed to "
+                f"compile ({exc}), skipping; its links will not render.",
+                "string_link",
+                None,
+            )
             continue
     return compiled
 

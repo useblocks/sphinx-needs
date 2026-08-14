@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -235,6 +236,35 @@ def test_valid_config_object_survives_a_build(
     app = build(make_app, sphinx_test_tempdir, {"good": GOOD_LINK})
     assert app.config.needs_string_links == {"good": GOOD_LINK}
     assert warnings_of(app) == "", warnings_of(app)
+
+
+def test_valid_config_is_not_rebound() -> None:
+    """The user's own dict object survives, not merely an equal one.
+
+    Equality cannot see this: ``_validate_conf`` hands back the user's own inner
+    dicts, so an unconditional rebind still produces an ``==`` outer dict. Only
+    identity pins the ``validated != confs`` guard.
+    """
+    from sphinx_needs.string_links import compile_string_links
+
+    # 'status' is a core field, so nothing in this configuration warns
+    confs = {"good": {**GOOD_LINK, "options": ["status"]}}
+    config = SimpleNamespace(needs_string_links=confs)
+    compile_string_links(None, config)
+
+    assert config.needs_string_links is confs
+
+
+def test_invalid_config_is_rebound() -> None:
+    """The counterpart: a pruned configuration *must* be a new object."""
+    from sphinx_needs.string_links import compile_string_links
+
+    confs = {"bad": {"options": ["status"]}}
+    config = SimpleNamespace(needs_string_links=confs)
+    compile_string_links(None, config)
+
+    assert config.needs_string_links is not confs
+    assert config.needs_string_links == {}
 
 
 @pytest.mark.parametrize(
@@ -742,3 +772,109 @@ def test_empty_list_elements_are_not_linked(
         ), html
     # and the meta area holds exactly the two links the needtable cell does
     assert meta.count("<a ") == 2, meta
+
+
+def test_compile_divergence_is_reported(monkeypatch: Any) -> None:
+    """A validated entry that will not compile at render time must not go quiet.
+
+    The two paths compile the same strings, so this should be unreachable -- but it
+    decides whether a user's links render, and an unlogged ``except`` on that path is
+    the wrong default.
+    """
+    from sphinx_needs import string_links as module
+
+    def boom(*_args: Any, **_kwargs: Any) -> None:
+        raise RuntimeError("simulated divergence")
+
+    monkeypatch.setattr(module, "_compile_string_link", boom)
+
+    messages: list[tuple[str, str]] = []
+    monkeypatch.setattr(
+        module,
+        "log_warning",
+        lambda _logger, message, subtype, _location: messages.append(
+            (message, subtype)
+        ),
+    )
+
+    config = SimpleNamespace(needs_string_links={"good": dict(GOOD_LINK)})
+    assert module.compiled_string_links(module.NeedsSphinxConfig(config)) == {}
+
+    assert messages, "the failure was swallowed"
+    message, subtype = messages[0]
+    assert "needs_string_links['good']" in message, message
+    assert "passed validation but failed to compile" in message, message
+    assert "simulated divergence" in message, message
+    assert subtype == "string_link"
+
+
+FAIL_LINK = {
+    **GOOD_LINK,
+    "regex": r"^(?P<value>.+)$",
+    "link_name": "{{value | no_such_filter}}",
+}
+
+FAIL_TABLE_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+   :ticket: AB-1
+
+   Body.
+
+.. needtable::
+   :columns: id;ticket
+   :style: table
+"""
+
+FAIL_LIST_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+   :mylist: XX-1, XX-2
+
+   Body.
+"""
+
+
+@pytest.mark.parametrize(
+    ("field", "index", "minimum"),
+    [
+        pytest.param("ticket", INDEX, 1, id="meta-string-field"),
+        pytest.param("mylist", FAIL_LIST_INDEX, 2, id="meta-list-field"),
+        pytest.param("ticket", FAIL_TABLE_INDEX, 2, id="needtable-cell"),
+    ],
+)
+def test_render_failure_warnings_carry_a_location(
+    field: str,
+    index: str,
+    minimum: int,
+    make_app: Any,
+    sphinx_test_tempdir: Any,
+) -> None:
+    """Every call site that can report a render failure passes a location.
+
+    Sphinx prefixes a located warning with ``<path>:<line>: ``, so an unlocated one
+    starts with ``WARNING:``. Asserting that of *every* such line covers all three
+    threaded call sites, including the needtable cell, whose warning shares the need's
+    location with the meta area's.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": {**FAIL_LINK, "options": [field]}},
+        index=index,
+    )
+    lines = [
+        line
+        for line in warnings_of(app).splitlines()
+        if "Problems dealing with string to link transformation" in line
+    ]
+    assert len(lines) >= minimum, warnings_of(app)
+    for line in lines:
+        assert not line.startswith("WARNING:"), line
+        assert "index.rst:" in line, line
