@@ -1943,14 +1943,17 @@ Helpful e.g. to generate a link to a ticket system based on the given ticket num
        }
    }
 
+All four keys are required.
+
 :regex: Must be a valid regular expression. Named capture groups are supported.
 :link_url: The final url as string. Supports Jinja.
 :link_name: The final link name as string. Supports Jinja.
 :options: List of option names, for which the regex shall be checked.
 
-``link_name`` and ``link_url`` support the `Jinja2 <https://jinja.palletsprojects.com>`__ syntax.
+``link_name`` and ``link_url`` are rendered with `MiniJinja <https://github.com/mitsuhiko/minijinja>`__,
+which implements a subset of the Jinja2 syntax; most notably, not every Jinja2 filter exists.
 All named capture group values get injected, so that parts of the option-value can be reused for
-link name and url.
+link name and url. Unnamed groups are not available to the templates.
 
 **Example**:
 
@@ -1985,6 +1988,83 @@ link name and url.
       Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 
 .. note:: You must define the options specified under :ref:`needs_string_links` inside :ref:`needs_fields` as well.
+
+Values are split into items
++++++++++++++++++++++++++++
+
+A field named in any entry's ``options`` has its value **split on ``,`` and ``;``**, and each item
+is stripped and then linked on its own. This is how a field can hold several ticket numbers, as in
+the ``:github: 404,652`` example above.
+
+The splitting applies to every field named in ``options``, whether or not the regular expression
+ends up matching anything, and there is **no way to escape a separator**: a value such as
+``https://example.com/a,b`` is split into two items, of which only the first is linked. If a field
+may hold a literal ``,`` or ``;``, do not name it in ``options``.
+
+Items that are empty once stripped are dropped, so ``AB-1, , AB-2`` is two items. Rendered items
+are joined with ``;``, which means the separators in the output do not necessarily match the ones
+in the source value.
+
+The first entry naming a field wins
++++++++++++++++++++++++++++++++++++
+
+Only the **first** entry whose ``options`` names the field is ever consulted -- entries are tried
+in the order they are declared, and there is **no fallthrough**. If that entry's regular expression
+does not match, the value renders as plain text even when a later entry would have matched it. To
+apply different patterns to one field, combine them into a single regular expression with ``|``.
+
+A value that matches no entry renders as plain text, silently. This is the intended fallback, not
+an error.
+
+The regular expression is searched, not anchored
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+The pattern is applied with Python's ``re.Pattern.search()``, so it is unanchored. On a match, the
+**whole item** is replaced by the rendered link -- any text around the match is discarded. Anchor
+the pattern with ``^`` and ``$`` unless you intend the entire value to be replaced.
+
+Interaction with needs_render_context
++++++++++++++++++++++++++++++++++++++
+
+:ref:`needs_render_context` is merged **over** the named capture groups, so a context key shadows a
+capture group of the same name. As the examples above use ``value`` as their group name, a
+``needs_render_context`` entry called ``value`` will silently rewrite every such link in the
+project. Keys that do not collide are simply available to both templates as extra variables.
+
+Where string links are applied
+++++++++++++++++++++++++++++++
+
+String links are applied in the need's meta area (and therefore in :ref:`needextract` too) and in
+:ref:`needtable` cells. For a field holding a list, each element is linked individually.
+
+They are **not** applied to the ``ID`` column of a needtable, nor to its link-type columns, which
+keep their references to the needs themselves; nor do they appear in ``needs.json``, which always
+holds the raw value.
+
+Invalid configurations
+++++++++++++++++++++++
+
+.. versionchanged:: 8.4.0
+
+   The configuration is validated once, when it is loaded.
+
+An entry that cannot be used -- a missing key, a regular expression that does not compile, a
+template that does not parse, ``options`` that is not a list of strings -- is reported as a
+``needs.string_link`` warning naming the entry, and skipped. The build continues and every other
+entry still applies. Previously such an entry aborted the build the moment the first need was
+rendered.
+
+The same subtype reports the two cases that used to pass in silence: an unknown key inside an
+entry, and an ``options`` entry naming a field that is registered nowhere. Neither skips the entry.
+
+A template can still fail while it is *rendered* -- an unknown filter, for instance, only fails
+then -- which is reported as a ``needs.layout`` warning; the value renders as plain text.
+
+To silence these warnings, add them to Sphinx's ``suppress_warnings``:
+
+.. code-block:: python
+
+   suppress_warnings = ["needs.string_link"]
 
 .. _`needs_build_json`:
 
