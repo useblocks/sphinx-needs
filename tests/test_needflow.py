@@ -561,3 +561,59 @@ def test_unknown_config_names_its_config_value(test_app):
     else:
         assert "config key 'nonexistent_cfg' not in 'needs_graphviz_styles'" in warnings
     assert "need_flows_configs" not in warnings
+
+
+UNKNOWN_LINK_TYPE = """\
+Unknown link type
+=================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :link_types: bogus_lt
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), UNKNOWN_LINK_TYPE),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), UNKNOWN_LINK_TYPE),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_unknown_link_type_warning_has_a_location(test_app):
+    """The unknown link type warning must say which needflow it came from.
+
+    The graphviz engine passed no location, so the warning arrived without the
+    ``file:line`` of the directive that caused it.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).replace(
+        str(app.srcdir) + os.path.sep, "<srcdir>/"
+    )
+
+    assert re.search(
+        r"<srcdir>/index\.rst:\d+: WARNING: Unknown link type BOGUS_LT", warnings
+    )
