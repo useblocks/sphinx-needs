@@ -34,7 +34,12 @@ from sphinx_needs.utils import remove_node_from_tree
 from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
 
-from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
+from ._shared import (
+    create_filter_paragraph,
+    filter_by_tree,
+    get_root_needs,
+    resolve_color,
+)
 
 try:
     from sphinx.writers.html5 import HTML5Translator
@@ -309,7 +314,7 @@ def _render_node(
     ):
         params.append(("color", "red"))
     elif node["border_color"]:
-        color = str(
+        color = resolve_color(
             match_variants(
                 node["border_color"],
                 need.filter_context(),
@@ -360,7 +365,7 @@ def _render_subgraph(
     if node["highlight"] and filter_single_need(need, config, node["highlight"]):
         params.append(("color", "red"))
     elif node["border_color"]:
-        color = str(
+        color = resolve_color(
             match_variants(
                 node["border_color"],
                 need.filter_context(),

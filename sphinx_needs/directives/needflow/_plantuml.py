@@ -29,7 +29,12 @@ from sphinx_needs.utils import remove_node_from_tree
 from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
 
-from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
+from ._shared import (
+    create_filter_paragraph,
+    filter_by_tree,
+    get_root_needs,
+    resolve_color,
+)
 
 logger = get_logger(__name__)
 
@@ -112,13 +117,16 @@ def get_need_node_rep_for_plantuml(
         node_colors.append("line:FF0000")
 
     elif current_needflow["border_color"]:
-        color = match_variants(
-            current_needflow["border_color"],
-            need_info.filter_context(),
-            needs_config.variants,
-            location=(current_needflow["docname"], current_needflow["lineno"]),
+        color = resolve_color(
+            match_variants(
+                current_needflow["border_color"],
+                need_info.filter_context(),
+                needs_config.variants,
+                location=(current_needflow["docname"], current_needflow["lineno"]),
+            )
         )
         if color:
+            # the whole color list is prefixed with a single "#" below
             node_colors.append(f"line:{color}")
 
     # need parts style use default "rectangle"
