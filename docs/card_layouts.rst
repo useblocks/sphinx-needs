@@ -199,6 +199,75 @@ the payload is never itself a literal path or URL.
 
 An element with no value renders nothing, exactly as it does for :ref:`needs_layouts`.
 
+.. _card_layouts_object_form:
+
+The object form
+~~~~~~~~~~~~~~~
+
+Every element string is shorthand for an *object* — a dictionary with a ``type`` key:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - String
+     - Object
+   * - ``"id"``
+     - ``{"type": "id"}``
+   * - ``"field:owner"``
+     - ``{"type": "field", "field": "owner"}``
+   * - ``"image:diagram"``
+     - ``{"type": "image", "field": "diagram"}``
+
+Both spellings are valid wherever elements are accepted, and mix freely in one list.
+An object without options compiles to **exactly** the same layout as its string shorthand —
+the strings stay valid forever and remain the documented default.
+The object form exists to carry options:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 12 12 76
+
+   * - Option
+     - On type
+     - Value
+   * - ``height``
+     - ``image``
+     - The rendered height:
+       a number with an optional ``px``, ``em``, ``rem``, ``%`` or ``pt`` unit,
+       at most 16 characters. A bare number means pixels.
+   * - ``width``
+     - ``image``
+     - The rendered width, with the same value grammar as ``height``.
+   * - ``label``
+     - ``field``
+     - Replaces the field name in the rendered ``name: value`` pair:
+       1–64 characters of letters, digits, spaces and ``_().,/-``,
+       starting and ending alphanumeric.
+
+.. code-block:: python
+
+   needs_card_layouts = {
+       "illustrated": {
+           "footer": [
+               "id",
+               {"type": "field", "field": "owner", "label": "Owned by"},
+           ],
+           "side": {
+               "elements": [{"type": "image", "field": "picture", "height": "40px"}]
+           },
+       }
+   }
+
+``field`` is required for the ``field`` and ``image`` types and forbidden for all others.
+Its value follows the same field-name grammar as the string shorthand,
+and the payload invariant above holds unchanged:
+the value of ``field`` is a **field name**, never a literal path or URL.
+No other type takes any option;
+an option on the wrong type, an unknown key, a missing or extra ``field``,
+or a value outside its grammar makes the specification invalid —
+the card is reported and skipped, exactly like any other invalid specification.
+
 .. _card_layouts_builtins:
 
 Built-in specifications

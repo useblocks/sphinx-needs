@@ -9,8 +9,9 @@ so that everything downstream of the layout registry
 honours them without any change to the renderer.
 
 The compiler only ever emits from the closed set of templates defined in this module.
-User supplied text never reaches a layout string,
-except for field names which are validated against a strict identifier allow-list first.
+The only user text that ever reaches a layout string is a field name
+or a grammar-bound option value,
+each validated against its strict allow-list first.
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ from sphinx_needs.defaults import LAYOUTS
 from sphinx_needs.logging import get_logger, log_warning
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Container, Iterable, Mapping, Sequence
+    from collections.abc import Callable, Container, Iterable, Mapping
 
     from sphinx.application import Sphinx
     from sphinx.config import Config
@@ -113,9 +114,35 @@ _SIDE_SPANS: Final[tuple[SideSpan, ...]] = ("full", "partial")
 _SIMPLE_ELEMENTS: Final = frozenset(
     {"id", "title", "type", "layout_echo", "style_echo"}
 )
+"""The element types that take neither a field nor any option."""
+
+_ELEMENT_TYPES: Final = _SIMPLE_ELEMENTS | {"field", "image"}
+"""Every value the ``type`` key of an object-form element may take."""
+
+_ELEMENT_OPTION_KEYS: Final[dict[str, frozenset[str]]] = {
+    "field": frozenset({"label"}),
+    "image": frozenset({"height", "width"}),
+}
+"""The option keys each element type accepts, beyond ``type`` and ``field``."""
 
 _NAME_PATTERN: Final = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
 """Allow-list for a card name and for any field name interpolated into a layout string."""
+
+_DIMENSION_PATTERN: Final = re.compile(r"^[0-9]+(\.[0-9]+)?(px|em|rem|%|pt)?$")
+"""Allow-list for the ``height`` and ``width`` options; a bare number means pixels."""
+
+_DIMENSION_MAX_LENGTH: Final = 16
+"""Upper bound on the length of a ``height`` or ``width`` value."""
+
+_LABEL_PATTERN: Final = re.compile(
+    r"^[A-Za-z0-9](?:[A-Za-z0-9 _().,/-]{0,62}[A-Za-z0-9])?$"
+)
+"""Allow-list for the ``label`` option: 1-64 characters, alphanumeric at both ends.
+
+Deliberately excludes every RST-active character,
+so a label interpolated into a ``prefix=`` argument can never change
+the meaning of the emitted layout string.
+"""
 
 # --- the closed template set ------------------------------------------------
 # Nothing else is ever emitted. No template contains ``{{``, which the layout
@@ -135,7 +162,9 @@ _ELEMENT_TEMPLATES: Final[dict[str, str]] = {
 }
 _FIELD_TEMPLATE: Final = '<<meta("{name}")>>'
 _FIELD_EMPTIES_TEMPLATE: Final = '<<meta("{name}", show_empty=True)>>'
-_IMAGE_TEMPLATE: Final = '<<image("field:{name}", align="center")>>'
+_FIELD_LABEL_TEMPLATE: Final = '<<meta("{name}", prefix="{label}: ")>>'
+_IMAGE_TEMPLATE: Final = '<<image("field:{name}", {options}align="center")>>'
+_IMAGE_OPTION_TEMPLATE: Final = '{key}="{value}", '
 _META_ALL_TEMPLATE: Final = "<<meta_all({args})>>"
 _META_LINKS_ALL: Final = "<<meta_links_all()>>"
 
@@ -173,10 +202,26 @@ class MetaSpec:
 
 
 @dataclass(frozen=True)
+class ElementSpec:
+    """A validated footer or side element.
+
+    The string shorthand ``field:owner`` and the object form
+    ``{"type": "field", "field": "owner"}`` both normalise to this,
+    so the equivalence of the two spellings holds by construction.
+    """
+
+    type: str
+    field: str | None = None
+    height: str | None = None
+    width: str | None = None
+    label: str | None = None
+
+
+@dataclass(frozen=True)
 class SideSpec:
     """The validated ``side`` region of a card specification."""
 
-    elements: tuple[str, ...] = ()
+    elements: tuple[ElementSpec, ...] = ()
     position: SidePosition = "left"
     span: SideSpan = "full"
 
@@ -187,7 +232,7 @@ class CardSpec:
 
     header: bool = True
     meta: MetaSpec | None = MetaSpec()
-    footer: tuple[str, ...] = ()
+    footer: tuple[ElementSpec, ...] = ()
     side: SideSpec | None = None
     collapse: CollapseMode = "honour"
 
@@ -346,10 +391,14 @@ def _parse_side(
         )
         return None
     elements = value.get("elements", [])
-    if not isinstance(elements, (list, tuple)) or not all(
-        isinstance(item, str) for item in elements
-    ):
-        warn(f"'side.elements' must be a list of strings, got {elements!r}, skipping.")
+    if not isinstance(elements, (list, tuple)):
+        warn(
+            f"'side.elements' must be a list of strings or dicts, "
+            f"got {elements!r}, skipping."
+        )
+        return None
+    parsed_elements = _parse_elements(elements, "side", warn)
+    if parsed_elements is None:
         return None
     position = value.get("position", "left")
     if position not in _SIDE_POSITIONS:
@@ -366,53 +415,164 @@ def _parse_side(
             f"got {span!r}, skipping."
         )
         return None
-    return SideSpec(elements=tuple(elements), position=position, span=span)
+    return SideSpec(elements=parsed_elements, position=position, span=span)
 
 
-def _check_elements(
-    elements: Sequence[str],
-    region: str,
-    *,
-    validate_fields: bool,
-    known_fields: Container[str],
-    warn: Callable[[str], None],
-) -> bool:
-    """Validate the elements of a footer or side region.
+def _parse_element_str(
+    element: str, region: str, warn: Callable[[str], None]
+) -> ElementSpec | None:
+    """Validate a string-form element.
 
-    :param elements: The raw element strings.
+    :param element: The raw element string.
     :param region: Name of the region, used in messages.
-    :param validate_fields: Whether referenced need fields must be registered.
-        Elements inherited from a built-in specification are exempt.
-    :param known_fields: The registered need field names.
     :param warn: Called with a message for every problem found.
-    :return: True if every element is valid.
+    :return: The normalised element, or ``None`` if it was invalid.
     """
+    if element in _SIMPLE_ELEMENTS:
+        return ElementSpec(type=element)
+    prefix, _, field_name = element.partition(":")
+    if prefix not in ("field", "image") or not field_name:
+        warn(
+            f"unknown {region} element {element!r} (allowed: "
+            f"{', '.join(sorted(_SIMPLE_ELEMENTS))}, 'field:<name>', "
+            "'image:<name>'), skipping."
+        )
+        return None
+    if not _NAME_PATTERN.match(field_name):
+        warn(
+            f"invalid field name {field_name!r} in {region} element "
+            f"{element!r}, skipping."
+        )
+        return None
+    return ElementSpec(type=prefix, field=field_name)
+
+
+def _parse_element_dict(
+    element: Mapping[str, Any], region: str, warn: Callable[[str], None]
+) -> ElementSpec | None:
+    """Validate an object-form element.
+
+    :param element: The raw element dict.
+    :param region: Name of the region, used in messages.
+    :param warn: Called with a message for every problem found.
+    :return: The normalised element, or ``None`` if it was invalid.
+    """
+    element_type = element.get("type")
+    if element_type not in _ELEMENT_TYPES:
+        warn(
+            f"{region} element 'type' must be one of "
+            f"{', '.join(repr(t) for t in sorted(_ELEMENT_TYPES))}, "
+            f"got {element_type!r}, skipping."
+        )
+        return None
+    takes_field = element_type in ("field", "image")
+    allowed = ({"type", "field"} if takes_field else {"type"}) | (
+        _ELEMENT_OPTION_KEYS.get(element_type, frozenset())
+    )
+    if unknown := sorted(set(element) - allowed):
+        warn(
+            f"key(s) {', '.join(repr(k) for k in unknown)} not allowed in a "
+            f"{element_type!r} {region} element "
+            f"(allowed: {', '.join(sorted(allowed))}), skipping."
+        )
+        return None
+    field_name: str | None = None
+    if takes_field:
+        raw_field = element.get("field")
+        if raw_field is None:
+            warn(
+                f"'field' is required in a {element_type!r} {region} element, skipping."
+            )
+            return None
+        if not isinstance(raw_field, str) or not _NAME_PATTERN.match(raw_field):
+            warn(f"invalid field name {raw_field!r} in {region} element, skipping.")
+            return None
+        field_name = raw_field
+    dimensions: dict[str, str | None] = {"height": None, "width": None}
+    for key in dimensions:
+        if (raw := element.get(key)) is None:
+            continue
+        if (
+            not isinstance(raw, str)
+            or len(raw) > _DIMENSION_MAX_LENGTH
+            or not _DIMENSION_PATTERN.match(raw)
+        ):
+            warn(
+                f"'{key}' must be a number with an optional px/em/rem/%/pt unit, "
+                f"at most {_DIMENSION_MAX_LENGTH} characters, "
+                f"got {raw!r} in {region} element, skipping."
+            )
+            return None
+        dimensions[key] = raw
+    label = element.get("label")
+    if label is not None and (
+        not isinstance(label, str) or not _LABEL_PATTERN.match(label)
+    ):
+        warn(
+            "'label' must be 1-64 characters from [A-Za-z0-9 _().,/-], "
+            f"starting and ending alphanumeric, got {label!r} in {region} "
+            "element, skipping."
+        )
+        return None
+    return ElementSpec(
+        type=element_type,
+        field=field_name,
+        height=dimensions["height"],
+        width=dimensions["width"],
+        label=label,
+    )
+
+
+def _parse_elements(
+    elements: Iterable[Any], region: str, warn: Callable[[str], None]
+) -> tuple[ElementSpec, ...] | None:
+    """Validate and normalise the elements of a footer or side region.
+
+    :param elements: The raw element entries, strings or dicts.
+    :param region: Name of the region, used in messages.
+    :param warn: Called with a message for every problem found.
+    :return: The normalised elements, or ``None`` if any entry was invalid.
+    """
+    parsed: list[ElementSpec] = []
     valid = True
     for element in elements:
-        if element in _SIMPLE_ELEMENTS:
-            continue
-        prefix, _, field_name = element.partition(":")
-        if prefix not in ("field", "image") or not field_name:
+        item: ElementSpec | None
+        if isinstance(element, str):
+            item = _parse_element_str(element, region, warn)
+        elif isinstance(element, dict):
+            item = _parse_element_dict(element, region, warn)
+        else:
             warn(
-                f"unknown {region} element {element!r} (allowed: "
-                f"{', '.join(sorted(_SIMPLE_ELEMENTS))}, 'field:<name>', "
-                "'image:<name>'), skipping."
+                f"{region} element must be a string or a dict, "
+                f"got {element!r}, skipping."
             )
+            item = None
+        if item is None:
             valid = False
-            continue
-        if not _NAME_PATTERN.match(field_name):
+        else:
+            parsed.append(item)
+    return tuple(parsed) if valid else None
+
+
+def _warn_unregistered_fields(
+    elements: Iterable[ElementSpec],
+    region: str,
+    known_fields: Container[str],
+    warn: Callable[[str], None],
+) -> None:
+    """Warn about elements referencing a field nobody registered.
+
+    :param elements: The normalised elements of the region.
+    :param region: Name of the region, used in messages.
+    :param known_fields: The registered need field names.
+    :param warn: Called with a message for every problem found.
+    """
+    for element in elements:
+        if element.field is not None and element.field not in known_fields:
             warn(
-                f"invalid field name {field_name!r} in {region} element "
-                f"{element!r}, skipping."
+                f"{region} element references the need field "
+                f"{element.field!r}, which is not registered; it will render empty."
             )
-            valid = False
-            continue
-        if validate_fields and field_name not in known_fields:
-            warn(
-                f"{region} element {element!r} references the need field "
-                f"{field_name!r}, which is not registered; it will render empty."
-            )
-    return valid
 
 
 def _parse_spec(
@@ -462,11 +622,15 @@ def _parse_spec(
     if meta is None:
         return None
 
-    footer = merged.get("footer", [])
-    if not isinstance(footer, (list, tuple)) or not all(
-        isinstance(item, str) for item in footer
-    ):
-        warn(f"'footer' must be a list of strings, got {footer!r}, skipping.")
+    raw_footer = merged.get("footer", [])
+    if not isinstance(raw_footer, (list, tuple)):
+        warn(
+            f"'footer' must be a list of strings or dicts, got {raw_footer!r}, "
+            "skipping."
+        )
+        return None
+    footer = _parse_elements(raw_footer, "footer", warn)
+    if footer is None:
         return None
 
     side: SideSpec | None = None
@@ -483,23 +647,9 @@ def _parse_spec(
     # their `side` region (upstream's `image` field, which nobody has to register). A footer
     # element is therefore always user-authored and always validated. Overriding an
     # inherited region re-keys its origin to the card, which restores validation there too.
-    valid = _check_elements(
-        footer,
-        "footer",
-        validate_fields=True,
-        known_fields=known_fields,
-        warn=warn,
-    )
-    if side is not None:
-        valid &= _check_elements(
-            side.elements,
-            "side",
-            validate_fields=origins.get("side.elements") not in BUILTIN_CARD_SPECS,
-            known_fields=known_fields,
-            warn=warn,
-        )
-    if not valid:
-        return None
+    _warn_unregistered_fields(footer, "footer", known_fields, warn)
+    if side is not None and origins.get("side.elements") not in BUILTIN_CARD_SPECS:
+        _warn_unregistered_fields(side.elements, "side", known_fields, warn)
 
     title_regions = [
         region
@@ -507,7 +657,7 @@ def _parse_spec(
             ("footer", footer),
             ("side", () if side is None else side.elements),
         )
-        if "title" in elements
+        if any(element.type == "title" for element in elements)
     ]
     if title_regions and header:
         warn(
@@ -522,7 +672,7 @@ def _parse_spec(
     return CardSpec(
         header=header,
         meta=None if meta is False else meta,
-        footer=tuple(footer),
+        footer=footer,
         side=None if side is not None and not side.elements else side,
         collapse=collapse,
     )
@@ -606,23 +756,31 @@ def _build_meta_lines(meta: MetaSpec) -> list[str]:
     return lines
 
 
-def _build_element_lines(elements: Iterable[str]) -> list[str]:
+def _build_element_lines(elements: Iterable[ElementSpec]) -> list[str]:
     """Render footer or side elements.
 
-    :param elements: The validated element strings.
+    :param elements: The validated elements.
     :return: One layout line per element.
     """
     lines: list[str] = []
     for element in elements:
-        if (template := _ELEMENT_TEMPLATES.get(element)) is not None:
+        if (template := _ELEMENT_TEMPLATES.get(element.type)) is not None:
             lines.append(template)
-            continue
-        prefix, _, name = element.partition(":")
-        lines.append(
-            (_IMAGE_TEMPLATE if prefix == "image" else _FIELD_TEMPLATE).format(
-                name=name
+        elif element.type == "field":
+            lines.append(
+                _FIELD_LABEL_TEMPLATE.format(name=element.field, label=element.label)
+                if element.label is not None
+                else _FIELD_TEMPLATE.format(name=element.field)
             )
-        )
+        else:
+            # an optionless image renders the empty options string, so the object
+            # form stays byte-identical to the ``image:<name>`` shorthand
+            options = "".join(
+                _IMAGE_OPTION_TEMPLATE.format(key=key, value=value)
+                for key, value in (("height", element.height), ("width", element.width))
+                if value is not None
+            )
+            lines.append(_IMAGE_TEMPLATE.format(name=element.field, options=options))
     return lines
 
 
