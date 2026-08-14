@@ -42,6 +42,9 @@ LOGGER = get_logger(__name__)
 _CONF_KEYS: Final = frozenset({"regex", "link_url", "link_name", "options"})
 """The keys a single ``needs_string_links`` entry must define."""
 
+_OPTIONS_TYPES: Final = (list, tuple, set, frozenset)
+"""The collection spellings accepted for an entry's ``options``."""
+
 
 @dataclass(frozen=True)
 class CompiledStringLink:
@@ -62,7 +65,7 @@ class CompiledStringLink:
 @lru_cache(maxsize=32)
 def _compile_string_link(
     name: str,
-    regex: str,
+    regex: str | re.Pattern[str],
     link_url: str,
     link_name: str,
     options: tuple[str, ...],
@@ -74,7 +77,7 @@ def _compile_string_link(
     for the whole build.
 
     :param name: The name of the configuration entry.
-    :param regex: The regular expression source.
+    :param regex: The regular expression source, or an already-compiled pattern.
     :param link_url: The url template source.
     :param link_name: The link name template source.
     :param options: The need fields the entry applies to.
@@ -177,19 +180,35 @@ def _validate_conf(
             f"(allowed: {', '.join(sorted(_CONF_KEYS))}), ignored."
         )
 
-    for key in ("regex", "link_url", "link_name"):
+    for key in ("link_url", "link_name"):
         if not isinstance(conf[key], str):
             warn(f"{key!r} must be a string, got {conf[key]!r}, skipping.")
             return None
 
+    # an already-compiled pattern is accepted: `re.compile` passes one straight back,
+    # keeping whatever flags it was built with
+    if not isinstance(conf["regex"], (str, re.Pattern)):
+        warn(
+            f"'regex' must be a string or a compiled pattern, "
+            f"got {conf['regex']!r}, skipping."
+        )
+        return None
+
     options = conf["options"]
-    if not isinstance(options, (list, tuple)) or not all(
+    if not isinstance(options, _OPTIONS_TYPES) or not all(
         isinstance(option, str) for option in options
     ):
-        # A bare string is the tempting spelling of a single field, and it is
-        # accepted by neither of the two membership tests it has to pass.
-        warn(f"'options' must be a list of strings, got {options!r}, skipping.")
+        # `options` is only ever membership-tested, so any of the four collection
+        # spellings is fine; a bare string is not, because it is accepted by neither
+        # of the two membership tests it has to pass, and a mapping is not either.
+        warn(
+            f"'options' must be a list of strings "
+            f"(a tuple, set or frozenset is also accepted), got {options!r}, skipping."
+        )
         return None
+
+    if not options:
+        warn("'options' is empty, so this entry can never apply.")
 
     for option in options:
         if option not in known_fields:
@@ -211,8 +230,11 @@ def _validate_conf(
             warn(f"{key!r} is not a valid template ({exc}), skipping.")
             return None
 
-    if isinstance(options, tuple):
-        return cast(StringLinkConf, {**conf, "options": list(options)})
+    if not isinstance(options, list):
+        # normalise to plain data for the rebound configuration; a set has no order of
+        # its own, so sort it rather than let the config value vary between processes
+        normalised = list(options) if isinstance(options, tuple) else sorted(options)
+        return cast(StringLinkConf, {**conf, "options": normalised})
     return cast(StringLinkConf, conf)
 
 

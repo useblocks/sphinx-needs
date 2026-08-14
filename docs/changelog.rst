@@ -83,10 +83,14 @@ Improvements
   and an ``options`` entry naming a field that is registered nowhere. Neither of those skips
   the entry. Silence them with ``suppress_warnings = ["needs.string_link"]``.
 
-  ``options`` given as a bare string is now skipped with a warning. It was accepted before,
-  but with two contradictory meanings: the ``,``/``;`` splitting silently did not happen,
-  while the per-field test degraded into a substring match, so ``options = "myfield"`` also
-  applied to a field named ``my``. Write it as a list.
+  Two spellings of ``options`` are now skipped with a warning, and both used to render
+  links, so **if your links have disappeared this is the paragraph to read**. A **bare
+  string** was accepted before, but with two contradictory meanings: the ``,``/``;``
+  splitting silently did not happen, while the per-field test degraded into a substring
+  match, so ``options = "myfield"`` also applied to a field named ``my``. A **mapping**
+  (``{"myfield": True}``) worked by accident, through iteration over its keys. Write either
+  as a list. A list, tuple, set or frozenset of names is accepted, as is an already-compiled
+  ``re.Pattern`` for ``regex``.
 
 Bug fixes
 .........

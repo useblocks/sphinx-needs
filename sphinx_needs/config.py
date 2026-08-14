@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, field, fields
 from pathlib import Path
@@ -370,17 +371,21 @@ class StringLinkConf(TypedDict):
     (see :func:`~sphinx_needs.string_links.compile_string_links`).
     """
 
-    regex: str
+    regex: str | re.Pattern[str]
     """A regular expression, searched (unanchored) in each value.
 
     Named capture groups are made available to both templates.
+    An already-compiled pattern is accepted, and keeps its flags.
     """
     link_url: str
     """The link target, rendered as a template."""
     link_name: str
     """The link text, rendered as a template."""
     options: list[str]
-    """The names of the need fields this transformation applies to."""
+    """The names of the need fields this transformation applies to.
+
+    A tuple, set or frozenset is also accepted, and is normalised to a list.
+    """
 
 
 class NeedStatusesOption(TypedDict):

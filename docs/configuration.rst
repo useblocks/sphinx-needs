@@ -1946,9 +1946,13 @@ Helpful e.g. to generate a link to a ticket system based on the given ticket num
 All four keys are required.
 
 :regex: Must be a valid regular expression. Named capture groups are supported.
+   An already-compiled ``re.Pattern`` is also accepted, and keeps its flags.
 :link_url: The final url as string. Supports Jinja.
 :link_name: The final link name as string. Supports Jinja.
 :options: List of option names, for which the regex shall be checked.
+   A tuple, set or frozenset is also accepted; the names are only ever
+   membership-tested, so their order does not matter. A bare string is **not** a
+   valid spelling of a single name.
 
 ``link_name`` and ``link_url`` are rendered with `MiniJinja <https://github.com/mitsuhiko/minijinja>`__,
 which implements a subset of the Jinja2 syntax; most notably, not every Jinja2 filter exists.
@@ -2049,7 +2053,8 @@ Invalid configurations
    The configuration is validated once, when it is loaded.
 
 An entry that cannot be used -- a missing key, a regular expression that does not compile, a
-template that does not parse, ``options`` that is not a list of strings -- is reported as a
+template that does not parse, ``options`` that is none of the accepted collection spellings
+(a bare string and a mapping are the two that get rejected) -- is reported as a
 ``needs.string_link`` warning naming the entry, and skipped. The build continues and every other
 entry still applies. Previously such an entry aborted the build the moment the first need was
 rendered.

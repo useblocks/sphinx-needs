@@ -31,6 +31,7 @@ String links
 """
 
 CONF_HEAD = """\
+import re
 extensions = ['sphinx_needs']
 needs_fields = {
     'ticket': {'nullable': True},
@@ -146,13 +147,18 @@ def _meta_span(html: str, field: str) -> str:
             id="options-as-string",
         ),
         pytest.param(
+            {**GOOD_LINK, "options": {"ticket": True}},
+            "'options' must be a list of strings",
+            id="options-as-mapping",
+        ),
+        pytest.param(
             {**GOOD_LINK, "options": ["ticket", 7]},
             "'options' must be a list of strings",
             id="options-not-all-strings",
         ),
         pytest.param(
             {**GOOD_LINK, "regex": 42},
-            "'regex' must be a string",
+            "'regex' must be a string or a compiled pattern",
             id="regex-not-a-string",
         ),
     ],
@@ -231,15 +237,89 @@ def test_valid_config_object_survives_a_build(
     assert warnings_of(app) == "", warnings_of(app)
 
 
-def test_options_as_tuple_is_accepted(make_app: Any, sphinx_test_tempdir: Any) -> None:
-    """A tuple is a legitimate spelling of a list, and worked before validation."""
+@pytest.mark.parametrize(
+    "options",
+    [
+        pytest.param(("ticket",), id="tuple"),
+        pytest.param({"ticket"}, id="set"),
+        pytest.param(frozenset({"ticket"}), id="frozenset"),
+    ],
+)
+def test_options_collection_spellings_are_accepted(
+    options: Any, make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """``options`` is only ever membership-tested, so any collection of strings works.
+
+    All three spellings render links on the unvalidated code, so rejecting them would
+    have been silent link loss on a configuration that was already correct.
+    """
     app = build(
         make_app,
         sphinx_test_tempdir,
-        {"good": {**GOOD_LINK, "options": ("ticket",)}},
+        {"good": {**GOOD_LINK, "options": options}},
     )
     assert warnings_of(app) == "", warnings_of(app)
     assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
+    # normalised to plain data for the rebound configuration
+    assert app.config.needs_string_links["good"]["options"] == ["ticket"]
+
+
+@pytest.mark.parametrize(
+    ("pattern", "expected"),
+    [
+        pytest.param(
+            're.compile(r"^(?P<value>[A-Z]+-\\d+)$")', "AB-1", id="compiled-pattern"
+        ),
+        pytest.param(
+            're.compile(r"^(?P<value>[a-z]+-\\d+)$", re.IGNORECASE)',
+            "AB-1",
+            id="compiled-pattern-with-flags",
+        ),
+    ],
+)
+def test_regex_accepts_a_compiled_pattern(
+    pattern: str, expected: str, make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """``re.compile`` is idempotent, so a pre-compiled pattern works -- flags and all.
+
+    The ``re.IGNORECASE`` case is the one that pins flag preservation: the pattern is
+    lower-case only, and the value is upper-case.
+    """
+    from tests.conftest import create_src_files_in_tmpdir
+
+    conf = (
+        CONF_HEAD
+        + "needs_string_links = {'good': {\n"
+        + f"    'regex': {pattern},\n"
+        + "    'link_url': 'https://tracker.example.com/{{value}}',\n"
+        + "    'link_name': 'T:{{value}}',\n"
+        + "    'options': ['ticket'],\n"
+        + "}}\n"
+    )
+    srcdir = create_src_files_in_tmpdir(
+        [(Path("conf.py"), conf), (Path("index.rst"), INDEX)], sphinx_test_tempdir
+    )
+    app = make_app(srcdir=srcdir, buildername="html")
+    app.build()
+
+    assert warnings_of(app) == "", warnings_of(app)
+    assert f'href="https://tracker.example.com/{expected}"' in need_html(app)
+
+
+def test_empty_options_warns_but_keeps_the_entry(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """An entry with no fields to apply to is a silent no-op worth naming."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": {**GOOD_LINK, "options": []}},
+    )
+    warnings = warnings_of(app)
+    assert "'options' is empty, so this entry can never apply." in warnings, warnings
+    assert "needs.string_link" in warnings, warnings
+    # warn only -- the entry is kept
+    assert app.config.needs_string_links["t"]["options"] == []
 
 
 def test_unused_broken_conf_still_only_warns(
