@@ -181,13 +181,33 @@ def test_invalid_conf_warns_but_the_build_survives(
     assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
 
 
-def test_string_links_not_a_dict_warns(make_app: Any, sphinx_test_tempdir: Any) -> None:
-    """``needs_string_links`` itself being the wrong type must not crash the build."""
-    app = build(make_app, sphinx_test_tempdir, [GOOD_LINK])
+@pytest.mark.parametrize(
+    "value",
+    [
+        pytest.param([GOOD_LINK], id="non-empty-list"),
+        pytest.param([1], id="list-of-junk"),
+        pytest.param([], id="empty-list"),
+        pytest.param("", id="empty-string"),
+        pytest.param(0, id="zero"),
+    ],
+)
+def test_string_links_not_a_dict_warns(
+    value: Any, make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """``needs_string_links`` itself being the wrong type must not crash the build.
+
+    The *falsy* spellings are the interesting ones: ``[]`` is a plausible typo for
+    ``{}``, and it used to slip past the emptiness check unvalidated and then die on
+    ``.items()`` inside the renderer.
+    """
+    app = build(make_app, sphinx_test_tempdir, value)
 
     warnings = warnings_of(app)
     assert "needs_string_links must be a dict" in warnings, warnings
-    assert "AB-1" in need_html(app)
+    assert "needs.string_link" in warnings, warnings
+    assert app.config.needs_string_links == {}
+    # the build still produced a page
+    assert "SLINK_1" in need_html(app)
 
 
 def test_invalid_conf_is_pruned_from_the_config(

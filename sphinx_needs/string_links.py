@@ -229,8 +229,8 @@ def compile_string_links(_app: Sphinx, config: Config) -> None:
     """
     needs_config = NeedsSphinxConfig(config)
     confs = needs_config.string_links
-    if not confs:
-        return
+    # the type check has to come first: a *falsy* non-dict -- `[]`, `""`, `0` -- would
+    # otherwise leave through the emptiness check unvalidated, and then die on `.items()`
     if not isinstance(confs, dict):
         log_warning(
             LOGGER,
@@ -239,6 +239,8 @@ def compile_string_links(_app: Sphinx, config: Config) -> None:
             None,
         )
         needs_config.string_links = {}
+        return
+    if not confs:
         return
 
     known_fields = {*NeedsCoreFields, *_NEEDS_CONFIG.fields}
