@@ -537,9 +537,8 @@ class LayoutHandler:
                     ref_item = nodes.Text(datum)
                     data_node += ref_item
 
-                if (
-                    name in needs_string_links_option and index + 1 < len(data)
-                ) or index + 1 < len([data]):
+                if index + 1 < len(data_list):
+                    # separators go *between* items, as in row_col_maker
                     data_node += nodes.emphasis("; ", "; ")
 
             data_container.append(data_node)

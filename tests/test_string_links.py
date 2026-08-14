@@ -477,3 +477,44 @@ def test_core_fields_are_accepted_in_options(
         },
     )
     assert warnings_of(app) == "", warnings_of(app)
+
+
+SEPARATOR_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+   :ticket: AB-1
+   :tickets: AB-1, AB-2; AB-3
+   :other: Q
+
+   Body.
+"""
+
+
+@pytest.mark.parametrize(
+    ("field", "items"),
+    [
+        pytest.param("ticket", 1, id="one-item"),
+        pytest.param("tickets", 3, id="three-items"),
+        pytest.param("other", 1, id="one-character-value"),
+    ],
+)
+def test_separators_go_between_items(
+    field: str, items: int, make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """N items produce N-1 separators in the meta area, as they do in a needtable.
+
+    The condition read ``len(data)`` -- a character count of the whole value --
+    so every item got a trailing separator, except when the value was a single
+    character, which got none at all.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": {**GOOD_LINK, "options": ["ticket", "tickets", "other"]}},
+        index=SEPARATOR_INDEX,
+    )
+    meta = _meta_span(need_html(app), field)
+    assert meta.count("<em>; </em>") == items - 1, meta
