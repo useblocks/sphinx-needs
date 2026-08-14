@@ -362,7 +362,9 @@ def _render_subgraph(
         params.append(("fillcolor", _quote(need["type_color"])))
 
     # outline color
-    if node["highlight"] and filter_single_need(need, config, node["highlight"]):
+    if node["highlight"] and filter_single_need(
+        need, config, node["highlight"], needs_view.values()
+    ):
         params.append(("color", "red"))
     elif node["border_color"]:
         color = resolve_color(
