@@ -98,7 +98,7 @@ def process_needflow_graphviz(
                         link_types=",".join(link_type_names),
                     ),
                     "needflow",
-                    None,
+                    location=node,
                 )
 
         # compute the allowed link types
