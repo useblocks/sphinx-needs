@@ -8,6 +8,39 @@ from sphinx.config import Config
 from sphinx.util.console import strip_colors
 
 
+#: A ``conf.py`` for the inline source projects below.
+#: The id regex is relaxed, so that ids exercising the entity name sanitisation
+#: (see :func:`~sphinx_needs.directives.needflow._plantuml.make_entity_names`) are allowed.
+CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_id_regex = "^[A-Z0-9_=-]+$"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+]
+"""
+
+
+def _debug_source(outdir: Path, file: str) -> str:
+    """Return the diagram source emitted by the needflow ``:debug:`` option.
+
+    Both engines render it inside a ``<pre>``, but only graphviz syntax highlights
+    it, so the text content is taken rather than the markup.
+
+    :param outdir: The build output directory.
+    :param file: The name of the built HTML page holding the needflow.
+    :return: The concatenated text of every ``<pre>`` block on the page.
+    """
+    tree = html_parser.parse(outdir / file)
+    return "\n".join(pre.text_content() for pre in tree.xpath("//pre"))
+
+
 def _get_svg(config: Config, outdir: Path, file: str, id: str) -> str:
     root_tree = html_parser.parse(outdir / file)
     if config.needs_flow_engine == "plantuml":
@@ -251,3 +284,67 @@ def test_doc_build_needflow_incl_child_needs(test_app):
             '"../index.html#SPEC_5"',
         ):
             assert link not in svg
+
+
+COLLIDING_IDS = """\
+Colliding need ids
+==================
+
+.. spec:: First
+   :id: R-1
+
+.. spec:: Second
+   :id: R=1
+   :links: R-1
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), COLLIDING_IDS)],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), COLLIDING_IDS)],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_node_ids_are_injective(test_app):
+    """Needs whose ids sanitise alike must still be drawn as two nodes.
+
+    PlantUML entity names cannot contain punctuation, so ``R-1`` and ``R=1`` both
+    fold to ``R_1`` and used to collapse into a single node, silently losing a need
+    and its edge. Graphviz quotes its ids and is immune, which is asserted here too,
+    so both engines are pinned to the same "ids are stable and injective" policy.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        # the ids are mapped in sorted order, so "R-1" keeps the plain name
+        # and "R=1" is disambiguated with a numeric suffix
+        assert debug.count("as R_1 ") == 1
+        assert debug.count("as R_1_2 ") == 1
+        assert "R_1_2 --> R_1" in debug
+    else:
+        assert debug.count('"R-1" [label=') == 1
+        assert debug.count('"R=1" [label=') == 1
+        assert '"R=1" -> "R-1" [' in debug
