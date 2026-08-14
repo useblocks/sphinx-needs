@@ -1,0 +1,232 @@
+"""Validation and compilation of :ref:`needs_string_links` configurations.
+
+A *string link* turns a field value such as ``AB-1`` into a hyperlink, by
+searching it with a regular expression and rendering the captured groups into a
+url template and a name template.
+
+The configurations are validated and compiled once per build during
+``config-inited``, rather than lazily while a need is rendered. This means an
+unusable configuration — a missing key, a regular expression that does not
+compile, a template that does not parse — is reported as a ``needs.string_link``
+warning naming the offending entry, and skipped, instead of aborting the build
+from inside the renderer with a bare ``KeyError``.
+
+The compiled objects deliberately never touch the Sphinx configuration: the
+configuration is deep-copied and pickled (for parallel builds), and compiled
+regular expressions and templates do not survive that. Only plain data is
+written back to ``needs_string_links``; the compiled form is memoised by the
+configuration's own strings in :func:`_compile_string_link`, in the same way
+:func:`~sphinx_needs._jinja.compile_template` memoises template sources.
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from functools import lru_cache
+from typing import TYPE_CHECKING, Any, Final, cast
+
+from sphinx_needs._jinja import CompiledTemplate, compile_template
+from sphinx_needs.config import NeedsSphinxConfig, StringLinkConf
+from sphinx_needs.logging import get_logger, log_warning
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from sphinx.application import Sphinx
+    from sphinx.config import Config
+
+LOGGER = get_logger(__name__)
+
+_CONF_KEYS: Final = frozenset({"regex", "link_url", "link_name", "options"})
+"""The keys a single ``needs_string_links`` entry must define."""
+
+
+@dataclass(frozen=True)
+class CompiledStringLink:
+    """A validated ``needs_string_links`` entry, ready to be applied to a value."""
+
+    name: str
+    """The name the entry was given in the configuration, used in messages."""
+    regex: re.Pattern[str]
+    """The compiled regular expression, searched (unanchored) in each value."""
+    url_template: CompiledTemplate
+    """The compiled ``link_url`` template."""
+    name_template: CompiledTemplate
+    """The compiled ``link_name`` template."""
+    options: tuple[str, ...]
+    """The need fields this entry applies to."""
+
+
+@lru_cache(maxsize=32)
+def _compile_string_link(
+    name: str,
+    regex: str,
+    link_url: str,
+    link_name: str,
+    options: tuple[str, ...],
+) -> CompiledStringLink:
+    """Compile a single, already validated configuration entry.
+
+    Memoised on the entry's own strings, so that the two renderers
+    (the need meta area and ``needtable`` cells) share one compiled object
+    for the whole build.
+
+    :param name: The name of the configuration entry.
+    :param regex: The regular expression source.
+    :param link_url: The url template source.
+    :param link_name: The link name template source.
+    :param options: The need fields the entry applies to.
+    :return: The compiled entry.
+    :raises re.error: If the regular expression does not compile.
+    :raises Exception: If one of the templates does not parse.
+    """
+    return CompiledStringLink(
+        name=name,
+        regex=re.compile(regex),
+        url_template=compile_template(link_url, autoescape=False),
+        name_template=compile_template(link_name, autoescape=False),
+        options=options,
+    )
+
+
+def compiled_string_links(
+    needs_config: NeedsSphinxConfig,
+) -> dict[str, CompiledStringLink]:
+    """Get the compiled form of every usable ``needs_string_links`` entry.
+
+    Entries that cannot be compiled are skipped silently, because
+    :func:`compile_string_links` has already reported them at ``config-inited``.
+
+    :param needs_config: The sphinx-needs configuration.
+    :return: The compiled entries, keyed by their configuration name.
+    """
+    compiled: dict[str, CompiledStringLink] = {}
+    for name, conf in needs_config.string_links.items():
+        try:
+            compiled[name] = _compile_string_link(
+                name,
+                conf["regex"],
+                conf["link_url"],
+                conf["link_name"],
+                tuple(conf["options"]),
+            )
+        except Exception:
+            continue
+    return compiled
+
+
+def string_link_field_names(needs_config: NeedsSphinxConfig) -> set[str]:
+    """Get the union of the need fields named by every ``needs_string_links`` entry.
+
+    A field in this set has its value split on ``,`` and ``;`` before the
+    entries are applied, whether or not any of them ends up matching.
+
+    :param needs_config: The sphinx-needs configuration.
+    :return: The names of the fields string links apply to.
+    """
+    names: set[str] = set()
+    for conf in needs_config.string_links.values():
+        names.update(conf["options"])
+    return names
+
+
+def _validate_conf(
+    conf: Any,
+    *,
+    warn: Callable[[str], None],
+) -> StringLinkConf | None:
+    """Validate a single ``needs_string_links`` entry.
+
+    :param conf: The raw entry, as written by the user.
+    :param warn: Called with a message for every problem found.
+    :return: The validated entry, or ``None`` if it must be skipped.
+    """
+    if not isinstance(conf, dict):
+        warn(f"must be a dict, got {conf!r}, skipping.")
+        return None
+
+    if missing := sorted(_CONF_KEYS - set(conf)):
+        warn(
+            f"missing required key(s) {', '.join(repr(k) for k in missing)} "
+            f"(required: {', '.join(sorted(_CONF_KEYS))}), skipping."
+        )
+        return None
+
+    for key in ("regex", "link_url", "link_name"):
+        if not isinstance(conf[key], str):
+            warn(f"{key!r} must be a string, got {conf[key]!r}, skipping.")
+            return None
+
+    options = conf["options"]
+    if not isinstance(options, (list, tuple)) or not all(
+        isinstance(option, str) for option in options
+    ):
+        # A bare string is the tempting spelling of a single field, and it is
+        # accepted by neither of the two membership tests it has to pass.
+        warn(f"'options' must be a list of strings, got {options!r}, skipping.")
+        return None
+
+    try:
+        re.compile(conf["regex"])
+    except re.error as exc:
+        warn(f"'regex' is not a valid regular expression ({exc}), skipping.")
+        return None
+
+    for key in ("link_url", "link_name"):
+        try:
+            compile_template(conf[key], autoescape=False)
+        except Exception as exc:
+            warn(f"{key!r} is not a valid template ({exc}), skipping.")
+            return None
+
+    if isinstance(options, tuple):
+        return cast(StringLinkConf, {**conf, "options": list(options)})
+    return cast(StringLinkConf, conf)
+
+
+def compile_string_links(_app: Sphinx, config: Config) -> None:
+    """Validate ``needs_string_links``, and compile every usable entry.
+
+    Connected to ``config-inited`` at priority 551,
+    i.e. after the need fields have been registered
+    and before the configuration is checked.
+    Invalid entries are warned about and skipped,
+    so that a single bad entry never costs the user the rest of their build.
+
+    :param config: The Sphinx configuration.
+    """
+    needs_config = NeedsSphinxConfig(config)
+    confs = needs_config.string_links
+    if not confs:
+        return
+    if not isinstance(confs, dict):
+        log_warning(
+            LOGGER,
+            f"needs_string_links must be a dict, got {confs!r}.",
+            "string_link",
+            None,
+        )
+        needs_config.string_links = {}
+        return
+
+    validated: dict[str, StringLinkConf] = {}
+    for name, conf in confs.items():
+
+        def warn(message: str, name: Any = name) -> None:
+            log_warning(
+                LOGGER,
+                f"needs_string_links[{name!r}]: {message}",
+                "string_link",
+                None,
+            )
+
+        if (checked := _validate_conf(conf, warn=warn)) is not None:
+            validated[name] = checked
+
+    if validated != confs:
+        # rebind, never mutate: the dict may still be the user's own conf.py object
+        needs_config.string_links = validated
+
+    # compile eagerly, so that the work is not repeated per rendered need
+    compiled_string_links(needs_config)

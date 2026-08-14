@@ -142,6 +142,7 @@ from sphinx_needs.schema.config_utils import (
 )
 from sphinx_needs.schema.process import process_schemas
 from sphinx_needs.services.github import GithubService
+from sphinx_needs.string_links import compile_string_links
 from sphinx_needs.utils import node_match
 from sphinx_needs.variant_data import VariantDataError, resolve_variant_data
 from sphinx_needs.warnings import process_warnings
@@ -327,6 +328,7 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", merge_default_configs)
     # runs after the built-in layouts are merged in, and before the config is checked
     app.connect("config-inited", compile_card_layouts, priority=550)
+    app.connect("config-inited", compile_string_links, priority=551)
     app.connect("config-inited", check_configuration, priority=600)  # runs late
 
     app.connect("env-before-read-docs", prepare_env)
