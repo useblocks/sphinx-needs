@@ -8,7 +8,6 @@ from sphinx import version_info
 from sphinx.config import Config
 from sphinx.util.console import strip_colors
 
-
 #: A ``conf.py`` for the inline source projects below.
 #: The id regex is relaxed, so that ids exercising the entity name sanitisation
 #: (see :func:`~sphinx_needs.directives.needflow._plantuml.make_entity_names`) are allowed.
