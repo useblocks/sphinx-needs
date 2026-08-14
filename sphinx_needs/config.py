@@ -817,6 +817,10 @@ class NeedsSphinxConfig:
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
     """Defines custom layouts for needs rendering."""
+    card_layouts: dict[str, dict[str, Any]] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": ()}
+    )
+    """Declarative card specifications, compiled into ``needs_layouts`` entries."""
     default_layout: str = field(
         default="clean", metadata={"rebuild": "html", "types": (str,)}
     )
