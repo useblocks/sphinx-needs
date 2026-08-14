@@ -15,7 +15,7 @@ Improvements
 ............
 
 - ✨ New :ref:`needs_card_layouts` configuration, for describing layouts declaratively
-  (:pr:`1761`)
+  (:pr:`1765`)
 
   A *card specification* states what a need should show — ``header``, ``meta``, ``footer``,
   ``side`` and ``collapse`` — as a small dictionary, instead of as hand-written layout
@@ -51,7 +51,7 @@ Improvements
   exact per-directive list.
 
 - ✨ The ``max_items`` option on :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and
-  :ref:`needsequence` now limits how many items a view shows (:pr:`1761`)
+  :ref:`needsequence` now limits how many items a view shows (:pr:`1765`)
 
   The limit is applied after filtering and sorting, so a view keeps the first items it would
   otherwise have rendered; on :ref:`needsequence` it counts messages rather than needs.
