@@ -686,3 +686,59 @@ def test_list_field_agrees_between_meta_and_needtable(
         href = f'href="https://list.example.com/{item}">L:{item}</a>'
         # once in the need's meta area, once in the needtable cell
         assert html.count(href) == 2, html
+
+
+EMPTY_ELEM_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+
+   Body.
+
+.. needtable::
+   :columns: id;mylist
+   :style: table
+"""
+
+
+def test_empty_list_elements_are_not_linked(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """An empty element must not become a live link to the bare url template.
+
+    ``row_col_maker`` has always filtered empty data before selecting an entry; the
+    meta area's list branch did not, so an element that is empty rendered as a link
+    with every capture group substituted empty. A field default is the cheapest way
+    to get such an element past the directive-option coercion, which strips them.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "t": {
+                "regex": r"^(?P<value>.*)$",
+                "link_url": "https://list.example.com/{{value}}",
+                "link_name": "L:{{value}}",
+                "options": ["mylist"],
+            }
+        },
+        index=EMPTY_ELEM_INDEX,
+        extra=(
+            "needs_fields['mylist']['default'] = ['XX-1', '', 'XX-2']\n"
+            "needs_global_options = {}\n"
+        ),
+    )
+    html = need_html(app)
+    meta = _meta_span(html, "mylist")
+
+    # no link to the bare base url, on either surface
+    assert 'href="https://list.example.com/"' not in html, html
+    # the two real elements are still linked, in the meta area and in the table
+    for item in ("XX-1", "XX-2"):
+        assert (
+            html.count(f'href="https://list.example.com/{item}">L:{item}</a>') == 2
+        ), html
+    # and the meta area holds exactly the two links the needtable cell does
+    assert meta.count("<a ") == 2, meta

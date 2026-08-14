@@ -554,11 +554,14 @@ class LayoutHandler:
                     list_container += spacer
 
                 inline = nodes.inline(classes=["needs_data"])
-                if matching_link_confs:
-                    # apply string links per element, as needtable cells do
+                element_text = str(element)
+                # apply string links per element, as needtable cells do -- including
+                # its guard against empty ones, which would otherwise render a live
+                # link to whatever the url template is with every group empty
+                if matching_link_confs and element_text:
                     inline += match_string_link(
-                        text_item=str(element),
-                        data=str(element),
+                        text_item=element_text,
+                        data=element_text,
                         need_key=name,
                         matching_link_confs=matching_link_confs,
                         render_context=self.needs_config.render_context,
