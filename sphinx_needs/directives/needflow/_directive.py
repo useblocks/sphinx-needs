@@ -100,7 +100,7 @@ class NeedflowDirective(FilterBase):
                 elif config_name:
                     log_warning(
                         LOGGER,
-                        f"config key {config_name!r} not in 'need_flows_configs'",
+                        f"config key {config_name!r} not in 'needs_flow_configs'",
                         "needflow",
                         location=self.get_location(),
                     )
