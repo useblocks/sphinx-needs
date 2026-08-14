@@ -439,7 +439,7 @@ span = "partial"
 # collapsed until the reader opens it.
 [needs.card_layouts.card_summary]
 collapse = "closed"
-footer = ["id", "type", "layout-echo"]
+footer = ["id", "type", "layout_echo"]
 
 [needs.card_layouts.card_summary.meta]
 include = ["status", "author"]

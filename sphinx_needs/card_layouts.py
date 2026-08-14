@@ -66,7 +66,7 @@ BUILTIN_CARD_SPECS: Final[dict[str, dict[str, Any]]] = {
     },
     "complete": {
         "meta": {"fields": "effective", "exclude": ["layout", "style"]},
-        "footer": ["layout-echo", "style-echo"],
+        "footer": ["layout_echo", "style_echo"],
     },
     "debug": {"meta": {"fields": "all", "empties": True}, "collapse": "open"},
     "focus": {
@@ -111,7 +111,7 @@ _SIDE_POSITIONS: Final[tuple[SidePosition, ...]] = ("left", "right")
 _SIDE_SPANS: Final[tuple[SideSpan, ...]] = ("full", "partial")
 
 _SIMPLE_ELEMENTS: Final = frozenset(
-    {"id", "title", "type", "layout-echo", "style-echo"}
+    {"id", "title", "type", "layout_echo", "style_echo"}
 )
 
 _NAME_PATTERN: Final = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
@@ -130,8 +130,8 @@ _ELEMENT_TEMPLATES: Final[dict[str, str]] = {
     "id": "<<meta_id()>>",
     "title": '<<meta("title")>>',
     "type": '<<meta("type_name")>>',
-    "layout-echo": 'layout: <<meta("layout")>>',
-    "style-echo": 'style: <<meta("style")>>',
+    "layout_echo": 'layout: <<meta("layout")>>',
+    "style_echo": 'style: <<meta("style")>>',
 }
 _FIELD_TEMPLATE: Final = '<<meta("{name}")>>'
 _FIELD_EMPTIES_TEMPLATE: Final = '<<meta("{name}", show_empty=True)>>'

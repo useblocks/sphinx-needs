@@ -64,8 +64,8 @@ CONFORMANCE_SPECS: dict[str, dict[str, Any]] = {
         "footer": [
             "id",
             "type",
-            "layout-echo",
-            "style-echo",
+            "layout_echo",
+            "style_echo",
             "field:verified_by",
             "image:badge",
         ],
@@ -119,8 +119,8 @@ VALID_SPECS: dict[str, dict[str, Any]] = {
         "footer": [
             "id",
             "type",
-            "layout-echo",
-            "style-echo",
+            "layout_echo",
+            "style_echo",
             "field:verified_by",
             "image:badge",
         ]
@@ -209,8 +209,8 @@ def test_default_spec_is_clean() -> None:
         ("id", "<<meta_id()>>"),
         ("title", '<<meta("title")>>'),
         ("type", '<<meta("type_name")>>'),
-        ("layout-echo", 'layout: <<meta("layout")>>'),
-        ("style-echo", 'style: <<meta("style")>>'),
+        ("layout_echo", 'layout: <<meta("layout")>>'),
+        ("style_echo", 'style: <<meta("style")>>'),
         ("field:verified_by", '<<meta("verified_by")>>'),
         ("image:badge", '<<image("field:badge", align="center")>>'),
     ],
@@ -241,7 +241,7 @@ def test_side_uses_the_same_element_set() -> None:
 def test_footer_keeps_element_order() -> None:
     """Elements are emitted in the order they were declared."""
     compiled, _ = compile_spec(
-        {"header": False, "meta": False, "footer": ["type", "id", "layout-echo"]}
+        {"header": False, "meta": False, "footer": ["type", "id", "layout_echo"]}
     )
     assert compiled is not None
     assert compiled["layout"]["footer"] == [

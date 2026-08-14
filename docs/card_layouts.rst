@@ -180,9 +180,9 @@ Elements
        region, so that a need's title appears exactly once.
    * - ``type``
      - The need type's display name.
-   * - ``layout-echo``
+   * - ``layout_echo``
      - ``layout:`` followed by the name of the layout in use.
-   * - ``style-echo``
+   * - ``style_echo``
      - ``style:`` followed by the need's style.
    * - ``field:<name>``
      - The value of the need field ``<name>``.
@@ -192,6 +192,10 @@ Elements
 Field names must consist of letters, digits, underscores and hyphens, and start with a
 letter or underscore. A name that no field is registered under is reported as a warning,
 because it would silently render nothing.
+
+A prefixed element's payload is always a **field name**:
+``image:diagram`` shows the image the need's ``diagram`` field points to —
+the payload is never itself a literal path or URL.
 
 An element with no value renders nothing, exactly as it does for :ref:`needs_layouts`.
 
@@ -313,7 +317,7 @@ region collapsed, so the card opens as a title bar above a footer.
 
    [needs.card_layouts.card_summary]
    collapse = "closed"
-   footer = ["id", "type", "layout-echo"]
+   footer = ["id", "type", "layout_echo"]
 
    [needs.card_layouts.card_summary.meta]
    include = ["status", "author"]
