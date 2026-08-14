@@ -664,8 +664,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     classes: list[str]
     """List of CSS classes."""
 
-    alt: str
-    """Alternative text for the diagram in HTML output."""
+    alt: str | None
+    """Alternative text for the diagram in HTML output,
+    ``None`` if the option was not given."""
 
     root_id: str | None
     """need ID to use as a root node."""

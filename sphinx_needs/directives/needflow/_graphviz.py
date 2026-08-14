@@ -696,7 +696,10 @@ def html_visit_needflow_graphviz(self: HTML5Translator, node: NeedflowGraphiz) -
     if fname is None:
         self.body.append(self.encode(code))
     else:
-        alt = attrributes.get("alt", "needflow graphviz diagram")
+        alt = attrributes["alt"]
+        if alt is None:
+            # the author did not describe the diagram, so give it a generic description
+            alt = "needflow graphviz diagram"
         if "align" in attrributes:
             self.body.append(
                 f'<div align="{attrributes["align"]}" class="align-{attrributes["align"]}">'
