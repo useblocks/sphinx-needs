@@ -518,3 +518,71 @@ def test_separators_go_between_items(
     )
     meta = _meta_span(need_html(app), field)
     assert meta.count("<em>; </em>") == items - 1, meta
+
+
+LIST_INDEX = """\
+String links
+============
+
+.. req:: A need
+   :id: SLINK_1
+   :mylist: XX-1, XX-2
+   :tags: alpha, beta
+
+   Body.
+
+.. needtable::
+   :columns: id;mylist
+   :style: table
+"""
+
+
+@pytest.mark.parametrize("field", ["mylist", "tags"])
+def test_list_fields_are_linked_in_the_meta_area(
+    field: str, make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A list field links element by element, as it already did in a needtable.
+
+    The meta area's list branch never consulted the string links, so the same
+    field linked in a table but rendered as plain text in the need itself.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "t": {
+                "regex": r"^(?P<value>.+)$",
+                "link_url": "https://list.example.com/{{value}}",
+                "link_name": "L:{{value}}",
+                "options": [field],
+            }
+        },
+        index=LIST_INDEX,
+    )
+    meta = _meta_span(need_html(app), field)
+    assert meta.count("<a ") == 2, meta
+    assert 'class="needs_spacer"' in meta, meta
+
+
+def test_list_field_agrees_between_meta_and_needtable(
+    make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """The two surfaces produce the same links for the same list field."""
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {
+            "t": {
+                "regex": r"^(?P<value>.+)$",
+                "link_url": "https://list.example.com/{{value}}",
+                "link_name": "L:{{value}}",
+                "options": ["mylist"],
+            }
+        },
+        index=LIST_INDEX,
+    )
+    html = need_html(app)
+    for item in ("XX-1", "XX-2"):
+        href = f'href="https://list.example.com/{item}">L:{item}</a>'
+        # once in the need's meta area, once in the needtable cell
+        assert html.count(href) == 2, html

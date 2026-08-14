@@ -503,6 +503,12 @@ class LayoutHandler:
         elif data is None and show_empty:
             data = ""
 
+        matching_link_confs = [
+            link_conf
+            for link_conf in self.string_links.values()
+            if name in link_conf.options
+        ]
+
         if isinstance(data, str):
             if len(data) == 0 and not show_empty:
                 return []
@@ -514,12 +520,6 @@ class LayoutHandler:
                 if name in needs_string_links_option
                 else [data]
             )
-
-            matching_link_confs = [
-                link_conf
-                for link_conf in self.string_links.values()
-                if name in link_conf.options
-            ]
 
             data_node = nodes.inline(classes=["needs_data"])
             for index, datum in enumerate(data_list):
@@ -554,7 +554,18 @@ class LayoutHandler:
                     list_container += spacer
 
                 inline = nodes.inline(classes=["needs_data"])
-                inline += nodes.Text(element)
+                if matching_link_confs:
+                    # apply string links per element, as needtable cells do
+                    inline += match_string_link(
+                        text_item=str(element),
+                        data=str(element),
+                        need_key=name,
+                        matching_link_confs=matching_link_confs,
+                        render_context=self.needs_config.render_context,
+                        location=(self.need["docname"], self.need["lineno"]),
+                    )
+                else:
+                    inline += nodes.Text(element)
                 list_container += inline
             data_container += list_container
         else:
