@@ -617,3 +617,53 @@ def test_unknown_link_type_warning_has_a_location(test_app):
     assert re.search(
         r"<srcdir>/index\.rst:\d+: WARNING: Unknown link type BOGUS_LT", warnings
     )
+
+
+ALT_TEXTS = """\
+Alt texts
+=========
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+
+.. needflow::
+   :alt: my alt text
+
+.. needflow::
+   :alt:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), ALT_TEXTS)],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_graphviz_alt_text(test_app):
+    """A graphviz needflow gets a placeholder ``alt``, unless the author sets one.
+
+    The directive always stored an ``alt``, so the intended placeholder default was
+    unreachable and every image was published with an empty ``alt``. An explicitly
+    empty ``:alt:`` still means "no alternative text", for a decorative diagram.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    tree = html_parser.parse(Path(app.outdir) / "index.html")
+    alts = [img.attrib["alt"] for img in tree.xpath("//img[@class='graphviz']")]
+
+    assert alts == ["needflow graphviz diagram", "my alt text", ""]
