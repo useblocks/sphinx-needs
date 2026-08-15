@@ -967,6 +967,12 @@ since it used to draw labels.
 A diagram overrides it with :ref:`show_link_names <needflow_show_link_names>`,
 including turning labels off again with ``none``.
 
+.. note::
+
+   Every enumerated ``needs_flow_*`` value -- this one, :ref:`needs_flow_direction`,
+   :ref:`needs_flow_legend` and :ref:`needs_flow_engine` -- is matched without regard to
+   case or surrounding whitespace, exactly as the matching directive option is.
+
 .. _`needs_flow_link_types`:
 
 needs_flow_link_types

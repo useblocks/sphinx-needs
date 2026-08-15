@@ -3005,3 +3005,103 @@ def test_graphviz_label_does_not_break_html_entities(test_app):
     # no entity may be interrupted by a line break element
     assert not re.search(r"&[a-z]*<br[^>]*>[a-z]*;", debug)
 
+
+NORMALISED_CONFIG = """\
+Config value normalisation
+==========================
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "override,needle,in_diagram",
+    [
+        ({"needs_flow_show_links": "  Outgoing  "}, "links outgoing", True),
+        ({"needs_flow_direction": "  RIGHT  "}, "left to right direction", True),
+        ({"needs_flow_engine": "  GraphViz  "}, "digraph needflow", True),
+        # the legend is a document table, so it is looked for in the page itself
+        ({"needs_flow_legend": "  Types  "}, "needflow_legend", False),
+    ],
+    ids=["show_links", "direction", "engine", "legend"],
+)
+def test_enum_config_values_ignore_case_and_padding(
+    make_app, tmp_path, plantuml_command, override, needle, in_diagram
+):
+    """A configured enum value is matched the way the matching option value is.
+
+    The directive options go through docutils' ``choice``, which lowercases and strips
+    before matching, so ``:show_link_names: Outgoing`` has always been accepted. The
+    configuration side matched exactly, so the same word in ``conf.py`` warned and fell
+    back -- silently drawing something else. That asymmetry was internal to Sphinx-Needs
+    and it also made the two implementations of this vocabulary disagree, since ubCode
+    normalises both halves.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(NORMALISED_CONFIG, "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "graphviz_output_format": "svg",
+            **override,
+        },
+    )
+    app.build()
+
+    # the value is usable, so nothing is reported and nothing falls back
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    # the diagram source is read from the `:debug:` block rather than the raw markup,
+    # which the graphviz engine syntax highlights into per-token spans
+    haystack = (
+        _debug_source(Path(app.outdir), "index.html")
+        if in_diagram
+        else Path(app.outdir, "index.html").read_text()
+    )
+    assert needle in haystack
+
+
+@pytest.mark.parametrize(
+    "override,message",
+    [
+        ({"needs_flow_show_links": "  Outgoinggg  "}, "'needs_flow_show_links'"),
+        ({"needs_flow_direction": "  sideways  "}, "'needs_flow_direction'"),
+        ({"needs_flow_engine": "  crayon  "}, "'needs_flow_engine'"),
+    ],
+    ids=["show_links", "direction", "engine"],
+)
+def test_normalisation_does_not_silence_a_genuinely_wrong_value(
+    make_app, tmp_path, plantuml_command, override, message
+):
+    """Tolerating case and padding must not turn a wrong value into a silent fallback.
+
+    The point of normalising is to accept what the author plainly meant, not to accept
+    anything -- so a value that is wrong after normalisation is still reported, and the
+    message quotes what was actually written.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(NORMALISED_CONFIG, "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command, **override},
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert f"Invalid {message} value" in warnings
+    # the author's own spelling is echoed, padding and all, so it can be found in conf.py
+    assert repr(next(iter(override.values()))) in warnings

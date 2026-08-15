@@ -331,15 +331,23 @@ def validated_config_enum(
     reaching one unchecked is how a typo becomes a ``KeyError``.  The value is reported
     once, with the allowed values, and the documented default is used instead.
 
+    Case and surrounding whitespace are ignored, which is what the matching *option*
+    already does -- docutils' ``choice`` lowercases and strips before matching, so
+    ``:show_link_names: Outgoing`` has always been accepted while the same word in
+    ``conf.py`` warned and fell back to something else entirely.  That asymmetry was
+    internal to Sphinx-Needs, and it also made the two implementations of this vocabulary
+    disagree, since ubCode normalises both halves.  The warning still quotes the value as
+    it was written, so it can be found in ``conf.py``.
+
     :param value: The configured value.
     :param allowed: The values the configuration accepts.
     :param default: The value to fall back to.
     :param name: The configuration key, for the message.
     :param location: Where to report the value, if anywhere.
-    :return: The value, or the default if it is not usable.
+    :return: The normalised value, or the default if it is not usable.
     """
-    if value in allowed:
-        return value
+    if (normalised := str(value).strip().lower()) in allowed:
+        return normalised
     log_warning(
         LOGGER,
         f"Invalid {name!r} value {value!r}, "
@@ -368,7 +376,9 @@ def resolve_engine(
     :param location: Where to report an engine that cannot be drawn with.
     :return: The engine to draw with.
     """
-    engine = option if option is not None else project_default
+    # normalised the same way as everywhere else, so that a configured "PlantUML" means
+    # what `:engine: PlantUML` has always meant (docutils' `choice` lowercases for us)
+    engine = (option if option is not None else str(project_default)).strip().lower()
     if engine in ENGINES:
         return engine
     if engine == "mermaid":
