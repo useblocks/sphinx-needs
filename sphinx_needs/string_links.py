@@ -104,6 +104,11 @@ def compiled_string_links(
     impossible -- both paths compile the same strings -- but it decides whether a
     user's links render, so it is reported rather than swallowed.
 
+    This function is called once per rendered need and once per needtable cell, so the
+    report is emitted with ``once=True``: one line per entry, not one per need. Sphinx
+    resets that filter per application, so a later build in the same process still
+    reports; a parallel build may report once per worker process.
+
     :param needs_config: The sphinx-needs configuration.
     :return: The compiled entries, keyed by their configuration name.
     """
@@ -124,6 +129,7 @@ def compiled_string_links(
                 f"compile ({exc}), skipping; its links will not render.",
                 "string_link",
                 None,
+                once=True,
             )
             continue
     return compiled

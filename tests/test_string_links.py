@@ -799,7 +799,7 @@ def test_compile_divergence_is_reported(monkeypatch: Any) -> None:
     monkeypatch.setattr(
         module,
         "log_warning",
-        lambda _logger, message, subtype, _location: messages.append(
+        lambda _logger, message, subtype, _location, **_kwargs: messages.append(
             (message, subtype)
         ),
     )
@@ -957,3 +957,45 @@ def test_bytes_pattern_is_rejected(make_app: Any, sphinx_test_tempdir: Any) -> N
     assert "Problems dealing with string to link transformation" not in warnings
     assert app.config.needs_string_links == {}
     assert "AB-1" in need_html(app)
+
+
+MANY_NEEDS_INDEX = "String links\n============\n" + "".join(
+    f"""
+.. req:: Need {n}
+   :id: SLINK_{n:03d}
+   :ticket: AB-{n}
+
+   Body.
+"""
+    for n in range(1, 7)
+)
+
+
+def test_compile_divergence_is_reported_once(
+    make_app: Any, sphinx_test_tempdir: Any, monkeypatch: Any
+) -> None:
+    """The divergence report is per entry, not per need.
+
+    ``compiled_string_links`` runs once per rendered need and once per needtable cell,
+    so an unguarded warning would dump one line per need for a condition that is
+    supposed to be unreachable.
+    """
+    from sphinx_needs import string_links as module
+
+    def boom(*_args: Any, **_kwargs: Any) -> None:
+        raise RuntimeError("simulated divergence")
+
+    monkeypatch.setattr(module, "_compile_string_link", boom)
+
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"t": GOOD_LINK},
+        index=MANY_NEEDS_INDEX,
+    )
+    lines = [
+        line
+        for line in warnings_of(app).splitlines()
+        if "passed validation but failed to compile" in line
+    ]
+    assert len(lines) == 1, lines
