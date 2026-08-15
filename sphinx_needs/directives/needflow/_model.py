@@ -28,7 +28,7 @@ either of them draws -- and are called out at the point where they happen:
 from __future__ import annotations
 
 from collections.abc import Callable, Container, Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Literal
 
 from docutils import nodes
@@ -48,14 +48,19 @@ from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
 
 from ._options import (
+    ArrowStyle,
     FlowDirection,
     LegendPart,
+    LineStyle,
     LinkLabels,
     StyleProps,
     compile_style_classes,
+    resolve_arrow,
     resolve_direction,
     resolve_legend,
+    resolve_line,
     resolve_link_labels,
+    resolve_shape,
     resolve_styles,
 )
 
@@ -250,6 +255,36 @@ class GraphEdge:
             else self.link_type.display.style
         )
 
+    @property
+    def line(self) -> LineStyle | None:
+        """How this link's line is drawn, as an intent rather than an engine token.
+
+        ``None`` when the link type only carries the deprecated ``style`` value, which
+        each engine then emits exactly as it always has.
+        """
+        display = self.link_type.display
+        return resolve_line(
+            display.part_line if self.is_part else display.line, self.style
+        )
+
+    @property
+    def arrow(self) -> ArrowStyle | None:
+        """Which arrow heads this link carries.
+
+        ``None`` when the link type only carries the deprecated start/end tokens.
+        """
+        return resolve_arrow(self.link_type.display.arrow)
+
+    @property
+    def color(self) -> str | None:
+        """The color of this link, or ``None`` to leave it to the engine.
+
+        The configured default is the engines' own edge color, so it is left unsaid
+        rather than restated on every edge of every diagram.
+        """
+        color = self.link_type.display.color.strip()
+        return color if color and color != "#000000" else None
+
     def label(self, labels: LinkLabels) -> str | None:
         """The text to write on this edge.
 
@@ -432,6 +467,17 @@ def build_graph(
         needs_config.flow_styles, location=variant_location
     )
 
+    # `needs_types[].shape` is the neutral counterpart of `needs_types[].style`, which
+    # holds PlantUML element keywords; the old key is left doing exactly what it does
+    # today, and only a type that opts in to the new one is drawn from the neutral
+    # vocabulary, so no existing project's diagram moves
+    type_shapes = {
+        need_type["directive"]: shape
+        for need_type in needs_config.types
+        if (raw := need_type.get("shape"))
+        and (shape := resolve_shape(raw)) is not None
+    }
+
     roots, drawn = build_node_tree(
         found_needs,
         lambda need: resolve_presentation(
@@ -440,6 +486,7 @@ def build_graph(
             border_color=attributes["border_color"],
             styles=attributes["styles"],
             style_classes=style_classes,
+            type_shapes=type_shapes,
             config=needs_config,
             needs=needs_view.values(),
             location=variant_location,
@@ -497,6 +544,7 @@ def resolve_presentation(
     border_color: str | None,
     styles: str = "",
     style_classes: Mapping[str, StyleProps] | None = None,
+    type_shapes: Mapping[str, str] | None = None,
     config: NeedsSphinxConfig,
     needs: Iterable[NeedItem | NeedPartItem],
     location: LocationType,
@@ -525,6 +573,11 @@ def resolve_presentation(
         variants=config.variants,
         location=location,
     )
+    if resolved_styles.shape is None and need["is_need"]:
+        # a style rule is more specific than the need type, so the type's shape is only
+        # consulted when no rule set one
+        if (shape := (type_shapes or {}).get(need["type"])) is not None:
+            resolved_styles = replace(resolved_styles, shape=shape)
     is_highlighted = styled_highlight or (
         bool(highlight) and filter_single_need(need, config, highlight, needs)
     )

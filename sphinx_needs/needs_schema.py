@@ -585,15 +585,32 @@ class LinkDisplayConfig:
     outgoing: str
     """Title for outgoing links (e.g., 'links outgoing')."""
     color: str = "#000000"
-    """Color used for needflow diagrams."""
+    """Color used for needflow diagrams.
+
+    The default is the engines' own edge color, so it is not emitted; any other value
+    is drawn."""
     style: str = ""
-    """Line style used for needflow diagrams."""
+    """Line style used for needflow diagrams (deprecated, use ``line``)."""
     style_part: str = "dotted"
-    """Line style used for need parts in needflow diagrams."""
+    """Line style used for need parts in needflow diagrams (deprecated, use ``part_line``)."""
     style_start: str = "-"
-    """Arrow start style for needflow diagrams."""
+    """Arrow start style for needflow diagrams (deprecated, use ``arrow``)."""
     style_end: str = "->"
-    """Arrow end style for needflow diagrams."""
+    """Arrow end style for needflow diagrams (deprecated, use ``arrow``)."""
+    line: str = ""
+    """How the line is drawn in needflow diagrams.
+
+    One of ``solid``, ``dashed``, ``dotted``, ``thick`` or ``invisible``;
+    empty means the deprecated ``style`` is consulted instead."""
+    part_line: str = ""
+    """How the line to a need part is drawn (see ``line``).
+
+    Empty means the deprecated ``style_part`` is consulted instead."""
+    arrow: str = ""
+    """Which arrow heads a line carries in needflow diagrams.
+
+    One of ``normal``, ``none``, ``open``, ``circle``, ``cross`` or ``both``;
+    empty means the deprecated ``style_start``/``style_end`` are consulted instead."""
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

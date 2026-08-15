@@ -720,3 +720,141 @@ def resolve_styles(
             highlighted = False
         props = props.overlay(found)
     return props, highlighted
+
+
+LineStyle = Literal["solid", "dashed", "dotted", "thick", "invisible"]
+"""How a line between two needs is drawn."""
+
+ArrowStyle = Literal["normal", "none", "open", "circle", "cross", "both"]
+"""Which arrow heads a line carries.
+
+The members are the ones every engine can draw; anything beyond them would be
+expressible in one engine's syntax only, which is what the engine config is for.
+"""
+
+#: The legacy PlantUML line keywords, mapped onto the neutral vocabulary.
+#: ``needs_links[].style`` has always held these, so a project can move a value across
+#: unchanged and have it keep its meaning.
+LINE_ALIASES: Mapping[str, LineStyle] = {
+    "": "solid",
+    "solid": "solid",
+    "dashed": "dashed",
+    "dotted": "dotted",
+    "bold": "thick",
+    "thick": "thick",
+    "hidden": "invisible",
+    "invisible": "invisible",
+}
+
+#: How each neutral line is written in PlantUML, inside the ``[...]`` of an arrow.
+_PLANTUML_LINES: Mapping[LineStyle, str] = {
+    "solid": "",
+    "dashed": "dashed",
+    "dotted": "dotted",
+    "thick": "bold",
+    "invisible": "hidden",
+}
+
+#: How each neutral line is written as a Graphviz ``style``.
+_GRAPHVIZ_LINES: Mapping[LineStyle, str] = {
+    "solid": "solid",
+    "dashed": "dashed",
+    "dotted": "dotted",
+    "thick": "bold",
+    "invisible": "invis",
+}
+
+#: How each neutral arrow is written in PlantUML, as a (start, end) token pair.
+#: PlantUML has no crossed head, so ``cross`` degrades to a plain one (see
+#: :func:`plantuml_arrow`).
+_PLANTUML_ARROWS: Mapping[ArrowStyle, tuple[str, str]] = {
+    "normal": ("-", "->"),
+    "none": ("-", "-"),
+    "open": ("-", "->"),
+    "circle": ("-", "-o"),
+    "cross": ("-", "->"),
+    "both": ("<", "->"),
+}
+
+#: How each neutral arrow is written as Graphviz attributes.
+_GRAPHVIZ_ARROWS: Mapping[ArrowStyle, tuple[tuple[str, str], ...]] = {
+    "normal": (("arrowhead", "normal"),),
+    "none": (("arrowhead", "none"),),
+    "open": (("arrowhead", "vee"),),
+    "circle": (("arrowhead", "odot"),),
+    "cross": (("arrowhead", "tee"),),
+    "both": (("dir", "both"), ("arrowtail", "normal"), ("arrowhead", "normal")),
+}
+
+
+def resolve_line(line: str, legacy: str) -> LineStyle | None:
+    """Decide how a line is drawn, preferring the neutral value over the legacy one.
+
+    :param line: The configured ``line`` (or ``part_line``), empty if unset.
+    :param legacy: The configured ``style`` (or ``style_part``), which may also hold
+        a color and several comma separated keywords.
+    :return: The neutral line style, or ``None`` if the legacy value is to be emitted
+        as it always has been.
+    """
+    if line and (resolved := LINE_ALIASES.get(line.strip().lower())) is not None:
+        return resolved
+    return None
+
+
+def resolve_arrow(arrow: str) -> ArrowStyle | None:
+    """Decide which arrow heads a line carries.
+
+    :param arrow: The configured ``arrow``, empty if unset.
+    :return: The neutral arrow style, or ``None`` if the legacy start/end tokens are
+        to be emitted as they always have been.
+    """
+    if not arrow:
+        return None
+    value = arrow.strip().lower()
+    return value if value in get_args(ArrowStyle) else None  # type: ignore[return-value]
+
+
+def plantuml_line(line: LineStyle) -> str:
+    """Write a neutral line style as PlantUML.
+
+    :param line: The neutral line style.
+    :return: What to put inside the ``[...]`` of the arrow, empty for a plain line.
+    """
+    return _PLANTUML_LINES[line]
+
+
+def plantuml_arrow(arrow: ArrowStyle, *, location: LocationType) -> tuple[str, str]:
+    """Write a neutral arrow style as a PlantUML (start, end) token pair.
+
+    :param arrow: The neutral arrow style.
+    :param location: Where to report an arrow PlantUML cannot draw.
+    :return: The start and end tokens of the arrow.
+    """
+    if arrow == "cross":
+        log_warning(
+            LOGGER,
+            "the plantuml engine has no crossed arrow head, "
+            "so a plain one is drawn instead",
+            "needflow",
+            location=location,
+            once=True,
+        )
+    return _PLANTUML_ARROWS[arrow]
+
+
+def graphviz_line(line: LineStyle) -> str:
+    """Write a neutral line style as a Graphviz ``style`` value.
+
+    :param line: The neutral line style.
+    :return: The ``style`` value.
+    """
+    return _GRAPHVIZ_LINES[line]
+
+
+def graphviz_arrow(arrow: ArrowStyle) -> tuple[tuple[str, str], ...]:
+    """Write a neutral arrow style as Graphviz attributes.
+
+    :param arrow: The neutral arrow style.
+    :return: The attributes to add.
+    """
+    return _GRAPHVIZ_ARROWS[arrow]

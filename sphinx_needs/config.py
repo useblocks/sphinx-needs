@@ -328,7 +328,16 @@ class NeedType(TypedDict):
     """The default color to use in diagrams.
     If unset or empty, no color is applied and the diagram engine's default is used."""
     style: NotRequired[str]
-    """The default node style to use in diagrams (default: "node")."""
+    """The default node style to use in diagrams (default: "node").
+
+    Holds a PlantUML element keyword; prefer ``shape``, which every engine
+    understands."""
+    shape: NotRequired[str]
+    """The default shape to draw the need with, in every diagram engine.
+
+    One of ``rectangle``, ``rounded``, ``circle``, ``ellipse``, ``diamond``,
+    ``hexagon``, ``cylinder``, ``document``, ``folder`` or ``box3d``; the legacy
+    PlantUML keywords of ``style`` are also accepted. Takes precedence over ``style``."""
 
 
 class NeedFields(TypedDict):

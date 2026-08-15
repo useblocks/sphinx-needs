@@ -33,7 +33,13 @@ from ._model import (
     build_graph,
     resolve_link_types,
 )
-from ._options import GRAPHVIZ_SHAPES, LinkLabels, graphviz_rankdir
+from ._options import (
+    GRAPHVIZ_SHAPES,
+    LinkLabels,
+    graphviz_arrow,
+    graphviz_line,
+    graphviz_rankdir,
+)
 from ._shared import create_filter_paragraph, create_legend_nodes
 
 try:
@@ -448,14 +454,24 @@ def _render_edge(
     if (label := edge.label(link_labels)) is not None:
         params.append(("label", _quote(label)))
 
-    params.extend(
-        # TODO also use link_type.display.color?
-        _style_params_from_link_type(
-            edge.style,
-            edge.link_type.display.style_start,
-            edge.link_type.display.style_end,
+    # the neutral `line`/`arrow`/`color` win where a link type sets them; where it only
+    # carries the deprecated plantuml tokens, they are translated as they were
+    if (line := edge.line) is not None:
+        params.append(("style", _quote(graphviz_line(line))))
+    if (arrow := edge.arrow) is not None:
+        params.extend(graphviz_arrow(arrow))
+    if line is None or arrow is None:
+        params.extend(
+            _style_params_from_link_type(
+                edge.style,
+                edge.link_type.display.style_start,
+                edge.link_type.display.style_end,
+                skip_line=line is not None,
+                skip_arrow=arrow is not None,
+            )
         )
-    )
+    if color := edge.color:
+        params.append(("color", _quote(color)))
 
     start_id = _quote(edge.source_id)
     if (ltail := cluster_ids[edge.source_id]) is not None:
@@ -473,26 +489,44 @@ def _render_edge(
 
 @cache
 def _style_params_from_link_type(
-    styles: str, style_start: str, style_end: str
+    styles: str,
+    style_start: str,
+    style_end: str,
+    skip_line: bool = False,
+    skip_arrow: bool = False,
 ) -> list[tuple[str, str]]:
+    """Translate the deprecated PlantUML link tokens into graphviz attributes.
+
+    :param styles: The ``style``/``style_part`` value, which may hold a color and
+        several comma separated keywords.
+    :param style_start: The ``style_start`` arrow token.
+    :param style_end: The ``style_end`` arrow token.
+    :param skip_line: Whether the link type already set a neutral ``line``, which wins.
+    :param skip_arrow: Whether the link type already set a neutral ``arrow``, which wins.
+    :return: The attributes to add.
+    """
     params: list[tuple[str, str]] = []
 
-    for style in styles.split(","):
-        if not (style := style.strip()):
-            continue
-        if style.startswith("#"):
-            # assume this is a color
-            params.append(("color", _quote(style)))
-        elif style in ("dotted", "dashed", "solid", "bold"):
-            params.append(("style", _quote(style)))
-        else:
-            log_warning(
-                LOGGER,
-                f"Unknown link style {style!r} for graphviz engine",
-                "needflow",
-                None,
-                once=True,
-            )
+    if not skip_line:
+        for style in styles.split(","):
+            if not (style := style.strip()):
+                continue
+            if style.startswith("#"):
+                # assume this is a color
+                params.append(("color", _quote(style)))
+            elif style in ("dotted", "dashed", "solid", "bold"):
+                params.append(("style", _quote(style)))
+            else:
+                log_warning(
+                    LOGGER,
+                    f"Unknown link style {style!r} for graphviz engine",
+                    "needflow",
+                    None,
+                    once=True,
+                )
+
+    if skip_arrow:
+        return params
 
     # convert plantuml arrow start/end style to graphviz style.
     plantuml_arrow_ends = style_start + style_end

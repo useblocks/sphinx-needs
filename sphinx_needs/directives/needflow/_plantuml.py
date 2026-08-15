@@ -26,7 +26,12 @@ from ._model import (
     build_graph,
     resolve_link_types,
 )
-from ._options import plantuml_direction, plantuml_shape
+from ._options import (
+    plantuml_arrow,
+    plantuml_direction,
+    plantuml_line,
+    plantuml_shape,
+)
 from ._shared import create_filter_paragraph, create_legend_nodes
 
 logger = get_logger(__name__)
@@ -446,16 +451,25 @@ def render_connections(graph: NeedflowGraph, entity_names: Mapping[str, str]) ->
         else:
             comment = ""
 
-        # If source or target of link is a need_part, a specific style is needed
-        link_style = f"[{edge.style}]" if (edge.is_part or edge.style) else ""
+        # the neutral `line`/`arrow`/`color` win where a link type sets them; where it
+        # only carries the deprecated plantuml tokens, they are emitted as they were
+        parts = []
+        if (line := edge.line) is not None:
+            if token := plantuml_line(line):
+                parts.append(token)
+        elif edge.is_part or edge.style:
+            parts.append(edge.style)
+        if color := edge.color:
+            parts.append(f"#{color.lstrip('#')}")
+        link_style = f"[{','.join(parts)}]" if parts else ""
 
         source = get_entity_name(entity_names, edge.source_id)
         target = get_entity_name(entity_names, edge.target_id)
-        arrow = (
-            edge.link_type.display.style_start
-            + link_style
-            + edge.link_type.display.style_end
-        )
-        # TODO also use link_type.display.color?
+        if (neutral := edge.arrow) is not None:
+            start, end = plantuml_arrow(neutral, location=None)
+        else:
+            start = edge.link_type.display.style_start
+            end = edge.link_type.display.style_end
+        arrow = start + link_style + end
         puml_connections += f"{source} {arrow} {target}{comment}\n"
     return puml_connections

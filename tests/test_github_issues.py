@@ -174,7 +174,10 @@ def test_doc_github_1664_legend(test_app):
     debug = _debug_source(Path(app.outdir, "legend.html"))
 
     if app.config.needs_flow_engine == "plantuml":
-        assert "\nlegend\n" in debug
+        # the debug block is line numbered on both engines, so the legend block is
+        # matched without depending on where its lines start
+        assert re.search(r"\d+legend\n", debug)
+        assert re.search(r"\d+endlegend\n", debug)
         # the row is kept, with an empty color swatch cell
         assert "| | Specification |" in debug
     else:

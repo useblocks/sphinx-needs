@@ -1989,3 +1989,148 @@ def test_flow_link_types_is_deprecated_as_dead(test_app):
 
     # the `links` edge is drawn even though the config named only `blocks`
     assert "BBBBB --> AAAAA" in _debug_source(Path(app.outdir), "index.html")
+
+
+#: A ``conf.py`` whose link type and need type use the neutral vocabulary.
+NEUTRAL_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "shape": "cylinder",
+    },
+]
+needs_links = {
+    "links": {
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "line": "dashed",
+        "arrow": "circle",
+        "color": "#00AA00",
+    },
+}
+"""
+
+NEUTRAL_LINKS = """\
+Neutral link and type styling
+=============================
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), NEUTRAL_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), NEUTRAL_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_neutral_link_and_type_styling(test_app):
+    """``needs_links[].line/arrow/color`` and ``needs_types[].shape`` reach both engines.
+
+    The old keys held PlantUML tokens that graphviz had to translate through a lookup
+    table with a documented "cheat", and ``color`` was carried by the configuration but
+    honoured by neither engine. The neutral values say what is meant, and each engine
+    writes it in its own syntax.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert "database " in debug  # the neutral cylinder
+        assert "[dashed,#00AA00]" in debug
+        assert "-o " in debug  # the neutral circle head
+    else:
+        assert 'shape="cylinder"' in debug
+        assert 'style="dashed"' in debug
+        assert 'arrowhead="odot"' in debug or "arrowhead=odot" in debug
+        assert 'color="#00AA00"' in debug
+
+
+LEGACY_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+]
+needs_links = {
+    "links": {
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "style": "dotted",
+    },
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGACY_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        }
+    ],
+    indirect=True,
+)
+def test_legacy_link_display_keys_are_deprecated_but_honoured(test_app):
+    """The PlantUML-token link keys keep drawing exactly what they always drew.
+
+    The deprecation is an alias, not a withdrawal: a project can move one link type at
+    a time, and one that never moves keeps its diagrams.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "uses deprecated display key(s) style" in warnings
+    assert "'line', 'part_line' and 'arrow'" in warnings
+
+    assert "-[dotted]->" in _debug_source(Path(app.outdir), "index.html")

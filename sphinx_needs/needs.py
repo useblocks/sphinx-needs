@@ -1084,9 +1084,33 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 "outgoing": link.get("outgoing", name),
             }
             # Only override optional fields if explicitly set in config
-            for key in ("color", "style", "style_part", "style_start", "style_end"):
+            for key in (
+                "color",
+                "style",
+                "style_part",
+                "style_start",
+                "style_end",
+                "line",
+                "part_line",
+                "arrow",
+            ):
                 if key in link:
                     display_kwargs[key] = link[key]
+            if legacy := {
+                key
+                for key in ("style", "style_part", "style_start", "style_end")
+                if key in link
+            }:
+                # kept working indefinitely, and folded into the neutral values by the
+                # needflow model, so a project can migrate one link type at a time
+                log_warning(
+                    LOGGER,
+                    f"needs_links {name!r} uses deprecated display key(s) "
+                    f"{', '.join(sorted(legacy))}. "
+                    "Please use 'line', 'part_line' and 'arrow' instead.",
+                    "deprecated",
+                    None,
+                )
             display_config = LinkDisplayConfig(**display_kwargs)
             link_field = LinkSchema(
                 name=name,
