@@ -105,6 +105,8 @@ Bug fixes
   The intended default was unreachable, so every such image was published with an empty
   ``alt`` attribute. Writing ``:alt:`` with no value still gives an empty ``alt``, for a
   diagram that is purely decorative.
+  The stored environment version is bumped, because the option is recorded differently
+  when it is not given, so the first build after upgrading re-reads every document.
 
 - 🐛 The :ref:`needflow` warning for an unknown ``:config:`` name now names
   :ref:`needs_flow_configs`, which was misspelled as ``need_flows_configs``.
