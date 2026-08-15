@@ -666,3 +666,45 @@ def test_graphviz_alt_text(test_app):
     alts = [img.attrib["alt"] for img in tree.xpath("//img[@class='graphviz']")]
 
     assert alts == ["needflow graphviz diagram", "my alt text", ""]
+
+
+def test_get_entity_name_unmapped_id_falls_back_with_warning():
+    """An unmapped id must degrade to a direct conversion, loudly, never crash.
+
+    Every rendered need is mapped up front, so an unmapped id means an emission site
+    bypassed the diagram's injective mapping; the lookup falls back to the (possibly
+    colliding) direct conversion and warns. The two ``warnings == ""`` build tests
+    above prove the fallback is unreachable today; this pins its contract directly.
+
+    The capture handler is attached to the module's own logger rather than relying on
+    propagation, which Sphinx disables once an application has configured logging.
+    """
+    import logging
+
+    from sphinx_needs.directives.needflow._plantuml import get_entity_name
+
+    records: list[logging.LogRecord] = []
+
+    class _Capture(logging.Handler):
+        def emit(self, record: logging.LogRecord) -> None:
+            records.append(record)
+
+    module_logger = logging.getLogger(
+        "sphinx.sphinx_needs.directives.needflow._plantuml"
+    )
+    handler = _Capture(level=logging.WARNING)
+    module_logger.addHandler(handler)
+    old_level = module_logger.level
+    module_logger.setLevel(logging.WARNING)
+    try:
+        assert get_entity_name({"R-1": "R_1", "R=1": "R_1_2"}, "R=1") == "R_1_2"
+        assert records == []
+
+        assert get_entity_name({}, "R=1") == "R_1"
+        assert any(
+            "'R=1' was not mapped to a plantuml entity name" in record.getMessage()
+            for record in records
+        )
+    finally:
+        module_logger.removeHandler(handler)
+        module_logger.setLevel(old_level)
