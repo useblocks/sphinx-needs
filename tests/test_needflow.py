@@ -902,3 +902,185 @@ def test_direction_config_is_consulted_only_when_unset(test_app):
     # the option opts back out to the default, which Graphviz already draws, so no
     # statement is needed -- the project default never reaches the diagram source
     assert "rankdir" not in _debug_source(outdir, "index.html", 1)
+
+
+LINK_LABELS = """\
+Link labels
+===========
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :debug:
+
+.. needflow::
+   :link_labels: outgoing
+   :debug:
+
+.. needflow::
+   :link_labels: incoming
+   :debug:
+
+.. needflow::
+   :link_labels: type
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), LINK_LABELS)],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), LINK_LABELS)],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_link_labels_option(test_app):
+    """``:link_labels:`` chooses what an edge is labelled with, or nothing at all.
+
+    The tri-state replaces a flag that could only ever be turned on, so a diagram can
+    now also opt out of a project default. All four values behave the same on both
+    engines, which is the point of a portable option.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    outdir = Path(app.outdir)
+    none = _debug_source(outdir, "index.html", 0)
+    outgoing = _debug_source(outdir, "index.html", 1)
+    incoming = _debug_source(outdir, "index.html", 2)
+    by_type = _debug_source(outdir, "index.html", 3)
+
+    assert "links outgoing" not in none
+    assert "links incoming" not in none
+    assert "links outgoing" in outgoing
+    assert "links incoming" in incoming
+    # the bare field name, for a diagram that wants the data model rather than prose
+    assert "links incoming" not in by_type
+    assert "links outgoing" not in by_type
+    assert "links" in by_type
+
+
+DEPRECATED_SHOW_LINK_NAMES = """\
+Deprecated show_link_names
+==========================
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :show_link_names:
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), DEPRECATED_SHOW_LINK_NAMES),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        }
+    ],
+    indirect=True,
+)
+def test_show_link_names_is_deprecated_but_honoured(test_app):
+    """``:show_link_names:`` keeps working, and says once that it has a replacement.
+
+    Deprecation upstream means an alias that is honoured indefinitely, so the only
+    difference a reader sees is the warning; the diagram is exactly the one
+    ``:link_labels: outgoing`` draws.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "'show_link_names' option is deprecated" in warnings
+    assert "link_labels" in warnings
+
+    assert "links outgoing" in _debug_source(Path(app.outdir), "index.html")
+
+
+DEPRECATED_FLOW_SHOW_LINKS = """\
+Deprecated needs_flow_show_links
+================================
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :debug:
+
+.. needflow::
+   :link_labels: none
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), DEPRECATED_FLOW_SHOW_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "plantuml",
+                "needs_flow_show_links": True,
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_flow_show_links_is_deprecated_and_can_be_overridden(test_app):
+    """``needs_flow_show_links`` is honoured, deprecated, and no longer inescapable.
+
+    It used to be OR-ed with the option, so a project that turned labels on left no
+    way of turning them off again for a single diagram. ``:link_labels: none`` is that
+    way out, which is why the tri-state replaces the flag.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "'needs_flow_show_links' is deprecated" in warnings
+    # a project wide deprecation is said once, not once per diagram
+    assert warnings.count("'needs_flow_show_links' is deprecated") == 1
+
+    outdir = Path(app.outdir)
+    assert "links outgoing" in _debug_source(outdir, "index.html", 0)
+    assert "links outgoing" not in _debug_source(outdir, "index.html", 1)

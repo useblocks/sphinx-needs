@@ -19,6 +19,7 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.needflow._options import (
     direction_option,
     graphviz_config_direction,
+    link_labels_option,
     plantuml_config_direction,
 )
 from sphinx_needs.filter_common import FilterBase
@@ -61,6 +62,7 @@ class NeedflowDirective(FilterBase):
         "debug": directives.flag,
         # portable formatting vocabulary
         "direction": direction_option,
+        "link_labels": link_labels_option,
         # formatting
         "highlight": directives.unchanged_required,
         "border_color": directives.unchanged_required,
@@ -78,10 +80,32 @@ class NeedflowDirective(FilterBase):
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
 
+    def _warn_deprecated(self, option: str, replacement: str) -> None:
+        """Report that a used option has a replacement, without withdrawing it.
+
+        A deprecated option keeps being honoured -- indefinitely, as every other
+        Sphinx-Needs deprecation is -- so the warning fires only when the option is
+        actually used, and never for a document that has already moved on.
+
+        :param option: The name of the deprecated option.
+        :param replacement: What to say the author should write instead.
+        """
+        log_warning(
+            LOGGER,
+            f"The 'needflow' {option!r} option is deprecated. {replacement}",
+            "deprecated",
+            location=self.get_location(),
+        )
+
     @measure_time("needflow")
     def run(self) -> Sequence[nodes.Node]:
         needs_config = NeedsSphinxConfig(self.env.config)
         location = (self.env.docname, self.lineno)
+
+        if "show_link_names" in self.options:
+            self._warn_deprecated(
+                "show_link_names", "Please use ':link_labels: outgoing' instead."
+            )
 
         id = self.env.new_serialno("needflow")
         targetid = f"needflow-{self.env.docname}-{id}"
@@ -183,6 +207,7 @@ class NeedflowDirective(FilterBase):
             # consulted when the author did not say (the `max_items` precedent)
             "direction": self.options.get("direction"),
             "config_direction": config_direction,
+            "link_labels": self.options.get("link_labels"),
             **self.collect_filter_attributes(),
         }
 

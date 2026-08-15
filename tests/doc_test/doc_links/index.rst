@@ -87,7 +87,7 @@ Flow
 .. needflow::
    :show_legend:
    :filter: is_need
-   :show_link_names:
+   :link_labels: outgoing
    :link_types: links,blocks,tests
 
 **flow without links**
@@ -95,5 +95,5 @@ Flow
 .. needflow::
    :show_legend:
    :filter: is_need
-   :show_link_names:
+   :link_labels: outgoing
    :link_types: blocks,tests

@@ -22,8 +22,6 @@ either of them draws -- and are called out at the point where they happen:
 - ``parent_needs`` is dropped from the allowed link types *before* the root walk, so
   ``root_id`` never follows the need hierarchy.
 - The root walk runs before the filter, not after it.
-- ``show_link_names`` is OR-ed with ``needs_flow_show_links``, so the configuration can
-  only ever turn labels on.
 - An edge may point at a need that is not drawn as a node (see :class:`GraphEdge`).
 """
 
@@ -49,7 +47,12 @@ from sphinx_needs.needs_schema import FieldsSchema, LinkSchema
 from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
 
-from ._options import FlowDirection, resolve_direction
+from ._options import (
+    FlowDirection,
+    LinkLabels,
+    resolve_direction,
+    resolve_link_labels,
+)
 
 LOGGER = get_logger(__name__)
 
@@ -234,6 +237,22 @@ class GraphEdge:
             else self.link_type.display.style
         )
 
+    def label(self, labels: LinkLabels) -> str | None:
+        """The text to write on this edge.
+
+        :param labels: What the diagram labels its edges with.
+        :return: The label, or ``None`` for an unlabelled edge.
+        """
+        match labels:
+            case "outgoing":
+                return self.link_type.display.outgoing
+            case "incoming":
+                return self.link_type.display.incoming
+            case "type":
+                return self.link_type.name
+            case _:
+                return None
+
 
 @dataclass
 class NeedflowGraph:
@@ -254,8 +273,8 @@ class NeedflowGraph:
     edges: list[GraphEdge]
     """Every link between needs of the result, in the order the engines emit them."""
 
-    show_link_names: bool
-    """Whether edges are to be labelled with the link type."""
+    link_labels: LinkLabels
+    """What edges are to be labelled with, if anything."""
 
     direction: FlowDirection
     """The direction the diagram is drawn in, as an intent rather than an engine token.
@@ -402,8 +421,12 @@ def build_graph(
         roots=roots,
         nodes=drawn,
         edges=collect_edges(found_needs, allowed_link_types, drawn),
-        # the configuration can only ever turn link names on; it is kept as is
-        show_link_names=attributes["show_link_names"] or needs_config.flow_show_links,
+        link_labels=resolve_link_labels(
+            attributes["link_labels"],
+            attributes["show_link_names"],
+            needs_config.flow_link_labels,
+            needs_config.flow_show_links,
+        ),
         direction=resolve_direction(
             attributes["direction"],
             attributes["config_direction"],

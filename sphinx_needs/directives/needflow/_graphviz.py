@@ -32,7 +32,7 @@ from ._model import (
     build_graph,
     resolve_link_types,
 )
-from ._options import graphviz_rankdir
+from ._options import LinkLabels, graphviz_rankdir
 from ._shared import create_filter_paragraph
 
 try:
@@ -145,7 +145,7 @@ def process_needflow_graphviz(
         # calculate edge definitions
         content += "\n// edge definitions\n"
         for edge in graph.edges:
-            content += _render_edge(edge, graph.show_link_names, cluster_ids)
+            content += _render_edge(edge, graph.link_labels, cluster_ids)
 
         # note this lists only the need types that were actually drawn, whereas the
         # plantuml engine lists every configured type, so the same `:show_legend:` gives
@@ -372,13 +372,13 @@ def _label(
 
 def _render_edge(
     edge: GraphEdge,
-    show_links: bool,
+    link_labels: LinkLabels,
     cluster_ids: dict[str, str | None],
 ) -> str:
     """Render an edge in the graphviz format.
 
     :param edge: The edge to render.
-    :param show_links: Whether to label the edge with the link type.
+    :param link_labels: What to label the edge with, if anything.
     :param cluster_ids: The cluster ids collected by :func:`_render_node`.
     """
     if not (edge.source_drawn and edge.target_drawn):
@@ -387,8 +387,8 @@ def _render_edge(
 
     params: list[tuple[str, str]] = []
 
-    if show_links:
-        params.append(("label", _quote(edge.link_type.display.outgoing)))
+    if (label := edge.label(link_labels)) is not None:
+        params.append(("label", _quote(label)))
 
     params.extend(
         # TODO also use link_type.display.color?

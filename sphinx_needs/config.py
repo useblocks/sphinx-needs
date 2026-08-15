@@ -801,6 +801,10 @@ class NeedsSphinxConfig:
         default="down", metadata={"rebuild": "html", "types": (str,)}
     )
     """The default direction needflow diagrams are drawn in."""
+    flow_link_labels: Literal["none", "outgoing", "incoming", "type"] = field(
+        default="none", metadata={"rebuild": "html", "types": (str,)}
+    )
+    """What needflow diagrams label their edges with, by default."""
     flow_link_types: list[str] = field(
         default_factory=lambda: ["links"], metadata={"rebuild": "html", "types": ()}
     )

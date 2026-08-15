@@ -280,6 +280,46 @@ def resolve_direction(
     return project_default
 
 
+def resolve_link_labels(
+    option: LinkLabels | None,
+    show_link_names: bool,
+    project_default: LinkLabels,
+    legacy_show_links: bool,
+) -> LinkLabels:
+    """Decide what a diagram's edges are labelled with.
+
+    The four sources are consulted most specific first: the option, then the flag it
+    replaces, then the project default, then the configuration flag *that* replaces.
+    The old flag and the old configuration value were OR-ed together, so a project
+    that turned labels on left no way of turning them off again for a single diagram;
+    a diagram can now always have the last word.
+
+    :param option: The ``:link_labels:`` option, ``None`` if it was not given.
+    :param show_link_names: Whether the deprecated ``:show_link_names:`` flag was given.
+    :param project_default: The ``needs_flow_link_labels`` configuration value.
+    :param legacy_show_links: The deprecated ``needs_flow_show_links`` configuration value.
+    :return: What to label edges with.
+    """
+    if option is not None:
+        return option
+    if show_link_names:
+        return "outgoing"
+    if project_default != "none":
+        return project_default
+    if legacy_show_links:
+        log_warning(
+            LOGGER,
+            "Config option 'needs_flow_show_links' is deprecated. "
+            "Please use 'needs_flow_link_labels' instead "
+            "('True' is equivalent to 'outgoing').",
+            "deprecated",
+            location=None,
+            once=True,
+        )
+        return "outgoing"
+    return "none"
+
+
 @dataclass(frozen=True)
 class StyleProps:
     """The resolved presentation properties of a style class.

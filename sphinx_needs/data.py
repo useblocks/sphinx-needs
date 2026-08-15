@@ -690,6 +690,10 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     """The direction to draw the diagram in,
     ``None`` if the option was not given, in which case the configuration is consulted."""
 
+    link_labels: Literal["none", "outgoing", "incoming", "type"] | None
+    """What to label edges with,
+    ``None`` if the option was not given, in which case the configuration is consulted."""
+
     config_direction: Literal["down", "up", "right", "left"] | None
     """The direction the selected engine configuration sets, if any.
 
