@@ -1,7 +1,7 @@
-id: link-labels-outgoing
-title: ':link_labels: outgoing'
+id: link-labels-config-default
+title: link_labels as a project default, overridden by one diagram
 purpose: |
-  The outgoing title of the link type. Every implementation has a spelling that already meant exactly this before the portable vocabulary existed -- in sphinx-needs it is the bare `:show_link_names:` flag, which is why that option was widened to take a value rather than replaced. This case is therefore the byte-parity target each implementation checks its own pre-existing spelling against.
+  The configuration half of `link_labels`, which no other case drives: a project default must reach a diagram that says nothing about labels. It also pins `type` as the bare field name when it arrives from configuration -- a distinction a containment check cannot make, because `links` is a substring of both configured titles. The companion case `link-labels-option-beats-config` covers a diagram overriding it.
 needs:
 - id: REQ_1
   type: req
@@ -16,8 +16,8 @@ links:
 - option: links
   incoming: is linked by
   outgoing: links to
-options:
-  link_labels: outgoing
+config:
+  link_labels: type
 expect:
   plantuml:
     source: |
@@ -30,7 +30,7 @@ expect:
 
       ' Connection definition
 
-      REQ_1 --> REQ_2: links to\n
+      REQ_1 --> REQ_2: links\n
 
       @enduml
   graphviz:
@@ -49,5 +49,5 @@ expect:
       "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement two</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d"];
 
       // edge definitions
-      "REQ_1" -> "REQ_2" [label="links to", arrowhead=vee];
+      "REQ_1" -> "REQ_2" [label="links", arrowhead=vee];
       }

@@ -25,7 +25,8 @@ options:
   legend: links
 expect:
   legend:
-    links: [links]
+    links:
+    - links
   plantuml:
     source: |
       @startuml

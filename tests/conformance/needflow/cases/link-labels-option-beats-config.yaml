@@ -1,7 +1,11 @@
-id: link-labels-outgoing
-title: ':link_labels: outgoing'
+id: link-labels-option-beats-config
+title: a diagram turns labels off against a project default that turns them on
 purpose: |
-  The outgoing title of the link type. Every implementation has a spelling that already meant exactly this before the portable vocabulary existed -- in sphinx-needs it is the bare `:show_link_names:` flag, which is why that option was widened to take a value rather than replaced. This case is therefore the byte-parity target each implementation checks its own pre-existing spelling against.
+  Only an unset option consults the configuration, so a diagram always has the last word. This
+  is the case that used to be inexpressible: the option and the project default were combined
+  such that the default could only ever turn labels on, leaving a project no way to draw one
+  unlabelled diagram. Every implementation must give the option precedence, so the expectation
+  here is an edge with no label at all despite the project asking for one.
 needs:
 - id: REQ_1
   type: req
@@ -16,8 +20,10 @@ links:
 - option: links
   incoming: is linked by
   outgoing: links to
-options:
+config:
   link_labels: outgoing
+options:
+  link_labels: none
 expect:
   plantuml:
     source: |
@@ -30,7 +36,7 @@ expect:
 
       ' Connection definition
 
-      REQ_1 --> REQ_2: links to\n
+      REQ_1 --> REQ_2
 
       @enduml
   graphviz:
@@ -49,5 +55,5 @@ expect:
       "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement two</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d"];
 
       // edge definitions
-      "REQ_1" -> "REQ_2" [label="links to", arrowhead=vee];
+      "REQ_1" -> "REQ_2" [arrowhead=vee];
       }

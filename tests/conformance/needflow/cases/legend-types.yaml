@@ -25,7 +25,8 @@ options:
   legend: types
 expect:
   legend:
-    types: [Requirement]
+    types:
+    - Requirement
   plantuml:
     source: |
       @startuml
