@@ -46,9 +46,11 @@ New Features
   :ref:`needs_flow_engine_config`. Only an unset option consults the configuration, so a
   single diagram can always opt back out of a project default.
 
-  ``needs_links`` gains ``line``, ``part_line`` and ``arrow``, and its ``color`` is finally
-  honoured — an identical "TODO" had sat in both emitters. ``needs_types`` gains ``shape``,
-  a ten member vocabulary every engine can draw.
+  ``needs_links`` gains ``line``, ``part_line``, ``arrow`` and ``part_color``, and its
+  ``color`` is finally honoured — an identical "TODO" had sat in both emitters.
+  ``needs_types`` gains ``shape``, a ten member vocabulary every engine can draw.
+  ``color`` is unset by default rather than black, so a link type can now ask for black
+  and be given it.
 
   Where an engine cannot express an intent it degrades rather than fails: a plainer diagram
   beats a failed build. PlantUML has no bottom-up or right-left layout, so ``:direction: up``
@@ -62,6 +64,14 @@ New Features
 
 Improvements
 ............
+
+- 👌 :ref:`needflow`'s ``:debug:`` output is now a line-numbered literal block on both
+  engines (:pr:`1770`).
+
+  The ``plantuml`` engine emitted raw HTML while ``graphviz`` emitted a literal block,
+  so the same option produced two different things. Both now use the block, and so pick
+  up line numbers and the theme's code styling. Pygments has no PlantUML lexer, so that
+  source is shown unhighlighted rather than wrongly highlighted.
 
 - ✨ New :ref:`needs_card_layouts` configuration, for describing layouts declaratively
   (:pr:`1765`)
@@ -157,6 +167,35 @@ These changes do not affect user-facing behaviour:
 Bug fixes
 .........
 
+- 🐛 :ref:`needflow`'s ``:class:`` option is now honoured by the ``plantuml`` engine
+  (:pr:`1770`).
+
+  The option was collected by the directive and then dropped, so the same ``:class:``
+  styled a graphviz diagram and did nothing to a plantuml one.
+
+- 🐛 A malformed :ref:`needs_graphviz_styles` entry no longer ends the build
+  (:pr:`1770`).
+
+  A value that is not a mapping of attributes travelled unchecked from the
+  configuration into the emitter and aborted the build with ``'str' object has no
+  attribute 'items'``. It is now rejected where it is read, with a warning, and the
+  diagram is drawn without it.
+
+- 🐛 An unusable :ref:`needs_flow_engine` no longer ends the build (:pr:`1770`).
+
+  It tripped a bare ``assert`` -- which ``python -O`` strips, and which produced a
+  traceback rather than a message. It now warns once when the configuration is read,
+  names the allowed values, and draws with the default engine. ``mermaid`` is accepted
+  as a reserved name and degrades the same way, so a document shared with ubCode does
+  not lose its diagram here.
+
+- 🐛 :ref:`needs_graphviz_styles` is no longer mutated when a diagram selects several
+  configurations by name (:pr:`1770`).
+
+  The merge assigned one configuration's own sub-dictionary and then updated it in
+  place, so the entry was permanently altered and every later diagram inherited the
+  styles of an earlier one.
+
 - 🐛 :ref:`needflow` no longer fails the build when a need type has no ``color`` (or an
   empty one) and the diagram shows a legend (:issue:`1664`).
 
@@ -237,7 +276,9 @@ emits a ``needs.deprecated`` warning naming its replacement (:pr:`1770`).
   raster image and has always been ignored silently by the ``graphviz`` engine, so the same
   option never meant the same thing on both engines. Use ``:width:`` / ``:height:``.
 - ``needs_links[].style``, ``.style_part``, ``.style_start`` and ``.style_end`` →
-  ``.line``, ``.part_line`` and ``.arrow``. A project can migrate one link type at a time.
+  ``.line``, ``.part_line``, ``.color``, ``.part_color`` and ``.arrow``. A project can
+  migrate one link type, and one key, at a time. Note that the arrow member reproducing
+  today's default is ``open``, not ``normal`` — see :ref:`needflow_arrow_migration`.
 - :ref:`needs_flow_link_types` -- deprecated as **dead**. The directive always defaults its
   ``:link_types:`` option to every link field, so this value has never been consulted;
   making it work now would silently narrow every existing diagram. The documentation that

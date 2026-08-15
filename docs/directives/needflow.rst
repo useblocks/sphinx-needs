@@ -518,7 +518,7 @@ You can set a scale factor for the final flow chart using the ``scale`` option.
 
 We also support the numbers between ``1`` and ``300``.
 
-.. syntax-example::
+.. code-block:: rst
 
    .. needflow::
       :filter: is_need
@@ -541,20 +541,15 @@ highlight
 The ``:highlight:`` option takes a single :ref:`filter_string` as a value and
 sets the border for each need of the needflow to **red** if the need also passes the filter string.
 
-.. syntax-example::
+.. code-block:: rst
 
    .. needflow::
       :tags: flow_example
       :link_types: tests, blocks
       :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
 
-.. dropdown:: Using Graphviz engine
-
-   .. needflow::
-      :engine: graphviz
-      :tags: flow_example
-      :link_types: tests, blocks
-      :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
+The rendered result is the one shown under :ref:`styles <needflow_styles>`,
+whose built-in ``highlight`` class draws exactly the same outline.
 
 .. _needflow_border_color:
 
@@ -571,7 +566,7 @@ border_color
 The ``:border_color:`` allows for setting per need border colors, based on the need data.
 The value should be written with the :ref:`variant syntax <needs_variant_support>`, and each return value should be a hex (RGB) color.
 
-.. syntax-example::
+.. code-block:: rst
 
    .. needflow:: Engineering plan to develop a car
       :tags: flow_example
@@ -581,16 +576,8 @@ The value should be written with the :ref:`variant syntax <needs_variant_support
          [type == 'spec']:0000FF,
          [type == 'test']:00FF00
 
-.. dropdown:: Using Graphviz engine
-
-   .. needflow:: Engineering plan to develop a car
-      :engine: graphviz
-      :tags: flow_example
-      :link_types: tests, blocks
-      :border_color:
-         [type == 'req']:FF0000,
-         [type == 'spec']:0000FF,
-         [type == 'test']:00FF00
+The same diagram, rendered, is under :ref:`styles <needflow_styles>`:
+a class setting ``border`` says this and more.
 
 .. _needflow_align:
 
@@ -723,6 +710,8 @@ so no existing diagram changes.
       :tags: flow_example
       :show_legend:
 
+For a rendered legend, see :ref:`legend <needflow_legend>` above.
+
 .. _needflow_show_link_names:
 
 show_link_names
@@ -741,4 +730,6 @@ Equivalent to ``:link_labels: outgoing``.
    .. needflow::
       :tags: flow_example
       :show_link_names:
+
+For a rendered result, see :ref:`link_labels <needflow_link_labels>` above.
 
