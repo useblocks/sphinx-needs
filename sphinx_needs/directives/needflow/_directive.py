@@ -141,7 +141,7 @@ class NeedflowDirective(FilterBase):
             "lineno": self.lineno,
             "target_id": targetid,
             "root_id": self.options.get("root_id"),
-            "root_direction": self.options.get("root_direction", "all"),
+            "root_direction": self.options.get("root_direction", "both"),
             "root_depth": self.options.get("root_depth", None),
             "show_legend": "show_legend" in self.options,
             "show_filters": "show_filters" in self.options,
