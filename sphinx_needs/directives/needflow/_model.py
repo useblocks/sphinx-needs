@@ -263,9 +263,7 @@ class GraphEdge:
         each engine then emits exactly as it always has.
         """
         display = self.link_type.display
-        return resolve_line(
-            display.part_line if self.is_part else display.line, self.style
-        )
+        return resolve_line(display.part_line if self.is_part else display.line)
 
     @property
     def arrow(self) -> ArrowStyle | None:

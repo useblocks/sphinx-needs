@@ -784,12 +784,14 @@ _GRAPHVIZ_ARROWS: Mapping[ArrowStyle, tuple[tuple[str, str], ...]] = {
 }
 
 
-def resolve_line(line: str, legacy: str) -> LineStyle | None:
+def resolve_line(line: str) -> LineStyle | None:
     """Decide how a line is drawn, preferring the neutral value over the legacy one.
 
+    An unset -- or unrecognised -- neutral value hands the decision back to the
+    deprecated ``style``/``style_part``, which each engine then emits exactly as it
+    always has, rather than guessing at what was meant.
+
     :param line: The configured ``line`` (or ``part_line``), empty if unset.
-    :param legacy: The configured ``style`` (or ``style_part``), which may also hold
-        a color and several comma separated keywords.
     :return: The neutral line style, or ``None`` if the legacy value is to be emitted
         as it always has been.
     """
