@@ -207,6 +207,7 @@ Contents
    dynamic_functions
    services/index
    layout_styles
+   card_layouts
    api
    schema/index
    utils

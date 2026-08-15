@@ -6,7 +6,7 @@ need items
 Creates a **need** object with a specified type.
 You can define the type using the correct directive, like ``.. req::`` or ``.. test::``.
 
-.. need-example::
+.. syntax-example::
 
     .. req:: User needs to login
        :id: ID123
@@ -36,7 +36,7 @@ and stores its PlantUML code under given key from :ref:`needuml` directive under
 
 This diagram data can then be used in other :ref:`needuml` calls to combine and reuse PlantUML elements.
 
-.. need-example::
+.. syntax-example::
 
    .. spec:: Interfaces
       :id: SP_INT
@@ -70,7 +70,7 @@ Filter for diagrams
 The option ``arch`` can be easily used for filtering. For instance to show all need objects, which
 are representing some kind of a diagram.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :filter: bool(arch)
@@ -114,7 +114,7 @@ All you must specify is the ID for the need.
 
 You can easily set links to multiple needs by using **;** as a separator.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Link example Target
       :id: REQ_LINK_1
@@ -210,7 +210,7 @@ By using :ref:`needs_links <needs_links>`, you can use the configured link-types
       }
    }
 
-.. need-example::
+.. syntax-example::
 
    .. req:: test me
       :id: test_req
@@ -244,7 +244,7 @@ Default: False
 
    If you delete a need using the :delete: option, the need will not be part of any filter result.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: First Requirement Need
       :id: DELID123
@@ -296,7 +296,7 @@ Allowed values (case-insensitive):
 
 Default: False
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Collapse is set to True
       :tags: collapse; example
@@ -331,7 +331,7 @@ Allowed values (case-insensitive):
 Default: False
 
 
-.. need-example::
+.. syntax-example::
 
     .. req:: First Req Need
        :id: JINJAID123
@@ -385,7 +385,7 @@ elided title if needed.  By default there is no limit to the title length.
 If a title is provided and the flag is present, then the provided title will
 be used and a warning will be issued.
 
-.. need-example::
+.. syntax-example::
 
     .. req::
        :title_from_content:
@@ -402,7 +402,7 @@ layout
 
 ``layout`` can be used to set a specific grid and content mapping.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: My layout requirement 1
       :id: LAYOUT_1
@@ -411,7 +411,7 @@ layout
 
       Some **content** of LAYOUT_1
 
-.. need-example::
+.. syntax-example::
 
    .. req:: My layout requirement 2
       :id: LAYOUT_2
@@ -420,7 +420,7 @@ layout
 
       Some **content** of LAYOUT_2
 
-.. need-example::
+.. syntax-example::
 
    .. req:: My layout requirement 3
       :id: LAYOUT_3
@@ -443,7 +443,7 @@ style
 
 The class-attribute can then be selected with **CSS** to specify the layout of the need.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: My styled requirement
       :id: STYLE_001
@@ -470,7 +470,7 @@ derived from the values of other need options.
 Here ``style`` is set to ``[[copy('status')]]``,
 which leads to the CSS class ``needs_style_open`` if the ``status`` option is set to ``open``.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: My automatically styled requirement
       :id: STYLE_005
@@ -509,7 +509,7 @@ You can have several templates, but can set only one for a need.
 
    .. literalinclude:: /needs_templates/spec_template.need
 
-.. need-example::
+.. syntax-example::
 
    .. spec:: My specification
       :status: open
@@ -539,7 +539,7 @@ For example, you can use it to set a section name before each **need**.
 
    .. literalinclude:: /needs_templates/spec_pre_template.need
 
-.. need-example::
+.. syntax-example::
 
    .. spec:: My specification
       :id: TEMPL_PRE_SPEC
@@ -562,7 +562,7 @@ You can use it to show some need-specific analytics, like dependency diagrams or
 
    .. literalinclude:: /needs_templates/spec_post_template.need
 
-.. need-example::
+.. syntax-example::
 
    .. spec:: My specification
       :id: TEMPL_POST_SPEC

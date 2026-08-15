@@ -15,6 +15,7 @@ def get_logger(name: str) -> SphinxLoggerAdapter:
 # keep below 2 dicts sorted to spot missing items
 WarningSubTypes = Literal[
     "beta",
+    "card_layout",
     "config",
     "constraint",
     "create_need",
@@ -40,6 +41,7 @@ WarningSubTypes = Literal[
     "link_text",
     "load_external_need",
     "load_service_need",
+    "max_items",
     "mistyped_external_values",
     "mistyped_import_values",
     "mpl",
@@ -61,6 +63,7 @@ WarningSubTypes = Literal[
 
 WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "beta": "Beta feature, subject to change",
+    "card_layout": "Invalid ``needs_card_layouts`` specification",
     "config": "Invalid configuration",
     "constraint": "Constraint violation",
     "create_need": "Creation of a need from directive failed",
@@ -85,6 +88,7 @@ WarningSubTypeDescription: dict[WarningSubTypes, str] = {
     "link_text": "Reference text could not be generated",
     "load_external_need": "Failed to load an external need",
     "load_service_need": "Failed to load a service need",
+    "max_items": "View truncated by a max_items limit",
     "mistyped_external_values": "Unexpected value types found in external need data",
     "mistyped_import_values": "Unexpected value types found in imported need data",
     "mpl": "Matplotlib required but not installed",

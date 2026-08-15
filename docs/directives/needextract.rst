@@ -10,7 +10,7 @@ needextract
 It supports custom creation of extracts from existing needs.
 For instance, a supplier could get a copy of requirements but would not see all the internal meta-data.
 
-.. need-example::
+.. syntax-example::
 
    .. feature:: A feature
       :id: EXTRACT_FEATURE_1
@@ -36,7 +36,7 @@ It also supports arguments as filter string,
 which works like the option ``filter``, but also
 supports need ID as filter argument.
 
-.. need-example::
+.. syntax-example::
 
    .. needextract:: EXTRACT_FEATURE_1
       :layout: clean
@@ -57,7 +57,7 @@ The original need provides the style information, if not overwritten by :ref:`ne
 
 See :ref:`layouts` for a list of available layouts.
 
-.. need-example::
+.. syntax-example::
 
    .. needextract:: EXTRACT_FEATURE_1
       :layout: focus_r
@@ -72,7 +72,7 @@ The original need provides the layout information , if not overwritten by :ref:`
 
 See :ref:`styles` for a list of available styles.
 
-.. need-example::
+.. syntax-example::
 
    .. needextract:: EXTRACT_FEATURE_1
       :style: blue_border

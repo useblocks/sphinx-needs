@@ -267,7 +267,7 @@ Filtering
 +++++++++
 Show all needs, which have ``github`` as part of their ``service`` value.
 
-.. need-example::
+.. syntax-example::
 
     .. needtable::
        :filter: service is not None and 'github' in service

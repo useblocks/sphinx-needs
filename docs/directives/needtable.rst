@@ -7,7 +7,7 @@ needtable
 
 **needtable** generates a table, based on the result of given filters.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable:: Example table
       :tags: main_example
@@ -23,6 +23,8 @@ Options
     **needtable** supports the full filtering possibilities of **Sphinx-Needs**.
     Please see :ref:`filter` for more information.
 
+Some further options are accepted only for :ref:`ubCode compatibility <ubcode_compat_options>`, and are otherwise ignored.
+
 
 .. _needtable_columns:
 
@@ -37,7 +39,7 @@ For instance::
 
 This will show the columns *id*, *title* and *tags* in the order given.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :columns: id;title;tags
@@ -51,7 +53,7 @@ Tables with a lot of columns will get a horizontal scrollbar in HTML output.
 
 **DataTable style**
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test
@@ -59,7 +61,7 @@ Tables with a lot of columns will get a horizontal scrollbar in HTML output.
 
 **Normal style**
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test
@@ -78,7 +80,7 @@ A comma separated list of lengths or percentages used to define the width of eac
 It has the same meaning as the ``width options`` of
 `listtable <https://docutils.sourceforge.io/docs/ref/rst/directives.html#list-table>`_ directive.
 
-.. need-example::
+.. syntax-example::
 
   .. needtable::
      :tags: test
@@ -93,7 +95,7 @@ Custom column titles
 You can customize each column title by following this syntax for its definition: ``OPTION as "My custom title"``.
 The characters ``,`` or ``;`` are not allowed.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test
@@ -107,7 +109,7 @@ show_filters
 
 If set, we add the used filter above the table:
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test
@@ -130,7 +132,7 @@ Overrides config parameter :ref:`needs_table_style` if set.
 
 .. dropdown:: Show example
 
-   .. need-example::
+   .. syntax-example::
 
       .. needtable::
          :style: table
@@ -151,7 +153,7 @@ It adds the part rows directly under the related need’s row, and their id and 
 
 To change the prefix please read :ref:`needs_part_prefix`.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test_table
@@ -162,7 +164,7 @@ To change the prefix please read :ref:`needs_part_prefix`.
 
 .. dropdown:: Show above example's configuration
 
-   .. need-example::
+   .. syntax-example::
 
       .. req:: Test need with need parts
          :id: table_001
@@ -192,7 +194,7 @@ You can use the ``style_row`` option to set a specific class-attribute for the t
 
 Also, you can set specific layout for the row.
 
-.. need-example::
+.. syntax-example::
 
   .. needtable::
      :tags: ex_row_color
@@ -205,7 +207,7 @@ Row style based on specific need value
 You can use :ref:`dynamic_functions` to derive the value for ``style_row`` based on a specific value of the
 documented need in the row.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: ex_row_color
@@ -289,7 +291,7 @@ must have the type ``string``, ``float`` or ``int``.
 
 By default, we use ``id_complete`` if we don't set a sort option.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: ex_row_color
@@ -297,7 +299,7 @@ By default, we use ``id_complete`` if we don't set a sort option.
 
 In this case, we set the sort option to ``status``. So *EX_ROW_3* is above of *EX_ROW_2*.
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: ex_row_color
@@ -340,13 +342,45 @@ It supports comma separated values and will add classes to the already set class
     }
 
 
-.. need-example::
+.. syntax-example::
 
    .. needtable::
       :tags: test
       :columns: id,title,status
       :style: table
       :class: class_red_border
+
+.. _needtable_max_items:
+
+max_items
+~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The maximum number of needs to show.
+
+We apply the limit after filtering and after the :ref:`sort <needtable_sort>`,
+so the table keeps the first rows it would otherwise have shown,
+and tells the reader how many needs it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
+
+The limit counts the entries the filter returned, which are needs and need parts alike.
+A table that also sets :ref:`show_parts <needtable_show_parts>` can therefore render more rows than the limit,
+since the part rows of a kept entry are all still expanded.
+
+``:max_items: 0`` means no limit, also for a project that sets :ref:`needs_views_max_items`.
+Without the option, the table shows as many needs as that configuration allows.
+
+.. syntax-example::
+
+   .. needtable::
+      :tags: flow_example
+      :style: table
+      :sort: id
+      :max_items: 2
 
 common filters
 ~~~~~~~~~~~~~~

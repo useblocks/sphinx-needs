@@ -12,7 +12,7 @@ So it allows to define PlantUML diagrams.
 But gives you access to need object data by supporting `Jinja <https://jinja.palletsprojects.com/>`_ statements,
 which allows you to use loops, if-clauses, and it injects data from need-objects.
 
-.. need-example::
+.. syntax-example::
 
    .. needuml::
 
@@ -53,7 +53,7 @@ extra
 Allows to inject additional key-value pairs into the ``needuml`` rendering.
 ``:extra:`` must be a comma-separated list, containing *key:value* pairs.
 
-.. need-example::
+.. syntax-example::
 
    .. needuml::
       :extra: name:Roberto,work:RocketLab
@@ -90,7 +90,7 @@ If ``:debug:`` is set, a debug-output of the generated PlantUML code gets added 
 
 Helpful to identify reasons why a PlantUML build may have thrown errors.
 
-.. need-example::
+.. syntax-example::
 
    .. needuml::
       :debug:
@@ -108,7 +108,7 @@ Allows to store multiple ``needuml`` inside a need under ``arch`` under the give
 If no option key given, then the first ``needuml`` will be stored in the need under ``arch`` under ``diagram``, ``need["arch"]["diagram"]``.
 Option ``:key:`` value can't be empty, and can't be ``diagram``.
 
-.. need-example::
+.. syntax-example::
 
    .. comp:: Component Y
       :id: COMP_002
@@ -142,7 +142,7 @@ using builder :ref:`needumls_builder` or other builder like ``html`` with config
 
 If given file path already exists, it will be overwritten.
 
-.. need-example::
+.. syntax-example::
 
    .. int:: Test needuml save
       :id: INT_001
@@ -170,7 +170,7 @@ needs
 ~~~~~
 A Python dictionary containing all Needs. The ``need_id`` is used as key.
 
-.. need-example::
+.. syntax-example::
 
    .. needuml::
 
@@ -195,7 +195,7 @@ This functions represents each Need the same way.
    E.g. see even the following example, with text following 
    `{{flow("COMP_001")}}`.
 
-.. need-example::
+.. syntax-example::
 
    .. needuml::
 
@@ -211,7 +211,7 @@ filter(filter_string)
 ~~~~~~~~~~~~~~~~~~~~~
 Finds a list of Sphinx-Need objects that pass the given filter string.
 
-.. need-example::
+.. syntax-example::
 
    .. needuml::
 
@@ -230,7 +230,7 @@ text associated to the hyperlink is either defined by ``option`` (in this case,
 Sphinx-Need picks the text of the field specified by ``option``), or by the free text ``text``.
 
 
-.. need-example::
+.. syntax-example::
 
    .. needuml::
 
@@ -248,7 +248,7 @@ If diagram code is available in the need data under ``arch``, the stored PlantUM
 Please read :ref:`need_diagram` for details.
 
 
-.. need-example::
+.. syntax-example::
 
    .. needuml::
 
@@ -267,7 +267,7 @@ Key argument
 ``key`` value by default is ``diagram``. If no key argument given, then the PlantUML code is loaded from ``diagram`` under ``arch``
 inside the need object.
 
-.. need-example::
+.. syntax-example::
 
    .. comp:: Z
       :id: COMP_Z
@@ -284,7 +284,7 @@ Additional keyword arguments
 
 :ref:`uml() <needuml_jinja_uml>` supports additional keyword parameters which are then available in the loaded PlantUML code.
 
-.. need-example::
+.. syntax-example::
 
    .. comp:: Variant A or B
       :id: COMP_A_B
@@ -307,7 +307,7 @@ Additional keyword arguments
 
 Passing ``variant="A"`` parameter to the :ref:`uml() <needuml_jinja_uml>` function, we get the following:
 
-.. need-example::
+.. syntax-example::
 
    .. needuml::
       :debug:
@@ -316,7 +316,7 @@ Passing ``variant="A"`` parameter to the :ref:`uml() <needuml_jinja_uml>` functi
 
 Passing ``variant="B"`` parameter to the :ref:`uml() <needuml_jinja_uml>` function, we get the following:
 
-.. need-example::
+.. syntax-example::
 
    .. needuml::
       :debug:
@@ -443,7 +443,7 @@ All features are available and ``uml()`` can be used multiple time on different 
 NeedUml Examples
 ----------------
 
-.. need-example::
+.. syntax-example::
 
    .. needuml::
       :scale: 50%
@@ -471,7 +471,7 @@ NeedUml Examples
       card "and much more..." as much #ffcc00
       much -> sn
 
-.. need-example::
+.. syntax-example::
 
     .. comp:: Component X
        :id: COMP_001

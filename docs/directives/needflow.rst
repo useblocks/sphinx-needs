@@ -9,7 +9,7 @@ needflow
 
 If you provide an argument, we use it as caption for the generated image.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow:: My first needflow
       :filter: is_need
@@ -65,6 +65,8 @@ Options
    **needflow** supports the full filtering possibilities of **Sphinx-Needs**.
    Please see :ref:`filter` for more information.
 
+Some further options are accepted only for :ref:`ubCode compatibility <ubcode_compat_options>`, and are otherwise ignored.
+
 .. _needflow_engine:
 
 engine
@@ -105,7 +107,7 @@ If ``:root_depth:`` is set, only needs with a distance of ``root_depth`` to the 
 
 Other need filters are applied on this initial selection of connected needs.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :root_id: spec_flow_002
@@ -157,7 +159,7 @@ show_filters
 
 Adds information of used filters below generated flowchart.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :tags: flow_example
@@ -178,7 +180,7 @@ show_legend
 Adds a legend below generated flowchart. The legends contains all defined need-types and their configured color
 for flowcharts.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :tags: flow_example
@@ -203,7 +205,7 @@ Adds the link type name beside connections.
 You can configure it globally by setting :ref:`needs_flow_show_links` in **conf.py**.
 Setup data can be found in test case document ``tests/doc_test/doc_links``.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :tags: flow_example
@@ -245,7 +247,7 @@ You can set this option globally via the configuration option :ref:`needs_flow_l
 
 See also :ref:`needs_links` for more details about specific link types.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: A requirement
       :id: req_flow_001
@@ -302,7 +304,7 @@ when using the ``plantuml`` engine,
 or the :ref:`needs_graphviz_styles` configuration,
 when using the ``graphviz`` engine.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :filter: is_need
@@ -314,7 +316,7 @@ when using the ``graphviz`` engine.
 
 You can apply multiple configurations together by separating them via ``,`` symbol.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :filter: is_need
@@ -392,7 +394,7 @@ You can set a scale factor for the final flow chart using the ``scale`` option.
 
 We also support the numbers between ``1`` and ``300``.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :filter: is_need
@@ -410,7 +412,7 @@ highlight
 The ``:highlight:`` option takes a single :ref:`filter_string` as a value and
 sets the border for each need of the needflow to **red** if the need also passes the filter string.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :tags: flow_example
@@ -435,7 +437,7 @@ border_color
 The ``:border_color:`` allows for setting per need border colors, based on the need data.
 The value should be written with the :ref:`variant syntax <needs_variant_support>`, and each return value should be a hex (RGB) color.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow:: Engineering plan to develop a car
       :tags: flow_example
@@ -464,7 +466,7 @@ align
 You can set the alignment for the PlantUML image using the ``align`` option.
 Allowed values are: ``left``, ``center``, ``right``
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :filter: is_need and type == 'spec'
@@ -490,7 +492,7 @@ If you set the ``:debug:``, we add a debug-output of the generated PlantUML code
 
 Helpful to identify reasons why a PlantUML build may have thrown errors.
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :filter: is_need
@@ -508,6 +510,42 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       :link_types: tests, blocks
       :config: default,lefttoright
       :debug:
+
+.. _needflow_max_items:
+
+max_items
+~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The maximum number of needs to show, applied identically by both engines.
+
+We apply the limit after filtering and sorting, so the diagram keeps the first needs it would otherwise have shown,
+and tells the reader how many needs it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
+The limit counts the entries the filter returned, which are needs and need parts alike.
+Since the limit is applied before the diagram is built,
+a link to a dropped need is not drawn at all,
+and a need whose parent was dropped is drawn as a root instead of nested.
+
+``:max_items: 0`` means no limit, also for a project that sets :ref:`needs_views_max_items`.
+Without the option, the diagram shows as many needs as that configuration allows.
+
+.. syntax-example::
+
+   .. needflow::
+      :tags: flow_example
+      :max_items: 2
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
+      :max_items: 2
 
 common filters
 ~~~~~~~~~~~~~~

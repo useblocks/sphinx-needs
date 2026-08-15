@@ -4,6 +4,116 @@
 Changelog
 =========
 
+.. _`release:unreleased`:
+
+Unreleased
+----------
+
+:Released: Unreleased
+
+Improvements
+............
+
+- ✨ New :ref:`needs_card_layouts` configuration, for describing layouts declaratively
+  (:pr:`1765`)
+
+  A *card specification* states what a need should show — ``header``, ``meta``, ``footer``,
+  ``side`` and ``collapse`` — as a small dictionary, instead of as hand-written layout
+  strings. Specifications are compiled into :ref:`needs_layouts` entries during
+  configuration, so a card works wherever a layout name is accepted, and can inherit from
+  another card or from a built-in layout via ``extends``:
+
+  .. code-block:: python
+
+     needs_card_layouts = {
+         "product": {
+             "extends": "clean",
+             "meta": {"include": ["status", "tags"]},
+             "footer": ["id", "type"],
+             "collapse": "closed",
+         }
+     }
+
+  ``needs_layouts`` is unchanged and remains supported for layouts the card vocabulary
+  cannot express. A specification that cannot be compiled, or whose name is already taken
+  by an existing layout, is reported as a new ``needs.card_layout`` warning and skipped,
+  leaving the rest of the build untouched. See :ref:`card_layouts` for the full vocabulary
+  and its documented limits.
+
+- ✨ The ``cypher``, ``width`` and ``height`` directive options are now
+  accepted for `ubCode`_ compatibility (:pr:`1760`)
+
+  :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and :ref:`needsequence` accept these
+  ubCode-only options and then ignore them, so that a document authored for ubCode also
+  builds with Sphinx-Needs, instead of failing with an ``unknown option`` error.
+  Nothing about the build changes: the options never reach a node, the rendered output, or
+  the ``needs.json`` file. See :ref:`ubCode compatibility <ubcode_compat_options>` for the
+  exact per-directive list.
+
+- ✨ The ``max_items`` option on :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and
+  :ref:`needsequence` now limits how many items a view shows (:pr:`1761`)
+
+  The limit is applied after filtering and sorting, so a view keeps the first items it would
+  otherwise have rendered; on :ref:`needsequence` it counts messages rather than needs.
+  ``:max_items: 0`` means no limit, and a view without the option falls back to the new
+  :ref:`needs_views_max_items` configuration, which defaults to ``0`` — so nothing is limited
+  until you ask for it, and existing projects render exactly as before. A view that was
+  truncated says so, instead of silently dropping needs: it adds a notice to the page and
+  emits a ``needs.max_items`` warning, which a project that caps deliberately can silence
+  with ``suppress_warnings = ["needs.max_items"]``.
+
+  Previously the option was accepted and ignored for `ubCode`_ compatibility, which was only
+  ever in an unreleased state, so no released behaviour changes.
+  The stored environment version is bumped for the new directive option, so the first build
+  after upgrading re-reads every document.
+
+Documentation
+.............
+
+- 📚 ``docs/ubproject.toml``, the `ubCode`_ configuration of this documentation, is brought
+  up to date with current ubCode releases
+
+  It now mirrors the parts of ``conf.py`` that ubCode also understands (the ``|br|``
+  substitution, the ``:pr:`` / ``:issue:`` roles and the intersphinx projects), and drops
+  five ``extend_directives`` entries for directives that ubCode now supports natively.
+  Sphinx is unaffected: ``needs_from_toml`` reads only the ``[needs]`` table, which is
+  unchanged.
+
+.. _`release:8.3.1`:
+
+8.3.1
+-----
+
+:Released: 11.08.2026
+:Full Changelog: `v8.3.0...v8.3.1 <https://github.com/useblocks/sphinx-needs/compare/8.3.0...8.3.1>`__
+
+This is a patch release with a PlantUML bug fix and a documentation
+restructuring.
+
+Bug fixes
+.........
+
+- 🐛 Generated PlantUML diagrams (:ref:`needuml`, :ref:`needarch`,
+  :ref:`needflow`, :ref:`needsequence`, :ref:`needgantt`) now derive PlantUML's
+  working directory from the *physical* path of the source document instead of
+  its logical docname (:issue:`1749`).
+
+  Relative ``!include`` paths therefore also resolve for documents whose source
+  file does not live under ``srcdir`` — e.g. documents contributed by
+  `sphinx-mounts <https://github.com/useblocks/sphinx-mounts>`__ — which
+  previously failed with a misleading
+  ``WARNING: plantuml command '...' cannot be run``.
+  Ordinary documents keep the exact working directory they had before.
+
+Documentation
+.............
+
+- 📚 The documentation now uses the shared
+  `sphinx-syntax-example <https://github.com/sphinx-extensions2/sphinx-syntax-example>`__
+  ``syntax-example`` directive, in place of the bespoke ``need-example`` directive
+  that was defined in ``docs/conf.py``.
+  Consequently, the ``docs`` extra now requires Python >= 3.11.
+
 .. _`release:8.3.0`:
 
 8.3.0

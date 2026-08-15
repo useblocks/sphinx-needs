@@ -32,6 +32,11 @@ To develop **Sphinx-Needs**  it can be installed, with development extras, into 
 
    pip install sphinx-needs[test,benchmark,docs]
 
+.. note::
+
+   The ``docs`` extra requires Python >= 3.11.
+   On Python 3.10 the extra still installs, but the documentation cannot be built.
+
 or using `uv <https://docs.astral.sh/uv/>`__ to install the dependencies into an isolated environment:
 
 .. code-block:: bash
@@ -63,6 +68,11 @@ To build the **Sphinx-Needs** documentation stored under ``/docs``, run:
    # Build HTML pages with the furo theme,
    # and first remove all old build files
    CLEAN=true tox -e docs-furo
+
+.. note::
+
+   The ``docs-*`` environments pin ``basepython = python3.12``,
+   since building the documentation requires Python >= 3.11.
 
 or to build with a different builder:
 

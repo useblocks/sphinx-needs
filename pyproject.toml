@@ -66,6 +66,9 @@ docs = [
   "sphinxcontrib-programoutput~=0.17",
   "sphinx-design~=0.6",
   "sphinx-ai-index~=0.1.0",
+  # the `syntax-example` directive; the marker keeps the extra resolvable on
+  # python 3.10 (the directive, and so a docs build, needs python>=3.11)
+  "sphinx-syntax-example~=0.2.0; python_version >= '3.11'",
 ]
 theme-im = ["sphinx-immaterial~=0.11.11"]
 theme-furo = ["furo~=2024.8.6"]
@@ -157,7 +160,8 @@ extras =
 commands =
   pytest --ignore tests/benchmarks {posargs:tests}
 
-[testenv:py{310,311,312,313,314}-benchmark]
+# no py310: the docs extra requires python>=3.11 (sphinx-syntax-example)
+[testenv:py{311,312,313,314}-benchmark]
 extras =
   test
   benchmark
@@ -166,7 +170,9 @@ commands =
   pytest {posargs:tests/benchmarks}
 
 [testenv:docs-{alabaster,furo,im,pds,rtd}]
-extras = 
+# the docs extra requires python>=3.11 (sphinx-syntax-example)
+basepython = python3.12
+extras =
   docs
   furo: theme-furo
   im: theme-im

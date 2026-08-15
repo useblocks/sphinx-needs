@@ -7,7 +7,7 @@ needlist
 
 **needlist** creates a list of elements based on the result of given filters.
 
-.. need-example::
+.. syntax-example::
 
    .. needlist::
       :tags: main_example
@@ -20,6 +20,8 @@ Options
     **needlist** supports the full filtering possibilities of **Sphinx-Needs**.
     Please see :ref:`filter` for more information.
 
+Some further options are accepted only for :ref:`ubCode compatibility <ubcode_compat_options>`, and are otherwise ignored.
+
 
 .. _needlist_show_status:
 
@@ -29,7 +31,7 @@ Flag for adding status information to the needs list results filtered.
 
 If a filtered need has no status information, we write no status output for the need.
 
-.. need-example::
+.. syntax-example::
 
    .. needlist::
       :show_status:
@@ -44,7 +46,7 @@ Flag for adding tag information to the needs list results filtered.
 If a filtered need has no tag information, we write no tag output for the need.
 
 
-.. need-example::
+.. syntax-example::
 
    .. needlist::
       :show_tags:
@@ -58,11 +60,37 @@ show_filters
 If set, we add the used filter below the needlist results:
 
 
-.. need-example::
+.. syntax-example::
 
    .. needlist::
       :show_filters:
       :status: done; implemented
+
+.. _needlist_max_items:
+
+max_items
+~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The maximum number of needs to show.
+
+We apply the limit after filtering and sorting, so the list keeps the first needs it would otherwise have shown,
+and tells the reader how many needs it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
+The limit counts the entries the filter returned, which are needs and need parts alike.
+
+``:max_items: 0`` means no limit, also for a project that sets :ref:`needs_views_max_items`.
+Without the option, the list shows as many needs as that configuration allows.
+
+.. syntax-example::
+
+   .. needlist::
+      :tags: flow_example
+      :max_items: 2
 
 common filters
 ~~~~~~~~~~~~~~

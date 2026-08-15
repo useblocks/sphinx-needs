@@ -49,7 +49,7 @@ A need item is a generic object which can become anything you require for your p
 
 sphinx-needs comes with some default types: ``req``, ``spec``, ``impl``, and ``test``, which can be used as directives:
 
-.. need-example:: A basic need item
+.. syntax-example:: A basic need item
 
     .. req:: Basic need example
         :id: basic_example
@@ -74,7 +74,7 @@ This can be created in the ``conf.py`` file, using the :ref:`needs_types` config
 There are also some optional directive fields 
 that can be used to add additional data to the item or further style its representation:
 
-.. need-example:: A custom need item
+.. syntax-example:: A custom need item
 
     .. tutorial-project:: Our new car
         :id: T_CAR
@@ -116,7 +116,7 @@ By default this will display the title and ID of the need item, but we can also 
 by using an explicit title and using ``[[field]]`` syntax:
 
 
-.. need-example:: Referring to a need item
+.. syntax-example:: Referring to a need item
 
     The project is described in more detail in :need:`T_CAR`.
 
@@ -144,7 +144,7 @@ We can define custom link types in the ``conf.py`` file, using the :ref:`needs_l
 
 We can now uses these links when specifying need items, notice how "back links" are automatically generated when displaying the item:
 
-.. need-example:: Need items with links
+.. syntax-example:: Need items with links
 
    .. tutorial-req:: Safety Features
       :id: T_SAFE
@@ -164,7 +164,7 @@ Lets also add some more need items to our plan:
 
 .. dropdown:: Add Specification items
 
-   .. need-example:: More need items with links
+   .. syntax-example:: More need items with links
 
       .. tutorial-spec:: Implement RADAR system
          :id: T_RADAR
@@ -221,7 +221,7 @@ or generated from external services, using the :ref:`needservice` directive.
 
 Lets import some test cases, we add an additional tag to each, to make them easier to select later on:
 
-.. need-example:: Importing need items
+.. syntax-example:: Importing need items
 
     .. needimport:: _static/tutorial_needs.json
         :tags: tutorial,tutorial_tests
@@ -242,7 +242,7 @@ to add additional fields to them, such as links.
 The ``needextend`` directive expects a :ref:`filter <filter>` argument, which is used to select the need items to extend.
 Here we filter by the tag we set on the imported items above:
 
-.. need-example:: Extending need items
+.. syntax-example:: Extending need items
 
     .. needextend:: "tutorial_tests" in tags
         :+tutorial_tests: T_RADAR
@@ -281,7 +281,7 @@ either by simple options, or by using a more complex expression.
 In the following example we will display a list of all need items with the tag "tutorial",
 sorted by ID, and showing the status of each item:
 
-.. need-example:: Simple list
+.. syntax-example:: Simple list
 
     .. needlist::
         :tags: tutorial
@@ -290,7 +290,7 @@ sorted by ID, and showing the status of each item:
 
 Similarly, we can display the same items in a table format:
 
-.. need-example:: Simple table
+.. syntax-example:: Simple table
 
     .. needtable::
         :tags: tutorial
@@ -301,7 +301,7 @@ Similarly, we can display the same items in a table format:
 There are currently two styles for the table; a simple HTML ``table``, or the default ``datatables`` style to add dynamic pagination, filtering and sorting,
 using the `DataTables <https://datatables.net/>`__ JS package:
 
-.. need-example:: Table with dynamic features
+.. syntax-example:: Table with dynamic features
 
     .. needtable::
         :tags: tutorial
@@ -311,7 +311,7 @@ using the `DataTables <https://datatables.net/>`__ JS package:
 
 Finally, we can display a :ref:`flow diagram <needflow>` of the need items, to also show the relationships between them:
  
-.. need-example:: Flow diagram
+.. syntax-example:: Flow diagram
 
     .. needflow:: Engineering plan to develop a car
         :alt: Engineering plan to develop a car
@@ -327,7 +327,7 @@ Finally, we can display a :ref:`flow diagram <needflow>` of the need items, to a
 
     You can also use the Graphviz engine to render the flow diagram, by setting the ``engine`` option to ``graphviz``:
 
-    .. need-example:: Flow diagram with Graphviz
+    .. syntax-example:: Flow diagram with Graphviz
 
         .. needflow:: Engineering plan to develop a car
             :engine: graphviz
@@ -351,13 +351,13 @@ As well as summarising needs, sphinx-needs provides some built-in roles and dire
 
 In the following examples we will display metrics of the test cases we imported earlier, grouped by status:
 
-.. need-example:: Count of need items
+.. syntax-example:: Count of need items
 
     - Open: :need_count:`'tutorial_tests' in tags and status == 'open'`
     - In Progress: :need_count:`'tutorial_tests' in tags and status == 'in progress'`
     - Closed: :need_count:`'tutorial_tests' in tags and status == 'closed'`
 
-.. need-example:: Pie chart of metric
+.. syntax-example:: Pie chart of metric
 
    .. needpie:: Test Status
       :labels: Open, In progress, Closed
@@ -367,7 +367,7 @@ In the following examples we will display metrics of the test cases we imported 
       'tutorial_tests' in tags and status == 'in progress'
       'tutorial_tests' in tags and status == 'closed'
 
-.. need-example:: Bar chart of metric
+.. syntax-example:: Bar chart of metric
 
    .. needbar:: Test Status
       :horizontal:

@@ -1,39 +1,55 @@
 "$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
 
-[parse.extend_directives.need-example]
-argument = true
-options = true
-content = true
-parse_content = true
-content_required = true
+# Branding for the `ubc build html` site — the ubCode counterpart of the
+# Sphinx/furo theming in conf.py + _static/_css/furo.css, written against
+# ubCode's documented `--ubc-*` CSS variable contract.
+[build.html]
+title = "Sphinx-Needs"
+# `shared.css` is the theme-AGNOSTIC sheet every Sphinx theme links in conf.py
+# (flow-chart sizing/animations, grid-example helpers) — reused verbatim here.
+# Order matters: the theme sheet comes second so its declarations win where the
+# two meet (notably the hero background, whose shared.css URL is
+# `_css/`-relative and cannot survive the flat copy into `_static/`).
+extra_css = ["_static/_css/shared.css", "_static/ubc-theme.css"]
+# The furo pair (`light_logo` / `dark_logo` in conf.py); the long logos carry
+# the wordmark, so `hide_title` keeps the sidebar logo-only (furo's
+# `sidebar_hide_name`). Favicon matches conf.py's `html_favicon`.
+logo = "_static/sphinx-needs-logo-long-light.svg"
+logo_dark = "_static/sphinx-needs-logo-long-dark.svg"
+hide_title = true
+favicon = "_static/sphinx-needs-logo-square-dark.svg"
+# conf.py computes `2017-{now.year}`; TOML is static, so the year is written out.
+copyright = "2017-2026, team useblocks"
+# The furo triple from conf.py's `html_theme_options` (source_repository /
+# source_branch / source_directory), so the built site's view/edit buttons
+# point at the same files the Sphinx build's do.
+source_repository = "https://github.com/useblocks/sphinx-needs"
+source_branch = "master"
+source_directory = "docs/"
 
-[parse.extend_directives.grid-item-card]
-argument = false
-options = true
-content = true
-parse_content = true
-content_required = true
+[parse]
+# Enable the built-in extension ports used by these docs:
+# - sphinx_syntax_example: the `.. syntax-example::` directive (also declared in
+#   `extensions` in docs/conf.py), so the engine recognises it by module tag and
+#   renders the same source + rendered-result shape as the Sphinx build.
+# - sphinx.ext.extlinks: the `:pr:` and `:issue:` roles configured below.
+# - sphinx.ext.todo: the `.. todo::` directive.
+extensions = ["sphinx_syntax_example", "sphinx.ext.extlinks", "sphinx.ext.todo"]
+# Mirrors conf.py's `rst_epilog`, which defines the `|br|` substitution.
+rst_epilog = """
+.. |br| raw:: html
 
-[parse.extend_directives.button-link]
-argument = true
-options = true
-content = true
-parse_content = true
-content_required = true
+   <br>
+"""
 
-[parse.extend_directives.button-ref]
-argument = true
-options = true
-content = true
-parse_content = true
-content_required = true
+# Mirrors conf.py's `extlinks`.
+[parse.extlinks.pr]
+url = "https://github.com/useblocks/sphinx-needs/pull/%s"
+caption = "PR #%s"
 
-[parse.extend_directives.uml]
-argument = true
-options = true
-content = true
-parse_content = false
-content_required = false
+[parse.extlinks.issue]
+url = "https://github.com/useblocks/sphinx-needs/issues/%s"
+caption = "issue #%s"
 
 [parse.extend_directives.need-warnings]
 argument = false
@@ -48,15 +64,6 @@ options = false
 content = false
 parse_content = false
 content_required = false
-
-[parse.extend_directives.page-summary]
-argument = false
-options = false
-content = true
-content_required = true
-parse_content = true
-description = "Provides a summary of the page used for building a retrieval index."
-extension = "sphinx-ai-index"
 
 [needs]
 show_link_type = false
@@ -406,6 +413,38 @@ head = [
 ]
 meta = ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"]
 
+# Card specifications, rendered live on the `card_layouts` page.
+#
+# The three `[needs.layouts]` entries above stay hand-written on purpose: each
+# uses something the card vocabulary deliberately does not cover -- prose in the
+# head, `permalink()`, `sidebar()` -- which is exactly what makes them the
+# escape-hatch examples on the layout page. The two below are the cases the card
+# vocabulary is for, and they are declared here rather than in `conf.py` so that
+# the `needs_from_toml` path is exercised by this project's own build.
+
+# `clean` plus the need's image beside the header and meta, with the body running
+# full width underneath it (`span = "partial"`).
+[needs.card_layouts.card_profile]
+extends = "clean"
+
+[needs.card_layouts.card_profile.meta]
+exclude = ["layout", "style"]
+
+[needs.card_layouts.card_profile.side]
+elements = ["image:image", "id"]
+position = "left"
+span = "partial"
+
+# A compact card: two named fields, no links, a footer, and the meta region
+# collapsed until the reader opens it.
+[needs.card_layouts.card_summary]
+collapse = "closed"
+footer = ["id", "type", "layout_echo"]
+
+[needs.card_layouts.card_summary.meta]
+include = ["status", "author"]
+links = false
+
 [needs.string_links.config_link]
 regex = "^(?P<value>\\w+)$"
 link_url = "https://sphinxcontrib-needs.readthedocs.io/en/latest/configuration.html#{{value | replace(\"_\", \"-\")}}"
@@ -421,3 +460,11 @@ options = ["github"]
 [needs_json]
 path = "_build/html/furo/needs.json"
 src = "."
+
+# Cross-project references, mirroring conf.py's `intersphinx_mapping` (same
+# project names, so external references resolve identically in both engines).
+[intersphinx.projects.python]
+url = "https://docs.python.org/3.8"
+
+[intersphinx.projects.sphinx]
+url = "https://www.sphinx-doc.org/en/master"

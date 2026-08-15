@@ -22,6 +22,7 @@ _build
 coverage.xml
 .doctrees
 docs/github_images/
+docs/_static/tutorial_needs.json
 .eggs/
 
 

@@ -61,6 +61,11 @@ class NeedflowDirective(FilterBase):
         "show_filters": directives.flag,
         "show_link_names": directives.flag,
         "config": directives.unchanged_required,
+        "max_items": directives.nonnegative_int,
+        # ubCode compatibility: accepted and ignored by Sphinx-Needs.
+        "cypher": directives.unchanged,
+        "width": directives.unchanged,
+        "height": directives.unchanged,
     }
 
     # Update the options_spec with values defined in the FilterBase class
@@ -153,6 +158,7 @@ class NeedflowDirective(FilterBase):
             "caption": self.arguments[0] if self.arguments else None,
             "classes": self.options.get("class", []),
             "alt": self.options.get("alt", ""),
+            "max_items": self.options.get("max_items"),
             **self.collect_filter_attributes(),
         }
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import html
-import os
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -10,10 +9,18 @@ from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
-from sphinx_needs.diagrams_common import calculate_link, create_legend
+from sphinx_needs.diagrams_common import (
+    calculate_link,
+    create_legend,
+    set_plantuml_paths,
+)
 from sphinx_needs.directives.needflow._directive import NeedflowPlantuml
-from sphinx_needs.directives.utils import no_needs_found_paragraph
-from sphinx_needs.filter_common import filter_single_need, process_filters
+from sphinx_needs.directives.utils import no_needs_found_paragraph, report_max_items
+from sphinx_needs.filter_common import (
+    apply_max_items,
+    filter_single_need,
+    process_filters,
+)
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.needs_schema import LinkSchema
@@ -276,6 +283,9 @@ def process_needflow_plantuml(
             origin="needflow",
             location=node,
         )
+        found_needs, total_needs = apply_max_items(
+            found_needs, current_needflow.get("max_items"), needs_config
+        )
 
         if found_needs:
             plantuml_block_text = ".. plantuml::\n\n   @startuml   @enduml"
@@ -319,10 +329,7 @@ def process_needflow_plantuml(
                 puml_node["uml"] += create_legend(needs_config.types)
 
             puml_node["uml"] += "\n@enduml"
-            puml_node["incdir"] = os.path.dirname(current_needflow["docname"])
-            puml_node["filename"] = os.path.split(current_needflow["docname"])[
-                1
-            ]  # Needed for plantuml >= 0.9
+            set_plantuml_paths(puml_node, env, current_needflow["docname"])
 
             scale = int(current_needflow["scale"])
             # if scale != 100:
@@ -365,6 +372,16 @@ def process_needflow_plantuml(
         else:  # no needs found
             content.append(
                 no_needs_found_paragraph(current_needflow.get("filter_warning"))
+            )
+
+        if len(found_needs) < total_needs:
+            content.append(
+                report_max_items(
+                    len(found_needs),
+                    total_needs,
+                    origin="needflow",
+                    location=node,
+                )
             )
 
         if current_needflow["show_filters"]:

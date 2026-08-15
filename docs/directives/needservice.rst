@@ -72,7 +72,7 @@ their content.
 
 .. tip:: Click the small arrow under the need id to see all meta data.
 
-.. need-example::
+.. syntax-example::
 
     .. needservice:: github-issues
        :query: repo:useblocks/sphinx-needs node latexpdf

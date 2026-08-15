@@ -421,7 +421,7 @@ Configuration example:
 
 The above example configuration allows the following usage:
 
-.. need-example::
+.. syntax-example::
 
    .. req:: My requirement
       :id: EXTRA_REQ_001
@@ -696,6 +696,33 @@ needs_filter_max_time
 
 If set, warn if any :ref:`filter processing <filter>` call takes longer than the given time in seconds.
 
+.. _`needs_views_max_items`:
+
+needs_views_max_items
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The maximum number of items a view directive shows, when it does not set its own ``max_items`` option.
+
+It applies to :ref:`needlist`, :ref:`needtable` and :ref:`needflow`, which count needs (and need parts),
+and to :ref:`needsequence`, which counts messages.
+The limit is applied after filtering and sorting, so a view keeps the first items it would otherwise have shown,
+and reports how many it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
+
+A value of ``0`` means that nothing is limited.
+A single view can opt out of a project-wide limit again with ``:max_items: 0``.
+
+.. code-block:: python
+
+   needs_views_max_items = 50
+
+Default: :need_config_default:`views_max_items`
+
 .. _`needs_uml_process_max_time`:
 
 needs_uml_process_max_time
@@ -780,7 +807,7 @@ These configs can then be selected when using :ref:`needflow`.
 
 This configurations can then be used like this:
 
-.. need-example::
+.. syntax-example::
 
    .. needflow::
       :tags: flow_example
@@ -1030,7 +1057,7 @@ Generates needs ID from title. By default, this setting is set to **False**.
 When no need ID is given by the user, and ``needs_id_from_title`` is set to **True**, then a need ID
 will be calculated based on the current need directive prefix, title, and a hashed value from title.
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Group big short
 
@@ -1101,7 +1128,7 @@ A title can be auto-generated for a requirement by either setting
 The resulting requirement would have the title derived from the first
 sentence of the requirement.
 
-.. need-example::
+.. syntax-example::
 
    .. req::
       :title_from_content:
@@ -1130,7 +1157,7 @@ setting (which is not limited by default).
 If a title is specified for an individual requirement, then that title
 will be used over the generated title.
 
-.. need-example::
+.. syntax-example::
 
    .. req::
       :id: R_ERROR_LOGGING
@@ -1596,6 +1623,36 @@ Example:
    **Sphinx-Needs** provides some default layouts. These layouts cannot be overwritten.
    See :ref:`layout list <layouts>` for more information.
 
+.. _`needs_card_layouts`:
+
+needs_card_layouts
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+``needs_card_layouts`` describes layouts declaratively, as a dictionary of *card
+specifications*, and is the recommended way to adjust how needs are rendered.
+Each specification is compiled into a :ref:`needs_layouts` entry of the same name, so a
+card can be used wherever a layout name is accepted.
+
+Please read :ref:`card_layouts` for the full specification vocabulary.
+
+Example:
+
+.. code-block:: python
+
+   needs_card_layouts = {
+       'my_card': {
+           'meta': {'include': ['status', 'tags']},
+           'footer': ['id', 'type'],
+           'collapse': 'closed',
+       }
+   }
+
+A specification that cannot be compiled, or whose name is already taken by a built-in
+layout or a ``needs_layouts`` entry, is reported as a ``needs.card_layout`` warning and
+skipped; the rest of the build is unaffected.
+
 .. _`needs_default_layout`:
 
 needs_default_layout
@@ -1918,7 +1975,7 @@ link name and url.
        }
    }
 
-.. need-example::
+.. syntax-example::
 
    .. spec:: Use needs_string_links
       :id: EXAMPLE_STRING_LINKS
@@ -2311,7 +2368,7 @@ The value can be any data type (string, integer, list, dict, etc.)
 The data passed via needs_render_context will be available as variable(s) when rendering Jinja templates or strings.
 You can use the data passed via needs_render_context as shown below:
 
-.. need-example::
+.. syntax-example::
 
    .. req:: Need with jinja_content enabled
       :id: JINJA1D8913
