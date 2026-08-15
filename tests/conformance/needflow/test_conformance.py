@@ -791,18 +791,24 @@ def test_line_endings_do_not_change_a_checksum(tmp_path: Path) -> None:
     giving up the tamper detection it exists to serve.
     """
     case = next(iter(_case_files()))
-    content = case.read_bytes()
-    assert b"\r\n" not in content, "the corpus is stored with LF endings"
+    # derived from whatever the working tree happens to hold, because that is precisely
+    # what varies: a Windows checkout of this very file may already be CRLF
+    content = case.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
 
-    crlf = tmp_path / "crlf.yaml"
-    crlf.write_bytes(content.replace(b"\n", b"\r\n"))
-    cr_only = tmp_path / "cr.yaml"
-    cr_only.write_bytes(content.replace(b"\n", b"\r"))
+    variants = {
+        "lf.yaml": content,
+        "crlf.yaml": content.replace(b"\n", b"\r\n"),
+        "cr.yaml": content.replace(b"\n", b"\r"),
+    }
+    digests = set()
+    for name, encoded in variants.items():
+        path = tmp_path / name
+        path.write_bytes(encoded)
+        digests.add(_sha256(path))
+    assert len(digests) == 1, "the same content hashed differently per line ending"
+    assert digests == {_sha256(case)}, "and differently again from the corpus file"
 
-    assert _sha256(crlf) == _sha256(case)
-    assert _sha256(cr_only) == _sha256(case)
-
-    # ...and a change to the content itself is still caught
+    # ...and a change to the content itself is still caught, whatever the endings
     edited = tmp_path / "edited.yaml"
-    edited.write_bytes(content.replace(b"\n", b"\r\n") + b"\r\n# edited\r\n")
+    edited.write_bytes(variants["crlf.yaml"] + b"\r\n# edited\r\n")
     assert _sha256(edited) != _sha256(case)
