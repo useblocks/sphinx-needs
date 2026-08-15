@@ -2290,7 +2290,7 @@ Bad config value
 )
 @pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
 def test_out_of_enum_config_values_warn_and_fall_back(
-    make_app, tmp_path, override, message, engine
+    make_app, tmp_path, plantuml_command, override, message, engine
 ):
     """An out-of-enum configuration value must warn, never end the build.
 
@@ -2302,7 +2302,11 @@ def test_out_of_enum_config_values_warn_and_fall_back(
     """
     (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
     (tmp_path / "index.rst").write_text(BAD_CONFIG_VALUE, "utf8")
-    confoverrides = {"needs_flow_engine": engine, **override}
+    confoverrides = {
+        "needs_flow_engine": engine,
+        "plantuml": plantuml_command,
+        **override,
+    }
     if engine == "graphviz":
         confoverrides["graphviz_output_format"] = "svg"
 
@@ -2408,7 +2412,7 @@ def test_invalid_flow_engine_is_reported_without_any_needflow(test_app):
     ids=["direction", "link_labels", "legend"],
 )
 def test_bad_flow_config_is_reported_without_any_needflow(
-    make_app, tmp_path, override, message
+    make_app, tmp_path, plantuml_command, override, message
 ):
     """Every enumerated needflow value is checked where the configuration is read.
 
@@ -2420,7 +2424,11 @@ def test_bad_flow_config_is_reported_without_any_needflow(
     (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
     (tmp_path / "index.rst").write_text(NO_NEEDFLOW, "utf8")
 
-    app = make_app(srcdir=tmp_path, buildername="html", confoverrides=override)
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command, **override},
+    )
     app.build()
 
     warnings = strip_colors(app._warning.getvalue())
@@ -2874,7 +2882,7 @@ Bad style config
     ],
 )
 def test_unusable_style_config_warns_and_draws_anyway(
-    make_app, tmp_path, styles, message
+    make_app, tmp_path, plantuml_command, styles, message
 ):
     """Every way of misdescribing a style class warns and leaves the diagram drawable.
 
@@ -2894,7 +2902,10 @@ def test_unusable_style_config_warns_and_draws_anyway(
     app = make_app(
         srcdir=tmp_path,
         buildername="html",
-        confoverrides={"needs_flow_engine": "plantuml"},
+        confoverrides={
+            "needs_flow_engine": "plantuml",
+            "plantuml": plantuml_command,
+        },
     )
     app.build()  # must not raise
 

@@ -230,7 +230,7 @@ def _validate_legend_expectation(case: dict[str, Any], path: Path) -> None:
         )
 
 
-def _conf_py(case: dict[str, Any], engine: str) -> str:
+def _conf_py(case: dict[str, Any], engine: str, plantuml_command: str) -> str:
     """Build the ``conf.py`` of a case's minimal project.
 
     Only the portable vocabulary reaches the configuration: a case cannot name a
@@ -238,6 +238,10 @@ def _conf_py(case: dict[str, Any], engine: str) -> str:
 
     :param case: The parsed case file.
     :param engine: The engine to draw with.
+    :param plantuml_command: How to run plantuml, from the suite-wide fixture. A project
+        left on the default command renders only where a ``plantuml`` happens to be
+        installed, and the render failure everywhere else arrives as a warning that this
+        harness -- correctly -- refuses as outside the degradation registry.
     :return: The ``conf.py`` source.
     """
     types = case.get("types") or [
@@ -256,6 +260,7 @@ def _conf_py(case: dict[str, Any], engine: str) -> str:
         "needs_id_required = True",
         f"needs_flow_engine = {engine!r}",
         f"needs_types = {types!r}",
+        f"plantuml = {plantuml_command!r}",
     ]
     if links:
         lines.append(f"needs_links = {links!r}")
@@ -473,7 +478,13 @@ def test_manifest_has_no_orphans() -> None:
 
 @pytest.mark.parametrize("path", _case_files(), ids=lambda p: p.stem)
 @pytest.mark.parametrize("engine", ENGINES)
-def test_conformance_case(make_app, tmp_path: Path, path: Path, engine: str) -> None:
+def test_conformance_case(
+    make_app,
+    tmp_path: Path,
+    plantuml_command: str,
+    path: Path,
+    engine: str,
+) -> None:
     """Draw a corpus case and compare it with the expected source and degradations."""
     case = yaml.safe_load(path.read_text("utf8"))
     validate_case(case, path)
@@ -485,7 +496,7 @@ def test_conformance_case(make_app, tmp_path: Path, path: Path, engine: str) -> 
     if expected and (reason := expected.get("skip")):
         pytest.skip(f"{path.stem}: {reason}")
 
-    (tmp_path / "conf.py").write_text(_conf_py(case, engine), "utf8")
+    (tmp_path / "conf.py").write_text(_conf_py(case, engine, plantuml_command), "utf8")
     (tmp_path / "index.rst").write_text(_index_rst(case), "utf8")
 
     app = make_app(srcdir=tmp_path, buildername="html")
