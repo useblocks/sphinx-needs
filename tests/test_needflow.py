@@ -969,9 +969,9 @@ def test_direction_config_is_consulted_only_when_unset(test_app):
     assert "rankdir" not in _debug_source(outdir, "index.html", 1)
 
 
-LINK_LABELS = """\
-Link labels
-===========
+SHOW_LINK_NAMES_VALUES = """\
+Link label values
+=================
 
 .. spec:: A
    :id: AAAAA
@@ -984,15 +984,23 @@ Link labels
    :debug:
 
 .. needflow::
-   :link_labels: outgoing
+   :show_link_names:
    :debug:
 
 .. needflow::
-   :link_labels: incoming
+   :show_link_names: outgoing
    :debug:
 
 .. needflow::
-   :link_labels: type
+   :show_link_names: incoming
+   :debug:
+
+.. needflow::
+   :show_link_names: type
+   :debug:
+
+.. needflow::
+   :show_link_names: none
    :debug:
 """
 
@@ -1002,12 +1010,18 @@ Link labels
     [
         {
             "buildername": "html",
-            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), LINK_LABELS)],
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), SHOW_LINK_NAMES_VALUES),
+            ],
             "confoverrides": {"needs_flow_engine": "plantuml"},
         },
         {
             "buildername": "html",
-            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), LINK_LABELS)],
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), SHOW_LINK_NAMES_VALUES),
+            ],
             "confoverrides": {
                 "needs_flow_engine": "graphviz",
                 "graphviz_output_format": "svg",
@@ -1017,12 +1031,14 @@ Link labels
     ids=["plantuml", "graphviz"],
     indirect=True,
 )
-def test_link_labels_option(test_app):
-    """``:link_labels:`` chooses what an edge is labelled with, or nothing at all.
+def test_show_link_names_takes_a_value(test_app):
+    """``:show_link_names:`` chooses what an edge is labelled with, or nothing at all.
 
-    The tri-state replaces a flag that could only ever be turned on, so a diagram can
-    now also opt out of a project default. All four values behave the same on both
-    engines, which is the point of a portable option.
+    The bare flag already meant exactly one of these values, so the option is widened
+    rather than replaced: written without a value it still means ``outgoing``, and no
+    existing document has to change. The other three are new, and the ``none`` value is
+    what lets a diagram opt out of a project default -- which the flag could not
+    express, because it could only ever turn labels on.
     """
     app = test_app
     app.build()
@@ -1031,72 +1047,33 @@ def test_link_labels_option(test_app):
     assert warnings == ""
 
     outdir = Path(app.outdir)
-    none = _debug_source(outdir, "index.html", 0)
-    outgoing = _debug_source(outdir, "index.html", 1)
-    incoming = _debug_source(outdir, "index.html", 2)
-    by_type = _debug_source(outdir, "index.html", 3)
+    default = _debug_source(outdir, "index.html", 0)
+    bare = _debug_source(outdir, "index.html", 1)
+    outgoing = _debug_source(outdir, "index.html", 2)
+    incoming = _debug_source(outdir, "index.html", 3)
+    by_type = _debug_source(outdir, "index.html", 4)
+    none = _debug_source(outdir, "index.html", 5)
 
-    assert "links outgoing" not in none
-    assert "links incoming" not in none
+    # the bare form is exactly what it has always been: the outgoing title
+    assert bare == outgoing
     assert "links outgoing" in outgoing
     assert "links incoming" in incoming
+
+    # unlabelled, whether by default or by asking
+    for source in (default, none):
+        assert "links outgoing" not in source
+        assert "links incoming" not in source
+    assert default == none
+
     # the bare field name, for a diagram that wants the data model rather than prose
     assert "links incoming" not in by_type
     assert "links outgoing" not in by_type
     assert "links" in by_type
 
 
-DEPRECATED_SHOW_LINK_NAMES = """\
-Deprecated show_link_names
-==========================
-
-.. spec:: A
-   :id: AAAAA
-
-.. spec:: B
-   :id: BBBBB
-   :links: AAAAA
-
-.. needflow::
-   :show_link_names:
-   :debug:
-"""
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [
-        {
-            "buildername": "html",
-            "files": [
-                (Path("conf.py"), CONF_PY),
-                (Path("index.rst"), DEPRECATED_SHOW_LINK_NAMES),
-            ],
-            "confoverrides": {"needs_flow_engine": "plantuml"},
-        }
-    ],
-    indirect=True,
-)
-def test_show_link_names_is_deprecated_but_honoured(test_app):
-    """``:show_link_names:`` keeps working, and says once that it has a replacement.
-
-    Deprecation upstream means an alias that is honoured indefinitely, so the only
-    difference a reader sees is the warning; the diagram is exactly the one
-    ``:link_labels: outgoing`` draws.
-    """
-    app = test_app
-    app.build()
-
-    warnings = strip_colors(app._warning.getvalue())
-    assert "'show_link_names' option is deprecated" in warnings
-    assert "link_labels" in warnings
-
-    assert "links outgoing" in _debug_source(Path(app.outdir), "index.html")
-
-
-DEPRECATED_FLOW_SHOW_LINKS = """\
-Deprecated needs_flow_show_links
-================================
+FLOW_SHOW_LINKS_CONFIG = """\
+Project default link labels
+===========================
 
 .. spec:: A
    :id: AAAAA
@@ -1109,59 +1086,64 @@ Deprecated needs_flow_show_links
    :debug:
 
 .. needflow::
-   :link_labels: none
+   :show_link_names: none
    :debug:
 """
 
 
 @pytest.mark.parametrize(
-    "test_app",
+    "value,labelled",
     [
-        {
-            "buildername": "html",
-            "files": [
-                (Path("conf.py"), CONF_PY),
-                (Path("index.rst"), DEPRECATED_FLOW_SHOW_LINKS),
-            ],
-            "confoverrides": {
-                "needs_flow_engine": "plantuml",
-                "needs_flow_show_links": True,
-            },
-        },
-        {
-            "buildername": "html",
-            "files": [
-                (Path("conf.py"), CONF_PY),
-                (Path("index.rst"), DEPRECATED_FLOW_SHOW_LINKS),
-            ],
-            "confoverrides": {
-                "needs_flow_engine": "graphviz",
-                "graphviz_output_format": "svg",
-                "needs_flow_show_links": True,
-            },
-        },
+        (True, "links outgoing"),
+        ("outgoing", "links outgoing"),
+        ("incoming", "links incoming"),
+        ("type", "links"),
+        (False, None),
+        ("none", None),
     ],
-    ids=["plantuml", "graphviz"],
-    indirect=True,
+    ids=["true", "outgoing", "incoming", "type", "false", "none"],
 )
-def test_flow_show_links_is_deprecated_and_can_be_overridden(test_app):
-    """``needs_flow_show_links`` is honoured, deprecated, and no longer inescapable.
+@pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
+def test_flow_show_links_config_accepts_a_bool_or_a_value(
+    make_app, tmp_path, plantuml_command, value, labelled, engine
+):
+    """``needs_flow_show_links`` takes the same values, and the booleans it always took.
 
-    It used to be OR-ed with the option, so a project that turned labels on left no
-    way of turning them off again for a single diagram. ``:link_labels: none`` is that
-    way out, which is why the tri-state replaces the flag.
+    ``True`` has always meant "label with the outgoing title", so it keeps meaning
+    exactly that and ``False`` means ``none``; the strings say the same things less
+    ambiguously. A diagram can always have the last word, which it could not before:
+    the flag and the option used to be OR-ed together, so a project that turned labels
+    on left no way of turning them off again for one diagram.
     """
-    app = test_app
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(FLOW_SHOW_LINKS_CONFIG, "utf8")
+    confoverrides = {
+        "needs_flow_engine": engine,
+        "plantuml": plantuml_command,
+        "needs_flow_show_links": value,
+    }
+    if engine == "graphviz":
+        confoverrides["graphviz_output_format"] = "svg"
+
+    app = make_app(srcdir=tmp_path, buildername="html", confoverrides=confoverrides)
     app.build()
 
-    warnings = strip_colors(app._warning.getvalue())
-    assert "'needs_flow_show_links' is deprecated" in warnings
-    # a project wide deprecation is said once, not once per diagram
-    assert warnings.count("'needs_flow_show_links' is deprecated") == 1
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
 
     outdir = Path(app.outdir)
-    assert "links outgoing" in _debug_source(outdir, "index.html", 0)
-    assert "links outgoing" not in _debug_source(outdir, "index.html", 1)
+    from_config = _debug_source(outdir, "index.html", 0)
+    overridden = _debug_source(outdir, "index.html", 1)
+
+    if labelled is None:
+        assert "links outgoing" not in from_config
+        assert "links incoming" not in from_config
+    else:
+        assert labelled in from_config
+
+    # whatever the project asked for, the diagram turned it off
+    assert "links outgoing" not in overridden
+    assert "links incoming" not in overridden
 
 
 #: A ``conf.py`` with a second need type that no diagram below draws,
@@ -2283,7 +2265,7 @@ Bad config value
     "override,message",
     [
         ({"needs_flow_direction": "sideways"}, "Invalid 'needs_flow_direction' value"),
-        ({"needs_flow_link_labels": "bogus"}, "Invalid 'needs_flow_link_labels' value"),
+        ({"needs_flow_show_links": "bogus"}, "Invalid 'needs_flow_show_links' value"),
         ({"needs_flow_legend": "nonsense"}, "Invalid 'needs_flow_legend' value"),
     ],
     ids=["direction", "link_labels", "legend"],
@@ -2406,7 +2388,7 @@ def test_invalid_flow_engine_is_reported_without_any_needflow(test_app):
     "override,message",
     [
         ({"needs_flow_direction": "sideways"}, "Invalid 'needs_flow_direction' value"),
-        ({"needs_flow_link_labels": "bogus"}, "Invalid 'needs_flow_link_labels' value"),
+        ({"needs_flow_show_links": "bogus"}, "Invalid 'needs_flow_show_links' value"),
         ({"needs_flow_legend": "nonsense"}, "Invalid 'needs_flow_legend' value"),
     ],
     ids=["direction", "link_labels", "legend"],

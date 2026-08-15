@@ -561,10 +561,7 @@ def build_graph(
             attributes["legend"], needs_config.flow_legend, location=location
         ),
         link_labels=resolve_link_labels(
-            attributes["link_labels"],
-            attributes["show_link_names"],
-            needs_config.flow_link_labels,
-            needs_config.flow_show_links,
+            attributes["show_link_names_value"], needs_config.flow_show_links
         ),
         direction=resolve_direction(
             attributes["direction"],

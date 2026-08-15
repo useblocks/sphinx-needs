@@ -690,9 +690,12 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     """The direction to draw the diagram in,
     ``None`` if the option was not given, in which case the configuration is consulted."""
 
-    link_labels: Literal["none", "outgoing", "incoming", "type"] | None
-    """What to label edges with,
-    ``None`` if the option was not given, in which case the configuration is consulted."""
+    show_link_names_value: Literal["none", "outgoing", "incoming", "type"] | None
+    """What to label edges with, ``None`` if ``show_link_names`` was not given.
+
+    The bare ``show_link_names`` flag of :class:`NeedsFilteredDiagramBaseType` is shared
+    with the other diagram directives, which still take it as a flag, so needflow's
+    widened value lands beside it rather than changing its type."""
 
     styles: str
     """Style class rules, in the variant syntax, empty if the option was not given."""

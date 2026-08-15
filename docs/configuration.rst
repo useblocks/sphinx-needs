@@ -865,23 +865,6 @@ The direction :ref:`needflow` diagrams flow in by default:
 A diagram overrides it with :ref:`needflow_direction`;
 only a diagram that does not set the option consults this value.
 
-.. _`needs_flow_link_labels`:
-
-needs_flow_link_labels
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. versionadded:: 8.4.0
-
-What :ref:`needflow` diagrams label their connections with by default:
-``none`` (the default), ``outgoing``, ``incoming`` or ``type``.
-
-.. code-block:: python
-
-   needs_flow_link_labels = "outgoing"
-
-A diagram overrides it with :ref:`needflow_link_labels`,
-including turning labels off again with ``none``.
-
 .. _`needs_flow_legend`:
 
 needs_flow_legend
@@ -961,18 +944,23 @@ needs_flow_show_links
 
 .. versionadded:: 0.3.11
 
-.. deprecated:: 8.4.0
-   Use :ref:`needs_flow_link_labels` instead;
-   ``True`` is equivalent to ``outgoing``.
-   This value is still honoured.
+.. versionchanged:: 8.4.0
+   Accepts a value as well as a boolean.
 
-Used to de/activate the output of link type names beside the connection in the :ref:`needflow` directive:
+What :ref:`needflow` diagrams label their connections with by default:
+``none`` (the default), ``outgoing``, ``incoming`` or ``type``.
 
 .. code-block:: python
 
-   needs_flow_show_links = True
+   needs_flow_show_links = "outgoing"
+
+``True`` and ``False`` are also accepted, and mean ``outgoing`` and ``none`` --
+which is what the value has always meant, so no existing configuration changes.
 
 Default value: ``False``
+
+A diagram overrides it with :ref:`show_link_names <needflow_show_link_names>`,
+including turning labels off again with ``none``.
 
 .. _`needs_flow_link_types`:
 

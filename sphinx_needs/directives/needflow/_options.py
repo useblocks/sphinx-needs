@@ -107,16 +107,21 @@ def direction_option(argument: str) -> FlowDirection:
     return DIRECTION_ALIASES[value]
 
 
-def link_labels_option(argument: str) -> LinkLabels:
-    """Parse the ``:link_labels:`` option value.
+def show_link_names_option(argument: str | None) -> LinkLabels:
+    """Parse the ``:show_link_names:`` option value.
 
-    :param argument: The raw option value.
+    The option began as a bare flag meaning "label edges with the outgoing title", which
+    is exactly one of the values below -- so it is widened rather than replaced, and a
+    bare ``:show_link_names:`` still means what it always did.  docutils hands a valueless
+    option ``None`` or ``''`` depending on how it was written, and both mean bare.
+
+    :param argument: The raw option value, ``None`` or empty when written bare.
     :return: What to label edges with.
     :raises ValueError: If the value is not a known kind of label.
     """
-    return directives.choice(  # type: ignore[no-any-return]
-        (argument or "").strip().lower(), get_args(LinkLabels)
-    )
+    if not (value := (argument or "").strip().lower()):
+        return "outgoing"
+    return directives.choice(value, get_args(LinkLabels))  # type: ignore[no-any-return]
 
 
 def legend_option(argument: str) -> tuple[LegendPart, ...]:
@@ -422,7 +427,7 @@ def validated_config_legend(
 
 
 def validate_flow_config(
-    *, engine: str, direction: str, link_labels: str, legend: str
+    *, engine: str, direction: str, show_links: bool | str, legend: str
 ) -> None:
     """Report every unusable needflow configuration value, once, as it is read.
 
@@ -433,7 +438,7 @@ def validate_flow_config(
 
     :param engine: The ``needs_flow_engine`` value.
     :param direction: The ``needs_flow_direction`` value.
-    :param link_labels: The ``needs_flow_link_labels`` value.
+    :param show_links: The ``needs_flow_show_links`` value.
     :param legend: The ``needs_flow_legend`` value.
     """
     validated_config_enum(
@@ -446,61 +451,51 @@ def validate_flow_config(
         name="needs_flow_direction",
         location=None,
     )
-    validated_config_enum(
-        link_labels,
-        get_args(LinkLabels),
-        "none",
-        name="needs_flow_link_labels",
-        location=None,
-    )
+    validated_config_show_links(show_links, location=None)
     validated_config_legend(legend, location=None)
 
 
+def validated_config_show_links(
+    value: bool | str, *, location: LocationType
+) -> LinkLabels:
+    """Check the configured project default for edge labels.
+
+    The value was a boolean before it named a kind of label, and both spellings stay
+    valid: ``True`` is the ``outgoing`` it has always drawn and ``False`` is ``none``.
+    An unusable string warns once and falls back, like every other enumerated value.
+
+    :param value: The ``needs_flow_show_links`` configuration value.
+    :param location: Where to report an unusable value, if anywhere.
+    :return: What to label edges with by default.
+    """
+    if isinstance(value, bool):
+        return "outgoing" if value else "none"
+    return validated_config_enum(  # type: ignore[return-value]
+        str(value),
+        get_args(LinkLabels),
+        "none",
+        name="needs_flow_show_links",
+        location=location,
+    )
+
+
 def resolve_link_labels(
-    option: LinkLabels | None,
-    show_link_names: bool,
-    project_default: LinkLabels,
-    legacy_show_links: bool,
+    option: LinkLabels | None, project_default: bool | str
 ) -> LinkLabels:
     """Decide what a diagram's edges are labelled with.
 
-    The four sources are consulted most specific first: the option, then the flag it
-    replaces, then the project default, then the configuration flag *that* replaces.
-    The old flag and the old configuration value were OR-ed together, so a project
-    that turned labels on left no way of turning them off again for a single diagram;
-    a diagram can now always have the last word.
+    Only an unset option consults the configuration, so a diagram always has the last
+    word -- which it did not before the option took a value: the flag and the
+    configuration were OR-ed together, so a project that turned labels on left no way of
+    turning them off again for one diagram.
 
-    :param option: The ``:link_labels:`` option, ``None`` if it was not given.
-    :param show_link_names: Whether the deprecated ``:show_link_names:`` flag was given.
-    :param project_default: The ``needs_flow_link_labels`` configuration value.
-    :param legacy_show_links: The deprecated ``needs_flow_show_links`` configuration value.
+    :param option: The ``:show_link_names:`` option, ``None`` if it was not given.
+    :param project_default: The ``needs_flow_show_links`` configuration value.
     :return: What to label edges with.
     """
     if option is not None:
         return option
-    if show_link_names:
-        return "outgoing"
-    validated = validated_config_enum(
-        project_default,
-        get_args(LinkLabels),
-        "none",
-        name="needs_flow_link_labels",
-        location=None,
-    )
-    if validated != "none":
-        return validated  # type: ignore[return-value]
-    if legacy_show_links:
-        log_warning(
-            LOGGER,
-            "Config option 'needs_flow_show_links' is deprecated. "
-            "Please use 'needs_flow_link_labels' instead "
-            "('True' is equivalent to 'outgoing').",
-            "deprecated",
-            location=None,
-            once=True,
-        )
-        return "outgoing"
-    return "none"
+    return validated_config_show_links(project_default, location=None)
 
 
 @dataclass(frozen=True)

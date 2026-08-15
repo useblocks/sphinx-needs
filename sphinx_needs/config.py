@@ -813,22 +813,21 @@ class NeedsSphinxConfig:
 
     ``mermaid`` is accepted for ubCode compatibility but cannot be drawn here,
     so it degrades to the default engine with a warning."""
-    flow_show_links: bool = field(
-        default=False, metadata={"rebuild": "html", "types": (bool,)}
+    flow_show_links: bool | str = field(
+        default=False, metadata={"rebuild": "html", "types": (bool, str)}
     )
-    """If True, show links in needflow diagrams by default.
+    """What needflow diagrams label their edges with, by default.
 
-    .. deprecated:: 8.4.0
-       Use ``needs_flow_link_labels`` instead; ``True`` is equivalent to ``outgoing``.
+    One of ``none``, ``outgoing``, ``incoming`` or ``type``.
+    ``True`` and ``False`` are also accepted, and mean ``outgoing`` and ``none``.
+
+    .. versionchanged:: 8.4.0
+       Accepts a value as well as a boolean.
     """
     flow_direction: Literal["down", "up", "right", "left"] = field(
         default="down", metadata={"rebuild": "html", "types": (str,)}
     )
     """The default direction needflow diagrams are drawn in."""
-    flow_link_labels: Literal["none", "outgoing", "incoming", "type"] = field(
-        default="none", metadata={"rebuild": "html", "types": (str,)}
-    )
-    """What needflow diagrams label their edges with, by default."""
     flow_legend: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
     """The legend needflow diagrams show by default (``types``, ``links`` or both)."""
     flow_styles: dict[str, dict[str, Any]] = field(

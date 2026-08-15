@@ -34,17 +34,26 @@ New Features
        * ``down`` (default), ``up``, ``right`` or ``left``, plus the ``TB``/``TD``/``BT``/``LR``/``RL`` aliases.
      - * ``:legend:``
        * ``types``, ``links`` or both, drawn as a table beside the diagram.
-     - * ``:link_labels:``
-       * ``none`` (default), ``outgoing``, ``incoming`` or ``type``.
+     - * ``:show_link_names:``
+       * Widened from a flag: ``none`` (default), ``outgoing``, ``incoming`` or ``type``;
+         written bare it still means ``outgoing``.
      - * ``:styles:``
        * ``[<filter>]:<class>`` rules over classes named in :ref:`needs_flow_styles`.
      - * ``:engine_config:``
        * Engine specific customisation, selected by name from :ref:`needs_flow_engine_config`.
 
   With matching project defaults :ref:`needs_flow_direction`, :ref:`needs_flow_legend`,
-  :ref:`needs_flow_link_labels`, :ref:`needs_flow_styles` and
+  :ref:`needs_flow_show_links`, :ref:`needs_flow_styles` and
   :ref:`needs_flow_engine_config`. Only an unset option consults the configuration, so a
   single diagram can always opt back out of a project default.
+
+  Edge labels are the one intent that already had an option, so it is **widened rather
+  than replaced**: the bare ``:show_link_names:`` flag already meant precisely
+  ``outgoing``, and :ref:`needs_flow_show_links` still accepts ``True`` and ``False``
+  beside the four values. No existing document or configuration changes, and neither
+  spelling is deprecated. The values are what make the pair useful: the flag and the
+  configuration used to be OR-ed together, so a project that turned labels on left no way
+  of turning them off again for one diagram -- ``:show_link_names: none`` is that way out.
 
   ``needs_links`` gains ``line``, ``part_line``, ``arrow`` and ``part_color``, and its
   ``color`` is finally honoured — an identical "TODO" had sat in both emitters.
@@ -270,10 +279,6 @@ emits a ``needs.deprecated`` warning naming its replacement (:pr:`1770`).
 
 - ``needflow`` ``:show_legend:`` → :ref:`:legend: types <needflow_legend>`.
   The legacy option keeps its per-engine in-image rendering, so no diagram changes.
-- ``needflow`` ``:show_link_names:`` → :ref:`:link_labels: outgoing <needflow_link_labels>`.
-- :ref:`needs_flow_show_links` → :ref:`needs_flow_link_labels` (``True`` is equivalent to
-  ``outgoing``). The two used to be OR-ed together, so a project that turned labels on left
-  no way of turning them off for a single diagram; ``:link_labels: none`` is that way out.
 - ``needflow`` ``:config:`` → :ref:`engine_config <needflow_engine_config>`, which reads the
   same registries, so nothing has to move.
 - ``needflow`` ``:highlight:`` → :ref:`styles <needflow_styles>` with the built-in

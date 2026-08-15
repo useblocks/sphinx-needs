@@ -15,7 +15,7 @@ If you provide an argument, we use it as caption for the generated image.
       :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
       :direction: right
 
 .. versionadded:: 2.2.0
@@ -31,7 +31,7 @@ If you provide an argument, we use it as caption for the generated image.
          :filter: is_need
          :tags: flow_example
          :link_types: tests, blocks
-         :link_labels: outgoing
+         :show_link_names:
          :direction: right
 
 Dependencies
@@ -118,20 +118,20 @@ Other need filters are applied on this initial selection of connected needs.
       :root_id: spec_flow_002
       :root_direction: incoming
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
 
    .. needflow::
       :root_id: spec_flow_002
       :root_direction: outgoing
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
 
    .. needflow::
       :root_id: spec_flow_002
       :root_direction: outgoing
       :root_depth: 1
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
 
 .. dropdown:: Using Graphviz engine
 
@@ -140,14 +140,14 @@ Other need filters are applied on this initial selection of connected needs.
       :root_id: spec_flow_002
       :root_direction: incoming
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
 
    .. needflow::
       :engine: graphviz
       :root_id: spec_flow_002
       :root_direction: outgoing
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
 
    .. needflow::
       :engine: graphviz
@@ -155,7 +155,7 @@ Other need filters are applied on this initial selection of connected needs.
       :root_direction: outgoing
       :root_depth: 1
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
 
 .. _needflow_show_filters:
 
@@ -207,12 +207,17 @@ and it can describe link types -- which no in-diagram legend ever could.
       :tags: flow_example
       :legend: types,links
 
-.. _needflow_link_labels:
+.. _needflow_show_link_names:
 
-link_labels
-~~~~~~~~~~~
+show_link_names
+~~~~~~~~~~~~~~~
 
-.. versionadded:: 8.4.0
+.. versionadded:: 0.3.11
+
+.. versionchanged:: 8.4.0
+   Takes an optional value.
+   Written bare it still means ``outgoing``, which is what the flag has always drawn,
+   so no existing document changes.
 
 Chooses what each connection is labelled with:
 
@@ -226,23 +231,30 @@ Chooses what each connection is labelled with:
    The bare link field name, e.g. ``links``,
    for a diagram that wants the data model rather than prose.
 
-You can set the project default with :ref:`needs_flow_link_labels` in **conf.py**.
-Because the option has four values rather than two,
-a single diagram can always turn labels off again,
-which the flag it replaces could not express.
+Written without a value, ``:show_link_names:`` means ``outgoing``:
+
+.. code-block:: rst
+
+   .. needflow::
+      :show_link_names:
+
+You can set the project default with :ref:`needs_flow_show_links` in **conf.py**.
+Because the option now takes a value rather than only being present or absent,
+a single diagram can turn labels off again with ``none``,
+which the bare flag could not express.
 
 .. syntax-example::
 
    .. needflow::
       :tags: flow_example
-      :link_labels: outgoing
+      :show_link_names: incoming
 
 .. dropdown:: Using Graphviz engine
 
    .. needflow::
       :engine: graphviz
       :tags: flow_example
-      :link_labels: outgoing
+      :show_link_names: incoming
 
 .. _needflow_link_types:
 
@@ -307,7 +319,7 @@ See also :ref:`needs_links` for more details about specific link types.
    .. needflow::
       :tags: flow_example
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
 
 .. dropdown:: Using Graphviz engine
 
@@ -315,7 +327,7 @@ See also :ref:`needs_links` for more details about specific link types.
       :engine: graphviz
       :tags: flow_example
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
 
 .. _needflow_direction:
 
@@ -427,7 +439,7 @@ where it and a portable option disagree, the option wins.
       :tags: flow_example
       :types: spec
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
       :engine_config: monochrome
 
 You can apply multiple configurations together by separating them via ``,`` symbol.
@@ -439,7 +451,7 @@ You can apply multiple configurations together by separating them via ``,`` symb
       :tags: flow_example
       :types: spec
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
       :direction: right
       :engine_config: monochrome,handwritten
 
@@ -451,7 +463,7 @@ You can apply multiple configurations together by separating them via ``,`` symb
       :tags: flow_example
       :types: spec
       :link_types: tests, blocks
-      :link_labels: outgoing
+      :show_link_names:
       :direction: right
       :engine_config: default
 
@@ -712,24 +724,4 @@ so no existing diagram changes.
 
 For a rendered legend, see :ref:`legend <needflow_legend>` above.
 
-.. _needflow_show_link_names:
-
-show_link_names
-~~~~~~~~~~~~~~~
-
-.. versionadded:: 0.3.11
-
-.. deprecated:: 8.4.0
-   Use ``:link_labels: outgoing``, see :ref:`link_labels <needflow_link_labels>`.
-
-Adds the link type name beside connections.
-Equivalent to ``:link_labels: outgoing``.
-
-.. code-block:: rst
-
-   .. needflow::
-      :tags: flow_example
-      :show_link_names:
-
-For a rendered result, see :ref:`link_labels <needflow_link_labels>` above.
 

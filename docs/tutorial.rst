@@ -10,7 +10,7 @@ We will create need items, link them together, visualize the relationships betwe
     :alt: Engineering plan to develop a car
     :root_id: T_CAR
     :engine_config: tutorial
-    :link_labels: outgoing
+    :show_link_names:
     :styles:
         [status == 'open']:open,
         [status == 'in progress']:wip,
@@ -318,7 +318,7 @@ Finally, we can display a :ref:`flow diagram <needflow>` of the need items, to a
         :root_id: T_CAR
         :direction: right
         :engine_config: tutorial
-        :link_labels: outgoing
+        :show_link_names:
         :styles:
             [status == 'open']:open,
             [status == 'in progress']:wip,
@@ -336,7 +336,7 @@ Finally, we can display a :ref:`flow diagram <needflow>` of the need items, to a
             :root_id: T_CAR
             :direction: right
             :engine_config: tutorial
-            :link_labels: outgoing
+            :show_link_names:
             :styles:
                 [status == 'open']:open,
                 [status == 'in progress']:wip,

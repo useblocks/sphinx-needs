@@ -21,9 +21,9 @@ from sphinx_needs.directives.needflow._options import (
     direction_option,
     graphviz_config_direction,
     legend_option,
-    link_labels_option,
     plantuml_config_direction,
     resolve_engine,
+    show_link_names_option,
 )
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger, log_warning
@@ -67,7 +67,6 @@ class NeedflowDirective(FilterBase):
         "debug": directives.flag,
         # portable formatting vocabulary
         "direction": direction_option,
-        "link_labels": link_labels_option,
         "legend": legend_option,
         "styles": directives.unchanged_required,
         # formatting
@@ -75,7 +74,8 @@ class NeedflowDirective(FilterBase):
         "border_color": directives.unchanged_required,
         "show_legend": directives.flag,
         "show_filters": directives.flag,
-        "show_link_names": directives.flag,
+        # widened from a bare flag: written without a value it still means `outgoing`
+        "show_link_names": show_link_names_option,
         "config": directives.unchanged_required,
         "engine_config": directives.unchanged_required,
         "max_items": directives.nonnegative_int,
@@ -226,10 +226,6 @@ class NeedflowDirective(FilterBase):
         needs_config = NeedsSphinxConfig(self.env.config)
         location = (self.env.docname, self.lineno)
 
-        if "show_link_names" in self.options:
-            self._warn_deprecated(
-                "show_link_names", "Please use ':link_labels: outgoing' instead."
-            )
         if "show_legend" in self.options:
             self._warn_deprecated(
                 "show_legend",
@@ -312,6 +308,9 @@ class NeedflowDirective(FilterBase):
             "show_legend": "show_legend" in self.options,
             "show_filters": "show_filters" in self.options,
             "show_link_names": "show_link_names" in self.options,
+            # None means the option was not given, so that the configuration is only
+            # consulted when the author did not say
+            "show_link_names_value": self.options.get("show_link_names"),
             "link_types": link_types,
             "config_names": config_names,
             "config": config,
@@ -331,7 +330,6 @@ class NeedflowDirective(FilterBase):
             # consulted when the author did not say (the `max_items` precedent)
             "direction": self.options.get("direction"),
             "config_direction": config_direction,
-            "link_labels": self.options.get("link_labels"),
             "legend": self.options.get("legend"),
             "styles": self.options.get("styles", ""),
             **self.collect_filter_attributes(),

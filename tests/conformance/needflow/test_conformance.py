@@ -51,13 +51,21 @@ CASE_KEYS = frozenset(
 )
 
 #: Portable configuration keys (spec, "config"), mapped to their ``conf.py`` names.
+#:
+#: The corpus carries the *portable* vocabulary, which is deliberately decoupled from
+#: what either repository happens to call a thing -- this table is the seam. Sphinx-Needs
+#: spells the neutral ``link_labels`` as ``needs_flow_show_links``, the flag it widened.
 CONFIG_KEYS = {
     "direction": "needs_flow_direction",
     "legend": "needs_flow_legend",
-    "link_labels": "needs_flow_link_labels",
+    "link_labels": "needs_flow_show_links",
     "styles": "needs_flow_styles",
     "engine_config": "needs_flow_engine_config",
 }
+
+#: Portable directive options whose Sphinx-Needs spelling differs from the neutral one
+#: (see :data:`CONFIG_KEYS`). Anything absent is spelled the same in both.
+OPTION_NAMES = {"link_labels": "show_link_names"}
 
 #: Portable directive options (spec, "options").  Selection options are neutral already
 #: and are listed here so that a case can filter what it draws.
@@ -322,7 +330,8 @@ def _index_rst(case: dict[str, Any]) -> str:
     lines.append(".. needflow::")
     lines.append("   :debug:")
     for key, value in (case.get("options") or {}).items():
-        lines.append(f"   :{key}: {value}" if value != "" else f"   :{key}:")
+        name = OPTION_NAMES.get(key, key)
+        lines.append(f"   :{name}: {value}" if value != "" else f"   :{name}:")
     lines.append("")
     return "\n".join(lines)
 
