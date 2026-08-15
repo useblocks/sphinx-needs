@@ -110,6 +110,10 @@ from sphinx_needs.environment import (
     install_permalink_file,
     install_styles_static_files,
 )
+from sphinx_needs.directives.needflow._options import (
+    ACCEPTED_ENGINES,
+    validated_config_enum,
+)
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs
 from sphinx_needs.functions import NEEDS_COMMON_FUNCTIONS
@@ -1146,6 +1150,16 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             schema.add_link_field(link_field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid link {name!r}: {exc}") from exc
+
+    # validated where the configuration is read, so that a project which misconfigures
+    # the engine and happens to have no needflow anywhere is still told, exactly once
+    validated_config_enum(
+        needs_config.flow_engine,
+        ACCEPTED_ENGINES,
+        "plantuml",
+        name="needs_flow_engine",
+        location=None,
+    )
 
     if needs_config.flow_link_types != ["links"]:
         # the needflow directive always defaults its `link_types` option to every link

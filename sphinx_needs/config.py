@@ -804,10 +804,13 @@ class NeedsSphinxConfig:
         default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
     )
     """Warn if process_needuml runs for longer than this time (in seconds)."""
-    flow_engine: Literal["plantuml", "graphviz"] = field(
+    flow_engine: Literal["plantuml", "graphviz", "mermaid"] = field(
         default="plantuml", metadata={"rebuild": "env", "types": (str,)}
     )
-    """The rendering engine to use for needflow diagrams."""
+    """The rendering engine to use for needflow diagrams.
+
+    ``mermaid`` is accepted for ubCode compatibility but cannot be drawn here,
+    so it degrades to the default engine with a warning."""
     flow_show_links: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )

@@ -1839,20 +1839,24 @@ Invalid engine
     ],
     indirect=True,
 )
-def test_invalid_flow_engine_warns_and_falls_back(test_app):
-    """An unusable ``needs_flow_engine`` is a configuration mistake, not a crash.
+def test_reserved_flow_engine_config_falls_back(test_app):
+    """``needs_flow_engine = "mermaid"`` is accepted project-wide and degrades.
 
-    It used to trip a bare ``assert``, which ends a build with a traceback rather
-    than a message naming the option and its allowed values.
+    The configuration counterpart of the ``:engine:`` option: the name is reserved for
+    ubCode rather than rejected, so a shared configuration can name it without the
+    Sphinx-Needs build losing every diagram. It used to trip a bare ``assert``, which
+    ends a build with a traceback rather than a message.
     """
     app = test_app
     app.build()  # must not raise
 
     warnings = strip_colors(app._warning.getvalue())
-    assert "Invalid 'needs_flow_engine' value 'mermaid'" in warnings
-    assert "plantuml" in warnings
+    assert "the 'mermaid' engine is not available in Sphinx-Needs" in warnings
+    assert "'plantuml' instead" in warnings
     # said once for the project, not once per diagram
-    assert warnings.count("Invalid 'needs_flow_engine' value") == 1
+    assert warnings.count("engine is not available") == 1
+    # ...and it is not reported as an invalid value, because it is a valid one
+    assert "Invalid 'needs_flow_engine'" not in warnings
 
     # the fallback engine still drew a diagram, rather than the build ending
     assert "needflow-index-0" in Path(app.outdir, "index.html").read_text()
@@ -2223,3 +2227,138 @@ def test_graph_keyed_rankdir_is_detected_and_overridable(test_app):
 
     warnings = strip_colors(app._warning.getvalue())
     assert warnings.count("disagrees with the direction") == 1
+
+
+BAD_CONFIG_VALUE = """\
+Bad config value
+================
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "override,message",
+    [
+        ({"needs_flow_direction": "sideways"}, "Invalid 'needs_flow_direction' value"),
+        ({"needs_flow_link_labels": "bogus"}, "Invalid 'needs_flow_link_labels' value"),
+        ({"needs_flow_legend": "nonsense"}, "Invalid 'needs_flow_legend' value"),
+    ],
+    ids=["direction", "link_labels", "legend"],
+)
+@pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
+def test_out_of_enum_config_values_warn_and_fall_back(
+    make_app, tmp_path, override, message, engine
+):
+    """An out-of-enum configuration value must warn, never end the build.
+
+    ``needs_flow_direction`` used to be read straight into a lookup table, so a typo
+    reached it as a ``KeyError`` and aborted the build with a traceback -- the exact
+    failure mode this slice removed for ``needs_flow_engine``. Every enumerated
+    configuration value is now validated the same way: one ``needs.config`` warning
+    naming the allowed values, then the documented default.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(BAD_CONFIG_VALUE, "utf8")
+    confoverrides = {"needs_flow_engine": engine, **override}
+    if engine == "graphviz":
+        confoverrides["graphviz_output_format"] = "svg"
+
+    app = make_app(srcdir=tmp_path, buildername="html", confoverrides=confoverrides)
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert message in warnings
+    # said once for the project, not once per diagram
+    assert warnings.count(message) == 1
+
+    # the diagram is still drawn, with the default the warning names
+    assert "AAAAA" in _debug_source(Path(app.outdir), "index.html")
+
+
+RESERVED_ENGINE = """\
+Reserved engine
+===============
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :engine: mermaid
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), RESERVED_ENGINE),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        }
+    ],
+    indirect=True,
+)
+def test_reserved_mermaid_engine_option_degrades(test_app):
+    """``:engine: mermaid`` is accepted and degrades, rather than dropping the directive.
+
+    ubCode draws needflows with mermaid, and a document naming it must not become
+    unportable the moment it is rendered here -- which is what a hard docutils error
+    made it, because the directive was discarded entirely.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "'mermaid' engine is not available" in warnings
+    assert warnings.count("'mermaid' engine is not available") == 1
+
+    # the diagram is drawn by the fallback engine rather than lost
+    assert "AAAAA" in _debug_source(Path(app.outdir), "index.html")
+
+
+NO_NEEDFLOW = """\
+No needflow here
+================
+
+.. spec:: A
+   :id: AAAAA
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), NO_NEEDFLOW)],
+            "confoverrides": {"needs_flow_engine": "nonsuch"},
+        }
+    ],
+    indirect=True,
+)
+def test_invalid_flow_engine_is_reported_without_any_needflow(test_app):
+    """An unusable ``needs_flow_engine`` is a configuration fault, reported at load time.
+
+    Checking it as a diagram is drawn means a project that misconfigures it and happens
+    to have no needflow is never told; the check belongs where the configuration is
+    read, so it fires exactly once whether or not anything uses it.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "Invalid 'needs_flow_engine' value 'nonsuch'" in warnings
+    assert warnings.count("Invalid 'needs_flow_engine' value") == 1

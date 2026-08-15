@@ -17,6 +17,7 @@ from sphinx_needs.data import (
 )
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.needflow._options import (
+    ACCEPTED_ENGINES,
     direction_option,
     graphviz_config_direction,
     legend_option,
@@ -46,7 +47,9 @@ class NeedflowDirective(FilterBase):
     optional_arguments = 1  # the caption
     final_argument_whitespace = True
     option_spec = {
-        "engine": lambda c: directives.choice(c, ("graphviz", "plantuml")),
+        # `mermaid` is accepted but not drawable here, so that a ubCode authored
+        # document does not lose its diagram entirely; see `resolve_engine`
+        "engine": lambda c: directives.choice(c, ACCEPTED_ENGINES),
         # basic options
         "alt": directives.unchanged,
         "scale": directives.unchanged_required,

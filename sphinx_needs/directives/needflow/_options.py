@@ -291,13 +291,59 @@ def resolve_direction(
         return option
     if config_direction is not None:
         return config_direction
-    return project_default
+    return validated_config_enum(  # type: ignore[return-value]
+        project_default,
+        get_args(FlowDirection),
+        "down",
+        name="needs_flow_direction",
+        location=None,
+    )
 
 
-#: The engines a needflow can be drawn with.
-#: ``mermaid`` is reserved: ubCode draws needflows with it, and a document naming it
-#: should not become unportable the moment it is rendered here.
+#: The engines a needflow can actually be drawn with here.
 ENGINES = ("plantuml", "graphviz")
+
+#: The engines a document may name.
+#:
+#: ``mermaid`` is reserved rather than drawable: ubCode draws needflows with it, and a
+#: document naming it must not become unportable the moment it is rendered here -- so it
+#: is accepted and degrades to a drawable engine, instead of discarding the directive.
+ACCEPTED_ENGINES = (*ENGINES, "mermaid")
+
+
+def validated_config_enum(
+    value: str,
+    allowed: tuple[str, ...],
+    default: str,
+    *,
+    name: str,
+    location: LocationType,
+) -> str:
+    """Check a configured value against a closed enumeration, without failing the build.
+
+    An out-of-enum value is a mistake in one line of ``conf.py``, not a reason to end a
+    build with a traceback: every value here reaches a lookup table sooner or later, and
+    reaching one unchecked is how a typo becomes a ``KeyError``.  The value is reported
+    once, with the allowed values, and the documented default is used instead.
+
+    :param value: The configured value.
+    :param allowed: The values the configuration accepts.
+    :param default: The value to fall back to.
+    :param name: The configuration key, for the message.
+    :param location: Where to report the value, if anywhere.
+    :return: The value, or the default if it is not usable.
+    """
+    if value in allowed:
+        return value
+    log_warning(
+        LOGGER,
+        f"Invalid {name!r} value {value!r}, "
+        f"allowed values: {', '.join(allowed)}; {default!r} is used",
+        "config",
+        location=location,
+        once=True,
+    )
+    return default
 
 
 def resolve_engine(
@@ -305,29 +351,30 @@ def resolve_engine(
 ) -> str:
     """Decide which engine draws a diagram, without ever failing the build.
 
-    An unusable value used to trip a bare ``assert``, which fails a build with a
-    traceback rather than a message. A misconfigured engine is worth a warning and the
-    default engine, in keeping with everything else here: a plainer diagram beats a
-    failed build.
+    An engine this build cannot run is not a reason to lose the diagram.  ``mermaid`` is
+    an accepted name that nothing here can draw, so it degrades to a drawable engine with
+    one warning for the project (tier 2); an outright unusable configuration value has
+    already been reported when the configuration was read
+    (:func:`~sphinx_needs.needs.load_config`), so it degrades silently rather than
+    repeating itself once per diagram.
 
     :param option: The ``:engine:`` option, ``None`` if it was not given.
     :param project_default: The ``needs_flow_engine`` configuration value.
-    :param location: Where to report an unusable value.
+    :param location: Where to report an engine that cannot be drawn with.
     :return: The engine to draw with.
     """
-    if option is not None:
-        # the option is a closed choice, so it is already known to be valid
-        return option
-    if project_default in ENGINES:
-        return project_default
-    log_warning(
-        LOGGER,
-        f"Invalid 'needs_flow_engine' value {project_default!r}, "
-        f"allowed values: {', '.join(ENGINES)}; {ENGINES[0]!r} is used",
-        "config",
-        location=location,
-        once=True,
-    )
+    engine = option if option is not None else project_default
+    if engine in ENGINES:
+        return engine
+    if engine == "mermaid":
+        log_warning(
+            LOGGER,
+            f"the {engine!r} engine is not available in Sphinx-Needs, "
+            f"so the diagram is drawn with {ENGINES[0]!r} instead",
+            "needflow",
+            location=location,
+            once=True,
+        )
     return ENGINES[0]
 
 
@@ -386,8 +433,15 @@ def resolve_link_labels(
         return option
     if show_link_names:
         return "outgoing"
-    if project_default != "none":
-        return project_default
+    validated = validated_config_enum(
+        project_default,
+        get_args(LinkLabels),
+        "none",
+        name="needs_flow_link_labels",
+        location=None,
+    )
+    if validated != "none":
+        return validated  # type: ignore[return-value]
     if legacy_show_links:
         log_warning(
             LOGGER,
