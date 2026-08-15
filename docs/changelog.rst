@@ -131,6 +131,14 @@ Improvements
   as a list. A list, tuple, set or frozenset of names is accepted, as is an already-compiled
   ``re.Pattern`` for ``regex`` (a *bytes* pattern is not, as it could never match a field value).
 
+Internal changes
+................
+
+These changes do not affect user-facing behaviour:
+
+- ♻️ :ref:`needflow`'s two engines now share one graph-model pass, with no change to the
+  generated diagram source
+
 Bug fixes
 .........
 
