@@ -97,8 +97,10 @@ Improvements
   The stored environment version is bumped for the new directive option, so the first build
   after upgrading re-reads every document.
 
+.. set the :pr: below to this change's own PR number before release
+
 - 👌 :ref:`needs_string_links` is validated when it is loaded, and no longer fails the build
-  (:pr:`1766`)
+  (:pr:`0000`)
 
   A configuration entry used to be looked at only while a need was being rendered, and then
   indexed into blindly. A missing key, a regular expression that does not compile, a template
@@ -142,11 +144,14 @@ Bug fixes
   has always done, and the warning says which need it came from.
 
 - 🐛 :ref:`needs_string_links` renders separators between items only **(changed output)**
+  (:pr:`1718`)
 
   In a need's meta area, the separator condition counted the *characters* of the value instead
   of its items, so every item got a trailing ``;`` — and a single-character value got no
   separator at all. N items now produce N-1 separators, exactly as :ref:`needtable` cells have
   always done. Fields not named in any ``options`` are unaffected.
+  The one-line fix landed in :pr:`1718`; this release also pins the rule with regression
+  tests on both surfaces.
 
 - 🐛 :ref:`needs_string_links` applies to list fields in the meta area **(changed output)**
 
