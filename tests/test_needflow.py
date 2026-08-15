@@ -2398,6 +2398,36 @@ def test_invalid_flow_engine_is_reported_without_any_needflow(test_app):
     assert warnings.count("Invalid 'needs_flow_engine' value") == 1
 
 
+@pytest.mark.parametrize(
+    "override,message",
+    [
+        ({"needs_flow_direction": "sideways"}, "Invalid 'needs_flow_direction' value"),
+        ({"needs_flow_link_labels": "bogus"}, "Invalid 'needs_flow_link_labels' value"),
+        ({"needs_flow_legend": "nonsense"}, "Invalid 'needs_flow_legend' value"),
+    ],
+    ids=["direction", "link_labels", "legend"],
+)
+def test_bad_flow_config_is_reported_without_any_needflow(
+    make_app, tmp_path, override, message
+):
+    """Every enumerated needflow value is checked where the configuration is read.
+
+    ``needs_flow_engine`` already was, and the rest were only checked as a diagram was
+    drawn -- so a project that misconfigured one of them and happened to have no
+    needflow anywhere heard nothing at all. All four are now consistent, and still warn
+    exactly once for a project that does draw diagrams.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(NO_NEEDFLOW, "utf8")
+
+    app = make_app(srcdir=tmp_path, buildername="html", confoverrides=override)
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert message in warnings
+    assert warnings.count(message) == 1
+
+
 NESTED_FILL = """\
 Nested need fill
 ================

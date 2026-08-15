@@ -396,17 +396,64 @@ def resolve_legend(
     """
     if option is not None:
         return option
+    return validated_config_legend(project_default, location=location)
+
+
+def validated_config_legend(
+    value: str, *, location: LocationType
+) -> tuple[LegendPart, ...]:
+    """Check a configured legend specification, without failing the build.
+
+    :param value: The ``needs_flow_legend`` configuration value.
+    :param location: Where to report an unusable value, if anywhere.
+    :return: The legend sections it names, empty if it names none or cannot be used.
+    """
     try:
-        return parse_legend(project_default)
+        return parse_legend(value)
     except ValueError as err:
         log_warning(
             LOGGER,
-            f"Invalid 'needs_flow_legend' value {project_default!r}: {err}",
+            f"Invalid 'needs_flow_legend' value {value!r}: {err}",
             "config",
             location=location,
             once=True,
         )
         return ()
+
+
+def validate_flow_config(
+    *, engine: str, direction: str, link_labels: str, legend: str
+) -> None:
+    """Report every unusable needflow configuration value, once, as it is read.
+
+    Checking these as a diagram is drawn means a project that misconfigures one and
+    happens to have no needflow is never told.  The checks are the same functions the
+    resolution uses, and they warn only once for a given message, so a project with
+    needflows hears about a bad value exactly once rather than twice.
+
+    :param engine: The ``needs_flow_engine`` value.
+    :param direction: The ``needs_flow_direction`` value.
+    :param link_labels: The ``needs_flow_link_labels`` value.
+    :param legend: The ``needs_flow_legend`` value.
+    """
+    validated_config_enum(
+        engine, ACCEPTED_ENGINES, "plantuml", name="needs_flow_engine", location=None
+    )
+    validated_config_enum(
+        direction,
+        get_args(FlowDirection),
+        "down",
+        name="needs_flow_direction",
+        location=None,
+    )
+    validated_config_enum(
+        link_labels,
+        get_args(LinkLabels),
+        "none",
+        name="needs_flow_link_labels",
+        location=None,
+    )
+    validated_config_legend(legend, location=None)
 
 
 def resolve_link_labels(

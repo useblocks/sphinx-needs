@@ -74,10 +74,7 @@ from sphinx_needs.directives.needflow import (
     process_needflow_graphviz,
     process_needflow_plantuml,
 )
-from sphinx_needs.directives.needflow._options import (
-    ACCEPTED_ENGINES,
-    validated_config_enum,
-)
+from sphinx_needs.directives.needflow._options import validate_flow_config
 from sphinx_needs.directives.needgantt import (
     Needgantt,
     NeedganttDirective,
@@ -1152,13 +1149,12 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             raise NeedsConfigException(f"Invalid link {name!r}: {exc}") from exc
 
     # validated where the configuration is read, so that a project which misconfigures
-    # the engine and happens to have no needflow anywhere is still told, exactly once
-    validated_config_enum(
-        needs_config.flow_engine,
-        ACCEPTED_ENGINES,
-        "plantuml",
-        name="needs_flow_engine",
-        location=None,
+    # one of these and happens to have no needflow anywhere is still told, exactly once
+    validate_flow_config(
+        engine=needs_config.flow_engine,
+        direction=needs_config.flow_direction,
+        link_labels=needs_config.flow_link_labels,
+        legend=needs_config.flow_legend,
     )
 
     if needs_config.flow_link_types != ["links"]:
