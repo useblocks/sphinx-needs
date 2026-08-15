@@ -306,6 +306,9 @@ def process_needflow_plantuml(
             puml_node["uml"] += render_connections(graph, entity_names)
 
             # Create a legend
+            # note this lists every configured need type, whereas the graphviz engine
+            # lists only the types it actually drew, so the same `:show_legend:` gives
+            # the two engines different legends; it is kept as is
             if current_needflow["show_legend"]:
                 puml_node["uml"] += create_legend(needs_config.types)
 

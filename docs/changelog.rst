@@ -97,6 +97,14 @@ Improvements
   The stored environment version is bumped for the new directive option, so the first build
   after upgrading re-reads every document.
 
+Internal changes
+................
+
+These changes do not affect user-facing behaviour:
+
+- ♻️ :ref:`needflow`'s two engines now share one graph-model pass, with no change to the
+  generated diagram source
+
 Bug fixes
 .........
 

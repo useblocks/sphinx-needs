@@ -106,6 +106,9 @@ class NeedflowDirective(FilterBase):
                     )
             config = "\n".join(_configs)
         else:
+            # note a graphviz needflow without a `:config:` silently gets the "default"
+            # style, so it is never unstyled the way a plantuml one is, and naming any
+            # config replaces that default rather than adding to it; it is kept as is
             config_names = config_names if config_names else "default"
             for config_name in config_names.split(","):
                 config_name = config_name.strip()

@@ -90,6 +90,10 @@ def process_needflow_graphviz(
             variant_location=node,
         )
 
+        # this check used to run before the `max_items` cap, which the model now applies;
+        # the verdict is the same either way, because `apply_max_items` either returns the
+        # needs unchanged or truncates them to a limit of at least one, so it can never
+        # turn a non-empty result into an empty one
         if not graph.needs:
             node.replace_self(
                 no_needs_found_paragraph(attributes.get("filter_warning"))
@@ -135,6 +139,9 @@ def process_needflow_graphviz(
         for edge in graph.edges:
             content += _render_edge(edge, graph.show_link_names, cluster_ids)
 
+        # note this lists only the need types that were actually drawn, whereas the
+        # plantuml engine lists every configured type, so the same `:show_legend:` gives
+        # the two engines different legends; it is kept as is
         if attributes["show_legend"]:
             content += _create_legend(
                 [drawn.need for drawn in graph.nodes.values()], needs_config

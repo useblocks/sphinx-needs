@@ -150,7 +150,11 @@ class NodePresentation:
     """The resolved presentation of a single drawn need, free of any engine syntax."""
 
     type_style: str
-    """The style name of the need type, or ``rectangle`` for a need part."""
+    """The style name of the need type, or ``rectangle`` for a need part.
+
+    A need part has no style of its own, and both engines happen to spell their fallback
+    for one the same way, so the name is shared here rather than left to each engine.
+    """
 
     type_color: str | None
     """The color of the need type as configured, or ``None`` if it has none.
