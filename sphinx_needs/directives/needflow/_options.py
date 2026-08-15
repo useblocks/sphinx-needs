@@ -280,6 +280,41 @@ def resolve_direction(
     return project_default
 
 
+#: The engines a needflow can be drawn with.
+#: ``mermaid`` is reserved: ubCode draws needflows with it, and a document naming it
+#: should not become unportable the moment it is rendered here.
+ENGINES = ("plantuml", "graphviz")
+
+
+def resolve_engine(option: str | None, project_default: str, *, location: LocationType) -> str:
+    """Decide which engine draws a diagram, without ever failing the build.
+
+    An unusable value used to trip a bare ``assert``, which fails a build with a
+    traceback rather than a message. A misconfigured engine is worth a warning and the
+    default engine, in keeping with everything else here: a plainer diagram beats a
+    failed build.
+
+    :param option: The ``:engine:`` option, ``None`` if it was not given.
+    :param project_default: The ``needs_flow_engine`` configuration value.
+    :param location: Where to report an unusable value.
+    :return: The engine to draw with.
+    """
+    if option is not None:
+        # the option is a closed choice, so it is already known to be valid
+        return option
+    if project_default in ENGINES:
+        return project_default
+    log_warning(
+        LOGGER,
+        f"Invalid 'needs_flow_engine' value {project_default!r}, "
+        f"allowed values: {', '.join(ENGINES)}; {ENGINES[0]!r} is used",
+        "config",
+        location=location,
+        once=True,
+    )
+    return ENGINES[0]
+
+
 def resolve_legend(
     option: tuple[LegendPart, ...] | None,
     project_default: str,

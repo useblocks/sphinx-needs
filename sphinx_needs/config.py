@@ -811,6 +811,14 @@ class NeedsSphinxConfig:
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
     """Named style classes that the needflow ``:styles:`` option can apply to needs."""
+    flow_engine_config: dict[str, dict[str, Any]] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": ()}
+    )
+    """Engine specific needflow customisation, per engine, selected by ``:engine_config:``.
+
+    Keyed by engine name, then by the name the directive selects, e.g.
+    ``{"plantuml": {"corporate": "!include theme.puml"}}``.
+    """
     flow_link_types: list[str] = field(
         default_factory=lambda: ["links"], metadata={"rebuild": "html", "types": ()}
     )

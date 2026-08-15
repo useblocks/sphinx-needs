@@ -577,10 +577,11 @@ Unknown config
     indirect=True,
 )
 def test_unknown_config_names_its_config_value(test_app):
-    """An unknown ``:config:`` name must point at the config value that holds them.
+    """An unknown engine config name must point at the values that could hold it.
 
-    Each engine reads its own config value, and the plantuml message used to
-    misspell it as ``need_flows_configs``, which does not exist.
+    Each engine reads its own registry, and the plantuml message used to misspell it
+    as ``need_flows_configs``, which does not exist. Both the new engine-keyed
+    registry and the legacy one are named, since either could supply the name.
     """
     app = test_app
     app.build()
@@ -588,9 +589,16 @@ def test_unknown_config_names_its_config_value(test_app):
     warnings = strip_colors(app._warning.getvalue())
 
     if app.config.needs_flow_engine == "plantuml":
-        assert "config key 'nonexistent_cfg' not in 'needs_flow_configs'" in warnings
+        assert (
+            "config key 'nonexistent_cfg' not in "
+            "'needs_flow_engine_config[plantuml]' or 'needs_flow_configs'" in warnings
+        )
     else:
-        assert "config key 'nonexistent_cfg' not in 'needs_graphviz_styles'" in warnings
+        assert (
+            "config key 'nonexistent_cfg' not in "
+            "'needs_flow_engine_config[graphviz]' or 'needs_graphviz_styles'"
+            in warnings
+        )
     assert "need_flows_configs" not in warnings
 
 
@@ -1630,3 +1638,196 @@ def test_highlight_is_sugar_for_the_builtin_style_class(test_app):
         assert "line:FF0000" in legacy
     else:
         assert "color=red" in legacy
+
+
+ENGINE_CONFIG = """\
+Engine config
+=============
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :engine_config: corporate
+   :debug:
+
+.. needflow::
+   :config: corporate
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), ENGINE_CONFIG)],
+            "confoverrides": {
+                "needs_flow_engine": "plantuml",
+                "needs_flow_engine_config": {
+                    "plantuml": {"corporate": "skinparam backgroundColor #EEEEEE"}
+                },
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_engine_config_hatch(test_app):
+    """``:engine_config:`` is the one discouraged way through to engine specific syntax.
+
+    Documents stay portable, projects may choose not to be: the blob lives in the
+    configuration under the engine it belongs to, and the document only names it.
+    ``:config:`` is the deprecated spelling of the same selector, so both draw the
+    same diagram.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "'config' option is deprecated" in warnings
+    assert "engine_config" in warnings
+    assert _warnings_except(app, "'config' option is deprecated") == []
+
+    outdir = Path(app.outdir)
+    assert "skinparam backgroundColor #EEEEEE" in _debug_source(outdir, "index.html", 0)
+    assert _debug_source(outdir, "index.html", 0) == _debug_source(
+        outdir, "index.html", 1
+    )
+
+
+LEGACY_ENGINE_CONFIG = """\
+Legacy engine config registry
+=============================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :engine_config: legacy
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), LEGACY_ENGINE_CONFIG),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "plantuml",
+                "needs_flow_configs": {"legacy": "skinparam shadowing false"},
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_engine_config_still_reads_the_legacy_registry(test_app):
+    """The new selector reads the old registries, so no project has to move its blobs.
+
+    The registries are a rename, not a redesign: the same values mean the same thing
+    under either name, which is what makes the migration free.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    assert "skinparam shadowing false" in _debug_source(Path(app.outdir), "index.html")
+
+
+MALFORMED_GRAPHVIZ_STYLE = """\
+Malformed graphviz style
+========================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), MALFORMED_GRAPHVIZ_STYLE),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+                "needs_graphviz_styles": {"default": {"node": "not-a-mapping"}},
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_malformed_graphviz_style_warns_instead_of_crashing(test_app):
+    """A graphviz style entry that is not a mapping must not fail the whole build.
+
+    The value used to travel unchecked from the configuration into the emitter, where
+    ``'str' object has no attribute 'items'`` aborted the build with a traceback
+    instead of a message. It is now rejected where it is read, and the diagram is
+    drawn without it.
+    """
+    app = test_app
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "must be a mapping of attributes" in warnings
+
+    assert "AAAAA" in _get_svg(
+        app.config, Path(app.outdir), "index.html", "needflow-index-0"
+    )
+
+
+INVALID_ENGINE = """\
+Invalid engine
+==============
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), INVALID_ENGINE),
+            ],
+            "confoverrides": {"needs_flow_engine": "mermaid"},
+        }
+    ],
+    indirect=True,
+)
+def test_invalid_flow_engine_warns_and_falls_back(test_app):
+    """An unusable ``needs_flow_engine`` is a configuration mistake, not a crash.
+
+    It used to trip a bare ``assert``, which ends a build with a traceback rather
+    than a message naming the option and its allowed values.
+    """
+    app = test_app
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "Invalid 'needs_flow_engine' value 'mermaid'" in warnings
+    assert "plantuml" in warnings
+    # said once for the project, not once per diagram
+    assert warnings.count("Invalid 'needs_flow_engine' value") == 1
+
+    # the fallback engine still drew a diagram, rather than the build ending
+    assert "needflow-index-0" in Path(app.outdir, "index.html").read_text()
