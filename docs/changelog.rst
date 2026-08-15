@@ -99,7 +99,7 @@ Improvements
   match, so ``options = "myfield"`` also applied to a field named ``my``. A **mapping**
   (``{"myfield": True}``) worked by accident, through iteration over its keys. Write either
   as a list. A list, tuple, set or frozenset of names is accepted, as is an already-compiled
-  ``re.Pattern`` for ``regex``.
+  ``re.Pattern`` for ``regex`` (a *bytes* pattern is not, as it could never match a field value).
 
 Bug fixes
 .........
