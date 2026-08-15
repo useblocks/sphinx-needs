@@ -861,16 +861,32 @@ Direction from an engine config
                 (Path("index.rst"), DIRECTION_FROM_CONFIG),
             ],
             "confoverrides": {"needs_flow_engine": "plantuml"},
-        }
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), DIRECTION_FROM_CONFIG),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
     ],
+    ids=["plantuml", "graphviz"],
     indirect=True,
 )
 def test_explicit_direction_beats_config_direction(test_app):
     """An explicit ``:direction:`` overrides a direction carried by an engine config.
 
     The engine config blob is a preamble of defaults, and a neutral option is a
-    per-element value, so the option is emitted after the blob and wins. Because the
-    two disagree here, the build says so rather than silently picking one.
+    per-element value, so the option is emitted last and wins. Because the two
+    disagree here, the build says so rather than silently picking one.
+
+    Both engines must behave the same way. The graphviz half is the one that was
+    wrong: the shipped ``lefttoright`` config keys its ``rankdir`` under ``graph``,
+    which the detection missed, so the disagreement went unnoticed and the blob won.
     """
     app = test_app
     app.build()
@@ -879,16 +895,25 @@ def test_explicit_direction_beats_config_direction(test_app):
     from_config = _debug_source(outdir, "index.html", 0)
     overridden = _debug_source(outdir, "index.html", 1)
 
-    # the config alone still works, and says nothing about a conflict
-    assert "left to right direction" in from_config
-
-    # the explicit option wins: its statement comes after the config blob
-    assert overridden.index("left to right direction") < overridden.index(
-        "top to bottom direction"
-    )
-
     warnings = strip_colors(app._warning.getvalue())
     assert warnings.count("disagrees with the direction") == 1
+
+    if app.config.needs_flow_engine == "plantuml":
+        # the config alone still works, and is not restated
+        assert from_config.count("left to right direction") == 1
+        assert "top to bottom direction" not in from_config
+
+        # the explicit option wins: its statement comes after the config blob
+        assert overridden.index("left to right direction") < overridden.index(
+            "top to bottom direction"
+        )
+    else:
+        assert from_config.count('rankdir="LR"') == 1
+        assert 'rankdir="TB"' not in from_config
+
+        # the option's rankdir has to come after the `graph [...]` block, because a
+        # graph attribute statement overrides an earlier top-level one
+        assert overridden.index('rankdir="LR"') < overridden.index('rankdir="TB"')
 
 
 DIRECTION_CONFIG_DEFAULT = """\
@@ -2133,3 +2158,68 @@ def test_legacy_link_display_keys_are_deprecated_but_honoured(test_app):
     assert "'line', 'part_line' and 'arrow'" in warnings
 
     assert "-[dotted]->" in _debug_source(Path(app.outdir), "index.html")
+
+
+GRAPH_KEYED_DIRECTION = """\
+Graph keyed rankdir
+===================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :engine_config: sideways
+   :debug:
+
+.. needflow::
+   :engine_config: sideways
+   :direction: down
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), GRAPH_KEYED_DIRECTION),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+                "needs_flow_engine_config": {
+                    "graphviz": {
+                        "sideways": {"graph": {"rankdir": "LR"}},
+                    }
+                },
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_graph_keyed_rankdir_is_detected_and_overridable(test_app):
+    """A ``rankdir`` inside a ``graph [...]`` block still loses to ``:direction:``.
+
+    ``rankdir`` is a graph attribute, and the shape the documentation teaches -- and the
+    shipped ``lefttoright`` config uses -- keys it under ``graph`` rather than at the top
+    level. Detecting only the top level form meant the engine config silently won on
+    graphviz, which is the one thing the published collision rule says cannot happen.
+    """
+    app = test_app
+    app.build()
+
+    outdir = Path(app.outdir)
+    from_config = _debug_source(outdir, "index.html", 0)
+    overridden = _debug_source(outdir, "index.html", 1)
+
+    # the config alone is honoured and not restated
+    assert from_config.count('rankdir="LR"') == 1
+
+    # the option wins, and says so, because a later statement overrides the block
+    assert overridden.index('rankdir="LR"') < overridden.index('rankdir="TB"')
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert warnings.count("disagrees with the direction") == 1

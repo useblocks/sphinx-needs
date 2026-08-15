@@ -124,18 +124,22 @@ def process_needflow_graphviz(
         for key, value in attributes["graphviz_style"].get("root", {}).items():
             content += f"{key}={_quote(str(value))};\n"
 
-        # the config blob is a preamble of defaults, so the direction is written after
-        # it and wins; nothing is written for a diagram already drawn that way
-        if (
-            rankdir := graphviz_rankdir(graph.direction, graph.config_direction)
-        ) is not None:
-            content += f"rankdir={_quote(rankdir)};\n"
         for etype in ("graph", "node", "edge"):
             if etype in attributes["graphviz_style"]:
                 content += f"{etype} [\n"
                 for key, value in attributes["graphviz_style"][etype].items():
                     content += f"  {key}={_quote(str(value))};\n"
                 content += "]\n"
+
+        # the config blob is a preamble of defaults, so the direction is written after
+        # all of it and wins -- including after the `graph [...]` block, since a graph
+        # attribute statement overrides an earlier one and that is where the shipped
+        # `lefttoright`/`toptobottom` configs put their `rankdir`.
+        # Nothing is written for a diagram already drawn the way it asks to be.
+        if (
+            rankdir := graphviz_rankdir(graph.direction, graph.config_direction)
+        ) is not None:
+            content += f"rankdir={_quote(rankdir)};\n"
 
         # calculate node definitions
         content += "\n// node definitions\n"

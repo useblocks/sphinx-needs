@@ -188,8 +188,10 @@ def plantuml_direction(
             location=location,
             once=True,
         )
-    if drawn == "down" and (config_direction is None or config_direction == drawn):
-        # already how PlantUML draws by default, and nothing to override
+    if drawn == config_direction or (drawn == "down" and config_direction is None):
+        # already how the diagram is drawn, whether because PlantUML draws that way by
+        # default or because the config blob already said so, and restating it would
+        # move the bytes of a diagram that never asked for anything
         return None
     return _PLANTUML_DIRECTION[drawn]
 
@@ -205,8 +207,12 @@ def graphviz_rankdir(
     :param config_direction: The direction the engine config blob already sets, if any.
     :return: The ``rankdir`` value to emit, or ``None`` if none is needed.
     """
-    if direction == "down" and (config_direction is None or config_direction == "down"):
-        # already how Graphviz draws by default, and nothing to override
+    if direction == config_direction or (
+        direction == "down" and config_direction is None
+    ):
+        # already how the diagram is drawn, whether because Graphviz draws that way by
+        # default or because the config blob already said so, and restating it would
+        # move the bytes of a diagram that never asked for anything
         return None
     return GRAPHVIZ_RANKDIR[direction]
 
@@ -231,17 +237,25 @@ def plantuml_config_direction(config: str) -> FlowDirection | None:
 def graphviz_config_direction(style: GraphvizStyleType) -> FlowDirection | None:
     """Detect the direction a Graphviz config blob sets, if any (see above).
 
+    ``rankdir`` is a graph attribute, so a blob can set it either as a bare top level
+    statement (the ``root`` section) or inside a ``graph [...]`` block -- and the
+    shipped ``lefttoright``/``toptobottom`` configs use the latter.  The emitter writes
+    ``root`` first and ``graph`` after it, and the later statement wins, so the sections
+    are consulted in that same order of increasing authority.
+
     :param style: The resolved Graphviz style.
     :return: The direction the blob's ``rankdir`` sets, or ``None``.
     """
-    root = style.get("root", {})
-    if not isinstance(root, dict):
-        return None
-    rankdir = str(root.get("rankdir", "")).strip().upper()
-    for direction, token in GRAPHVIZ_RANKDIR.items():
-        if rankdir == token:
-            return direction
-    return None
+    found: FlowDirection | None = None
+    for section in ("root", "graph"):
+        attributes = style.get(section, {})  # type: ignore[literal-required]
+        if not isinstance(attributes, Mapping):
+            continue
+        rankdir = str(attributes.get("rankdir", "")).strip().upper()
+        for direction, token in GRAPHVIZ_RANKDIR.items():
+            if rankdir == token:
+                found = direction
+    return found
 
 
 def resolve_direction(
