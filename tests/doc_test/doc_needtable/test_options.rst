@@ -19,6 +19,13 @@ TEST OPTIONS
 
    Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 
+.. spec:: Single value string_link
+   :id: SINGLE_STRING_LINK
+   :config: needs_string_links
+   :github: 404
+
+   A need with a single-value string_links field to verify no trailing separator is rendered.
+
 
 table 1
 --------

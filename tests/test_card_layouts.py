@@ -32,6 +32,7 @@ KNOWN_FIELDS = frozenset(
         "badge",
         "image",
         "layout",
+        "owner",
         "picture",
         "status",
         "style",
@@ -48,7 +49,7 @@ ALLOWED_FUNCTIONS = frozenset(
     {"collapse_button", "image", "meta", "meta_all", "meta_id", "meta_links_all"}
 )
 
-#: The three specifications shared verbatim with the ubCode implementation of the
+#: The four specifications shared verbatim with the ubCode implementation of the
 #: same vocabulary. They are the conformance oracle for both: identical input,
 #: comparable output.
 CONFORMANCE_SPECS: dict[str, dict[str, Any]] = {
@@ -85,12 +86,27 @@ CONFORMANCE_SPECS: dict[str, dict[str, Any]] = {
         "meta": False,
         "footer": ["title", "id"],
     },
+    # the object-form twin: headerless, so side and footer can coexist on a grid
+    "conformance_object": {
+        "header": False,
+        "meta": False,
+        "side": {
+            "elements": [{"type": "image", "field": "image", "height": "40px"}],
+            "position": "left",
+            "span": "full",
+        },
+        "footer": [
+            {"type": "field", "field": "owner", "label": "Owned by"},
+            {"type": "id"},
+        ],
+    },
 }
 
 CONFORMANCE_GRIDS = {
     "conformance_full": "simple_footer",
     "conformance_side": "simple_side_right_partial",
     "conformance_headerless": "content_footer",
+    "conformance_object": "content_footer_side_left",
 }
 
 #: Every valid specification exercised anywhere in this file, so that the
@@ -154,6 +170,35 @@ VALID_SPECS: dict[str, dict[str, Any]] = {
         "meta": {"fields": "all"},
         "collapse": "closed",
     },
+    "object_footer_optionless": {
+        "footer": [
+            {"type": "id"},
+            {"type": "field", "field": "verified_by"},
+            {"type": "image", "field": "badge"},
+        ]
+    },
+    "object_footer_label": {
+        "footer": [{"type": "field", "field": "verified_by", "label": "Verified by"}]
+    },
+    "object_image_options": {
+        "footer": [
+            {"type": "image", "field": "badge", "height": "40px", "width": "3.5em"}
+        ]
+    },
+    "object_side_height": {
+        "side": {
+            "elements": [{"type": "image", "field": "picture", "height": "40"}],
+            "position": "right",
+        }
+    },
+    "object_title_headerless": {
+        "header": False,
+        "meta": False,
+        "footer": [{"type": "title"}],
+    },
+    "object_mixed_spellings": {
+        "footer": ["id", {"type": "field", "field": "status", "label": "State"}]
+    },
 }
 
 
@@ -213,9 +258,35 @@ def test_default_spec_is_clean() -> None:
         ("style_echo", 'style: <<meta("style")>>'),
         ("field:verified_by", '<<meta("verified_by")>>'),
         ("image:badge", '<<image("field:badge", align="center")>>'),
+        ({"type": "id"}, "<<meta_id()>>"),
+        ({"type": "title"}, '<<meta("title")>>'),
+        ({"type": "type"}, '<<meta("type_name")>>'),
+        ({"type": "layout_echo"}, 'layout: <<meta("layout")>>'),
+        ({"type": "style_echo"}, 'style: <<meta("style")>>'),
+        ({"type": "field", "field": "verified_by"}, '<<meta("verified_by")>>'),
+        (
+            {"type": "image", "field": "badge"},
+            '<<image("field:badge", align="center")>>',
+        ),
+        (
+            {"type": "field", "field": "verified_by", "label": "Verified by"},
+            '<<meta("verified_by", prefix="Verified by: ")>>',
+        ),
+        (
+            {"type": "image", "field": "badge", "height": "40px"},
+            '<<image("field:badge", height="40px", align="center")>>',
+        ),
+        (
+            {"type": "image", "field": "badge", "width": "50%"},
+            '<<image("field:badge", width="50%", align="center")>>',
+        ),
+        (
+            {"type": "image", "field": "badge", "height": "40px", "width": "3.5em"},
+            '<<image("field:badge", height="40px", width="3.5em", align="center")>>',
+        ),
     ],
 )
-def test_footer_element_mapping(element: str, expected: str) -> None:
+def test_footer_element_mapping(element: str | dict[str, Any], expected: str) -> None:
     """Every element of the shared vocabulary maps to one layout line."""
     compiled, messages = compile_spec(
         {"header": False, "meta": False, "footer": [element]}
@@ -658,6 +729,120 @@ def test_clean_round_trip_differs_only_in_whitespace() -> None:
 
 
 # --------------------------------------------------------------------------
+# unit tests: the object form
+# --------------------------------------------------------------------------
+
+#: Every string element paired with its object-form spelling.
+OBJECT_TWINS: list[tuple[str, dict[str, Any]]] = [
+    ("id", {"type": "id"}),
+    ("title", {"type": "title"}),
+    ("type", {"type": "type"}),
+    ("layout_echo", {"type": "layout_echo"}),
+    ("style_echo", {"type": "style_echo"}),
+    ("field:verified_by", {"type": "field", "field": "verified_by"}),
+    ("image:badge", {"type": "image", "field": "badge"}),
+]
+
+
+@pytest.mark.parametrize(
+    ("string", "obj"), OBJECT_TWINS, ids=[string for string, _ in OBJECT_TWINS]
+)
+def test_optionless_object_equals_its_string_shorthand(
+    string: str, obj: dict[str, Any]
+) -> None:
+    """An optionless object compiles byte-identically to its string shorthand.
+
+    This is the hard equivalence requirement of the object form:
+    same resolved specification, same compiled layout strings.
+    """
+    compiled_string, string_messages = compile_spec(
+        {"header": False, "meta": False, "footer": [string]}
+    )
+    compiled_object, object_messages = compile_spec(
+        {"header": False, "meta": False, "footer": [obj]}
+    )
+    assert string_messages == object_messages == []
+    assert compiled_string is not None
+    assert compiled_string == compiled_object
+
+
+def test_optionless_object_equivalence_holds_in_the_side_region() -> None:
+    """The equivalence guarantee covers ``side.elements`` as well as ``footer``."""
+    compiled_string, _ = compile_spec(
+        {"side": {"elements": ["image:picture", "id"], "position": "right"}}
+    )
+    compiled_object, messages = compile_spec(
+        {
+            "side": {
+                "elements": [{"type": "image", "field": "picture"}, {"type": "id"}],
+                "position": "right",
+            }
+        }
+    )
+    assert messages == []
+    assert compiled_string is not None
+    assert compiled_string == compiled_object
+
+
+def test_spellings_mix_freely_in_one_list() -> None:
+    """Strings and objects are two spellings of one vocabulary, not two modes."""
+    compiled, messages = compile_spec(
+        {"footer": ["id", {"type": "field", "field": "status", "label": "State"}]}
+    )
+    assert messages == []
+    assert compiled is not None
+    assert compiled["layout"]["footer"] == [
+        "<<meta_id()>>",
+        '<<meta("status", prefix="State: ")>>',
+    ]
+
+
+@pytest.mark.parametrize(
+    "label",
+    [
+        pytest.param("x", id="single-char"),
+        pytest.param("Owned by", id="space"),
+        pytest.param("user_name", id="intra-word-underscore"),
+        pytest.param("Aa_0 ().,/-9", id="all-allowed-chars"),
+        pytest.param("a" * 64, id="max-length"),
+    ],
+)
+def test_label_grammar_accepts_its_edges(label: str) -> None:
+    """The label grammar's boundary values are all usable."""
+    compiled, messages = compile_spec(
+        {"footer": [{"type": "field", "field": "status", "label": label}]}
+    )
+    assert messages == []
+    assert compiled is not None
+    assert compiled["layout"]["footer"] == [f'<<meta("status", prefix="{label}: ")>>']
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        pytest.param("40", id="bare-number-means-px"),
+        pytest.param("40.5", id="decimal"),
+        pytest.param("40px", id="px"),
+        pytest.param("3.5em", id="em"),
+        pytest.param("2rem", id="rem"),
+        pytest.param("100%", id="percent"),
+        pytest.param("12pt", id="pt"),
+        pytest.param("1234567890.123px", id="max-length"),
+    ],
+)
+def test_dimension_grammar_accepts_its_edges(value: str) -> None:
+    """The height/width grammar's boundary values are all usable."""
+    compiled, messages = compile_spec(
+        {"footer": [{"type": "image", "field": "badge", "height": value}]}
+    )
+    assert messages == []
+    assert compiled is not None
+    assert compiled["layout"]["footer"] == [
+        f'<<image("field:badge", height="{value}", align="center")>>'
+    ]
+
+
+# --------------------------------------------------------------------------
 # unit tests: validation
 # --------------------------------------------------------------------------
 
@@ -757,6 +942,200 @@ def test_clean_round_trip_differs_only_in_whitespace() -> None:
             "a card with a meta region but no header is not expressible",
             id="meta-without-header",
         ),
+        # --- object-form elements
+        pytest.param(
+            {"footer": [{"type": "nonsense"}]},
+            "footer element 'type' must be one of",
+            id="object-unknown-type",
+        ),
+        pytest.param(
+            {"footer": [{}]},
+            "footer element 'type' must be one of",
+            id="object-missing-type",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field"}]},
+            "'field' is required in a 'field' footer element",
+            id="object-field-missing-field",
+        ),
+        pytest.param(
+            {"footer": [{"type": "image"}]},
+            "'field' is required in a 'image' footer element",
+            id="object-image-missing-field",
+        ),
+        pytest.param(
+            {"side": {"elements": [{"type": "image"}]}},
+            "'field' is required in a 'image' side element",
+            id="object-side-missing-field",
+        ),
+        pytest.param(
+            {"footer": [{"type": "id", "field": "status"}]},
+            "key(s) 'field' not allowed in a 'id' footer element",
+            id="object-field-on-id",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "height": "40px"}]},
+            "key(s) 'height' not allowed in a 'field' footer element",
+            id="object-height-on-field",
+        ),
+        pytest.param(
+            {"footer": [{"type": "image", "field": "badge", "label": "Badge"}]},
+            "key(s) 'label' not allowed in a 'image' footer element",
+            id="object-label-on-image",
+        ),
+        pytest.param(
+            {"footer": [{"type": "id", "label": "ID"}]},
+            "key(s) 'label' not allowed in a 'id' footer element",
+            id="object-label-on-id",
+        ),
+        pytest.param(
+            {"footer": [{"type": "image", "field": "badge", "nope": 1}]},
+            "key(s) 'nope' not allowed in a 'image' footer element",
+            id="object-unknown-key",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "bad name"}]},
+            "invalid field name 'bad name'",
+            id="object-bad-field-name",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": 3}]},
+            "invalid field name 3",
+            id="object-non-string-field",
+        ),
+        pytest.param(
+            {"footer": [{"type": "image", "field": "badge", "height": "40 px"}]},
+            "'height' must be a number",
+            id="object-bad-height",
+        ),
+        pytest.param(
+            {"footer": [{"type": "image", "field": "badge", "width": "-40px"}]},
+            "'width' must be a number",
+            id="object-bad-width",
+        ),
+        pytest.param(
+            {"footer": [{"type": "image", "field": "badge", "height": 40}]},
+            "'height' must be a number",
+            id="object-non-string-height",
+        ),
+        pytest.param(
+            {
+                "footer": [
+                    {"type": "image", "field": "badge", "height": "1234567890.1234px"}
+                ]
+            },
+            "'height' must be a number",
+            id="object-height-too-long",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "bad*label"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-rst-char",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": " padded"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-leading-space",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "padded "}]},
+            "'label' must be 1-64 characters",
+            id="object-label-trailing-space",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "-dash"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-non-alnum-start",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": ""}]},
+            "'label' must be 1-64 characters",
+            id="object-empty-label",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "a" * 65}]},
+            "'label' must be 1-64 characters",
+            id="object-label-too-long",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": 3}]},
+            "'label' must be 1-64 characters",
+            id="object-non-string-label",
+        ),
+        # a trailing newline slips past a ``$``-anchored ``match`` and would abort
+        # the build once the emitted layout call is parsed; ``fullmatch`` stops it
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "Owned by\n"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-trailing-newline",
+        ),
+        pytest.param(
+            {"footer": [{"type": "image", "field": "badge", "height": "40px\n"}]},
+            "'height' must be a number",
+            id="object-height-trailing-newline",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "owner\n"}]},
+            "invalid field name 'owner\\n'",
+            id="object-field-trailing-newline",
+        ),
+        pytest.param(
+            {"footer": ["field:owner\n"]},
+            "invalid field name 'owner\\n'",
+            id="string-field-trailing-newline",
+        ),
+        # a word-leading/-trailing underscore is RST reference syntax (``name_``,
+        # ``__``) and would crash the HTML writer via the RST-parsed ``prefix``
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "Owned_ by"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-trailing-underscore",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "a__b"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-double-underscore",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "anon__ ref"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-anonymous-reference",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "Ünicode"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-non-ascii",
+        ),
+        pytest.param(
+            # full-width digits U+FF14 U+FF10: ASCII-only [0-9] must reject them
+            {
+                "footer": [
+                    {"type": "image", "field": "badge", "height": "\uff14\uff10px"}
+                ]
+            },
+            "'height' must be a number",
+            id="object-height-non-ascii-digits",
+        ),
+        pytest.param(
+            {"footer": [{1: "x", "type": "id"}]},
+            "footer element keys must be strings",
+            id="object-non-string-dict-key",
+        ),
+        pytest.param(
+            {"footer": [3]},
+            "footer element must be a string or a dict",
+            id="object-non-str-non-dict-entry",
+        ),
+        pytest.param(
+            {"side": {"elements": [None]}},
+            "side element must be a string or a dict",
+            id="object-side-bad-entry",
+        ),
+        pytest.param(
+            {"footer": [{"type": "title"}]},
+            "the 'title' element is only allowed when 'header' is false",
+            id="object-title-with-header",
+        ),
     ],
 )
 def test_invalid_specs_are_skipped_with_a_warning(
@@ -826,6 +1205,14 @@ def test_headerless_partial_side_degrades_to_full() -> None:
         pytest.param({"footer": ["field:unknown_field"]}, id="field"),
         pytest.param({"footer": ["image:unknown_field"]}, id="image"),
         pytest.param({"side": {"elements": ["image:unknown_field"]}}, id="side-image"),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "unknown_field"}]},
+            id="object-field",
+        ),
+        pytest.param(
+            {"side": {"elements": [{"type": "image", "field": "unknown_field"}]}},
+            id="object-side-image",
+        ),
     ],
 )
 def test_unregistered_field_warns_but_still_compiles(spec: dict[str, Any]) -> None:
@@ -1044,6 +1431,14 @@ Conformance
    :layout: conformance_headerless
 
    Headerless body.
+
+.. req:: Object card
+   :id: CONF_OBJECT
+   :image: pic.svg
+   :owner: daniel
+   :layout: conformance_object
+
+   Object body.
 """
 
 PIC_SVG = (
@@ -1067,6 +1462,8 @@ PIC_SVG = (
                         "    'verified_by': {'nullable': True},\n"
                         "    'badge': {'nullable': True},\n"
                         "    'picture': {'nullable': True},\n"
+                        "    'image': {'nullable': True},\n"
+                        "    'owner': {'nullable': True},\n"
                         "}\n",
                     ),
                 ),
@@ -1078,7 +1475,7 @@ PIC_SVG = (
     indirect=True,
 )
 def test_conformance_specs_build(test_app: Any) -> None:
-    """The three shared conformance specifications build end to end.
+    """The four shared conformance specifications build end to end.
 
     They are committed identically to the ubCode implementation of the same
     vocabulary, so that both can be compared against one another.
@@ -1107,6 +1504,114 @@ def test_conformance_specs_build(test_app: Any) -> None:
     assert '<tr class="footer row-even"><td class="footer">' in headerless
     footer = headerless.split('<td class="footer">')[1]
     assert footer.index('class="needs_title"') < footer.index('class="needs-id"')
+
+    # conformance_object: the height option reaches the side image, and the
+    # label option renders as the prefix of the footer's name: value pair
+    object_card = need_table(html, "CONF_OBJECT")
+    img = object_card[
+        object_card.index("<img") : object_card.index(">", object_card.index("<img"))
+    ]
+    assert 'src="_images/pic.svg"' in img
+    assert "40px" in img
+    assert "Owned by:" in object_card
+    assert object_card.index('class="needs_owner"') < object_card.index(
+        'class="needs-id"'
+    )
+
+
+OBJECT_INDEX = """\
+Object form
+===========
+
+.. req:: Illustrated requirement
+   :id: OBJ_SIDE
+   :picture: pic.svg
+   :layout: object_side
+
+   Side body.
+
+.. req:: Labelled requirement
+   :id: OBJ_LABEL
+   :owner: daniel
+   :layout: object_label
+
+   Label body.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (
+                    Path("conf.py"),
+                    conf_py(
+                        {
+                            "object_side": {
+                                "side": {
+                                    "elements": [
+                                        {
+                                            "type": "image",
+                                            "field": "picture",
+                                            "height": "40px",
+                                        }
+                                    ],
+                                    "position": "left",
+                                }
+                            },
+                            "object_label": {
+                                "footer": [
+                                    {
+                                        "type": "field",
+                                        "field": "owner",
+                                        "label": "Owned by",
+                                    },
+                                    # an intra-word underscore is grammar-legal and
+                                    # must survive the RST parse of the prefix
+                                    {
+                                        "type": "field",
+                                        "field": "owner",
+                                        "label": "user_name",
+                                    },
+                                    {"type": "id"},
+                                ]
+                            },
+                        },
+                        "needs_fields = {\n"
+                        "    'picture': {'nullable': True},\n"
+                        "    'owner': {'nullable': True},\n"
+                        "}\n",
+                    ),
+                ),
+                (Path("index.rst"), OBJECT_INDEX),
+                (Path("pic.svg"), PIC_SVG),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_object_form_options_render(test_app: Any) -> None:
+    """``height`` reaches the rendered image and ``label`` the rendered pair."""
+    app = test_app
+    app.build()
+    assert app.warning_list == []
+
+    html = scrub((app.outdir / "index.html").read_text())
+
+    side = need_table(html, "OBJ_SIDE")
+    img = side[side.index("<img") : side.index(">", side.index("<img"))]
+    assert 'src="_images/pic.svg"' in img
+    assert "40px" in img
+
+    labelled = need_table(html, "OBJ_LABEL")
+    footer = labelled.split('<td class="need footer"')[1]
+    assert "Owned by:" in footer
+    assert "user_name:" in footer
+    assert 'class="needs_owner"' in footer
+    assert footer.index('class="needs_owner"') < footer.index('class="needs-id"')
 
 
 # --------------------------------------------------------------------------
@@ -1157,6 +1662,16 @@ Warnings
             {"footer": ["title"]},
             "the 'title' element is only allowed",
             id="title-placement",
+        ),
+        pytest.param(
+            {"footer": [{"type": "image", "field": "badge", "height": "40;px"}]},
+            "'height' must be a number",
+            id="object-bad-height",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "**bold**"}]},
+            "'label' must be 1-64 characters",
+            id="object-bad-label",
         ),
     ],
 )
