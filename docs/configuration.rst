@@ -1946,7 +1946,8 @@ Helpful e.g. to generate a link to a ticket system based on the given ticket num
 All four keys are required.
 
 :regex: Must be a valid regular expression. Named capture groups are supported.
-   An already-compiled ``re.Pattern`` is also accepted, and keeps its flags.
+   An already-compiled ``re.Pattern`` is also accepted, and keeps its flags; a *bytes*
+   pattern is not, as it could never match a field value.
 :link_url: The final url as string. Supports Jinja.
 :link_name: The final link name as string. Supports Jinja.
 :options: List of option names, for which the regex shall be checked.
@@ -2059,9 +2060,9 @@ template that does not parse, ``options`` that is none of the accepted collectio
 entry still applies. Previously such an entry aborted the build the moment the first need was
 rendered.
 
-The same subtype reports three cases that used to pass in silence: an unknown key inside an
-entry, an ``options`` entry naming a field that is registered nowhere, and an empty ``options``.
-None of them skips the entry.
+The same subtype reports the cases that used to pass in silence -- an unknown key inside an
+entry, an ``options`` entry naming a field that is registered nowhere, an empty ``options`` --
+none of which skips the entry.
 
 A template can still fail while it is *rendered* -- an unknown filter, for instance, only fails
 then -- which is reported as a ``needs.layout`` warning; the value renders as plain text. Every
@@ -2080,10 +2081,11 @@ The two subtypes therefore divide as follows, and both take a Sphinx ``suppress_
 
 .. note::
 
-   If you build with ``-W``, the three silent-no-op cases above and the list-field fix in 8.4.0
-   can turn a build that passed before into one that fails. In particular, a template that fails
-   at render time on a **list** field is now reported (as ``needs.layout``), where the meta area
-   previously failed silently.
+   A configuration mistake that was previously silent -- or that crashed the build -- is now a
+   warning, and a warning fails a ``-W`` build. So a project that passed with ``-W`` before
+   8.4.0 can start failing on a ``needs_string_links`` it never changed. The same applies to
+   render-time failures the list-field fix newly reaches: a template that fails on a **list**
+   field is now reported (as ``needs.layout``), where the meta area used to swallow it.
 
 .. _`needs_build_json`:
 

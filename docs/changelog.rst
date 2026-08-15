@@ -79,14 +79,17 @@ Improvements
   Every entry is now validated once, during configuration. A problem is reported as a new
   ``needs.string_link`` warning naming the entry, and only that entry is skipped, so a
   configuration that used to fail the build now builds and renders everything else. The same
-  warning covers three cases that previously passed in silence: an unknown key inside an
-  entry, an ``options`` entry naming a field that is registered nowhere, and an empty
-  ``options``. None of those skips the entry.
+  warning also covers the cases that previously passed in silence — an unknown key inside an
+  entry, an ``options`` entry naming a field that is registered nowhere, an empty ``options``
+  — none of which skips the entry.
 
-  **If you build with** ``-W``, note that those three cases turn a build that passes today
-  into one that fails, and so does the list-field fix below. Silence the configuration
-  warnings with ``suppress_warnings = ["needs.string_link"]``; render-time failures keep the
-  existing ``needs.layout`` subtype, so covering both takes
+  **If you build with** ``-W``, take this as the general rule: a configuration mistake that
+  used to be silent — or to crash — is now a warning, and a warning fails a ``-W`` build. So
+  a project whose ``needs_string_links`` contains anything questionable can start failing
+  where it passed, even though nothing about it changed. The same goes for the list-field fix
+  below, which reaches render-time failures that the meta area used to swallow. Silence the
+  configuration warnings with ``suppress_warnings = ["needs.string_link"]``; render-time
+  failures keep the existing ``needs.layout`` subtype, so covering both takes
   ``suppress_warnings = ["needs.string_link", "needs.layout"]``.
 
   Two spellings of ``options`` are now skipped with a warning, and both used to render
