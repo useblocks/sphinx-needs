@@ -40,8 +40,17 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 7
+ENV_DATA_VERSION: Final = 8
 """Version of the data stored in the environment.
+
+Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
+handing a pickled doctree to code that no longer understands it.
+
+.. note:: 7 was an intermediate shape that existed only within an unreleased branch, so
+   the released step is 6 to 8. It still had to be stepped over: parent and tip both
+   stamping 7 meant a rebuild over an existing ``_build`` kept the old doctrees and
+   failed with a ``KeyError`` -- which is precisely what this constant exists to prevent,
+   and what anyone bisecting or switching branches would have hit.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -626,6 +635,13 @@ class NeedsFilteredDiagramBaseType(NeedsFilteredBaseType):
     show_legend: bool
     show_filters: bool
     show_link_names: bool
+    """Whether to label edges with the link type.
+
+    .. versionchanged:: 8.4.0
+       For :class:`NeedsFlowType` this records only that the option was *given*; what it
+       was given is in ``show_link_names_value``, since needflow's widened option cannot
+       narrow a key the other diagram directives share.
+    """
     link_types: list[str]
     config: str
     config_names: str
