@@ -744,12 +744,127 @@ Select between the rendering engines for :ref:`needflow` diagrams,
 * ``plantuml``: Use `PlantUML <https://plantuml.com/>`__ to render the diagrams (default).
 * ``graphviz``: Use `Graphviz <https://graphviz.org>`__ to render the diagrams.
 
+.. versionchanged:: 8.4.0
+   Any other value is reported as a configuration warning and the default engine is
+   used, instead of ending the build with a traceback.
+
+.. _`needs_flow_direction`:
+
+needs_flow_direction
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The direction :ref:`needflow` diagrams flow in by default:
+``down`` (the default), ``up``, ``right`` or ``left``.
+
+.. code-block:: python
+
+   needs_flow_direction = "right"
+
+A diagram overrides it with :ref:`needflow_direction`;
+only a diagram that does not set the option consults this value.
+
+.. _`needs_flow_link_labels`:
+
+needs_flow_link_labels
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+What :ref:`needflow` diagrams label their connections with by default:
+``none`` (the default), ``outgoing``, ``incoming`` or ``type``.
+
+.. code-block:: python
+
+   needs_flow_link_labels = "outgoing"
+
+A diagram overrides it with :ref:`needflow_link_labels`,
+including turning labels off again with ``none``.
+
+.. _`needs_flow_legend`:
+
+needs_flow_legend
+~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The legend :ref:`needflow` diagrams show by default,
+as a comma separated list of ``types`` and ``links``.
+
+.. code-block:: python
+
+   needs_flow_legend = "types,links"
+
+Default value: ``""``, i.e. no legend.
+A diagram overrides it with :ref:`needflow_legend`,
+and opts out entirely by giving that option no value.
+
+.. _`needs_flow_styles`:
+
+needs_flow_styles
+~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Named style classes that a diagram applies to needs with :ref:`needflow_styles`.
+
+.. code-block:: python
+
+   needs_flow_styles = {
+       "critical": {
+           "fill": "#FFDDDD",
+           "border": "#AA0000",
+           "border_width": 3,
+           "border_style": "dashed",
+           "text_color": "#330000",
+           "shape": "hexagon",
+       },
+   }
+
+The property set is closed --
+``fill``, ``border``, ``border_width``, ``border_style``, ``text_color`` and ``shape`` --
+so that a class means the same thing on every engine.
+Engine specific customisation belongs in :ref:`needs_flow_engine_config` instead.
+Colors may be written with or without a leading ``#``.
+
+One class is built in and does not need configuring:
+``highlight`` draws a red outline.
+
+.. _`needs_flow_engine_config`:
+
+needs_flow_engine_config
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Engine specific :ref:`needflow` customisation, keyed by engine and then by the name
+that :ref:`needflow_engine_config` selects.
+
+.. code-block:: python
+
+   needs_flow_engine_config = {
+       "plantuml": {"corporate": "skinparam backgroundColor #EEEEEE"},
+       "graphviz": {"wide": {"node": {"margin": "0.4,0.2"}}},
+   }
+
+The values are exactly what :ref:`needs_flow_configs` and :ref:`needs_graphviz_styles`
+hold, under one engine-keyed roof; both of those are still read, so nothing has to move.
+
+Use it sparingly.
+Everything else on this page is portable between engines; this is not.
+
 .. _`needs_flow_show_links`:
 
 needs_flow_show_links
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 0.3.11
+
+.. deprecated:: 8.4.0
+   Use :ref:`needs_flow_link_labels` instead;
+   ``True`` is equivalent to ``outgoing``.
+   This value is still honoured.
 
 Used to de/activate the output of link type names beside the connection in the :ref:`needflow` directive:
 
@@ -759,8 +874,6 @@ Used to de/activate the output of link type names beside the connection in the :
 
 Default value: ``False``
 
-Can be configured also for each :ref:`needflow` directive via :ref:`needflow_show_link_names`.
-
 .. _`needs_flow_link_types`:
 
 needs_flow_link_types
@@ -768,14 +881,18 @@ needs_flow_link_types
 
 .. versionadded:: 0.3.11
 
-Defines the link_types to show in a :ref:`needflow` diagram:
+.. deprecated:: 8.4.0
+   This value has never had any effect and is scheduled for removal.
+   Use the :ref:`needflow_link_types` directive option instead.
 
-.. code-block:: python
+.. warning::
 
-   needs_flow_link_types = ['links', 'blocks', 'tests']
-
-You can define this setting on each specific ``needflow`` by using the :ref:`needflow` directive option :ref:`needflow_link_types`.
-See also :ref:`needflow_link_types` for more details.
+   This configuration does nothing.
+   The :ref:`needflow` directive defaults its ``:link_types:`` option to
+   *every* link field, so the option is always set and this value is never
+   consulted -- which is why making it work now would silently narrow every
+   existing diagram that does not name its link types.
+   Setting it emits a ``needs.deprecated`` warning.
 
 Default value: ``['links']``
 
@@ -788,6 +905,12 @@ needs_flow_configs
 
 ``needs_flow_configs`` must be a dictionary which can store multiple `PlantUML configurations <https://plantuml.com/>`_.
 These configs can then be selected when using :ref:`needflow`.
+
+.. note::
+
+   :ref:`needs_flow_engine_config` is the engine-keyed home of this registry.
+   This one is still read, under the same names and with the same values,
+   so there is nothing to migrate.
 
 .. code-block:: python
 
@@ -812,7 +935,8 @@ This configurations can then be used like this:
    .. needflow::
       :tags: flow_example
       :types: spec
-      :config: lefttoright,my_config
+      :direction: right
+      :engine_config: my_config
 
 Multiple configurations can be used by separating them with a comma,
 these will be applied in the order they are defined.
@@ -854,7 +978,8 @@ This configurations can then be used like this:
 
    .. needflow::
        :engine: graphviz
-       :config: lefttoright,my_config
+       :direction: right
+       :engine_config: my_config
 
 Multiple configurations can be used by separating them with a comma,
 these will be merged in the order they are defined.

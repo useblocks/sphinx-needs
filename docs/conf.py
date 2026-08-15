@@ -46,7 +46,15 @@ if DOCS_THEME == "sphinx_immaterial":
 syntax_example_numbering = True
 
 # needs.max_items: the max_items examples truncate on purpose
-suppress_warnings = ["needs.link_outgoing", "needs.github", "needs.max_items"]
+suppress_warnings = [
+    "needs.link_outgoing",
+    "needs.github",
+    "needs.max_items",
+    # this documentation demonstrates the deprecated needflow options and link display
+    # keys on purpose, in the sections that document them, so the notice they emit is
+    # expected here rather than actionable
+    "needs.deprecated",
+]
 
 nitpicky = True
 nitpick_ignore = [
