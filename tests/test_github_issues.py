@@ -155,13 +155,21 @@ def test_doc_github_1664_legend(test_app):
 
     The type must keep its legend row -- only the color swatch is left blank --
     so the legend still documents every type it is asked about.
+
+    ``:show_legend:`` is deprecated in favour of ``:legend:``, but is still honoured
+    and so still has to survive a colorless type; the fixture therefore keeps the
+    legacy spelling, and the deprecation notice is the only warning allowed.
     """
     app = test_app
     app.build()  # must not raise
 
     # a legend the engine cannot parse would be reported as a render warning
-    warnings = strip_colors(app._warning.getvalue()).strip()
-    assert warnings == ""
+    warnings = [
+        line
+        for line in strip_colors(app._warning.getvalue()).strip().splitlines()
+        if "'show_legend' option is deprecated" not in line
+    ]
+    assert warnings == []
 
     debug = _debug_source(Path(app.outdir, "legend.html"))
 

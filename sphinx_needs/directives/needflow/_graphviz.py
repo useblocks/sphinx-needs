@@ -33,7 +33,7 @@ from ._model import (
     resolve_link_types,
 )
 from ._options import LinkLabels, graphviz_rankdir
-from ._shared import create_filter_paragraph
+from ._shared import create_filter_paragraph, create_legend_nodes
 
 try:
     from sphinx.writers.html5 import HTML5Translator
@@ -166,6 +166,14 @@ def process_needflow_graphviz(
             code.source, code.line = node.source, node.line
             # add the debug code to after the surrounding figure
             node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, code)
+
+        # the portable legend is a document table beside the diagram, identical on
+        # every engine, rather than part of the picture; inserted last so that it ends
+        # up directly below the figure it describes
+        for legend in create_legend_nodes(
+            graph.legend, graph.drawn_types, graph.drawn_link_types
+        ):
+            node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, legend)
 
 
 def _get_link_to_need(

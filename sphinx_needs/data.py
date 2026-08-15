@@ -694,6 +694,12 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     """What to label edges with,
     ``None`` if the option was not given, in which case the configuration is consulted."""
 
+    legend: tuple[Literal["types", "links"], ...] | None
+    """The legend sections to show beside the diagram.
+
+    ``None`` if the option was not given, in which case the configuration is consulted;
+    an empty tuple means the option was given without a value, i.e. no legend."""
+
     config_direction: Literal["down", "up", "right", "left"] | None
     """The direction the selected engine configuration sets, if any.
 

@@ -805,6 +805,8 @@ class NeedsSphinxConfig:
         default="none", metadata={"rebuild": "html", "types": (str,)}
     )
     """What needflow diagrams label their edges with, by default."""
+    flow_legend: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
+    """The legend needflow diagrams show by default (``types``, ``links`` or both)."""
     flow_link_types: list[str] = field(
         default_factory=lambda: ["links"], metadata={"rebuild": "html", "types": ()}
     )

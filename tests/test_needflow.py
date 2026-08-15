@@ -40,6 +40,15 @@ def _outline_colors(source: str) -> list[str]:
     return _OUTLINE_COLOR.findall(source)
 
 
+#: Selects the legend containers of a built page.
+#: The class is matched as a whole token, so that the tables and color swatches
+#: *inside* a legend -- whose classes also start with ``needflow_legend`` -- are not
+#: mistaken for legends of their own.
+_LEGEND_XPATH = (
+    "//div[contains(concat(' ', normalize-space(@class), ' '), ' needflow_legend ')]"
+)
+
+
 def _debug_source(outdir: Path, file: str, index: int = 0) -> str:
     """Return the diagram source emitted by the needflow ``:debug:`` option.
 
@@ -1084,3 +1093,263 @@ def test_flow_show_links_is_deprecated_and_can_be_overridden(test_app):
     outdir = Path(app.outdir)
     assert "links outgoing" in _debug_source(outdir, "index.html", 0)
     assert "links outgoing" not in _debug_source(outdir, "index.html", 1)
+
+
+#: A ``conf.py`` with a second need type that no diagram below draws,
+#: so that a "drawn types only" legend can be told apart from "all configured types".
+LEGEND_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+    {
+        "directive": "undrawn",
+        "title": "Never Drawn",
+        "prefix": "UN_",
+        "color": "#CCCCCC",
+        "style": "node",
+    },
+]
+"""
+
+LEGEND = """\
+Legend
+======
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :legend: types
+
+.. needflow::
+   :legend: links
+
+.. needflow::
+   :legend: types,links
+
+.. needflow::
+   :legend:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), LEGEND),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), LEGEND),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_legend_option(test_app):
+    """``:legend:`` draws a table beside the diagram, the same one on every engine.
+
+    The legend is a document, not a picture: one implementation serves both engines
+    (and any future one), it lists only what the diagram actually drew, and it can
+    describe link types, which no in-diagram legend ever did. An explicitly empty
+    value means "no legend", which is how a diagram opts out of a project default.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    tree = html_parser.parse(Path(app.outdir) / "index.html")
+    legends = tree.xpath(_LEGEND_XPATH)
+
+    # the fourth needflow asked for no legend at all
+    assert len(legends) == 3
+
+    types, links, both = (node.text_content() for node in legends)
+
+    assert "Specification" in types
+    # only the types that were drawn, not every configured type
+    assert "Never Drawn" not in types
+    assert "links outgoing" not in types
+
+    assert "links outgoing" in links
+    assert "Specification" not in links
+
+    assert "Specification" in both
+    assert "links outgoing" in both
+
+
+LEGEND_UNDRAWN_LINKS = """\
+Legend without edges
+====================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :legend: links
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), LEGEND_UNDRAWN_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        }
+    ],
+    indirect=True,
+)
+def test_legend_lists_only_drawn_link_types(test_app):
+    """A link legend describes the edges that are there, not every configured link.
+
+    A diagram with no edges has nothing to describe, so it gets no legend at all
+    rather than an empty table of headings -- a legend listing link types the reader
+    cannot see anywhere in the picture is worse than none.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    tree = html_parser.parse(Path(app.outdir) / "index.html")
+    assert tree.xpath(_LEGEND_XPATH) == []
+
+
+LEGEND_FROM_CONFIG = """\
+Legend from config
+==================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+
+.. needflow::
+   :legend:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), LEGEND_FROM_CONFIG),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "plantuml",
+                "needs_flow_legend": "types",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_legend_config_is_consulted_only_when_unset(test_app):
+    """``needs_flow_legend`` is a project default an explicitly empty option overrides.
+
+    An empty value is not the same as an absent one, which is what makes opting out
+    of a project default expressible at all.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    tree = html_parser.parse(Path(app.outdir) / "index.html")
+    legends = tree.xpath(_LEGEND_XPATH)
+    assert len(legends) == 1
+    assert "Specification" in legends[0].text_content()
+
+
+DEPRECATED_SHOW_LEGEND = """\
+Deprecated show_legend
+======================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :show_legend:
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), DEPRECATED_SHOW_LEGEND),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), DEPRECATED_SHOW_LEGEND),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_show_legend_is_deprecated_and_keeps_drawing_in_the_diagram(test_app):
+    """``:show_legend:`` still draws its old in-picture legend, and says so.
+
+    Its rendering is deliberately left alone -- it differs per engine, which is the
+    reason ``:legend:`` exists -- so nobody's diagram changes on upgrade.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "'show_legend' option is deprecated" in warnings
+    assert "legend" in warnings
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+    # the legacy legend is part of the diagram source, not a document table
+    assert "Legend" in debug
+
+    tree = html_parser.parse(Path(app.outdir) / "index.html")
+    assert tree.xpath(_LEGEND_XPATH) == []

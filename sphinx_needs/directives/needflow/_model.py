@@ -34,7 +34,7 @@ from typing import Literal
 from docutils import nodes
 from sphinx.application import Sphinx
 
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.filter_common import (
     apply_max_items,
@@ -49,8 +49,10 @@ from sphinx_needs.views import NeedsView
 
 from ._options import (
     FlowDirection,
+    LegendPart,
     LinkLabels,
     resolve_direction,
+    resolve_legend,
     resolve_link_labels,
 )
 
@@ -276,6 +278,15 @@ class NeedflowGraph:
     link_labels: LinkLabels
     """What edges are to be labelled with, if anything."""
 
+    legend: tuple[LegendPart, ...]
+    """The legend sections to describe the diagram with, in the order asked for."""
+
+    drawn_types: list[NeedType]
+    """The configured need types the diagram actually drew, in configuration order."""
+
+    drawn_link_types: list[LinkSchema]
+    """The link fields the diagram actually drew edges for, in schema order."""
+
     direction: FlowDirection
     """The direction the diagram is drawn in, as an intent rather than an engine token.
 
@@ -415,12 +426,33 @@ def build_graph(
         ),
     )
 
+    edges = collect_edges(found_needs, allowed_link_types, drawn)
+
+    # what the legend describes is what was drawn, so it is derived from the graph and
+    # not from the configuration -- a legend listing things the reader cannot find in
+    # the picture is worse than no legend at all
+    drawn_type_names = {node.need["type"] for node in drawn.values()}
+    drawn_link_type_names = {edge.link_type.name for edge in edges}
+
     return NeedflowGraph(
         needs=found_needs,
         total_needs=total_needs,
         roots=roots,
         nodes=drawn,
-        edges=collect_edges(found_needs, allowed_link_types, drawn),
+        edges=edges,
+        drawn_types=[
+            need_type
+            for need_type in needs_config.types
+            if need_type["directive"] in drawn_type_names
+        ],
+        drawn_link_types=[
+            link_type
+            for link_type in allowed_link_types
+            if link_type.name in drawn_link_type_names
+        ],
+        legend=resolve_legend(
+            attributes["legend"], needs_config.flow_legend, location=location
+        ),
         link_labels=resolve_link_labels(
             attributes["link_labels"],
             attributes["show_link_names"],

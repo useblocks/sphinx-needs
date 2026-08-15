@@ -19,6 +19,7 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.needflow._options import (
     direction_option,
     graphviz_config_direction,
+    legend_option,
     link_labels_option,
     plantuml_config_direction,
 )
@@ -63,6 +64,7 @@ class NeedflowDirective(FilterBase):
         # portable formatting vocabulary
         "direction": direction_option,
         "link_labels": link_labels_option,
+        "legend": legend_option,
         # formatting
         "highlight": directives.unchanged_required,
         "border_color": directives.unchanged_required,
@@ -105,6 +107,12 @@ class NeedflowDirective(FilterBase):
         if "show_link_names" in self.options:
             self._warn_deprecated(
                 "show_link_names", "Please use ':link_labels: outgoing' instead."
+            )
+        if "show_legend" in self.options:
+            self._warn_deprecated(
+                "show_legend",
+                "Please use ':legend: types' instead, which draws the same legend on "
+                "every engine, as a table beside the diagram.",
             )
 
         id = self.env.new_serialno("needflow")
@@ -208,6 +216,7 @@ class NeedflowDirective(FilterBase):
             "direction": self.options.get("direction"),
             "config_direction": config_direction,
             "link_labels": self.options.get("link_labels"),
+            "legend": self.options.get("legend"),
             **self.collect_filter_attributes(),
         }
 

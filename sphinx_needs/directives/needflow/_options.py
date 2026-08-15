@@ -280,6 +280,37 @@ def resolve_direction(
     return project_default
 
 
+def resolve_legend(
+    option: tuple[LegendPart, ...] | None,
+    project_default: str,
+    *,
+    location: LocationType,
+) -> tuple[LegendPart, ...]:
+    """Decide which legend sections a diagram shows.
+
+    An explicitly empty option is honoured as "no legend", so a single diagram can opt
+    out of a project default; only an absent option consults the configuration.
+
+    :param option: The ``:legend:`` option, ``None`` if it was not given.
+    :param project_default: The ``needs_flow_legend`` configuration value.
+    :param location: Where to report an unusable configuration value.
+    :return: The legend sections to draw.
+    """
+    if option is not None:
+        return option
+    try:
+        return parse_legend(project_default)
+    except ValueError as err:
+        log_warning(
+            LOGGER,
+            f"Invalid 'needs_flow_legend' value {project_default!r}: {err}",
+            "config",
+            location=None,
+            once=True,
+        )
+        return ()
+
+
 def resolve_link_labels(
     option: LinkLabels | None,
     show_link_names: bool,

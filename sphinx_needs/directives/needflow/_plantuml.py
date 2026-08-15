@@ -27,7 +27,7 @@ from ._model import (
     resolve_link_types,
 )
 from ._options import plantuml_direction
-from ._shared import create_filter_paragraph
+from ._shared import create_filter_paragraph, create_legend_nodes
 
 logger = get_logger(__name__)
 
@@ -363,6 +363,13 @@ def process_needflow_plantuml(
             puml_node.line = current_needflow["lineno"]
 
             content.append(puml_node)
+            # the portable legend is a document table beside the diagram, identical on
+            # every engine, rather than part of the picture
+            content.extend(
+                create_legend_nodes(
+                    graph.legend, graph.drawn_types, graph.drawn_link_types
+                )
+            )
         else:  # no needs found
             content.append(
                 no_needs_found_paragraph(current_needflow.get("filter_warning"))
