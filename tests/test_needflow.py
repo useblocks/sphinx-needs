@@ -2623,3 +2623,146 @@ def test_an_explicitly_black_link_color_is_drawn(test_app):
     assert warnings == ""
 
     assert 'color="#000000"' in _debug_source(Path(app.outdir), "index.html")
+
+
+UNKNOWN_CLASS_FIRST = """\
+First document
+==============
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :styles: nosuchclass
+"""
+
+UNKNOWN_CLASS_SECOND = """\
+Second document
+===============
+
+.. spec:: B
+   :id: BBBBB
+
+.. needflow::
+   :styles: nosuchclass
+"""
+
+UNKNOWN_CLASS_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   first
+   second
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), UNKNOWN_CLASS_INDEX),
+                (Path("first.rst"), UNKNOWN_CLASS_FIRST),
+                (Path("second.rst"), UNKNOWN_CLASS_SECOND),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        }
+    ],
+    indirect=True,
+)
+def test_unknown_style_class_warns_once_per_directive(test_app):
+    """Naming a class that is not configured is reported wherever it happens.
+
+    It is an authoring mistake, which the degradation policy puts in the tier that
+    warns per directive -- a project-wide once-filter hides every occurrence after the
+    first, so the same typo in twenty documents produced one warning pointing at one of
+    them.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert warnings.count("style class 'nosuchclass' is not defined") == 2
+    assert "first.rst" in warnings
+    assert "second.rst" in warnings
+
+
+UNDRAWABLE_SHAPE_AND_ARROW_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "shape": "diamond",
+    },
+]
+needs_links = {
+    "links": {
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "arrow": "cross",
+    },
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), UNDRAWABLE_SHAPE_AND_ARROW_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), UNDRAWABLE_SHAPE_AND_ARROW_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_shapes_and_arrows_plantuml_cannot_draw_degrade_with_a_location(test_app):
+    """A shape or arrow an engine has no form for degrades, once, and says where.
+
+    Both are tier-2 gaps: the intent is named and this engine cannot honour it, so the
+    project hears once and gets the nearest drawable form. Graphviz can draw both, so
+    it must say nothing at all -- which is what makes these degradations and not errors.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).replace(
+        str(app.srcdir) + os.path.sep, "<srcdir>/"
+    )
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert warnings.count("has no 'diamond' shape") == 1
+        assert warnings.count("has no crossed arrow head") == 1
+        # the warning names the needflow it came from, not just the project
+        assert re.search(r"<srcdir>/index\.rst:\d+: WARNING: the plantuml", warnings)
+        # ...and the nearest drawable forms are used
+        assert "rectangle " in debug
+        assert "-> " in debug
+    else:
+        assert warnings.strip() == ""
+        assert 'shape="diamond"' in debug
+        assert "arrowhead=tee" in debug

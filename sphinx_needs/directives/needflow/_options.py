@@ -33,7 +33,8 @@ from docutils.parsers.rst import directives
 
 from sphinx_needs.data import GraphvizStyleType
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.variants import match_variants_all
+from sphinx_needs.exceptions import VariantParsingException
+from sphinx_needs.variants import VariantFunctionParsed, match_variants_all
 
 LOGGER = get_logger(__name__)
 
@@ -128,17 +129,18 @@ def legend_option(argument: str) -> tuple[LegendPart, ...]:
     :return: The legend sections to draw, in the order given, without duplicates.
     :raises ValueError: If a section is not a known one.
     """
-    return parse_legend(argument, allow_empty=True)
+    return parse_legend(argument)
 
 
-def parse_legend(value: str, *, allow_empty: bool = True) -> tuple[LegendPart, ...]:
+def parse_legend(value: str) -> tuple[LegendPart, ...]:
     """Parse a legend specification, from an option or from the configuration.
 
+    An empty value is accepted and means "no legend", which is how a diagram opts out
+    of a project default.
+
     :param value: A comma separated list of legend sections.
-    :param allow_empty: Whether an empty value is accepted as "no legend".
     :return: The legend sections to draw, in the order given, without duplicates.
-    :raises ValueError: If a section is not a known one, or the value is empty and
-        empty values are not accepted.
+    :raises ValueError: If a section is not a known one.
     """
     parts: list[LegendPart] = []
     for raw in (value or "").split(","):
@@ -151,8 +153,6 @@ def parse_legend(value: str, *, allow_empty: bool = True) -> tuple[LegendPart, .
             )
         if part not in parts:
             parts.append(part)  # type: ignore[arg-type]
-    if not parts and not allow_empty:
-        raise ValueError("no legend section given")
     return tuple(parts)
 
 
@@ -403,7 +403,7 @@ def resolve_legend(
             LOGGER,
             f"Invalid 'needs_flow_legend' value {project_default!r}: {err}",
             "config",
-            location=None,
+            location=location,
             once=True,
         )
         return ()
@@ -625,7 +625,7 @@ def compile_style_classes(
             f"'needs_flow_styles' must be a mapping of class names to properties, "
             f"but is {type(styles).__name__}",
             "config",
-            location=None,
+            location=location,
             once=True,
         )
         return compiled
@@ -636,7 +636,7 @@ def compile_style_classes(
                 f"style class {name!r} in 'needs_flow_styles' must be a mapping of "
                 f"properties, but is {type(props).__name__}",
                 "config",
-                location=None,
+                location=location,
                 once=True,
             )
             continue
@@ -649,22 +649,27 @@ def compile_style_classes(
                     f"'needs_flow_styles', allowed properties: "
                     f"{', '.join(sorted(_STYLE_PROPERTIES))}",
                     "config",
-                    location=None,
+                    location=location,
                     once=True,
                 )
                 continue
-            if (coerced := _coerce_style_value(key, value, name)) is not None:
+            if (
+                coerced := _coerce_style_value(key, value, name, location=location)
+            ) is not None:
                 values[key] = coerced
         compiled[name] = StyleProps(**values)
     return compiled
 
 
-def _coerce_style_value(key: str, value: Any, class_name: str) -> Any:
+def _coerce_style_value(
+    key: str, value: Any, class_name: str, *, location: LocationType = None
+) -> Any:
     """Validate and normalise a single style property value.
 
     :param key: The property name, already known to be part of the closed set.
     :param value: The configured value.
     :param class_name: The style class the property belongs to, for the message.
+    :param location: Where to report an unusable value.
     :return: The normalised value, or ``None`` if it is unusable.
     """
     if key in ("fill", "border", "text_color"):
@@ -678,7 +683,7 @@ def _coerce_style_value(key: str, value: Any, class_name: str) -> Any:
                 f"'border_width' of style class {class_name!r} must be a number, "
                 f"but is {value!r}",
                 "config",
-                location=None,
+                location=location,
                 once=True,
             )
             return None
@@ -690,19 +695,22 @@ def _coerce_style_value(key: str, value: Any, class_name: str) -> Any:
             f"unknown 'border_style' {value!r} of style class {class_name!r}, "
             "allowed values: solid, dashed, dotted",
             "config",
-            location=None,
+            location=location,
             once=True,
         )
         return None
     # key == "shape"
-    return resolve_shape(value, class_name=class_name)
+    return resolve_shape(value, class_name=class_name, location=location)
 
 
-def resolve_shape(value: Any, *, class_name: str | None = None) -> str | None:
+def resolve_shape(
+    value: Any, *, class_name: str | None = None, location: LocationType = None
+) -> str | None:
     """Normalise a shape name, accepting the legacy PlantUML keywords as aliases.
 
     :param value: The configured shape.
     :param class_name: The style class the shape belongs to, if any, for the message.
+    :param location: Where to report an unknown shape.
     :return: The neutral shape name, or ``None`` if it is not a known shape.
     """
     shape = str(value).strip().lower()
@@ -715,7 +723,7 @@ def resolve_shape(value: Any, *, class_name: str | None = None) -> str | None:
         LOGGER,
         f"unknown shape {value!r}{where}, allowed values: {', '.join(SHAPES)}",
         "config",
-        location=None,
+        location=location,
         once=True,
     )
     return None
@@ -738,6 +746,48 @@ def _rule_class_names(values: Iterable[Any]) -> list[str]:
         for raw in str(value).split(",")
         if (name := raw.strip())
     ]
+
+
+def declared_style_classes(rules: str) -> list[str]:
+    """Every class name a rule list mentions, whatever its filter matches.
+
+    Whether a rule *applies* depends on the need, but which classes it *names* does not,
+    so an unknown name can be -- and is -- reported once for the directive that wrote it
+    rather than once for every need it was tried against.
+
+    :param rules: The ``:styles:`` option value, in the variant syntax.
+    :return: The class names, in declaration order, with duplicates kept.
+    """
+    if not rules:
+        return []
+    try:
+        parsed = VariantFunctionParsed.from_string(rules, allow_semicolon=True)
+    except VariantParsingException:
+        # the value is unparseable, which `resolve_styles` reports as it evaluates
+        return []
+    values = [value for _, _, value in parsed.expressions]
+    if parsed.final_value is not None:
+        values.append(parsed.final_value)
+    return _rule_class_names(values)
+
+
+def warn_unknown_style_classes(
+    rules: str, compiled: Mapping[str, StyleProps], *, location: LocationType
+) -> None:
+    """Report the classes a diagram names but the configuration does not define.
+
+    :param rules: The ``:styles:`` option value, in the variant syntax.
+    :param compiled: The configured classes, from :func:`compile_style_classes`.
+    :param location: The directive that named them.
+    """
+    for name in dict.fromkeys(declared_style_classes(rules)):
+        if name not in BUILTIN_STYLE_CLASSES and name not in compiled:
+            log_warning(
+                LOGGER,
+                f"style class {name!r} is not defined in 'needs_flow_styles'",
+                "needflow",
+                location=location,
+            )
 
 
 def resolve_styles(
@@ -772,13 +822,7 @@ def resolve_styles(
             highlighted = True
             continue
         if (found := compiled.get(name)) is None:
-            log_warning(
-                LOGGER,
-                f"style class {name!r} is not defined in 'needs_flow_styles'",
-                "needflow",
-                location=location,
-                once=True,
-            )
+            # already reported once for the directive by `warn_unknown_style_classes`
             continue
         if found.border is not None:
             # a later outline colour displaces the built-in highlight, per the cascade

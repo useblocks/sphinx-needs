@@ -63,6 +63,7 @@ from ._options import (
     resolve_link_labels,
     resolve_shape,
     resolve_styles,
+    warn_unknown_style_classes,
 )
 
 LOGGER = get_logger(__name__)
@@ -502,6 +503,11 @@ def build_graph(
     # asked for the class and not once for every need the rule happened to match
     style_classes = compile_style_classes(
         needs_config.flow_styles, location=variant_location
+    )
+    # which classes a rule names does not depend on the need it is tried against, so an
+    # unknown one is reported here, once for this directive, rather than once per need
+    warn_unknown_style_classes(
+        attributes["styles"], style_classes, location=variant_location
     )
 
     # `needs_types[].shape` is the neutral counterpart of `needs_types[].style`, which
