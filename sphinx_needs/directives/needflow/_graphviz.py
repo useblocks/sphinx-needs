@@ -4,7 +4,7 @@ import html
 import textwrap
 from collections.abc import Callable
 from functools import cache
-from typing import Literal, TypedDict
+from typing import Literal
 from urllib.parse import urlparse
 
 from docutils import nodes
@@ -22,24 +22,17 @@ from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.needflow._directive import NeedflowGraphiz
 from sphinx_needs.directives.utils import no_needs_found_paragraph, report_max_items
 from sphinx_needs.errors import NoUri
-from sphinx_needs.filter_common import (
-    apply_max_items,
-    filter_single_need,
-    process_filters,
-)
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
-from sphinx_needs.needs_schema import LinkSchema
 from sphinx_needs.utils import remove_node_from_tree
-from sphinx_needs.variants import match_variants
-from sphinx_needs.views import NeedsView
 
-from ._shared import (
-    create_filter_paragraph,
-    filter_by_tree,
-    get_root_needs,
-    resolve_color,
+from ._model import (
+    GraphEdge,
+    GraphNode,
+    build_graph,
+    resolve_link_types,
 )
+from ._shared import create_filter_paragraph
 
 try:
     from sphinx.writers.html5 import HTML5Translator
@@ -58,11 +51,6 @@ def process_needflow_graphviz(
 ) -> None:
     needs_config = NeedsSphinxConfig(app.config)
     needs_schema = SphinxNeedsData(app.env).get_schema()
-    env_data = SphinxNeedsData(app.env)
-    needs_view = env_data.get_needs_view()
-
-    link_type_names = [name.upper() for name in needs_schema.iter_link_field_names()]
-    allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
     node: NeedflowGraphiz
     for node in found_nodes:  # type: ignore[assignment]
@@ -87,78 +75,40 @@ def process_needflow_graphviz(
             # add the paragraph to after the surrounding figure
             node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, para)
 
-        option_link_types = [link.upper() for link in attributes["link_types"]]
-        for lt in option_link_types:
-            if lt not in link_type_names:
-                log_warning(
-                    LOGGER,
-                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types}".format(
-                        link_type=lt,
-                        flow=attributes["target_id"],
-                        link_types=",".join(link_type_names),
-                    ),
-                    "needflow",
-                    location=node,
-                )
-
-        # compute the allowed link types
-        allowed_link_types: list[LinkSchema] = []
-        for link in needs_schema.iter_link_fields():
-            # Skip link-type handling, if it is not part of a specified list of allowed link_types or
-            # if not part of the overall configuration of needs_flow_link_types
-            if (
-                attributes["link_types"] and link.name.upper() not in option_link_types
-            ) or (
-                not attributes["link_types"]
-                and link.name.upper() not in allowed_link_types_options
-            ):
-                continue
-            # skip creating links from child needs to their own parent need
-            if link.name == "parent_needs":
-                continue
-            allowed_link_types.append(link)
-
-        init_filtered_needs = (
-            filter_by_tree(
-                needs_view,
-                root_id,
-                [lt.name for lt in allowed_link_types],
-                attributes["root_direction"],
-                attributes["root_depth"],
-            )
-            if (root_id := attributes["root_id"])
-            else needs_view
-        )
-        filtered_needs = process_filters(
-            app,
-            init_filtered_needs,
-            node.attributes,
-            origin="needflow",
+        allowed_link_types = resolve_link_types(
+            attributes,
+            schema=needs_schema,
+            config=needs_config,
             location=node,
         )
 
-        if not filtered_needs:
+        graph = build_graph(
+            app,
+            attributes,
+            allowed_link_types,
+            location=node,
+            variant_location=node,
+        )
+
+        # this check used to run before the `max_items` cap, which the model now applies;
+        # the verdict is the same either way, because `apply_max_items` either returns the
+        # needs unchanged or truncates them to a limit of at least one, so it can never
+        # turn a non-empty result into an empty one
+        if not graph.needs:
             node.replace_self(
                 no_needs_found_paragraph(attributes.get("filter_warning"))
             )
             continue
 
-        # the cap is applied before any of the rendering data is derived,
-        # so that dropped needs cannot be referenced by what is rendered
-        filtered_needs, total_needs = apply_max_items(
-            filtered_needs, attributes.get("max_items"), needs_config
-        )
-        if len(filtered_needs) < total_needs:
+        if len(graph.needs) < graph.total_needs:
             para = report_max_items(
-                len(filtered_needs),
-                total_needs,
+                len(graph.needs),
+                graph.total_needs,
                 origin="needflow",
                 location=node,
             )
             # add the paragraph to after the surrounding figure
             node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, para)
-
-        id_comp_to_need = {need["id_complete"]: need for need in filtered_needs}
 
         content = "digraph needflow {\ncompound=true;\n"
 
@@ -174,31 +124,27 @@ def process_needflow_graphviz(
 
         # calculate node definitions
         content += "\n// node definitions\n"
-        rendered_nodes: dict[str, _RenderedNode] = {}
+        cluster_ids: dict[str, str | None] = {}
         """A mapping of node id_complete to the cluster id if the node is a subgraph, else None."""
-        for root_need in get_root_needs(filtered_needs):
+        for root in graph.roots:
             content += _render_node(
-                root_need,
+                root,
                 node,
-                needs_view,
-                needs_config,
                 lambda n: _get_link_to_need(app, fromdocname, n),
-                id_comp_to_need,
-                rendered_nodes,
+                cluster_ids,
             )
 
         # calculate edge definitions
         content += "\n// edge definitions\n"
-        for need in filtered_needs:
-            for link_type in allowed_link_types:
-                for link in need[link_type.name]:
-                    content += _render_edge(
-                        need, link, link_type, node, needs_config, rendered_nodes
-                    )
+        for edge in graph.edges:
+            content += _render_edge(edge, graph.show_link_names, cluster_ids)
 
+        # note this lists only the need types that were actually drawn, whereas the
+        # plantuml engine lists every configured type, so the same `:show_legend:` gives
+        # the two engines different legends; it is kept as is
         if attributes["show_legend"]:
             content += _create_legend(
-                [r["need"] for r in rendered_nodes.values()], needs_config
+                [drawn.need for drawn in graph.nodes.values()], needs_config
             )
 
         content += "}"
@@ -239,42 +185,34 @@ def _get_link_to_need(
     return None
 
 
-class _RenderedNode(TypedDict):
-    cluster_id: str | None
-    need: NeedItem | NeedPartItem
-
-
 def _quote(text: str) -> str:
     """Quote a string for use in a graphviz file."""
     return '"' + text.replace('"', '\\"') + '"'
 
 
 def _render_node(
-    need: NeedItem | NeedPartItem,
+    drawn: GraphNode,
     node: NeedflowGraphiz,
-    needs_view: NeedsView,
-    config: NeedsSphinxConfig,
     calc_link: Callable[[NeedItem | NeedPartItem], str | None],
-    id_comp_to_need: dict[str, NeedItem | NeedPartItem],
-    rendered_nodes: dict[str, _RenderedNode],
+    cluster_ids: dict[str, str | None],
     subgraph: bool = True,
 ) -> str:
-    """Render a node in the graphviz format."""
+    """Render a node in the graphviz format.
 
-    if subgraph and (
-        (
-            need["is_need"]
-            and any(f"{need['id']}.{i}" in id_comp_to_need for i in need["parts"])
-        )
-        or any(i in id_comp_to_need for i in need["parent_needs_back"])
-    ):
+    :param drawn: The node to render, carrying its resolved presentation.
+    :param node: The needflow node, for the graphviz style of the whole diagram.
+    :param calc_link: How to compute the link target of a need.
+    :param cluster_ids: Collects the cluster id of every node drawn as a subgraph,
+        which the edges need in order to point at the cluster rather than the ghost node.
+    """
+    if subgraph and (drawn.parts or drawn.children):
         # graphviz cannot nest nodes,
         # so we have to create a subgraph to represent a need with parts/children
-        return _render_subgraph(
-            need, node, needs_view, config, calc_link, id_comp_to_need, rendered_nodes
-        )
+        return _render_subgraph(drawn, node, calc_link, cluster_ids)
 
-    rendered_nodes[need["id_complete"]] = {"need": need, "cluster_id": None}
+    need = drawn.need
+    presentation = drawn.presentation
+    cluster_ids[need["id_complete"]] = None
 
     params: list[tuple[str, str]] = []
 
@@ -288,42 +226,31 @@ def _render_node(
 
     # shape
     if need["is_need"]:
-        if need["type_style"] not in _plantuml_shapes:
+        if presentation.type_style not in _plantuml_shapes:
             log_warning(
                 LOGGER,
-                f"Unknown node style {need['type_style']!r} for graphviz engine",
+                f"Unknown node style {presentation.type_style!r} for graphviz engine",
                 "needflow",
                 None,
                 once=True,
             )
-        shape = _plantuml_shapes.get(need["type_style"], need["type_style"])
+        shape = _plantuml_shapes.get(presentation.type_style, presentation.type_style)
         params.append(("shape", _quote(shape)))
     else:
         params.append(("shape", "rectangle"))
 
     # fill color
-    if need["type_color"]:
+    if presentation.type_color:
         style = node.attributes["graphviz_style"].get("node", {}).get("style", "")
         new_style = style + ",filled" if style else "filled"
         params.append(("style", _quote(new_style)))
-        params.append(("fillcolor", _quote(need["type_color"])))
+        params.append(("fillcolor", _quote(presentation.type_color)))
 
     # outline color
-    if node["highlight"] and filter_single_need(
-        need, config, node["highlight"], needs_view.values()
-    ):
+    if presentation.highlight:
         params.append(("color", "red"))
-    elif node["border_color"]:
-        color = resolve_color(
-            match_variants(
-                node["border_color"],
-                need.filter_context(),
-                config.variants,
-                location=node,
-            )
-        )
-        if color:
-            params.append(("color", _quote("#" + color)))
+    elif presentation.border_color:
+        params.append(("color", _quote("#" + presentation.border_color)))
 
     id = _quote(need["id_complete"])
     param_str = ", ".join(f"{key}={value}" for key, value in params)
@@ -331,15 +258,23 @@ def _render_node(
 
 
 def _render_subgraph(
-    need: NeedItem | NeedPartItem,
+    drawn: GraphNode,
     node: NeedflowGraphiz,
-    needs_view: NeedsView,
-    config: NeedsSphinxConfig,
     calc_link: Callable[[NeedItem | NeedPartItem], str | None],
-    id_comp_to_need: dict[str, NeedItem | NeedPartItem],
-    rendered_nodes: dict[str, _RenderedNode],
+    cluster_ids: dict[str, str | None],
 ) -> str:
-    """Render a subgraph in the graphviz format."""
+    """Render a need with parts or child needs, as a graphviz subgraph.
+
+    .. note:: The shape of a need drawn as a subgraph is emitted as configured, without
+       the translation (and the warning) that a plain node gets; it is kept as is.
+
+    :param drawn: The node to render, carrying the nodes nested inside it.
+    :param node: The needflow node, for the graphviz style of the whole diagram.
+    :param calc_link: How to compute the link target of a need.
+    :param cluster_ids: See :func:`_render_node`.
+    """
+    need = drawn.need
+    presentation = drawn.presentation
     params: list[tuple[str, str]] = []
 
     # label
@@ -352,31 +287,20 @@ def _render_subgraph(
 
     # shape
     if need["is_need"]:
-        params.append(("shape", _quote(need["type_style"])))
+        params.append(("shape", _quote(presentation.type_style)))
     else:
         params.append(("shape", "rectangle"))
 
     # fill color
-    if need["type_color"]:
+    if presentation.type_color:
         params.append(("style", "filled"))
-        params.append(("fillcolor", _quote(need["type_color"])))
+        params.append(("fillcolor", _quote(presentation.type_color)))
 
     # outline color
-    if node["highlight"] and filter_single_need(
-        need, config, node["highlight"], needs_view.values()
-    ):
+    if presentation.highlight:
         params.append(("color", "red"))
-    elif node["border_color"]:
-        color = resolve_color(
-            match_variants(
-                node["border_color"],
-                need.filter_context(),
-                config.variants,
-                location=node,
-            )
-        )
-        if color:
-            params.append(("color", _quote("#" + color)))
+    elif presentation.border_color:
+        params.append(("color", _quote("#" + presentation.border_color)))
 
     # we need to create an invisible node to allow links to the subgraph
     id = _quote(need["id_complete"])
@@ -385,46 +309,23 @@ def _render_subgraph(
     cluster_id = _quote("cluster_" + need["id_complete"])
     param_str = "\n".join(f"  {key}={value};" for key, value in params)
 
-    rendered_nodes[need["id_complete"]] = {
-        "need": need,
-        "cluster_id": "cluster_" + need["id_complete"],
-    }
+    cluster_ids[need["id_complete"]] = "cluster_" + need["id_complete"]
 
+    # note the comments are written according to the need itself, not to what is drawn,
+    # so a need whose parts were all filtered out still gets the parts comment
     children = ""
     if need["is_need"] and need["parts"]:
         children += "  // parts:\n"
-        for need_part_id in need["parts"]:
-            need_part_id = need["id"] + "." + need_part_id
-            if need_part_id in id_comp_to_need:
-                children += textwrap.indent(
-                    _render_node(
-                        id_comp_to_need[need_part_id],
-                        node,
-                        needs_view,
-                        config,
-                        calc_link,
-                        id_comp_to_need,
-                        rendered_nodes,
-                        False,
-                    ),
-                    "  ",
-                )
+        for part in drawn.parts:
+            children += textwrap.indent(
+                _render_node(part, node, calc_link, cluster_ids, False), "  "
+            )
     if need["parent_needs_back"]:
         children += "  // child needs:\n"
-        for child_need_id in need["parent_needs_back"]:
-            if child_need_id in id_comp_to_need:
-                children += textwrap.indent(
-                    _render_node(
-                        id_comp_to_need[child_need_id],
-                        node,
-                        needs_view,
-                        config,
-                        calc_link,
-                        id_comp_to_need,
-                        rendered_nodes,
-                    ),
-                    "  ",
-                )
+        for child in drawn.children:
+            children += textwrap.indent(
+                _render_node(child, node, calc_link, cluster_ids), "  "
+            )
 
     return f"subgraph {cluster_id} {{\n{param_str}\n\n  {ghost_node}\n{children}\n}};\n"
 
@@ -462,42 +363,41 @@ def _label(
 
 
 def _render_edge(
-    need: NeedItem | NeedPartItem,
-    link: str,
-    link_type: LinkSchema,
-    node: NeedflowGraphiz,
-    config: NeedsSphinxConfig,
-    rendered_nodes: dict[str, _RenderedNode],
+    edge: GraphEdge,
+    show_links: bool,
+    cluster_ids: dict[str, str | None],
 ) -> str:
-    """Render an edge in the graphviz format."""
-    if need["id_complete"] not in rendered_nodes or link not in rendered_nodes:
+    """Render an edge in the graphviz format.
+
+    :param edge: The edge to render.
+    :param show_links: Whether to label the edge with the link type.
+    :param cluster_ids: The cluster ids collected by :func:`_render_node`.
+    """
+    if not (edge.source_drawn and edge.target_drawn):
         # if the start or end node is not rendered, we should not create a link
         return ""
-
-    show_links = node["show_link_names"] or config.flow_show_links
 
     params: list[tuple[str, str]] = []
 
     if show_links:
-        params.append(("label", _quote(link_type.display.outgoing)))
+        params.append(("label", _quote(edge.link_type.display.outgoing)))
 
-    is_part = "." in link or "." in need["id_complete"]
     params.extend(
         # TODO also use link_type.display.color?
         _style_params_from_link_type(
-            link_type.display.style_part if is_part else link_type.display.style,
-            link_type.display.style_start,
-            link_type.display.style_end,
+            edge.style,
+            edge.link_type.display.style_start,
+            edge.link_type.display.style_end,
         )
     )
 
-    start_id = _quote(need["id_complete"])
-    if (ltail := rendered_nodes[need["id_complete"]]["cluster_id"]) is not None:
+    start_id = _quote(edge.source_id)
+    if (ltail := cluster_ids[edge.source_id]) is not None:
         # the need has been created as a subgraph and so we also need to create a logical link to the cluster
         params.append(("ltail", _quote(ltail)))
 
-    end_id = _quote(link)
-    if (lhead := rendered_nodes[link]["cluster_id"]) is not None:
+    end_id = _quote(edge.target_id)
+    if (lhead := cluster_ids[edge.target_id]) is not None:
         # the end need has been created as a subgraph and so we also need to create a logical link to the cluster
         params.append(("lhead", _quote(lhead)))
 
