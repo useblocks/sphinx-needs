@@ -243,7 +243,9 @@ The object form exists to carry options:
      - ``field``
      - Replaces the field name in the rendered ``name: value`` pair:
        1–64 characters of letters, digits, spaces and ``_().,/-``,
-       starting and ending alphanumeric.
+       starting and ending alphanumeric,
+       with an underscore only directly between letters or digits
+       (``user_name`` is valid, ``Owned_ by`` and ``a__b`` are not).
 
 .. code-block:: python
 

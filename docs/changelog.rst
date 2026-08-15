@@ -40,6 +40,35 @@ Improvements
   leaving the rest of the build untouched. See :ref:`card_layouts` for the full vocabulary
   and its documented limits.
 
+- ✨ :ref:`needs_card_layouts` elements gain an object form
+
+  Every element string is now shorthand for an object with a ``type`` key —
+  ``"image:diagram"`` is spelled ``{"type": "image", "field": "diagram"}`` — and the two
+  spellings mix freely in one list. An object without options compiles to exactly the same
+  layout as its string shorthand; the strings stay valid and remain the documented default.
+  The object form exists to carry options: ``height`` and ``width`` on ``image`` elements,
+  and ``label`` on ``field`` elements, replacing the field name in the rendered
+  ``name: value`` pair:
+
+  .. code-block:: python
+
+     needs_card_layouts = {
+         "illustrated": {
+             "footer": [
+                 "id",
+                 {"type": "field", "field": "owner", "label": "Owned by"},
+             ],
+             "side": {
+                 "elements": [{"type": "image", "field": "picture", "height": "40px"}]
+             },
+         }
+     }
+
+  Option values are grammar-bound; an option on the wrong type, an unknown key, or a value
+  outside its grammar is reported as a ``needs.card_layout`` warning and the card is
+  skipped, like any other invalid specification. See
+  :ref:`the object form <card_layouts_object_form>` for the option table and grammars.
+
 - ✨ The ``cypher``, ``width`` and ``height`` directive options are now
   accepted for `ubCode`_ compatibility (:pr:`1760`)
 

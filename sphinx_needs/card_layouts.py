@@ -125,23 +125,31 @@ _ELEMENT_OPTION_KEYS: Final[dict[str, frozenset[str]]] = {
 }
 """The option keys each element type accepts, beyond ``type`` and ``field``."""
 
-_NAME_PATTERN: Final = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]*$")
+# Every grammar below is enforced with ``fullmatch``: a ``$`` anchor also matches
+# just before a trailing newline, which would let e.g. ``"40px\n"`` through to the
+# emitted layout string and abort the build when the layout call is parsed.
+
+_NAME_PATTERN: Final = re.compile(r"[A-Za-z_][A-Za-z0-9_-]*")
 """Allow-list for a card name and for any field name interpolated into a layout string."""
 
-_DIMENSION_PATTERN: Final = re.compile(r"^[0-9]+(\.[0-9]+)?(px|em|rem|%|pt)?$")
+_DIMENSION_PATTERN: Final = re.compile(r"[0-9]+(\.[0-9]+)?(px|em|rem|%|pt)?")
 """Allow-list for the ``height`` and ``width`` options; a bare number means pixels."""
 
 _DIMENSION_MAX_LENGTH: Final = 16
 """Upper bound on the length of a ``height`` or ``width`` value."""
 
 _LABEL_PATTERN: Final = re.compile(
-    r"^[A-Za-z0-9](?:[A-Za-z0-9 _().,/-]{0,62}[A-Za-z0-9])?$"
+    r"[A-Za-z0-9](?:[A-Za-z0-9 _().,/-]{0,62}[A-Za-z0-9])?"
 )
-"""Allow-list for the ``label`` option: 1-64 characters, alphanumeric at both ends.
+"""Allow-list for the ``label`` option: 1-64 characters, alphanumeric at both ends."""
 
-Deliberately excludes every RST-active character,
-so a label interpolated into a ``prefix=`` argument can never change
-the meaning of the emitted layout string.
+_LABEL_LOOSE_UNDERSCORE: Final = re.compile(r"(?<![A-Za-z0-9])_|_(?![A-Za-z0-9])")
+"""An underscore not sitting directly between two alphanumerics; forbidden in a label.
+
+A word-leading or word-trailing underscore is RST reference syntax
+(``name_``, ``__``), which would crash the HTML writer
+when the label is RST-parsed as a ``prefix`` argument.
+Every other RST-active character is excluded by the label charset itself.
 """
 
 # --- the closed template set ------------------------------------------------
@@ -348,7 +356,7 @@ def _parse_meta(
             warn(f"'meta.{key}' must be a list of strings, got {raw!r}, skipping.")
             return None
         for item in raw:
-            if not _NAME_PATTERN.match(item):
+            if not _NAME_PATTERN.fullmatch(item):
                 warn(f"invalid field name {item!r} in 'meta.{key}', skipping.")
                 return None
         names[key] = tuple(raw)
@@ -438,7 +446,7 @@ def _parse_element_str(
             "'image:<name>'), skipping."
         )
         return None
-    if not _NAME_PATTERN.match(field_name):
+    if not _NAME_PATTERN.fullmatch(field_name):
         warn(
             f"invalid field name {field_name!r} in {region} element "
             f"{element!r}, skipping."
@@ -457,6 +465,10 @@ def _parse_element_dict(
     :param warn: Called with a message for every problem found.
     :return: The normalised element, or ``None`` if it was invalid.
     """
+    # guard before any key set arithmetic: mixed-type keys make ``sorted`` raise
+    if any(not isinstance(key, str) for key in element):
+        warn(f"{region} element keys must be strings, got {element!r}, skipping.")
+        return None
     element_type = element.get("type")
     if element_type not in _ELEMENT_TYPES:
         warn(
@@ -484,7 +496,7 @@ def _parse_element_dict(
                 f"'field' is required in a {element_type!r} {region} element, skipping."
             )
             return None
-        if not isinstance(raw_field, str) or not _NAME_PATTERN.match(raw_field):
+        if not isinstance(raw_field, str) or not _NAME_PATTERN.fullmatch(raw_field):
             warn(f"invalid field name {raw_field!r} in {region} element, skipping.")
             return None
         field_name = raw_field
@@ -495,7 +507,7 @@ def _parse_element_dict(
         if (
             not isinstance(raw, str)
             or len(raw) > _DIMENSION_MAX_LENGTH
-            or not _DIMENSION_PATTERN.match(raw)
+            or not _DIMENSION_PATTERN.fullmatch(raw)
         ):
             warn(
                 f"'{key}' must be a number with an optional px/em/rem/%/pt unit, "
@@ -506,12 +518,14 @@ def _parse_element_dict(
         dimensions[key] = raw
     label = element.get("label")
     if label is not None and (
-        not isinstance(label, str) or not _LABEL_PATTERN.match(label)
+        not isinstance(label, str)
+        or not _LABEL_PATTERN.fullmatch(label)
+        or _LABEL_LOOSE_UNDERSCORE.search(label)
     ):
         warn(
             "'label' must be 1-64 characters from [A-Za-z0-9 _().,/-], "
-            f"starting and ending alphanumeric, got {label!r} in {region} "
-            "element, skipping."
+            "starting and ending alphanumeric, with '_' only directly between "
+            f"alphanumerics, got {label!r} in {region} element, skipping."
         )
         return None
     return ElementSpec(
@@ -894,7 +908,7 @@ def compile_card_layouts(_app: Sphinx, config: Config) -> None:
                 LOGGER, f"needs_card_layouts[{name!r}]: {message}", "card_layout", None
             )
 
-        if not isinstance(name, str) or not _NAME_PATTERN.match(name):
+        if not isinstance(name, str) or not _NAME_PATTERN.fullmatch(name):
             warn(
                 "name must match [A-Za-z_][A-Za-z0-9_-]* to be usable as a layout "
                 "name, skipping."

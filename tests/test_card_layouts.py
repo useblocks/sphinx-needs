@@ -802,7 +802,8 @@ def test_spellings_mix_freely_in_one_list() -> None:
     [
         pytest.param("x", id="single-char"),
         pytest.param("Owned by", id="space"),
-        pytest.param("A 0_().,/-9", id="all-allowed-chars"),
+        pytest.param("user_name", id="intra-word-underscore"),
+        pytest.param("Aa_0 ().,/-9", id="all-allowed-chars"),
         pytest.param("a" * 64, id="max-length"),
     ],
 )
@@ -1060,6 +1061,65 @@ def test_dimension_grammar_accepts_its_edges(value: str) -> None:
             {"footer": [{"type": "field", "field": "status", "label": 3}]},
             "'label' must be 1-64 characters",
             id="object-non-string-label",
+        ),
+        # a trailing newline slips past a ``$``-anchored ``match`` and would abort
+        # the build once the emitted layout call is parsed; ``fullmatch`` stops it
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "Owned by\n"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-trailing-newline",
+        ),
+        pytest.param(
+            {"footer": [{"type": "image", "field": "badge", "height": "40px\n"}]},
+            "'height' must be a number",
+            id="object-height-trailing-newline",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "owner\n"}]},
+            "invalid field name 'owner\\n'",
+            id="object-field-trailing-newline",
+        ),
+        pytest.param(
+            {"footer": ["field:owner\n"]},
+            "invalid field name 'owner\\n'",
+            id="string-field-trailing-newline",
+        ),
+        # a word-leading/-trailing underscore is RST reference syntax (``name_``,
+        # ``__``) and would crash the HTML writer via the RST-parsed ``prefix``
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "Owned_ by"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-trailing-underscore",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "a__b"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-double-underscore",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "anon__ ref"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-anonymous-reference",
+        ),
+        pytest.param(
+            {"footer": [{"type": "field", "field": "status", "label": "Ünicode"}]},
+            "'label' must be 1-64 characters",
+            id="object-label-non-ascii",
+        ),
+        pytest.param(
+            # full-width digits U+FF14 U+FF10: ASCII-only [0-9] must reject them
+            {
+                "footer": [
+                    {"type": "image", "field": "badge", "height": "\uff14\uff10px"}
+                ]
+            },
+            "'height' must be a number",
+            id="object-height-non-ascii-digits",
+        ),
+        pytest.param(
+            {"footer": [{1: "x", "type": "id"}]},
+            "footer element keys must be strings",
+            id="object-non-string-dict-key",
         ),
         pytest.param(
             {"footer": [3]},
@@ -1509,6 +1569,13 @@ Object form
                                         "field": "owner",
                                         "label": "Owned by",
                                     },
+                                    # an intra-word underscore is grammar-legal and
+                                    # must survive the RST parse of the prefix
+                                    {
+                                        "type": "field",
+                                        "field": "owner",
+                                        "label": "user_name",
+                                    },
                                     {"type": "id"},
                                 ]
                             },
@@ -1542,6 +1609,7 @@ def test_object_form_options_render(test_app: Any) -> None:
     labelled = need_table(html, "OBJ_LABEL")
     footer = labelled.split('<td class="need footer"')[1]
     assert "Owned by:" in footer
+    assert "user_name:" in footer
     assert 'class="needs_owner"' in footer
     assert footer.index('class="needs_owner"') < footer.index('class="needs-id"')
 
