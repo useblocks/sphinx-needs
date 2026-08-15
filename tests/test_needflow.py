@@ -2820,7 +2820,10 @@ Bad style config
     [
         ('"not a mapping"', "'needs_flow_styles' must be a mapping of class names"),
         ('{"broken": "not a mapping"}', "must be a mapping of properties"),
-        ('{"broken": {"nosuch": 1}}', "unknown property 'nosuch' of style class 'broken'"),
+        (
+            '{"broken": {"nosuch": 1}}',
+            "unknown property 'nosuch' of style class 'broken'",
+        ),
         (
             '{"broken": {"border_width": "wide"}}',
             "'border_width' of style class 'broken' must be a number",

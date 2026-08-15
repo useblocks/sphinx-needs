@@ -283,9 +283,7 @@ class GraphEdge:
         ``part_line`` falls back to ``line``.
         """
         display = self.link_type.display
-        return (
-            (display.part_color if self.is_part else "") or display.color
-        ).strip()
+        return ((display.part_color if self.is_part else "") or display.color).strip()
 
     @property
     def color(self) -> str | None:

@@ -74,6 +74,10 @@ from sphinx_needs.directives.needflow import (
     process_needflow_graphviz,
     process_needflow_plantuml,
 )
+from sphinx_needs.directives.needflow._options import (
+    ACCEPTED_ENGINES,
+    validated_config_enum,
+)
 from sphinx_needs.directives.needgantt import (
     Needgantt,
     NeedganttDirective,
@@ -109,10 +113,6 @@ from sphinx_needs.environment import (
     install_lib_static_files,
     install_permalink_file,
     install_styles_static_files,
-)
-from sphinx_needs.directives.needflow._options import (
-    ACCEPTED_ENGINES,
-    validated_config_enum,
 )
 from sphinx_needs.exceptions import NeedsConfigException
 from sphinx_needs.external_needs import load_external_needs

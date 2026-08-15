@@ -32,8 +32,8 @@ from typing import Any, Literal, get_args
 from docutils.parsers.rst import directives
 
 from sphinx_needs.data import GraphvizStyleType
-from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.exceptions import VariantParsingException
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.variants import VariantFunctionParsed, match_variants_all
 
 LOGGER = get_logger(__name__)
@@ -248,7 +248,7 @@ def graphviz_config_direction(style: GraphvizStyleType) -> FlowDirection | None:
     """
     found: FlowDirection | None = None
     for section in ("root", "graph"):
-        attributes = style.get(section, {})  # type: ignore[literal-required]
+        attributes = style.get(section, {})
         if not isinstance(attributes, Mapping):
             continue
         rankdir = str(attributes.get("rankdir", "")).strip().upper()

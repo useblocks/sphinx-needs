@@ -318,9 +318,7 @@ def _render_subgraph(
     else:
         params.append(("shape", "rectangle"))
 
-    params.extend(
-        _presentation_params(presentation, base_style="", quote_style=False)
-    )
+    params.extend(_presentation_params(presentation, base_style="", quote_style=False))
 
     # we need to create an invisible node to allow links to the subgraph
     id = _quote(need["id_complete"])
@@ -396,7 +394,10 @@ def _presentation_params(
     if style_entries:
         joined = ",".join(style_entries)
         params.append(
-            ("style", _quote(joined) if quote_style or len(style_entries) > 1 else joined)
+            (
+                "style",
+                _quote(joined) if quote_style or len(style_entries) > 1 else joined,
+            )
         )
     if fill:
         params.append(("fillcolor", _quote(fill)))
