@@ -1127,8 +1127,21 @@ Deprecated needs_flow_show_links
                 "needs_flow_engine": "plantuml",
                 "needs_flow_show_links": True,
             },
-        }
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), DEPRECATED_FLOW_SHOW_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+                "needs_flow_show_links": True,
+            },
+        },
     ],
+    ids=["plantuml", "graphviz"],
     indirect=True,
 )
 def test_flow_show_links_is_deprecated_and_can_be_overridden(test_app):
@@ -2144,8 +2157,20 @@ needs_links = {
                 (Path("index.rst"), NEUTRAL_LINKS),
             ],
             "confoverrides": {"needs_flow_engine": "plantuml"},
-        }
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGACY_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
     ],
+    ids=["plantuml", "graphviz"],
     indirect=True,
 )
 def test_legacy_link_display_keys_are_deprecated_but_honoured(test_app):
@@ -2153,6 +2178,10 @@ def test_legacy_link_display_keys_are_deprecated_but_honoured(test_app):
 
     The deprecation is an alias, not a withdrawal: a project can move one link type at
     a time, and one that never moves keeps its diagrams.
+
+    Graphviz matters as much as plantuml here, because it reaches these tokens through
+    a whole translation layer of its own -- and that layer is what the entire
+    deprecation story rests on.
     """
     app = test_app
     app.build()
@@ -2161,7 +2190,12 @@ def test_legacy_link_display_keys_are_deprecated_but_honoured(test_app):
     assert "uses deprecated display key(s) style" in warnings
     assert "'line', 'part_line' and 'arrow'" in warnings
 
-    assert "-[dotted]->" in _debug_source(Path(app.outdir), "index.html")
+    debug = _debug_source(Path(app.outdir), "index.html")
+    if app.config.needs_flow_engine == "plantuml":
+        assert "-[dotted]->" in debug
+    else:
+        assert 'style="dotted"' in debug
+        assert "arrowhead=vee" in debug
 
 
 GRAPH_KEYED_DIRECTION = """\
@@ -2766,3 +2800,115 @@ def test_shapes_and_arrows_plantuml_cannot_draw_degrade_with_a_location(test_app
         assert warnings.strip() == ""
         assert 'shape="diamond"' in debug
         assert "arrowhead=tee" in debug
+
+
+BAD_STYLE_CONFIG = """\
+Bad style config
+================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :styles: broken
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "styles,message",
+    [
+        ('"not a mapping"', "'needs_flow_styles' must be a mapping of class names"),
+        ('{"broken": "not a mapping"}', "must be a mapping of properties"),
+        ('{"broken": {"nosuch": 1}}', "unknown property 'nosuch' of style class 'broken'"),
+        (
+            '{"broken": {"border_width": "wide"}}',
+            "'border_width' of style class 'broken' must be a number",
+        ),
+        (
+            '{"broken": {"border_style": "wiggly"}}',
+            "unknown 'border_style' 'wiggly' of style class 'broken'",
+        ),
+        ('{"broken": {"shape": "trapezoid"}}', "unknown shape 'trapezoid'"),
+    ],
+    ids=[
+        "not-a-mapping",
+        "class-not-a-mapping",
+        "unknown-property",
+        "bad-width",
+        "bad-line",
+        "bad-shape",
+    ],
+)
+def test_unusable_style_config_warns_and_draws_anyway(
+    make_app, tmp_path, styles, message
+):
+    """Every way of misdescribing a style class warns and leaves the diagram drawable.
+
+    The closed property set only helps if a value outside it is reported rather than
+    silently dropped or fatally applied, so each rejection path is exercised: the
+    container, each class, the property name, and each property's own value grammar.
+
+    The value is written into ``conf.py`` rather than passed as an override, because
+    Sphinx refuses to override a dictionary setting with a value of another type -- and
+    a hand-written ``conf.py`` is exactly where these mistakes are made.
+    """
+    (tmp_path / "conf.py").write_text(
+        CONF_PY + f"\nneeds_flow_styles = {styles}\n", "utf8"
+    )
+    (tmp_path / "index.rst").write_text(BAD_STYLE_CONFIG, "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"needs_flow_engine": "plantuml"},
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert message in warnings
+
+    # the class is unusable, but the need is still drawn
+    assert "AAAAA" in _debug_source(Path(app.outdir), "index.html")
+
+
+BAD_LEGEND_OPTION = """\
+Bad legend option
+=================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :legend: nosuchsection
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), BAD_LEGEND_OPTION),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        }
+    ],
+    indirect=True,
+)
+def test_unknown_legend_section_is_an_option_error(test_app):
+    """An out-of-enum *option* value is reported by docutils as the option is parsed.
+
+    That is the one tier where erroring is right: the author wrote something the
+    vocabulary does not contain, in the document, where it can be corrected -- as
+    opposed to a configuration value, which degrades so that one typo cannot stop a
+    whole build.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "unknown legend section 'nosuchsection'" in warnings
+    assert "types, links" in warnings

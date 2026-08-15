@@ -818,7 +818,7 @@ class NeedsSphinxConfig:
     )
     """If True, show links in needflow diagrams by default.
 
-    .. deprecated:: 8.3.0
+    .. deprecated:: 8.4.0
        Use ``needs_flow_link_labels`` instead; ``True`` is equivalent to ``outgoing``.
     """
     flow_direction: Literal["down", "up", "right", "left"] = field(
