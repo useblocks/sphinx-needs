@@ -477,7 +477,7 @@ def _render_edge(
     if line is None or arrow is None:
         params.extend(
             _style_params_from_link_type(
-                edge.style,
+                edge.legacy_style,
                 edge.link_type.display.style_start,
                 edge.link_type.display.style_end,
                 skip_line=line is not None,

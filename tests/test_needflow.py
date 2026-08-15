@@ -2413,3 +2413,213 @@ def test_subgraph_style_stays_unquoted(test_app):
     # the parent is a subgraph (bare), the child a plain node (quoted)
     assert "  style=filled;" in debug
     assert 'style="filled"' in debug
+
+
+#: A link type that styles part links differently from ordinary ones.
+PART_STYLING_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+]
+needs_links = {
+    "links": {
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "line": "solid",
+        "color": "#00AA00",
+        "part_line": "dotted",
+        "part_color": "#777777",
+    },
+}
+"""
+
+PART_STYLING = """\
+Part styling
+============
+
+.. spec:: A
+   :id: AAAAA
+
+   :np:`(subpart) a part of A`
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. spec:: C
+   :id: CCCCC
+   :links: AAAAA.subpart
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PART_STYLING_CONF_PY),
+                (Path("index.rst"), PART_STYLING),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PART_STYLING_CONF_PY),
+                (Path("index.rst"), PART_STYLING),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_part_links_take_their_own_line_and_color(test_app):
+    """A link to a need part can be drawn differently from an ordinary link.
+
+    ``part_line`` and ``part_color`` each fall back to their ordinary counterpart when
+    unset, so a link type says the difference once rather than describing both cases.
+    Without ``part_color`` the deprecated ``style``/``style_part`` pair could express a
+    distinction the neutral vocabulary could not, which left real configurations --
+    including this project's own -- stuck on the deprecated spelling.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        # the ordinary link: solid (no keyword) and green
+        assert "-[#00AA00]->" in debug
+        # the part link: dotted and grey
+        assert "-[dotted,#777777]->" in debug
+    else:
+        assert 'style="solid"' in debug
+        assert 'color="#00AA00"' in debug
+        assert 'style="dotted"' in debug
+        assert 'color="#777777"' in debug
+
+
+#: A link type migrated halfway: a neutral ``line``, but its color still legacy.
+HALF_MIGRATED_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+]
+needs_links = {
+    "links": {
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "style": "#00AA00",
+        "line": "dashed",
+    },
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), HALF_MIGRATED_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), HALF_MIGRATED_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_half_migrated_link_type_keeps_its_legacy_color(test_app):
+    """Migrating one key of a link type must not silently drop another.
+
+    The deprecated ``style`` is a compound of a color and a line keyword. Setting the
+    neutral ``line`` supersedes that string, and dropping it wholesale took the color
+    with it -- so a project migrating link types one at a time, which the changelog
+    explicitly invites, lost its edge colors halfway through and was told nothing.
+    """
+    app = test_app
+    app.build()
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert "-[dashed,#00AA00]->" in debug
+    else:
+        assert 'style="dashed"' in debug
+        assert 'color="#00AA00"' in debug
+
+
+EXPLICIT_BLACK_CONF_PY = HALF_MIGRATED_CONF_PY.replace(
+    '"style": "#00AA00",\n        "line": "dashed",', '"color": "#000000",'
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), EXPLICIT_BLACK_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_an_explicitly_black_link_color_is_drawn(test_app):
+    """A link type may ask for black, and be given black.
+
+    Treating black as "the same as unset" made the one color a user could not express
+    the one the engine happens to default to -- which stops being harmless the moment
+    an engine config sets an edge color of its own. Unset is the sentinel instead.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    assert 'color="#000000"' in _debug_source(Path(app.outdir), "index.html")

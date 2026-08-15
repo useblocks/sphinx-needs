@@ -584,11 +584,15 @@ class LinkDisplayConfig:
     """Title for incoming links (e.g., 'links incoming')."""
     outgoing: str
     """Title for outgoing links (e.g., 'links outgoing')."""
-    color: str = "#000000"
+    color: str = ""
     """Color used for needflow diagrams.
 
-    The default is the engines' own edge color, so it is not emitted; any other value
-    is drawn."""
+    Empty means unset, i.e. the engine's own edge color is left alone; any other value
+    is drawn, including an explicit black."""
+    part_color: str = ""
+    """Color used for links to need parts in needflow diagrams (see ``color``).
+
+    Empty means the link type's ``color`` is used for part links too."""
     style: str = ""
     """Line style used for needflow diagrams (deprecated, use ``line``)."""
     style_part: str = "dotted"

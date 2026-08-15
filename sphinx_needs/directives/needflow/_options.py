@@ -868,6 +868,22 @@ def resolve_line(line: str) -> LineStyle | None:
     return None
 
 
+def legacy_style_color(style: str) -> str | None:
+    """Pick the color out of a deprecated ``style``/``style_part`` value.
+
+    That value is a compound: a color token and any number of line keywords, comma
+    separated.  The neutral vocabulary splits the two apart, so a link type migrated one
+    key at a time needs the half it has not migrated yet to keep working.
+
+    :param style: The deprecated value, possibly empty.
+    :return: The color token, or ``None`` if the value carries none.
+    """
+    for raw in style.split(","):
+        if (token := raw.strip()).startswith("#"):
+            return token
+    return None
+
+
 def resolve_arrow(arrow: str) -> ArrowStyle | None:
     """Decide which arrow heads a line carries.
 

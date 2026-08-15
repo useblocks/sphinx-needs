@@ -55,6 +55,7 @@ from ._options import (
     LinkLabels,
     StyleProps,
     compile_style_classes,
+    legacy_style_color,
     resolve_arrow,
     resolve_direction,
     resolve_legend,
@@ -274,14 +275,52 @@ class GraphEdge:
         return resolve_arrow(self.link_type.display.arrow)
 
     @property
+    def _neutral_color(self) -> str:
+        """The color the neutral vocabulary gives this link, empty if it gives none.
+
+        ``part_color`` falls back to ``color`` when it is unset, exactly as
+        ``part_line`` falls back to ``line``.
+        """
+        display = self.link_type.display
+        return (
+            (display.part_color if self.is_part else "") or display.color
+        ).strip()
+
+    @property
     def color(self) -> str | None:
         """The color of this link, or ``None`` to leave it to the engine.
 
-        The configured default is the engines' own edge color, so it is left unsaid
-        rather than restated on every edge of every diagram.
+        An unset color means "leave the engine's own edge color alone", so nothing is
+        emitted -- which is what keeps a diagram that names no color byte-identical to
+        one drawn before colors were honoured at all.  An explicit color is drawn,
+        black included.
+
+        A link type part way through its migration -- a neutral ``line``, but its color
+        still only in the deprecated ``style`` -- keeps its color: the neutral line
+        supersedes that string, and dropping it wholesale would take the color with it.
         """
-        color = self.link_type.display.color.strip()
-        return color if color and color != "#000000" else None
+        if neutral := self._neutral_color:
+            return neutral
+        if self.line is not None:
+            return legacy_style_color(self.style)
+        return None
+
+    @property
+    def legacy_style(self) -> str:
+        """The deprecated ``style`` value that is still in force.
+
+        A neutral color supersedes the color token of that string, so the two cannot
+        both be emitted for a link type that sets both spellings.  Everything else is
+        passed through untouched, which is what keeps a purely legacy link type drawing
+        exactly what it always drew.
+        """
+        if not self._neutral_color:
+            return self.style
+        return ",".join(
+            token
+            for raw in self.style.split(",")
+            if (token := raw.strip()) and not token.startswith("#")
+        )
 
     def label(self, labels: LinkLabels) -> str | None:
         """The text to write on this edge.

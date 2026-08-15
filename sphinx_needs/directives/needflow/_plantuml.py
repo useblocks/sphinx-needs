@@ -456,8 +456,8 @@ def render_connections(graph: NeedflowGraph, entity_names: Mapping[str, str]) ->
         if (line := edge.line) is not None:
             if token := plantuml_line(line):
                 parts.append(token)
-        elif edge.is_part or edge.style:
-            parts.append(edge.style)
+        elif edge.is_part or edge.legacy_style:
+            parts.append(edge.legacy_style)
         if color := edge.color:
             parts.append(f"#{color.lstrip('#')}")
         link_style = f"[{','.join(parts)}]" if parts else ""

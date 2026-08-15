@@ -781,7 +781,6 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
             "outgoing": "links outgoing",
             "incoming": "links incoming",
             "copy": False,
-            "color": "#000000",
         }
     if "parent_needs" not in needs_config._links:
         needs_config._links["parent_needs"] = {
@@ -1090,6 +1089,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             # Only override optional fields if explicitly set in config
             for key in (
                 "color",
+                "part_color",
                 "style",
                 "style_part",
                 "style_start",

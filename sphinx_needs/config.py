@@ -277,7 +277,9 @@ class NeedLinksConfig(TypedDict, total=False):
     copy: bool
     """Copy to common links data. Default: False"""
     color: str
-    """Used for needflow. Default: #000000"""
+    """Used for needflow. Unset by default, i.e. the engine's own edge color."""
+    part_color: str
+    """Used for needflow, for links to need parts. Defaults to ``color``."""
     style: str
     """Used for needflow (deprecated, use ``line``). Default: solid"""
     style_part: str

@@ -29,10 +29,6 @@ def test_filter_build_html(test_app):
     # print(warnings.splitlines())
 
     expected_warnings = [
-        # the fixture deliberately keeps the deprecated needs_links display keys
-        "WARNING: needs_links 'triggers' uses deprecated display key(s) style, "
-        "style_part. Please use 'line', 'part_line' and 'arrow' instead. "
-        "[needs.deprecated]",
         "<srcdir>/index.rst:51: WARNING: Filter 'xxx' not valid. Error: name 'xxx' is not defined. [needs.filter]",
         "<srcdir>/index.rst:54: WARNING: Filter '1' not valid. Error: Filter did not evaluate to a boolean, instead <class 'int'>: 1. [needs.filter]",
         "<srcdir>/index.rst:57: WARNING: Filter 'yyy' not valid. Error: name 'yyy' is not defined. [needs.filter]",
