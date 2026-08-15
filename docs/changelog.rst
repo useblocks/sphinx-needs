@@ -97,10 +97,8 @@ Improvements
   The stored environment version is bumped for the new directive option, so the first build
   after upgrading re-reads every document.
 
-.. set the :pr: below to this change's own PR number before release
-
 - 👌 :ref:`needs_string_links` is validated when it is loaded, and no longer fails the build
-  (:pr:`0000`)
+  (:pr:`1767`)
 
   A configuration entry used to be looked at only while a need was being rendered, and then
   indexed into blindly. A missing key, a regular expression that does not compile, a template
