@@ -1,0 +1,47 @@
+id: baseline-defaults
+title: Two needs and one link, with no options at all
+purpose: |
+  The fence. A diagram that asks for nothing must draw without a single warning on any engine, and its source is the baseline every other case is a deviation from. If this case ever gains a degradation entry, some default has started warning.
+needs:
+- id: REQ_1
+  type: req
+  title: Requirement one
+  links:
+    links:
+    - REQ_2
+- id: REQ_2
+  type: req
+  title: Requirement two
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**Requirement one**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]]
+      node "<size:12>Requirement</size>\n**Requirement two**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]]
+
+      ' Connection definition
+
+      REQ_1 --> REQ_2
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "REQ_1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement one</b><br align="left"/><font point-size="10">REQ_1</font><br align="left"/>>, tooltip="REQ_1", href="<NODE_URL:REQ_1>", target="_top", shape="box3d"];
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement two</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d"];
+
+      // edge definitions
+      "REQ_1" -> "REQ_2" [arrowhead=vee];
+      }

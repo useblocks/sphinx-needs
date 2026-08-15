@@ -1,0 +1,30 @@
+{
+  "corpus_version": 1,
+  "readme": "e43c285a8efc7dcc48d4b3f216abdb79791e26c210ccc9ca0866464ca3ea9466",
+  "cases": {
+    "arrow-unsupported.yaml": "0ecae35149b3e646be79dd904fb2a998db8a369152781e602fd4884aac172b03",
+    "baseline-defaults.yaml": "c6ff6099b53278f8f2809c2f23349ee48e3d361fc1d8670ffd2359c60482c9cc",
+    "color-normalisation.yaml": "c4766708438e76fef451e75d80cb89f401168dc99356f9c3be6412eb5328d303",
+    "direction-down.yaml": "b93d818f30b3148f1211e7de388210f68d81c5b6a5ad1d6710b8536b4613d883",
+    "direction-left.yaml": "e3adda3c1fc77c27836281fdd9a3cfad4e6bcc074cc361273f9391d5e5d0b054",
+    "direction-right.yaml": "3416e691613f858b04363aecbde050c74dc10e8a75740d4af859daaa2b7d6a70",
+    "direction-up.yaml": "5b3356aaab27dcddc74a867d70f78399549033f118f2bd3a0107435f9efdd378",
+    "edge-empty-label.yaml": "89fecd5e427b47bd18b7276a8d08fe92559fb0670f463903a0312ecea2185141",
+    "legend-both.yaml": "757828b43c4ce7d003f3262aedc1b50e2498a216c0122d311a99a34dce9d1c49",
+    "legend-links.yaml": "f73964f253cf99fae5360cb187d29311be96b514e731c3561b7621326f23c333",
+    "legend-types.yaml": "4fa2350e0ce8d1ac48ad4054a8647a5b7316d20da36e63c8f8e06c791d059d8d",
+    "link-labels-incoming.yaml": "26599499d8b9029cd68fd61d1d225a423df6e10f3645168a956778dc6de908ea",
+    "link-labels-none.yaml": "84c9f3549698c56e2e86da9e9f021b9aa41c5b0c4bc379e7d18ecbd8b5f51986",
+    "link-labels-outgoing.yaml": "2db5ab9b116e673bad985fd192a9fbaa684a5ca75cdc0b6cc9716a6d670e77a1",
+    "link-labels-type.yaml": "c053eb59e6283462612be593441817308c3a51e7dc69130adffd25bb06ee62a8",
+    "link-line-arrow-color.yaml": "63eba2a2bfac7777fac49c8677412db73c4ccd90191870ff2f4f150f958d5554",
+    "link-part-styling.yaml": "9685a369e7342a68ae72b556debd0e0d3685e5842bfdb9ea6ee21cda1c4082d0",
+    "node-id-injectivity.yaml": "be7e761017c223de6c21c9d3682c6894853012f2cd774d392cfb8b07380e0172",
+    "option-conflict-direction.yaml": "7534bb58e3c45c2f5001bdb5fc018afc0f1a8b7a26f4be86e2b8c00bc098ca30",
+    "percent-neutralisation.yaml": "476c5e9f4558ab5765a20db11ece0d3dd6b25bc63adb2d78189dc567fb4179b1",
+    "shape-enum-sample.yaml": "e644ac7f6f833e33ec91d41313cbc6ff2397bd6be7788dd3f77568c8afbcce69",
+    "style-class-unknown.yaml": "87fc5e22c532f585125d032960d1e7994e792a9cc2ef1c7afd35ac1a198d6757",
+    "styles-cascade.yaml": "722a2541a3b28d770870442ece1d62ccc45709c12e57c3460f9f1c9c1e9420a5",
+    "styles-highlight-parity.yaml": "8f81e31f403371594b1c53d0cdc286522ee0f3ad6758450399559e1be364aa1a"
+  }
+}

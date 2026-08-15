@@ -1,0 +1,52 @@
+id: color-normalisation
+title: A style class colour agrees whether or not it is written with a hash
+purpose: |
+  Colours are written both ways in the wild, and each engine wants its own prefix. Two classes differing only in the leading `#` must therefore resolve to the same colour; the bug this pins produced `##RRGGBB` on one engine and `line:#RRGGBB` on the other.
+needs:
+- id: REQ_1
+  type: req
+  title: Hashed
+  status: hashed
+- id: REQ_2
+  type: req
+  title: Bare
+  status: bare
+config:
+  styles:
+    hashed:
+      border: '#FF0000'
+    bare:
+      border: FF0000
+options:
+  styles: '[status == ''hashed'']:hashed, [status == ''bare'']:bare'
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**Hashed**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]] #line:FF0000
+      node "<size:12>Requirement</size>\n**Bare**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]] #line:FF0000
+
+      ' Connection definition
+
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "REQ_1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Hashed</b><br align="left"/><font point-size="10">REQ_1</font><br align="left"/>>, tooltip="REQ_1", href="<NODE_URL:REQ_1>", target="_top", shape="box3d", color="#FF0000"];
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Bare</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d", color="#FF0000"];
+
+      // edge definitions
+      }

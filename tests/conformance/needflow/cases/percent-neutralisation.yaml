@@ -1,0 +1,47 @@
+id: percent-neutralisation
+title: Text that is significant to a diagram language stays literal
+purpose: |
+  A need title is user text, not diagram syntax. `%%` opens a comment in mermaid, and quotes, braces and angle brackets are significant to one engine or another. Whatever each emitter does about that -- escaping, quoting, or nothing -- it must not change what the reader sees, and it must never truncate the label.
+needs:
+- id: REQ_1
+  type: req
+  title: 100%% done "quoted" <angled> {braced}
+  links:
+    links:
+    - REQ_2
+- id: REQ_2
+  type: req
+  title: A -> B; end
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**100%% done**\n**"quoted"**\n**<angled>**\n**{braced}**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]]
+      node "<size:12>Requirement</size>\n**A -> B; end**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]]
+
+      ' Connection definition
+
+      REQ_1 --> REQ_2
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "REQ_1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>100%% done<br align="left"/>&quot;quoted&quot;<br align="left"/>&lt;angled&gt;<br align="left"/>{braced}</b><br align="left"/><font point-size="10">REQ_1</font><br align="left"/>>, tooltip="REQ_1", href="<NODE_URL:REQ_1>", target="_top", shape="box3d"];
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>A -&gt; B; end</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d"];
+
+      // edge definitions
+      "REQ_1" -> "REQ_2" [arrowhead=vee];
+      }
