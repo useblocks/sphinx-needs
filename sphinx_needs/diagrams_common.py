@@ -241,10 +241,18 @@ def calculate_link(
 
 
 def create_legend(need_types: list[NeedType]) -> str:
+    """Create the PlantUML legend for the given need types.
+
+    :param need_types: The need types to document, in the order they are shown.
+    :return: The PlantUML ``legend`` block.
+    """
+
     def create_row(need_type: NeedType) -> str:
-        return "\n|<back:{color}> {color} </back>| {name} |".format(
-            color=need_type["color"], name=need_type["title"]
-        )
+        # 'color' is optional, and a type without one keeps its row,
+        # with an empty swatch cell, rather than being dropped from the legend
+        color = need_type.get("color") or ""
+        swatch = f"<back:{color}> {color} </back>" if color else " "
+        return f"\n|{swatch}| {need_type['title']} |"
 
     rows = map(create_row, need_types)
     table = "|= Color |= Type |" + "".join(rows)

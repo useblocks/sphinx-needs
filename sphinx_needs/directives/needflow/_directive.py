@@ -100,7 +100,7 @@ class NeedflowDirective(FilterBase):
                 elif config_name:
                     log_warning(
                         LOGGER,
-                        f"config key {config_name!r} not in 'need_flows_configs'",
+                        f"config key {config_name!r} not in 'needs_flow_configs'",
                         "needflow",
                         location=self.get_location(),
                     )
@@ -157,7 +157,9 @@ class NeedflowDirective(FilterBase):
             "debug": "debug" in self.options,
             "caption": self.arguments[0] if self.arguments else None,
             "classes": self.options.get("class", []),
-            "alt": self.options.get("alt", ""),
+            # None means the option was not given, so that an engine can tell it apart
+            # from an explicitly empty value, i.e. a deliberately undescribed diagram
+            "alt": self.options.get("alt"),
             "max_items": self.options.get("max_items"),
             **self.collect_filter_attributes(),
         }

@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 5
+ENV_DATA_VERSION: Final = 6
 """Version of the data stored in the environment.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
@@ -664,8 +664,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     classes: list[str]
     """List of CSS classes."""
 
-    alt: str
-    """Alternative text for the diagram in HTML output."""
+    alt: str | None
+    """Alternative text for the diagram in HTML output,
+    ``None`` if the option was not given."""
 
     root_id: str | None
     """need ID to use as a root node."""

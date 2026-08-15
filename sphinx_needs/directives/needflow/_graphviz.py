@@ -34,7 +34,12 @@ from sphinx_needs.utils import remove_node_from_tree
 from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
 
-from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
+from ._shared import (
+    create_filter_paragraph,
+    filter_by_tree,
+    get_root_needs,
+    resolve_color,
+)
 
 try:
     from sphinx.writers.html5 import HTML5Translator
@@ -93,7 +98,7 @@ def process_needflow_graphviz(
                         link_types=",".join(link_type_names),
                     ),
                     "needflow",
-                    None,
+                    location=node,
                 )
 
         # compute the allowed link types
@@ -309,7 +314,7 @@ def _render_node(
     ):
         params.append(("color", "red"))
     elif node["border_color"]:
-        color = str(
+        color = resolve_color(
             match_variants(
                 node["border_color"],
                 need.filter_context(),
@@ -357,10 +362,12 @@ def _render_subgraph(
         params.append(("fillcolor", _quote(need["type_color"])))
 
     # outline color
-    if node["highlight"] and filter_single_need(need, config, node["highlight"]):
+    if node["highlight"] and filter_single_need(
+        need, config, node["highlight"], needs_view.values()
+    ):
         params.append(("color", "red"))
     elif node["border_color"]:
-        color = str(
+        color = resolve_color(
             match_variants(
                 node["border_color"],
                 need.filter_context(),
@@ -625,8 +632,12 @@ def _create_legend(
 
     for need_type in need_types:
         title = html.escape(need_type["title"])
-        color = _quote(need_type["color"])
-        label += f'\n<TR><TD align="left" bgcolor={color}>{title}</TD></TR>'
+        # 'color' is optional, and a type without one keeps its row,
+        # without a background color, rather than being dropped from the legend
+        if color := need_type.get("color"):
+            label += f'\n<TR><TD align="left" bgcolor={_quote(color)}>{title}</TD></TR>'
+        else:
+            label += f'\n<TR><TD align="left">{title}</TD></TR>'
 
     label += "\n</TABLE>>"
 
@@ -685,7 +696,10 @@ def html_visit_needflow_graphviz(self: HTML5Translator, node: NeedflowGraphiz) -
     if fname is None:
         self.body.append(self.encode(code))
     else:
-        alt = attrributes.get("alt", "needflow graphviz diagram")
+        alt = attrributes["alt"]
+        if alt is None:
+            # the author did not describe the diagram, so give it a generic description
+            alt = "needflow graphviz diagram"
         if "align" in attrributes:
             self.body.append(
                 f'<div align="{attrributes["align"]}" class="align-{attrributes["align"]}">'
