@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 6
+ENV_DATA_VERSION: Final = 7
 """Version of the data stored in the environment.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
@@ -685,6 +685,16 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
 
     max_items: int | None
     """Maximum number of needs to show, ``None`` if the option was not given."""
+
+    direction: Literal["down", "up", "right", "left"] | None
+    """The direction to draw the diagram in,
+    ``None`` if the option was not given, in which case the configuration is consulted."""
+
+    config_direction: Literal["down", "up", "right", "left"] | None
+    """The direction the selected engine configuration sets, if any.
+
+    Detected when the engine configuration is resolved, i.e. while the engine is still
+    known, so that the model can honour it without knowing which engine it is for."""
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):

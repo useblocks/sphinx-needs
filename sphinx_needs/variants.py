@@ -146,3 +146,70 @@ def match_variants(
             )
 
     return variant.final_value
+
+
+def match_variants_all(
+    options: str | None,
+    context: dict[str, Any],
+    variants: dict[str, str],
+    *,
+    location: str | tuple[str | None, int | None] | nodes.Node | None = None,
+) -> list[str | int | float | bool]:
+    """Evaluate an options list and return *every* matching variant, in order.
+
+    This is :func:`match_variants` without the early return: where that function picks
+    a single value, this one collects them all, which is what a cascade needs -- every
+    matching rule contributes, and a later one refines what an earlier one said.
+
+    The unconditional final value, if there is one, is written last and so is returned
+    last, keeping "later in the list wins" true for it as well.
+
+    :param options: A string (delimited by , or ;)
+    :param context: Mapping of variables to values used in the expressions
+    :param variants: mapping of variables to expressions
+    :param location: The source location of the option value,
+         which can be a string (the docname or docname:lineno), a tuple of (docname, lineno).
+         Used for logging warnings.
+    :return: The value of every matching item, in the order they were written.
+    """
+    if not isinstance(options, (str | None)):
+        log_warning(
+            LOGGER,
+            f"options must be a string or None: {options!r}",
+            "variant",
+            location=location,
+        )
+        return []
+
+    if not options:
+        return []
+
+    try:
+        variant = VariantFunctionParsed.from_string(options, allow_semicolon=True)
+    except VariantParsingException as e:
+        log_warning(
+            LOGGER,
+            f"Error parsing variant options {options!r}: {e}",
+            "variant",
+            location=location,
+        )
+        return []
+
+    matched: list[str | int | float | bool] = []
+    for expr, _, value in variant.expressions:
+        expr = variants.get(expr, expr)
+        try:
+            if bool(eval(expr, context.copy())):
+                matched.append(value)
+        except Exception as e:
+            log_warning(
+                LOGGER,
+                f"Error in variant expression {expr!r}: {e}",
+                "variant",
+                location=location,
+            )
+
+    if variant.final_value is not None:
+        matched.append(variant.final_value)
+
+    return matched

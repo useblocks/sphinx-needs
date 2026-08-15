@@ -16,6 +16,11 @@ from sphinx_needs.data import (
     SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time
+from sphinx_needs.directives.needflow._options import (
+    direction_option,
+    graphviz_config_direction,
+    plantuml_config_direction,
+)
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
@@ -54,6 +59,8 @@ class NeedflowDirective(FilterBase):
         "link_types": directives.unchanged_required,
         # debug; render the graph code in the document
         "debug": directives.flag,
+        # portable formatting vocabulary
+        "direction": direction_option,
         # formatting
         "highlight": directives.unchanged_required,
         "border_color": directives.unchanged_required,
@@ -137,6 +144,14 @@ class NeedflowDirective(FilterBase):
                             location=self.get_location(),
                         )
 
+        # the engine is still known here, so the direction a config blob sets is
+        # detected now and the model is spared having to know one engine from another
+        config_direction = (
+            plantuml_config_direction(config)
+            if engine == "plantuml"
+            else graphviz_config_direction(graphviz_style)
+        )
+
         add_doc(self.env, self.env.docname)
 
         attributes: NeedsFlowType = {
@@ -164,6 +179,10 @@ class NeedflowDirective(FilterBase):
             # from an explicitly empty value, i.e. a deliberately undescribed diagram
             "alt": self.options.get("alt"),
             "max_items": self.options.get("max_items"),
+            # None means the option was not given, so that the configuration is only
+            # consulted when the author did not say (the `max_items` precedent)
+            "direction": self.options.get("direction"),
+            "config_direction": config_direction,
             **self.collect_filter_attributes(),
         }
 

@@ -32,6 +32,7 @@ from ._model import (
     build_graph,
     resolve_link_types,
 )
+from ._options import graphviz_rankdir
 from ._shared import create_filter_paragraph
 
 try:
@@ -115,6 +116,13 @@ def process_needflow_graphviz(
         # global settings
         for key, value in attributes["graphviz_style"].get("root", {}).items():
             content += f"{key}={_quote(str(value))};\n"
+
+        # the config blob is a preamble of defaults, so the direction is written after
+        # it and wins; nothing is written for a diagram already drawn that way
+        if (
+            rankdir := graphviz_rankdir(graph.direction, graph.config_direction)
+        ) is not None:
+            content += f"rankdir={_quote(rankdir)};\n"
         for etype in ("graph", "node", "edge"):
             if etype in attributes["graphviz_style"]:
                 content += f"{etype} [\n"

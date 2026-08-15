@@ -49,6 +49,8 @@ from sphinx_needs.needs_schema import FieldsSchema, LinkSchema
 from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
 
+from ._options import FlowDirection, resolve_direction
+
 LOGGER = get_logger(__name__)
 
 #: The location accepted by the warning machinery of the values resolved here.
@@ -255,6 +257,17 @@ class NeedflowGraph:
     show_link_names: bool
     """Whether edges are to be labelled with the link type."""
 
+    direction: FlowDirection
+    """The direction the diagram is drawn in, as an intent rather than an engine token.
+
+    Each engine spells this in its own syntax, and degrades it if it must."""
+
+    config_direction: FlowDirection | None
+    """The direction the engine configuration already sets, if any.
+
+    An engine needs this to know whether it has to restate a direction in order to
+    override the configuration blob it emits first."""
+
 
 def resolve_link_types(
     attributes: NeedsFlowType,
@@ -391,6 +404,13 @@ def build_graph(
         edges=collect_edges(found_needs, allowed_link_types, drawn),
         # the configuration can only ever turn link names on; it is kept as is
         show_link_names=attributes["show_link_names"] or needs_config.flow_show_links,
+        direction=resolve_direction(
+            attributes["direction"],
+            attributes["config_direction"],
+            needs_config.flow_direction,
+            location=location,
+        ),
+        config_direction=attributes["config_direction"],
     )
 
 

@@ -708,3 +708,197 @@ def test_get_entity_name_unmapped_id_falls_back_with_warning():
     finally:
         module_logger.removeHandler(handler)
         module_logger.setLevel(old_level)
+
+
+DIRECTIONS = """\
+Directions
+==========
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :debug:
+
+.. needflow::
+   :direction: right
+   :debug:
+
+.. needflow::
+   :direction: up
+   :debug:
+
+.. needflow::
+   :direction: LR
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), DIRECTIONS)],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), DIRECTIONS)],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_direction_option(test_app):
+    """``:direction:`` expresses a layout intent that each engine spells its own way.
+
+    The default is unchanged and emits nothing, so existing diagrams keep their bytes.
+    PlantUML has no bottom-up primitive (verified: ``bottom to top direction`` is a
+    syntax error), so ``up`` degrades to its axis mate ``down`` with a single warning,
+    while graphviz renders it natively as ``rankdir=BT``.
+    """
+    app = test_app
+    app.build()
+
+    outdir = Path(app.outdir)
+    default = _debug_source(outdir, "index.html", 0)
+    right = _debug_source(outdir, "index.html", 1)
+    up = _debug_source(outdir, "index.html", 2)
+    alias = _debug_source(outdir, "index.html", 3)
+
+    warnings = strip_colors(app._warning.getvalue())
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert "direction" not in default
+        assert "left to right direction" in right
+        # degraded to its axis mate, which is how PlantUML already draws, so the
+        # diagram needs no statement at all -- only the one warning tells the author
+        assert "direction" not in up
+        assert warnings.count("cannot draw 'up'") == 1
+        assert "left to right direction" in alias
+    else:
+        assert "rankdir" not in default
+        assert 'rankdir="LR"' in right
+        assert 'rankdir="BT"' in up
+        assert 'rankdir="LR"' in alias
+        assert warnings.strip() == ""
+
+
+DIRECTION_FROM_CONFIG = """\
+Direction from an engine config
+===============================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :config: lefttoright
+   :debug:
+
+.. needflow::
+   :config: lefttoright
+   :direction: down
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), DIRECTION_FROM_CONFIG),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        }
+    ],
+    indirect=True,
+)
+def test_explicit_direction_beats_config_direction(test_app):
+    """An explicit ``:direction:`` overrides a direction carried by an engine config.
+
+    The engine config blob is a preamble of defaults, and a neutral option is a
+    per-element value, so the option is emitted after the blob and wins. Because the
+    two disagree here, the build says so rather than silently picking one.
+    """
+    app = test_app
+    app.build()
+
+    outdir = Path(app.outdir)
+    from_config = _debug_source(outdir, "index.html", 0)
+    overridden = _debug_source(outdir, "index.html", 1)
+
+    # the config alone still works, and says nothing about a conflict
+    assert "left to right direction" in from_config
+
+    # the explicit option wins: its statement comes after the config blob
+    assert overridden.index("left to right direction") < overridden.index(
+        "top to bottom direction"
+    )
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert warnings.count("disagrees with the direction") == 1
+
+
+DIRECTION_CONFIG_DEFAULT = """\
+Project default direction
+=========================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :debug:
+
+.. needflow::
+   :direction: down
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), DIRECTION_CONFIG_DEFAULT),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+                "needs_flow_direction": "right",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_direction_config_is_consulted_only_when_unset(test_app):
+    """``needs_flow_direction`` is the project default, and an option overrides it.
+
+    This is the ``max_items`` resolution rule: only an unset option consults the
+    configuration, so a directive can always opt back out of a project default.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    outdir = Path(app.outdir)
+    assert 'rankdir="LR"' in _debug_source(outdir, "index.html", 0)
+    # the option opts back out to the default, which Graphviz already draws, so no
+    # statement is needed -- the project default never reaches the diagram source
+    assert "rankdir" not in _debug_source(outdir, "index.html", 1)
