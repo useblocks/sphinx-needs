@@ -41,6 +41,7 @@ Improvements
   and its documented limits.
 
 - ✨ :ref:`needs_card_layouts` elements gain an object form
+  (:pr:`1766`)
 
   Every element string is now shorthand for an object with a ``type`` key —
   ``"image:diagram"`` is spelled ``{"type": "image", "field": "diagram"}`` — and the two
