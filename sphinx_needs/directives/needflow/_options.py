@@ -25,7 +25,7 @@ build stays silent.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from typing import Any, Literal, get_args
 
@@ -436,6 +436,61 @@ SHAPE_ALIASES: Mapping[str, str] = {
     "usecase": "ellipse",
 }
 
+#: How each neutral shape is drawn in PlantUML.
+#:
+#: PlantUML's nestable elements are a short list, so several shapes have no exact
+#: counterpart and take the nearest one silently (tier 1); ``diamond`` has no near form
+#: at all and is warned about (tier 2, see :func:`plantuml_shape`).
+PLANTUML_SHAPES: Mapping[str, str] = {
+    "rectangle": "rectangle",
+    "rounded": "card",
+    "circle": "usecase",
+    "ellipse": "usecase",
+    "hexagon": "hexagon",
+    "cylinder": "database",
+    "document": "artifact",
+    "folder": "folder",
+    "box3d": "node",
+}
+
+#: How each neutral shape is drawn in Graphviz, which has one for every member.
+#:
+#: ``rounded`` is a box with a style rather than a shape of its own, which the emitter
+#: handles; the shape recorded here is the box.
+GRAPHVIZ_SHAPES: Mapping[str, str] = {
+    "rectangle": "rectangle",
+    "rounded": "box",
+    "circle": "circle",
+    "ellipse": "ellipse",
+    "diamond": "diamond",
+    "hexagon": "hexagon",
+    "cylinder": "cylinder",
+    "document": "note",
+    "folder": "folder",
+    "box3d": "box3d",
+}
+
+
+def plantuml_shape(shape: str, *, location: LocationType) -> str:
+    """Translate a neutral shape into a PlantUML element keyword.
+
+    :param shape: The neutral shape name.
+    :param location: Where to report a shape PlantUML cannot draw.
+    :return: The element keyword to emit.
+    """
+    if (keyword := PLANTUML_SHAPES.get(shape)) is not None:
+        return keyword
+    log_warning(
+        LOGGER,
+        f"the plantuml engine has no {shape!r} shape, "
+        "so a rectangle is drawn instead",
+        "needflow",
+        location=location,
+        once=True,
+    )
+    return "rectangle"
+
+
 #: The closed set of properties a style class may set.
 _STYLE_PROPERTIES = frozenset(
     ("fill", "border", "border_width", "border_style", "text_color", "shape")
@@ -566,6 +621,25 @@ def resolve_shape(value: Any, *, class_name: str | None = None) -> str | None:
     return None
 
 
+def _rule_class_names(values: Iterable[Any]) -> list[str]:
+    """Split the values a rule list matched into individual class names.
+
+    The variant syntax gathers everything after the last filter into a single trailing
+    value, so ``[open]:a, b, c`` hands back ``"b, c"`` as one string.  A class name can
+    never contain a comma, so splitting on one recovers the classes the author wrote
+    and keeps them in the order they wrote them -- which is the order the cascade needs.
+
+    :param values: The values matched, in declaration order.
+    :return: The class names, in declaration order, without blanks.
+    """
+    return [
+        name
+        for value in values
+        for raw in str(value).split(",")
+        if (name := raw.strip())
+    ]
+
+
 def resolve_styles(
     rules: str,
     compiled: Mapping[str, StyleProps],
@@ -591,10 +665,9 @@ def resolve_styles(
     """
     props = StyleProps()
     highlighted = False
-    for value in match_variants_all(rules, context, dict(variants), location=location):
-        name = str(value).strip()
-        if not name:
-            continue
+    for name in _rule_class_names(
+        match_variants_all(rules, context, dict(variants), location=location)
+    ):
         if name in BUILTIN_STYLE_CLASSES:
             highlighted = True
             continue

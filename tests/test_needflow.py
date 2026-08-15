@@ -49,6 +49,24 @@ _LEGEND_XPATH = (
 )
 
 
+def _warnings_except(app, *allowed: str) -> list[str]:
+    """Return a build's warnings, minus the ones a test knowingly provokes.
+
+    A test that deliberately exercises a deprecated spelling still has to prove that
+    nothing *else* went wrong, so the notice it expects is filtered out rather than
+    the whole assertion being dropped.
+
+    :param app: The built Sphinx application.
+    :param allowed: Substrings identifying the warnings to ignore.
+    :return: Every other warning line.
+    """
+    return [
+        line
+        for line in strip_colors(app._warning.getvalue()).strip().splitlines()
+        if not any(text in line for text in allowed)
+    ]
+
+
 def _debug_source(outdir: Path, file: str, index: int = 0) -> str:
     """Return the diagram source emitted by the needflow ``:debug:`` option.
 
@@ -428,12 +446,15 @@ def test_border_color_handling(test_app):
 
     The project deliberately holds a need with a child, so that both graphviz node
     paths -- the plain node and the subgraph -- are covered and must agree.
+
+    ``:border_color:`` is deprecated in favour of ``:styles:``, but is still honoured
+    and so still has to normalise its value; the deprecation notice is therefore the
+    only warning the build is allowed to produce.
     """
     app = test_app
     app.build()
 
-    warnings = strip_colors(app._warning.getvalue()).strip()
-    assert warnings == ""
+    assert _warnings_except(app, "'border_color' option is deprecated") == []
 
     outdir = Path(app.outdir)
     bare = _debug_source(outdir, "index.html", 0)
@@ -504,12 +525,14 @@ def test_highlight_can_consult_other_needs(test_app):
     evaluate the filter without the needs list, so an expression referencing
     ``needs`` behaved differently -- here it would fail the whole build -- for a
     parent need than for a leaf one.
+
+    ``:highlight:`` is deprecated in favour of the built-in ``highlight`` style class,
+    but is still honoured, so the deprecation notice is the only warning allowed.
     """
     app = test_app
     app.build()
 
-    warnings = strip_colors(app._warning.getvalue()).strip()
-    assert warnings == ""
+    assert _warnings_except(app, "'highlight' option is deprecated") == []
 
     debug = _debug_source(Path(app.outdir), "index.html")
 
@@ -1353,3 +1376,257 @@ def test_show_legend_is_deprecated_and_keeps_drawing_in_the_diagram(test_app):
 
     tree = html_parser.parse(Path(app.outdir) / "index.html")
     assert tree.xpath(_LEGEND_XPATH) == []
+
+
+#: Style classes exercising every property of the closed set.
+FLOW_STYLES = {
+    "danger": {
+        "fill": "#FFDDDD",
+        "border": "AA0000",
+        "border_width": 3,
+        "border_style": "dashed",
+        "text_color": "#330000",
+    },
+    "shaped": {"shape": "hexagon"},
+    "later": {"border": "00FF00"},
+}
+
+STYLES = """\
+Styles
+======
+
+.. spec:: A
+   :id: AAAAA
+   :status: open
+
+.. spec:: B
+   :id: BBBBB
+
+.. needflow::
+   :styles: [status == 'open']:danger
+   :debug:
+
+.. needflow::
+   :styles: shaped
+   :debug:
+
+.. needflow::
+   :styles: danger, later
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), STYLES)],
+            "confoverrides": {
+                "needs_flow_engine": "plantuml",
+                "needs_flow_styles": FLOW_STYLES,
+            },
+        },
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), STYLES)],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+                "needs_flow_styles": FLOW_STYLES,
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_styles_option(test_app):
+    """``:styles:`` names configured classes and says which needs they apply to.
+
+    The predicate half is the variant syntax the project already uses, so no third
+    mini language is introduced, and the value half is a class name rather than
+    inline properties, so a rule means the same thing on every engine. Declarations
+    cascade like CSS ones: later wins, per property.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    outdir = Path(app.outdir)
+    filtered = _debug_source(outdir, "index.html", 0)
+    shaped = _debug_source(outdir, "index.html", 1)
+    cascaded = _debug_source(outdir, "index.html", 2)
+
+    if app.config.needs_flow_engine == "plantuml":
+        # only the need the filter matched is styled
+        assert filtered.count("line:AA0000") == 1
+        assert filtered.count("FFDDDD") == 1
+        assert "line.dashed" in filtered
+        # a wide border has no plantuml counterpart, so it degrades to a bold line
+        assert "line.bold" in filtered
+        assert "text:330000" in filtered
+        assert "hexagon " in shaped
+        # the later rule wins on the property it sets, and only on that one
+        assert "line:00FF00" in cascaded
+        assert "line:AA0000" not in cascaded
+        assert "FFDDDD" in cascaded
+    else:
+        assert filtered.count('color="#AA0000"') == 1
+        assert filtered.count('fillcolor="#FFDDDD"') == 1
+        assert "dashed" in filtered
+        assert "penwidth=3" in filtered
+        assert 'fontcolor="#330000"' in filtered
+        assert 'shape="hexagon"' in shaped
+        assert 'color="#00FF00"' in cascaded
+        assert 'color="#AA0000"' not in cascaded
+        assert 'fillcolor="#FFDDDD"' in cascaded
+
+
+UNKNOWN_STYLE_CLASS = """\
+Unknown style class
+===================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :styles: nonexistent
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), UNKNOWN_STYLE_CLASS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "plantuml",
+                "needs_flow_styles": FLOW_STYLES,
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_unknown_style_class_warns_and_draws_anyway(test_app):
+    """Naming a class that is not configured is an authoring mistake, not a build stop.
+
+    A missing style is reported against the directive that asked for it, and the
+    diagram is drawn without it -- a plainer diagram beats a failed build.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "style class 'nonexistent' is not defined in 'needs_flow_styles'" in warnings
+    assert "AAAAA" in _get_svg(
+        app.config, Path(app.outdir), "index.html", "needflow-index-0"
+    )
+
+
+NON_DICT_STYLES = """\
+Malformed style config
+======================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :styles: broken
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), NON_DICT_STYLES),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "plantuml",
+                "needs_flow_styles": {"broken": "not a mapping"},
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_malformed_style_class_warns_and_draws_anyway(test_app):
+    """A style class that is not a mapping of properties must not stop the build."""
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "must be a mapping of properties" in warnings
+    assert "AAAAA" in _get_svg(
+        app.config, Path(app.outdir), "index.html", "needflow-index-0"
+    )
+
+
+HIGHLIGHT_SUGAR = """\
+Highlight as a style class
+==========================
+
+.. spec:: A
+   :id: AAAAA
+   :status: open
+
+.. needflow::
+   :highlight: status == 'open'
+   :debug:
+
+.. needflow::
+   :styles: [status == 'open']:highlight
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), HIGHLIGHT_SUGAR)],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), HIGHLIGHT_SUGAR)],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_highlight_is_sugar_for_the_builtin_style_class(test_app):
+    """``:highlight:`` is the built-in ``highlight`` class, and draws exactly as before.
+
+    The class is rendered in each engine's legacy red-outline form rather than through
+    the property machinery, so a project migrating from the option to the class gets a
+    byte-identical diagram.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "'highlight' option is deprecated" in warnings
+
+    outdir = Path(app.outdir)
+    legacy = _debug_source(outdir, "index.html", 0)
+    as_class = _debug_source(outdir, "index.html", 1)
+
+    assert legacy == as_class
+    if app.config.needs_flow_engine == "plantuml":
+        assert "line:FF0000" in legacy
+    else:
+        assert "color=red" in legacy

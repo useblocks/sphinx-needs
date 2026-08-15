@@ -29,10 +29,11 @@ from sphinx_needs.utils import remove_node_from_tree
 from ._model import (
     GraphEdge,
     GraphNode,
+    NodePresentation,
     build_graph,
     resolve_link_types,
 )
-from ._options import LinkLabels, graphviz_rankdir
+from ._options import GRAPHVIZ_SHAPES, LinkLabels, graphviz_rankdir
 from ._shared import create_filter_paragraph, create_legend_nodes
 
 try:
@@ -241,7 +242,9 @@ def _render_node(
         params.extend([("href", _quote(_link)), ("target", _quote("_top"))])
 
     # shape
-    if need["is_need"]:
+    if presentation.styles.shape:
+        params.append(("shape", _quote(GRAPHVIZ_SHAPES[presentation.styles.shape])))
+    elif need["is_need"]:
         if presentation.type_style not in _plantuml_shapes:
             log_warning(
                 LOGGER,
@@ -255,18 +258,14 @@ def _render_node(
     else:
         params.append(("shape", "rectangle"))
 
-    # fill color
-    if presentation.type_color:
-        style = node.attributes["graphviz_style"].get("node", {}).get("style", "")
-        new_style = style + ",filled" if style else "filled"
-        params.append(("style", _quote(new_style)))
-        params.append(("fillcolor", _quote(presentation.type_color)))
-
-    # outline color
-    if presentation.highlight:
-        params.append(("color", "red"))
-    elif presentation.border_color:
-        params.append(("color", _quote("#" + presentation.border_color)))
+    params.extend(
+        _presentation_params(
+            presentation,
+            base_style=node.attributes["graphviz_style"].get("node", {}).get(
+                "style", ""
+            ),
+        )
+    )
 
     id = _quote(need["id_complete"])
     param_str = ", ".join(f"{key}={value}" for key, value in params)
@@ -302,21 +301,14 @@ def _render_subgraph(
         params.extend([("href", _quote(_link)), ("target", _quote("_top"))])
 
     # shape
-    if need["is_need"]:
+    if presentation.styles.shape:
+        params.append(("shape", _quote(GRAPHVIZ_SHAPES[presentation.styles.shape])))
+    elif need["is_need"]:
         params.append(("shape", _quote(presentation.type_style)))
     else:
         params.append(("shape", "rectangle"))
 
-    # fill color
-    if presentation.type_color:
-        params.append(("style", "filled"))
-        params.append(("fillcolor", _quote(presentation.type_color)))
-
-    # outline color
-    if presentation.highlight:
-        params.append(("color", "red"))
-    elif presentation.border_color:
-        params.append(("color", _quote("#" + presentation.border_color)))
+    params.extend(_presentation_params(presentation, base_style=""))
 
     # we need to create an invisible node to allow links to the subgraph
     id = _quote(need["id_complete"])
@@ -344,6 +336,64 @@ def _render_subgraph(
             )
 
     return f"subgraph {cluster_id} {{\n{param_str}\n\n  {ghost_node}\n{children}\n}};\n"
+
+
+def _presentation_params(
+    presentation: NodePresentation, *, base_style: str
+) -> list[tuple[str, str]]:
+    """Render the fill, outline and text of a node as graphviz attributes.
+
+    Both the plain node path and the subgraph path go through here, so that the two
+    cannot quietly grow apart again the way they had before.  Only the shape is left
+    to the callers, which still differ in whether they translate it.
+
+    A style rule wins over the configured need type, and a highlight wins over both --
+    unless a later rule set an outline of its own, which the model has already resolved.
+
+    :param presentation: The resolved presentation of the node.
+    :param base_style: The diagram-wide graphviz ``node`` style to keep alongside
+        ``filled``, empty if there is none to keep.
+    :return: The attributes to add, in emission order.
+    """
+    styles = presentation.styles
+    params: list[tuple[str, str]] = []
+
+    # a configured type color is used verbatim, since it may be a color *name*; a style
+    # rule's color has been normalised to bare hex, so it gets the "#" back here
+    fill: str | None = None
+    if styles.fill:
+        fill = "#" + styles.fill
+    elif presentation.type_color:
+        fill = presentation.type_color
+
+    style_entries: list[str] = []
+    if fill:
+        if base_style:
+            style_entries.append(base_style)
+        style_entries.append("filled")
+    if styles.shape == "rounded":
+        # graphviz draws a rounded box as a box with a style, not as a shape of its own
+        style_entries.append("rounded")
+    if styles.border_style in ("dashed", "dotted"):
+        style_entries.append(styles.border_style)
+    if style_entries:
+        params.append(("style", _quote(",".join(style_entries))))
+    if fill:
+        params.append(("fillcolor", _quote(fill)))
+
+    if presentation.highlight:
+        params.append(("color", "red"))
+    elif styles.border:
+        params.append(("color", _quote("#" + styles.border)))
+    elif presentation.border_color:
+        params.append(("color", _quote("#" + presentation.border_color)))
+
+    if styles.border_width is not None:
+        params.append(("penwidth", str(styles.border_width)))
+    if styles.text_color:
+        params.append(("fontcolor", _quote("#" + styles.text_color)))
+
+    return params
 
 
 def _label(

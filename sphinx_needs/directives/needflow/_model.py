@@ -27,7 +27,7 @@ either of them draws -- and are called out at the point where they happen:
 
 from __future__ import annotations
 
-from collections.abc import Callable, Container, Iterable
+from collections.abc import Callable, Container, Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -51,9 +51,12 @@ from ._options import (
     FlowDirection,
     LegendPart,
     LinkLabels,
+    StyleProps,
+    compile_style_classes,
     resolve_direction,
     resolve_legend,
     resolve_link_labels,
+    resolve_styles,
 )
 
 LOGGER = get_logger(__name__)
@@ -178,6 +181,14 @@ class NodePresentation:
 
     ``None`` if the option was not given, resolved to nothing, or if ``highlight``
     applies -- a highlight always takes precedence over a border color.
+    """
+
+    styles: StyleProps = StyleProps()
+    """The properties the ``:styles:`` rules resolved to for this need.
+
+    Every property is ``None`` unless a rule set it, and a property that is set
+    overrides the corresponding configured value -- ``fill`` over the type color,
+    ``shape`` over the type style, ``border`` over ``border_color``.
     """
 
 
@@ -414,12 +425,21 @@ def build_graph(
         found_needs, attributes.get("max_items"), needs_config
     )
 
+    # the style classes are compiled once for the whole diagram rather than once per
+    # need, so a mistake in the configuration is reported against the directive that
+    # asked for the class and not once for every need the rule happened to match
+    style_classes = compile_style_classes(
+        needs_config.flow_styles, location=variant_location
+    )
+
     roots, drawn = build_node_tree(
         found_needs,
         lambda need: resolve_presentation(
             need,
             highlight=attributes["highlight"],
             border_color=attributes["border_color"],
+            styles=attributes["styles"],
+            style_classes=style_classes,
             config=needs_config,
             needs=needs_view.values(),
             location=variant_location,
@@ -475,26 +495,42 @@ def resolve_presentation(
     *,
     highlight: str,
     border_color: str | None,
+    styles: str = "",
+    style_classes: Mapping[str, StyleProps] | None = None,
     config: NeedsSphinxConfig,
     needs: Iterable[NeedItem | NeedPartItem],
     location: LocationType,
 ) -> NodePresentation:
     """Resolve how a single need is to be presented.
 
+    ``:highlight:`` and the built-in ``highlight`` style class are the same thing, and
+    either wins over a border color -- as the option always has.  A style rule that
+    sets a border of its own displaces the highlight, because that is what a cascade
+    means: the last declaration wins.
+
     :param need: The need or need part to be drawn.
     :param highlight: The ``highlight`` filter, empty if the option was not given.
     :param border_color: The ``border_color`` option, in variant syntax.
+    :param styles: The ``styles`` rules, in variant syntax, empty if none were given.
+    :param style_classes: The compiled style classes of the configuration, if any.
     :param config: The Sphinx-Needs configuration.
     :param needs: All needs, for a ``highlight`` filter that consults them.
-    :param location: Where to report ``border_color`` variant problems.
+    :param location: Where to report variant and style problems.
     :return: The resolved presentation.
     """
-    is_highlighted = bool(highlight) and filter_single_need(
-        need, config, highlight, needs
+    resolved_styles, styled_highlight = resolve_styles(
+        styles,
+        style_classes or {},
+        context=need.filter_context(),
+        variants=config.variants,
+        location=location,
+    )
+    is_highlighted = styled_highlight or (
+        bool(highlight) and filter_single_need(need, config, highlight, needs)
     )
     resolved_border = None
-    if not is_highlighted and border_color:
-        # a highlight always wins, so the border color is not even resolved
+    if not is_highlighted and resolved_styles.border is None and border_color:
+        # a highlight or a style rule always wins, so the border color is not resolved
         resolved_border = resolve_color(
             match_variants(
                 border_color,
@@ -509,6 +545,7 @@ def resolve_presentation(
         type_color=need["type_color"] or None,
         highlight=is_highlighted,
         border_color=resolved_border,
+        styles=resolved_styles,
     )
 
 

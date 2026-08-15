@@ -65,6 +65,7 @@ class NeedflowDirective(FilterBase):
         "direction": direction_option,
         "link_labels": link_labels_option,
         "legend": legend_option,
+        "styles": directives.unchanged_required,
         # formatting
         "highlight": directives.unchanged_required,
         "border_color": directives.unchanged_required,
@@ -113,6 +114,17 @@ class NeedflowDirective(FilterBase):
                 "show_legend",
                 "Please use ':legend: types' instead, which draws the same legend on "
                 "every engine, as a table beside the diagram.",
+            )
+        if "highlight" in self.options:
+            self._warn_deprecated(
+                "highlight",
+                "Please use ':styles: [<filter>]:highlight' instead, "
+                "which draws the same outline.",
+            )
+        if "border_color" in self.options:
+            self._warn_deprecated(
+                "border_color",
+                "Please use ':styles:' with a class setting 'border' instead.",
             )
 
         id = self.env.new_serialno("needflow")
@@ -217,6 +229,7 @@ class NeedflowDirective(FilterBase):
             "config_direction": config_direction,
             "link_labels": self.options.get("link_labels"),
             "legend": self.options.get("legend"),
+            "styles": self.options.get("styles", ""),
             **self.collect_filter_attributes(),
         }
 

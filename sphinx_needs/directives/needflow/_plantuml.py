@@ -26,7 +26,7 @@ from ._model import (
     build_graph,
     resolve_link_types,
 )
-from ._options import plantuml_direction
+from ._options import plantuml_direction, plantuml_shape
 from ._shared import create_filter_paragraph, create_legend_nodes
 
 logger = get_logger(__name__)
@@ -115,16 +115,27 @@ def get_need_node_rep_for_plantuml(
 
     node_link = calculate_link(app, need_info, fromdocname)
 
+    styles = presentation.styles
+
     node_colors = []
-    if presentation.type_color:
+    if fill := (styles.fill or presentation.type_color):
         # We set # later, as the user may not have given a color and the node must get highlighted
-        node_colors.append(presentation.type_color.replace("#", ""))
+        node_colors.append(fill.replace("#", ""))
 
     if presentation.highlight:
         node_colors.append("line:FF0000")
-    elif presentation.border_color:
+    elif border := (styles.border or presentation.border_color):
         # the whole color list is prefixed with a single "#" below
-        node_colors.append(f"line:{presentation.border_color}")
+        node_colors.append(f"line:{border}")
+
+    if styles.border_style in ("dashed", "dotted"):
+        node_colors.append(f"line.{styles.border_style}")
+    if styles.border_width is not None and styles.border_width > 1:
+        # plantuml has no border width, so a wide border becomes a bold line: the
+        # nearest form it can draw, and not worth a warning (tier 1)
+        node_colors.append("line.bold")
+    if styles.text_color:
+        node_colors.append(f"text:{styles.text_color}")
 
     # node representation for plantuml
     color_suffix = f" #{';'.join(node_colors)}" if node_colors else ""
@@ -133,7 +144,11 @@ def get_need_node_rep_for_plantuml(
         node_text=node_text,
         link=node_link,
         color_suffix=color_suffix,
-        style=presentation.type_style,
+        style=(
+            plantuml_shape(styles.shape, location=None)
+            if styles.shape
+            else presentation.type_style
+        ),
     )
     return need_node_code
 

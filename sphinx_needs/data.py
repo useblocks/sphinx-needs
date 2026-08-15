@@ -694,6 +694,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     """What to label edges with,
     ``None`` if the option was not given, in which case the configuration is consulted."""
 
+    styles: str
+    """Style class rules, in the variant syntax, empty if the option was not given."""
+
     legend: tuple[Literal["types", "links"], ...] | None
     """The legend sections to show beside the diagram.
 
