@@ -77,11 +77,26 @@ def make_entity_names(ids: Iterable[str]) -> dict[str, str]:
 def get_entity_name(entity_names: Mapping[str, str], id: str) -> str:
     """Look up the PlantUML entity name of a need id.
 
+    Every id that is rendered is mapped up front, so an unmapped id means an emission
+    site was not given the mapping of the diagram it is drawing. That would silently
+    reintroduce the collisions :func:`make_entity_names` exists to prevent, so it is
+    reported; a diagram with plainer names is still better than a failed build, hence
+    the direct conversion is returned rather than raising.
+
     :param entity_names: The mapping created by :func:`make_entity_names`.
     :param id: The complete id of the need.
     :return: The mapped entity name, or a direct conversion for an unmapped id.
     """
-    return entity_names.get(id) or make_entity_name(id)
+    if (name := entity_names.get(id)) is not None:
+        return name
+    log_warning(
+        logger,
+        f"Need id {id!r} was not mapped to a plantuml entity name, "
+        "so it may collide with another need in the diagram",
+        "needflow",
+        location=None,
+    )
+    return make_entity_name(id)
 
 
 def get_need_node_rep_for_plantuml(
