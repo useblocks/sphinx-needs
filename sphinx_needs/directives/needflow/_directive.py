@@ -241,6 +241,14 @@ class NeedflowDirective(FilterBase):
                 "border_color",
                 "Please use ':styles:' with a class setting 'border' instead.",
             )
+        if "scale" in self.options:
+            # deprecated without a like-for-like replacement: it sizes a raster image,
+            # which the graphviz engine has always silently ignored
+            self._warn_deprecated(
+                "scale",
+                "It sizes a raster image, so it has no effect on every engine. "
+                "Please use ':width:' / ':height:' instead.",
+            )
 
         id = self.env.new_serialno("needflow")
         targetid = f"needflow-{self.env.docname}-{id}"

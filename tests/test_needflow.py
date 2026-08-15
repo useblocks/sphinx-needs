@@ -1831,3 +1831,161 @@ def test_invalid_flow_engine_warns_and_falls_back(test_app):
 
     # the fallback engine still drew a diagram, rather than the build ending
     assert "needflow-index-0" in Path(app.outdir, "index.html").read_text()
+
+
+PLANTUML_CLASS_AND_DEBUG = """\
+Class and debug on plantuml
+===========================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :class: my-flow-class
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), PLANTUML_CLASS_AND_DEBUG),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), PLANTUML_CLASS_AND_DEBUG),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_class_and_debug_behave_the_same_on_both_engines(test_app):
+    """``:class:`` and ``:debug:`` must mean the same thing whichever engine draws.
+
+    ``:class:`` was collected by the directive and then dropped by the plantuml
+    engine, so the same option styled a graphviz diagram and did nothing to a plantuml
+    one. ``:debug:`` produced raw HTML on plantuml and a highlighted literal block on
+    graphviz; both now produce a literal block.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    page = Path(app.outdir, "index.html").read_text()
+    assert "my-flow-class" in page
+
+    tree = html_parser.parse(Path(app.outdir) / "index.html")
+    # a literal block, i.e. inside a highlight container, on either engine
+    blocks = tree.xpath(
+        "//div[contains(concat(' ', normalize-space(@class), ' '), "
+        "' highlight ')]//pre"
+    )
+    assert len(blocks) == 1
+    assert "AAAAA" in blocks[0].text_content()
+
+
+DEPRECATED_SCALE = """\
+Deprecated scale
+================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :scale: 50
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), DEPRECATED_SCALE),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        }
+    ],
+    indirect=True,
+)
+def test_scale_is_deprecated_without_a_like_for_like_replacement(test_app):
+    """``:scale:`` sizes a raster image, which graphviz has always silently ignored.
+
+    Deprecating it is honesty rather than loss: the option never did the same thing
+    on both engines, and ``:width:``/``:height:`` are what a portable document should
+    say instead.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "'scale' option is deprecated" in warnings
+    assert ":width:" in warnings
+
+
+DEAD_FLOW_LINK_TYPES = """\
+Dead needs_flow_link_types
+==========================
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), DEAD_FLOW_LINK_TYPES),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "plantuml",
+                "needs_flow_link_types": ["blocks"],
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_flow_link_types_is_deprecated_as_dead(test_app):
+    """``needs_flow_link_types`` is deprecated because it has never had any effect.
+
+    The directive always defaults its ``:link_types:`` option to every link field, so
+    the configuration is unreachable. Making it work now would silently narrow every
+    existing diagram, so it is documented as dead instead -- and the edge below is
+    still drawn, proving the value really is ignored.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert '"needs_flow_link_types" is deprecated and has no effect' in warnings
+
+    # the `links` edge is drawn even though the config named only `blocks`
+    assert "BBBBB --> AAAAA" in _debug_source(Path(app.outdir), "index.html")

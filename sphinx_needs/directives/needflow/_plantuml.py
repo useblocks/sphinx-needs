@@ -345,6 +345,9 @@ def process_needflow_plantuml(
             puml_node["scale"] = scale
 
             puml_node = nodes.figure("", puml_node)
+            # `:class:` used to be collected and then dropped by this engine, so the
+            # same option styled a graphviz diagram and did nothing to a plantuml one
+            puml_node["classes"] += current_needflow["classes"]
 
             if current_needflow["align"]:
                 puml_node["align"] = current_needflow["align"]
@@ -409,15 +412,19 @@ def process_needflow_plantuml(
         if current_needflow["debug"] and found_needs:
             # We can only access puml_node if found_needs is set.
             # Otherwise it was not been set, or we get outdated data
-            debug_container = nodes.container()
             if isinstance(puml_node, nodes.figure):
                 data = puml_node.children[0]["uml"]  # type: ignore[index]
             else:
                 data = puml_node["uml"]
-            data = "\n".join([html.escape(line) for line in data.split("\n")])
-            debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
-            debug_container += debug_para
-            content.append(debug_container)
+            # the same shape the graphviz engine uses, so that `:debug:` produces the
+            # same kind of block whichever engine drew the diagram; Pygments has no
+            # PlantUML lexer, so the source is shown unhighlighted rather than wrongly
+            code = nodes.literal_block(
+                data, data, language="text", linenos=True, force=True
+            )
+            code.source = env.doc2path(current_needflow["docname"])
+            code.line = current_needflow["lineno"]
+            content.append(code)
 
         node.replace_self(content)
 

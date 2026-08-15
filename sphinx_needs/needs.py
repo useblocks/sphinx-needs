@@ -1123,6 +1123,18 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         except Exception as exc:
             raise NeedsConfigException(f"Invalid link {name!r}: {exc}") from exc
 
+    if needs_config.flow_link_types != ["links"]:
+        # the needflow directive always defaults its `link_types` option to every link
+        # field, so this value has never been reachable; restoring it now would
+        # silently narrow every existing diagram to the link types named here
+        log_warning(
+            LOGGER,
+            'Config option "needs_flow_link_types" is deprecated and has no effect. '
+            "Please use the needflow ':link_types:' option instead.",
+            "deprecated",
+            None,
+        )
+
     if needs_config._global_options:
         log_warning(
             LOGGER,
