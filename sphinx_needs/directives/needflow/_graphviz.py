@@ -267,9 +267,9 @@ def _render_node(
     params.extend(
         _presentation_params(
             presentation,
-            base_style=node.attributes["graphviz_style"].get("node", {}).get(
-                "style", ""
-            ),
+            base_style=node.attributes["graphviz_style"]
+            .get("node", {})
+            .get("style", ""),
         )
     )
 

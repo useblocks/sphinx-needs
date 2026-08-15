@@ -120,7 +120,8 @@ class NeedflowDirective(FilterBase):
         """
         registry = needs_config.flow_engine_config.get(engine)
         if isinstance(registry, Mapping) and name in registry:
-            return registry[name]
+            entry: object = registry[name]
+            return entry
         legacy = (
             needs_config.flow_configs
             if engine == "plantuml"
@@ -136,7 +137,9 @@ class NeedflowDirective(FilterBase):
         :param name: The name the directive selected.
         :param engine: The engine the diagram is drawn with.
         """
-        legacy = "needs_flow_configs" if engine == "plantuml" else "needs_graphviz_styles"
+        legacy = (
+            "needs_flow_configs" if engine == "plantuml" else "needs_graphviz_styles"
+        )
         log_warning(
             LOGGER,
             f"config key {name!r} not in 'needs_flow_engine_config[{engine}]' "
@@ -267,8 +270,9 @@ class NeedflowDirective(FilterBase):
 
         if "config" in self.options:
             self._warn_deprecated(
-                "config", "Please use ':engine_config:' instead, which reads the same "
-                "configuration and any 'needs_flow_engine_config' entries."
+                "config",
+                "Please use ':engine_config:' instead, which reads the same "
+                "configuration and any 'needs_flow_engine_config' entries.",
             )
         config_names: str = self.options.get(
             "engine_config", self.options.get("config", "")

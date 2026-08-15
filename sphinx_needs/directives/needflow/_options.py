@@ -286,7 +286,9 @@ def resolve_direction(
 ENGINES = ("plantuml", "graphviz")
 
 
-def resolve_engine(option: str | None, project_default: str, *, location: LocationType) -> str:
+def resolve_engine(
+    option: str | None, project_default: str, *, location: LocationType
+) -> str:
     """Decide which engine draws a diagram, without ever failing the build.
 
     An unusable value used to trip a bare ``assert``, which fails a build with a
@@ -420,11 +422,7 @@ class StyleProps:
         """
         return replace(
             self,
-            **{
-                name: value
-                for name, value in vars(other).items()
-                if value is not None  # noqa: E501
-            },
+            **{name: value for name, value in vars(other).items() if value is not None},
         )
 
 
@@ -517,8 +515,7 @@ def plantuml_shape(shape: str, *, location: LocationType) -> str:
         return keyword
     log_warning(
         LOGGER,
-        f"the plantuml engine has no {shape!r} shape, "
-        "so a rectangle is drawn instead",
+        f"the plantuml engine has no {shape!r} shape, so a rectangle is drawn instead",
         "needflow",
         location=location,
         once=True,

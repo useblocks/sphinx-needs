@@ -188,7 +188,7 @@ class NodePresentation:
     applies -- a highlight always takes precedence over a border color.
     """
 
-    styles: StyleProps = StyleProps()
+    styles: StyleProps = field(default_factory=StyleProps)
     """The properties the ``:styles:`` rules resolved to for this need.
 
     Every property is ``None`` unless a rule set it, and a property that is set
@@ -474,8 +474,7 @@ def build_graph(
     type_shapes = {
         need_type["directive"]: shape
         for need_type in needs_config.types
-        if (raw := need_type.get("shape"))
-        and (shape := resolve_shape(raw)) is not None
+        if (raw := need_type.get("shape")) and (shape := resolve_shape(raw)) is not None
     }
 
     roots, drawn = build_node_tree(
@@ -573,11 +572,14 @@ def resolve_presentation(
         variants=config.variants,
         location=location,
     )
-    if resolved_styles.shape is None and need["is_need"]:
-        # a style rule is more specific than the need type, so the type's shape is only
-        # consulted when no rule set one
-        if (shape := (type_shapes or {}).get(need["type"])) is not None:
-            resolved_styles = replace(resolved_styles, shape=shape)
+    # a style rule is more specific than the need type, so the type's shape is only
+    # consulted when no rule set one
+    if (
+        resolved_styles.shape is None
+        and need["is_need"]
+        and (shape := (type_shapes or {}).get(need["type"])) is not None
+    ):
+        resolved_styles = replace(resolved_styles, shape=shape)
     is_highlighted = styled_highlight or (
         bool(highlight) and filter_single_need(need, config, highlight, needs)
     )

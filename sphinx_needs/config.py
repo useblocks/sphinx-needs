@@ -279,13 +279,23 @@ class NeedLinksConfig(TypedDict, total=False):
     color: str
     """Used for needflow. Default: #000000"""
     style: str
-    """Used for needflow. Default: solid"""
+    """Used for needflow (deprecated, use ``line``). Default: solid"""
     style_part: str
-    """Used for needflow. Default: '[dotted]'"""
+    """Used for needflow (deprecated, use ``part_line``). Default: '[dotted]'"""
     style_start: str
-    """Used for needflow. Default: '-'"""
+    """Used for needflow (deprecated, use ``arrow``). Default: '-'"""
     style_end: str
-    """Used for needflow. Default: '->'"""
+    """Used for needflow (deprecated, use ``arrow``). Default: '->'"""
+    line: str
+    """How the line is drawn in needflow diagrams.
+
+    One of 'solid', 'dashed', 'dotted', 'thick' or 'invisible'."""
+    part_line: str
+    """How the line to a need part is drawn in needflow diagrams (see ``line``)."""
+    arrow: str
+    """Which arrow heads the line carries in needflow diagrams.
+
+    One of 'normal', 'none', 'open', 'circle', 'cross' or 'both'."""
     allow_dead_links: bool
     """If True, add a 'forbidden' class to dead links"""
     schema: NotRequired[LinkSchemaType]

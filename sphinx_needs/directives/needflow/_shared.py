@@ -17,8 +17,8 @@ from collections.abc import Iterable, Sequence
 
 from docutils import nodes
 
-from sphinx_needs.data import NeedsFlowType
 from sphinx_needs.config import NeedType
+from sphinx_needs.data import NeedsFlowType
 from sphinx_needs.needs_schema import LinkSchema
 
 from ._options import LegendPart

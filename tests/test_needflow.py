@@ -1892,8 +1892,7 @@ def test_class_and_debug_behave_the_same_on_both_engines(test_app):
     tree = html_parser.parse(Path(app.outdir) / "index.html")
     # a literal block, i.e. inside a highlight container, on either engine
     blocks = tree.xpath(
-        "//div[contains(concat(' ', normalize-space(@class), ' '), "
-        "' highlight ')]//pre"
+        "//div[contains(concat(' ', normalize-space(@class), ' '), ' highlight ')]//pre"
     )
     assert len(blocks) == 1
     assert "AAAAA" in blocks[0].text_content()

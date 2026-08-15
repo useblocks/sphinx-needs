@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import html
 from collections.abc import Iterable, Mapping
 
 from docutils import nodes

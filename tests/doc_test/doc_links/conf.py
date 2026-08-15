@@ -64,4 +64,3 @@ needs_extra_links = [
         "color": "#00AA00",
     }
 ]
-
