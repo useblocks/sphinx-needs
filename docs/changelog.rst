@@ -167,6 +167,52 @@ Bug fixes
 - 🐛 :ref:`needs_string_links` drops items that are empty once stripped, so ``AB-1, , AB-2``
   is two items rather than three with an empty one in the middle.
 
+- 🐛 :ref:`needflow` no longer fails the build when a need type has no ``color`` (or an
+  empty one) and the diagram shows a legend (:issue:`1664`).
+
+  ``color`` is optional in :ref:`needs_types`, but both engines read it unguarded while
+  building the legend, so ``:show_legend:`` ended the build with ``KeyError: 'color'``.
+  Such a type keeps its legend row, with an empty color swatch; a type whose ``color`` is
+  set to an empty string no longer emits an empty swatch value either.
+
+- 🐛 :ref:`needflow` needs whose ids differ only in punctuation are no longer drawn as a
+  single node by the plantuml engine.
+
+  PlantUML entity names cannot contain punctuation, so ids such as ``R-1`` and ``R=1`` both
+  became ``R_1`` and silently collapsed into one node, taking their edges with them.
+  Entity names are now assigned per diagram, so that they stay unique; the names shown by
+  ``:debug:`` therefore change for such ids. :ref:`needuml` entity names are unchanged.
+
+- 🐛 :ref:`needflow` ``:border_color:`` accepts a value written with a leading ``#``.
+
+  ``#00FF00`` previously reached graphviz as ``##00FF00`` and PlantUML as ``line:#00FF00``,
+  which PlantUML rejects outright. Both engines now normalise the value and add the prefix
+  their own syntax needs. Relatedly, a variant expression that matches nothing now means
+  "no border color" under graphviz, instead of the literal color ``#None``.
+
+- 🐛 :ref:`needflow` ``:highlight:`` filters that consult ``needs`` now also work for a
+  need with parts or child needs.
+
+  The graphviz engine draws such a need as a subgraph, and that path evaluated the filter
+  without the needs list, so the same expression could behave differently -- or fail the
+  build -- depending on whether a need happened to have children.
+
+- 🐛 A graphviz :ref:`needflow` image without an ``:alt:`` option now gets
+  ``alt="needflow graphviz diagram"``.
+
+  The intended default was unreachable, so every such image was published with an empty
+  ``alt`` attribute. Writing ``:alt:`` with no value still gives an empty ``alt``, for a
+  diagram that is purely decorative.
+  The stored environment version is bumped, because the option is recorded differently
+  when it is not given, so the first build after upgrading re-reads every document.
+
+- 🐛 The :ref:`needflow` warning for an unknown ``:config:`` name now names
+  :ref:`needs_flow_configs`, which was misspelled as ``need_flows_configs``.
+
+- 🐛 The :ref:`needflow` warning for an unknown ``:link_types:`` value now carries the
+  source location of the directive under the graphviz engine, as it already did under
+  plantuml.
+
 Documentation
 .............
 

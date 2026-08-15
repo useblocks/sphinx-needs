@@ -53,6 +53,23 @@ def filter_by_tree(
     return needs_view.filter_ids(need_ids)
 
 
+def resolve_color(value: None | str | int | float | bool) -> str | None:
+    """Normalise a resolved color option value to an engine neutral form.
+
+    A color may be written with or without a leading ``#``, and each engine adds the
+    prefix that its own syntax requires, so any leading ``#`` characters are stripped here.
+    An unset or empty value means "no color", rather than a color named after the
+    string representation of the value.
+
+    :param value: The resolved value of a color option,
+        e.g. the return value of :func:`~sphinx_needs.variants.match_variants`.
+    :return: The color without a leading ``#``, or ``None`` if no color was given.
+    """
+    if value is None:
+        return None
+    return str(value).strip().lstrip("#") or None
+
+
 def get_root_needs(found_needs: list[NeedItem | NeedPartItem]) -> list[NeedItem]:
     return_list = []
     for current_need in found_needs:

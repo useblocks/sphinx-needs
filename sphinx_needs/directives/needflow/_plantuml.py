@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+from collections.abc import Iterable, Mapping
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -28,7 +29,12 @@ from sphinx_needs.utils import remove_node_from_tree
 from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
 
-from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
+from ._shared import (
+    create_filter_paragraph,
+    filter_by_tree,
+    get_root_needs,
+    resolve_color,
+)
 
 logger = get_logger(__name__)
 
@@ -41,14 +47,70 @@ def make_entity_name(name: str) -> str:
     return name
 
 
+def make_entity_names(ids: Iterable[str]) -> dict[str, str]:
+    """Create a stable, injective mapping of need ids to PlantUML entity names.
+
+    :func:`make_entity_name` folds every character PlantUML forbids in an entity name
+    to ``_``, so distinct need ids can sanitise to the same name -- ``R-1`` and ``R=1``
+    both become ``R_1`` -- and would then be drawn as a single node.
+    Any id that would reuse an already taken name is therefore given a numeric suffix.
+
+    The ids are processed in sorted order, so the mapping depends only on the set of
+    ids and not on the order in which they happen to be filtered.
+
+    :param ids: The complete ids of all needs to be rendered.
+    :return: A mapping of each id to a unique PlantUML entity name.
+    """
+    entity_names: dict[str, str] = {}
+    taken: set[str] = set()
+    for id in sorted(set(ids)):
+        name = base = make_entity_name(id)
+        suffix = 1
+        while name in taken:
+            suffix += 1
+            name = f"{base}_{suffix}"
+        taken.add(name)
+        entity_names[id] = name
+    return entity_names
+
+
+def get_entity_name(entity_names: Mapping[str, str], id: str) -> str:
+    """Look up the PlantUML entity name of a need id.
+
+    Every id that is rendered is mapped up front, so an unmapped id means an emission
+    site was not given the mapping of the diagram it is drawing. That would silently
+    reintroduce the collisions :func:`make_entity_names` exists to prevent, so it is
+    reported; a diagram with plainer names is still better than a failed build, hence
+    the direct conversion is returned rather than raising.
+
+    :param entity_names: The mapping created by :func:`make_entity_names`.
+    :param id: The complete id of the need.
+    :return: The mapped entity name, or a direct conversion for an unmapped id.
+    """
+    if (name := entity_names.get(id)) is not None:
+        return name
+    log_warning(
+        logger,
+        f"Need id {id!r} was not mapped to a plantuml entity name, "
+        "so it may collide with another need in the diagram",
+        "needflow",
+        location=None,
+    )
+    return make_entity_name(id)
+
+
 def get_need_node_rep_for_plantuml(
     app: Sphinx,
     fromdocname: str,
     current_needflow: NeedsFlowType,
     needs_view: NeedsView,
     need_info: NeedItem | NeedPartItem,
+    entity_names: Mapping[str, str],
 ) -> str:
-    """Calculate need node representation for plantuml."""
+    """Calculate need node representation for plantuml.
+
+    :param entity_names: The id to entity name mapping of :func:`make_entity_names`.
+    """
     needs_config = NeedsSphinxConfig(app.config)
 
     node_text = render_template_string(
@@ -70,13 +132,16 @@ def get_need_node_rep_for_plantuml(
         node_colors.append("line:FF0000")
 
     elif current_needflow["border_color"]:
-        color = match_variants(
-            current_needflow["border_color"],
-            need_info.filter_context(),
-            needs_config.variants,
-            location=(current_needflow["docname"], current_needflow["lineno"]),
+        color = resolve_color(
+            match_variants(
+                current_needflow["border_color"],
+                need_info.filter_context(),
+                needs_config.variants,
+                location=(current_needflow["docname"], current_needflow["lineno"]),
+            )
         )
         if color:
+            # the whole color list is prefixed with a single "#" below
             node_colors.append(f"line:{color}")
 
     # need parts style use default "rectangle"
@@ -85,7 +150,7 @@ def get_need_node_rep_for_plantuml(
     # node representation for plantuml
     color_suffix = f" #{';'.join(node_colors)}" if node_colors else ""
     need_node_code = '{style} "{node_text}" as {id} [[{link}]]{color_suffix}'.format(
-        id=make_entity_name(need_info["id_complete"]),
+        id=get_entity_name(entity_names, need_info["id_complete"]),
         node_text=node_text,
         link=node_link,
         color_suffix=color_suffix,
@@ -101,9 +166,12 @@ def walk_curr_need_tree(
     needs_view: NeedsView,
     found_needs: list[NeedItem | NeedPartItem],
     need: NeedItem | NeedPartItem,
+    entity_names: Mapping[str, str],
 ) -> str:
     """
     Walk through each need to find all its child needs and need parts recursively and wrap them together in nested structure.
+
+    :param entity_names: The id to entity name mapping of :func:`make_entity_names`.
     """
 
     curr_need_tree = ""
@@ -125,7 +193,12 @@ def walk_curr_need_tree(
                 if need_part_id == found_need["id_complete"]:
                     curr_need_tree += (
                         get_need_node_rep_for_plantuml(
-                            app, fromdocname, current_needflow, needs_view, found_need
+                            app,
+                            fromdocname,
+                            current_needflow,
+                            needs_view,
+                            found_need,
+                            entity_names,
                         )
                         + "\n"
                     )
@@ -140,7 +213,12 @@ def walk_curr_need_tree(
             for curr_child_need in found_needs:
                 if curr_child_need["id_complete"] == curr_child_need_id:
                     curr_need_tree += get_need_node_rep_for_plantuml(
-                        app, fromdocname, current_needflow, needs_view, curr_child_need
+                        app,
+                        fromdocname,
+                        current_needflow,
+                        needs_view,
+                        curr_child_need,
+                        entity_names,
                     )
                     # check curr need child has children or has parts
                     if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
@@ -151,6 +229,7 @@ def walk_curr_need_tree(
                             needs_view,
                             found_needs,
                             curr_child_need,
+                            entity_names,
                         )
                     # add newline for next element
                     curr_need_tree += "\n"
@@ -168,13 +247,17 @@ def cal_needs_node(
     current_needflow: NeedsFlowType,
     needs_view: NeedsView,
     found_needs: list[NeedItem | NeedPartItem],
+    entity_names: Mapping[str, str],
 ) -> str:
-    """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
+    """Calculate and get needs node representaion for plantuml including all child needs and need parts.
+
+    :param entity_names: The id to entity name mapping of :func:`make_entity_names`.
+    """
     top_needs = get_root_needs(found_needs)
     curr_need_tree = ""
     for top_need in top_needs:
         top_need_node = get_need_node_rep_for_plantuml(
-            app, fromdocname, current_needflow, needs_view, top_need
+            app, fromdocname, current_needflow, needs_view, top_need, entity_names
         )
         curr_need_tree += (
             top_need_node
@@ -185,6 +268,7 @@ def cal_needs_node(
                 needs_view,
                 found_needs,
                 top_need,
+                entity_names,
             )
             + "\n"
         )
@@ -312,9 +396,20 @@ def process_needflow_plantuml(
                 puml_node["uml"] += config
                 puml_node["uml"] += "\n\n"
 
+            # the entity names must be assigned for the whole diagram at once,
+            # so that ids sanitising to the same name stay distinct nodes
+            entity_names = make_entity_names(
+                need["id_complete"] for need in found_needs
+            )
+
             puml_node["uml"] += "\n' Nodes definition \n\n"
             puml_node["uml"] += cal_needs_node(
-                app, fromdocname, current_needflow, needs_view, found_needs
+                app,
+                fromdocname,
+                current_needflow,
+                needs_view,
+                found_needs,
+                entity_names,
             )
 
             puml_node["uml"] += "\n' Connection definition \n\n"
@@ -322,6 +417,7 @@ def process_needflow_plantuml(
                 found_needs,
                 allowed_link_types,
                 current_needflow["show_link_names"] or needs_config.flow_show_links,
+                entity_names,
             )
 
             # Create a legend
@@ -410,9 +506,12 @@ def render_connections(
     found_needs: list[NeedItem | NeedPartItem],
     allowed_link_types: list[LinkSchema],
     show_links: bool,
+    entity_names: Mapping[str, str],
 ) -> str:
     """
     Render the connections between the needs.
+
+    :param entity_names: The id to entity name mapping of :func:`make_entity_names`.
     """
     puml_connections = ""
     for need_info in found_needs:
@@ -444,8 +543,8 @@ def render_connections(
 
                 # TODO also use link_type.display.color?
                 puml_connections += "{id} {style_start}{link_style}{style_end} {link}{comment}\n".format(
-                    id=make_entity_name(need_info["id_complete"]),
-                    link=make_entity_name(link),
+                    id=get_entity_name(entity_names, need_info["id_complete"]),
+                    link=get_entity_name(entity_names, link),
                     comment=comment,
                     link_style=link_style,
                     style_start=link_type.display.style_start,

@@ -90,6 +90,11 @@ alt
 
 Set the ``alt`` option to a string to add an alternative text to the generated image.
 
+If the option is not set, the graphviz engine describes the image as
+``needflow graphviz diagram``.
+Set the option to an empty value to publish an empty alternative text instead,
+for a diagram that is purely decorative.
+
 root_id
 ~~~~~~~
 
