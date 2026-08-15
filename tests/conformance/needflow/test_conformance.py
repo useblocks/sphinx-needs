@@ -123,8 +123,37 @@ _IGNORED_WARNINGS = re.compile(r"WARNING: (?:document isn't included|.*toctree)"
 
 
 def _sha256(path: Path) -> str:
-    """Return the lowercase hex sha256 of a file's bytes."""
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    """Return the lowercase hex sha256 of a file's content.
+
+    Line endings are normalised to LF before hashing, because the manifest stamps
+    *content*, not transport encoding. Git rewrites LF to CRLF on checkout under
+    ``text=auto``, so a corpus checked out on Windows holds different bytes for the same
+    content -- and a checksum over raw bytes would make the same corpus fail there while
+    passing on Linux, in either repository. The repositories additionally pin the corpus
+    to LF in ``.gitattributes``; this normalisation is what keeps the contract true when
+    that pin is missing, or when a file arrives by some other route.
+
+    :param path: The file to hash.
+    :return: The lowercase hex digest of its normalised content.
+    """
+    content = path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(content).hexdigest()
+
+
+def _build_manifest(corpus_version: int) -> dict[str, Any]:
+    """Compute what ``manifest.json`` should hold for the corpus on disk.
+
+    Verification and regeneration both go through this, so the checksums a run *asserts*
+    and the checksums a run *writes* can never be computed two different ways.
+
+    :param corpus_version: The version to stamp.
+    :return: The manifest contents.
+    """
+    return {
+        "corpus_version": corpus_version,
+        "readme": _sha256(CORPUS_ROOT / "README.md"),
+        "cases": {path.name: _sha256(path) for path in _case_files()},
+    }
 
 
 def _load_manifest() -> dict[str, Any]:
@@ -476,6 +505,28 @@ def test_manifest_has_no_orphans() -> None:
     assert set(manifest["cases"]) == {p.name for p in _case_files()}
 
 
+def test_manifest_matches_the_corpus() -> None:
+    """The whole manifest must describe the corpus that is actually on disk.
+
+    Under ``UBC_UPDATE_CORPUS`` this rewrites the manifest instead of asserting, which is
+    the only supported way to restamp it -- so the checksums that get written come from
+    the same function as the checksums that get checked. ``corpus_version`` is never
+    touched here: bumping it is a deliberate act, and the standing rule is that any case
+    or README change bumps it.
+    """
+    manifest = _load_manifest()
+    expected = _build_manifest(manifest["corpus_version"])
+
+    if os.environ.get("UBC_UPDATE_CORPUS"):
+        MANIFEST.write_text(json.dumps(expected, indent=2) + "\n", "utf8")
+        pytest.skip("manifest rewritten; bump corpus_version if content changed")
+
+    assert manifest == expected, (
+        "manifest.json does not describe the corpus on disk; regenerate it with "
+        "UBC_UPDATE_CORPUS=1 and bump corpus_version"
+    )
+
+
 @pytest.mark.parametrize("path", _case_files(), ids=lambda p: p.stem)
 @pytest.mark.parametrize("engine", ENGINES)
 def test_conformance_case(
@@ -728,3 +779,30 @@ def test_checksum_mismatch_is_detected(tmp_path: Path) -> None:
     manifest = _load_manifest()
     assert manifest["cases"][case.name] == original
     assert manifest["cases"][case.name] != _sha256(tampered)
+
+
+def test_line_endings_do_not_change_a_checksum(tmp_path: Path) -> None:
+    """The same content must hash the same however its lines happen to end.
+
+    Git hands a Windows checkout CRLF under ``text=auto``, so hashing raw bytes made the
+    same corpus fail there while passing on Linux. The two halves of the contract are
+    pinned together here: a line-ending rewrite must NOT move the checksum, and a real
+    edit must still move it -- otherwise normalisation would have bought portability by
+    giving up the tamper detection it exists to serve.
+    """
+    case = next(iter(_case_files()))
+    content = case.read_bytes()
+    assert b"\r\n" not in content, "the corpus is stored with LF endings"
+
+    crlf = tmp_path / "crlf.yaml"
+    crlf.write_bytes(content.replace(b"\n", b"\r\n"))
+    cr_only = tmp_path / "cr.yaml"
+    cr_only.write_bytes(content.replace(b"\n", b"\r"))
+
+    assert _sha256(crlf) == _sha256(case)
+    assert _sha256(cr_only) == _sha256(case)
+
+    # ...and a change to the content itself is still caught
+    edited = tmp_path / "edited.yaml"
+    edited.write_bytes(content.replace(b"\n", b"\r\n") + b"\r\n# edited\r\n")
+    assert _sha256(edited) != _sha256(case)

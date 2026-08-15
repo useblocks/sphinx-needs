@@ -36,8 +36,16 @@ ubcode under the crate that owns the mermaid emitter, e.g.
 path; the layout below `conformance/needflow/` is fixed).
 
 `manifest.json`: `corpus_version` is a monotonically increasing integer, bumped on ANY case
-or README change; `cases` maps case filename → lowercase hex sha256 of the file bytes.
+or README change; `cases` maps case filename → lowercase hex sha256 of the file CONTENT.
 README.md is also checksummed under a `readme` key.
+
+**Checksums are over LINE-ENDING-NORMALISED bytes**: replace CRLF and lone CR with LF
+before hashing. The manifest stamps content, not transport encoding — a corpus checked out
+on Windows (git's `text=auto` rewrites LF to CRLF) must produce the same checksum as the
+same corpus on Linux, in either repo. Each repo SHOULD additionally pin the corpus to LF in
+`.gitattributes` (`<corpus path>/** text eol=lf`) so the working-tree bytes stay canonical
+and a re-sync between the two repos cannot carry a platform's line endings across; the
+normalisation in the hash is what makes the contract hold even when that pin is missing.
 
 ## Case file schema (YAML)
 
@@ -90,9 +98,10 @@ options:                                  # directive options, portable names, s
 expect:
   legend:                                 # engine-INDEPENDENT (ruling D3: one out-of-diagram
     types: [Requirement]                  # implementation everywhere). Lists name EXACTLY the
-    links: []                             # entries that must appear, in order (drawn-only rule).
+                                          # entries that must appear, in order (drawn-only rule).
+                                          # Omit a section that must not render (here: links).
                                           # Key absent => the case must render NO legend.
-                                          # An empty list under a present key is a spec error.
+                                          # An empty or present-but-empty section is a spec error.
   mermaid:                                # consumed by ubcode only
     source: |
       flowchart TB
@@ -168,7 +177,7 @@ For every case file: load → build a minimal project from `needs`/`types`/`link
 `options` → capture emitted source per applicable engine + emitted warnings →
 normalise → assert source equality, the exact degradation set, and the `expect.legend`
 contract (exact rows in order when present; no legend rendered when absent) → verify the
-manifest checksum of the case file. Cases with `skip` for an engine are skipped there
+manifest checksum of the case file (over line-ending-normalised bytes, as defined above). Cases with `skip` for an engine are skipped there
 with the recorded reason. The runner must fail on: unknown top-level keys, unknown
 portable option/config keys, tier-1 degradation entries, an empty list under a present
 `expect.legend` key, and a case file whose checksum is absent from or different in the
