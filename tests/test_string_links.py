@@ -129,7 +129,14 @@ def _meta_span(html: str, field: str) -> str:
         pytest.param(
             {**GOOD_LINK, "regex": r"^[a-\d]+$"},
             "'regex' is not a valid regular expression",
-            id="bad-regex",
+            id="bad-regex-re-error",
+        ),
+        pytest.param(
+            # `re.compile` raises OverflowError here, not re.error -- narrowing the
+            # catch to re.error let this abort the build from `config-inited`
+            {**GOOD_LINK, "regex": "a{99999999999}"},
+            "'regex' is not a valid regular expression",
+            id="bad-regex-overflow",
         ),
         pytest.param(
             {**GOOD_LINK, "link_url": "https://x/{{ unclosed "},
@@ -878,3 +885,42 @@ def test_render_failure_warnings_carry_a_location(
     for line in lines:
         assert not line.startswith("WARNING:"), line
         assert "index.rst:" in line, line
+
+
+NO_NEEDS_INDEX = """\
+String links
+============
+
+Nothing here declares a need.
+"""
+
+
+@pytest.mark.parametrize(
+    "regex",
+    [
+        pytest.param(r"^[a-\d]+$", id="re-error"),
+        pytest.param("a{99999999999}", id="overflow-error"),
+    ],
+)
+def test_bad_regex_in_a_project_with_no_needs(
+    regex: str, make_app: Any, sphinx_test_tempdir: Any
+) -> None:
+    """A pattern that will not compile must not abort a build that has no needs.
+
+    This is the sharpest shape of the regression: on the unvalidated code the compile
+    happened while a need was rendered, so a project with no needs built fine. Moving
+    it to ``config-inited`` makes it fire unconditionally -- which is right, but only
+    if every way ``re.compile`` can fail is caught. ``a{99999999999}`` raises
+    ``OverflowError``, not ``re.error``.
+    """
+    app = build(
+        make_app,
+        sphinx_test_tempdir,
+        {"bad": {**GOOD_LINK, "regex": regex}},
+        index=NO_NEEDS_INDEX,
+    )
+    warnings = warnings_of(app)
+    assert "needs_string_links['bad']" in warnings, warnings
+    assert "'regex' is not a valid regular expression" in warnings, warnings
+    assert app.config.needs_string_links == {}
+    assert (Path(app.outdir) / "index.html").exists()

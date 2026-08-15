@@ -228,7 +228,10 @@ def _validate_conf(
 
     try:
         re.compile(conf["regex"])
-    except re.error as exc:
+    except Exception as exc:
+        # not just `re.error`: `a{99999999999}` raises OverflowError, and a deeply
+        # nested pattern can raise RecursionError. Any of them must warn, not abort
+        # the build -- this runs at `config-inited`, so it fires even with no needs.
         warn(f"'regex' is not a valid regular expression ({exc}), skipping.")
         return None
 
