@@ -189,6 +189,14 @@ Bug fixes
   as a reserved name and degrades the same way, so a document shared with ubCode does
   not lose its diagram here.
 
+- 🐛 :ref:`needflow`'s ``graphviz`` labels no longer break HTML entities when a title
+  wraps (:pr:`1770`).
+
+  The title was escaped and then wrapped, so the wrapper counted the characters of an
+  entity and could break inside one: a title holding a quote wrapped to ``&quo<br/>t;``,
+  which is invalid markup and a visibly broken label. Wrapping now happens first, which
+  also makes the wrap width count what the reader sees.
+
 - 🐛 :ref:`needs_graphviz_styles` is no longer mutated when a diagram selects several
   configurations by name (:pr:`1770`).
 

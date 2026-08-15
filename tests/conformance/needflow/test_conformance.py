@@ -97,6 +97,9 @@ LINK_KEYS = frozenset(
     )
 )
 
+#: The sections ``expect.legend`` may name.
+LEGEND_SECTIONS = frozenset(("types", "links"))
+
 #: Keys a case's ``needs`` entries may set.
 NEED_KEYS = frozenset(("id", "type", "title", "status", "tags", "links", "parts"))
 
@@ -178,7 +181,11 @@ def validate_case(case: dict[str, Any], path: Path) -> None:
     _check_keys(case.get("config", {}), set(CONFIG_KEYS), f"{path.name}: config")
     _check_keys(case.get("options", {}), OPTION_KEYS, f"{path.name}: options")
 
+    _validate_legend_expectation(case, path)
+
     for engine, expected in case["expect"].items():
+        if engine == "legend":
+            continue
         assert engine in (*ENGINES, "mermaid"), (
             f"{path.name}: unknown engine {engine!r} in 'expect'"
         )
@@ -192,6 +199,35 @@ def validate_case(case: dict[str, Any], path: Path) -> None:
                 f"{path.name}: tier 1 is silent by definition, "
                 f"so {entry['id']!r} cannot be listed as one"
             )
+
+
+def _validate_legend_expectation(case: dict[str, Any], path: Path) -> None:
+    """Check the shape of ``expect.legend``.
+
+    The key is engine independent, so it sits beside the engine keys rather than under
+    one.  Absence is meaningful -- it asserts that no legend is rendered -- so a present
+    key that names nothing would be a case claiming a legend while asserting nothing
+    about it, which the spec makes a hard error rather than a silent pass.
+
+    :param case: The parsed case file.
+    :param path: Where it came from, for messages.
+    :raises AssertionError: If the key is malformed.
+    """
+    if (legend := case["expect"].get("legend")) is None:
+        return
+    _check_keys(legend, LEGEND_SECTIONS, f"{path.name}: expect.legend")
+    assert legend, (
+        f"{path.name}: 'expect.legend' is present but names no section; "
+        "omit the key to assert that no legend is rendered"
+    )
+    for part, labels in legend.items():
+        assert isinstance(labels, list), (
+            f"{path.name}: 'expect.legend.{part}' must be a list"
+        )
+        assert labels, (
+            f"{path.name}: 'expect.legend.{part}' is an empty list; "
+            "omit the section, or omit the whole key to assert no legend"
+        )
 
 
 def _conf_py(case: dict[str, Any], engine: str) -> str:
@@ -314,30 +350,13 @@ def _emitted_source(app: Any) -> str:
     return str(umls[0])
 
 
-def _assert_legend_scope(app: Any, case: dict[str, Any]) -> None:
-    """Check the legend describes what was drawn, and only that.
-
-    The portable legend is deliberately **not** part of the diagram source -- it is a
-    document table, so that one implementation serves every engine -- which means
-    ``expect.<engine>.source`` cannot say anything about it.  Rather than extend the
-    shared case format unilaterally (which would be drift of exactly the kind this
-    corpus exists to prevent), the scope rule is derived from the case's own data: every
-    type the case draws must appear, and a configured-but-undrawn one must not.
-
-    See the note in the builder's report: the format may want a first-class key for this,
-    which is the repo-of-record's call, not this harness's.
+def _legend_rows(app: Any) -> dict[str, list[str]] | None:
+    """Read the rendered out-of-diagram legend, section by section.
 
     :param app: The built Sphinx application.
-    :param case: The parsed case file.
+    :return: The row labels of each section present, in document order, or ``None`` if
+        the page renders no legend at all.
     """
-    sections = str(
-        (case.get("options") or {}).get("legend")
-        or (case.get("config") or {}).get("legend")
-        or ""
-    )
-    if not sections:
-        return
-
     from lxml import html as html_parser
 
     tree = html_parser.parse(Path(str(app.outdir)) / "index.html")
@@ -345,24 +364,58 @@ def _assert_legend_scope(app: Any, case: dict[str, Any]) -> None:
         "//div[contains(concat(' ', normalize-space(@class), ' '), "
         "' needflow_legend ')]"
     )
-    assert len(legends) == 1, "a case asking for a legend must render exactly one"
-    text = legends[0].text_content()
+    if not legends:
+        return None
+    assert len(legends) == 1, "a case draws one diagram, so it renders one legend"
 
-    drawn_types = {need["type"] for need in case["needs"]}
-    if "types" in sections:
-        for type_ in case.get("types", []):
-            title = type_.get("title", type_["directive"])
-            if type_["directive"] in drawn_types:
-                assert title in text, f"drawn type {title!r} missing from the legend"
-            else:
-                assert title not in text, (
-                    f"undrawn type {title!r} must not appear in the legend"
-                )
-    if "links" in sections:
-        for link in case.get("links", []):
-            assert link.get("outgoing", link["option"]) in text or (
-                link["option"] in text
-            ), f"drawn link type {link['option']!r} missing from the legend"
+    rows: dict[str, list[str]] = {}
+    for part, column in (("types", 2), ("links", 1)):
+        tables = legends[0].xpath(
+            "..//table[contains(concat(' ', normalize-space(@class), ' '), "
+            f"' needflow_legend_{part} ')]"
+        )
+        if not tables:
+            continue
+        rows[part] = [
+            cell.text_content().strip()
+            for cell in tables[0].xpath(f".//tbody/tr/td[{column}]")
+        ]
+    return rows
+
+
+def _assert_legend(app: Any, case: dict[str, Any]) -> None:
+    """Check the rendered legend against ``expect.legend``.
+
+    The legend is engine independent by ruling D3 -- one out-of-diagram implementation
+    everywhere -- so its expectation sits beside the engine keys rather than inside one,
+    and is checked identically on every engine.  It never appears in any ``source``,
+    which is itself contract: a legend that leaked into the diagram would show up as a
+    source mismatch.
+
+    :param app: The built Sphinx application.
+    :param case: The parsed case file.
+    """
+    expected = case["expect"].get("legend")
+    rendered = _legend_rows(app)
+
+    if expected is None:
+        assert rendered is None, (
+            "this case has no 'expect.legend', so it must render no legend, "
+            f"but rendered {rendered}"
+        )
+        return
+
+    assert rendered is not None, "expected a legend, but none was rendered"
+    assert set(rendered) == set(expected), (
+        f"legend sections differ: expected {sorted(expected)}, "
+        f"rendered {sorted(rendered)}"
+    )
+    for part, labels in expected.items():
+        # exact rows, in order -- the drawn-only scope rule is what makes this an
+        # assertion rather than a containment check
+        assert rendered[part] == labels, (
+            f"legend {part!r} rows differ: expected {labels}, got {rendered[part]}"
+        )
 
 
 def _observed_degradations(app: Any) -> tuple[list[str], list[str]]:
@@ -450,7 +503,7 @@ def test_conformance_case(make_app, tmp_path: Path, path: Path, engine: str) -> 
     ]
     source = _normalise(_emitted_source(app), need_ids)
 
-    _assert_legend_scope(app, case)
+    _assert_legend(app, case)
 
     if updating:
         _rewrite_expectation(path, engine, source, observed)
@@ -493,7 +546,7 @@ def _rewrite_expectation(
     # engines in a stable order, so that a re-sync diff is about content
     case["expect"] = {
         name: case["expect"][name]
-        for name in (*ENGINES, "mermaid")
+        for name in ("legend", *ENGINES, "mermaid")
         if name in case["expect"]
     }
     path.write_text(_dump_case(case), "utf8")
@@ -609,6 +662,18 @@ def _probe(**overrides: Any) -> dict[str, Any]:
             "unknown degradation id 'made-up'",
         ),
         (_probe(expect={"crayon": {"source": "x"}}), "unknown engine 'crayon'"),
+        (
+            _probe(expect={"legend": {"types": []}, "plantuml": {"source": "x"}}),
+            "'expect.legend.types' is an empty list",
+        ),
+        (
+            _probe(expect={"legend": {}, "plantuml": {"source": "x"}}),
+            "present but names no section",
+        ),
+        (
+            _probe(expect={"legend": {"nosuch": ["x"]}, "plantuml": {"source": "x"}}),
+            "expect.legend uses unknown key(s) ['nosuch']",
+        ),
     ],
     ids=[
         "top-level-key",
@@ -623,6 +688,9 @@ def _probe(**overrides: Any) -> dict[str, Any]:
         "tier-1-entry",
         "unknown-degradation",
         "unknown-engine",
+        "empty-legend-list",
+        "empty-legend-key",
+        "unknown-legend-section",
     ],
 )
 def test_validator_refuses_malformed_cases(

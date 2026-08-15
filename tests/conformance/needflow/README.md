@@ -88,6 +88,11 @@ options:                                  # directive options, portable names, s
   filter: "True"
 
 expect:
+  legend:                                 # engine-INDEPENDENT (ruling D3: one out-of-diagram
+    types: [Requirement]                  # implementation everywhere). Lists name EXACTLY the
+    links: []                             # entries that must appear, in order (drawn-only rule).
+                                          # Key absent => the case must render NO legend.
+                                          # An empty list under a present key is a spec error.
   mermaid:                                # consumed by ubcode only
     source: |
       flowchart TB
@@ -119,6 +124,11 @@ Rules:
 - `expect.<engine>.source` is the full emitted diagram source for that engine, compared
   byte-exact AFTER normalisation (below). Upstream this is what `:debug:` exposes; in
   ubcode it is the string the mermaid emitter returns.
+- `expect.legend` asserts the rendered out-of-diagram legend (which, by design, never
+  appears in any `source`): the harness must verify the legend table contains exactly
+  the named type rows and link-type rows, in order, and that a case WITHOUT the key
+  renders no legend. The identical `source` values across legend cases are themselves
+  contract (the legend must not leak into the diagram).
 - `degradations` lists the degradation events the harness must observe for that engine:
   neutral `id` (registry below), `tier` (1–3; tier 1 is silent so it never appears here —
   listing a tier-1 entry is a spec error), `once: true` for warn-once-per-project.
@@ -156,11 +166,13 @@ ubcode mapping: `needs.option_*` diagnostic codes (U1b builder likewise).
 For every case file: load → build a minimal project from `needs`/`types`/`links`/`config`
 (portable keys mapped to the repo's config surface) → run the needflow directive with
 `options` → capture emitted source per applicable engine + emitted warnings →
-normalise → assert source equality and the exact degradation set → verify the manifest
-checksum of the case file. Cases with `skip` for an engine are skipped there with the
-recorded reason. The runner must fail on: unknown top-level keys, unknown portable
-option/config keys, tier-1 degradation entries, and a case file whose checksum is absent
-from or different in the manifest.
+normalise → assert source equality, the exact degradation set, and the `expect.legend`
+contract (exact rows in order when present; no legend rendered when absent) → verify the
+manifest checksum of the case file. Cases with `skip` for an engine are skipped there
+with the recorded reason. The runner must fail on: unknown top-level keys, unknown
+portable option/config keys, tier-1 degradation entries, an empty list under a present
+`expect.legend` key, and a case file whose checksum is absent from or different in the
+manifest.
 
 ## Required initial cases (plan §7 + vocabulary coverage)
 
@@ -170,8 +182,8 @@ from or different in the manifest.
 4. `percent-neutralisation` — `%%` and mermaid-significant text in titles stays literal.
 5. `color-normalisation` — `#RRGGBB` and bare `RRGGBB` in a style class agree.
 6. `direction-*` — one per value (down/up/right/left), incl. the plantuml tier-2 cases.
-7. `legend-types`, `legend-links`, `legend-both` — drawn-types-only scope asserted
-   (a configured-but-undrawn type must not appear).
+7. `legend-types`, `legend-links`, `legend-both` — drawn-types-only scope asserted via
+   `expect.legend` (a configured-but-undrawn type must not appear in its lists).
 8. `link-labels-*` — none/outgoing/incoming/type.
 9. `styles-cascade` — two matching rules, later wins per property; plus built-in
    `highlight` byte-parity case.

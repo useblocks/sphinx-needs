@@ -56,14 +56,19 @@ def create_filter_paragraph(data: NeedsFlowType) -> nodes.paragraph:
     return para
 
 
-def _table(head: Sequence[str], rows: Sequence[Sequence[nodes.Node]]) -> nodes.table:
+def _table(
+    head: Sequence[str], rows: Sequence[Sequence[nodes.Node]], part: LegendPart
+) -> nodes.table:
     """Build a simple docutils table.
 
     :param head: The column titles.
     :param rows: The cell contents of each body row, one entry per column.
+    :param part: Which legend section this is, which names the table so that a reader's
+        stylesheet -- and the conformance corpus -- can address one section rather than
+        having to count tables.
     :return: The table.
     """
-    table = nodes.table(classes=["needflow_legend_table"])
+    table = nodes.table(classes=["needflow_legend_table", f"needflow_legend_{part}"])
     group = nodes.tgroup(cols=len(head))
     table += group
     for _ in head:
@@ -143,6 +148,7 @@ def create_legend_nodes(
                         )
                         for need_type in need_types
                     ],
+                    "types",
                 )
             )
         elif part == "links" and link_types:
@@ -156,6 +162,7 @@ def create_legend_nodes(
                         )
                         for link_type in link_types
                     ],
+                    "links",
                 )
             )
 
