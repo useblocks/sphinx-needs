@@ -924,3 +924,36 @@ def test_bad_regex_in_a_project_with_no_needs(
     assert "'regex' is not a valid regular expression" in warnings, warnings
     assert app.config.needs_string_links == {}
     assert (Path(app.outdir) / "index.html").exists()
+
+
+def test_bytes_pattern_is_rejected(make_app: Any, sphinx_test_tempdir: Any) -> None:
+    """A compiled *bytes* pattern can never match a field value, so say so once.
+
+    ``re.compile`` accepts it and hands it straight back, so it passes every other
+    check and then fails ``.search()`` on every single value -- trading one
+    configuration warning naming the entry for two render-time warnings per value.
+    """
+    from tests.conftest import create_src_files_in_tmpdir
+
+    conf = (
+        CONF_HEAD + "needs_string_links = {'bad': {\n"
+        "    'regex': re.compile(rb'^(?P<value>.+)$'),\n"
+        "    'link_url': 'https://tracker.example.com/{{value}}',\n"
+        "    'link_name': 'T:{{value}}',\n"
+        "    'options': ['ticket'],\n"
+        "}}\n"
+    )
+    srcdir = create_src_files_in_tmpdir(
+        [(Path("conf.py"), conf), (Path("index.rst"), INDEX)], sphinx_test_tempdir
+    )
+    app = make_app(srcdir=srcdir, buildername="html")
+    app.build()
+
+    warnings = warnings_of(app)
+    assert "needs_string_links['bad']" in warnings, warnings
+    assert "'regex' is a bytes pattern" in warnings, warnings
+    assert "needs.string_link" in warnings, warnings
+    # skipped at configuration time, so no per-value render warnings at all
+    assert "Problems dealing with string to link transformation" not in warnings
+    assert app.config.needs_string_links == {}
+    assert "AB-1" in need_html(app)

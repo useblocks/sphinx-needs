@@ -202,6 +202,15 @@ def _validate_conf(
             f"got {conf['regex']!r}, skipping."
         )
         return None
+    if isinstance(conf["regex"], re.Pattern) and not isinstance(
+        conf["regex"].pattern, str
+    ):
+        # a bytes pattern compiles happily and then fails on every single value
+        warn(
+            f"'regex' is a bytes pattern, which can never match a field value, "
+            f"got {conf['regex']!r}, skipping."
+        )
+        return None
 
     options = conf["options"]
     if not isinstance(options, _OPTIONS_TYPES) or not all(
