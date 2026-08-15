@@ -424,12 +424,17 @@ def _label(
     # note this is based on the plantuml template DEFAULT_DIAGRAM_TEMPLATE
 
     br = f'<br align="{align}"/>'
-    # note this text wrapping mimics the jinja wordwrap filter
+    # note this text wrapping mimics the jinja wordwrap filter.
+    # The text is wrapped *before* it is escaped: wrapping escaped text lets the wrapper
+    # count the characters of an entity and break inside one, so a title holding a quote
+    # or an angle bracket produced `&quo<br/>t;` -- invalid markup, and a visibly broken
+    # label. It also means the wrap width counts what the reader sees.
     need_title = need["title"] if need["is_need"] else need["content"]
     title = br.join(
         br.join(
-            textwrap.wrap(
-                html.escape(line),
+            html.escape(chunk)
+            for chunk in textwrap.wrap(
+                line,
                 15,
                 expand_tabs=False,
                 replace_whitespace=False,

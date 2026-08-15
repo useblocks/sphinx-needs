@@ -2915,3 +2915,51 @@ def test_unknown_legend_section_is_an_option_error(test_app):
     warnings = strip_colors(app._warning.getvalue())
     assert "unknown legend section 'nosuchsection'" in warnings
     assert "types, links" in warnings
+
+
+ENTITY_IN_TITLE = """\
+Entity in a wrapped title
+=========================
+
+.. spec:: A "quoted" and <angled> title that wraps
+   :id: AAAAA
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), ENTITY_IN_TITLE)],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_graphviz_label_does_not_break_html_entities(test_app):
+    """A title holding a quote or a bracket must survive being wrapped.
+
+    The label was escaped and then wrapped, so the wrapper counted the characters of an
+    entity and could break inside one -- producing ``&quo<br/>t;``, which is invalid
+    markup and a visibly broken label. Wrapping first also makes the wrap width count
+    what the reader sees rather than what the escaper wrote.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    assert "&quot;" in debug
+    assert "&lt;angled&gt;" in debug
+    # no entity may be interrupted by a line break element
+    assert not re.search(r"&[a-z]*<br[^>]*>[a-z]*;", debug)

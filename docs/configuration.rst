@@ -193,6 +193,13 @@ once for the project -- a diagram is never refused for asking.
 
 .. note::
 
+   ``hexagon`` is emitted to PlantUML as its ``hexagon`` element, which older PlantUML
+   releases do not have; such a release reports a diagram error rather than drawing a
+   different shape.
+   If you support PlantUML builds older than 1.2020.13, prefer another member.
+
+.. note::
+
    ``color`` can also be an empty string. This makes sense, if the PlantUMl configuration is mostly provided by using
    :ref:`needs_flow_configs` and the used colors shall not get overwritten by type specific values.
 
