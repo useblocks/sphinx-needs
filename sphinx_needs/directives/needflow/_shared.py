@@ -57,7 +57,7 @@ def resolve_color(value: None | str | int | float | bool) -> str | None:
     """Normalise a resolved color option value to an engine neutral form.
 
     A color may be written with or without a leading ``#``, and each engine adds the
-    prefix that its own syntax requires, so any given one is stripped here.
+    prefix that its own syntax requires, so any leading ``#`` characters are stripped here.
     An unset or empty value means "no color", rather than a color named after the
     string representation of the value.
 
