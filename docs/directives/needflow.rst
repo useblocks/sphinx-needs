@@ -723,5 +723,3 @@ so no existing diagram changes.
       :show_legend:
 
 For a rendered legend, see :ref:`legend <needflow_legend>` above.
-
-

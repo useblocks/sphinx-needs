@@ -49,11 +49,15 @@ New Features
 
   Edge labels are the one intent that already had an option, so it is **widened rather
   than replaced**: the bare ``:show_link_names:`` flag already meant precisely
-  ``outgoing``, and :ref:`needs_flow_show_links` still accepts ``True`` and ``False``
-  beside the four values. No existing document or configuration changes, and neither
-  spelling is deprecated. The values are what make the pair useful: the flag and the
-  configuration used to be OR-ed together, so a project that turned labels on left no way
-  of turning them off again for one diagram -- ``:show_link_names: none`` is that way out.
+  ``outgoing``, and :ref:`needs_flow_show_links` still accepts ``True``, ``False`` and any
+  other non-string value beside the four names. Existing documents and configurations
+  therefore keep drawing exactly what they drew, and neither spelling is deprecated. The
+  one exception is a *string* that is not one of the four values: it used to be truthy and
+  draw labels, and now warns and falls back to ``none``.
+
+  The values are what make the pair useful: the flag and the configuration used to be
+  OR-ed together, so a project that turned labels on left no way of turning them off again
+  for one diagram -- ``:show_link_names: none`` is that way out.
 
   ``needs_links`` gains ``line``, ``part_line``, ``arrow`` and ``part_color``, and its
   ``color`` is finally honoured — an identical "TODO" had sat in both emitters.

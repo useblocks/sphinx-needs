@@ -1100,8 +1100,21 @@ Project default link labels
         ("type", "links"),
         (False, None),
         ("none", None),
+        # not a bool and not a string: this value was declared a bool for years, so
+        # anything truthy drew labels and anything falsy did not
+        (1, "links outgoing"),
+        (0, None),
     ],
-    ids=["true", "outgoing", "incoming", "type", "false", "none"],
+    ids=[
+        "true",
+        "outgoing",
+        "incoming",
+        "type",
+        "false",
+        "none",
+        "truthy-non-bool",
+        "falsy-non-bool",
+    ],
 )
 @pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
 def test_flow_show_links_config_accepts_a_bool_or_a_value(
@@ -1140,6 +1153,11 @@ def test_flow_show_links_config_accepts_a_bool_or_a_value(
         assert "links incoming" not in from_config
     else:
         assert labelled in from_config
+        if labelled == "links":
+            # `links` is a substring of both titles, so asserting its presence alone
+            # cannot tell the bare field name apart from either of them
+            assert "links outgoing" not in from_config
+            assert "links incoming" not in from_config
 
     # whatever the project asked for, the diagram turned it off
     assert "links outgoing" not in overridden
@@ -2268,7 +2286,7 @@ Bad config value
         ({"needs_flow_show_links": "bogus"}, "Invalid 'needs_flow_show_links' value"),
         ({"needs_flow_legend": "nonsense"}, "Invalid 'needs_flow_legend' value"),
     ],
-    ids=["direction", "link_labels", "legend"],
+    ids=["direction", "show_links", "legend"],
 )
 @pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
 def test_out_of_enum_config_values_warn_and_fall_back(
@@ -2391,7 +2409,7 @@ def test_invalid_flow_engine_is_reported_without_any_needflow(test_app):
         ({"needs_flow_show_links": "bogus"}, "Invalid 'needs_flow_show_links' value"),
         ({"needs_flow_legend": "nonsense"}, "Invalid 'needs_flow_legend' value"),
     ],
-    ids=["direction", "link_labels", "legend"],
+    ids=["direction", "show_links", "legend"],
 )
 def test_bad_flow_config_is_reported_without_any_needflow(
     make_app, tmp_path, plantuml_command, override, message
@@ -2986,3 +3004,4 @@ def test_graphviz_label_does_not_break_html_entities(test_app):
     assert "&lt;angled&gt;" in debug
     # no entity may be interrupted by a line break element
     assert not re.search(r"&[a-z]*<br[^>]*>[a-z]*;", debug)
+

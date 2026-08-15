@@ -954,10 +954,15 @@ What :ref:`needflow` diagrams label their connections with by default:
 
    needs_flow_show_links = "outgoing"
 
-``True`` and ``False`` are also accepted, and mean ``outgoing`` and ``none`` --
-which is what the value has always meant, so no existing configuration changes.
+Default value: ``False``, i.e. ``none``.
 
-Default value: ``False``
+``True`` and ``False`` are also accepted, and mean ``outgoing`` and ``none``, which is
+what they have always meant.
+The same goes for any other non-string value: this option was declared a boolean for
+years, so a truthy one such as ``1`` still draws labels.
+A *string* that is not one of the four values is a mistake rather than a truth value, so
+it warns and falls back to ``none`` -- which is the one input whose behaviour changes,
+since it used to draw labels.
 
 A diagram overrides it with :ref:`show_link_names <needflow_show_link_names>`,
 including turning labels off again with ``none``.

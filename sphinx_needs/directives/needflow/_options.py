@@ -464,11 +464,16 @@ def validated_config_show_links(
     valid: ``True`` is the ``outgoing`` it has always drawn and ``False`` is ``none``.
     An unusable string warns once and falls back, like every other enumerated value.
 
+    Anything that is neither a string nor a boolean is read for its truth, because that
+    is what a value declared ``bool`` for years actually did: ``1`` drew labels and drew
+    them silently, so it still does. Only a *string* is held to the enumeration, since a
+    string is someone naming a value rather than leaning on truthiness.
+
     :param value: The ``needs_flow_show_links`` configuration value.
     :param location: Where to report an unusable value, if anywhere.
     :return: What to label edges with by default.
     """
-    if isinstance(value, bool):
+    if not isinstance(value, str):
         return "outgoing" if value else "none"
     return validated_config_enum(  # type: ignore[return-value]
         str(value),
