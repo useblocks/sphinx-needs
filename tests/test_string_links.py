@@ -169,6 +169,16 @@ def _meta_span(html: str, field: str) -> str:
             "'regex' must be a string or a compiled pattern",
             id="regex-not-a-string",
         ),
+        pytest.param(
+            {**GOOD_LINK, "link_url": 42},
+            "'link_url' must be a string",
+            id="link-url-not-a-string",
+        ),
+        pytest.param(
+            {**GOOD_LINK, "link_name": ["Open"]},
+            "'link_name' must be a string",
+            id="link-name-not-a-string",
+        ),
     ],
 )
 def test_invalid_conf_warns_but_the_build_survives(
