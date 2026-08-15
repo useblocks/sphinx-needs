@@ -29,6 +29,7 @@ either of them draws -- and are called out at the point where they happen:
 
 from __future__ import annotations
 
+from collections.abc import Callable, Container, Iterable
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -366,33 +367,92 @@ def build_graph(
         found_needs, attributes.get("max_items"), needs_config
     )
 
+    roots, drawn = build_node_tree(
+        found_needs,
+        lambda need: resolve_presentation(
+            need,
+            highlight=attributes["highlight"],
+            border_color=attributes["border_color"],
+            config=needs_config,
+            needs=needs_view.values(),
+            location=variant_location,
+        ),
+    )
+
+    return NeedflowGraph(
+        needs=found_needs,
+        total_needs=total_needs,
+        roots=roots,
+        nodes=drawn,
+        edges=collect_edges(found_needs, allowed_link_types, drawn),
+        # the configuration can only ever turn link names on; it is kept as is
+        show_link_names=attributes["show_link_names"] or needs_config.flow_show_links,
+    )
+
+
+def resolve_presentation(
+    need: NeedItem | NeedPartItem,
+    /,
+    *,
+    highlight: str,
+    border_color: str | None,
+    config: NeedsSphinxConfig,
+    needs: Iterable[NeedItem | NeedPartItem],
+    location: LocationType,
+) -> NodePresentation:
+    """Resolve how a single need is to be presented.
+
+    :param need: The need or need part to be drawn.
+    :param highlight: The ``highlight`` filter, empty if the option was not given.
+    :param border_color: The ``border_color`` option, in variant syntax.
+    :param config: The Sphinx-Needs configuration.
+    :param needs: All needs, for a ``highlight`` filter that consults them.
+    :param location: Where to report ``border_color`` variant problems.
+    :return: The resolved presentation.
+    """
+    is_highlighted = bool(highlight) and filter_single_need(
+        need, config, highlight, needs
+    )
+    resolved_border = None
+    if not is_highlighted and border_color:
+        # a highlight always wins, so the border color is not even resolved
+        resolved_border = resolve_color(
+            match_variants(
+                border_color,
+                need.filter_context(),
+                config.variants,
+                location=location,
+            )
+        )
+    return NodePresentation(
+        # need parts have no style of their own
+        type_style=need["type_style"] if need["is_need"] else "rectangle",
+        type_color=need["type_color"] or None,
+        highlight=is_highlighted,
+        border_color=resolved_border,
+    )
+
+
+def build_node_tree(
+    found_needs: list[NeedItem | NeedPartItem],
+    presentation: Callable[[NeedItem | NeedPartItem], NodePresentation],
+    /,
+) -> tuple[list[GraphNode], dict[str, GraphNode]]:
+    """Arrange the needs of a result into the tree of nodes that the engines draw.
+
+    A need is drawn inside its parent need, and a need part inside its need, so a need
+    whose parent is not part of the result becomes a root, and a need part whose need is
+    not part of the result is not drawn at all.
+
+    :param found_needs: The needs and need parts that passed the filter.
+    :param presentation: How to resolve the presentation of a single need.
+    :return: The root nodes, and every drawn node by complete id.
+    """
     found_by_id = {need["id_complete"]: need for need in found_needs}
     drawn: dict[str, GraphNode] = {}
 
-    def _presentation(need: NeedItem | NeedPartItem) -> NodePresentation:
-        highlight = bool(attributes["highlight"]) and filter_single_need(
-            need, needs_config, attributes["highlight"], needs_view.values()
-        )
-        border_color = None
-        if not highlight and attributes["border_color"]:
-            border_color = resolve_color(
-                match_variants(
-                    attributes["border_color"],
-                    need.filter_context(),
-                    needs_config.variants,
-                    location=variant_location,
-                )
-            )
-        return NodePresentation(
-            # need parts have no style of their own
-            type_style=need["type_style"] if need["is_need"] else "rectangle",
-            type_color=need["type_color"] or None,
-            highlight=highlight,
-            border_color=border_color,
-        )
-
-    def _build_node(need: NeedItem | NeedPartItem, *, leaf: bool = False) -> GraphNode:
-        node = GraphNode(need=need, presentation=_presentation(need))
+    def _build(need: NeedItem | NeedPartItem, *, leaf: bool = False) -> GraphNode:
+        node = GraphNode(need=need, presentation=presentation(need))
         drawn[need["id_complete"]] = node
         if leaf:
             # a need part is never recursed into, by either engine
@@ -400,20 +460,40 @@ def build_graph(
         if need["is_need"]:
             for part_id in need["parts"]:
                 if (part := found_by_id.get(f"{need['id']}.{part_id}")) is not None:
-                    node.parts.append(_build_node(part, leaf=True))
+                    node.parts.append(_build(part, leaf=True))
         for child_id in need["parent_needs_back"]:
             if (child := found_by_id.get(child_id)) is not None:
-                node.children.append(_build_node(child))
+                node.children.append(_build(child))
         return node
 
-    roots = [_build_node(root) for root in get_root_needs(found_needs)]
+    return [_build(root) for root in get_root_needs(found_needs)], drawn
 
+
+def collect_edges(
+    found_needs: list[NeedItem | NeedPartItem],
+    allowed_link_types: list[LinkSchema],
+    drawn: Container[str],
+    /,
+) -> list[GraphEdge]:
+    """Collect every link between the needs of a result.
+
+    A link is collected only if its target is part of the result; whether either of its
+    ends is actually *drawn* is recorded rather than acted on, since the engines differ
+    in what they do with a link that has an undrawn end.
+
+    :param found_needs: The needs and need parts that passed the filter.
+    :param allowed_link_types: The link fields to draw.
+    :param drawn: The complete ids of the drawn nodes, from :func:`build_node_tree`.
+    :return: The edges, in the order the engines emit them.
+    """
+    # a need and a need part are both identified by their complete id
+    found_ids = {need["id_complete"] for need in found_needs}
     edges: list[GraphEdge] = []
     for need in found_needs:
         source_id = need["id_complete"]
         for link_type in allowed_link_types:
             for link in need[link_type.name]:
-                if link not in found_by_id:
+                if link not in found_ids:
                     # the link target was filtered out, so there is nothing to point at
                     continue
                 edges.append(
@@ -426,13 +506,4 @@ def build_graph(
                         target_drawn=link in drawn,
                     )
                 )
-
-    return NeedflowGraph(
-        needs=found_needs,
-        total_needs=total_needs,
-        roots=roots,
-        nodes=drawn,
-        edges=edges,
-        # the configuration can only ever turn link names on; it is kept as is
-        show_link_names=attributes["show_link_names"] or needs_config.flow_show_links,
-    )
+    return edges
