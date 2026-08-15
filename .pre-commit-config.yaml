@@ -16,6 +16,9 @@ repos:
     rev: v0.21.0
     hooks:
       - id: yamlfmt
+        # the conformance corpus is shared byte-for-byte with ubCode and checksummed in
+        # its own manifest, so a formatter local to this repository must not rewrite it
+        exclude: ^tests/conformance/
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.19.1

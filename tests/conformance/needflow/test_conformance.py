@@ -145,8 +145,7 @@ def _check_keys(actual: Any, allowed: frozenset[str] | set[str], what: str) -> N
     assert isinstance(actual, dict), f"{what} must be a mapping, got {type(actual)}"
     if unknown := set(actual) - set(allowed):
         raise AssertionError(
-            f"{what} uses unknown key(s) {sorted(unknown)}; "
-            f"allowed: {sorted(allowed)}"
+            f"{what} uses unknown key(s) {sorted(unknown)}; allowed: {sorted(allowed)}"
         )
 
 
@@ -275,7 +274,7 @@ def _normalise(source: str, need_ids: list[str]) -> str:
         quoted = re.escape(need_id)
         # plantuml: `[[<url>]]`, graphviz: `href="<url>"`
         source = re.sub(
-            rf'\[\[[^\]]*#{quoted}\]\]', f"[[<NODE_URL:{need_id}>]]", source
+            rf"\[\[[^\]]*#{quoted}\]\]", f"[[<NODE_URL:{need_id}>]]", source
         )
         source = re.sub(
             rf'href="[^"]*#{quoted}"', f'href="<NODE_URL:{need_id}>"', source
@@ -302,9 +301,7 @@ def _emitted_source(app: Any) -> str:
     doctree = app.env.get_and_resolve_doctree("index", app.builder)
     for node in doctree.findall(NeedflowPlantuml):  # pragma: no cover - engine specific
         raise AssertionError(f"unresolved plantuml needflow: {node}")
-    sources = [
-        node["resolved_content"] for node in doctree.findall(NeedflowGraphiz)
-    ]
+    sources = [node["resolved_content"] for node in doctree.findall(NeedflowGraphiz)]
     if sources:
         assert len(sources) == 1, "a corpus case draws exactly one diagram"
         return str(sources[0])
