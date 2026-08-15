@@ -318,7 +318,9 @@ def _render_subgraph(
     else:
         params.append(("shape", "rectangle"))
 
-    params.extend(_presentation_params(presentation, base_style=""))
+    params.extend(
+        _presentation_params(presentation, base_style="", quote_style=False)
+    )
 
     # we need to create an invisible node to allow links to the subgraph
     id = _quote(need["id_complete"])
@@ -349,7 +351,7 @@ def _render_subgraph(
 
 
 def _presentation_params(
-    presentation: NodePresentation, *, base_style: str
+    presentation: NodePresentation, *, base_style: str, quote_style: bool = True
 ) -> list[tuple[str, str]]:
     """Render the fill, outline and text of a node as graphviz attributes.
 
@@ -363,6 +365,11 @@ def _presentation_params(
     :param presentation: The resolved presentation of the node.
     :param base_style: The diagram-wide graphviz ``node`` style to keep alongside
         ``filled``, empty if there is none to keep.
+    :param quote_style: Whether to quote the ``style`` value.  The subgraph path has
+        always written a bare ``style=filled``, and the generated image file is named
+        after a hash of this source, so quoting it there would rename every image of
+        every project that nests needs.  A value listing several styles is quoted
+        regardless, since a bare one cannot contain a comma.
     :return: The attributes to add, in emission order.
     """
     styles = presentation.styles
@@ -387,7 +394,10 @@ def _presentation_params(
     if styles.border_style in ("dashed", "dotted"):
         style_entries.append(styles.border_style)
     if style_entries:
-        params.append(("style", _quote(",".join(style_entries))))
+        joined = ",".join(style_entries)
+        params.append(
+            ("style", _quote(joined) if quote_style or len(style_entries) > 1 else joined)
+        )
     if fill:
         params.append(("fillcolor", _quote(fill)))
 

@@ -2362,3 +2362,54 @@ def test_invalid_flow_engine_is_reported_without_any_needflow(test_app):
     warnings = strip_colors(app._warning.getvalue())
     assert "Invalid 'needs_flow_engine' value 'nonsuch'" in warnings
     assert warnings.count("Invalid 'needs_flow_engine' value") == 1
+
+
+NESTED_FILL = """\
+Nested need fill
+================
+
+.. spec:: Parent
+   :id: PARENT
+
+   .. spec:: Child
+      :id: CHILD
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), NESTED_FILL)],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_subgraph_style_stays_unquoted(test_app):
+    """A clustered need keeps writing a bare ``style=filled``.
+
+    Graphviz treats ``filled`` and ``"filled"`` alike, but the generated image file is
+    named after a hash of this source, so quoting it renames every image of every
+    project that nests needs on its first rebuild. The plain node path has always
+    quoted and the subgraph path has always not; unifying the two emitters must not
+    quietly change either.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    # the parent is a subgraph (bare), the child a plain node (quoted)
+    assert "  style=filled;" in debug
+    assert 'style="filled"' in debug
