@@ -197,6 +197,20 @@ Bug fixes
 Documentation
 .............
 
+- 📚 The :ref:`needpie` and :ref:`needbar` pages are corrected against what the two
+  directives actually do.
+
+  Both claimed that several image files are written per chart, where exactly one is,
+  and both called a literal content value a "float/int", where only a non-negative
+  integer is read as one. The pages now also say what an invalid value really does —
+  a label, ``:explode:`` or grid-shape mismatch, an unknown color and an unknown style
+  all end the build — and that the rotation options take non-negative integers, that a
+  filter containing a comma needs a custom ``:separator:``, and that ``:colors:``
+  shorter than the data is extended with the default colors rather than repeated.
+  ``needpie`` gains the missing ``:filter_warning:`` section and states that content
+  and ``:filter-func:`` are alternatives; ``needbar`` states that it takes no filter
+  options at all.
+
 - 📚 ``docs/ubproject.toml``, the `ubCode`_ configuration of this documentation, is brought
   up to date with current ubCode releases
 
