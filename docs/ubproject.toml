@@ -92,6 +92,11 @@ border = "0000FF"
 [needs.flow_styles.done]
 border = "00FF00"
 
+# Named needflow legends, selected by name with the `:show_legend:` option.
+[needs.flow_legends.beside]
+parts = ["types", "links"]
+placement = "external"
+
 [needs.fields.status]
 parse_variants = true
 

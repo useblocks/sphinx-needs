@@ -865,23 +865,67 @@ The direction :ref:`needflow` diagrams flow in by default:
 A diagram overrides it with :ref:`needflow_direction`;
 only a diagram that does not set the option consults this value.
 
-.. _`needs_flow_legend`:
+.. _`needs_flow_legends`:
 
-needs_flow_legend
-~~~~~~~~~~~~~~~~~
+needs_flow_legends
+~~~~~~~~~~~~~~~~~~
 
 .. versionadded:: 8.4.0
 
-The legend :ref:`needflow` diagrams show by default,
-as a comma separated list of ``types`` and ``links``.
+Named legend configurations that a diagram selects by name with
+:ref:`show_legend <needflow_show_legend>`.
 
 .. code-block:: python
 
-   needs_flow_legend = "types,links"
+   needs_flow_legends = {
+       "beside": {"parts": ["types", "links"], "placement": "external"},
+   }
 
-Default value: ``""``, i.e. no legend.
-A diagram overrides it with :ref:`needflow_legend`,
-and opts out entirely by giving that option no value.
+``parts`` lists the sections to describe -- ``types``, ``links`` or both,
+in the order they should appear; it defaults to ``["types"]``.
+
+``placement`` is a *preference*, not a demand:
+
+``internal`` (the default)
+   Draw the legend inside the picture where the engine can,
+   and beside it where the engine cannot.
+``external``
+   Draw the legend beside the picture, as a document table.
+   The table looks the same on every engine, its text is selectable and searchable,
+   and it can describe link types -- which no in-diagram legend ever could.
+
+An engine that cannot draw the legend asked for inside the picture substitutes the
+external one without warning.
+Both engines here draw an in-image legend of need types, and neither can describe link
+types that way, so a legend whose ``parts`` include ``links`` is always drawn beside the
+diagram however it was placed.
+
+That substitution is silent by design.
+The two legends carry identical information and differ only in where they sit,
+so it is a cosmetic one,
+and a warning about it would be unactionable on a project whose other engine can never
+satisfy the preference.
+
+.. _`needs_flow_show_legend`:
+
+needs_flow_show_legend
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Which entry of :ref:`needs_flow_legends` a diagram gets
+when it asks for a legend without naming one.
+
+.. code-block:: python
+
+   needs_flow_show_legend = "beside"
+
+Default value: ``""``.
+
+This selects *which* legend, never *whether* one is drawn:
+a diagram still has to ask, with :ref:`show_legend <needflow_show_legend>`.
+There is deliberately no project-wide way of putting a legend on every diagram --
+a legend describes one picture, and the decision belongs with that picture.
 
 .. _`needs_flow_styles`:
 
@@ -969,9 +1013,9 @@ including turning labels off again with ``none``.
 
 .. note::
 
-   Every enumerated ``needs_flow_*`` value -- this one, :ref:`needs_flow_direction`,
-   :ref:`needs_flow_legend` and :ref:`needs_flow_engine` -- is matched without regard to
-   case or surrounding whitespace, exactly as the matching directive option is.
+   Every enumerated ``needs_flow_*`` value -- this one, :ref:`needs_flow_direction`
+   and :ref:`needs_flow_engine` -- is matched without regard to case or surrounding
+   whitespace, exactly as the matching directive option is.
 
 .. _`needs_flow_link_types`:
 

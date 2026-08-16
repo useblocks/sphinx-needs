@@ -177,35 +177,63 @@ Adds information of used filters below generated flowchart.
       :tags: flow_example
       :show_filters:
 
-.. _needflow_legend:
+.. _needflow_show_legend:
 
-legend
-~~~~~~
+show_legend
+~~~~~~~~~~~
 
-.. versionadded:: 8.4.0
+.. versionchanged:: 8.4.0
+   Takes the *name* of a legend configuration.
+   Written bare it still draws the legend it always drew, so no existing diagram changes.
 
-Describes the diagram in a table beside it,
-listing only what the diagram actually drew.
-The value is a comma separated list of ``types``, ``links``, or both;
-give the option without a value to draw no legend at all,
-which is how a single diagram opts out of :ref:`needs_flow_legend`.
+Describes the diagram: its need types, its link types, or both.
 
-The legend is a document table rather than part of the picture,
-so it looks the same on every engine, its text is selectable and searchable,
-and it can describe link types -- which no in-diagram legend ever could.
+Written without a value, the engine chooses:
+
+.. code-block:: rst
+
+   .. needflow::
+      :show_legend:
+
+Both engines draw their own in-image legend for that, exactly as they always have --
+including the long-standing difference that ``plantuml`` lists every configured need type
+while ``graphviz`` lists only the ones it drew.
+That difference is deliberately left alone, so no existing diagram changes;
+a named legend is how a project gets the same legend on both.
+A project can also change what "bare" means, with :ref:`needs_flow_show_legend`.
+
+Written with a value, it names an entry of :ref:`needs_flow_legends`:
+
+.. code-block:: python
+
+   needs_flow_legends = {
+       "beside": {"parts": ["types", "links"], "placement": "external"},
+   }
+
+A legend placed beside the diagram lists only what the diagram actually drew,
+whichever engine drew it.
 
 .. syntax-example::
 
    .. needflow::
       :tags: flow_example
-      :legend: types,links
+      :show_legend: beside
 
 .. dropdown:: Using Graphviz engine
 
    .. needflow::
       :engine: graphviz
       :tags: flow_example
-      :legend: types,links
+      :show_legend: beside
+
+The option takes a name and never the sections inline.
+A project names its legends whatever it likes,
+so a legend called ``types`` would collide with the section called ``types``
+and need a precedence rule nobody should have to learn.
+One namespace, no reserved words.
+
+Naming a legend that :ref:`needs_flow_legends` does not define is a warning on that
+diagram, listing the names that are available, and the engine's own legend is drawn.
 
 .. _needflow_show_link_names:
 
@@ -689,37 +717,3 @@ common filters
 * :ref:`option_tags`
 * :ref:`option_types`
 * :ref:`option_filter`
-
-
-.. _needflow_legacy_options:
-
-Legacy options
---------------
-
-These options still work, and will keep working,
-but each has a portable replacement above that means the same thing on every engine.
-Using one emits a ``needs.deprecated`` warning naming the replacement.
-
-.. _needflow_show_legend:
-
-show_legend
-~~~~~~~~~~~
-
-.. deprecated:: 8.4.0
-   Use :ref:`legend <needflow_legend>` instead.
-
-Adds a legend inside the generated image,
-listing need types and their configured colors.
-Its rendering differs between the two engines --
-``plantuml`` lists every configured need type and ``graphviz`` only the drawn ones --
-which is exactly why :ref:`legend <needflow_legend>` exists.
-That difference is deliberately left as it is,
-so no existing diagram changes.
-
-.. code-block:: rst
-
-   .. needflow::
-      :tags: flow_example
-      :show_legend:
-
-For a rendered legend, see :ref:`legend <needflow_legend>` above.

@@ -32,8 +32,9 @@ New Features
        * Meaning
      - * ``:direction:``
        * ``down`` (default), ``up``, ``right`` or ``left``, plus the ``TB``/``TD``/``BT``/``LR``/``RL`` aliases.
-     - * ``:legend:``
-       * ``types``, ``links`` or both, drawn as a table beside the diagram.
+     - * ``:show_legend:``
+       * Widened from a flag: names an entry of :ref:`needs_flow_legends`, describing
+         ``types``, ``links`` or both; written bare it still draws what it always drew.
      - * ``:show_link_names:``
        * Widened from a flag: ``none`` (default), ``outgoing``, ``incoming`` or ``type``;
          written bare it still means ``outgoing``.
@@ -42,18 +43,20 @@ New Features
      - * ``:engine_config:``
        * Engine specific customisation, selected by name from :ref:`needs_flow_engine_config`.
 
-  With matching project defaults :ref:`needs_flow_direction`, :ref:`needs_flow_legend`,
-  :ref:`needs_flow_show_links`, :ref:`needs_flow_styles` and
-  :ref:`needs_flow_engine_config`. Only an unset option consults the configuration, so a
-  single diagram can always opt back out of a project default.
+  With matching project defaults :ref:`needs_flow_direction`, :ref:`needs_flow_legends`,
+  :ref:`needs_flow_show_legend`, :ref:`needs_flow_show_links`, :ref:`needs_flow_styles`
+  and :ref:`needs_flow_engine_config`. Only an unset option consults the configuration, so
+  a single diagram can always opt back out of a project default.
 
-  Edge labels are the one intent that already had an option, so it is **widened rather
-  than replaced**: the bare ``:show_link_names:`` flag already meant precisely
-  ``outgoing``, and :ref:`needs_flow_show_links` still accepts ``True``, ``False`` and any
-  other non-string value beside the four names. Existing documents and configurations
-  therefore keep drawing exactly what they drew, and neither spelling is deprecated. The
-  one exception is a *string* that is not one of the four values: it used to be truthy and
-  draw labels, and now warns and falls back to ``none``.
+  Edge labels and the legend are the two intents that already had an option, so those are
+  **widened rather than replaced**: the bare ``:show_link_names:`` flag already meant
+  precisely ``outgoing``, and :ref:`needs_flow_show_links` still accepts ``True``,
+  ``False`` and any other non-string value beside the four names; the bare
+  ``:show_legend:`` flag still draws the legend it always drew. Existing documents and
+  configurations therefore keep drawing exactly what they drew, and none of those
+  spellings is deprecated. The one exception is a *string* ``needs_flow_show_links`` that
+  is not one of the four values: it used to be truthy and draw labels, and now warns and
+  falls back to ``none``.
 
   The values are what make the pair useful: the flag and the configuration used to be
   OR-ed together, so a project that turned labels on left no way of turning them off again
@@ -70,10 +73,21 @@ New Features
   is drawn ``down`` with a single warning per project, and a border width becomes a bold line
   silently. Nothing warns unless the feature is actually used.
 
-  The new ``:legend:`` is a document table rather than part of the picture, so there is one
-  implementation for every engine instead of one per engine. It lists only what the diagram
-  actually drew, its text is selectable, and it can describe link types — which no
-  in-diagram legend could.
+  ``:show_legend:`` takes the *name* of a legend from :ref:`needs_flow_legends`, never the
+  sections inline: a project names its legends whatever it likes, so an inline vocabulary
+  would mean a legend called ``types`` collided with the section called ``types`` and
+  needed a precedence rule nobody should have to learn. A named legend chooses its
+  sections, and asks for ``internal`` or ``external`` placement; the external one is a
+  document table rather than part of the picture, so there is one implementation for every
+  engine instead of one per engine, its text is selectable, and it can describe link types
+  — which no in-diagram legend could. Placement is a preference: an engine that cannot draw
+  inside the picture substitutes the table silently, because the two carry the same
+  information and differ only in where they sit.
+
+  Naming no legend at all leaves the choice to the engine, which is what keeps the bare
+  flag byte-identical to before. :ref:`needs_flow_show_legend` changes which legend "bare"
+  means, project-wide — *which*, never *whether*: a legend describes one picture, so the
+  decision to draw one stays with that picture.
 
 Improvements
 ............
@@ -281,8 +295,6 @@ Deprecations
 Every item below keeps working exactly as it did, and will keep working; using one now
 emits a ``needs.deprecated`` warning naming its replacement (:pr:`1770`).
 
-- ``needflow`` ``:show_legend:`` → :ref:`:legend: types <needflow_legend>`.
-  The legacy option keeps its per-engine in-image rendering, so no diagram changes.
 - ``needflow`` ``:config:`` → :ref:`engine_config <needflow_engine_config>`, which reads the
   same registries, so nothing has to move.
 - ``needflow`` ``:highlight:`` → :ref:`styles <needflow_styles>` with the built-in
