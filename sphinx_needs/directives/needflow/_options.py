@@ -93,6 +93,36 @@ LegendPart = Literal["types", "links"]
 """A section of the out-of-diagram legend."""
 
 
+#: The keys a ``needs_flow_legends`` entry may set.
+_LEGEND_KEYS = frozenset(("parts", "placement"))
+
+
+@dataclass(frozen=True)
+class LegendSpec:
+    """A resolved legend configuration."""
+
+    parts: tuple[LegendPart, ...] = ("types",)
+    """Which sections the legend describes, in the order they are shown."""
+
+    placement: str = "internal"
+    """Where the legend is asked to go: ``internal`` or ``external``.
+
+    This is a *preference*, not a requirement. An engine that cannot draw a good legend
+    inside the diagram renders the external table instead, silently: the two carry
+    identical information and differ only in where they sit, which makes the
+    substitution a decorative nearest form rather than an intent that went unhonoured.
+    """
+
+    @property
+    def internal(self) -> bool:
+        """Whether this legend can actually be drawn inside the diagram.
+
+        Neither in-diagram legend here can describe link types, so a legend that asks
+        for them is drawn beside the diagram whatever it would have preferred.
+        """
+        return self.placement == "internal" and self.parts == ("types",)
+
+
 def direction_option(argument: str) -> FlowDirection:
     """Parse the ``:direction:`` option value.
 
@@ -124,41 +154,19 @@ def show_link_names_option(argument: str | None) -> LinkLabels:
     return directives.choice(value, get_args(LinkLabels))  # type: ignore[no-any-return]
 
 
-def legend_option(argument: str) -> tuple[LegendPart, ...]:
-    """Parse the ``:legend:`` option value.
+def show_legend_option(argument: str | None) -> str:
+    """Parse the ``:show_legend:`` option value.
 
-    An explicitly empty value is *not* the same as an absent option: it means "no
-    legend", and so overrides a project default that asked for one.
+    The option takes the *key* of a legend configuration, or nothing at all. It never
+    takes the sections inline: a project is free to name its legends whatever it likes,
+    and an inline vocabulary would mean a legend called ``types`` collided with the
+    section called ``types`` and needed a precedence rule nobody should have to learn.
+    One namespace, no reserved words.
 
-    :param argument: The raw option value, a comma separated list.
-    :return: The legend sections to draw, in the order given, without duplicates.
-    :raises ValueError: If a section is not a known one.
+    :param argument: The raw option value, ``None`` or empty when written bare.
+    :return: The key, or ``""`` when written bare.
     """
-    return parse_legend(argument)
-
-
-def parse_legend(value: str) -> tuple[LegendPart, ...]:
-    """Parse a legend specification, from an option or from the configuration.
-
-    An empty value is accepted and means "no legend", which is how a diagram opts out
-    of a project default.
-
-    :param value: A comma separated list of legend sections.
-    :return: The legend sections to draw, in the order given, without duplicates.
-    :raises ValueError: If a section is not a known one.
-    """
-    parts: list[LegendPart] = []
-    for raw in (value or "").split(","):
-        if not (part := raw.strip().lower()):
-            continue
-        if part not in get_args(LegendPart):
-            raise ValueError(
-                f"unknown legend section {part!r}, "
-                f"allowed values: {', '.join(get_args(LegendPart))}"
-            )
-        if part not in parts:
-            parts.append(part)  # type: ignore[arg-type]
-    return tuple(parts)
+    return (argument or "").strip()
 
 
 def plantuml_direction(
@@ -393,76 +401,124 @@ def resolve_engine(
     return ENGINES[0]
 
 
-def resolve_legend(
-    option: tuple[LegendPart, ...] | None,
-    project_default: str,
-    *,
-    location: LocationType,
-) -> tuple[LegendPart, ...]:
-    """Decide which legend sections a diagram shows.
+#: The legend a diagram gets when nothing names one.
+#:
+#: Both engines here can draw a types legend inside the diagram, and both have always
+#: done so for a bare ``:show_legend:``, so that is the default and a bare option keeps
+#: drawing byte-identically to before this option took a key at all. An engine with no
+#: good in-diagram legend resolves the same preference to the external table.
+ENGINE_DEFAULT_LEGEND = LegendSpec()
 
-    An explicitly empty option is honoured as "no legend", so a single diagram can opt
-    out of a project default; only an absent option consults the configuration.
 
-    :param option: The ``:legend:`` option, ``None`` if it was not given.
-    :param project_default: The ``needs_flow_legend`` configuration value.
-    :param location: Where to report an unusable configuration value.
-    :return: The legend sections to draw.
+def compile_legends(
+    legends: Mapping[str, Any], *, location: LocationType
+) -> dict[str, LegendSpec]:
+    """Turn the ``needs_flow_legends`` configuration into resolved legend specifications.
+
+    :param legends: The ``needs_flow_legends`` configuration value.
+    :param location: Where to report an unusable entry.
+    :return: The usable legend configurations, by name.
     """
-    if option is not None:
-        return option
-    return validated_config_legend(project_default, location=location)
-
-
-def validated_config_legend(
-    value: str, *, location: LocationType
-) -> tuple[LegendPart, ...]:
-    """Check a configured legend specification, without failing the build.
-
-    :param value: The ``needs_flow_legend`` configuration value.
-    :param location: Where to report an unusable value, if anywhere.
-    :return: The legend sections it names, empty if it names none or cannot be used.
-    """
-    try:
-        return parse_legend(value)
-    except ValueError as err:
+    compiled: dict[str, LegendSpec] = {}
+    if not isinstance(legends, Mapping):
         log_warning(
             LOGGER,
-            f"Invalid 'needs_flow_legend' value {value!r}: {err}",
+            f"'needs_flow_legends' must be a mapping of names to legend configurations, "
+            f"but is {type(legends).__name__}",
             "config",
             location=location,
             once=True,
         )
-        return ()
+        return compiled
+    for name, spec in legends.items():
+        if not isinstance(spec, Mapping):
+            log_warning(
+                LOGGER,
+                f"legend {name!r} in 'needs_flow_legends' must be a mapping, "
+                f"but is {type(spec).__name__}",
+                "config",
+                location=location,
+                once=True,
+            )
+            continue
+        if unknown := set(spec) - _LEGEND_KEYS:
+            log_warning(
+                LOGGER,
+                f"unknown key(s) {sorted(unknown)} of legend {name!r} in "
+                f"'needs_flow_legends', allowed keys: {', '.join(sorted(_LEGEND_KEYS))}",
+                "config",
+                location=location,
+                once=True,
+            )
+        parts: list[LegendPart] = []
+        for raw in spec.get("parts", ["types"]):
+            part = str(raw).strip().lower()
+            if part not in get_args(LegendPart):
+                log_warning(
+                    LOGGER,
+                    f"unknown legend section {raw!r} of legend {name!r}, "
+                    f"allowed values: {', '.join(get_args(LegendPart))}",
+                    "config",
+                    location=location,
+                    once=True,
+                )
+                continue
+            if part not in parts:
+                parts.append(part)  # type: ignore[arg-type]
+        placement = str(spec.get("placement", "internal")).strip().lower()
+        if placement not in ("internal", "external"):
+            log_warning(
+                LOGGER,
+                f"unknown placement {spec.get('placement')!r} of legend {name!r}, "
+                "allowed values: internal, external",
+                "config",
+                location=location,
+                once=True,
+            )
+            placement = "internal"
+        compiled[name] = LegendSpec(
+            parts=tuple(parts) or ("types",), placement=placement
+        )
+    return compiled
 
 
-def validate_flow_config(
-    *, engine: str, direction: str, show_links: bool | str, legend: str
-) -> None:
-    """Report every unusable needflow configuration value, once, as it is read.
+def resolve_legend(
+    present: bool,
+    option_key: str,
+    project_key: str,
+    compiled: Mapping[str, LegendSpec],
+    *,
+    location: LocationType,
+) -> LegendSpec | None:
+    """Decide which legend a diagram shows, if any.
 
-    Checking these as a diagram is drawn means a project that misconfigures one and
-    happens to have no needflow is never told.  The checks are the same functions the
-    resolution uses, and they warn only once for a given message, so a project with
-    needflows hears about a bad value exactly once rather than twice.
+    Whether there is a legend is decided by the directive alone -- the configuration
+    only ever says *which* one -- so a project default cannot give a legend to a diagram
+    that never asked for one, and the key namespace needs no value meaning "off" that
+    a legend could accidentally be named after.
 
-    :param engine: The ``needs_flow_engine`` value.
-    :param direction: The ``needs_flow_direction`` value.
-    :param show_links: The ``needs_flow_show_links`` value.
-    :param legend: The ``needs_flow_legend`` value.
+    :param present: Whether ``:show_legend:`` was given at all.
+    :param option_key: The key the option named, empty when written bare.
+    :param project_key: The ``needs_flow_show_legend`` configuration value.
+    :param compiled: The configured legends, from :func:`compile_legends`.
+    :param location: Where to report an unknown key.
+    :return: The legend to draw, or ``None`` for no legend.
     """
-    validated_config_enum(
-        engine, ACCEPTED_ENGINES, "plantuml", name="needs_flow_engine", location=None
+    if not present:
+        return None
+    if not (key := option_key or project_key.strip()):
+        return ENGINE_DEFAULT_LEGEND
+    if (found := compiled.get(key)) is not None:
+        return found
+    known = ", ".join(sorted(compiled)) or "none are defined"
+    log_warning(
+        LOGGER,
+        f"legend key {key!r} is not defined in 'needs_flow_legends' "
+        f"(available: {known})",
+        "needflow",
+        location=location,
     )
-    validated_config_enum(
-        direction,
-        get_args(FlowDirection),
-        "down",
-        name="needs_flow_direction",
-        location=None,
-    )
-    validated_config_show_links(show_links, location=None)
-    validated_config_legend(legend, location=None)
+    return ENGINE_DEFAULT_LEGEND
 
 
 def validated_config_show_links(
@@ -511,6 +567,33 @@ def resolve_link_labels(
     if option is not None:
         return option
     return validated_config_show_links(project_default, location=None)
+
+
+def validate_flow_config(
+    *, engine: str, direction: str, show_links: bool | str
+) -> None:
+    """Report every unusable needflow configuration value, once, as it is read.
+
+    Checking these as a diagram is drawn means a project that misconfigures one and
+    happens to have no needflow is never told.  The checks are the same functions the
+    resolution uses, and they warn only once for a given message, so a project with
+    needflows hears about a bad value exactly once rather than twice.
+
+    :param engine: The ``needs_flow_engine`` value.
+    :param direction: The ``needs_flow_direction`` value.
+    :param show_links: The ``needs_flow_show_links`` value.
+    """
+    validated_config_enum(
+        engine, ACCEPTED_ENGINES, "plantuml", name="needs_flow_engine", location=None
+    )
+    validated_config_enum(
+        direction,
+        get_args(FlowDirection),
+        "down",
+        name="needs_flow_direction",
+        location=None,
+    )
+    validated_config_show_links(show_links, location=None)
 
 
 @dataclass(frozen=True)

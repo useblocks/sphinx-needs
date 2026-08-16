@@ -50,10 +50,11 @@ from sphinx_needs.views import NeedsView
 from ._options import (
     ArrowStyle,
     FlowDirection,
-    LegendPart,
+    LegendSpec,
     LineStyle,
     LinkLabels,
     StyleProps,
+    compile_legends,
     compile_style_classes,
     legacy_style_color,
     resolve_arrow,
@@ -360,8 +361,8 @@ class NeedflowGraph:
     link_labels: LinkLabels
     """What edges are to be labelled with, if anything."""
 
-    legend: tuple[LegendPart, ...]
-    """The legend sections to describe the diagram with, in the order asked for."""
+    legend: LegendSpec | None
+    """The legend to describe the diagram with, or ``None`` for no legend."""
 
     drawn_types: list[NeedType]
     """The configured need types the diagram actually drew, in configuration order."""
@@ -558,7 +559,11 @@ def build_graph(
             if link_type.name in drawn_link_type_names
         ],
         legend=resolve_legend(
-            attributes["legend"], needs_config.flow_legend, location=location
+            attributes["show_legend"],
+            attributes["show_legend_key"],
+            needs_config.flow_show_legend,
+            compile_legends(needs_config.flow_legends, location=location),
+            location=location,
         ),
         link_labels=resolve_link_labels(
             attributes["show_link_names_value"], needs_config.flow_show_links

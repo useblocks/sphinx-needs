@@ -343,11 +343,11 @@ def process_needflow_plantuml(
             puml_node["uml"] += "\n' Connection definition \n\n"
             puml_node["uml"] += render_connections(graph, entity_names, node)
 
-            # Create a legend
+            # Create a legend, inside the diagram where that is what was asked for
             # note this lists every configured need type, whereas the graphviz engine
             # lists only the types it actually drew, so the same `:show_legend:` gives
             # the two engines different legends; it is kept as is
-            if current_needflow["show_legend"]:
+            if graph.legend is not None and graph.legend.internal:
                 puml_node["uml"] += create_legend(needs_config.types)
 
             puml_node["uml"] += "\n@enduml"
@@ -394,13 +394,13 @@ def process_needflow_plantuml(
             puml_node.line = current_needflow["lineno"]
 
             content.append(puml_node)
-            # the portable legend is a document table beside the diagram, identical on
-            # every engine, rather than part of the picture
-            content.extend(
-                create_legend_nodes(
-                    graph.legend, graph.drawn_types, graph.drawn_link_types
+            # ...and beside it otherwise, as a document table identical on every engine
+            if graph.legend is not None and not graph.legend.internal:
+                content.extend(
+                    create_legend_nodes(
+                        graph.legend.parts, graph.drawn_types, graph.drawn_link_types
+                    )
                 )
-            )
         else:  # no needs found
             content.append(
                 no_needs_found_paragraph(current_needflow.get("filter_warning"))

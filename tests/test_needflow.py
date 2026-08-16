@@ -82,6 +82,24 @@ def _debug_source(outdir: Path, file: str, index: int = 0) -> str:
     return tree.xpath("//pre")[index].text_content()
 
 
+def _draws_internal_legend(source: str, engine: str) -> bool:
+    """Whether an engine drew its own legend *inside* this diagram.
+
+    Each engine opens its legend with a token of its own, so the token is matched
+    rather than a bare substring that a need title could equally well contain. The
+    ``:debug:`` block is line numbered, so ``legend`` is preceded by a digit rather
+    than by a line start -- hence a lookbehind for a *letter*, which is what keeps
+    ``endlegend`` from matching, rather than a word boundary, which a digit is not.
+
+    :param source: The emitted diagram source, from :func:`_debug_source`.
+    :param engine: The ``needs_flow_engine`` that emitted it.
+    :return: True if the source contains that engine's in-diagram legend.
+    """
+    if engine == "plantuml":
+        return re.search(r"(?<![A-Za-z])legend\n", source) is not None
+    return "<B>Legend</B>" in source
+
+
 def _get_svg(config: Config, outdir: Path, file: str, id: str) -> str:
     root_tree = html_parser.parse(outdir / file)
     if config.needs_flow_engine == "plantuml":
@@ -1185,11 +1203,17 @@ needs_types = [
         "style": "node",
     },
 ]
+needs_flow_legends = {
+    "beside": {"placement": "external"},
+    "beside_links": {"parts": ["types", "links"], "placement": "external"},
+    "inside": {"placement": "internal"},
+    "inside_links": {"parts": ["links"], "placement": "internal"},
+}
 """
 
-LEGEND = """\
-Legend
-======
+LEGEND_KEYS = """\
+Legend keys
+===========
 
 .. spec:: A
    :id: AAAAA
@@ -1199,180 +1223,22 @@ Legend
    :links: AAAAA
 
 .. needflow::
-   :legend: types
-
-.. needflow::
-   :legend: links
-
-.. needflow::
-   :legend: types,links
-
-.. needflow::
-   :legend:
-"""
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [
-        {
-            "buildername": "html",
-            "files": [
-                (Path("conf.py"), LEGEND_CONF_PY),
-                (Path("index.rst"), LEGEND),
-            ],
-            "confoverrides": {"needs_flow_engine": "plantuml"},
-        },
-        {
-            "buildername": "html",
-            "files": [
-                (Path("conf.py"), LEGEND_CONF_PY),
-                (Path("index.rst"), LEGEND),
-            ],
-            "confoverrides": {
-                "needs_flow_engine": "graphviz",
-                "graphviz_output_format": "svg",
-            },
-        },
-    ],
-    ids=["plantuml", "graphviz"],
-    indirect=True,
-)
-def test_legend_option(test_app):
-    """``:legend:`` draws a table beside the diagram, the same one on every engine.
-
-    The legend is a document, not a picture: one implementation serves both engines
-    (and any future one), it lists only what the diagram actually drew, and it can
-    describe link types, which no in-diagram legend ever did. An explicitly empty
-    value means "no legend", which is how a diagram opts out of a project default.
-    """
-    app = test_app
-    app.build()
-
-    warnings = strip_colors(app._warning.getvalue()).strip()
-    assert warnings == ""
-
-    tree = html_parser.parse(Path(app.outdir) / "index.html")
-    legends = tree.xpath(_LEGEND_XPATH)
-
-    # the fourth needflow asked for no legend at all
-    assert len(legends) == 3
-
-    types, links, both = (node.text_content() for node in legends)
-
-    assert "Specification" in types
-    # only the types that were drawn, not every configured type
-    assert "Never Drawn" not in types
-    assert "links outgoing" not in types
-
-    assert "links outgoing" in links
-    assert "Specification" not in links
-
-    assert "Specification" in both
-    assert "links outgoing" in both
-
-
-LEGEND_UNDRAWN_LINKS = """\
-Legend without edges
-====================
-
-.. spec:: A
-   :id: AAAAA
-
-.. needflow::
-   :legend: links
-"""
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [
-        {
-            "buildername": "html",
-            "files": [
-                (Path("conf.py"), LEGEND_CONF_PY),
-                (Path("index.rst"), LEGEND_UNDRAWN_LINKS),
-            ],
-            "confoverrides": {"needs_flow_engine": "plantuml"},
-        }
-    ],
-    indirect=True,
-)
-def test_legend_lists_only_drawn_link_types(test_app):
-    """A link legend describes the edges that are there, not every configured link.
-
-    A diagram with no edges has nothing to describe, so it gets no legend at all
-    rather than an empty table of headings -- a legend listing link types the reader
-    cannot see anywhere in the picture is worse than none.
-    """
-    app = test_app
-    app.build()
-
-    warnings = strip_colors(app._warning.getvalue()).strip()
-    assert warnings == ""
-
-    tree = html_parser.parse(Path(app.outdir) / "index.html")
-    assert tree.xpath(_LEGEND_XPATH) == []
-
-
-LEGEND_FROM_CONFIG = """\
-Legend from config
-==================
-
-.. spec:: A
-   :id: AAAAA
-
-.. needflow::
-
-.. needflow::
-   :legend:
-"""
-
-
-@pytest.mark.parametrize(
-    "test_app",
-    [
-        {
-            "buildername": "html",
-            "files": [
-                (Path("conf.py"), LEGEND_CONF_PY),
-                (Path("index.rst"), LEGEND_FROM_CONFIG),
-            ],
-            "confoverrides": {
-                "needs_flow_engine": "plantuml",
-                "needs_flow_legend": "types",
-            },
-        }
-    ],
-    indirect=True,
-)
-def test_legend_config_is_consulted_only_when_unset(test_app):
-    """``needs_flow_legend`` is a project default an explicitly empty option overrides.
-
-    An empty value is not the same as an absent one, which is what makes opting out
-    of a project default expressible at all.
-    """
-    app = test_app
-    app.build()
-
-    warnings = strip_colors(app._warning.getvalue()).strip()
-    assert warnings == ""
-
-    tree = html_parser.parse(Path(app.outdir) / "index.html")
-    legends = tree.xpath(_LEGEND_XPATH)
-    assert len(legends) == 1
-    assert "Specification" in legends[0].text_content()
-
-
-DEPRECATED_SHOW_LEGEND = """\
-Deprecated show_legend
-======================
-
-.. spec:: A
-   :id: AAAAA
-
-.. needflow::
    :show_legend:
+   :debug:
+
+.. needflow::
+   :show_legend: beside
+   :debug:
+
+.. needflow::
+   :show_legend: beside_links
+   :debug:
+
+.. needflow::
+   :show_legend: inside
+   :debug:
+
+.. needflow::
    :debug:
 """
 
@@ -1384,7 +1250,7 @@ Deprecated show_legend
             "buildername": "html",
             "files": [
                 (Path("conf.py"), LEGEND_CONF_PY),
-                (Path("index.rst"), DEPRECATED_SHOW_LEGEND),
+                (Path("index.rst"), LEGEND_KEYS),
             ],
             "confoverrides": {"needs_flow_engine": "plantuml"},
         },
@@ -1392,7 +1258,7 @@ Deprecated show_legend
             "buildername": "html",
             "files": [
                 (Path("conf.py"), LEGEND_CONF_PY),
-                (Path("index.rst"), DEPRECATED_SHOW_LEGEND),
+                (Path("index.rst"), LEGEND_KEYS),
             ],
             "confoverrides": {
                 "needs_flow_engine": "graphviz",
@@ -1403,25 +1269,312 @@ Deprecated show_legend
     ids=["plantuml", "graphviz"],
     indirect=True,
 )
-def test_show_legend_is_deprecated_and_keeps_drawing_in_the_diagram(test_app):
-    """``:show_legend:`` still draws its old in-picture legend, and says so.
+def test_show_legend_takes_a_key(test_app):
+    """``:show_legend:`` names a legend configuration, or nothing at all.
 
-    Its rendering is deliberately left alone -- it differs per engine, which is the
-    reason ``:legend:`` exists -- so nobody's diagram changes on upgrade.
+    The option takes a *key*, never an inline value, so the names a project chooses can
+    never collide with a reserved word -- there is one namespace and no precedence rule
+    to learn. Written bare it keeps drawing exactly the legend it always drew, which is
+    each engine's own in-diagram one.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    outdir = Path(app.outdir)
+    bare = _debug_source(outdir, "index.html", 0)
+    external = _debug_source(outdir, "index.html", 1)
+    external_links = _debug_source(outdir, "index.html", 2)
+    internal = _debug_source(outdir, "index.html", 3)
+    none = _debug_source(outdir, "index.html", 4)
+
+    legends = html_parser.parse(outdir / "index.html").xpath(_LEGEND_XPATH)
+
+    engine = app.config.needs_flow_engine
+    assert _draws_internal_legend(bare, engine)
+
+    # a key that only says where the legend goes still draws the same one, inside
+    assert _draws_internal_legend(internal, engine)
+    assert bare == internal
+
+    # ...and asking for it beside the diagram takes it out of the picture entirely
+    assert not _draws_internal_legend(external, engine)
+    assert not _draws_internal_legend(external_links, engine)
+
+    # a diagram that never asked has no legend anywhere
+    assert not _draws_internal_legend(none, engine)
+
+    # exactly the two external legends are rendered as document tables
+    assert len(legends) == 2
+    assert "Specification" in legends[0].text_content()
+    assert "Never Drawn" not in legends[0].text_content()
+    assert "links outgoing" not in legends[0].text_content()
+    assert "links outgoing" in legends[1].text_content()
+
+
+LEGEND_DEFAULT_KEY = """\
+Project default legend key
+==========================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :show_legend:
+   :debug:
+
+.. needflow::
+   :show_legend: inside
+   :debug:
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), LEGEND_DEFAULT_KEY),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "plantuml",
+                "needs_flow_show_legend": "beside",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_show_legend_config_key_selects_which_not_whether(test_app):
+    """``needs_flow_show_legend`` names which legend, never whether there is one.
+
+    Presence stays per-directive, so a project default cannot turn legends on for
+    diagrams that never asked -- which is also why the key namespace needs no off
+    switch and so cannot collide with a legend name.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    outdir = Path(app.outdir)
+    default_key = _debug_source(outdir, "index.html", 0)
+    named = _debug_source(outdir, "index.html", 1)
+    absent = _debug_source(outdir, "index.html", 2)
+
+    engine = app.config.needs_flow_engine
+    # the project default applies where the diagram named nothing (`beside`, so the
+    # legend leaves the picture)...
+    assert not _draws_internal_legend(default_key, engine)
+    # ...loses to a diagram that named its own (`inside`)...
+    assert _draws_internal_legend(named, engine)
+    # ...and never reaches a diagram that did not ask at all
+    assert not _draws_internal_legend(absent, engine)
+
+    legends = html_parser.parse(outdir / "index.html").xpath(_LEGEND_XPATH)
+    assert len(legends) == 1
+
+
+UNKNOWN_LEGEND_KEY = """\
+Unknown legend key
+==================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :show_legend: nosuchkey
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), UNKNOWN_LEGEND_KEY),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        }
+    ],
+    indirect=True,
+)
+def test_unknown_legend_key_warns_and_draws_the_default(test_app):
+    """Naming a legend that is not configured is an authoring mistake, not a build stop.
+
+    It is reported against the directive that wrote it, with the keys that *are*
+    available, and the diagram falls back to the engine's own legend rather than losing
+    one -- a plainer diagram beats a failed build.
     """
     app = test_app
     app.build()
 
     warnings = strip_colors(app._warning.getvalue())
-    assert "'show_legend' option is deprecated" in warnings
-    assert "legend" in warnings
+    assert "legend key 'nosuchkey' is not defined in 'needs_flow_legends'" in warnings
+    # the message names what the author could have written instead
+    assert "available: beside, beside_links, inside, inside_links" in warnings
+    # ...and it is reported against the directive that wrote it, not the project
+    assert "index.rst:7" in warnings
+
+    assert _draws_internal_legend(
+        _debug_source(Path(app.outdir), "index.html"),
+        app.config.needs_flow_engine,
+    )
+
+
+LEGEND_INTERNAL_WITH_LINKS = """\
+Internal placement that cannot be honoured
+==========================================
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :show_legend: inside_links
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), LEGEND_INTERNAL_WITH_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), LEGEND_INTERNAL_WITH_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_internal_placement_degrades_silently(test_app):
+    """Placement is a preference, and failing to honour it is silent (tier 1).
+
+    Neither in-diagram legend can describe link types, so a legend that asks for them
+    is drawn beside the diagram instead. An external legend carries identical
+    information and differs only in where it sits, which makes this a decorative
+    nearest-form substitution rather than a capability gap worth a warning -- and a
+    warning here would be unactionable on a configuration shared with a tool that can
+    never satisfy it.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
 
     debug = _debug_source(Path(app.outdir), "index.html")
-    # the legacy legend is part of the diagram source, not a document table
-    assert "Legend" in debug
+    assert not _draws_internal_legend(debug, app.config.needs_flow_engine)
 
-    tree = html_parser.parse(Path(app.outdir) / "index.html")
-    assert tree.xpath(_LEGEND_XPATH) == []
+    legends = html_parser.parse(Path(app.outdir) / "index.html").xpath(_LEGEND_XPATH)
+    assert len(legends) == 1
+    assert "links outgoing" in legends[0].text_content()
+
+
+BAD_LEGEND_CONFIG = """\
+Bad legend config
+=================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :show_legend: broken
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "legends,message",
+    [
+        ('"not a mapping"', "'needs_flow_legends' must be a mapping of names"),
+        (
+            '{"broken": "not a mapping"}',
+            "legend 'broken' in 'needs_flow_legends' must be a mapping",
+        ),
+        (
+            '{"broken": {"nosuch": 1}}',
+            "unknown key(s) ['nosuch'] of legend 'broken'",
+        ),
+        (
+            '{"broken": {"parts": ["sections"]}}',
+            "unknown legend section 'sections' of legend 'broken'",
+        ),
+        (
+            '{"broken": {"placement": "sideways"}}',
+            "unknown placement 'sideways' of legend 'broken'",
+        ),
+    ],
+    ids=[
+        "not-a-mapping",
+        "legend-not-a-mapping",
+        "unknown-key",
+        "unknown-section",
+        "unknown-placement",
+    ],
+)
+def test_unusable_legend_config_warns_and_draws_anyway(
+    make_app, tmp_path, plantuml_command, legends, message
+):
+    """Every way of misdescribing a legend warns and leaves the diagram drawable.
+
+    A legend is decoration: getting it wrong must not cost the reader the picture. Each
+    rejection path is exercised -- the container, each entry, the key names, and each
+    key's own value grammar -- because a closed vocabulary only helps if a value outside
+    it is reported rather than silently dropped.
+
+    The value is written into ``conf.py`` rather than passed as an override, because
+    Sphinx refuses to override a dictionary setting with a value of another type -- and
+    a hand-written ``conf.py`` is exactly where these mistakes are made.
+    """
+    (tmp_path / "conf.py").write_text(
+        CONF_PY + f"\nneeds_flow_legends = {legends}\n", "utf8"
+    )
+    (tmp_path / "index.rst").write_text(BAD_LEGEND_CONFIG, "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "needs_flow_engine": "plantuml",
+            "plantuml": plantuml_command,
+        },
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert message in warnings
+
+    # the legend is unusable, but the need is still drawn
+    assert "AAAAA" in _debug_source(Path(app.outdir), "index.html")
 
 
 #: Style classes exercising every property of the closed set.
@@ -2284,9 +2437,8 @@ Bad config value
     [
         ({"needs_flow_direction": "sideways"}, "Invalid 'needs_flow_direction' value"),
         ({"needs_flow_show_links": "bogus"}, "Invalid 'needs_flow_show_links' value"),
-        ({"needs_flow_legend": "nonsense"}, "Invalid 'needs_flow_legend' value"),
     ],
-    ids=["direction", "show_links", "legend"],
+    ids=["direction", "show_links"],
 )
 @pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
 def test_out_of_enum_config_values_warn_and_fall_back(
@@ -2407,9 +2559,8 @@ def test_invalid_flow_engine_is_reported_without_any_needflow(test_app):
     [
         ({"needs_flow_direction": "sideways"}, "Invalid 'needs_flow_direction' value"),
         ({"needs_flow_show_links": "bogus"}, "Invalid 'needs_flow_show_links' value"),
-        ({"needs_flow_legend": "nonsense"}, "Invalid 'needs_flow_legend' value"),
     ],
-    ids=["direction", "show_links", "legend"],
+    ids=["direction", "show_links"],
 )
 def test_bad_flow_config_is_reported_without_any_needflow(
     make_app, tmp_path, plantuml_command, override, message
@@ -2916,15 +3067,15 @@ def test_unusable_style_config_warns_and_draws_anyway(
     assert "AAAAA" in _debug_source(Path(app.outdir), "index.html")
 
 
-BAD_LEGEND_OPTION = """\
-Bad legend option
-=================
+BAD_DIRECTION_OPTION = """\
+Bad direction option
+====================
 
 .. spec:: A
    :id: AAAAA
 
 .. needflow::
-   :legend: nosuchsection
+   :direction: sideways
 """
 
 
@@ -2935,14 +3086,14 @@ Bad legend option
             "buildername": "html",
             "files": [
                 (Path("conf.py"), CONF_PY),
-                (Path("index.rst"), BAD_LEGEND_OPTION),
+                (Path("index.rst"), BAD_DIRECTION_OPTION),
             ],
             "confoverrides": {"needs_flow_engine": "plantuml"},
         }
     ],
     indirect=True,
 )
-def test_unknown_legend_section_is_an_option_error(test_app):
+def test_unknown_direction_value_is_an_option_error(test_app):
     """An out-of-enum *option* value is reported by docutils as the option is parsed.
 
     That is the one tier where erroring is right: the author wrote something the
@@ -2954,8 +3105,8 @@ def test_unknown_legend_section_is_an_option_error(test_app):
     app.build()
 
     warnings = strip_colors(app._warning.getvalue())
-    assert "unknown legend section 'nosuchsection'" in warnings
-    assert "types, links" in warnings
+    assert '"sideways" unknown' in warnings
+    assert "down" in warnings and "up" in warnings
 
 
 ENTITY_IN_TITLE = """\
@@ -3028,10 +3179,8 @@ Config value normalisation
         ({"needs_flow_show_links": "  Outgoing  "}, "links outgoing", True),
         ({"needs_flow_direction": "  RIGHT  "}, "left to right direction", True),
         ({"needs_flow_engine": "  GraphViz  "}, "digraph needflow", True),
-        # the legend is a document table, so it is looked for in the page itself
-        ({"needs_flow_legend": "  Types  "}, "needflow_legend", False),
     ],
-    ids=["show_links", "direction", "engine", "legend"],
+    ids=["show_links", "direction", "engine"],
 )
 def test_enum_config_values_ignore_case_and_padding(
     make_app, tmp_path, plantuml_command, override, needle, in_diagram

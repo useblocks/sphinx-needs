@@ -828,8 +828,16 @@ class NeedsSphinxConfig:
         default="down", metadata={"rebuild": "html", "types": (str,)}
     )
     """The default direction needflow diagrams are drawn in."""
-    flow_legend: str = field(default="", metadata={"rebuild": "html", "types": (str,)})
-    """The legend needflow diagrams show by default (``types``, ``links`` or both)."""
+    flow_legends: dict[str, dict[str, Any]] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": ()}
+    )
+    """Named legend configurations that the needflow ``:show_legend:`` option selects."""
+    flow_show_legend: str = field(
+        default="", metadata={"rebuild": "html", "types": (str,)}
+    )
+    """Which legend a needflow shows when it asks for one without naming it.
+
+    This selects *which* legend, never *whether*: asking for one stays per directive."""
     flow_styles: dict[str, dict[str, Any]] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )

@@ -40,17 +40,17 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 8
+ENV_DATA_VERSION: Final = 9
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
 handing a pickled doctree to code that no longer understands it.
 
-.. note:: 7 was an intermediate shape that existed only within an unreleased branch, so
-   the released step is 6 to 8. It still had to be stepped over: parent and tip both
-   stamping 7 meant a rebuild over an existing ``_build`` kept the old doctrees and
-   failed with a ``KeyError`` -- which is precisely what this constant exists to prevent,
-   and what anyone bisecting or switching branches would have hit.
+.. note:: 7 and 8 were intermediate shapes that existed only within an unreleased branch,
+   so the released step is 6 to 9. They still had to be stepped over: two commits stamping
+   the same version for two shapes meant a rebuild over an existing ``_build`` kept the old
+   doctrees and failed with a ``KeyError`` -- which is precisely what this constant exists
+   to prevent, and what anyone bisecting or switching branches would have hit.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -716,11 +716,11 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     styles: str
     """Style class rules, in the variant syntax, empty if the option was not given."""
 
-    legend: tuple[Literal["types", "links"], ...] | None
-    """The legend sections to show beside the diagram.
+    show_legend_key: str
+    """The legend configuration ``show_legend`` named, empty when written bare.
 
-    ``None`` if the option was not given, in which case the configuration is consulted;
-    an empty tuple means the option was given without a value, i.e. no legend."""
+    Whether a legend is shown at all is the ``show_legend`` flag of
+    :class:`NeedsFilteredDiagramBaseType`; this only says which one."""
 
     config_direction: Literal["down", "up", "right", "left"] | None
     """The direction the selected engine configuration sets, if any.

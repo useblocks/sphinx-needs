@@ -79,13 +79,13 @@ Flow
 **flow by default config**
 
 .. needflow::
-   :legend: types
+   :show_legend:
    :filter: is_need
 
 **flow with link names and all now link types**
 
 .. needflow::
-   :legend: types
+   :show_legend:
    :filter: is_need
    :show_link_names:
    :link_types: links,blocks,tests
@@ -93,7 +93,7 @@ Flow
 **flow without links**
 
 .. needflow::
-   :legend: types
+   :show_legend:
    :filter: is_need
    :show_link_names:
    :link_types: blocks,tests

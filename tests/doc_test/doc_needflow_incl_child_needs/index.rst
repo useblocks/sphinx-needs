@@ -46,4 +46,4 @@ TEST DOCUMENT NEEDFLOW INCL CHILD NEEDS
 
 .. needflow::
    :show_link_names:
-   :legend: types
+   :show_legend:

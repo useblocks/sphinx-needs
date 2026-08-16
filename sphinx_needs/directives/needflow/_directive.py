@@ -20,9 +20,9 @@ from sphinx_needs.directives.needflow._options import (
     ACCEPTED_ENGINES,
     direction_option,
     graphviz_config_direction,
-    legend_option,
     plantuml_config_direction,
     resolve_engine,
+    show_legend_option,
     show_link_names_option,
 )
 from sphinx_needs.filter_common import FilterBase
@@ -67,12 +67,12 @@ class NeedflowDirective(FilterBase):
         "debug": directives.flag,
         # portable formatting vocabulary
         "direction": direction_option,
-        "legend": legend_option,
         "styles": directives.unchanged_required,
         # formatting
         "highlight": directives.unchanged_required,
         "border_color": directives.unchanged_required,
-        "show_legend": directives.flag,
+        # widened from a bare flag: it now names a `needs_flow_legends` key, or nothing
+        "show_legend": show_legend_option,
         "show_filters": directives.flag,
         # widened from a bare flag: written without a value it still means `outgoing`
         "show_link_names": show_link_names_option,
@@ -226,12 +226,6 @@ class NeedflowDirective(FilterBase):
         needs_config = NeedsSphinxConfig(self.env.config)
         location = (self.env.docname, self.lineno)
 
-        if "show_legend" in self.options:
-            self._warn_deprecated(
-                "show_legend",
-                "Please use ':legend: types' instead, which draws the same legend on "
-                "every engine, as a table beside the diagram.",
-            )
         if "highlight" in self.options:
             self._warn_deprecated(
                 "highlight",
@@ -306,6 +300,7 @@ class NeedflowDirective(FilterBase):
             "root_direction": self.options.get("root_direction", "both"),
             "root_depth": self.options.get("root_depth", None),
             "show_legend": "show_legend" in self.options,
+            "show_legend_key": self.options.get("show_legend", ""),
             "show_filters": "show_filters" in self.options,
             "show_link_names": "show_link_names" in self.options,
             # None means the option was not given, so that the configuration is only
@@ -330,7 +325,6 @@ class NeedflowDirective(FilterBase):
             # consulted when the author did not say (the `max_items` precedent)
             "direction": self.options.get("direction"),
             "config_direction": config_direction,
-            "legend": self.options.get("legend"),
             "styles": self.options.get("styles", ""),
             **self.collect_filter_attributes(),
         }

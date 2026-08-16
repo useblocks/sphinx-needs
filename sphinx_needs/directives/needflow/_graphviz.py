@@ -161,7 +161,7 @@ def process_needflow_graphviz(
         # note this lists only the need types that were actually drawn, whereas the
         # plantuml engine lists every configured type, so the same `:show_legend:` gives
         # the two engines different legends; it is kept as is
-        if attributes["show_legend"]:
+        if graph.legend is not None and graph.legend.internal:
             content += _create_legend(
                 [drawn.need for drawn in graph.nodes.values()], needs_config
             )
@@ -178,13 +178,15 @@ def process_needflow_graphviz(
             # add the debug code to after the surrounding figure
             node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, code)
 
-        # the portable legend is a document table beside the diagram, identical on
-        # every engine, rather than part of the picture; inserted last so that it ends
-        # up directly below the figure it describes
-        for legend in create_legend_nodes(
-            graph.legend, graph.drawn_types, graph.drawn_link_types
-        ):
-            node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, legend)
+        # ...and beside it otherwise, as a document table identical on every engine;
+        # inserted last so that it ends up directly below the figure it describes
+        if graph.legend is not None and not graph.legend.internal:
+            for legend in create_legend_nodes(
+                graph.legend.parts, graph.drawn_types, graph.drawn_link_types
+            ):
+                node.parent.parent.insert(
+                    node.parent.parent.index(node.parent) + 1, legend
+                )
 
 
 def _get_link_to_need(
