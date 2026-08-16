@@ -277,15 +277,27 @@ class NeedLinksConfig(TypedDict, total=False):
     copy: bool
     """Copy to common links data. Default: False"""
     color: str
-    """Used for needflow. Default: #000000"""
+    """Used for needflow. Unset by default, i.e. the engine's own edge color."""
+    part_color: str
+    """Used for needflow, for links to need parts. Defaults to ``color``."""
     style: str
-    """Used for needflow. Default: solid"""
+    """Used for needflow (deprecated, use ``line``). Default: solid"""
     style_part: str
-    """Used for needflow. Default: '[dotted]'"""
+    """Used for needflow (deprecated, use ``part_line``). Default: '[dotted]'"""
     style_start: str
-    """Used for needflow. Default: '-'"""
+    """Used for needflow (deprecated, use ``arrow``). Default: '-'"""
     style_end: str
-    """Used for needflow. Default: '->'"""
+    """Used for needflow (deprecated, use ``arrow``). Default: '->'"""
+    line: str
+    """How the line is drawn in needflow diagrams.
+
+    One of 'solid', 'dashed', 'dotted', 'thick' or 'invisible'."""
+    part_line: str
+    """How the line to a need part is drawn in needflow diagrams (see ``line``)."""
+    arrow: str
+    """Which arrow heads the line carries in needflow diagrams.
+
+    One of 'normal', 'none', 'open', 'circle', 'cross' or 'both'."""
     allow_dead_links: bool
     """If True, add a 'forbidden' class to dead links"""
     schema: NotRequired[LinkSchemaType]
@@ -328,7 +340,16 @@ class NeedType(TypedDict):
     """The default color to use in diagrams.
     If unset or empty, no color is applied and the diagram engine's default is used."""
     style: NotRequired[str]
-    """The default node style to use in diagrams (default: "node")."""
+    """The default node style to use in diagrams (default: "node").
+
+    Holds a PlantUML element keyword; prefer ``shape``, which every engine
+    understands."""
+    shape: NotRequired[str]
+    """The default shape to draw the need with, in every diagram engine.
+
+    One of ``rectangle``, ``rounded``, ``circle``, ``ellipse``, ``diamond``,
+    ``hexagon``, ``cylinder``, ``document``, ``folder`` or ``box3d``; the legacy
+    PlantUML keywords of ``style`` are also accepted. Takes precedence over ``style``."""
 
 
 class NeedFields(TypedDict):
@@ -785,14 +806,50 @@ class NeedsSphinxConfig:
         default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
     )
     """Warn if process_needuml runs for longer than this time (in seconds)."""
-    flow_engine: Literal["plantuml", "graphviz"] = field(
+    flow_engine: Literal["plantuml", "graphviz", "mermaid"] = field(
         default="plantuml", metadata={"rebuild": "env", "types": (str,)}
     )
-    """The rendering engine to use for needflow diagrams."""
-    flow_show_links: bool = field(
-        default=False, metadata={"rebuild": "html", "types": (bool,)}
+    """The rendering engine to use for needflow diagrams.
+
+    ``mermaid`` is accepted for ubCode compatibility but cannot be drawn here,
+    so it degrades to the default engine with a warning."""
+    flow_show_links: bool | str = field(
+        default=False, metadata={"rebuild": "html", "types": (bool, str)}
     )
-    """If True, show links in needflow diagrams by default."""
+    """What needflow diagrams label their edges with, by default.
+
+    One of ``none``, ``outgoing``, ``incoming`` or ``type``.
+    ``True`` and ``False`` are also accepted, and mean ``outgoing`` and ``none``.
+
+    .. versionchanged:: 8.4.0
+       Accepts a value as well as a boolean.
+    """
+    flow_direction: Literal["down", "up", "right", "left"] = field(
+        default="down", metadata={"rebuild": "html", "types": (str,)}
+    )
+    """The default direction needflow diagrams are drawn in."""
+    flow_legends: dict[str, dict[str, Any]] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": ()}
+    )
+    """Named legend configurations that the needflow ``:show_legend:`` option selects."""
+    flow_show_legend: str = field(
+        default="", metadata={"rebuild": "html", "types": (str,)}
+    )
+    """Which legend a needflow shows when it asks for one without naming it.
+
+    This selects *which* legend, never *whether*: asking for one stays per directive."""
+    flow_styles: dict[str, dict[str, Any]] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": ()}
+    )
+    """Named style classes that the needflow ``:styles:`` option can apply to needs."""
+    flow_engine_config: dict[str, dict[str, Any]] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": ()}
+    )
+    """Engine specific needflow customisation, per engine, selected by ``:engine_config:``.
+
+    Keyed by engine name, then by the name the directive selects, e.g.
+    ``{"plantuml": {"corporate": "!include theme.puml"}}``.
+    """
     flow_link_types: list[str] = field(
         default_factory=lambda: ["links"], metadata={"rebuild": "html", "types": ()}
     )

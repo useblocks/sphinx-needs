@@ -16,7 +16,7 @@ If you provide an argument, we use it as caption for the generated image.
       :tags: flow_example
       :link_types: tests, blocks
       :show_link_names:
-      :config: lefttoright
+      :direction: right
 
 .. versionadded:: 2.2.0
 
@@ -32,7 +32,7 @@ If you provide an argument, we use it as caption for the generated image.
          :tags: flow_example
          :link_types: tests, blocks
          :show_link_names:
-         :config: default,lefttoright
+         :direction: right
 
 Dependencies
 ------------
@@ -182,21 +182,67 @@ Adds information of used filters below generated flowchart.
 show_legend
 ~~~~~~~~~~~
 
-Adds a legend below generated flowchart. The legends contains all defined need-types and their configured color
-for flowcharts.
+.. versionchanged:: 8.4.0
+   Takes the *name* of a legend configuration.
+   Written bare it still draws the legend it always drew, so no existing diagram changes.
+
+Describes the diagram: its need types, its link types, or both.
+
+Written without a value, the engine chooses:
+
+.. code-block:: rst
+
+   .. needflow::
+      :show_legend:
+
+Both engines draw their own in-image legend for that, exactly as they always have --
+including the long-standing difference that ``plantuml`` lists every configured need type
+while ``graphviz`` lists only the ones it drew.
+That difference is deliberately left alone, so no existing diagram changes;
+a named legend is how a project gets the same legend on both.
+A project can also change what "bare" means, with :ref:`needs_flow_show_legend`.
+
+Written with a value, it names an entry of :ref:`needs_flow_legends`:
+
+.. code-block:: python
+
+   needs_flow_legends = {
+       "beside": {"parts": ["types", "links"], "placement": "external"},
+   }
+
+A legend placed beside the diagram lists only what the diagram actually drew,
+whichever engine drew it,
+and shows its sections in the order ``parts`` gives them.
 
 .. syntax-example::
 
    .. needflow::
       :tags: flow_example
-      :show_legend:
+      :show_legend: beside
 
 .. dropdown:: Using Graphviz engine
 
    .. needflow::
       :engine: graphviz
       :tags: flow_example
-      :show_legend:
+      :show_legend: beside
+
+The option takes a name and never the sections inline.
+A project names its legends whatever it likes,
+so a legend called ``types`` would collide with the section called ``types``
+and need a precedence rule nobody should have to learn.
+One namespace, no reserved words.
+
+Which legend a diagram gets is resolved in order:
+the name this option gives,
+then :ref:`needs_flow_show_legend`,
+then the engine's own legend.
+
+Naming a legend that :ref:`needs_flow_legends` does not define is a warning on that
+diagram, listing the names that are available.
+The name is then treated as though it had not been written,
+so the project default still applies --
+a typo in one diagram does not cost the project the legend it configured.
 
 .. _needflow_show_link_names:
 
@@ -205,23 +251,47 @@ show_link_names
 
 .. versionadded:: 0.3.11
 
-Adds the link type name beside connections.
+.. versionchanged:: 8.4.0
+   Takes an optional value.
+   Written bare it still means ``outgoing``, which is what the flag has always drawn,
+   so no existing document changes.
 
-You can configure it globally by setting :ref:`needs_flow_show_links` in **conf.py**.
-Setup data can be found in test case document ``tests/doc_test/doc_links``.
+Chooses what each connection is labelled with:
+
+``none``
+   Nothing (the default).
+``outgoing``
+   The outgoing title of the link type, e.g. ``links outgoing``.
+``incoming``
+   The incoming title of the link type, e.g. ``links incoming``.
+``type``
+   The bare link field name, e.g. ``links``,
+   for a diagram that wants the data model rather than prose.
+
+Written without a value, ``:show_link_names:`` means ``outgoing``:
+
+.. code-block:: rst
+
+   .. needflow::
+      :show_link_names:
+
+You can set the project default with :ref:`needs_flow_show_links` in **conf.py**.
+Because the option now takes a value rather than only being present or absent,
+a single diagram can turn labels off again with ``none``,
+which the bare flag could not express.
 
 .. syntax-example::
 
    .. needflow::
       :tags: flow_example
-      :show_link_names:
+      :show_link_names: incoming
 
 .. dropdown:: Using Graphviz engine
 
    .. needflow::
       :engine: graphviz
       :tags: flow_example
-      :show_link_names:
+      :show_link_names: incoming
 
 .. _needflow_link_types:
 
@@ -296,18 +366,108 @@ See also :ref:`needs_links` for more details about specific link types.
       :link_types: tests, blocks
       :show_link_names:
 
-.. _needflow_config:
+.. _needflow_direction:
 
-config
+direction
+~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Sets the direction the diagram flows in:
+``down`` (the default), ``up``, ``right`` or ``left``.
+The tokens ``TB``, ``TD``, ``BT``, ``LR`` and ``RL`` are accepted as aliases,
+so a habit picked up from Graphviz or Mermaid does not have to be unlearned.
+
+You can set the project default with :ref:`needs_flow_direction` in **conf.py**.
+
+Not every engine can draw every direction.
+PlantUML has no bottom-up or right-left layout at all,
+so ``up`` is drawn ``down`` and ``left`` is drawn ``right``,
+with one warning per project;
+Graphviz draws all four.
+A diagram is never refused for asking:
+a plainer diagram is better than a failed build.
+
+.. syntax-example::
+
+   .. needflow::
+      :tags: flow_example
+      :link_types: tests, blocks
+      :direction: right
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
+      :link_types: tests, blocks
+      :direction: right
+
+.. _needflow_styles:
+
+styles
 ~~~~~~
 
-.. versionadded:: 0.5.2
+.. versionadded:: 8.4.0
 
-You can specify a configuration using the ``:config:`` option but you should
-set the :ref:`needs_flow_configs` configuration parameter in **conf.py**,
-when using the ``plantuml`` engine,
-or the :ref:`needs_graphviz_styles` configuration,
-when using the ``graphviz`` engine.
+Applies named style classes to the needs a filter selects.
+Each rule is written ``[<filter>]:<class>``,
+in the same variant syntax used elsewhere in **Sphinx-Needs**,
+and several rules are separated by commas;
+a class written without a filter applies to every need.
+
+The classes themselves live in :ref:`needs_flow_styles` in **conf.py**,
+so a rule says *which* needs look different and the configuration says *how*.
+Rules cascade the way CSS declarations do:
+every matching rule contributes,
+and a later one overrides an earlier one property by property.
+
+One class is built in.
+``highlight`` draws the red outline that the deprecated ``:highlight:``
+option has always drawn, so moving from the option to the class changes nothing.
+
+.. syntax-example::
+
+   .. needflow::
+      :tags: flow_example
+      :link_types: tests, blocks
+      :styles: [type == 'req']:highlight
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
+      :link_types: tests, blocks
+      :styles: [type == 'req']:highlight
+
+.. _needflow_engine_config:
+.. _needflow_config:
+
+engine_config
+~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+.. deprecated:: 8.4.0
+   The ``:config:`` spelling of this option is deprecated.
+   Use ``:engine_config:``, which selects from the same registries.
+
+Selects engine specific customisation by name.
+This is the one deliberate way out of the portable vocabulary,
+and it is meant to be used sparingly:
+everything else on this page means the same thing on every engine,
+whereas an engine config is written in one engine's own syntax.
+
+The customisation lives in :ref:`needs_flow_engine_config` in **conf.py**,
+under the engine it belongs to,
+so the *document* stays portable even when the *project* chooses not to be.
+The older :ref:`needs_flow_configs` (plantuml) and :ref:`needs_graphviz_styles`
+(graphviz) registries are still read under exactly the same names and values,
+so nothing has to move.
+
+An engine config is a preamble of defaults:
+where it and a portable option disagree, the option wins.
 
 .. syntax-example::
 
@@ -317,7 +477,7 @@ when using the ``graphviz`` engine.
       :types: spec
       :link_types: tests, blocks
       :show_link_names:
-      :config: monochrome
+      :engine_config: monochrome
 
 You can apply multiple configurations together by separating them via ``,`` symbol.
 
@@ -329,7 +489,8 @@ You can apply multiple configurations together by separating them via ``,`` symb
       :types: spec
       :link_types: tests, blocks
       :show_link_names:
-      :config: monochrome,lefttoright,handwritten
+      :direction: right
+      :engine_config: monochrome,handwritten
 
 .. dropdown:: Using Graphviz engine
 
@@ -340,7 +501,8 @@ You can apply multiple configurations together by separating them via ``,`` symb
       :types: spec
       :link_types: tests, blocks
       :show_link_names:
-      :config: default,lefttoright
+      :direction: right
+      :engine_config: default
 
 **Sphinx-Needs** provides some necessary configurations already.
 
@@ -393,13 +555,19 @@ scale
 
 .. versionadded:: 0.5.3
 
+.. deprecated:: 8.4.0
+   ``:scale:`` sizes a raster image, which the ``graphviz`` engine has always
+   ignored silently, so the same option never meant the same thing on both engines.
+   Use ``:width:`` / ``:height:`` instead.
+   It is still honoured by the ``plantuml`` engine.
+
 You can set a scale factor for the final flow chart using the ``scale`` option.
 
 ``:scale: 50`` will set width and height to ``50%`` of the original image size.
 
 We also support the numbers between ``1`` and ``300``.
 
-.. syntax-example::
+.. code-block:: rst
 
    .. needflow::
       :filter: is_need
@@ -414,23 +582,23 @@ highlight
 
 .. versionadded:: 0.5.3
 
+.. deprecated:: 8.4.0
+   Use :ref:`styles <needflow_styles>` with the built-in ``highlight`` class instead,
+   e.g. ``:styles: [type == 'req']:highlight``, which draws exactly the same outline.
+   ``:highlight:`` is still honoured.
+
 The ``:highlight:`` option takes a single :ref:`filter_string` as a value and
 sets the border for each need of the needflow to **red** if the need also passes the filter string.
 
-.. syntax-example::
+.. code-block:: rst
 
    .. needflow::
       :tags: flow_example
       :link_types: tests, blocks
       :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
 
-.. dropdown:: Using Graphviz engine
-
-   .. needflow::
-      :engine: graphviz
-      :tags: flow_example
-      :link_types: tests, blocks
-      :highlight: id in ['spec_flow_002', 'subspec_2'] or type == 'req'
+The rendered result is the one shown under :ref:`styles <needflow_styles>`,
+whose built-in ``highlight`` class draws exactly the same outline.
 
 .. _needflow_border_color:
 
@@ -439,10 +607,15 @@ border_color
 
 .. versionadded:: 3.0.0
 
+.. deprecated:: 8.4.0
+   Use :ref:`styles <needflow_styles>` with a class setting ``border`` instead,
+   which says the same thing and can set the rest of a need's presentation too.
+   ``:border_color:`` is still honoured.
+
 The ``:border_color:`` allows for setting per need border colors, based on the need data.
 The value should be written with the :ref:`variant syntax <needs_variant_support>`, and each return value should be a hex (RGB) color.
 
-.. syntax-example::
+.. code-block:: rst
 
    .. needflow:: Engineering plan to develop a car
       :tags: flow_example
@@ -452,16 +625,8 @@ The value should be written with the :ref:`variant syntax <needs_variant_support
          [type == 'spec']:0000FF,
          [type == 'test']:00FF00
 
-.. dropdown:: Using Graphviz engine
-
-   .. needflow:: Engineering plan to develop a car
-      :engine: graphviz
-      :tags: flow_example
-      :link_types: tests, blocks
-      :border_color:
-         [type == 'req']:FF0000,
-         [type == 'spec']:0000FF,
-         [type == 'test']:00FF00
+The same diagram, rendered, is under :ref:`styles <needflow_styles>`:
+a class setting ``border`` says this and more.
 
 .. _needflow_align:
 
@@ -503,7 +668,8 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
-      :config: lefttoright, handwritten
+      :direction: right
+      :engine_config: handwritten
       :debug:
 
 .. dropdown:: Using Graphviz engine
@@ -513,7 +679,8 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       :filter: is_need
       :tags: flow_example
       :link_types: tests, blocks
-      :config: default,lefttoright
+      :direction: right
+      :engine_config: default
       :debug:
 
 .. _needflow_max_items:
@@ -559,4 +726,3 @@ common filters
 * :ref:`option_tags`
 * :ref:`option_types`
 * :ref:`option_filter`
-

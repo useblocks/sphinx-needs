@@ -22,21 +22,19 @@ either of them draws -- and are called out at the point where they happen:
 - ``parent_needs`` is dropped from the allowed link types *before* the root walk, so
   ``root_id`` never follows the need hierarchy.
 - The root walk runs before the filter, not after it.
-- ``show_link_names`` is OR-ed with ``needs_flow_show_links``, so the configuration can
-  only ever turn labels on.
 - An edge may point at a need that is not drawn as a node (see :class:`GraphEdge`).
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable, Container, Iterable
-from dataclasses import dataclass, field
+from collections.abc import Callable, Container, Iterable, Mapping
+from dataclasses import dataclass, field, replace
 from typing import Literal
 
 from docutils import nodes
 from sphinx.application import Sphinx
 
-from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.config import NeedsSphinxConfig, NeedType
 from sphinx_needs.data import NeedsFlowType, SphinxNeedsData
 from sphinx_needs.filter_common import (
     apply_max_items,
@@ -48,6 +46,26 @@ from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.needs_schema import FieldsSchema, LinkSchema
 from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
+
+from ._options import (
+    ArrowStyle,
+    FlowDirection,
+    LegendSpec,
+    LineStyle,
+    LinkLabels,
+    StyleProps,
+    compile_legends,
+    compile_style_classes,
+    legacy_style_color,
+    resolve_arrow,
+    resolve_direction,
+    resolve_legend,
+    resolve_line,
+    resolve_link_labels,
+    resolve_shape,
+    resolve_styles,
+    warn_unknown_style_classes,
+)
 
 LOGGER = get_logger(__name__)
 
@@ -173,6 +191,14 @@ class NodePresentation:
     applies -- a highlight always takes precedence over a border color.
     """
 
+    styles: StyleProps = field(default_factory=StyleProps)
+    """The properties the ``:styles:`` rules resolved to for this need.
+
+    Every property is ``None`` unless a rule set it, and a property that is set
+    overrides the corresponding configured value -- ``fill`` over the type color,
+    ``shape`` over the type style, ``border`` over ``border_color``.
+    """
+
 
 @dataclass
 class GraphNode:
@@ -232,6 +258,86 @@ class GraphEdge:
             else self.link_type.display.style
         )
 
+    @property
+    def line(self) -> LineStyle | None:
+        """How this link's line is drawn, as an intent rather than an engine token.
+
+        ``None`` when the link type only carries the deprecated ``style`` value, which
+        each engine then emits exactly as it always has.
+        """
+        display = self.link_type.display
+        return resolve_line(display.part_line if self.is_part else display.line)
+
+    @property
+    def arrow(self) -> ArrowStyle | None:
+        """Which arrow heads this link carries.
+
+        ``None`` when the link type only carries the deprecated start/end tokens.
+        """
+        return resolve_arrow(self.link_type.display.arrow)
+
+    @property
+    def _neutral_color(self) -> str:
+        """The color the neutral vocabulary gives this link, empty if it gives none.
+
+        ``part_color`` falls back to ``color`` when it is unset, exactly as
+        ``part_line`` falls back to ``line``.
+        """
+        display = self.link_type.display
+        return ((display.part_color if self.is_part else "") or display.color).strip()
+
+    @property
+    def color(self) -> str | None:
+        """The color of this link, or ``None`` to leave it to the engine.
+
+        An unset color means "leave the engine's own edge color alone", so nothing is
+        emitted -- which is what keeps a diagram that names no color byte-identical to
+        one drawn before colors were honoured at all.  An explicit color is drawn,
+        black included.
+
+        A link type part way through its migration -- a neutral ``line``, but its color
+        still only in the deprecated ``style`` -- keeps its color: the neutral line
+        supersedes that string, and dropping it wholesale would take the color with it.
+        """
+        if neutral := self._neutral_color:
+            return neutral
+        if self.line is not None:
+            return legacy_style_color(self.style)
+        return None
+
+    @property
+    def legacy_style(self) -> str:
+        """The deprecated ``style`` value that is still in force.
+
+        A neutral color supersedes the color token of that string, so the two cannot
+        both be emitted for a link type that sets both spellings.  Everything else is
+        passed through untouched, which is what keeps a purely legacy link type drawing
+        exactly what it always drew.
+        """
+        if not self._neutral_color:
+            return self.style
+        return ",".join(
+            token
+            for raw in self.style.split(",")
+            if (token := raw.strip()) and not token.startswith("#")
+        )
+
+    def label(self, labels: LinkLabels) -> str | None:
+        """The text to write on this edge.
+
+        :param labels: What the diagram labels its edges with.
+        :return: The label, or ``None`` for an unlabelled edge.
+        """
+        match labels:
+            case "outgoing":
+                return self.link_type.display.outgoing
+            case "incoming":
+                return self.link_type.display.incoming
+            case "type":
+                return self.link_type.name
+            case _:
+                return None
+
 
 @dataclass
 class NeedflowGraph:
@@ -252,8 +358,28 @@ class NeedflowGraph:
     edges: list[GraphEdge]
     """Every link between needs of the result, in the order the engines emit them."""
 
-    show_link_names: bool
-    """Whether edges are to be labelled with the link type."""
+    link_labels: LinkLabels
+    """What edges are to be labelled with, if anything."""
+
+    legend: LegendSpec | None
+    """The legend to describe the diagram with, or ``None`` for no legend."""
+
+    drawn_types: list[NeedType]
+    """The configured need types the diagram actually drew, in configuration order."""
+
+    drawn_link_types: list[LinkSchema]
+    """The link fields the diagram actually drew edges for, in schema order."""
+
+    direction: FlowDirection
+    """The direction the diagram is drawn in, as an intent rather than an engine token.
+
+    Each engine spells this in its own syntax, and degrades it if it must."""
+
+    config_direction: FlowDirection | None
+    """The direction the engine configuration already sets, if any.
+
+    An engine needs this to know whether it has to restate a direction in order to
+    override the configuration blob it emits first."""
 
 
 def resolve_link_types(
@@ -371,26 +497,90 @@ def build_graph(
         found_needs, attributes.get("max_items"), needs_config
     )
 
+    # the style classes are compiled once for the whole diagram rather than once per
+    # need, so a mistake in the configuration is reported against the directive that
+    # asked for the class and not once for every need the rule happened to match
+    style_classes = compile_style_classes(
+        needs_config.flow_styles, location=variant_location
+    )
+    # which classes a rule names does not depend on the need it is tried against, so an
+    # unknown one is reported here, once for this directive, rather than once per need
+    warn_unknown_style_classes(
+        attributes["styles"], style_classes, location=variant_location
+    )
+
+    # `needs_types[].shape` is the neutral counterpart of `needs_types[].style`, which
+    # holds PlantUML element keywords; the old key is left doing exactly what it does
+    # today, and only a type that opts in to the new one is drawn from the neutral
+    # vocabulary, so no existing project's diagram moves
+    type_shapes = {
+        need_type["directive"]: shape
+        for need_type in needs_config.types
+        if (raw := need_type.get("shape")) and (shape := resolve_shape(raw)) is not None
+    }
+
     roots, drawn = build_node_tree(
         found_needs,
         lambda need: resolve_presentation(
             need,
             highlight=attributes["highlight"],
             border_color=attributes["border_color"],
+            styles=attributes["styles"],
+            style_classes=style_classes,
+            type_shapes=type_shapes,
             config=needs_config,
             needs=needs_view.values(),
             location=variant_location,
         ),
     )
 
+    edges = collect_edges(found_needs, allowed_link_types, drawn)
+
+    # what the legend describes is what was drawn, so it is derived from the graph and
+    # not from the configuration -- a legend listing things the reader cannot find in
+    # the picture is worse than no legend at all
+    drawn_type_names = {node.need["type"] for node in drawn.values()}
+    drawn_link_type_names = {edge.link_type.name for edge in edges}
+
     return NeedflowGraph(
         needs=found_needs,
         total_needs=total_needs,
         roots=roots,
         nodes=drawn,
-        edges=collect_edges(found_needs, allowed_link_types, drawn),
-        # the configuration can only ever turn link names on; it is kept as is
-        show_link_names=attributes["show_link_names"] or needs_config.flow_show_links,
+        edges=edges,
+        drawn_types=[
+            need_type
+            for need_type in needs_config.types
+            if need_type["directive"] in drawn_type_names
+        ],
+        drawn_link_types=[
+            link_type
+            for link_type in allowed_link_types
+            if link_type.name in drawn_link_type_names
+        ],
+        legend=resolve_legend(
+            attributes["show_legend"],
+            attributes["show_legend_key"],
+            needs_config.flow_show_legend,
+            # `location=None`: the shape of `needs_flow_legends` is a `conf.py` matter,
+            # so its warnings belong to the project rather than to whichever diagram
+            # was drawn first. `validate_flow_config` has already emitted them at read
+            # time with the same text, so Sphinx's `once` filter suppresses these; the
+            # call is repeated per diagram because the compiled result is cheap and
+            # holding it would mean caching build-scoped state on a module
+            compile_legends(needs_config.flow_legends, location=None),
+            location=location,
+        ),
+        link_labels=resolve_link_labels(
+            attributes["show_link_names_value"], needs_config.flow_show_links
+        ),
+        direction=resolve_direction(
+            attributes["direction"],
+            attributes["config_direction"],
+            needs_config.flow_direction,
+            location=location,
+        ),
+        config_direction=attributes["config_direction"],
     )
 
 
@@ -400,26 +590,51 @@ def resolve_presentation(
     *,
     highlight: str,
     border_color: str | None,
+    styles: str = "",
+    style_classes: Mapping[str, StyleProps] | None = None,
+    type_shapes: Mapping[str, str] | None = None,
     config: NeedsSphinxConfig,
     needs: Iterable[NeedItem | NeedPartItem],
     location: LocationType,
 ) -> NodePresentation:
     """Resolve how a single need is to be presented.
 
+    ``:highlight:`` and the built-in ``highlight`` style class are the same thing, and
+    either wins over a border color -- as the option always has.  A style rule that
+    sets a border of its own displaces the highlight, because that is what a cascade
+    means: the last declaration wins.
+
     :param need: The need or need part to be drawn.
     :param highlight: The ``highlight`` filter, empty if the option was not given.
     :param border_color: The ``border_color`` option, in variant syntax.
+    :param styles: The ``styles`` rules, in variant syntax, empty if none were given.
+    :param style_classes: The compiled style classes of the configuration, if any.
     :param config: The Sphinx-Needs configuration.
     :param needs: All needs, for a ``highlight`` filter that consults them.
-    :param location: Where to report ``border_color`` variant problems.
+    :param location: Where to report variant and style problems.
     :return: The resolved presentation.
     """
-    is_highlighted = bool(highlight) and filter_single_need(
-        need, config, highlight, needs
+    resolved_styles, styled_highlight = resolve_styles(
+        styles,
+        style_classes or {},
+        context=need.filter_context(),
+        variants=config.variants,
+        location=location,
+    )
+    # a style rule is more specific than the need type, so the type's shape is only
+    # consulted when no rule set one
+    if (
+        resolved_styles.shape is None
+        and need["is_need"]
+        and (shape := (type_shapes or {}).get(need["type"])) is not None
+    ):
+        resolved_styles = replace(resolved_styles, shape=shape)
+    is_highlighted = styled_highlight or (
+        bool(highlight) and filter_single_need(need, config, highlight, needs)
     )
     resolved_border = None
-    if not is_highlighted and border_color:
-        # a highlight always wins, so the border color is not even resolved
+    if not is_highlighted and resolved_styles.border is None and border_color:
+        # a highlight or a style rule always wins, so the border color is not resolved
         resolved_border = resolve_color(
             match_variants(
                 border_color,
@@ -434,6 +649,7 @@ def resolve_presentation(
         type_color=need["type_color"] or None,
         highlight=is_highlighted,
         border_color=resolved_border,
+        styles=resolved_styles,
     )
 
 

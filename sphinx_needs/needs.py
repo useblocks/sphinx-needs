@@ -74,6 +74,7 @@ from sphinx_needs.directives.needflow import (
     process_needflow_graphviz,
     process_needflow_plantuml,
 )
+from sphinx_needs.directives.needflow._options import validate_flow_config
 from sphinx_needs.directives.needgantt import (
     Needgantt,
     NeedganttDirective,
@@ -777,7 +778,6 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
             "outgoing": "links outgoing",
             "incoming": "links incoming",
             "copy": False,
-            "color": "#000000",
         }
     if "parent_needs" not in needs_config._links:
         needs_config._links["parent_needs"] = {
@@ -1084,9 +1084,34 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 "outgoing": link.get("outgoing", name),
             }
             # Only override optional fields if explicitly set in config
-            for key in ("color", "style", "style_part", "style_start", "style_end"):
+            for key in (
+                "color",
+                "part_color",
+                "style",
+                "style_part",
+                "style_start",
+                "style_end",
+                "line",
+                "part_line",
+                "arrow",
+            ):
                 if key in link:
                     display_kwargs[key] = link[key]
+            if legacy := {
+                key
+                for key in ("style", "style_part", "style_start", "style_end")
+                if key in link
+            }:
+                # kept working indefinitely, and folded into the neutral values by the
+                # needflow model, so a project can migrate one link type at a time
+                log_warning(
+                    LOGGER,
+                    f"needs_links {name!r} uses deprecated display key(s) "
+                    f"{', '.join(sorted(legacy))}. "
+                    "Please use 'line', 'part_line' and 'arrow' instead.",
+                    "deprecated",
+                    None,
+                )
             display_config = LinkDisplayConfig(**display_kwargs)
             link_field = LinkSchema(
                 name=name,
@@ -1122,6 +1147,28 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             schema.add_link_field(link_field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid link {name!r}: {exc}") from exc
+
+    # validated where the configuration is read, so that a project which misconfigures
+    # one of these and happens to have no needflow anywhere is still told, exactly once
+    validate_flow_config(
+        engine=needs_config.flow_engine,
+        direction=needs_config.flow_direction,
+        show_links=needs_config.flow_show_links,
+        legends=needs_config.flow_legends,
+        show_legend=needs_config.flow_show_legend,
+    )
+
+    if needs_config.flow_link_types != ["links"]:
+        # the needflow directive always defaults its `link_types` option to every link
+        # field, so this value has never been reachable; restoring it now would
+        # silently narrow every existing diagram to the link types named here
+        log_warning(
+            LOGGER,
+            'Config option "needs_flow_link_types" is deprecated and has no effect. '
+            "Please use the needflow ':link_types:' option instead.",
+            "deprecated",
+            None,
+        )
 
     if needs_config._global_options:
         log_warning(

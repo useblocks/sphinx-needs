@@ -1,0 +1,74 @@
+id: shape-enum-sample
+title: Three portable shapes, one of which PlantUML cannot draw
+purpose: |
+  The shape vocabulary is only portable if a member with no counterpart degrades rather than erroring. `cylinder` and `document` exist on both engines; `diamond` exists on Graphviz and has no PlantUML nestable element, so PlantUML must draw the nearest form and say so once (tier 2) while Graphviz stays silent.
+needs:
+- id: REQ_1
+  type: store
+  title: A store
+  links:
+    links:
+    - REQ_2
+- id: REQ_2
+  type: gate
+  title: A document
+  links:
+    links:
+    - REQ_3
+- id: REQ_3
+  type: choice
+  title: A choice
+types:
+- directive: store
+  title: Store
+  prefix: S_
+  shape: cylinder
+- directive: gate
+  title: Gate
+  prefix: G_
+  shape: document
+- directive: choice
+  title: Choice
+  prefix: C_
+  shape: diamond
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      database "<size:12>Store</size>\n**A store**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]]
+      artifact "<size:12>Gate</size>\n**A document**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]]
+      rectangle "<size:12>Choice</size>\n**A choice**\n<size:10>REQ_3</size>" as REQ_3 [[<NODE_URL:REQ_3>]]
+
+      ' Connection definition
+
+      REQ_1 --> REQ_2
+      REQ_2 --> REQ_3
+
+      @enduml
+    degradations:
+    - id: shape-unmapped
+      tier: 2
+      once: true
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "REQ_1" [label=<<font point-size="12">Store</font><br align="left"/><b>A store</b><br align="left"/><font point-size="10">REQ_1</font><br align="left"/>>, tooltip="REQ_1", href="<NODE_URL:REQ_1>", target="_top", shape="cylinder"];
+      "REQ_2" [label=<<font point-size="12">Gate</font><br align="left"/><b>A document</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="note"];
+      "REQ_3" [label=<<font point-size="12">Choice</font><br align="left"/><b>A choice</b><br align="left"/><font point-size="10">REQ_3</font><br align="left"/>>, tooltip="REQ_3", href="<NODE_URL:REQ_3>", target="_top", shape="diamond"];
+
+      // edge definitions
+      "REQ_1" -> "REQ_2" [arrowhead=vee];
+      "REQ_2" -> "REQ_3" [arrowhead=vee];
+      }

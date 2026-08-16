@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import html
 from collections.abc import Iterable, Mapping
 
 from docutils import nodes
@@ -26,7 +25,13 @@ from ._model import (
     build_graph,
     resolve_link_types,
 )
-from ._shared import create_filter_paragraph
+from ._options import (
+    plantuml_arrow,
+    plantuml_direction,
+    plantuml_line,
+    plantuml_shape,
+)
+from ._shared import create_filter_paragraph, create_legend_nodes
 
 logger = get_logger(__name__)
 
@@ -96,11 +101,14 @@ def get_need_node_rep_for_plantuml(
     fromdocname: str,
     graph_node: GraphNode,
     entity_names: Mapping[str, str],
+    location: nodes.Element | None = None,
 ) -> str:
     """Emit the plantuml representation of a single need or need part.
 
     :param graph_node: The node to emit, carrying its resolved presentation.
     :param entity_names: The id to entity name mapping of :func:`make_entity_names`.
+    :param location: The needflow being drawn, for reporting a shape plantuml has no
+        form for.
     """
     needs_config = NeedsSphinxConfig(app.config)
     need_info = graph_node.need
@@ -114,16 +122,27 @@ def get_need_node_rep_for_plantuml(
 
     node_link = calculate_link(app, need_info, fromdocname)
 
+    styles = presentation.styles
+
     node_colors = []
-    if presentation.type_color:
+    if fill := (styles.fill or presentation.type_color):
         # We set # later, as the user may not have given a color and the node must get highlighted
-        node_colors.append(presentation.type_color.replace("#", ""))
+        node_colors.append(fill.replace("#", ""))
 
     if presentation.highlight:
         node_colors.append("line:FF0000")
-    elif presentation.border_color:
+    elif border := (styles.border or presentation.border_color):
         # the whole color list is prefixed with a single "#" below
-        node_colors.append(f"line:{presentation.border_color}")
+        node_colors.append(f"line:{border}")
+
+    if styles.border_style in ("dashed", "dotted"):
+        node_colors.append(f"line.{styles.border_style}")
+    if styles.border_width is not None and styles.border_width > 1:
+        # plantuml has no border width, so a wide border becomes a bold line: the
+        # nearest form it can draw, and not worth a warning (tier 1)
+        node_colors.append("line.bold")
+    if styles.text_color:
+        node_colors.append(f"text:{styles.text_color}")
 
     # node representation for plantuml
     color_suffix = f" #{';'.join(node_colors)}" if node_colors else ""
@@ -132,7 +151,11 @@ def get_need_node_rep_for_plantuml(
         node_text=node_text,
         link=node_link,
         color_suffix=color_suffix,
-        style=presentation.type_style,
+        style=(
+            plantuml_shape(styles.shape, location=location)
+            if styles.shape
+            else presentation.type_style
+        ),
     )
     return need_node_code
 
@@ -142,6 +165,7 @@ def walk_curr_need_tree(
     fromdocname: str,
     graph_node: GraphNode,
     entity_names: Mapping[str, str],
+    location: nodes.Element | None = None,
 ) -> str:
     """Emit the need parts and child needs of a need, as a nested plantuml block.
 
@@ -168,7 +192,7 @@ def walk_curr_need_tree(
         for part_node in graph_node.parts:
             curr_need_tree += (
                 get_need_node_rep_for_plantuml(
-                    app, fromdocname, part_node, entity_names
+                    app, fromdocname, part_node, entity_names, location
                 )
                 + "\n"
             )
@@ -180,10 +204,10 @@ def walk_curr_need_tree(
         # walk through all child needs one by one
         for child_node in graph_node.children:
             curr_need_tree += get_need_node_rep_for_plantuml(
-                app, fromdocname, child_node, entity_names
+                app, fromdocname, child_node, entity_names, location
             )
             curr_need_tree += walk_curr_need_tree(
-                app, fromdocname, child_node, entity_names
+                app, fromdocname, child_node, entity_names, location
             )
             # add newline for next element
             curr_need_tree += "\n"
@@ -199,6 +223,7 @@ def cal_needs_node(
     fromdocname: str,
     graph: NeedflowGraph,
     entity_names: Mapping[str, str],
+    location: nodes.Element | None = None,
 ) -> str:
     """Emit the plantuml node definitions of a whole diagram.
 
@@ -208,8 +233,10 @@ def cal_needs_node(
     curr_need_tree = ""
     for root in graph.roots:
         curr_need_tree += (
-            get_need_node_rep_for_plantuml(app, fromdocname, root, entity_names)
-            + walk_curr_need_tree(app, fromdocname, root, entity_names)
+            get_need_node_rep_for_plantuml(
+                app, fromdocname, root, entity_names, location
+            )
+            + walk_curr_need_tree(app, fromdocname, root, entity_names, location)
             + "\n"
         )
     return curr_need_tree
@@ -293,6 +320,15 @@ def process_needflow_plantuml(
                 puml_node["uml"] += config
                 puml_node["uml"] += "\n\n"
 
+            # the config blob is a preamble of defaults, so the direction is written
+            # after it and wins; nothing is written for a diagram already drawn that way
+            if (
+                direction := plantuml_direction(
+                    graph.direction, graph.config_direction, location=node
+                )
+            ) is not None:
+                puml_node["uml"] += f"\n' Direction\n\n{direction}\n"
+
             # the entity names must be assigned for the whole diagram at once,
             # so that ids sanitising to the same name stay distinct nodes
             entity_names = make_entity_names(
@@ -300,16 +336,18 @@ def process_needflow_plantuml(
             )
 
             puml_node["uml"] += "\n' Nodes definition \n\n"
-            puml_node["uml"] += cal_needs_node(app, fromdocname, graph, entity_names)
+            puml_node["uml"] += cal_needs_node(
+                app, fromdocname, graph, entity_names, node
+            )
 
             puml_node["uml"] += "\n' Connection definition \n\n"
-            puml_node["uml"] += render_connections(graph, entity_names)
+            puml_node["uml"] += render_connections(graph, entity_names, node)
 
-            # Create a legend
+            # Create a legend, inside the diagram where that is what was asked for
             # note this lists every configured need type, whereas the graphviz engine
             # lists only the types it actually drew, so the same `:show_legend:` gives
             # the two engines different legends; it is kept as is
-            if current_needflow["show_legend"]:
+            if graph.legend is not None and graph.legend.internal:
                 puml_node["uml"] += create_legend(needs_config.types)
 
             puml_node["uml"] += "\n@enduml"
@@ -320,6 +358,9 @@ def process_needflow_plantuml(
             puml_node["scale"] = scale
 
             puml_node = nodes.figure("", puml_node)
+            # `:class:` used to be collected and then dropped by this engine, so the
+            # same option styled a graphviz diagram and did nothing to a plantuml one
+            puml_node["classes"] += current_needflow["classes"]
 
             if current_needflow["align"]:
                 puml_node["align"] = current_needflow["align"]
@@ -353,6 +394,13 @@ def process_needflow_plantuml(
             puml_node.line = current_needflow["lineno"]
 
             content.append(puml_node)
+            # ...and beside it otherwise, as a document table identical on every engine
+            if graph.legend is not None and not graph.legend.internal:
+                content.extend(
+                    create_legend_nodes(
+                        graph.legend.parts, graph.drawn_types, graph.drawn_link_types
+                    )
+                )
         else:  # no needs found
             content.append(
                 no_needs_found_paragraph(current_needflow.get("filter_warning"))
@@ -377,20 +425,28 @@ def process_needflow_plantuml(
         if current_needflow["debug"] and found_needs:
             # We can only access puml_node if found_needs is set.
             # Otherwise it was not been set, or we get outdated data
-            debug_container = nodes.container()
             if isinstance(puml_node, nodes.figure):
                 data = puml_node.children[0]["uml"]  # type: ignore[index]
             else:
                 data = puml_node["uml"]
-            data = "\n".join([html.escape(line) for line in data.split("\n")])
-            debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
-            debug_container += debug_para
-            content.append(debug_container)
+            # the same shape the graphviz engine uses, so that `:debug:` produces the
+            # same kind of block whichever engine drew the diagram; Pygments has no
+            # PlantUML lexer, so the source is shown unhighlighted rather than wrongly
+            code = nodes.literal_block(
+                data, data, language="text", linenos=True, force=True
+            )
+            code.source = env.doc2path(current_needflow["docname"])
+            code.line = current_needflow["lineno"]
+            content.append(code)
 
         node.replace_self(content)
 
 
-def render_connections(graph: NeedflowGraph, entity_names: Mapping[str, str]) -> str:
+def render_connections(
+    graph: NeedflowGraph,
+    entity_names: Mapping[str, str],
+    location: nodes.Element | None = None,
+) -> str:
     """Emit the plantuml connections between the needs.
 
     .. note:: An edge is emitted even when one of its ends is not drawn as a node -- a
@@ -399,25 +455,35 @@ def render_connections(graph: NeedflowGraph, entity_names: Mapping[str, str]) ->
 
     :param graph: The graph to emit the connections of.
     :param entity_names: The id to entity name mapping of :func:`make_entity_names`.
+    :param location: The needflow being drawn, for reporting an arrow plantuml has no
+        form for.
     """
     puml_connections = ""
     for edge in graph.edges:
-        if graph.show_link_names:
-            desc = edge.link_type.display.outgoing + "\\n"
-            comment = f": {desc}"
+        if (label := edge.label(graph.link_labels)) is not None:
+            comment = f": {label}\\n"
         else:
             comment = ""
 
-        # If source or target of link is a need_part, a specific style is needed
-        link_style = f"[{edge.style}]" if (edge.is_part or edge.style) else ""
+        # the neutral `line`/`arrow`/`color` win where a link type sets them; where it
+        # only carries the deprecated plantuml tokens, they are emitted as they were
+        parts = []
+        if (line := edge.line) is not None:
+            if token := plantuml_line(line):
+                parts.append(token)
+        elif edge.is_part or edge.legacy_style:
+            parts.append(edge.legacy_style)
+        if color := edge.color:
+            parts.append(f"#{color.lstrip('#')}")
+        link_style = f"[{','.join(parts)}]" if parts else ""
 
         source = get_entity_name(entity_names, edge.source_id)
         target = get_entity_name(entity_names, edge.target_id)
-        arrow = (
-            edge.link_type.display.style_start
-            + link_style
-            + edge.link_type.display.style_end
-        )
-        # TODO also use link_type.display.color?
+        if (neutral := edge.arrow) is not None:
+            start, end = plantuml_arrow(neutral, location=location)
+        else:
+            start = edge.link_type.display.style_start
+            end = edge.link_type.display.style_end
+        arrow = start + link_style + end
         puml_connections += f"{source} {arrow} {target}{comment}\n"
     return puml_connections

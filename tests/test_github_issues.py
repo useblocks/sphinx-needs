@@ -155,18 +155,23 @@ def test_doc_github_1664_legend(test_app):
 
     The type must keep its legend row -- only the color swatch is left blank --
     so the legend still documents every type it is asked about.
+
+    The fixture writes the bare ``:show_legend:``, which still draws each engine's own
+    in-image legend and is not deprecated, so the build must be silent.
     """
     app = test_app
     app.build()  # must not raise
 
     # a legend the engine cannot parse would be reported as a render warning
-    warnings = strip_colors(app._warning.getvalue()).strip()
-    assert warnings == ""
+    assert strip_colors(app._warning.getvalue()).strip() == ""
 
     debug = _debug_source(Path(app.outdir, "legend.html"))
 
     if app.config.needs_flow_engine == "plantuml":
-        assert "\nlegend\n" in debug
+        # the debug block is line numbered on both engines, so the legend block is
+        # matched without depending on where its lines start
+        assert re.search(r"\d+legend\n", debug)
+        assert re.search(r"\d+endlegend\n", debug)
         # the row is kept, with an empty color swatch cell
         assert "| | Specification |" in debug
     else:

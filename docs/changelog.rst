@@ -11,8 +11,99 @@ Unreleased
 
 :Released: Unreleased
 
+New Features
+............
+
+- ✨ **A portable option vocabulary for** :ref:`needflow` (:pr:`1770`)
+
+  A ``needflow`` used to be written partly in PlantUML's vocabulary: ``needs_types[].style``
+  held PlantUML element keywords, ``needs_links[].style_start``/``style_end`` held PlantUML
+  arrow tokens, and the graphviz engine was a translation layer over them. Several options
+  also quietly meant different things depending on which engine drew the diagram.
+
+  The options below say what is *meant*, and each engine writes it in its own syntax, so a
+  document renders the same wherever it is built:
+
+  .. list-table::
+     :header-rows: 1
+     :widths: 25,75
+
+     - * Option
+       * Meaning
+     - * ``:direction:``
+       * ``down`` (default), ``up``, ``right`` or ``left``, plus the ``TB``/``TD``/``BT``/``LR``/``RL`` aliases.
+     - * ``:show_legend:``
+       * Widened from a flag: names an entry of :ref:`needs_flow_legends`, describing
+         ``types``, ``links`` or both; written bare it still draws what it always drew.
+     - * ``:show_link_names:``
+       * Widened from a flag: ``none`` (default), ``outgoing``, ``incoming`` or ``type``;
+         written bare it still means ``outgoing``.
+     - * ``:styles:``
+       * ``[<filter>]:<class>`` rules over classes named in :ref:`needs_flow_styles`.
+     - * ``:engine_config:``
+       * Engine specific customisation, selected by name from :ref:`needs_flow_engine_config`.
+
+  With matching project defaults :ref:`needs_flow_direction`, :ref:`needs_flow_legends`,
+  :ref:`needs_flow_show_legend`, :ref:`needs_flow_show_links`, :ref:`needs_flow_styles`
+  and :ref:`needs_flow_engine_config`. Only an unset option consults the configuration, so
+  a single diagram can always opt back out of a project default.
+
+  Edge labels and the legend are the two intents that already had an option, so those are
+  **widened rather than replaced**: the bare ``:show_link_names:`` flag already meant
+  precisely ``outgoing``, and :ref:`needs_flow_show_links` still accepts ``True``,
+  ``False`` and any other non-string value beside the four names; the bare
+  ``:show_legend:`` flag still draws the legend it always drew. Existing documents and
+  configurations therefore keep drawing exactly what they drew, and none of those
+  spellings is deprecated. The one exception is a *string* ``needs_flow_show_links`` that
+  is not one of the four values: it used to be truthy and draw labels, and now warns and
+  falls back to ``none``.
+
+  The values are what make the pair useful: the flag and the configuration used to be
+  OR-ed together, so a project that turned labels on left no way of turning them off again
+  for one diagram -- ``:show_link_names: none`` is that way out.
+
+  ``needs_links`` gains ``line``, ``part_line``, ``arrow`` and ``part_color``, and its
+  ``color`` is finally honoured — an identical "TODO" had sat in both emitters.
+  ``needs_types`` gains ``shape``, a ten member vocabulary every engine can draw.
+  ``color`` is unset by default rather than black, so a link type can now ask for black
+  and be given it.
+
+  Where an engine cannot express an intent it degrades rather than fails: a plainer diagram
+  beats a failed build. PlantUML has no bottom-up or right-left layout, so ``:direction: up``
+  is drawn ``down`` with a single warning per project, and a border width becomes a bold line
+  silently. Nothing warns unless the feature is actually used.
+
+  ``:show_legend:`` takes the *name* of a legend from :ref:`needs_flow_legends`, never the
+  sections inline: a project names its legends whatever it likes, so an inline vocabulary
+  would mean a legend called ``types`` collided with the section called ``types`` and
+  needed a precedence rule nobody should have to learn. A named legend chooses its
+  sections as an ordered list — ``["links", "types"]`` puts links first, on every engine
+  — and asks for ``internal`` or ``external`` placement; unset placement takes the
+  engine's own default, which is ``internal`` for both engines here. The external one is a
+  document table rather than part of the picture, so there is one implementation for every
+  engine instead of one per engine, its text is selectable, and it can describe link types
+  — which no in-diagram legend could. Placement is a preference: an engine that cannot draw
+  inside the picture substitutes the table silently, because the two carry the same
+  information and differ only in where they sit.
+
+  Naming no legend at all leaves the choice to the engine, which is what keeps the bare
+  flag byte-identical to before. :ref:`needs_flow_show_legend` changes which legend "bare"
+  means, project-wide — *which*, never *whether*: a legend describes one picture, so the
+  decision to draw one stays with that picture. The two resolve as a chain — option, then
+  configuration, then the engine — in which a name that is not defined warns and is then
+  treated as unset, so a typo in one diagram costs that diagram a warning rather than
+  costing the project the legend it configured.
+
 Improvements
 ............
+
+- 👌 :ref:`needflow`'s ``:debug:`` output is now a line-numbered literal block on both
+  engines (:pr:`1770`).
+
+  The ``plantuml`` engine emitted raw HTML while ``graphviz`` emitted a literal block,
+  so the same option produced two different things. Both now use the block, and so pick
+  up line numbers and the theme's code styling. Pygments has no PlantUML lexer, so that
+  source is shown unhighlighted rather than wrongly highlighted.
 
 - ✨ New :ref:`needs_card_layouts` configuration, for describing layouts declaratively
   (:pr:`1765`)
@@ -108,6 +199,43 @@ These changes do not affect user-facing behaviour:
 Bug fixes
 .........
 
+- 🐛 :ref:`needflow`'s ``:class:`` option is now honoured by the ``plantuml`` engine
+  (:pr:`1770`).
+
+  The option was collected by the directive and then dropped, so the same ``:class:``
+  styled a graphviz diagram and did nothing to a plantuml one.
+
+- 🐛 A malformed :ref:`needs_graphviz_styles` entry no longer ends the build
+  (:pr:`1770`).
+
+  A value that is not a mapping of attributes travelled unchecked from the
+  configuration into the emitter and aborted the build with ``'str' object has no
+  attribute 'items'``. It is now rejected where it is read, with a warning, and the
+  diagram is drawn without it.
+
+- 🐛 An unusable :ref:`needs_flow_engine` no longer ends the build (:pr:`1770`).
+
+  It tripped a bare ``assert`` -- which ``python -O`` strips, and which produced a
+  traceback rather than a message. It now warns once when the configuration is read,
+  names the allowed values, and draws with the default engine. ``mermaid`` is accepted
+  as a reserved name and degrades the same way, so a document shared with ubCode does
+  not lose its diagram here.
+
+- 🐛 :ref:`needflow`'s ``graphviz`` labels no longer break HTML entities when a title
+  wraps (:pr:`1770`).
+
+  The title was escaped and then wrapped, so the wrapper counted the characters of an
+  entity and could break inside one: a title holding a quote wrapped to ``&quo<br/>t;``,
+  which is invalid markup and a visibly broken label. Wrapping now happens first, which
+  also makes the wrap width count what the reader sees.
+
+- 🐛 :ref:`needs_graphviz_styles` is no longer mutated when a diagram selects several
+  configurations by name (:pr:`1770`).
+
+  The merge assigned one configuration's own sub-dictionary and then updated it in
+  place, so the entry was permanently altered and every later diagram inherited the
+  styles of an earlier one.
+
 - 🐛 :ref:`needflow` no longer fails the build when a need type has no ``color`` (or an
   empty one) and the diagram shows a legend (:issue:`1664`).
 
@@ -165,6 +293,30 @@ Documentation
   five ``extend_directives`` entries for directives that ubCode now supports natively.
   Sphinx is unaffected: ``needs_from_toml`` reads only the ``[needs]`` table, which is
   unchanged.
+
+Deprecations
+............
+
+Every item below keeps working exactly as it did, and will keep working; using one now
+emits a ``needs.deprecated`` warning naming its replacement (:pr:`1770`).
+
+- ``needflow`` ``:config:`` → :ref:`engine_config <needflow_engine_config>`, which reads the
+  same registries, so nothing has to move.
+- ``needflow`` ``:highlight:`` → :ref:`styles <needflow_styles>` with the built-in
+  ``highlight`` class, which draws exactly the same outline.
+- ``needflow`` ``:border_color:`` → :ref:`styles <needflow_styles>` with a class setting
+  ``border``.
+- ``needflow`` ``:scale:`` -- deprecated **without** a like-for-like replacement. It sizes a
+  raster image and has always been ignored silently by the ``graphviz`` engine, so the same
+  option never meant the same thing on both engines. Use ``:width:`` / ``:height:``.
+- ``needs_links[].style``, ``.style_part``, ``.style_start`` and ``.style_end`` →
+  ``.line``, ``.part_line``, ``.color``, ``.part_color`` and ``.arrow``. A project can
+  migrate one link type, and one key, at a time. Note that the arrow member reproducing
+  today's default is ``open``, not ``normal`` — see :ref:`needflow_arrow_migration`.
+- :ref:`needs_flow_link_types` -- deprecated as **dead**. The directive always defaults its
+  ``:link_types:`` option to every link field, so this value has never been consulted;
+  making it work now would silently narrow every existing diagram. The documentation that
+  described its behaviour has been corrected.
 
 .. _`release:8.3.1`:
 

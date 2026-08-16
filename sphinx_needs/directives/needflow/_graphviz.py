@@ -29,10 +29,18 @@ from sphinx_needs.utils import remove_node_from_tree
 from ._model import (
     GraphEdge,
     GraphNode,
+    NodePresentation,
     build_graph,
     resolve_link_types,
 )
-from ._shared import create_filter_paragraph
+from ._options import (
+    GRAPHVIZ_SHAPES,
+    LinkLabels,
+    graphviz_arrow,
+    graphviz_line,
+    graphviz_rankdir,
+)
+from ._shared import create_filter_paragraph, create_legend_nodes
 
 try:
     from sphinx.writers.html5 import HTML5Translator
@@ -115,12 +123,23 @@ def process_needflow_graphviz(
         # global settings
         for key, value in attributes["graphviz_style"].get("root", {}).items():
             content += f"{key}={_quote(str(value))};\n"
+
         for etype in ("graph", "node", "edge"):
             if etype in attributes["graphviz_style"]:
                 content += f"{etype} [\n"
                 for key, value in attributes["graphviz_style"][etype].items():
                     content += f"  {key}={_quote(str(value))};\n"
                 content += "]\n"
+
+        # the config blob is a preamble of defaults, so the direction is written after
+        # all of it and wins -- including after the `graph [...]` block, since a graph
+        # attribute statement overrides an earlier one and that is where the shipped
+        # `lefttoright`/`toptobottom` configs put their `rankdir`.
+        # Nothing is written for a diagram already drawn the way it asks to be.
+        if (
+            rankdir := graphviz_rankdir(graph.direction, graph.config_direction)
+        ) is not None:
+            content += f"rankdir={_quote(rankdir)};\n"
 
         # calculate node definitions
         content += "\n// node definitions\n"
@@ -137,12 +156,12 @@ def process_needflow_graphviz(
         # calculate edge definitions
         content += "\n// edge definitions\n"
         for edge in graph.edges:
-            content += _render_edge(edge, graph.show_link_names, cluster_ids)
+            content += _render_edge(edge, graph.link_labels, cluster_ids)
 
         # note this lists only the need types that were actually drawn, whereas the
         # plantuml engine lists every configured type, so the same `:show_legend:` gives
         # the two engines different legends; it is kept as is
-        if attributes["show_legend"]:
+        if graph.legend is not None and graph.legend.internal:
             content += _create_legend(
                 [drawn.need for drawn in graph.nodes.values()], needs_config
             )
@@ -158,6 +177,16 @@ def process_needflow_graphviz(
             code.source, code.line = node.source, node.line
             # add the debug code to after the surrounding figure
             node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, code)
+
+        # ...and beside it otherwise, as a document table identical on every engine;
+        # inserted last so that it ends up directly below the figure it describes
+        if graph.legend is not None and not graph.legend.internal:
+            for legend in create_legend_nodes(
+                graph.legend.parts, graph.drawn_types, graph.drawn_link_types
+            ):
+                node.parent.parent.insert(
+                    node.parent.parent.index(node.parent) + 1, legend
+                )
 
 
 def _get_link_to_need(
@@ -225,7 +254,9 @@ def _render_node(
         params.extend([("href", _quote(_link)), ("target", _quote("_top"))])
 
     # shape
-    if need["is_need"]:
+    if presentation.styles.shape:
+        params.append(("shape", _quote(GRAPHVIZ_SHAPES[presentation.styles.shape])))
+    elif need["is_need"]:
         if presentation.type_style not in _plantuml_shapes:
             log_warning(
                 LOGGER,
@@ -239,18 +270,14 @@ def _render_node(
     else:
         params.append(("shape", "rectangle"))
 
-    # fill color
-    if presentation.type_color:
-        style = node.attributes["graphviz_style"].get("node", {}).get("style", "")
-        new_style = style + ",filled" if style else "filled"
-        params.append(("style", _quote(new_style)))
-        params.append(("fillcolor", _quote(presentation.type_color)))
-
-    # outline color
-    if presentation.highlight:
-        params.append(("color", "red"))
-    elif presentation.border_color:
-        params.append(("color", _quote("#" + presentation.border_color)))
+    params.extend(
+        _presentation_params(
+            presentation,
+            base_style=node.attributes["graphviz_style"]
+            .get("node", {})
+            .get("style", ""),
+        )
+    )
 
     id = _quote(need["id_complete"])
     param_str = ", ".join(f"{key}={value}" for key, value in params)
@@ -286,21 +313,14 @@ def _render_subgraph(
         params.extend([("href", _quote(_link)), ("target", _quote("_top"))])
 
     # shape
-    if need["is_need"]:
+    if presentation.styles.shape:
+        params.append(("shape", _quote(GRAPHVIZ_SHAPES[presentation.styles.shape])))
+    elif need["is_need"]:
         params.append(("shape", _quote(presentation.type_style)))
     else:
         params.append(("shape", "rectangle"))
 
-    # fill color
-    if presentation.type_color:
-        params.append(("style", "filled"))
-        params.append(("fillcolor", _quote(presentation.type_color)))
-
-    # outline color
-    if presentation.highlight:
-        params.append(("color", "red"))
-    elif presentation.border_color:
-        params.append(("color", _quote("#" + presentation.border_color)))
+    params.extend(_presentation_params(presentation, base_style="", quote_style=False))
 
     # we need to create an invisible node to allow links to the subgraph
     id = _quote(need["id_complete"])
@@ -330,6 +350,75 @@ def _render_subgraph(
     return f"subgraph {cluster_id} {{\n{param_str}\n\n  {ghost_node}\n{children}\n}};\n"
 
 
+def _presentation_params(
+    presentation: NodePresentation, *, base_style: str, quote_style: bool = True
+) -> list[tuple[str, str]]:
+    """Render the fill, outline and text of a node as graphviz attributes.
+
+    Both the plain node path and the subgraph path go through here, so that the two
+    cannot quietly grow apart again the way they had before.  Only the shape is left
+    to the callers, which still differ in whether they translate it.
+
+    A style rule wins over the configured need type, and a highlight wins over both --
+    unless a later rule set an outline of its own, which the model has already resolved.
+
+    :param presentation: The resolved presentation of the node.
+    :param base_style: The diagram-wide graphviz ``node`` style to keep alongside
+        ``filled``, empty if there is none to keep.
+    :param quote_style: Whether to quote the ``style`` value.  The subgraph path has
+        always written a bare ``style=filled``, and the generated image file is named
+        after a hash of this source, so quoting it there would rename every image of
+        every project that nests needs.  A value listing several styles is quoted
+        regardless, since a bare one cannot contain a comma.
+    :return: The attributes to add, in emission order.
+    """
+    styles = presentation.styles
+    params: list[tuple[str, str]] = []
+
+    # a configured type color is used verbatim, since it may be a color *name*; a style
+    # rule's color has been normalised to bare hex, so it gets the "#" back here
+    fill: str | None = None
+    if styles.fill:
+        fill = "#" + styles.fill
+    elif presentation.type_color:
+        fill = presentation.type_color
+
+    style_entries: list[str] = []
+    if fill:
+        if base_style:
+            style_entries.append(base_style)
+        style_entries.append("filled")
+    if styles.shape == "rounded":
+        # graphviz draws a rounded box as a box with a style, not as a shape of its own
+        style_entries.append("rounded")
+    if styles.border_style in ("dashed", "dotted"):
+        style_entries.append(styles.border_style)
+    if style_entries:
+        joined = ",".join(style_entries)
+        params.append(
+            (
+                "style",
+                _quote(joined) if quote_style or len(style_entries) > 1 else joined,
+            )
+        )
+    if fill:
+        params.append(("fillcolor", _quote(fill)))
+
+    if presentation.highlight:
+        params.append(("color", "red"))
+    elif styles.border:
+        params.append(("color", _quote("#" + styles.border)))
+    elif presentation.border_color:
+        params.append(("color", _quote("#" + presentation.border_color)))
+
+    if styles.border_width is not None:
+        params.append(("penwidth", str(styles.border_width)))
+    if styles.text_color:
+        params.append(("fontcolor", _quote("#" + styles.text_color)))
+
+    return params
+
+
 def _label(
     need: NeedItem | NeedPartItem, align: Literal["left", "right", "center"]
 ) -> str:
@@ -337,12 +426,17 @@ def _label(
     # note this is based on the plantuml template DEFAULT_DIAGRAM_TEMPLATE
 
     br = f'<br align="{align}"/>'
-    # note this text wrapping mimics the jinja wordwrap filter
+    # note this text wrapping mimics the jinja wordwrap filter.
+    # The text is wrapped *before* it is escaped: wrapping escaped text lets the wrapper
+    # count the characters of an entity and break inside one, so a title holding a quote
+    # or an angle bracket produced `&quo<br/>t;` -- invalid markup, and a visibly broken
+    # label. It also means the wrap width counts what the reader sees.
     need_title = need["title"] if need["is_need"] else need["content"]
     title = br.join(
         br.join(
-            textwrap.wrap(
-                html.escape(line),
+            html.escape(chunk)
+            for chunk in textwrap.wrap(
+                line,
                 15,
                 expand_tabs=False,
                 replace_whitespace=False,
@@ -364,13 +458,13 @@ def _label(
 
 def _render_edge(
     edge: GraphEdge,
-    show_links: bool,
+    link_labels: LinkLabels,
     cluster_ids: dict[str, str | None],
 ) -> str:
     """Render an edge in the graphviz format.
 
     :param edge: The edge to render.
-    :param show_links: Whether to label the edge with the link type.
+    :param link_labels: What to label the edge with, if anything.
     :param cluster_ids: The cluster ids collected by :func:`_render_node`.
     """
     if not (edge.source_drawn and edge.target_drawn):
@@ -379,17 +473,27 @@ def _render_edge(
 
     params: list[tuple[str, str]] = []
 
-    if show_links:
-        params.append(("label", _quote(edge.link_type.display.outgoing)))
+    if (label := edge.label(link_labels)) is not None:
+        params.append(("label", _quote(label)))
 
-    params.extend(
-        # TODO also use link_type.display.color?
-        _style_params_from_link_type(
-            edge.style,
-            edge.link_type.display.style_start,
-            edge.link_type.display.style_end,
+    # the neutral `line`/`arrow`/`color` win where a link type sets them; where it only
+    # carries the deprecated plantuml tokens, they are translated as they were
+    if (line := edge.line) is not None:
+        params.append(("style", _quote(graphviz_line(line))))
+    if (arrow := edge.arrow) is not None:
+        params.extend(graphviz_arrow(arrow))
+    if line is None or arrow is None:
+        params.extend(
+            _style_params_from_link_type(
+                edge.legacy_style,
+                edge.link_type.display.style_start,
+                edge.link_type.display.style_end,
+                skip_line=line is not None,
+                skip_arrow=arrow is not None,
+            )
         )
-    )
+    if color := edge.color:
+        params.append(("color", _quote(color)))
 
     start_id = _quote(edge.source_id)
     if (ltail := cluster_ids[edge.source_id]) is not None:
@@ -407,26 +511,44 @@ def _render_edge(
 
 @cache
 def _style_params_from_link_type(
-    styles: str, style_start: str, style_end: str
+    styles: str,
+    style_start: str,
+    style_end: str,
+    skip_line: bool = False,
+    skip_arrow: bool = False,
 ) -> list[tuple[str, str]]:
+    """Translate the deprecated PlantUML link tokens into graphviz attributes.
+
+    :param styles: The ``style``/``style_part`` value, which may hold a color and
+        several comma separated keywords.
+    :param style_start: The ``style_start`` arrow token.
+    :param style_end: The ``style_end`` arrow token.
+    :param skip_line: Whether the link type already set a neutral ``line``, which wins.
+    :param skip_arrow: Whether the link type already set a neutral ``arrow``, which wins.
+    :return: The attributes to add.
+    """
     params: list[tuple[str, str]] = []
 
-    for style in styles.split(","):
-        if not (style := style.strip()):
-            continue
-        if style.startswith("#"):
-            # assume this is a color
-            params.append(("color", _quote(style)))
-        elif style in ("dotted", "dashed", "solid", "bold"):
-            params.append(("style", _quote(style)))
-        else:
-            log_warning(
-                LOGGER,
-                f"Unknown link style {style!r} for graphviz engine",
-                "needflow",
-                None,
-                once=True,
-            )
+    if not skip_line:
+        for style in styles.split(","):
+            if not (style := style.strip()):
+                continue
+            if style.startswith("#"):
+                # assume this is a color
+                params.append(("color", _quote(style)))
+            elif style in ("dotted", "dashed", "solid", "bold"):
+                params.append(("style", _quote(style)))
+            else:
+                log_warning(
+                    LOGGER,
+                    f"Unknown link style {style!r} for graphviz engine",
+                    "needflow",
+                    None,
+                    once=True,
+                )
+
+    if skip_arrow:
+        return params
 
     # convert plantuml arrow start/end style to graphviz style.
     plantuml_arrow_ends = style_start + style_end

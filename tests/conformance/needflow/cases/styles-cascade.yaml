@@ -1,0 +1,56 @@
+id: styles-cascade
+title: Two matching style rules, later wins per property
+purpose: |
+  The cascade is the one piece of semantics `:styles:` borrows wholesale from CSS, and it is per property rather than wholesale: the later rule here sets only `border`, so the earlier rule's `fill` must survive it. An implementation that replaced the whole class would pass a single-rule test and fail this one.
+needs:
+- id: REQ_1
+  type: req
+  title: Requirement one
+  links:
+    links:
+    - REQ_2
+- id: REQ_2
+  type: req
+  title: Requirement two
+config:
+  styles:
+    base:
+      fill: '#FFDDDD'
+      border: '#AA0000'
+    later:
+      border: '#00FF00'
+options:
+  styles: base, later
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**Requirement one**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]] #FFDDDD;line:00FF00
+      node "<size:12>Requirement</size>\n**Requirement two**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]] #FFDDDD;line:00FF00
+
+      ' Connection definition
+
+      REQ_1 --> REQ_2
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "REQ_1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement one</b><br align="left"/><font point-size="10">REQ_1</font><br align="left"/>>, tooltip="REQ_1", href="<NODE_URL:REQ_1>", target="_top", shape="box3d", style="filled", fillcolor="#FFDDDD", color="#00FF00"];
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement two</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d", style="filled", fillcolor="#FFDDDD", color="#00FF00"];
+
+      // edge definitions
+      "REQ_1" -> "REQ_2" [arrowhead=vee];
+      }

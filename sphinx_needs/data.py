@@ -40,8 +40,17 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 6
+ENV_DATA_VERSION: Final = 9
 """Version of the data stored in the environment.
+
+Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
+handing a pickled doctree to code that no longer understands it.
+
+.. note:: 7 and 8 were intermediate shapes that existed only within an unreleased branch,
+   so the released step is 6 to 9. They still had to be stepped over: two commits stamping
+   the same version for two shapes meant a rebuild over an existing ``_build`` kept the old
+   doctrees and failed with a ``KeyError`` -- which is precisely what this constant exists
+   to prevent, and what anyone bisecting or switching branches would have hit.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -626,6 +635,13 @@ class NeedsFilteredDiagramBaseType(NeedsFilteredBaseType):
     show_legend: bool
     show_filters: bool
     show_link_names: bool
+    """Whether to label edges with the link type.
+
+    .. versionchanged:: 8.4.0
+       For :class:`NeedsFlowType` this records only that the option was *given*; what it
+       was given is in ``show_link_names_value``, since needflow's widened option cannot
+       narrow a key the other diagram directives share.
+    """
     link_types: list[str]
     config: str
     config_names: str
@@ -685,6 +701,32 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
 
     max_items: int | None
     """Maximum number of needs to show, ``None`` if the option was not given."""
+
+    direction: Literal["down", "up", "right", "left"] | None
+    """The direction to draw the diagram in,
+    ``None`` if the option was not given, in which case the configuration is consulted."""
+
+    show_link_names_value: Literal["none", "outgoing", "incoming", "type"] | None
+    """What to label edges with, ``None`` if ``show_link_names`` was not given.
+
+    The bare ``show_link_names`` flag of :class:`NeedsFilteredDiagramBaseType` is shared
+    with the other diagram directives, which still take it as a flag, so needflow's
+    widened value lands beside it rather than changing its type."""
+
+    styles: str
+    """Style class rules, in the variant syntax, empty if the option was not given."""
+
+    show_legend_key: str
+    """The legend configuration ``show_legend`` named, empty when written bare.
+
+    Whether a legend is shown at all is the ``show_legend`` flag of
+    :class:`NeedsFilteredDiagramBaseType`; this only says which one."""
+
+    config_direction: Literal["down", "up", "right", "left"] | None
+    """The direction the selected engine configuration sets, if any.
+
+    Detected when the engine configuration is resolved, i.e. while the engine is still
+    known, so that the model can honour it without knowing which engine it is for."""
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):

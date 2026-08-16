@@ -1,0 +1,85 @@
+id: legend-engine-default
+title: a legend asked for without naming one, left to the engine
+purpose: |
+  The deliberate engine-specific default. Asking for a legend without naming a configuration
+  gets whichever legend that engine draws best: an engine that can draw a good one inside the
+  diagram does, and it is asserted byte-exactly by `source` with no `legend` key at all; an
+  engine that cannot renders the external table instead, and has a `legend` key and no legend
+  in its `source`. This is the case that makes the default a contract rather than an accident,
+  and it is why `legend` is per engine rather than shared.
+needs:
+- id: REQ_1
+  type: req
+  title: Requirement one
+  links:
+    links:
+    - REQ_2
+- id: REQ_2
+  type: req
+  title: Requirement two
+types:
+- directive: req
+  title: Requirement
+  prefix: R_
+  color: '#BFD8D2'
+- directive: undrawn
+  title: Never Drawn
+  prefix: U_
+  color: '#CCCCCC'
+options:
+  show_legend: ''
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**Requirement one**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]] #BFD8D2
+      node "<size:12>Requirement</size>\n**Requirement two**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]] #BFD8D2
+
+      ' Connection definition
+
+      REQ_1 --> REQ_2
+
+      ' Legend definition
+      legend
+      |= Color |= Type |
+      |<back:#BFD8D2> #BFD8D2 </back>| Requirement |
+      |<back:#CCCCCC> #CCCCCC </back>| Never Drawn |
+      |<back:#cccccc> #cccccc </back>| Issue |
+      |<back:#aaaaaa> #aaaaaa </back>| PullRequest |
+      |<back:#888888> #888888 </back>| Commit |
+      endlegend
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "REQ_1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement one</b><br align="left"/><font point-size="10">REQ_1</font><br align="left"/>>, tooltip="REQ_1", href="<NODE_URL:REQ_1>", target="_top", shape="box3d", style="filled", fillcolor="#BFD8D2"];
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement two</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d", style="filled", fillcolor="#BFD8D2"];
+
+      // edge definitions
+      "REQ_1" -> "REQ_2" [arrowhead=vee];
+
+      {
+          rank = sink;
+          legend [
+              shape=box,
+              style=rounded,
+              label=<<TABLE border="0">
+      <TR><TD align="center"><B>Legend</B></TD></TR>
+      <TR><TD align="left" bgcolor="#BFD8D2">Requirement</TD></TR>
+      </TABLE>>
+          ];
+      }
+      }

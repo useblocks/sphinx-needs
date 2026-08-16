@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from docutils import nodes
@@ -16,6 +16,15 @@ from sphinx_needs.data import (
     SphinxNeedsData,
 )
 from sphinx_needs.debug import measure_time
+from sphinx_needs.directives.needflow._options import (
+    ACCEPTED_ENGINES,
+    direction_option,
+    graphviz_config_direction,
+    plantuml_config_direction,
+    resolve_engine,
+    show_legend_option,
+    show_link_names_option,
+)
 from sphinx_needs.filter_common import FilterBase
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
@@ -38,7 +47,9 @@ class NeedflowDirective(FilterBase):
     optional_arguments = 1  # the caption
     final_argument_whitespace = True
     option_spec = {
-        "engine": lambda c: directives.choice(c, ("graphviz", "plantuml")),
+        # `mermaid` is accepted but not drawable here, so that a ubCode authored
+        # document does not lose its diagram entirely; see `resolve_engine`
+        "engine": lambda c: directives.choice(c, ACCEPTED_ENGINES),
         # basic options
         "alt": directives.unchanged,
         "scale": directives.unchanged_required,
@@ -54,13 +65,19 @@ class NeedflowDirective(FilterBase):
         "link_types": directives.unchanged_required,
         # debug; render the graph code in the document
         "debug": directives.flag,
+        # portable formatting vocabulary
+        "direction": direction_option,
+        "styles": directives.unchanged_required,
         # formatting
         "highlight": directives.unchanged_required,
         "border_color": directives.unchanged_required,
-        "show_legend": directives.flag,
+        # widened from a bare flag: it now names a `needs_flow_legends` key, or nothing
+        "show_legend": show_legend_option,
         "show_filters": directives.flag,
-        "show_link_names": directives.flag,
+        # widened from a bare flag: written without a value it still means `outgoing`
+        "show_link_names": show_link_names_option,
         "config": directives.unchanged_required,
+        "engine_config": directives.unchanged_required,
         "max_items": directives.nonnegative_int,
         # ubCode compatibility: accepted and ignored by Sphinx-Needs.
         "cypher": directives.unchanged,
@@ -71,10 +88,163 @@ class NeedflowDirective(FilterBase):
     # Update the options_spec with values defined in the FilterBase class
     option_spec.update(FilterBase.base_option_spec)
 
+    def _warn_deprecated(self, option: str, replacement: str) -> None:
+        """Report that a used option has a replacement, without withdrawing it.
+
+        A deprecated option keeps being honoured -- indefinitely, as every other
+        Sphinx-Needs deprecation is -- so the warning fires only when the option is
+        actually used, and never for a document that has already moved on.
+
+        :param option: The name of the deprecated option.
+        :param replacement: What to say the author should write instead.
+        """
+        log_warning(
+            LOGGER,
+            f"The 'needflow' {option!r} option is deprecated. {replacement}",
+            "deprecated",
+            location=self.get_location(),
+        )
+
+    def _engine_config_entry(
+        self, name: str, engine: str, needs_config: NeedsSphinxConfig
+    ) -> object | None:
+        """Look one engine config name up, in the new registry and then the old one.
+
+        The registries are a rename, not a redesign: ``needs_flow_engine_config`` is
+        the engine-keyed home of what ``needs_flow_configs`` and
+        ``needs_graphviz_styles`` hold today, and existing values transfer verbatim.
+        The old ones are therefore still read, so that no project has to move its
+        blobs in order to upgrade.
+
+        :param name: The name the directive selected.
+        :param engine: The engine the diagram is drawn with.
+        :param needs_config: The Sphinx-Needs configuration.
+        :return: The entry, or ``None`` if no registry holds that name.
+        """
+        registry = needs_config.flow_engine_config.get(engine)
+        if isinstance(registry, Mapping) and name in registry:
+            entry: object = registry[name]
+            return entry
+        legacy = (
+            needs_config.flow_configs
+            if engine == "plantuml"
+            else needs_config.graphviz_styles
+        )
+        if isinstance(legacy, Mapping) and name in legacy:
+            return legacy[name]
+        return None
+
+    def _unknown_engine_config(self, name: str, engine: str) -> None:
+        """Report an engine config name that no registry holds.
+
+        :param name: The name the directive selected.
+        :param engine: The engine the diagram is drawn with.
+        """
+        legacy = (
+            "needs_flow_configs" if engine == "plantuml" else "needs_graphviz_styles"
+        )
+        log_warning(
+            LOGGER,
+            f"config key {name!r} not in 'needs_flow_engine_config[{engine}]' "
+            f"or {legacy!r}",
+            "needflow",
+            location=self.get_location(),
+        )
+
+    def _plantuml_engine_config(
+        self, config_names: str, needs_config: NeedsSphinxConfig
+    ) -> str:
+        """Resolve the named plantuml customisations into one preamble.
+
+        :param config_names: The comma separated names the directive selected.
+        :param needs_config: The Sphinx-Needs configuration.
+        :return: The preamble text, empty if nothing was selected.
+        """
+        blobs: list[str] = []
+        for raw in config_names.split(","):
+            if not (name := raw.strip()):
+                continue
+            entry = self._engine_config_entry(name, "plantuml", needs_config)
+            if entry is None:
+                self._unknown_engine_config(name, "plantuml")
+            else:
+                blobs.append(str(entry))
+        return "\n".join(blobs)
+
+    def _graphviz_engine_config(
+        self, config_names: str, needs_config: NeedsSphinxConfig
+    ) -> GraphvizStyleType:
+        """Resolve the named graphviz customisations into one style mapping.
+
+        The result is validated here rather than trusted downstream: a value that is
+        not a mapping of attributes used to reach the emitter and fail the whole build
+        with ``'str' object has no attribute 'items'``. Bad configuration is worth a
+        warning, never a broken build, so the offending entry is dropped and the
+        diagram is drawn without it.
+
+        :param config_names: The comma separated names the directive selected.
+        :param needs_config: The Sphinx-Needs configuration.
+        :return: The merged style, only ever holding mappings of attributes.
+        """
+        style: GraphvizStyleType = {}
+        for raw in config_names.split(","):
+            if not (name := raw.strip()):
+                continue
+            entry = self._engine_config_entry(name, "graphviz", needs_config)
+            if entry is None:
+                self._unknown_engine_config(name, "graphviz")
+                continue
+            if not isinstance(entry, Mapping):
+                log_warning(
+                    LOGGER,
+                    f"malformed engine config {name!r} for the graphviz engine: "
+                    f"must be a mapping of element types to attributes, "
+                    f"but is {type(entry).__name__}",
+                    "needflow",
+                    location=self.get_location(),
+                )
+                continue
+            for key, value in entry.items():
+                if not isinstance(value, Mapping):
+                    log_warning(
+                        LOGGER,
+                        f"malformed engine config {name!r} for the graphviz engine: "
+                        f"{key!r} must be a mapping of attributes, "
+                        f"but is {type(value).__name__}",
+                        "needflow",
+                        location=self.get_location(),
+                    )
+                    continue
+                if key in style:
+                    style[key].update(value)  # type: ignore[literal-required]
+                else:
+                    style[key] = dict(value)  # type: ignore[literal-required]
+        return style
+
     @measure_time("needflow")
     def run(self) -> Sequence[nodes.Node]:
         needs_config = NeedsSphinxConfig(self.env.config)
         location = (self.env.docname, self.lineno)
+
+        if "highlight" in self.options:
+            self._warn_deprecated(
+                "highlight",
+                "Please use ':styles: [<filter>]:highlight' instead, "
+                "which draws the same outline.",
+            )
+        if "border_color" in self.options:
+            self._warn_deprecated(
+                "border_color",
+                "Please use ':styles:' with a class setting 'border' instead.",
+            )
+        if "scale" in self.options:
+            # deprecated without a like-for-like replacement: it sizes a raster image,
+            # which the graphviz engine has always silently ignored
+            self._warn_deprecated(
+                "scale",
+                "It sizes a raster image, so it has no effect on every engine. "
+                "Please use ':width:' / ':height:' instead.",
+            )
 
         id = self.env.new_serialno("needflow")
         targetid = f"needflow-{self.env.docname}-{id}"
@@ -85,57 +255,40 @@ class NeedflowDirective(FilterBase):
             self.options.get("link_types", all_link_types), location
         )
 
-        engine = self.options.get("engine", needs_config.flow_engine)
-        assert engine in ["graphviz", "plantuml"], f"Unknown needflow engine '{engine}'"
+        engine = resolve_engine(
+            self.options.get("engine"),
+            needs_config.flow_engine,
+            location=self.get_location(),
+        )
 
-        config_names: str = self.options.get("config", "")
+        if "config" in self.options:
+            self._warn_deprecated(
+                "config",
+                "Please use ':engine_config:' instead, which reads the same "
+                "configuration and any 'needs_flow_engine_config' entries.",
+            )
+        config_names: str = self.options.get(
+            "engine_config", self.options.get("config", "")
+        )
         config = ""
         graphviz_style: GraphvizStyleType = {}
         if engine == "plantuml":
-            _configs = []
-            for config_name in config_names.split(","):
-                config_name = config_name.strip()
-                if config_name and config_name in needs_config.flow_configs:
-                    _configs.append(needs_config.flow_configs[config_name])
-                elif config_name:
-                    log_warning(
-                        LOGGER,
-                        f"config key {config_name!r} not in 'needs_flow_configs'",
-                        "needflow",
-                        location=self.get_location(),
-                    )
-            config = "\n".join(_configs)
+            config = self._plantuml_engine_config(config_names, needs_config)
         else:
-            # note a graphviz needflow without a `:config:` silently gets the "default"
-            # style, so it is never unstyled the way a plantuml one is, and naming any
-            # config replaces that default rather than adding to it; it is kept as is
+            # note a graphviz needflow without an engine config silently gets the
+            # "default" style, so it is never unstyled the way a plantuml one is, and
+            # naming any config replaces that default rather than adding to it;
+            # it is kept as is
             config_names = config_names if config_names else "default"
-            for config_name in config_names.split(","):
-                config_name = config_name.strip()
-                try:
-                    if config_name and config_name in needs_config.graphviz_styles:
-                        for key, value in needs_config.graphviz_styles[
-                            config_name
-                        ].items():
-                            if key in graphviz_style:
-                                graphviz_style[key].update(value)  # type: ignore[literal-required]
-                            else:
-                                graphviz_style[key] = value  # type: ignore[literal-required]
-                    elif config_name:
-                        log_warning(
-                            LOGGER,
-                            f"config key {config_name!r} not in 'needs_graphviz_styles'",
-                            "needflow",
-                            location=self.get_location(),
-                        )
-                except Exception as err:
-                    if config_name:
-                        log_warning(
-                            LOGGER,
-                            f"malformed config {config_name!r} in 'needs_graphviz_styles': {err}",
-                            "needflow",
-                            location=self.get_location(),
-                        )
+            graphviz_style = self._graphviz_engine_config(config_names, needs_config)
+
+        # the engine is still known here, so the direction a config blob sets is
+        # detected now and the model is spared having to know one engine from another
+        config_direction = (
+            plantuml_config_direction(config)
+            if engine == "plantuml"
+            else graphviz_config_direction(graphviz_style)
+        )
 
         add_doc(self.env, self.env.docname)
 
@@ -147,8 +300,12 @@ class NeedflowDirective(FilterBase):
             "root_direction": self.options.get("root_direction", "both"),
             "root_depth": self.options.get("root_depth", None),
             "show_legend": "show_legend" in self.options,
+            "show_legend_key": self.options.get("show_legend", ""),
             "show_filters": "show_filters" in self.options,
             "show_link_names": "show_link_names" in self.options,
+            # None means the option was not given, so that the configuration is only
+            # consulted when the author did not say
+            "show_link_names_value": self.options.get("show_link_names"),
             "link_types": link_types,
             "config_names": config_names,
             "config": config,
@@ -164,6 +321,11 @@ class NeedflowDirective(FilterBase):
             # from an explicitly empty value, i.e. a deliberately undescribed diagram
             "alt": self.options.get("alt"),
             "max_items": self.options.get("max_items"),
+            # None means the option was not given, so that the configuration is only
+            # consulted when the author did not say (the `max_items` precedent)
+            "direction": self.options.get("direction"),
+            "config_direction": config_direction,
+            "styles": self.options.get("styles", ""),
             **self.collect_filter_attributes(),
         }
 

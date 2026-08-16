@@ -9,12 +9,12 @@ We will create need items, link them together, visualize the relationships betwe
 .. needflow:: Engineering plan to develop a car
     :alt: Engineering plan to develop a car
     :root_id: T_CAR
-    :config: tutorial
+    :engine_config: tutorial
     :show_link_names:
-    :border_color:
-        [status == 'open']:FF0000, 
-        [status == 'in progress']:0000FF, 
-        [status == 'closed']:00FF00
+    :styles:
+        [status == 'open']:open,
+        [status == 'in progress']:wip,
+        [status == 'closed']:done
 
 .. admonition:: Prerequisites
 
@@ -316,12 +316,13 @@ Finally, we can display a :ref:`flow diagram <needflow>` of the need items, to a
     .. needflow:: Engineering plan to develop a car
         :alt: Engineering plan to develop a car
         :root_id: T_CAR
-        :config: lefttoright,tutorial
+        :direction: right
+        :engine_config: tutorial
         :show_link_names:
-        :border_color: 
-            [status == 'open']:FF0000, 
-            [status == 'in progress']:0000FF, 
-            [status == 'closed']:00FF00
+        :styles:
+            [status == 'open']:open,
+            [status == 'in progress']:wip,
+            [status == 'closed']:done
 
 .. dropdown:: Aternative use of Graphviz engine
 
@@ -333,12 +334,13 @@ Finally, we can display a :ref:`flow diagram <needflow>` of the need items, to a
             :engine: graphviz
             :alt: Engineering plan to develop a car
             :root_id: T_CAR
-            :config: lefttoright,tutorial
+            :direction: right
+            :engine_config: tutorial
             :show_link_names:
-            :border_color: 
-                [status == 'open']:FF0000, 
-                [status == 'in progress']:0000FF, 
-                [status == 'closed']:00FF00
+            :styles:
+                [status == 'open']:open,
+                [status == 'in progress']:wip,
+                [status == 'closed']:done
 
 Analysing Metrics
 -----------------

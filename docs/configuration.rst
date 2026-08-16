@@ -173,6 +173,30 @@ By default it is set to:
 * **prefix**: A prefix for generated IDs, to easily identify that an ID belongs to a specific type. Can also be ""
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well. Can also be ""
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`__ for more.
+* **shape** (optional): The shape to draw the need with, in *every* diagram engine --
+  one of ``rectangle``, ``rounded``, ``circle``, ``ellipse``, ``diamond``, ``hexagon``,
+  ``cylinder``, ``document``, ``folder`` or ``box3d``.
+  Takes precedence over ``style``, and accepts the legacy plantuml keywords of ``style``
+  as aliases, so a value can be moved across unchanged. *New in version 8.4.0.*
+
+.. code-block:: python
+
+   needs_types = [
+       dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2",
+            shape="rectangle"),
+       dict(directive="test", title="Test Case", prefix="T_", color="#DCB239",
+            shape="hexagon"),
+   ]
+
+Where an engine has no form for a shape it draws the nearest one it has, and says so
+once for the project -- a diagram is never refused for asking.
+
+.. note::
+
+   ``hexagon`` is emitted to PlantUML as its ``hexagon`` element, which older PlantUML
+   releases do not have; such a release reports a diagram error rather than drawing a
+   different shape.
+   If you support PlantUML builds older than 1.2020.13, prefer another member.
 
 .. note::
 
@@ -390,11 +414,30 @@ Each configured link can define:
   Default: False.
 - ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
+- ``line`` (optional): How the line is drawn in :ref:`needflow` diagrams --
+  ``solid``, ``dashed``, ``dotted``, ``thick`` or ``invisible``.
+  Every engine draws all five. *New in version 8.4.0.*
+- ``part_line`` (optional): Same as ``line``, for a link connected to a :ref:`need_part`.
+  Defaults to ``line``. *New in version 8.4.0.*
+- ``arrow`` (optional): Which arrow heads the line carries --
+  ``normal``, ``none``, ``open``, ``circle``, ``cross`` or ``both``.
+  See :ref:`needflow_arrow_migration`. *New in version 8.4.0.*
+- ``color`` (optional): The line color, e.g. ``#FFCC00``. Unset by default, which leaves
+  the engine's own edge color alone. *Honoured since version 8.4.0; previously accepted
+  and ignored.*
+- ``part_color`` (optional): Same as ``color``, for a link connected to a
+  :ref:`need_part`. Defaults to ``color``. *New in version 8.4.0.*
 - ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
 - ``style_part`` (optional): Same as ``style``, but get used if link is connected to a :ref:`need_part`.
   See :ref:`links_style`.
 - ``style_start`` (optional): See :ref:`needflow_style_start`.
 - ``style_end`` (optional): See :ref:`needflow_style_start`.
+
+.. deprecated:: 8.4.0
+   ``style``, ``style_part``, ``style_start`` and ``style_end`` hold PlantUML tokens,
+   which every other engine has to translate.
+   Use ``line``, ``part_line``, ``color``, ``part_color`` and ``arrow`` instead;
+   the old keys are still honoured, so a link type can move one key at a time.
 
 Configuration example:
 
@@ -412,10 +455,9 @@ Configuration example:
            "outgoing": "triggers",
            "copy": False,
            "allow_dead_links": True,
-           "style": "#00AA00",
-           "style_part": "#00AA00",
-           "style_start": "-",
-           "style_end": "--o",
+           "line": "solid",
+           "color": "#00AA00",
+           "arrow": "circle",
        },
    }
 
@@ -500,10 +542,63 @@ with ``allow_dead_links`` not set or set to ``False``.
 
 By default not allowed dead links will be shown in red , allowed ones in gray (see above example).
 
+.. _`needflow_arrow_migration`:
+
+Migrating style_start / style_end to arrow
+++++++++++++++++++++++++++++++++++++++++++
+
+.. versionadded:: 8.4.0
+
+``arrow`` names the arrow heads a link carries, rather than spelling them as PlantUML
+tokens that every other engine then has to translate.
+Its members are the ones every engine can draw:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20,40,40
+
+   - * ``arrow``
+     * Drawn as
+     * Replaces
+   - * ``normal``
+     * A solid arrow head
+     * ``style_start = "-"``, ``style_end = "->>"``
+   - * ``none``
+     * No head at all
+     * ``style_start = "-"``, ``style_end = "-"``
+   - * ``open``
+     * An open "V" head -- **the default of today's diagrams**
+     * ``style_start = "-"``, ``style_end = "->"``
+   - * ``circle``
+     * A hollow circle
+     * ``style_start = "-"``, ``style_end = "-o"``
+   - * ``cross``
+     * A crossbar
+     * no PlantUML equivalent
+   - * ``both``
+     * A head at each end
+     * ``style_start = "<"``, ``style_end = "->"``
+
+.. important::
+
+   The member that reproduces what a link type draws **today** is ``open``, not
+   ``normal``.
+   The default ``style_end`` of ``->`` has always rendered as an open "V" head on the
+   graphviz engine, and ``normal`` is the solid head instead.
+   On the plantuml engine the two are identical, so the difference only shows once a
+   diagram is rendered with graphviz.
+
+Where an engine cannot draw a member it degrades and says so once:
+``cross`` has no PlantUML form, so PlantUML draws a plain head.
+
 .. _`links_style`:
 
 style / style_part
 ++++++++++++++++++
+
+.. deprecated:: 8.4.0
+   Use ``line``, ``color`` and ``part_color`` instead, which every engine understands.
+   These keys are still honoured.
 
 The style string can contain the following comma separated information:
 
@@ -522,6 +617,11 @@ An empty string uses the default plantuml settings.
 
 style_start / style_end
 +++++++++++++++++++++++
+
+.. deprecated:: 8.4.0
+   Use ``arrow`` instead, which every engine understands --
+   see :ref:`needflow_arrow_migration` for the mapping.
+   These keys are still honoured.
 
 These two options can define the arrow type, line type and line length.
 
@@ -744,6 +844,167 @@ Select between the rendering engines for :ref:`needflow` diagrams,
 * ``plantuml``: Use `PlantUML <https://plantuml.com/>`__ to render the diagrams (default).
 * ``graphviz``: Use `Graphviz <https://graphviz.org>`__ to render the diagrams.
 
+.. versionchanged:: 8.4.0
+   Any other value is reported as a configuration warning and the default engine is
+   used, instead of ending the build with a traceback.
+
+.. _`needs_flow_direction`:
+
+needs_flow_direction
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The direction :ref:`needflow` diagrams flow in by default:
+``down`` (the default), ``up``, ``right`` or ``left``.
+
+.. code-block:: python
+
+   needs_flow_direction = "right"
+
+A diagram overrides it with :ref:`needflow_direction`;
+only a diagram that does not set the option consults this value.
+
+.. _`needs_flow_legends`:
+
+needs_flow_legends
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Named legend configurations that a diagram selects by name with
+:ref:`show_legend <needflow_show_legend>`.
+
+.. code-block:: python
+
+   needs_flow_legends = {
+       "beside": {"parts": ["types", "links"], "placement": "external"},
+   }
+
+``parts`` is a **list** of the sections to describe -- ``types``, ``links`` or both --
+**in the order they are shown**; it defaults to ``["types"]``.
+
+Order is contract, not an artefact of how the list happens to be written:
+``["links", "types"]`` puts the link table first and keeps it there on every engine,
+so a reader scanning two diagrams finds the same section in the same place.
+
+Only a list is accepted.
+A bare string such as ``"both"`` is reported and ignored --
+a single name cannot express an order,
+and a second accepted spelling would have to keep meaning the same thing
+in every tool that reads this configuration.
+
+``placement`` is a *preference*, not a demand:
+
+``internal``
+   Draw the legend inside the picture where the engine can,
+   and beside it where the engine cannot.
+``external``
+   Draw the legend beside the picture, as a document table.
+   The table looks the same on every engine, its text is selectable and searchable,
+   and it can describe link types -- which no in-diagram legend ever could.
+
+Unset, ``placement`` takes **the engine's own default placement**.
+There is no single right answer to write down here:
+both engines in Sphinx-Needs can draw a legend of need types inside the picture and
+always have, so unset means ``internal`` for them,
+while an engine with no legend construct at all has only the external table to fall
+back on and unset means ``external`` for it.
+Naming the engine's default, rather than a fixed value, is what keeps one contract
+across the tools that read this key.
+
+An engine that cannot draw the legend asked for inside the picture substitutes the
+external one without warning.
+Both engines here draw an in-image legend of need types, and neither can describe link
+types that way, so a legend whose ``parts`` include ``links`` is always drawn beside the
+diagram however it was placed.
+
+That substitution is silent by design.
+The two legends carry identical information and differ only in where they sit,
+so it is a cosmetic one,
+and a warning about it would be unactionable on a project whose other engine can never
+satisfy the preference.
+
+.. _`needs_flow_show_legend`:
+
+needs_flow_show_legend
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Which entry of :ref:`needs_flow_legends` a diagram gets
+when it asks for a legend without naming one.
+
+.. code-block:: python
+
+   needs_flow_show_legend = "beside"
+
+Default value: ``""``.
+
+This selects *which* legend, never *whether* one is drawn:
+a diagram still has to ask, with :ref:`show_legend <needflow_show_legend>`.
+There is deliberately no project-wide way of putting a legend on every diagram --
+a legend describes one picture, and the decision belongs with that picture.
+
+A diagram that names its own legend overrides this;
+a diagram whose name is not defined falls back to it, having said so.
+If this value names nothing either,
+that is reported once for the build and the engine's own legend is drawn.
+
+.. _`needs_flow_styles`:
+
+needs_flow_styles
+~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Named style classes that a diagram applies to needs with :ref:`needflow_styles`.
+
+.. code-block:: python
+
+   needs_flow_styles = {
+       "critical": {
+           "fill": "#FFDDDD",
+           "border": "#AA0000",
+           "border_width": 3,
+           "border_style": "dashed",
+           "text_color": "#330000",
+           "shape": "hexagon",
+       },
+   }
+
+The property set is closed --
+``fill``, ``border``, ``border_width``, ``border_style``, ``text_color`` and ``shape`` --
+so that a class means the same thing on every engine.
+Engine specific customisation belongs in :ref:`needs_flow_engine_config` instead.
+Colors may be written with or without a leading ``#``.
+
+One class is built in and does not need configuring:
+``highlight`` draws a red outline.
+
+.. _`needs_flow_engine_config`:
+
+needs_flow_engine_config
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Engine specific :ref:`needflow` customisation, keyed by engine and then by the name
+that :ref:`needflow_engine_config` selects.
+
+.. code-block:: python
+
+   needs_flow_engine_config = {
+       "plantuml": {"corporate": "skinparam backgroundColor #EEEEEE"},
+       "graphviz": {"wide": {"node": {"margin": "0.4,0.2"}}},
+   }
+
+The values are exactly what :ref:`needs_flow_configs` and :ref:`needs_graphviz_styles`
+hold, under one engine-keyed roof; both of those are still read, so nothing has to move.
+
+Use it sparingly.
+Everything else on this page is portable between engines; this is not.
+
 .. _`needs_flow_show_links`:
 
 needs_flow_show_links
@@ -751,15 +1012,34 @@ needs_flow_show_links
 
 .. versionadded:: 0.3.11
 
-Used to de/activate the output of link type names beside the connection in the :ref:`needflow` directive:
+.. versionchanged:: 8.4.0
+   Accepts a value as well as a boolean.
+
+What :ref:`needflow` diagrams label their connections with by default:
+``none`` (the default), ``outgoing``, ``incoming`` or ``type``.
 
 .. code-block:: python
 
-   needs_flow_show_links = True
+   needs_flow_show_links = "outgoing"
 
-Default value: ``False``
+Default value: ``False``, i.e. ``none``.
 
-Can be configured also for each :ref:`needflow` directive via :ref:`needflow_show_link_names`.
+``True`` and ``False`` are also accepted, and mean ``outgoing`` and ``none``, which is
+what they have always meant.
+The same goes for any other non-string value: this option was declared a boolean for
+years, so a truthy one such as ``1`` still draws labels.
+A *string* that is not one of the four values is a mistake rather than a truth value, so
+it warns and falls back to ``none`` -- which is the one input whose behaviour changes,
+since it used to draw labels.
+
+A diagram overrides it with :ref:`show_link_names <needflow_show_link_names>`,
+including turning labels off again with ``none``.
+
+.. note::
+
+   Every enumerated ``needs_flow_*`` value -- this one, :ref:`needs_flow_direction`
+   and :ref:`needs_flow_engine` -- is matched without regard to case or surrounding
+   whitespace, exactly as the matching directive option is.
 
 .. _`needs_flow_link_types`:
 
@@ -768,14 +1048,18 @@ needs_flow_link_types
 
 .. versionadded:: 0.3.11
 
-Defines the link_types to show in a :ref:`needflow` diagram:
+.. deprecated:: 8.4.0
+   This value has never had any effect and is scheduled for removal.
+   Use the :ref:`needflow_link_types` directive option instead.
 
-.. code-block:: python
+.. warning::
 
-   needs_flow_link_types = ['links', 'blocks', 'tests']
-
-You can define this setting on each specific ``needflow`` by using the :ref:`needflow` directive option :ref:`needflow_link_types`.
-See also :ref:`needflow_link_types` for more details.
+   This configuration does nothing.
+   The :ref:`needflow` directive defaults its ``:link_types:`` option to
+   *every* link field, so the option is always set and this value is never
+   consulted -- which is why making it work now would silently narrow every
+   existing diagram that does not name its link types.
+   Setting it emits a ``needs.deprecated`` warning.
 
 Default value: ``['links']``
 
@@ -788,6 +1072,12 @@ needs_flow_configs
 
 ``needs_flow_configs`` must be a dictionary which can store multiple `PlantUML configurations <https://plantuml.com/>`_.
 These configs can then be selected when using :ref:`needflow`.
+
+.. note::
+
+   :ref:`needs_flow_engine_config` is the engine-keyed home of this registry.
+   This one is still read, under the same names and with the same values,
+   so there is nothing to migrate.
 
 .. code-block:: python
 
@@ -812,7 +1102,8 @@ This configurations can then be used like this:
    .. needflow::
       :tags: flow_example
       :types: spec
-      :config: lefttoright,my_config
+      :direction: right
+      :engine_config: my_config
 
 Multiple configurations can be used by separating them with a comma,
 these will be applied in the order they are defined.
@@ -828,6 +1119,12 @@ needs_graphviz_styles
 
 This must be a dictionary which can store multiple `Graphviz configurations <https://graphviz.org>`__.
 These configs can then be selected when using :ref:`needflow` and the engine is set to ``graphviz``.
+
+.. note::
+
+   :ref:`needs_flow_engine_config` is the engine-keyed home of this registry.
+   This one is still read, under the same names and with the same values,
+   so there is nothing to migrate.
 
 .. code-block:: python
 
@@ -854,7 +1151,8 @@ This configurations can then be used like this:
 
    .. needflow::
        :engine: graphviz
-       :config: lefttoright,my_config
+       :direction: right
+       :engine_config: my_config
 
 Multiple configurations can be used by separating them with a comma,
 these will be merged in the order they are defined.

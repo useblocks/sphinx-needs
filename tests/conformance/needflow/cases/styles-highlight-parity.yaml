@@ -1,0 +1,46 @@
+id: styles-highlight-parity
+title: The built-in highlight class draws the legacy highlight outline
+purpose: |
+  `highlight` is the one style class every implementation ships without configuration, and upstream it must be byte-identical to what the deprecated `:highlight:` option has always drawn -- otherwise migrating from the option to the class silently changes every diagram that used it. Recording the source here is what makes that parity a cross-implementation contract rather than an upstream detail.
+needs:
+- id: REQ_1
+  type: req
+  title: Highlighted
+  status: open
+- id: REQ_2
+  type: req
+  title: Not highlighted
+  status: closed
+options:
+  styles: '[status == ''open'']:highlight'
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**Highlighted**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]] #line:FF0000
+      node "<size:12>Requirement</size>\n**Not highlighted**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]]
+
+      ' Connection definition
+
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "REQ_1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Highlighted</b><br align="left"/><font point-size="10">REQ_1</font><br align="left"/>>, tooltip="REQ_1", href="<NODE_URL:REQ_1>", target="_top", shape="box3d", color=red];
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Not highlighted</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d"];
+
+      // edge definitions
+      }

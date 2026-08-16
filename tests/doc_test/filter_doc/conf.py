@@ -64,8 +64,10 @@ needs_links = {
         "incoming": "triggered by",
         "outgoing": "triggers",
         "copy": False,
-        "style": "#00AA00",
-        "style_part": "solid,#777777",
+        "line": "solid",
+        "part_line": "solid",
+        "color": "#00AA00",
+        "part_color": "#777777",
         "allow_dead_links": True,
     },
 }
