@@ -172,6 +172,14 @@ Bug fixes
   ids are salted with the chart's own file name, which is already derived from the
   directive's target id. Nothing about the rendered chart changes.
 
+- 🐛 :ref:`needbar` no longer fails the build when ``:ylabels: FROM_DATA`` is given on
+  its own.
+
+  The default xlabels — ``1``, ``2``, … one per column — were derived before the ylabels
+  column had been taken out of the content, so there was always one too many of them and
+  the build ended with ``length of xlabels: N+1 is not equal with sum of columns: N``.
+  Grids that give both label options, or only ``:xlabels: FROM_DATA``, are unaffected.
+
 Documentation
 .............
 
