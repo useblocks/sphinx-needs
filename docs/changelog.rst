@@ -154,6 +154,15 @@ Bug fixes
   source location of the directive under the graphviz engine, as it already did under
   plantuml.
 
+- 🐛 ``c.this_doc()`` now works in :ref:`needpie`, :ref:`needbar` and the
+  :ref:`need_count` role (:issue:`1449`).
+
+  These evaluate their filters themselves, and did not pass on the document the
+  directive or role was written in, so ``c.this_doc()`` ended in a
+  ``this_doc can not be used in this context`` warning and counted nothing. They now
+  resolve it against their own document, as :ref:`needtable` and the other filtered
+  directives already did.
+
 Documentation
 .............
 

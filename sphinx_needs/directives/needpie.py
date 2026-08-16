@@ -165,7 +165,13 @@ def process_needpie(
                     sizes.append(abs(float(line)))
                 else:
                     result = len(
-                        filter_needs_parts(need_list, needs_config, line, location=node)
+                        filter_needs_parts(
+                            need_list,
+                            needs_config,
+                            line,
+                            location=node,
+                            origin_docname=current_needpie["docname"],
+                        )
                     )
                     sizes.append(result)
         elif current_needpie["filter_func"] and not content:

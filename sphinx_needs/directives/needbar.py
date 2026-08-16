@@ -303,7 +303,11 @@ def process_needbar(
                 else:
                     result = len(
                         filter_needs_parts(
-                            need_list, needs_config, element, location=node
+                            need_list,
+                            needs_config,
+                            element,
+                            location=node,
+                            origin_docname=current_needbar["docname"],
                         )
                     )
                     line_number.append(float(result))
