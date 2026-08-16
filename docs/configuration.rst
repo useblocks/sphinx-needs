@@ -927,6 +927,11 @@ a diagram still has to ask, with :ref:`show_legend <needflow_show_legend>`.
 There is deliberately no project-wide way of putting a legend on every diagram --
 a legend describes one picture, and the decision belongs with that picture.
 
+A diagram that names its own legend overrides this;
+a diagram whose name is not defined falls back to it, having said so.
+If this value names nothing either,
+that is reported once for the build and the engine's own legend is drawn.
+
 .. _`needs_flow_styles`:
 
 needs_flow_styles

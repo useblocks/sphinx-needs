@@ -232,8 +232,16 @@ so a legend called ``types`` would collide with the section called ``types``
 and need a precedence rule nobody should have to learn.
 One namespace, no reserved words.
 
+Which legend a diagram gets is resolved in order:
+the name this option gives,
+then :ref:`needs_flow_show_legend`,
+then the engine's own legend.
+
 Naming a legend that :ref:`needs_flow_legends` does not define is a warning on that
-diagram, listing the names that are available, and the engine's own legend is drawn.
+diagram, listing the names that are available.
+The name is then treated as though it had not been written,
+so the project default still applies --
+a typo in one diagram does not cost the project the legend it configured.
 
 .. _needflow_show_link_names:
 

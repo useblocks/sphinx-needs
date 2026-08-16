@@ -87,7 +87,10 @@ New Features
   Naming no legend at all leaves the choice to the engine, which is what keeps the bare
   flag byte-identical to before. :ref:`needs_flow_show_legend` changes which legend "bare"
   means, project-wide — *which*, never *whether*: a legend describes one picture, so the
-  decision to draw one stays with that picture.
+  decision to draw one stays with that picture. The two resolve as a chain — option, then
+  configuration, then the engine — in which a name that is not defined warns and is then
+  treated as unset, so a typo in one diagram costs that diagram a warning rather than
+  costing the project the legend it configured.
 
 Improvements
 ............
