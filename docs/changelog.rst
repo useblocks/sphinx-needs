@@ -77,7 +77,9 @@ New Features
   sections inline: a project names its legends whatever it likes, so an inline vocabulary
   would mean a legend called ``types`` collided with the section called ``types`` and
   needed a precedence rule nobody should have to learn. A named legend chooses its
-  sections, and asks for ``internal`` or ``external`` placement; the external one is a
+  sections as an ordered list — ``["links", "types"]`` puts links first, on every engine
+  — and asks for ``internal`` or ``external`` placement; unset placement takes the
+  engine's own default, which is ``internal`` for both engines here. The external one is a
   document table rather than part of the picture, so there is one implementation for every
   engine instead of one per engine, its text is selectable, and it can describe link types
   — which no in-diagram legend could. Placement is a preference: an engine that cannot draw

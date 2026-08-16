@@ -881,18 +881,37 @@ Named legend configurations that a diagram selects by name with
        "beside": {"parts": ["types", "links"], "placement": "external"},
    }
 
-``parts`` lists the sections to describe -- ``types``, ``links`` or both,
-in the order they should appear; it defaults to ``["types"]``.
+``parts`` is a **list** of the sections to describe -- ``types``, ``links`` or both --
+**in the order they are shown**; it defaults to ``["types"]``.
+
+Order is contract, not an artefact of how the list happens to be written:
+``["links", "types"]`` puts the link table first and keeps it there on every engine,
+so a reader scanning two diagrams finds the same section in the same place.
+
+Only a list is accepted.
+A bare string such as ``"both"`` is reported and ignored --
+a single name cannot express an order,
+and a second accepted spelling would have to keep meaning the same thing
+in every tool that reads this configuration.
 
 ``placement`` is a *preference*, not a demand:
 
-``internal`` (the default)
+``internal``
    Draw the legend inside the picture where the engine can,
    and beside it where the engine cannot.
 ``external``
    Draw the legend beside the picture, as a document table.
    The table looks the same on every engine, its text is selectable and searchable,
    and it can describe link types -- which no in-diagram legend ever could.
+
+Unset, ``placement`` takes **the engine's own default placement**.
+There is no single right answer to write down here:
+both engines in Sphinx-Needs can draw a legend of need types inside the picture and
+always have, so unset means ``internal`` for them,
+while an engine with no legend construct at all has only the external table to fall
+back on and unset means ``external`` for it.
+Naming the engine's default, rather than a fixed value, is what keeps one contract
+across the tools that read this key.
 
 An engine that cannot draw the legend asked for inside the picture substitutes the
 external one without warning.

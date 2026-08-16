@@ -211,7 +211,8 @@ Written with a value, it names an entry of :ref:`needs_flow_legends`:
    }
 
 A legend placed beside the diagram lists only what the diagram actually drew,
-whichever engine drew it.
+whichever engine drew it,
+and shows its sections in the order ``parts`` gives them.
 
 .. syntax-example::
 
