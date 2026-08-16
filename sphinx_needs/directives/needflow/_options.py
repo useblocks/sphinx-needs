@@ -33,7 +33,7 @@ from docutils.parsers.rst import directives
 
 from sphinx_needs.data import GraphvizStyleType
 from sphinx_needs.exceptions import VariantParsingException
-from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.variants import VariantFunctionParsed, match_variants_all
 
 LOGGER = get_logger(__name__)
@@ -497,27 +497,48 @@ def resolve_legend(
     that never asked for one, and the key namespace needs no value meaning "off" that
     a legend could accidentally be named after.
 
+    *Which* one is a chain, not a switch: the option, then the configuration, then the
+    engine's own legend. A key that names nothing is **treated as unset**, which is the
+    rule the rest of this vocabulary already follows -- an unusable
+    ``needs_flow_show_links`` string warns and then behaves as though it had not been
+    written -- so it warns and hands on to the next step rather than replacing it. A
+    typo in one directive must not silently cost the project the legend it configured.
+
+    The two steps warn differently because they are different mistakes. An option key is
+    the directive's own text, so it is reported there, every time. A project key is one
+    ``conf.py`` line, so it is reported once for the whole build; repeating it at every
+    needflow would bury the directive-level warnings an author can act on.
+
     :param present: Whether ``:show_legend:`` was given at all.
     :param option_key: The key the option named, empty when written bare.
     :param project_key: The ``needs_flow_show_legend`` configuration value.
     :param compiled: The configured legends, from :func:`compile_legends`.
-    :param location: Where to report an unknown key.
+    :param location: Where to report an unknown option key.
     :return: The legend to draw, or ``None`` for no legend.
     """
     if not present:
         return None
-    if not (key := option_key or project_key.strip()):
-        return ENGINE_DEFAULT_LEGEND
-    if (found := compiled.get(key)) is not None:
-        return found
-    known = ", ".join(sorted(compiled)) or "none are defined"
-    log_warning(
-        LOGGER,
-        f"legend key {key!r} is not defined in 'needs_flow_legends' "
-        f"(available: {known})",
-        "needflow",
-        location=location,
+    # the steps of the chain, each with the tier its own mistake belongs to: the option
+    # is authored per directive and reported there every time, the configuration is one
+    # `conf.py` line and reported once for the build
+    steps: tuple[tuple[str, str, WarningSubTypes, LocationType, bool], ...] = (
+        (option_key.strip(), "", "needflow", location, False),
+        (project_key.strip(), " of 'needs_flow_show_legend'", "config", None, True),
     )
+    for key, named, subtype, where, once in steps:
+        if not key:
+            continue
+        if (found := compiled.get(key)) is not None:
+            return found
+        known = ", ".join(sorted(compiled)) or "none are defined"
+        log_warning(
+            LOGGER,
+            f"legend key {key!r}{named} is not defined in 'needs_flow_legends' "
+            f"(available: {known})",
+            subtype,
+            location=where,
+            once=once,
+        )
     return ENGINE_DEFAULT_LEGEND
 
 

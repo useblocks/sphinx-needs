@@ -1413,8 +1413,11 @@ def test_unknown_legend_key_warns_and_draws_the_default(test_app):
     """Naming a legend that is not configured is an authoring mistake, not a build stop.
 
     It is reported against the directive that wrote it, with the keys that *are*
-    available, and the diagram falls back to the engine's own legend rather than losing
-    one -- a plainer diagram beats a failed build.
+    available, and the diagram falls back rather than losing its legend -- a plainer
+    diagram beats a failed build. This project sets no ``needs_flow_show_legend``, so
+    the fallback lands on the last step of the chain, the engine's own legend;
+    :func:`test_unknown_legend_option_key_falls_through_to_the_project_key` covers the step
+    before it.
     """
     app = test_app
     app.build()
@@ -1430,6 +1433,116 @@ def test_unknown_legend_key_warns_and_draws_the_default(test_app):
         _debug_source(Path(app.outdir), "index.html"),
         app.config.needs_flow_engine,
     )
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), UNKNOWN_LEGEND_KEY),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "plantuml",
+                # deliberately NOT the engine default: a project key that happened to
+                # resolve to the same legend could not tell the two paths apart, which
+                # is exactly the hole this test exists to close
+                "needs_flow_show_legend": "beside",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_unknown_legend_option_key_falls_through_to_the_project_key(test_app):
+    """An unusable option value is *treated as unset*, so the project default applies.
+
+    This is the same rule the rest of the vocabulary already follows -- an unusable
+    ``needs_flow_show_links`` string warns and behaves as though it had not been
+    written -- and it is what makes the resolution a chain rather than a switch: option,
+    then configuration, then the engine's own legend. A directive naming a legend that
+    does not exist must not silently cost the project the legend it did configure.
+
+    ``beside`` is external where the engine default is internal, so the two outcomes are
+    distinguishable in the rendering rather than only in principle.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    # the mistake is still reported, against the directive that wrote it
+    assert "legend key 'nosuchkey' is not defined in 'needs_flow_legends'" in warnings
+
+    # ...and the project's own legend is what gets drawn, not the engine default
+    debug = _debug_source(Path(app.outdir), "index.html")
+    assert not _draws_internal_legend(debug, app.config.needs_flow_engine)
+
+    legends = html_parser.parse(Path(app.outdir) / "index.html").xpath(_LEGEND_XPATH)
+    assert len(legends) == 1
+    assert "Specification" in legends[0].text_content()
+
+
+UNKNOWN_PROJECT_LEGEND_KEY = """\
+Unknown project legend key
+==========================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :show_legend:
+   :debug:
+
+.. needflow::
+   :show_legend:
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGEND_CONF_PY),
+                (Path("index.rst"), UNKNOWN_PROJECT_LEGEND_KEY),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "plantuml",
+                "needs_flow_show_legend": "nosuchkey",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_unknown_project_legend_key_warns_once_and_draws_the_engine_default(test_app):
+    """A misconfigured project default is the project's mistake, so it is said once.
+
+    The chain ends at the engine's own legend, so every diagram still gets one. The
+    warning is emitted once for the project rather than once per diagram: repeating a
+    ``conf.py`` mistake at every needflow would bury the directive-level warnings that
+    an author can actually act on.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    # said once for two diagrams, and it names the configuration key at fault rather
+    # than reading like a mistake in the directive that happened to trigger it
+    assert warnings.count("'needs_flow_show_legend'") == 1
+    assert (
+        "legend key 'nosuchkey' of 'needs_flow_show_legend' is not defined in "
+        "'needs_flow_legends' (available: beside, beside_links, inside, inside_links)"
+    ) in warnings
+
+    # both diagrams still get a legend, the engine's own
+    for index in (0, 1):
+        assert _draws_internal_legend(
+            _debug_source(Path(app.outdir), "index.html", index),
+            app.config.needs_flow_engine,
+        )
 
 
 LEGEND_INTERNAL_WITH_LINKS = """\
