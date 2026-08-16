@@ -163,6 +163,15 @@ Bug fixes
   resolve it against their own document, as :ref:`needtable` and the other filtered
   directives already did.
 
+- 🐛 :ref:`needpie` and :ref:`needbar` images are now byte-identical between builds of
+  unchanged sources.
+
+  Matplotlib writes the wall clock time into every SVG it produces, and — with no hash
+  salt configured — derives the internal element ids from a random ``uuid4``, so two
+  builds of the same chart never agreed byte for byte. The date is now left out and the
+  ids are salted with the chart's own file name, which is already derived from the
+  directive's target id. Nothing about the rendered chart changes.
+
 Documentation
 .............
 

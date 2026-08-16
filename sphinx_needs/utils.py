@@ -427,6 +427,35 @@ def import_matplotlib() -> matplotlib | None:
     return matplotlib
 
 
+def _savefig_reproducibly(
+    figure: FigureBase, path: str, ext: str, basename: str
+) -> None:
+    """Write a matplotlib figure, without the build time leaking into the file.
+
+    Matplotlib's SVG backend writes two values that change between otherwise
+    identical builds: an ``<dc:date>`` holding the wall clock time, and element ids
+    derived from a random ``uuid4`` whenever ``svg.hashsalt`` is unset. Both are
+    suppressed here, so that rebuilding unchanged sources produces the same bytes.
+    ``basename`` is the per-chart digest of the directive's target id, and so is a
+    stable salt that still differs between charts of one build.
+
+    :param figure: The figure to write.
+    :param path: The file to write it to.
+    :param ext: The file extension, deciding the matplotlib writer.
+    :param basename: The file name without extension, used as the id salt.
+    """
+    # only the SVG writer takes these settings, and it is the one the HTML
+    # builders use; ``import_matplotlib`` cannot fail here, since a figure only
+    # exists if it succeeded already
+    matplotlib = import_matplotlib() if ext == "svg" else None
+    if matplotlib is None:
+        figure.savefig(path)
+        return
+
+    with matplotlib.rc_context({"svg.hashsalt": basename}):
+        figure.savefig(path, metadata={"Date": None})
+
+
 def save_matplotlib_figure(
     app: Sphinx, figure: FigureBase, basename: str, fromdocname: str
 ) -> nodes.image:
@@ -456,7 +485,9 @@ def save_matplotlib_figure(
 
     abs_file_path = os.path.join(image_folder, f"{basename}.{ext}")
     if abs_file_path not in env.images:
-        figure.savefig(os.path.join(env.app.srcdir, abs_file_path))
+        _savefig_reproducibly(
+            figure, os.path.join(env.app.srcdir, abs_file_path), ext, basename
+        )
         env.images.add_file(fromdocname, abs_file_path)
 
     image_node = nodes.image()
