@@ -1,5 +1,5 @@
 id: legend-links
-title: ':legend: links'
+title: an external legend of the drawn link types
 purpose: |
   A link legend describes the link types the diagram drew edges for. No in-diagram legend could ever do this, so the expectation is new behaviour rather than a preserved one.
 needs:
@@ -21,12 +21,14 @@ types:
   title: Never Drawn
   prefix: U_
   color: '#CCCCCC'
-options:
-  legend: links
-expect:
-  legend:
-    links:
+legends:
+  beside:
+    parts:
     - links
+    placement: external
+options:
+  show_legend: beside
+expect:
   plantuml:
     source: |
       @startuml
@@ -41,6 +43,9 @@ expect:
       REQ_1 --> REQ_2
 
       @enduml
+    legend:
+      links:
+      - links
   graphviz:
     source: |
       digraph needflow {
@@ -59,3 +64,6 @@ expect:
       // edge definitions
       "REQ_1" -> "REQ_2" [arrowhead=vee];
       }
+    legend:
+      links:
+      - links

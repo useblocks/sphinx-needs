@@ -47,7 +47,18 @@ ENGINES = ("plantuml", "graphviz")
 
 #: Top level keys a case file may use (spec, "Case file schema").
 CASE_KEYS = frozenset(
-    ("id", "title", "purpose", "needs", "types", "links", "config", "options", "expect")
+    (
+        "id",
+        "title",
+        "purpose",
+        "needs",
+        "types",
+        "links",
+        "legends",
+        "config",
+        "options",
+        "expect",
+    )
 )
 
 #: Portable configuration keys (spec, "config"), mapped to their ``conf.py`` names.
@@ -57,7 +68,7 @@ CASE_KEYS = frozenset(
 #: spells the neutral ``link_labels`` as ``needs_flow_show_links``, the flag it widened.
 CONFIG_KEYS = {
     "direction": "needs_flow_direction",
-    "legend": "needs_flow_legend",
+    "show_legend": "needs_flow_show_legend",
     "link_labels": "needs_flow_show_links",
     "styles": "needs_flow_styles",
     "engine_config": "needs_flow_engine_config",
@@ -72,7 +83,7 @@ OPTION_NAMES = {"link_labels": "show_link_names"}
 OPTION_KEYS = frozenset(
     (
         "direction",
-        "legend",
+        "show_legend",
         "link_labels",
         "styles",
         "engine_config",
@@ -218,16 +229,13 @@ def validate_case(case: dict[str, Any], path: Path) -> None:
     _check_keys(case.get("config", {}), set(CONFIG_KEYS), f"{path.name}: config")
     _check_keys(case.get("options", {}), OPTION_KEYS, f"{path.name}: options")
 
-    _validate_legend_expectation(case, path)
-
     for engine, expected in case["expect"].items():
-        if engine == "legend":
-            continue
         assert engine in (*ENGINES, "mermaid"), (
             f"{path.name}: unknown engine {engine!r} in 'expect'"
         )
         if "skip" in expected:
             continue
+        _validate_legend_expectation(expected.get("legend"), engine, path)
         for entry in expected.get("degradations", []):
             assert entry.get("id") in DEGRADATION_PATTERNS, (
                 f"{path.name}: unknown degradation id {entry.get('id')!r}"
@@ -238,32 +246,34 @@ def validate_case(case: dict[str, Any], path: Path) -> None:
             )
 
 
-def _validate_legend_expectation(case: dict[str, Any], path: Path) -> None:
-    """Check the shape of ``expect.legend``.
+def _validate_legend_expectation(legend: Any, engine: str, path: Path) -> None:
+    """Check the shape of one engine's ``expect.<engine>.legend``.
 
-    The key is engine independent, so it sits beside the engine keys rather than under
-    one.  Absence is meaningful -- it asserts that no legend is rendered -- so a present
-    key that names nothing would be a case claiming a legend while asserting nothing
-    about it, which the spec makes a hard error rather than a silent pass.
+    The key is per engine rather than shared, because the default legend is engine
+    specific: an engine that can draw a good legend inside the diagram does, and that one
+    is already asserted byte-exactly by ``source``.  Absence is therefore meaningful --
+    it asserts that *this* engine renders no external legend -- so a present key naming
+    nothing would claim one while asserting nothing about it, which is a hard error
+    rather than a silent pass.
 
-    :param case: The parsed case file.
+    :param legend: The engine's ``legend`` expectation, if it has one.
+    :param engine: The engine it belongs to, for messages.
     :param path: Where it came from, for messages.
     :raises AssertionError: If the key is malformed.
     """
-    if (legend := case["expect"].get("legend")) is None:
+    if legend is None:
         return
-    _check_keys(legend, LEGEND_SECTIONS, f"{path.name}: expect.legend")
+    where = f"{path.name}: expect.{engine}.legend"
+    _check_keys(legend, LEGEND_SECTIONS, where)
     assert legend, (
-        f"{path.name}: 'expect.legend' is present but names no section; "
-        "omit the key to assert that no legend is rendered"
+        f"{where} is present but names no section; "
+        "omit the key to assert that this engine renders no external legend"
     )
     for part, labels in legend.items():
-        assert isinstance(labels, list), (
-            f"{path.name}: 'expect.legend.{part}' must be a list"
-        )
+        assert isinstance(labels, list), f"{where}.{part} must be a list"
         assert labels, (
-            f"{path.name}: 'expect.legend.{part}' is an empty list; "
-            "omit the section, or omit the whole key to assert no legend"
+            f"{where}.{part} is an empty list; omit the section, or omit the whole key "
+            "to assert no external legend"
         )
 
 
@@ -301,6 +311,8 @@ def _conf_py(case: dict[str, Any], engine: str, plantuml_command: str) -> str:
     ]
     if links:
         lines.append(f"needs_links = {links!r}")
+    if legends := case.get("legends"):
+        lines.append(f"needs_flow_legends = {legends!r}")
     for key, value in (case.get("config") or {}).items():
         lines.append(f"{CONFIG_KEYS[key]} = {value!r}")
     return "\n".join(lines) + "\n"
@@ -426,29 +438,28 @@ def _legend_rows(app: Any) -> dict[str, list[str]] | None:
     return rows
 
 
-def _assert_legend(app: Any, case: dict[str, Any]) -> None:
-    """Check the rendered legend against ``expect.legend``.
+def _assert_legend(app: Any, expected: dict[str, Any] | None) -> None:
+    """Check the rendered EXTERNAL legend against this engine's expectation.
 
-    The legend is engine independent by ruling D3 -- one out-of-diagram implementation
-    everywhere -- so its expectation sits beside the engine keys rather than inside one,
-    and is checked identically on every engine.  It never appears in any ``source``,
-    which is itself contract: a legend that leaked into the diagram would show up as a
-    source mismatch.
+    Only the out-of-diagram legend is checked here.  A legend an engine draws *inside*
+    the diagram is already part of that engine's ``source`` and is compared byte-exactly
+    there, so giving it a key of its own would state the same contract twice and let the
+    two drift.  A case where an engine draws its legend internally therefore has no
+    ``legend`` key for that engine, and this asserts that nothing external appeared.
 
     :param app: The built Sphinx application.
-    :param case: The parsed case file.
+    :param expected: The engine's ``legend`` expectation, if it has one.
     """
-    expected = case["expect"].get("legend")
     rendered = _legend_rows(app)
 
     if expected is None:
         assert rendered is None, (
-            "this case has no 'expect.legend', so it must render no legend, "
-            f"but rendered {rendered}"
+            "this engine has no 'legend' expectation, so it must render no external "
+            f"legend, but rendered {rendered}"
         )
         return
 
-    assert rendered is not None, "expected a legend, but none was rendered"
+    assert rendered is not None, "expected an external legend, but none was rendered"
     assert set(rendered) == set(expected), (
         f"legend sections differ: expected {sorted(expected)}, "
         f"rendered {sorted(rendered)}"
@@ -489,6 +500,11 @@ def test_case_checksum_is_stamped(path: Path) -> None:
     files, and a change that skips the manifest turns red here rather than becoming a
     silent difference between them.
     """
+    if os.environ.get("UBC_UPDATE_CORPUS"):
+        # a regeneration run rewrites both the case files and the manifest, so which of
+        # the two this test happens to read first would decide whether it passes; the
+        # stamp is checked on the ordinary run that follows, which is the one that counts
+        pytest.skip("regenerating; checksums are checked on the next ordinary run")
     manifest = _load_manifest()
     assert path.name in manifest["cases"], (
         f"{path.name} is not stamped in manifest.json"
@@ -501,6 +517,8 @@ def test_case_checksum_is_stamped(path: Path) -> None:
 
 def test_readme_checksum_is_stamped() -> None:
     """The spec travels with the corpus, so it is stamped like any case."""
+    if os.environ.get("UBC_UPDATE_CORPUS"):
+        pytest.skip("regenerating; checksums are checked on the next ordinary run")
     manifest = _load_manifest()
     assert manifest["readme"] == _sha256(CORPUS_ROOT / "README.md"), (
         "README.md does not match its manifest checksum; "
@@ -574,11 +592,14 @@ def test_conformance_case(
     ]
     source = _normalise(_emitted_source(app), need_ids)
 
-    _assert_legend(app, case)
-
     if updating:
-        _rewrite_expectation(path, engine, source, observed)
+        # recorded, never asserted: under regeneration the rendered legend IS the new
+        # expectation, so checking it against the old one would only ever reject the
+        # rewrite this run exists to produce
+        _rewrite_expectation(path, engine, source, observed, _legend_rows(app))
         pytest.skip(f"{path.stem}: {engine} expectation rewritten")
+
+    _assert_legend(app, expected.get("legend"))
 
     wanted = [entry["id"] for entry in expected.get("degradations", [])]
 
@@ -592,7 +613,11 @@ def test_conformance_case(
 
 
 def _rewrite_expectation(
-    path: Path, engine: str, source: str, observed: list[str]
+    path: Path,
+    engine: str,
+    source: str,
+    observed: list[str],
+    legend: dict[str, list[str]] | None,
 ) -> None:
     """Write a freshly emitted source back into a case file.
 
@@ -603,6 +628,7 @@ def _rewrite_expectation(
     :param engine: The engine whose expectation to replace.
     :param source: The emitted source.
     :param observed: The degradation ids observed.
+    :param legend: The external legend rows rendered, if any.
     """
     case = yaml.safe_load(path.read_text("utf8"))
     entry: dict[str, Any] = {"source": source}
@@ -613,11 +639,13 @@ def _rewrite_expectation(
             {"id": name, "tier": _TIERS[name], "once": _TIERS[name] == 2}
             for name in sorted(set(observed))
         ]
+    if legend:
+        entry["legend"] = legend
     case.setdefault("expect", {})[engine] = entry
     # engines in a stable order, so that a re-sync diff is about content
     case["expect"] = {
         name: case["expect"][name]
-        for name in ("legend", *ENGINES, "mermaid")
+        for name in (*ENGINES, "mermaid")
         if name in case["expect"]
     }
     path.write_text(_dump_case(case), "utf8")
@@ -734,16 +762,16 @@ def _probe(**overrides: Any) -> dict[str, Any]:
         ),
         (_probe(expect={"crayon": {"source": "x"}}), "unknown engine 'crayon'"),
         (
-            _probe(expect={"legend": {"types": []}, "plantuml": {"source": "x"}}),
-            "'expect.legend.types' is an empty list",
+            _probe(expect={"plantuml": {"source": "x", "legend": {"types": []}}}),
+            "expect.plantuml.legend.types is an empty list",
         ),
         (
-            _probe(expect={"legend": {}, "plantuml": {"source": "x"}}),
+            _probe(expect={"plantuml": {"source": "x", "legend": {}}}),
             "present but names no section",
         ),
         (
-            _probe(expect={"legend": {"nosuch": ["x"]}, "plantuml": {"source": "x"}}),
-            "expect.legend uses unknown key(s) ['nosuch']",
+            _probe(expect={"plantuml": {"source": "x", "legend": {"nosuch": ["x"]}}}),
+            "expect.plantuml.legend uses unknown key(s) ['nosuch']",
         ),
     ],
     ids=[

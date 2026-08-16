@@ -1,7 +1,12 @@
-id: legend-both
-title: an external legend of both sections, in order
+id: legend-engine-default
+title: a legend asked for without naming one, left to the engine
 purpose: |
-  Both sections, in the order asked for. Order is contract: a reader scanning two diagrams should find the same section in the same place.
+  The deliberate engine-specific default. Asking for a legend without naming a configuration
+  gets whichever legend that engine draws best: an engine that can draw a good one inside the
+  diagram does, and it is asserted byte-exactly by `source` with no `legend` key at all; an
+  engine that cannot renders the external table instead, and has a `legend` key and no legend
+  in its `source`. This is the case that makes the default a contract rather than an accident,
+  and it is why `legend` is per engine rather than shared.
 needs:
 - id: REQ_1
   type: req
@@ -21,14 +26,8 @@ types:
   title: Never Drawn
   prefix: U_
   color: '#CCCCCC'
-legends:
-  beside:
-    parts:
-    - types
-    - links
-    placement: external
 options:
-  show_legend: beside
+  show_legend: ''
 expect:
   plantuml:
     source: |
@@ -43,12 +42,17 @@ expect:
 
       REQ_1 --> REQ_2
 
+      ' Legend definition
+      legend
+      |= Color |= Type |
+      |<back:#BFD8D2> #BFD8D2 </back>| Requirement |
+      |<back:#CCCCCC> #CCCCCC </back>| Never Drawn |
+      |<back:#cccccc> #cccccc </back>| Issue |
+      |<back:#aaaaaa> #aaaaaa </back>| PullRequest |
+      |<back:#888888> #888888 </back>| Commit |
+      endlegend
+
       @enduml
-    legend:
-      types:
-      - Requirement
-      links:
-      - links
   graphviz:
     source: |
       digraph needflow {
@@ -66,9 +70,16 @@ expect:
 
       // edge definitions
       "REQ_1" -> "REQ_2" [arrowhead=vee];
+
+      {
+          rank = sink;
+          legend [
+              shape=box,
+              style=rounded,
+              label=<<TABLE border="0">
+      <TR><TD align="center"><B>Legend</B></TD></TR>
+      <TR><TD align="left" bgcolor="#BFD8D2">Requirement</TD></TR>
+      </TABLE>>
+          ];
       }
-    legend:
-      types:
-      - Requirement
-      links:
-      - links
+      }

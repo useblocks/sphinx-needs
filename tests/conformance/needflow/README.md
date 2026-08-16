@@ -84,28 +84,34 @@ links:                                    # portable needs_links subset; omit fo
     arrow: open                           # optional; portable enum
     color: "#00AA00"                      # optional
 
+legends:                                  # named legend configs (the mapping a case may pin)
+  compact:
+    parts: [types]                          # types | links | both sections
+    placement: external                      # preference: internal where the engine can, else external
+
 config:                                   # portable config, NEUTRAL keys (mapping below)
   direction: up
-  legend: types
+  show_legend: compact                    # names an entry in `legends`; unset => engine default
   link_labels: outgoing
   styles: { warn: { border: "#FF8800", border_width: 2 } }
   engine_config: {}                       # hatch registries; engine-keyed, opaque strings
 
 options:                                  # directive options, portable names, string values
   direction: up
+  show_legend: compact                    # a KEY into `legends` (never an inline value)
   filter: "True"
 
 expect:
-  legend:                                 # engine-INDEPENDENT (ruling D3: one out-of-diagram
-    types: [Requirement]                  # implementation everywhere). Lists name EXACTLY the
-                                          # entries that must appear, in order (drawn-only rule).
-                                          # Omit a section that must not render (here: links).
-                                          # Key absent => the case must render NO legend.
-                                          # An empty or present-but-empty section is a spec error.
   mermaid:                                # consumed by ubcode only
     source: |
       flowchart TB
       ...
+    legend:                               # the EXTERNAL (out-of-diagram) legend, per engine.
+      types: [Requirement]                # Lists name EXACTLY the entries that must appear, in
+                                          # order (drawn-only rule). Omit a section that must not
+                                          # render (here: links). Key absent for an engine =>
+                                          # that engine must render NO external legend.
+                                          # A present-but-empty section is a spec error.
   plantuml:                               # consumed by sphinx-needs only
     source: |
       @startuml
@@ -133,11 +139,21 @@ Rules:
 - `expect.<engine>.source` is the full emitted diagram source for that engine, compared
   byte-exact AFTER normalisation (below). Upstream this is what `:debug:` exposes; in
   ubcode it is the string the mermaid emitter returns.
-- `expect.legend` asserts the rendered out-of-diagram legend (which, by design, never
-  appears in any `source`): the harness must verify the legend table contains exactly
-  the named type rows and link-type rows, in order, and that a case WITHOUT the key
-  renders no legend. The identical `source` values across legend cases are themselves
-  contract (the legend must not leak into the diagram).
+- **Two kinds of legend, asserted in two places.** An INTERNAL legend is drawn inside the
+  diagram, so it is already asserted byte-exactly by that engine's `source` — it needs no
+  key of its own, and adding one would duplicate the contract. An EXTERNAL legend is
+  out-of-diagram document content, so it is asserted by `expect.<engine>.legend`: exactly
+  the named type rows and link-type rows, in order; key absent for an engine means that
+  engine must render no external legend.
+- `legend` is per-engine, NOT shared, because the default legend is engine-specific
+  (an engine that can draw a good internal legend does; one that cannot renders the
+  external table). Where a case pins an explicit legend config the expectations will
+  usually be identical across engines — write them out per engine anyway. This mirrors
+  how `source` is already handled, and it avoids any merge or precedence rule: a reader
+  sees exactly what each engine must produce without resolving an override in their head.
+  (This supersedes an earlier revision of this spec in which `legend` was a single shared
+  top-level key. That assumed one out-of-diagram implementation everywhere, which the
+  engine-specific default deliberately breaks.)
 - `degradations` lists the degradation events the harness must observe for that engine:
   neutral `id` (registry below), `tier` (1–3; tier 1 is silent so it never appears here —
   listing a tier-1 entry is a spec error), `once: true` for warn-once-per-project.
@@ -176,12 +192,13 @@ For every case file: load → build a minimal project from `needs`/`types`/`link
 (portable keys mapped to the repo's config surface) → run the needflow directive with
 `options` → capture emitted source per applicable engine + emitted warnings →
 normalise → assert source equality, the exact degradation set, and the `expect.legend`
-contract (exact rows in order when present; no legend rendered when absent) → verify the
-manifest checksum of the case file (over line-ending-normalised bytes, as defined above). Cases with `skip` for an engine are skipped there
+contract for that engine (exact rows in order when present; no external legend rendered
+when absent) → verify the manifest checksum of the case file (over line-ending-normalised
+bytes, as defined above). Cases with `skip` for an engine are skipped there
 with the recorded reason. The runner must fail on: unknown top-level keys, unknown
 portable option/config keys, tier-1 degradation entries, an empty list under a present
-`expect.legend` key, and a case file whose checksum is absent from or different in the
-manifest.
+`expect.<engine>.legend` section, and a case file whose checksum is absent from or
+different in the manifest.
 
 ## Required initial cases (plan §7 + vocabulary coverage)
 
@@ -191,8 +208,12 @@ manifest.
 4. `percent-neutralisation` — `%%` and mermaid-significant text in titles stays literal.
 5. `color-normalisation` — `#RRGGBB` and bare `RRGGBB` in a style class agree.
 6. `direction-*` — one per value (down/up/right/left), incl. the plantuml tier-2 cases.
-7. `legend-types`, `legend-links`, `legend-both` — drawn-types-only scope asserted via
-   `expect.legend` (a configured-but-undrawn type must not appear in its lists).
+7. `legend-types`, `legend-links`, `legend-both` — each pinning an explicit legend config
+   key so every engine renders the same external legend; drawn-types-only scope asserted via
+   `expect.<engine>.legend` (a configured-but-undrawn type must not appear in its lists).
+   Plus `legend-engine-default` — no key named, exercising the deliberate engine-specific
+   default: an engine that draws an internal legend has it in `source` and NO `legend` key;
+   an engine that cannot has a `legend` key and no legend in its `source`.
 8. `link-labels-*` — none/outgoing/incoming/type.
 9. `styles-cascade` — two matching rules, later wins per property; plus built-in
    `highlight` byte-parity case.

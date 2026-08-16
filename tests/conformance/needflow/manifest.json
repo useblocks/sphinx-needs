@@ -1,6 +1,6 @@
 {
-  "corpus_version": 4,
-  "readme": "abcd9af888b841fa1d89664a6992aa67972f8f69df37a4511828fc9f72948a43",
+  "corpus_version": 5,
+  "readme": "30f39c22f6ca4138cd1d41db220758bc1c601b55d81eed5ef563580bf00afc51",
   "cases": {
     "arrow-unsupported.yaml": "0ecae35149b3e646be79dd904fb2a998db8a369152781e602fd4884aac172b03",
     "baseline-defaults.yaml": "c6ff6099b53278f8f2809c2f23349ee48e3d361fc1d8670ffd2359c60482c9cc",
@@ -10,9 +10,10 @@
     "direction-right.yaml": "3416e691613f858b04363aecbde050c74dc10e8a75740d4af859daaa2b7d6a70",
     "direction-up.yaml": "5b3356aaab27dcddc74a867d70f78399549033f118f2bd3a0107435f9efdd378",
     "edge-empty-label.yaml": "89fecd5e427b47bd18b7276a8d08fe92559fb0670f463903a0312ecea2185141",
-    "legend-both.yaml": "e279b4bf343cc71a8aa81b2fde0b997795648b43b649601ccda8268939bdd9e5",
-    "legend-links.yaml": "32470e3d118b9eacacd676ac529ee87a528878abb64624ece34e6d6988a0ed12",
-    "legend-types.yaml": "aab6a813ee93f949823a02ba2a7135c23120f0e4844cd8f03ed07dcead23222b",
+    "legend-both.yaml": "997cd4d4e316b8e15a112098de842d768b526ba51534d9e28b5759f773fa4738",
+    "legend-engine-default.yaml": "dbf5180b2b63249d94a6f3c2b53c8c45b7d01b8d1b432887d27154a6d1ee1df1",
+    "legend-links.yaml": "e05f9c663dd5342ed2e79ea4c1b90accab1642efd221d706f54aa7381e9fe3c2",
+    "legend-types.yaml": "3991702aed8bed93367cd1c98f577486fbb810b6bfe691969bbb996fa690ee3b",
     "link-labels-config-default.yaml": "6f034fb6f0fbde52e2f74bd02315e2d4984b1afd0724d905d1d8c1669241a872",
     "link-labels-incoming.yaml": "26599499d8b9029cd68fd61d1d225a423df6e10f3645168a956778dc6de908ea",
     "link-labels-none.yaml": "84c9f3549698c56e2e86da9e9f021b9aa41c5b0c4bc379e7d18ecbd8b5f51986",
