@@ -19,7 +19,9 @@ def test_doc_build_html(test_app):
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "SPEC_1" in html
-    assert '<img alt="_images/need_pie_' in html
+    # the title is used as the alt text
+    assert '<img alt="Test pie" id="needpie-index-0" src="_images/need_pie_' in html
+    assert '<img alt="Test pie 2" id="needpie-index-1" src="_images/need_pie_' in html
 
 
 @pytest.mark.parametrize(

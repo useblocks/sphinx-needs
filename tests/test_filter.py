@@ -111,7 +111,9 @@ def test_filter_build_html(test_app):
 
     assert html_6.count("got filter warning from needpie") == 1
     assert "no filter warning from needpie" not in html_6
-    assert '<img alt="_images/need_pie_' in html_6
+    assert '<img alt="Success Pie"' in html_6
+    # the three empty pies are replaced by a paragraph and write no image
+    assert html_6.count("<img alt=") == 1
 
     assert html_6.count('<p class="needs_filter_warning"') == 18
 
@@ -148,13 +150,13 @@ def test_this_doc_in_charts_and_need_count(test_app):
     assert "index_ratio_b-150.0" in html  # 3 of 2 needs
     # a pie of a single non-empty slice renders an image,
     # an all-zero one is replaced by the "no needs" paragraph
-    assert '<img alt="_images/need_pie_' in html
+    assert '<img alt="Index pie"' in html
     assert "No needs passed the filters" not in html
     assert '<img alt="Index bar"' in html
 
     html_page = Path(app.outdir, "page.html").read_text()
     assert "page_count-1" in html_page
-    assert '<img alt="_images/need_pie_' in html_page
+    assert '<img alt="Page pie"' in html_page
     assert "No needs passed the filters" not in html_page
 
 

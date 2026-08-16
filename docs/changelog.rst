@@ -180,6 +180,20 @@ Bug fixes
   the build ended with ``length of xlabels: N+1 is not equal with sum of columns: N``.
   Grids that give both label options, or only ``:xlabels: FROM_DATA``, are unaffected.
 
+- 🐛 A :ref:`needpie` with a title now uses it as the image's ``alt`` text, as
+  :ref:`needbar` already did.
+
+  Until now every pie was published with the ``alt`` docutils falls back to — the
+  image's own file URI — which tells a screen reader nothing. A pie without a title
+  keeps that fallback.
+
+- 🐛 A :ref:`needpie` whose values are all zero no longer writes an unreferenced image
+  file.
+
+  Such a pie is replaced by the "No needs passed the filters" paragraph, but the chart
+  had already been rendered into ``_images/``, where it then stayed, referenced by
+  nothing.
+
 Documentation
 .............
 
