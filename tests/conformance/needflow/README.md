@@ -86,8 +86,11 @@ links:                                    # portable needs_links subset; omit fo
 
 legends:                                  # named legend configs (the mapping a case may pin)
   compact:
-    parts: [types]                          # types | links | both sections
-    placement: external                      # preference: internal where the engine can, else external
+    parts: [types]                          # LIST of sections, in RENDER ORDER (types, links).
+                                            # A list only — a bare string is a spec error.
+    placement: external                      # preference: internal where the engine can, else
+                                            # external. UNSET takes the ENGINE's default placement
+                                            # (internal on plantuml/graphviz, external on mermaid).
 
 config:                                   # portable config, NEUTRAL keys (mapping below)
   direction: up

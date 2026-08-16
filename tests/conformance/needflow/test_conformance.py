@@ -423,17 +423,25 @@ def _legend_rows(app: Any) -> dict[str, list[str]] | None:
         return None
     assert len(legends) == 1, "a case draws one diagram, so it renders one legend"
 
+    # the label column differs per section, because a type row leads with its colour
+    # swatch and a link row with the link name
+    columns = {"types": 2, "links": 1}
+
+    # iterated in DOCUMENT order rather than in a fixed order, because `parts` is an
+    # ordered list: a legend asked for `[links, types]` must render links first, and a
+    # reader that collected the sections in a fixed order could never see the difference
     rows: dict[str, list[str]] = {}
-    for part, column in (("types", 2), ("links", 1)):
-        tables = legends[0].xpath(
-            "..//table[contains(concat(' ', normalize-space(@class), ' '), "
-            f"' needflow_legend_{part} ')]"
-        )
-        if not tables:
-            continue
+    for table in legends[0].xpath(
+        "..//table[contains(concat(' ', normalize-space(@class), ' '), "
+        "' needflow_legend_table ')]"
+    ):
+        classes = str(table.get("class", "")).split()
+        parts = [part for part in columns if f"needflow_legend_{part}" in classes]
+        assert len(parts) == 1, f"a legend table names one section, got {classes}"
+        part = parts[0]
         rows[part] = [
             cell.text_content().strip()
-            for cell in tables[0].xpath(f".//tbody/tr/td[{column}]")
+            for cell in table.xpath(f".//tbody/tr/td[{columns[part]}]")
         ]
     return rows
 
@@ -460,9 +468,10 @@ def _assert_legend(app: Any, expected: dict[str, Any] | None) -> None:
         return
 
     assert rendered is not None, "expected an external legend, but none was rendered"
-    assert set(rendered) == set(expected), (
-        f"legend sections differ: expected {sorted(expected)}, "
-        f"rendered {sorted(rendered)}"
+    # sections compared as a SEQUENCE, not a set: `parts` is an ordered list, so which
+    # section comes first is contract and a set comparison would silently accept either
+    assert list(rendered) == list(expected), (
+        f"legend sections differ: expected {list(expected)}, rendered {list(rendered)}"
     )
     for part, labels in expected.items():
         # exact rows, in order -- the drawn-only scope rule is what makes this an
@@ -527,7 +536,14 @@ def test_readme_checksum_is_stamped() -> None:
 
 
 def test_manifest_has_no_orphans() -> None:
-    """The manifest may not stamp a case that no longer exists."""
+    """The manifest may not stamp a case that no longer exists.
+
+    Skipped while regenerating for the same reason as the checksum tests: adding or
+    removing a case makes the manifest and the case directory disagree until the rewrite
+    lands, so whether this ran before or after it would decide the result.
+    """
+    if os.environ.get("UBC_UPDATE_CORPUS"):
+        pytest.skip("regenerating; the manifest is checked on the next ordinary run")
     manifest = _load_manifest()
     assert set(manifest["cases"]) == {p.name for p in _case_files()}
 
