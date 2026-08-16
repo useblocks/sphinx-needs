@@ -92,9 +92,22 @@ LinkLabels = Literal["none", "outgoing", "incoming", "type"]
 LegendPart = Literal["types", "links"]
 """A section of the out-of-diagram legend."""
 
+LegendPlacement = Literal["internal", "external"]
+"""Where a legend is asked to be drawn."""
+
 
 #: The keys a ``needs_flow_legends`` entry may set.
 _LEGEND_KEYS = frozenset(("parts", "placement"))
+
+#: The placement an engine of this build uses when a legend does not ask for one.
+#:
+#: ``placement`` unset means "the engine's default placement" rather than any fixed
+#: value, because the honest answer differs per engine: both engines here can draw a
+#: types legend inside the picture and have always done so, while an engine with no
+#: legend construct at all -- Mermaid, in ubCode -- has only the external table to
+#: default to.  Writing the rule this way is what keeps the two tools describing one
+#: contract instead of each documenting its own answer as if it were universal.
+ENGINE_DEFAULT_PLACEMENT: LegendPlacement = "internal"
 
 
 @dataclass(frozen=True)
@@ -102,10 +115,15 @@ class LegendSpec:
     """A resolved legend configuration."""
 
     parts: tuple[LegendPart, ...] = ("types",)
-    """Which sections the legend describes, in the order they are shown."""
+    """Which sections the legend describes, **in the order they are shown**.
 
-    placement: str = "internal"
-    """Where the legend is asked to go: ``internal`` or ``external``.
+    Order is part of the contract, not an artefact of how the list was written: a
+    reader scanning two diagrams should find the same section in the same place, so
+    ``["links", "types"]`` puts links first and stays that way on every engine.
+    """
+
+    placement: LegendPlacement | None = None
+    """Where the legend is asked to go, or ``None`` for the engine's own default.
 
     This is a *preference*, not a requirement. An engine that cannot draw a good legend
     inside the diagram renders the external table instead, silently: the two carry
@@ -120,7 +138,8 @@ class LegendSpec:
         Neither in-diagram legend here can describe link types, so a legend that asks
         for them is drawn beside the diagram whatever it would have preferred.
         """
-        return self.placement == "internal" and self.parts == ("types",)
+        placement = self.placement or ENGINE_DEFAULT_PLACEMENT
+        return placement == "internal" and self.parts == ("types",)
 
 
 def direction_option(argument: str) -> FlowDirection:
@@ -431,6 +450,21 @@ def compile_legends(
         )
         return compiled
     for name, spec in legends.items():
+        if str(name) != str(name).strip() or not str(name).strip():
+            # `:show_legend:` strips its value, and an empty one means "no name given",
+            # so such a name can never be matched however the author writes it; keeping
+            # it would leave a legend that silently never appears, and would pad the
+            # "available:" list of an unknown-key warning with untypable names
+            log_warning(
+                LOGGER,
+                f"legend {name!r} in 'needs_flow_legends' can never be selected, "
+                "because a name is matched with surrounding whitespace removed and "
+                "an empty one means no name was given; it is ignored",
+                "config",
+                location=location,
+                once=True,
+            )
+            continue
         if not isinstance(spec, Mapping):
             log_warning(
                 LOGGER,
@@ -450,8 +484,26 @@ def compile_legends(
                 location=location,
                 once=True,
             )
+        raw_parts = spec.get("parts", ["types"])
+        if not isinstance(raw_parts, (list, tuple)):
+            # a scalar is the shape this mistake actually takes, and both scalars fail
+            # badly if let through: a number is not iterable at all, and a string
+            # iterates character by character, warning about single letters and then
+            # quietly drawing the default legend instead of the one that was asked for.
+            # Only a list is accepted -- a second accepted spelling would have to mean
+            # the same thing in both tools forever, and `parts` is ordered, which a
+            # single name cannot express
+            log_warning(
+                LOGGER,
+                f"'parts' of legend {name!r} must be a list, e.g. "
+                f'parts = ["types"], but is {type(raw_parts).__name__}',
+                "config",
+                location=location,
+                once=True,
+            )
+            raw_parts = ["types"]
         parts: list[LegendPart] = []
-        for raw in spec.get("parts", ["types"]):
+        for raw in raw_parts:
             part = str(raw).strip().lower()
             if part not in get_args(LegendPart):
                 log_warning(
@@ -465,18 +517,21 @@ def compile_legends(
                 continue
             if part not in parts:
                 parts.append(part)  # type: ignore[arg-type]
-        placement = str(spec.get("placement", "internal")).strip().lower()
-        if placement not in ("internal", "external"):
-            log_warning(
-                LOGGER,
-                f"unknown placement {spec.get('placement')!r} of legend {name!r}, "
-                "allowed values: internal, external",
-                "config",
-                location=location,
-                once=True,
-            )
-            placement = "internal"
-        compiled[name] = LegendSpec(
+        placement: LegendPlacement | None = None
+        if (raw_placement := spec.get("placement")) is not None:
+            candidate = str(raw_placement).strip().lower()
+            if candidate not in get_args(LegendPlacement):
+                log_warning(
+                    LOGGER,
+                    f"unknown placement {raw_placement!r} of legend {name!r}, "
+                    f"allowed values: {', '.join(get_args(LegendPlacement))}",
+                    "config",
+                    location=location,
+                    once=True,
+                )
+            else:
+                placement = candidate  # type: ignore[assignment]
+        compiled[str(name)] = LegendSpec(
             parts=tuple(parts) or ("types",), placement=placement
         )
     return compiled
@@ -530,16 +585,44 @@ def resolve_legend(
             continue
         if (found := compiled.get(key)) is not None:
             return found
-        known = ", ".join(sorted(compiled)) or "none are defined"
-        log_warning(
-            LOGGER,
-            f"legend key {key!r}{named} is not defined in 'needs_flow_legends' "
-            f"(available: {known})",
-            subtype,
-            location=where,
-            once=once,
+        warn_unknown_legend_key(
+            key, compiled, named=named, subtype=subtype, location=where, once=once
         )
     return ENGINE_DEFAULT_LEGEND
+
+
+def warn_unknown_legend_key(
+    key: str,
+    compiled: Mapping[str, LegendSpec],
+    *,
+    named: str,
+    subtype: WarningSubTypes,
+    location: LocationType,
+    once: bool,
+) -> None:
+    """Report a legend name that ``needs_flow_legends`` does not define.
+
+    Shared by the read-time check and the per-diagram resolution so that the two emit
+    the *same* text: Sphinx's ``once`` filter dedupes on the message, so identical
+    wording is what lets the read-time warning -- which knows no directive -- win, and
+    keeps a ``conf.py`` mistake from being reported against an ``index.rst`` line.
+
+    :param key: The name that was asked for.
+    :param compiled: The configured legends, from :func:`compile_legends`.
+    :param named: Where the name came from, as a phrase, empty for a directive option.
+    :param subtype: The warning subtype to report under.
+    :param location: Where to report it, ``None`` for the project.
+    :param once: Whether to report it only once for the build.
+    """
+    known = ", ".join(sorted(compiled)) or "none are defined"
+    log_warning(
+        LOGGER,
+        f"legend key {key!r}{named} is not defined in 'needs_flow_legends' "
+        f"(available: {known})",
+        subtype,
+        location=location,
+        once=once,
+    )
 
 
 def validated_config_show_links(
@@ -591,18 +674,27 @@ def resolve_link_labels(
 
 
 def validate_flow_config(
-    *, engine: str, direction: str, show_links: bool | str
+    *,
+    engine: str,
+    direction: str,
+    show_links: bool | str,
+    legends: Mapping[str, Any],
+    show_legend: str,
 ) -> None:
     """Report every unusable needflow configuration value, once, as it is read.
 
     Checking these as a diagram is drawn means a project that misconfigures one and
     happens to have no needflow is never told.  The checks are the same functions the
     resolution uses, and they warn only once for a given message, so a project with
-    needflows hears about a bad value exactly once rather than twice.
+    needflows hears about a bad value exactly once rather than twice -- and hears it
+    against ``conf.py`` rather than against whichever directive happened to be drawn
+    first, because this call has no directive location to attach.
 
     :param engine: The ``needs_flow_engine`` value.
     :param direction: The ``needs_flow_direction`` value.
     :param show_links: The ``needs_flow_show_links`` value.
+    :param legends: The ``needs_flow_legends`` value.
+    :param show_legend: The ``needs_flow_show_legend`` value.
     """
     validated_config_enum(
         engine, ACCEPTED_ENGINES, "plantuml", name="needs_flow_engine", location=None
@@ -615,6 +707,16 @@ def validate_flow_config(
         location=None,
     )
     validated_config_show_links(show_links, location=None)
+    compiled = compile_legends(legends, location=None)
+    if (key := show_legend.strip()) and key not in compiled:
+        warn_unknown_legend_key(
+            key,
+            compiled,
+            named=" of 'needs_flow_show_legend'",
+            subtype="config",
+            location=None,
+            once=True,
+        )
 
 
 @dataclass(frozen=True)

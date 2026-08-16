@@ -562,7 +562,13 @@ def build_graph(
             attributes["show_legend"],
             attributes["show_legend_key"],
             needs_config.flow_show_legend,
-            compile_legends(needs_config.flow_legends, location=location),
+            # `location=None`: the shape of `needs_flow_legends` is a `conf.py` matter,
+            # so its warnings belong to the project rather than to whichever diagram
+            # was drawn first. `validate_flow_config` has already emitted them at read
+            # time with the same text, so Sphinx's `once` filter suppresses these; the
+            # call is repeated per diagram because the compiled result is cheap and
+            # holding it would mean caching build-scoped state on a module
+            compile_legends(needs_config.flow_legends, location=None),
             location=location,
         ),
         link_labels=resolve_link_labels(

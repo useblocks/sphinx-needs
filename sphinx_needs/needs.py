@@ -1154,6 +1154,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         engine=needs_config.flow_engine,
         direction=needs_config.flow_direction,
         show_links=needs_config.flow_show_links,
+        legends=needs_config.flow_legends,
+        show_legend=needs_config.flow_show_legend,
     )
 
     if needs_config.flow_link_types != ["links"]:

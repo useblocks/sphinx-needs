@@ -1641,6 +1641,21 @@ Bad legend config
             '{"broken": {"parts": ["sections"]}}',
             "unknown legend section 'sections' of legend 'broken'",
         ),
+        # a scalar is the shape a `parts` mistake actually takes -- an int is not
+        # iterable at all, and a bare string iterates character by character, which
+        # used to warn about five single letters and then draw a different legend
+        (
+            '{"broken": {"parts": 5}}',
+            "'parts' of legend 'broken' must be a list, e.g. parts = [\"types\"]",
+        ),
+        (
+            '{"broken": {"parts": "links"}}',
+            "'parts' of legend 'broken' must be a list, e.g. parts = [\"types\"]",
+        ),
+        (
+            '{"broken": {"parts": "both"}}',
+            "'parts' of legend 'broken' must be a list, e.g. parts = [\"types\"]",
+        ),
         (
             '{"broken": {"placement": "sideways"}}',
             "unknown placement 'sideways' of legend 'broken'",
@@ -1651,6 +1666,9 @@ Bad legend config
         "legend-not-a-mapping",
         "unknown-key",
         "unknown-section",
+        "parts-not-a-list-int",
+        "parts-not-a-list-str",
+        "parts-not-a-list-both",
         "unknown-placement",
     ],
 )
@@ -1686,8 +1704,53 @@ def test_unusable_legend_config_warns_and_draws_anyway(
     warnings = strip_colors(app._warning.getvalue())
     assert message in warnings
 
+    # a `conf.py` mistake is reported against the project, not against whichever
+    # directive happened to ask for the legend first -- the value is not written in
+    # `index.rst` and an author sent there finds nothing to fix
+    reported = [line for line in warnings.splitlines() if message in line]
+    assert reported and not any("index.rst" in line for line in reported), reported
+
     # the legend is unusable, but the need is still drawn
     assert "AAAAA" in _debug_source(Path(app.outdir), "index.html")
+
+
+@pytest.mark.parametrize(
+    "name",
+    ['""', '"   "', '"  padded  "'],
+    ids=["empty", "blank", "padded"],
+)
+def test_unreachable_legend_key_is_reported_and_dropped(
+    make_app, tmp_path, plantuml_command, name
+):
+    """A legend name no ``:show_legend:`` could ever select is reported, and dropped.
+
+    Selectors are stripped before lookup and an empty one means "no name given", so a
+    configured name that is empty, blank, or carries outside whitespace can never be
+    matched however it is written. Keeping it would leave the author a legend that
+    silently never appears, and would pad the "available:" list of an unknown-key
+    warning with names that cannot be typed.
+    """
+    (tmp_path / "conf.py").write_text(
+        CONF_PY + f"\nneeds_flow_legends = {{{name}: {{'placement': 'external'}}}}\n",
+        "utf8",
+    )
+    (tmp_path / "index.rst").write_text(UNKNOWN_LEGEND_KEY, "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "needs_flow_engine": "plantuml",
+            "plantuml": plantuml_command,
+        },
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "in 'needs_flow_legends' can never be selected" in warnings
+
+    # dropped, so it is not offered as an alternative to the unknown key either
+    assert "available: none are defined" in warnings
 
 
 #: Style classes exercising every property of the closed set.
@@ -2672,8 +2735,26 @@ def test_invalid_flow_engine_is_reported_without_any_needflow(test_app):
     [
         ({"needs_flow_direction": "sideways"}, "Invalid 'needs_flow_direction' value"),
         ({"needs_flow_show_links": "bogus"}, "Invalid 'needs_flow_show_links' value"),
+        (
+            {"needs_flow_legends": {"broken": {"placement": "sideways"}}},
+            "unknown placement 'sideways' of legend 'broken'",
+        ),
+        (
+            {"needs_flow_legends": {"broken": {"parts": "links"}}},
+            "'parts' of legend 'broken' must be a list",
+        ),
+        (
+            {"needs_flow_show_legend": "alsobad"},
+            "legend key 'alsobad' of 'needs_flow_show_legend' is not defined",
+        ),
     ],
-    ids=["direction", "show_links"],
+    ids=[
+        "direction",
+        "show_links",
+        "legends-placement",
+        "legends-parts",
+        "show_legend",
+    ],
 )
 def test_bad_flow_config_is_reported_without_any_needflow(
     make_app, tmp_path, plantuml_command, override, message
@@ -2682,8 +2763,12 @@ def test_bad_flow_config_is_reported_without_any_needflow(
 
     ``needs_flow_engine`` already was, and the rest were only checked as a diagram was
     drawn -- so a project that misconfigured one of them and happened to have no
-    needflow anywhere heard nothing at all. All four are now consistent, and still warn
+    needflow anywhere heard nothing at all. They are now consistent, and still warn
     exactly once for a project that does draw diagrams.
+
+    The two legend keys belong here for the same reason as the rest, and their absence
+    was a regression against the release that had ``needs_flow_legend``: that one was a
+    plain string checked at read time, so the project below used to be told.
     """
     (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
     (tmp_path / "index.rst").write_text(NO_NEEDFLOW, "utf8")
