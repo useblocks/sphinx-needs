@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, field, fields
 from pathlib import Path
@@ -360,6 +361,31 @@ class NeedField(NeedFields):
 
     name: str
     """The name of the option."""
+
+
+class StringLinkConf(TypedDict):
+    """Defines a single string-to-link transformation (used in the needs_string_links dict).
+
+    Every key is required; a configuration missing one of them is reported as a
+    ``needs.string_link`` warning and skipped
+    (see :func:`~sphinx_needs.string_links.compile_string_links`).
+    """
+
+    regex: str | re.Pattern[str]
+    """A regular expression, searched (unanchored) in each value.
+
+    Named capture groups are made available to both templates.
+    An already-compiled pattern is accepted, and keeps its flags.
+    """
+    link_url: str
+    """The link target, rendered as a template."""
+    link_name: str
+    """The link text, rendered as a template."""
+    options: list[str]
+    """The names of the need fields this transformation applies to.
+
+    A tuple, set or frozenset is also accepted, and is normalised to a list.
+    """
 
 
 class NeedStatusesOption(TypedDict):
@@ -875,10 +901,14 @@ class NeedsSphinxConfig:
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """Additional classes to set for needs and needtable."""
-    string_links: dict[str, dict[str, Any]] = field(
+    string_links: dict[str, StringLinkConf] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
-    """In the need representation, find and render links in field values."""
+    """In the need representation, find and render links in field values.
+
+    Validated, and pruned of any invalid entry, during ``config-inited``
+    by :func:`~sphinx_needs.string_links.compile_string_links`.
+    """
     build_json: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
