@@ -15,13 +15,19 @@ from docutils import nodes
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 
-from sphinx_needs._jinja import compile_template, render_template_string
+from sphinx_needs._jinja import render_template_string
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.defaults import NEEDS_PROFILING
 from sphinx_needs.exceptions import NeedsInvalidFilter
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
+from sphinx_needs.string_links import (
+    CompiledStringLink,
+    compiled_string_links,
+    split_string_link_value,
+    string_link_field_names,
+)
 from sphinx_needs.views import NeedsAndPartsListView, NeedsView
 
 if TYPE_CHECKING:
@@ -122,17 +128,16 @@ def row_col_maker(
     row_col = nodes.entry(classes=["needs_" + need_key])
     para_col = nodes.paragraph()
 
-    needs_string_links_option: list[str] = []
-    for v in needs_config.string_links.values():
-        needs_string_links_option.extend(v["options"])
+    needs_string_links_option = string_link_field_names(needs_config)
+    # compiled once per cell, not once per value in the cell
+    link_string_list = compiled_string_links(needs_config)
 
     if need_key in need_info and need_info[need_key] is not None:
         value = need_info[need_key]
         if isinstance(value, list | set):
             data = value
         elif isinstance(value, str) and need_key in needs_string_links_option:
-            data = re.split(r",|;", value)
-            data = [i.strip() for i in data if len(i) != 0]
+            data = split_string_link_value(value)
         else:
             data = [value]
 
@@ -146,25 +151,11 @@ def row_col_maker(
                 link_list.append(link_field.name)
                 link_list.append(link_field.name + "_back")
 
-            # For needs_string_links
-            link_string_list = {}
-            for link_name, link_conf in needs_config.string_links.items():
-                link_string_list[link_name] = {
-                    "url_template": compile_template(
-                        link_conf["link_url"], autoescape=False
-                    ),
-                    "name_template": compile_template(
-                        link_conf["link_name"], autoescape=False
-                    ),
-                    "regex_compiled": re.compile(link_conf["regex"]),
-                    "options": link_conf["options"],
-                    "name": link_name,
-                }
-
-            matching_link_confs = []
-            for link_conf in link_string_list.values():
-                if need_key in link_conf["options"] and len(datum) != 0:
-                    matching_link_confs.append(link_conf)
+            matching_link_confs = [
+                link_conf
+                for link_conf in link_string_list.values()
+                if need_key in link_conf.options and len(datum) != 0
+            ]
 
             if need_key in link_list and "." in datum:
                 link_id = datum.split(".")[0]
@@ -228,6 +219,7 @@ def row_col_maker(
                     need_key,
                     matching_link_confs,
                     render_context=needs_config.render_context,
+                    location=(need_info["docname"], need_info["lineno"]),
                 )
             else:
                 para_col += text_col
@@ -529,22 +521,35 @@ def match_string_link(
     text_item: str,
     data: str,
     need_key: str,
-    matching_link_confs: list[dict[str, Any]],
+    matching_link_confs: list[CompiledStringLink],
     render_context: dict[str, Any],
-) -> Any:
+    location: str | tuple[str | None, int | None] | nodes.Node | None = None,
+) -> nodes.Node:
+    """Turn a single field value into a link, if a string link applies to it.
+
+    :param text_item: The text to fall back to, if no link can be created.
+    :param data: The value to search with the string link's regular expression.
+    :param need_key: The name of the need field, used in messages.
+    :param matching_link_confs: The compiled entries naming ``need_key``;
+        only the first is ever used.
+    :param render_context: The ``needs_render_context``, which is merged over
+        the regular expression's named groups.
+    :param location: Where to point a warning, if rendering fails.
+    :return: The link, or the plain text if no link could be created.
+    """
     try:
         link_name = None
         link_url = None
         link_conf = matching_link_confs[
             0
         ]  # We only handle the first matching string_link
-        match = link_conf["regex_compiled"].search(data)
+        match = link_conf.regex.search(data)
         if match:
             render_content = match.groupdict()
-            link_url = link_conf["url_template"].render(
+            link_url = link_conf.url_template.render(
                 {**render_content, **render_context}
             )
-            link_name = link_conf["name_template"].render(
+            link_name = link_conf.name_template.render(
                 {**render_content, **render_context}
             )
 
@@ -561,8 +566,11 @@ def match_string_link(
             f'Problems dealing with string to link transformation for value "{data}" of '
             f'option "{need_key}". Error: {e}',
             "layout",
-            None,
+            location,
         )
+        # fall back to the plain text: a template that fails at render time
+        # (an unknown filter, say) must not make the value disappear from the page
+        return nodes.Text(text_item)
     else:
         return ref_item
 

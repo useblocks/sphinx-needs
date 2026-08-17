@@ -97,6 +97,40 @@ Improvements
   The stored environment version is bumped for the new directive option, so the first build
   after upgrading re-reads every document.
 
+- 👌 :ref:`needs_string_links` is validated when it is loaded, and no longer fails the build
+  (:pr:`1767`)
+
+  A configuration entry used to be looked at only while a need was being rendered, and then
+  indexed into blindly. A missing key, a regular expression that does not compile, a template
+  that does not parse, or an entry that is not a dictionary each aborted the whole build with
+  an uncaught exception naming neither the entry nor a file — and did so even when no need
+  used the field the entry names.
+
+  Every entry is now validated once, during configuration. A problem is reported as a new
+  ``needs.string_link`` warning naming the entry, and only that entry is skipped, so a
+  configuration that used to fail the build now builds and renders everything else. The same
+  warning also covers the cases that previously passed in silence — an unknown key inside an
+  entry, an ``options`` entry naming a field that is registered nowhere, an empty ``options``
+  — none of which skips the entry.
+
+  **If you build with** ``-W``, take this as the general rule: a configuration mistake that
+  used to be silent — or to crash — is now a warning, and a warning fails a ``-W`` build. So
+  a project whose ``needs_string_links`` contains anything questionable can start failing
+  where it passed, even though nothing about it changed. The same goes for the list-field fix
+  below, which reaches render-time failures that the meta area used to swallow. Silence the
+  configuration warnings with ``suppress_warnings = ["needs.string_link"]``; render-time
+  failures keep the existing ``needs.layout`` subtype, so covering both takes
+  ``suppress_warnings = ["needs.string_link", "needs.layout"]``.
+
+  Two spellings of ``options`` are now skipped with a warning, and both used to render
+  links, so **if your links have disappeared this is the paragraph to read**. A **bare
+  string** was accepted before, but with two contradictory meanings: the ``,``/``;``
+  splitting silently did not happen, while the per-field test degraded into a substring
+  match, so ``options = "myfield"`` also applied to a field named ``my``. A **mapping**
+  (``{"myfield": True}``) worked by accident, through iteration over its keys. Write either
+  as a list. A list, tuple, set or frozenset of names is accepted, as is an already-compiled
+  ``re.Pattern`` for ``regex`` (a *bytes* pattern is not, as it could never match a field value).
+
 Internal changes
 ................
 
@@ -107,6 +141,39 @@ These changes do not affect user-facing behaviour:
 
 Bug fixes
 .........
+
+- 🐛 :ref:`needs_string_links` no longer makes a field value disappear when its template fails
+
+  A template that fails at render time — an unknown filter, say — logged a warning and then
+  returned nothing at all, and the value vanished from the page rather than merely losing its
+  link. It now falls back to the plain text, which is what a non-matching regular expression
+  has always done, and the warning says which need it came from.
+
+- 🐛 :ref:`needs_string_links` renders separators between items only **(changed output)**
+  (:pr:`1718`)
+
+  In a need's meta area, the separator condition counted the *characters* of the value instead
+  of its items, so every item got a trailing ``;`` — and a single-character value got no
+  separator at all. N items now produce N-1 separators, exactly as :ref:`needtable` cells have
+  always done. Fields not named in any ``options`` are unaffected.
+  The one-line fix landed in :pr:`1718`; this release also pins the rule with regression
+  tests on both surfaces.
+
+- 🐛 :ref:`needs_string_links` applies to list fields in the meta area **(changed output)**
+
+  A field holding a list (``tags``, or any array field) was linked element by element in a
+  :ref:`needtable` but rendered as plain text in the need itself. Both surfaces now link the
+  elements, so the same field no longer renders differently depending on where you look at it.
+  Empty elements are left alone on both surfaces, rather than linked to the bare url.
+
+  One consequence is worth calling out for ``-W`` builds: a template that fails at render
+  time on a **list** field is now reported (as a ``needs.layout`` warning, the subtype every
+  render-time failure uses), where the meta area previously failed silently. A project whose
+  list-field template is broken and which has no :ref:`needtable` rendering that field emitted
+  no warning at all before.
+
+- 🐛 :ref:`needs_string_links` drops items that are empty once stripped, so ``AB-1, , AB-2``
+  is two items rather than three with an empty one in the middle.
 
 - 🐛 :ref:`needflow` no longer fails the build when a need type has no ``color`` (or an
   empty one) and the diagram shows a legend (:issue:`1664`).
@@ -216,6 +283,12 @@ Documentation
   ``needpie`` gains the missing ``:filter_warning:`` section and states that content
   and ``:filter-func:`` are alternatives; ``needbar`` states that it takes no filter
   options at all.
+
+- 📚 :ref:`needs_string_links` documents the behaviour it always had: the ``,``/``;`` splitting
+  and its lack of an escape, that the first entry naming a field wins with no fallthrough, that
+  the pattern is searched rather than anchored, that :ref:`needs_render_context` shadows
+  same-named capture groups, and that the templates are rendered with MiniJinja rather than
+  Jinja2.
 
 - 📚 ``docs/ubproject.toml``, the `ubCode`_ configuration of this documentation, is brought
   up to date with current ubCode releases
