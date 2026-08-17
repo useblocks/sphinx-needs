@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 from sphinx.util.console import strip_colors
 
+from sphinx_needs.directives.needreport import DROPDOWN_MARKER
+
 SPHINX_DESIGN_INSTALLED = importlib.util.find_spec("sphinx_design") is not None
 
 
@@ -495,3 +497,316 @@ def test_needs_report_template_renders(test_app):
     assert "The project defines 8 need types:" in text
     assert "Requirement" in text
     assert "Specification" in text
+
+
+# -- the fallback only fires when it changes the report ----------------------
+#
+# Deciding on the raw template text -- "does the file mention report_directive?"
+# -- warned three shapes that build correctly today and cannot be helped by the
+# substitution: a Jinja comment naming the variable, a ``{% set %}`` shadowing
+# it, and the name appearing in rendered prose.  All three kept their output but
+# gained a warning, which under ``sphinx-build -W`` is a red CI.  The decision is
+# therefore made on the *rendered* text, and the substitution is adopted only
+# when re-rendering actually removes the dropdown usage.
+
+NO_PROVIDER_CONF = """\
+extensions = ["sphinx_needs"]
+needs_report_template = "/report_template.need"
+"""
+
+# Mentions the name in a Jinja comment, and hardcodes the directive it wants.
+COMMENT_MENTION_TEMPLATE = """\
+{# report_directive is deliberately not used here #}
+.. admonition:: Need Types
+
+   {% for type in types %}
+   * {{ type.title }}
+   {% endfor %}
+"""
+
+# Overrides the directive inside the template rather than in conf.py, which is
+# the docs' "choose the directive yourself" advice taken by a different route.
+SET_SHADOW_TEMPLATE = """\
+{% set report_directive = "admonition" %}
+.. {{ report_directive }}:: Need Types
+
+   {% for type in types %}
+   * {{ type.title }}
+   {% endfor %}
+"""
+
+# The name survives only into rendered prose, never into a directive.
+PROSE_MENTION_TEMPLATE = """\
+.. admonition:: Need Types
+
+   Set report_directive to choose how this block is rendered.
+
+   {% for type in types %}
+   * {{ type.title }}
+   {% endfor %}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        pytest.param(
+            {
+                "buildername": "html",
+                "no_plantuml": True,
+                "files": [
+                    (Path("conf.py"), NO_PROVIDER_CONF),
+                    (Path("index.rst"), REPORT_INDEX),
+                    (Path("report_template.need"), template),
+                ],
+            },
+            id=name,
+        )
+        for name, template in (
+            ("comment-mention", COMMENT_MENTION_TEMPLATE),
+            ("set-shadow", SET_SHADOW_TEMPLATE),
+            ("prose-mention", PROSE_MENTION_TEMPLATE),
+        )
+    ],
+    indirect=True,
+)
+def test_template_that_renders_no_dropdown_is_left_alone(test_app):
+    """A report that never renders a ``dropdown`` is not warned about.
+
+    Each of these projects builds cleanly today with no ``dropdown`` provider
+    loaded, so each must keep building cleanly: a new warning here would fail a
+    ``-W`` build that has nothing to fix.
+    """
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == []
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    # the report is on the page, rendered by the template's own choice
+    assert 'class="admonition-need-types admonition"' in html
+    assert "Requirement" in visible_text(html)
+
+
+HARDCODED_DROPDOWN_TEMPLATE = """\
+.. dropdown:: Need Types
+
+   {% for type in types %}
+   * {{ type.title }}
+   {% endfor %}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (Path("conf.py"), NO_PROVIDER_CONF),
+                (Path("index.rst"), REPORT_INDEX),
+                (Path("report_template.need"), HARDCODED_DROPDOWN_TEMPLATE),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_hardcoded_dropdown_template_keeps_todays_errors(test_app):
+    """A template that writes ``.. dropdown::`` itself is not claimed to be fixed.
+
+    Substituting the context variable cannot reach a literal in the template, so
+    re-rendering changes nothing.  Announcing "rendered with admonition instead"
+    would be false, and the warning would name no remedy the author could apply,
+    so this configuration keeps exactly the diagnostics it has today.
+    """
+    app = test_app
+    app.build()
+
+    reported = "\n".join(build_warnings(app))
+    assert 'ERROR: Unknown directive type "dropdown".' in reported
+    assert "No loaded extension provides" not in reported
+
+    html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert "admonition-need-types" not in html
+
+
+# Mentions the name, and cannot be rendered: the fallback decision must not run
+# ahead of the render and announce a substitution that never happened.
+UNRENDERABLE_MENTION_TEMPLATE = """\
+{# report_directive #}
+{% if no_such_variable|length != 0 %}
+Never rendered.
+{% endif %}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (Path("conf.py"), NO_PROVIDER_CONF),
+                (Path("index.rst"), REPORT_INDEX),
+                (Path("report_template.need"), UNRENDERABLE_MENTION_TEMPLATE),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_unrenderable_template_warns_only_about_the_render(test_app):
+    """A template that cannot render gets one warning, about the render.
+
+    The fallback decision is made on rendered text, so there is nothing for it
+    to decide here -- and the author is not told the report was "rendered with
+    admonition instead" when nothing was rendered at all.
+    """
+    app = test_app
+    app.build()
+
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert "Could not render needs report template file" in warnings[0]
+    assert "No loaded extension provides" not in warnings[0]
+
+
+# -- the render-failure report cannot itself end the build -------------------
+
+# ``getattr(exc, "message", exc)`` only swallows ``AttributeError``; an exception
+# whose own reporting raises would escape the handler and end the build -- the
+# very failure the handler exists to prevent.
+NASTY_DETAIL_CONF = '''\
+extensions = ["sphinx_needs"]
+needs_report_template = "/report_template.need"
+
+
+class NastyError(RuntimeError):
+    """An exception that cannot be asked to describe itself."""
+
+    @property
+    def message(self):
+        raise RuntimeError("message property exploded")
+
+
+def explode():
+    raise NastyError("boom")
+
+
+needs_render_context = {"explode": explode}
+'''
+
+NASTY_DETAIL_TEMPLATE = "{{ explode() }}\n"
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (Path("conf.py"), NASTY_DETAIL_CONF),
+                (Path("index.rst"), REPORT_INDEX),
+                (Path("report_template.need"), NASTY_DETAIL_TEMPLATE),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_render_failure_detail_that_raises_cannot_end_the_build(test_app):
+    """Reporting the failure falls back to the exception's type name."""
+    app = test_app
+    app.build()
+
+    warnings = build_warnings(app)
+    # Sphinx separately notes that ``needs_render_context`` cannot be cached
+    # because it holds a function, which has nothing to do with the directive
+    reported = [warning for warning in warnings if "needs.needreport" in warning]
+    assert len(reported) == 1, warnings
+    assert "Could not render needs report template file" in reported[0]
+    # the one thing that can still be said about it
+    assert reported[0].endswith(": NastyError [needs.needreport]"), reported[0]
+
+    # and the page is still there
+    assert "<h1>Report" in Path(app.outdir, "index.html").read_text(encoding="utf8")
+
+
+# -- the marker used to recognise a rendered dropdown ------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (".. dropdown:: Title", True),
+        ("   .. dropdown:: Title", True),
+        ("\t.. dropdown::", True),
+        (".. dropdown::", True),
+        # docutils allows a single space before the ``::`` marker
+        (".. dropdown ::", True),
+        ("Intro\n\n.. dropdown:: Title\n", True),
+        # not explicit markup: docutils needs whitespace after the ``..``
+        ("..dropdown:: Title", False),
+        # a different directive whose name merely starts the same way
+        (".. dropdowns:: Title", False),
+        # not at the start of a line
+        ("see the .. dropdown:: directive", False),
+        # the name in prose, and in a Jinja comment, are not directives
+        ("Set report_directive to dropdown.", False),
+        ("{# report_directive #}\n.. admonition:: Title", False),
+        ("", False),
+    ],
+)
+def test_dropdown_marker_matches_docutils_recognition(text, expected):
+    """The marker recognises a directive the way docutils does, and nothing else."""
+    assert bool(DROPDOWN_MARKER.search(text)) is expected
+
+
+# -- one configuration mistake, one warning ----------------------------------
+
+MANY_REPORTS_INDEX = """\
+Report
+======
+
+.. needreport::
+   :types:
+
+.. needreport::
+   :links:
+
+.. needreport::
+   :usage:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (Path("conf.py"), RESERVED_KEY_CONF),
+                (Path("index.rst"), MANY_REPORTS_INDEX),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_reserved_context_key_warns_once_per_build(test_app):
+    """The reserved-key warning is a fact about ``conf.py``, so it is said once.
+
+    It does not depend on the directive that happened to notice it, and a
+    project with a report on every page would otherwise get the same line once
+    per directive.
+    """
+    app = test_app
+    app.build()
+
+    warnings = build_warnings(app)
+    assert len(warnings) == 1, warnings
+    assert (
+        "needs_render_context replaces the needreport context key 'types'"
+        in (warnings[0])
+    )

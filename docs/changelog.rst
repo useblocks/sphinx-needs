@@ -290,10 +290,16 @@ Bug fixes
   over one of the reserved context names — ``types``, ``links``, ``options`` or ``usage``
   — is now reported; which value wins is deliberately unchanged, since these have been
   silently overridable for years, and only ``report_directive`` is meant to be set this
-  way. And when :ref:`needs_report_template` holds a path that is absolute on the file
-  system, the "could not load" warning explains why it names a path nobody wrote down:
-  the value is always resolved relative to the source directory, so an absolute one is
-  appended to it rather than read from where it points.
+  way. The collision is a property of the configuration rather than of any one directive,
+  so it is reported once per build. And when :ref:`needs_report_template` holds a path
+  that is absolute on the file system, the "could not load" warning explains why it names
+  a path nobody wrote down: the value is always resolved relative to the source
+  directory, so an absolute one is appended to it rather than read from where it points.
+
+  One consequence is worth calling out for ``-W`` builds: a project that overrides one of
+  those four reserved names renders exactly as it did before, but now emits a warning
+  where it emitted none, so a green build turns red until the entry is removed or the
+  warning is suppressed.
 
 - 🐛 :ref:`needreport` renders without an extension providing ``dropdown``
   (:issue:`899`)
@@ -312,6 +318,13 @@ Bug fixes
   a provider is used exactly as before and nothing is warned about. Nor is an explicit
   choice ever second-guessed — ``needs_render_context = {"report_directive": "dropdown"}``
   is honoured as written, provider or not.
+
+  The substitution is decided on the rendered report and adopted only when it changes it,
+  so a project with a template of its own gains neither the substitution nor the warning
+  unless it was actually rendering a ``dropdown``. A template that never produces one —
+  because it writes its own directive, or shadows ``report_directive`` with a
+  ``{% set %}`` — is left exactly as it is, and so is one that writes ``.. dropdown::``
+  as a literal, which re-rendering cannot reach.
 
 Documentation
 .............

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
@@ -32,6 +34,15 @@ DEFAULT_REPORT_DIRECTIVE = "dropdown"
 #: directive that renders as a titled block; core has no collapsible one.
 FALLBACK_REPORT_DIRECTIVE = "admonition"
 
+#: Recognises :data:`DEFAULT_REPORT_DIRECTIVE` used as a directive in *rendered*
+#: text, the way docutils recognises one: an explicit markup start (``..``) at the
+#: beginning of a possibly indented line, whitespace, the name, and the ``::``
+#: marker -- which docutils lets a single space precede.
+DROPDOWN_MARKER = re.compile(
+    rf"^[ \t]*\.\.[ \t]+{re.escape(DEFAULT_REPORT_DIRECTIVE)}[ \t]?::",
+    re.MULTILINE,
+)
+
 
 class NeedReportDirective(SphinxDirective):
     final_argument_whitespace = True
@@ -42,6 +53,40 @@ class NeedReportDirective(SphinxDirective):
         "usage": directives.flag,
         "template": directives.unchanged,
     }
+
+    def _render(self, template: str, context: dict[str, Any], path: Path) -> str | None:
+        """Render the report template, or warn and return ``None``.
+
+        A template that could not be rendered used to escape ``run()`` and end the
+        whole build, which is what :pr:`1105` set out to stop for this directive;
+        the missing-file path got that treatment, the render path did not.
+
+        :param template: The template source.
+        :param context: The render context.
+        :param path: The file the template was read from, named in the warning.
+        :returns: The rendered text, or ``None`` if it could not be rendered.
+        """
+        try:
+            return render_template_string(template, context, autoescape=False)
+        except Exception as exc:
+            # deliberately broad: MiniJinja raises ``TemplateError`` for a syntax
+            # error or for an operation on an undefined value, but the context also
+            # carries arbitrary objects from :ref:`needs_render_context`, and a
+            # filter applied to one of those -- or a callable in it -- can raise
+            # anything at all.  None of it should end the build.
+            try:
+                detail = str(getattr(exc, "message", exc))  # MiniJinja's summary
+            except Exception:
+                # asking the exception to describe itself raised in turn, and
+                # letting that escape would be the very failure being handled
+                detail = type(exc).__name__
+            log_warning(
+                LOGGER,
+                f"Could not render needs report template file {path}: {detail}",
+                "needreport",
+                location=self.get_location(),
+            )
+            return None
 
     def run(self) -> Sequence[nodes.raw]:
         env = self.env
@@ -88,7 +133,12 @@ class NeedReportDirective(SphinxDirective):
             key for key in RESERVED_CONTEXT_KEYS if key in needs_config.render_context
         ]:
             # warn only; which value wins is long-standing behaviour that projects
-            # may well be relying on, so the swap is made visible rather than undone
+            # may well be relying on, so the swap is made visible rather than undone.
+            # ``once=True`` because the collision is a property of the configuration
+            # and not of any one directive: a project with a report on every page
+            # would otherwise get the identical line once per directive.  Sphinx
+            # resets that filter per application, so a later build in the same
+            # process still reports.
             log_warning(
                 LOGGER,
                 "needs_render_context replaces the needreport context "
@@ -97,6 +147,7 @@ class NeedReportDirective(SphinxDirective):
                 "only 'report_directive' is meant to be set this way",
                 "needreport",
                 location=self.get_location(),
+                once=True,
             )
         report_info.update(**needs_config.render_context)
 
@@ -145,12 +196,19 @@ class NeedReportDirective(SphinxDirective):
             encoding="utf8"
         )
 
+        text = self._render(
+            needs_report_template_file_content, report_info, need_report_template_path
+        )
+        if text is None:
+            return []
+
         if (
             # an explicit choice is never second-guessed, even if it is unavailable
             "report_directive" not in needs_config.render_context
-            # a template that never reads the name cannot be helped by changing it,
-            # and would only get a warning it can do nothing about
-            and "report_directive" in needs_report_template_file_content
+            # only a report that actually renders the directive can be helped, and
+            # only the rendered text knows that: the name may be shadowed by a
+            # ``{% set %}``, or merely mentioned in a comment or in prose
+            and DROPDOWN_MARKER.search(text)
             and directives.directive(
                 DEFAULT_REPORT_DIRECTIVE,
                 self.state.memo.language,
@@ -158,37 +216,36 @@ class NeedReportDirective(SphinxDirective):
             )[0]
             is None
         ):
-            report_info["report_directive"] = FALLBACK_REPORT_DIRECTIVE
-            log_warning(
-                LOGGER,
-                f"No loaded extension provides a {DEFAULT_REPORT_DIRECTIVE!r} directive, "
-                f"so the needs report is rendered with "
-                f"{FALLBACK_REPORT_DIRECTIVE!r} instead. Load an extension that provides "
-                "it, for example sphinx-design, or choose the directive yourself with "
-                "needs_render_context = {'report_directive': ...}",
-                "needreport",
-                location=self.get_location(),
+            # rendered again rather than patched, because the name reaches the
+            # output through the template's own logic and only the template can
+            # apply it.  Any callable in :ref:`needs_render_context` is therefore
+            # invoked a second time, on this path alone -- the path that produces
+            # an empty report today (:issue:`899`), so the repeat is the cheaper
+            # of the two costs.
+            fallback_text = self._render(
+                needs_report_template_file_content,
+                {**report_info, "report_directive": FALLBACK_REPORT_DIRECTIVE},
+                need_report_template_path,
             )
-
-        try:
-            text = render_template_string(
-                needs_report_template_file_content, report_info, autoescape=False
-            )
-        except Exception as exc:
-            # deliberately broad: MiniJinja raises ``TemplateError`` for a syntax
-            # error or for an operation on an undefined value, but the context also
-            # carries arbitrary objects from :ref:`needs_render_context`, and a
-            # filter applied to one of those can raise anything at all.  None of it
-            # should end the build; the missing-file path above already warns.
-            detail = getattr(exc, "message", exc)  # MiniJinja's one-line summary
-            log_warning(
-                LOGGER,
-                f"Could not render needs report template file "
-                f"{need_report_template_path}: {detail}",
-                "needreport",
-                location=self.get_location(),
-            )
-            return []
+            if fallback_text is None:
+                return []
+            if not DROPDOWN_MARKER.search(fallback_text):
+                # the substitution reached the output, so it is worth making and
+                # worth reporting.  If the marker survived it, the template wrote
+                # the directive itself, nothing was fixed, and announcing a
+                # substitution would be false -- so that report keeps the default
+                # render and the diagnostics it has always had.
+                text = fallback_text
+                log_warning(
+                    LOGGER,
+                    f"No loaded extension provides a {DEFAULT_REPORT_DIRECTIVE!r} "
+                    f"directive, so the needs report is rendered with "
+                    f"{FALLBACK_REPORT_DIRECTIVE!r} instead. Load an extension that "
+                    "provides it, for example sphinx-design, or choose the directive "
+                    "yourself with needs_render_context = {'report_directive': ...}",
+                    "needreport",
+                    location=self.get_location(),
+                )
 
         self.state_machine.insert_input(
             text.split("\n"), self.state_machine.document.attributes["source"]

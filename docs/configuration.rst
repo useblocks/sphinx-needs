@@ -959,6 +959,13 @@ is used:
    explicit choice is never substituted, so a project that asks for ``dropdown``
    without a provider keeps failing as it did before.
 
+   The substitution is decided on the **rendered** report, and is made only when it
+   changes it. A template of your own that never renders a ``dropdown`` — because it
+   writes its own directive, or shadows ``report_directive`` with a ``{% set %}`` — is
+   left alone and warns about nothing. A template that writes ``.. dropdown::`` as a
+   literal is also left alone: re-rendering cannot reach a literal, so nothing would be
+   fixed, and that report keeps the errors it gets today.
+
 .. _`needs_report_template_context`:
 
 Template context
@@ -975,19 +982,22 @@ value described below. That is the intended way to set ``report_directive``; doi
 any of the other four is reported as a ``needs.needreport`` warning.
 
 ``types``
-   The :ref:`needs_types` configuration, as a list of dictionaries.
+   The :ref:`needs_types` configuration, as a list of dictionaries, plus any types
+   registered by a loaded service or extension.
 
 ``links``
    The :ref:`needs_links` configuration, as a list of dictionaries carrying the keys
    ``option``, ``incoming``, ``outgoing``, ``copy`` and ``allow_dead_links``.
 
 ``options``
-   The names of the configured :ref:`needs_fields`, as a list of strings.
+   The names of the configured :ref:`needs_fields`, as a list of strings, plus any
+   fields registered by a loaded service or extension.
 
 ``report_directive``
    The name of the directive each section of the packaged template is wrapped in.
    ``dropdown``, unless :ref:`needs_render_context` names another one, or nothing
-   provides ``dropdown`` and it falls back to ``admonition`` — see the note above.
+   provides ``dropdown`` and substituting ``admonition`` changes what the report
+   renders — see the note above.
 
 ``usage``
    A dictionary with the keys ``needs_amount`` and ``needs_types``, the latter holding one

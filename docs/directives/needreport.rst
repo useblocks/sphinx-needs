@@ -30,6 +30,8 @@ documented under :ref:`needs_report_template`.
    neither Sphinx nor Sphinx-Needs provides — it needs an extension that supplies one,
    for example `sphinx-design <https://sphinx-design.readthedocs.io>`__.
    If none is loaded, the report is rendered with ``admonition`` instead and warns.
+   A template of your own is only affected if that substitution actually changes what
+   it renders; see :ref:`needs_report_template`.
    To pick the directive yourself, and so render without a warning:
 
    .. code-block:: python
