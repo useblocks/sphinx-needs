@@ -944,16 +944,20 @@ is used:
 
    ``dropdown`` is provided neither by Sphinx nor by Sphinx-Needs. It comes from an
    extension that supplies one, for example
-   `sphinx-design <https://sphinx-design.readthedocs.io>`__. With no such extension
-   loaded, the rendered report fails to parse and each of its sections is reported as
-   ``Unknown directive type "dropdown"``. Name a directive you do have through
-   :ref:`needs_render_context` instead:
+   `sphinx-design <https://sphinx-design.readthedocs.io>`__. If no loaded extension
+   provides it, the report is rendered with ``admonition`` instead and a
+   ``needs.needreport`` warning says so. To choose the directive yourself — and to
+   silence that warning — name one through :ref:`needs_render_context`:
 
    .. code-block:: python
 
       needs_render_context = {
           "report_directive": "admonition",
       }
+
+   A value set that way is always used exactly as given, ``"dropdown"`` included: an
+   explicit choice is never substituted, so a project that asks for ``dropdown``
+   without a provider keeps failing as it did before.
 
 .. _`needs_report_template_context`:
 
@@ -981,8 +985,9 @@ any of the other four is reported as a ``needs.needreport`` warning.
    The names of the configured :ref:`needs_fields`, as a list of strings.
 
 ``report_directive``
-   The name of the directive each section of the packaged template is wrapped in;
-   ``dropdown`` unless :ref:`needs_render_context` names another one.
+   The name of the directive each section of the packaged template is wrapped in.
+   ``dropdown``, unless :ref:`needs_render_context` names another one, or nothing
+   provides ``dropdown`` and it falls back to ``admonition`` — see the note above.
 
 ``usage``
    A dictionary with the keys ``needs_amount`` and ``needs_types``, the latter holding one

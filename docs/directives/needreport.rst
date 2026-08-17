@@ -29,7 +29,8 @@ documented under :ref:`needs_report_template`.
    Each section of the default template is wrapped in a ``dropdown`` directive, which
    neither Sphinx nor Sphinx-Needs provides — it needs an extension that supplies one,
    for example `sphinx-design <https://sphinx-design.readthedocs.io>`__.
-   If you would rather not load such an extension, name a directive you do have:
+   If none is loaded, the report is rendered with ``admonition`` instead and warns.
+   To pick the directive yourself, and so render without a warning:
 
    .. code-block:: python
 

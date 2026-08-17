@@ -22,6 +22,16 @@ LOGGER = logging.getLogger(__name__)
 #: so the rest are warned about.
 RESERVED_CONTEXT_KEYS = ("types", "links", "options", "usage")
 
+#: The directive the packaged template wraps each of its sections in.
+#: Neither Sphinx nor this extension provides it -- it comes from an extension
+#: such as sphinx-design -- so it may not be registered at render time.
+DEFAULT_REPORT_DIRECTIVE = "dropdown"
+
+#: Used in place of :data:`DEFAULT_REPORT_DIRECTIVE` when nothing provides it.
+#: Sphinx always registers ``admonition``, and it is the only always-available
+#: directive that renders as a titled block; core has no collapsible one.
+FALLBACK_REPORT_DIRECTIVE = "admonition"
+
 
 class NeedReportDirective(SphinxDirective):
     final_argument_whitespace = True
@@ -72,7 +82,7 @@ class NeedReportDirective(SphinxDirective):
             }
             if "usage" in self.options
             else {},
-            "report_directive": "dropdown",
+            "report_directive": DEFAULT_REPORT_DIRECTIVE,
         }
         if replaced := [
             key for key in RESERVED_CONTEXT_KEYS if key in needs_config.render_context
@@ -134,6 +144,31 @@ class NeedReportDirective(SphinxDirective):
         needs_report_template_file_content = need_report_template_path.read_text(
             encoding="utf8"
         )
+
+        if (
+            # an explicit choice is never second-guessed, even if it is unavailable
+            "report_directive" not in needs_config.render_context
+            # a template that never reads the name cannot be helped by changing it,
+            # and would only get a warning it can do nothing about
+            and "report_directive" in needs_report_template_file_content
+            and directives.directive(
+                DEFAULT_REPORT_DIRECTIVE,
+                self.state.memo.language,
+                self.state.document,
+            )[0]
+            is None
+        ):
+            report_info["report_directive"] = FALLBACK_REPORT_DIRECTIVE
+            log_warning(
+                LOGGER,
+                f"No loaded extension provides a {DEFAULT_REPORT_DIRECTIVE!r} directive, "
+                f"so the needs report is rendered with "
+                f"{FALLBACK_REPORT_DIRECTIVE!r} instead. Load an extension that provides "
+                "it, for example sphinx-design, or choose the directive yourself with "
+                "needs_render_context = {'report_directive': ...}",
+                "needreport",
+                location=self.get_location(),
+            )
 
         try:
             text = render_template_string(

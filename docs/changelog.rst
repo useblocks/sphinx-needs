@@ -295,6 +295,24 @@ Bug fixes
   the value is always resolved relative to the source directory, so an absolute one is
   appended to it rather than read from where it points.
 
+- 🐛 :ref:`needreport` renders without an extension providing ``dropdown``
+  (:issue:`899`)
+
+  Each section of the default template is wrapped in a ``dropdown`` directive, which
+  neither Sphinx nor Sphinx-Needs provides. A project without an extension supplying one
+  got a docutils error per section — at line numbers belonging to the template rather
+  than to the document, so pointing at innocent lines — and, because Sphinx strips
+  ``system_message`` nodes, the report then vanished from the page altogether: an empty
+  section, four errors on the console, and a build that still exited ``0`` unless ``-W``
+  was in use.
+
+  When nothing provides ``dropdown``, the report is now rendered with ``admonition``
+  instead, and one ``needs.needreport`` warning names both remedies. Projects that do
+  load such an extension are unaffected: the directive is looked up in the registry, so
+  a provider is used exactly as before and nothing is warned about. Nor is an explicit
+  choice ever second-guessed — ``needs_render_context = {"report_directive": "dropdown"}``
+  is honoured as written, provider or not.
+
 Documentation
 .............
 
