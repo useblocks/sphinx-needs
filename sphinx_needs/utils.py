@@ -432,12 +432,12 @@ def _savefig_reproducibly(
 ) -> None:
     """Write a matplotlib figure, without the build time leaking into the file.
 
-    Each writer leaks the wall clock time under its own metadata key, and the SVG
-    writer additionally derives element ids from a random ``uuid4`` whenever
-    ``svg.hashsalt`` is unset. Both are suppressed here, so that rebuilding
-    unchanged sources produces the same bytes. ``basename`` is the per-chart digest
-    of the directive's target id, and so is a stable salt that still differs between
-    charts of one build.
+    The SVG and PDF writers stamp the wall clock time under their own metadata
+    keys, and the SVG writer additionally derives element ids from a random
+    ``uuid4`` whenever ``svg.hashsalt`` is unset. Both leaks are suppressed here,
+    so that rebuilding unchanged sources produces the same bytes. ``basename`` is
+    the per-chart digest of the directive's target id, and so is a stable salt
+    that still differs between charts of one build.
 
     The PNG writer needs nothing: it writes no timestamp of its own.
 
@@ -447,8 +447,9 @@ def _savefig_reproducibly(
     :param basename: The file name without extension, used as the id salt.
     """
     if ext == "pdf":
-        # the PDF writer names the same value ``CreationDate``, and derives its
-        # object ids from the content, so it needs no salt
+        # the PDF writer stamps the wall clock as ``CreationDate``; its object
+        # ids come from a sequential counter and are already deterministic, so
+        # it needs no salt
         figure.savefig(path, metadata={"CreationDate": None})
         return
 
