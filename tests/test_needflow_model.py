@@ -29,7 +29,13 @@ from sphinx_needs.directives.needflow._model import (
     resolve_link_types,
     resolve_presentation,
 )
-from sphinx_needs.need_item import NeedItem, NeedPartData, NeedsContent
+from sphinx_needs.exceptions import NeedsInvalidFilter
+from sphinx_needs.need_item import (
+    NeedItem,
+    NeedItemSourceDirective,
+    NeedPartData,
+    NeedsContent,
+)
 from sphinx_needs.needs_schema import FieldsSchema, LinkDisplayConfig, LinkSchema
 from sphinx_needs.views import NeedsView
 
@@ -66,6 +72,7 @@ def need(
     children: list[str] | None = None,
     incoming: list[str] | None = None,
     parts: tuple[str, ...] = (),
+    docname: str | None = None,
     **core: Any,
 ) -> NeedItem:
     """Create a need item, with only the fields the graph model looks at.
@@ -76,6 +83,7 @@ def need(
     :param children: The ids of the needs nested in this one.
     :param incoming: The ids of the needs linking to this one.
     :param parts: The ids of the parts of the need.
+    :param docname: The document the need is defined in, if it matters.
     """
     return NeedItem(
         core={**CORE_BASE, "id": id, **core},
@@ -92,7 +100,11 @@ def need(
             "parent_needs": children or [],
         },
         parts=tuple(NeedPartData(id=part, content=f"part {part}") for part in parts),
-        source=None,
+        source=(
+            NeedItemSourceDirective(docname=docname, lineno=1, lineno_content=1)
+            if docname is not None
+            else None
+        ),
     )
 
 
@@ -296,6 +308,7 @@ def _presentation(item, **options: Any) -> NodePresentation:
         item,
         highlight=options.pop("highlight", ""),
         border_color=options.pop("border_color", None),
+        origin_docname=options.pop("origin_docname", None),
         config=_config(**options),
         needs=[item],
         location=nodes.paragraph(),
@@ -327,6 +340,31 @@ def test_presentation_highlights_a_need_that_passes_the_filter():
 def test_presentation_does_not_highlight_a_need_that_fails_the_filter():
     presentation = _presentation(need("A", type="story"), highlight="type == 'spec'")
     assert presentation.highlight is False
+
+
+def test_presentation_highlights_a_need_of_the_origin_document():
+    """``c.this_doc()`` resolves against the document the needflow is written in."""
+    presentation = _presentation(
+        need("A", docname="index"), highlight="c.this_doc()", origin_docname="index"
+    )
+    assert presentation.highlight is True
+
+
+def test_presentation_does_not_highlight_a_need_of_another_document():
+    presentation = _presentation(
+        need("A", docname="page"), highlight="c.this_doc()", origin_docname="index"
+    )
+    assert presentation.highlight is False
+
+
+def test_presentation_highlight_without_an_origin_document_is_invalid():
+    """Without an origin document ``c.this_doc()`` has nothing to compare against.
+
+    Every caller in the code base passes one, but the parameter is optional, so this
+    pins that the failure is the explicit one rather than a silent False.
+    """
+    with pytest.raises(NeedsInvalidFilter, match="this_doc"):
+        _presentation(need("A", docname="index"), highlight="c.this_doc()")
 
 
 def test_presentation_resolves_the_border_color():

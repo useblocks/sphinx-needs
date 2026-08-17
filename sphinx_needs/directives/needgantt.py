@@ -248,7 +248,10 @@ def process_needgantt(
 
             if current_needgantt["milestone_filter"]:
                 is_milestone = filter_single_need(
-                    need, needs_config, current_needgantt["milestone_filter"]
+                    need,
+                    needs_config,
+                    current_needgantt["milestone_filter"],
+                    origin_docname=current_needgantt["docname"],
                 )
             else:
                 is_milestone = False
@@ -316,7 +319,10 @@ def process_needgantt(
         for need in found_needs:
             if current_needgantt["milestone_filter"]:
                 is_milestone = filter_single_need(
-                    need, needs_config, current_needgantt["milestone_filter"]
+                    need,
+                    needs_config,
+                    current_needgantt["milestone_filter"],
+                    origin_docname=current_needgantt["docname"],
                 )
             else:
                 is_milestone = False

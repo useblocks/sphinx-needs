@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 from sphinx.util.console import strip_colors
+from sphinxcontrib.plantuml import plantuml
 
 from sphinx_needs.filter_common import filter_needs_parts, filter_needs_view
 from sphinx_needs.need_item import (
@@ -161,6 +162,103 @@ def test_this_doc_in_charts_and_need_count(test_app):
     assert "page_count-1" in html_page
     assert '<img alt="Page pie"' in html_page
     assert "No needs passed the filters" not in html_page
+
+
+def _capture_diagrams(app) -> dict[str, list[str]]:
+    """Collect the PlantUML source of every diagram, keyed by the document it is on.
+
+    The generated source is asserted on rather than the rendered image, so that the
+    assertions describe what the directive decided to draw and do not depend on the
+    PlantUML binary being able to draw it.
+    """
+    sources: dict[str, list[str]] = {}
+
+    def collect(app_, doctree, docname):
+        for node in doctree.findall(plantuml):
+            sources.setdefault(docname, []).append(node["uml"])
+
+    app.connect("doctree-resolved", collect, priority=900)
+    return sources
+
+
+def _arrows(uml: str) -> list[str]:
+    """The messages a generated sequence diagram draws, in order."""
+    return [line.strip() for line in uml.splitlines() if " -> " in line]
+
+
+def _highlighted(uml: str) -> set[str]:
+    """The need ids a generated needflow draws with the highlight outline."""
+    return {
+        line.split(" as ", 1)[1].split(" ", 1)[0]
+        for line in uml.splitlines()
+        if "line:FF0000" in line
+    }
+
+
+def _milestones(uml: str) -> set[str]:
+    """The need ids a generated gantt chart draws as a milestone (a zero day task)."""
+    return {
+        line.split("] as [", 1)[1].split("]", 1)[0]
+        for line in uml.splitlines()
+        if line.startswith("[") and " lasts 0 days" in line
+    }
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_filter_this_doc_diagrams",
+        }
+    ],
+    indirect=True,
+)
+def test_this_doc_in_diagram_filters(test_app):
+    """``c.this_doc()`` must also work in the three diagram filters.
+
+    ``needsequence`` ``:filter:``, ``needflow`` ``:highlight:`` and ``needgantt``
+    ``:milestone_filter:`` call :func:`filter_single_need` directly and used to omit
+    the origin document. That function *raises* on an invalid filter, and none of the
+    three call sites catches it, so ``c.this_doc()`` aborted the whole build.
+
+    Every filter is evaluated against needs from both documents, so each assertion
+    below can only pass if it resolved against the document the directive itself is
+    written in.
+    """
+    app = test_app
+    sources = _capture_diagrams(app)
+    app.build()
+
+    # no filter may have degraded to a warning either: every filter in this fixture
+    # raises on failure today, so this is a backstop against a future downgrade of
+    # the failure mode
+    warnings = strip_colors(app._warning.getvalue())
+    assert "needs.filter" not in warnings
+
+    index_sequence, index_flow, index_gantt = sources["index"]
+    page_sequence, page_flow, page_gantt = sources["page"]
+
+    # the sequence filter applies to the receivers of a message: SENDER's message goes
+    # to one receiver on each document, and only the local one may be drawn
+    assert _arrows(index_sequence) == ["SENDER -> INDEX_RECV: Message"]
+    assert _arrows(page_sequence) == ["SENDER -> PAGE_RECV: Message"]
+
+    # every needflow draws all four needs, and highlights only its own document's
+    assert _highlighted(index_flow) == {"SENDER", "MESSAGE", "INDEX_RECV"}
+    assert _highlighted(page_flow) == {"PAGE_RECV"}
+
+    # likewise, a gantt task is a milestone only on the document that defines it
+    assert _milestones(index_gantt) == {"SENDER", "MESSAGE", "INDEX_RECV"}
+    assert _milestones(page_gantt) == {"PAGE_RECV"}
+    # and the needs that are not milestones keep their duration, i.e. the filter
+    # selected rather than matching everything
+    assert "[Page receiver] as [PAGE_RECV] lasts 1 days" in index_gantt
+    assert "[Sender] as [SENDER] lasts 1 days" in page_gantt
+    # needgantt evaluates the milestone filter a second time, for the constraints
+    # section, where a milestone "happens at" rather than "starts at"
+    assert "[SENDER] happens at [MESSAGE]'s end" in index_gantt
+    assert "[SENDER] starts at [MESSAGE]'s end" in page_gantt
 
 
 def create_needs_view():

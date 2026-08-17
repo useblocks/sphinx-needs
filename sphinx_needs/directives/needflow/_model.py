@@ -380,6 +380,7 @@ def build_graph(
             config=needs_config,
             needs=needs_view.values(),
             location=variant_location,
+            origin_docname=attributes["docname"],
         ),
     )
 
@@ -403,6 +404,7 @@ def resolve_presentation(
     config: NeedsSphinxConfig,
     needs: Iterable[NeedItem | NeedPartItem],
     location: LocationType,
+    origin_docname: str | None = None,
 ) -> NodePresentation:
     """Resolve how a single need is to be presented.
 
@@ -412,10 +414,12 @@ def resolve_presentation(
     :param config: The Sphinx-Needs configuration.
     :param needs: All needs, for a ``highlight`` filter that consults them.
     :param location: Where to report ``border_color`` variant problems.
+    :param origin_docname: The document the needflow is written in, so that a
+        ``highlight`` filter may test the need against it with ``c.this_doc()``.
     :return: The resolved presentation.
     """
     is_highlighted = bool(highlight) and filter_single_need(
-        need, config, highlight, needs
+        need, config, highlight, needs, origin_docname=origin_docname
     )
     resolved_border = None
     if not is_highlighted and border_color:
