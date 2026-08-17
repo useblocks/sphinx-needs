@@ -245,13 +245,16 @@ to filter for needs only in the same document as the directive.
       :filter: c.this_doc()
       :style: datatables
 
-It is available wherever a directive option holds the filter,
-including ``needsequence`` ``:filter:``, ``needflow`` ``:highlight:``
-and ``needgantt`` ``:milestone_filter:``.
+It is available in the filters of the need-listing and diagram directives —
+including ``needsequence`` ``:filter:``, ``needflow`` ``:highlight:``,
+``needgantt`` ``:milestone_filter:`` and the filter lines of ``needpie``
+and ``needbar``.
 It is *not* available to filters configured in **conf.py**,
 such as :ref:`needs_constraints` and :ref:`needs_warnings`,
 since those are not written in any document;
 using it there raises ``this_doc can not be used in this context``.
+It is likewise unavailable in ``needimport`` ``:filter:``, which runs against
+needs imported from another project, and in ``needuml`` content filters.
 
 .. _re_search:
 

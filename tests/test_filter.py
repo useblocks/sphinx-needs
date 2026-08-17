@@ -222,15 +222,17 @@ def test_this_doc_in_diagram_filters(test_app):
     the origin document. That function *raises* on an invalid filter, and none of the
     three call sites catches it, so ``c.this_doc()`` aborted the whole build.
 
-    All four needs are visible to every diagram, so each assertion below can only pass
-    if the filter resolved against the document the directive itself is written in.
+    Every filter is evaluated against needs from both documents, so each assertion
+    below can only pass if it resolved against the document the directive itself is
+    written in.
     """
     app = test_app
     sources = _capture_diagrams(app)
     app.build()
 
-    # no filter may have failed; a failure here is a warning rather than a raise only
-    # for the needflow ``:filter:``, which shares the fixture
+    # no filter may have degraded to a warning either: every filter in this fixture
+    # raises on failure today, so this is a backstop against a future downgrade of
+    # the failure mode
     warnings = strip_colors(app._warning.getvalue())
     assert "needs.filter" not in warnings
 

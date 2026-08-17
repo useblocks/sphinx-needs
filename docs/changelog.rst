@@ -237,7 +237,7 @@ Bug fixes
   invalid filter, and none of the four call sites caught it — so ``c.this_doc()`` here
   ended the build with ``this_doc can not be used in this context`` rather than merely
   warning. Each now resolves the filter against the document its own directive is
-  written in, completing the coverage that the entry above began.
+  written in, continuing the coverage that the entry above began.
 
   Filters configured in **conf.py**, such as :ref:`needs_constraints` and
   :ref:`needs_warnings`, remain uncovered: they belong to the project rather than to any
