@@ -107,7 +107,10 @@ def test_doc_needs_filter_code(test_app):
     assert "extern_filter_test_003" in code_html
 
     # check needpie filter func code data
-    assert '<img alt="Filter code func pie" id="needpie-filter_code-0"' in code_html
+    assert (
+        '<img alt="Filter code func pie" id="needpie-filter_code-0" '
+        'src="_images/need_pie_446e9.svg"' in code_html
+    )
 
     code_args_html = Path(app.outdir, "filter_code_args.html").read_text()
     assert '<a class="reference internal" href="#impl1">impl1</a>' in code_args_html

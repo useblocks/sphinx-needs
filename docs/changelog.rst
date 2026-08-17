@@ -155,22 +155,28 @@ Bug fixes
   plantuml.
 
 - 🐛 ``c.this_doc()`` now works in :ref:`needpie`, :ref:`needbar` and the
-  :ref:`need_count` role (:issue:`1449`).
+  :ref:`need_count` role (:issue:`1449`)
 
   These evaluate their filters themselves, and did not pass on the document the
   directive or role was written in, so ``c.this_doc()`` ended in a
   ``this_doc can not be used in this context`` warning and counted nothing. They now
-  resolve it against their own document, as :ref:`needtable` and the other filtered
-  directives already did.
+  resolve it against their own document, as :ref:`needtable`, :ref:`needlist` and the
+  other directives whose ``:filter:`` runs through ``process_filters`` already did.
+
+  Three filter options are still not covered — :ref:`needsequence` ``:filter:``,
+  :ref:`needflow` ``:highlight:`` and :ref:`needgantt` ``:milestone_filter:`` — where
+  ``c.this_doc()`` ends the build rather than warning.
 
 - 🐛 :ref:`needpie` and :ref:`needbar` images are now byte-identical between builds of
   unchanged sources.
 
-  Matplotlib writes the wall clock time into every SVG it produces, and — with no hash
-  salt configured — derives the internal element ids from a random ``uuid4``, so two
-  builds of the same chart never agreed byte for byte. The date is now left out and the
-  ids are salted with the chart's own file name, which is already derived from the
-  directive's target id. Nothing about the rendered chart changes.
+  Matplotlib writes the wall clock time into every SVG and PDF it produces, and — with
+  no hash salt configured — derives an SVG's internal element ids from a random
+  ``uuid4``, so two builds of the same chart never agreed byte for byte. The date is now
+  left out of both formats, and the ids are salted with the chart's own file name, which
+  is already derived from the directive's target id. This covers every image the
+  directives write: SVG for the HTML builders, PDF for the LaTeX builder, and PNG, which
+  already carried no timestamp. Nothing about the rendered chart changes.
 
 - 🐛 :ref:`needbar` no longer fails the build when ``:ylabels: FROM_DATA`` is given on
   its own.

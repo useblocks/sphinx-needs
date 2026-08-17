@@ -111,7 +111,10 @@ def test_filter_build_html(test_app):
 
     assert html_6.count("got filter warning from needpie") == 1
     assert "no filter warning from needpie" not in html_6
-    assert '<img alt="Success Pie"' in html_6
+    assert (
+        '<img alt="Success Pie" id="needpie-filter_no_needs-3" '
+        'src="_images/need_pie_580f4.svg"' in html_6
+    )
     # the three empty pies are replaced by a paragraph and write no image
     assert html_6.count("<img alt=") == 1
 

@@ -34,6 +34,10 @@ def test_chart_images_are_reproducible(
 
     Matplotlib's SVG backend otherwise embeds the wall clock time and, without a
     hash salt, ``uuid4``-derived element ids, which makes every rebuild differ.
+
+    ``needbar`` is covered from here rather than from ``test_needbar.py`` because
+    both directives share the one writer, ``utils._savefig_reproducibly``, and this
+    keeps its two fixtures in a single parametrisation.
     """
     src_dir = tmp_path / "src"
     shutil.copytree(os.path.join(os.path.dirname(__file__), srcdir), src_dir)

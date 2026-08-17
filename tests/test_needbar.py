@@ -70,3 +70,51 @@ def test_needbar_label_defaults(test_app):
     # unchanged: taken from the first content row
     assert x_labels("xlabels only") == ["A", "B"]
     assert x_labels("both") == ["A", "B"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needbar_from_data",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_chart_element_ids_are_unique_per_chart(test_app):
+    """Charts of one document must not share matplotlib's internal element ids.
+
+    The ids are salted with each chart's own file name, so that they stay stable
+    between builds without becoming equal across charts. A single constant salt
+    would satisfy reproducibility just as well, and the four bars of this document
+    would then all refer to the same clip path -- harmless while each SVG is a
+    separate file, but not once a consumer inlines them into one page.
+
+    This fixture is used because its four bars are close enough in shape that a
+    shared salt really does collapse their ids onto one value.
+    """
+    app = test_app
+    app.build()
+
+    html = Path(app.outdir, "index.html").read_text()
+    images = dict(re.findall(r'<img alt="([^"]*)"[^>]*src="_images/([^"]*)"', html))
+    assert len(images) == 4
+
+    id_sets = {
+        alt: set(
+            re.findall(
+                r"url\(#([^)]+)\)", Path(app.outdir, "_images", name).read_text()
+            )
+        )
+        for alt, name in images.items()
+    }
+    assert all(id_sets.values()), "no chart referenced an element id"
+
+    seen: set[str] = set()
+    for ids in id_sets.values():
+        assert not (seen & ids), (
+            f"element id shared between charts: {sorted(seen & ids)}"
+        )
+        seen |= ids

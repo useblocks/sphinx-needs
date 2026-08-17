@@ -432,21 +432,29 @@ def _savefig_reproducibly(
 ) -> None:
     """Write a matplotlib figure, without the build time leaking into the file.
 
-    Matplotlib's SVG backend writes two values that change between otherwise
-    identical builds: an ``<dc:date>`` holding the wall clock time, and element ids
-    derived from a random ``uuid4`` whenever ``svg.hashsalt`` is unset. Both are
-    suppressed here, so that rebuilding unchanged sources produces the same bytes.
-    ``basename`` is the per-chart digest of the directive's target id, and so is a
-    stable salt that still differs between charts of one build.
+    Each writer leaks the wall clock time under its own metadata key, and the SVG
+    writer additionally derives element ids from a random ``uuid4`` whenever
+    ``svg.hashsalt`` is unset. Both are suppressed here, so that rebuilding
+    unchanged sources produces the same bytes. ``basename`` is the per-chart digest
+    of the directive's target id, and so is a stable salt that still differs between
+    charts of one build.
+
+    The PNG writer needs nothing: it writes no timestamp of its own.
 
     :param figure: The figure to write.
     :param path: The file to write it to.
     :param ext: The file extension, deciding the matplotlib writer.
     :param basename: The file name without extension, used as the id salt.
     """
-    # only the SVG writer takes these settings, and it is the one the HTML
-    # builders use; ``import_matplotlib`` cannot fail here, since a figure only
-    # exists if it succeeded already
+    if ext == "pdf":
+        # the PDF writer names the same value ``CreationDate``, and derives its
+        # object ids from the content, so it needs no salt
+        figure.savefig(path, metadata={"CreationDate": None})
+        return
+
+    # only the SVG writer takes the salt, and it is the one the HTML builders use;
+    # ``import_matplotlib`` cannot fail here, since a figure only exists if it
+    # succeeded already
     matplotlib = import_matplotlib() if ext == "svg" else None
     if matplotlib is None:
         figure.savefig(path)

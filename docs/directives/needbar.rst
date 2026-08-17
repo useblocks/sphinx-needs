@@ -20,9 +20,14 @@ Each content value gets interpreted either as a static value or as a :ref:`filte
 The amount of found needs by the filter string is then used as value.
 
 A static value has to be written as a non-negative integer, like ``10``.
-Anything else, ``10.5`` and ``-5`` included, is read as a filter string,
-and a filter string that does not evaluate to a boolean gives a ``needs.filter``
-warning and counts as zero.
+Anything else, ``10.5`` and ``-5`` included, is read as a filter string.
+Those two then give a ``needs.filter`` warning and count as zero,
+because a filter is expected to evaluate to a boolean and a number does not.
+
+Not every non-boolean filter is rejected that way, though:
+a simple enough expression, such as the bare field name ``tags``,
+is answered by the query fast path, which coerces the result with ``bool()``
+and counts the matching needs instead of warning.
 
 ``needbar`` takes no filter options at all:
 the data comes from the content, so ``:filter:``, ``:filter-func:`` and
@@ -419,8 +424,9 @@ But besides names, ``:colors:`` options also supports hex-values like ``#ffcc00`
 .. hint::
    In a normal bar chart, we use the ``:colors:`` for the legend and bars itself.
    One color is used per row of the content, so `transpose`_ changes how many are needed.
-   Fewer colors than rows is not an error: the list is extended with the default colors,
-   so the remaining rows are colored as they would be without the option.
+   Fewer colors than rows is not an error: the remaining rows fall back to the default
+   palette, starting again at its first color. They are therefore not colored as they
+   would have been without the option.
    A color Matplotlib does not know ends the build.
 
 .. syntax-example::

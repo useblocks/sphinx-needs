@@ -21,9 +21,14 @@ Each content line gets interpreted either as a static value or as a :ref:`filter
 The amount of found needs by the filter string is then used as value.
 
 A static value has to be written as a non-negative integer, like ``10``.
-Anything else, ``10.5`` and ``-5`` included, is read as a filter string,
-and a filter string that does not evaluate to a boolean gives a ``needs.filter``
-warning and counts as zero.
+Anything else, ``10.5`` and ``-5`` included, is read as a filter string.
+Those two then give a ``needs.filter`` warning and count as zero,
+because a filter is expected to evaluate to a boolean and a number does not.
+
+Not every non-boolean filter is rejected that way, though:
+a simple enough expression, such as the bare field name ``tags``,
+is answered by the query fast path, which coerces the result with ``bool()``
+and counts the matching needs instead of warning.
 
 You can use :ref:`filter_func` with Python codes to define custom filters for ``needpie``.
 Give either content lines or ``:filter-func:``: if both are given,
