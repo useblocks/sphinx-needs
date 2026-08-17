@@ -143,8 +143,8 @@ def add_field(
     *,
     schema: FieldSchemaTypes | None = None,
     nullable: bool | None = None,
-    default: None | Any = None,
-    predicates: None | list[tuple[str, Any]] = None,
+    default: Any | None = None,
+    predicates: list[tuple[str, Any]] | None = None,
     parse_variants: bool | None = None,
     parse_dynamic_functions: bool | None = None,
 ) -> None:

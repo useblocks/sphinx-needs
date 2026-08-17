@@ -392,7 +392,7 @@ THIS_DIR = Path(__file__).parent
 
 
 def create_parameters(
-    *rel_paths: str, skip_files: None | list[str] = None
+    *rel_paths: str, skip_files: list[str] | None = None
 ) -> list[ParameterSet]:
     """Create parameters for a pytest param_file decorator."""
     paths: list[Path] = []

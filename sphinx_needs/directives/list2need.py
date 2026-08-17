@@ -84,7 +84,7 @@ class List2NeedDirective(SphinxDirective):
         types = {}
         types_raw_list = [x.strip() for x in types_raw.split(",")]
         conf_types = [x["directive"] for x in needs_config.types]
-        for x in range(0, len(types_raw_list)):
+        for x in range(len(types_raw_list)):
             types[x] = types_raw_list[x]
             if types[x] not in conf_types:
                 raise SphinxError(

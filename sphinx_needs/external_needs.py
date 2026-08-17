@@ -32,8 +32,7 @@ def load_external_needs(
                 f"base_url must be configured in external_needs item {idx}."
             )
 
-        if source["base_url"].endswith("/"):
-            source["base_url"] = source["base_url"][:-1]
+        source["base_url"] = source["base_url"].removesuffix("/")
 
         target_url = source.get("target_url", "")
 

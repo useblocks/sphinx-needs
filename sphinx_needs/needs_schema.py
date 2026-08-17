@@ -56,7 +56,7 @@ class FieldSchema:
 
     The value from the first matching filter will be used, if any.
     """
-    default: None | FieldLiteralValue | FieldFunctionArray = None
+    default: FieldLiteralValue | FieldFunctionArray | None = None
     """ The default value for this field.
     
     Used if the field has not been specifically set, and no predicate matches.
@@ -111,7 +111,7 @@ class FieldSchema:
         return self.schema["type"]
 
     @property
-    def item_type(self) -> None | Literal["string", "boolean", "integer", "number"]:
+    def item_type(self) -> Literal["string", "boolean", "integer", "number"] | None:
         if self.schema["type"] == "array":
             return self.schema["items"]["type"]
         return None
@@ -382,7 +382,7 @@ class FieldSchema:
 
     def convert_or_type_check(
         self, value: Any, *, allow_coercion: bool
-    ) -> None | FieldLiteralValue | FieldFunctionArray:
+    ) -> FieldLiteralValue | FieldFunctionArray | None:
         """Convert a value to the correct type for this field, or check if it is of the correct type.
 
         :param value: The value to convert or check.
@@ -619,7 +619,7 @@ class LinkSchema:
 
     The value from the first matching filter will be used, if any.
     """
-    default: None | LinksLiteralValue | LinksFunctionArray = None
+    default: LinksLiteralValue | LinksFunctionArray | None = None
     """ The default value for this field.
     
     Used if the field has not been specifically set, and no predicate matches.
@@ -1042,8 +1042,7 @@ def _split_list(
             while text and not text.startswith("]]"):
                 _current_element += text[0]
                 text = text[1:]
-            if _current_element.endswith("]"):
-                _current_element = _current_element[:-1]
+            _current_element = _current_element.removesuffix("]")
             _current_elements.append(
                 (
                     _current_element,
@@ -1062,8 +1061,7 @@ def _split_list(
             while text and not text.startswith("}>"):
                 _current_element += text[0]
                 text = text[1:]
-            if _current_element.endswith("}"):
-                _current_element = _current_element[:-1]
+            _current_element = _current_element.removesuffix("}")
             _current_elements.append(
                 (
                     _current_element,
@@ -1082,8 +1080,7 @@ def _split_list(
             while text and not text.startswith(">>"):
                 _current_element += text[0]
                 text = text[1:]
-            if _current_element.endswith(">"):
-                _current_element = _current_element[:-1]
+            _current_element = _current_element.removesuffix(">")
             _current_elements.append(
                 (
                     _current_element,
@@ -1189,11 +1186,9 @@ def _split_link_list(
             while text and not text.startswith("]]"):
                 content += text[0]
                 text = text[1:]
-            if content.endswith("]"):
-                content = content[:-1]
+            content = content.removesuffix("]")
             yield DynamicFunctionParsed.from_string(content)
-            if text.startswith("]]"):
-                text = text[2:]
+            text = text.removeprefix("]]")
         elif parse_variants and text.startswith("<<") and not _current.strip():
             # << at start of slot (no preceding non-whitespace text) → variant function
             _current = ""  # discard any leading whitespace
@@ -1204,11 +1199,9 @@ def _split_link_list(
             while text and not text.startswith(">>"):
                 content += text[0]
                 text = text[1:]
-            if content.endswith(">"):
-                content = content[:-1]
+            content = content.removesuffix(">")
             yield VariantFunctionParsed.from_string(content)
-            if text.startswith(">>"):
-                text = text[2:]
+            text = text.removeprefix(">>")
         elif parse_variants and text.startswith("<{") and not _current.strip():
             # <{ at start of slot (no preceding non-whitespace text) → variant data
             _current = ""  # discard any leading whitespace
@@ -1219,11 +1212,9 @@ def _split_link_list(
             while text and not text.startswith("}>"):
                 content += text[0]
                 text = text[1:]
-            if content.endswith("}"):
-                content = content[:-1]
+            content = content.removesuffix("}")
             yield VariantDataParsed.from_string(content)
-            if text.startswith("}>"):
-                text = text[2:]
+            text = text.removeprefix("}>")
         elif text[0] in ";|,":
             # Delimiter: flush current item
             if not _has_special:
