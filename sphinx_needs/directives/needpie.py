@@ -165,7 +165,13 @@ def process_needpie(
                     sizes.append(abs(float(line)))
                 else:
                     result = len(
-                        filter_needs_parts(need_list, needs_config, line, location=node)
+                        filter_needs_parts(
+                            need_list,
+                            needs_config,
+                            line,
+                            location=node,
+                            origin_docname=current_needpie["docname"],
+                        )
                     )
                     sizes.append(result)
         elif current_needpie["filter_func"] and not content:
@@ -312,20 +318,26 @@ def process_needpie(
 
         # Final storage
 
-        # We need to calculate an unique pie-image file name
-        hash_value = hashlib.sha256(node.attributes["ids"][0].encode()).hexdigest()[:5]
-        image_node = save_matplotlib_figure(
-            app, fig, f"need_pie_{hash_value}", fromdocname
-        )
-
-        # Add lineno to node
-        image_node.line = current_needpie["lineno"]
-
         if len(sizes) == 0 or all(s == 0 for s in sizes):
+            # nothing is shown, so no image file is written either
             node.replace_self(
                 no_needs_found_paragraph(current_needpie.get("filter_warning"))
             )
         else:
+            # We need to calculate an unique pie-image file name
+            target_id: str = node.attributes["ids"][0]
+            hash_value = hashlib.sha256(target_id.encode()).hexdigest()[:5]
+            image_node = save_matplotlib_figure(
+                app, fig, f"need_pie_{hash_value}", fromdocname
+            )
+
+            # Add lineno to node
+            image_node.line = current_needpie["lineno"]
+
+            # normally the title is more understandable for a person who needs alt
+            if current_needpie["title"]:
+                image_node["alt"] = current_needpie["title"]
+
             node.replace_self(image_node)
 
         # Cleanup matplotlib

@@ -221,8 +221,68 @@ Bug fixes
   source location of the directive under the graphviz engine, as it already did under
   plantuml.
 
+- 🐛 ``c.this_doc()`` now works in :ref:`needpie`, :ref:`needbar` and the
+  :ref:`need_count` role (:issue:`1449`)
+
+  These evaluate their filters themselves, and did not pass on the document the
+  directive or role was written in, so ``c.this_doc()`` ended in a
+  ``this_doc can not be used in this context`` warning and counted nothing. They now
+  resolve it against their own document, as :ref:`needtable`, :ref:`needlist` and the
+  other directives whose ``:filter:`` runs through ``process_filters`` already did.
+
+  Three filter options are still not covered — :ref:`needsequence` ``:filter:``,
+  :ref:`needflow` ``:highlight:`` and :ref:`needgantt` ``:milestone_filter:`` — where
+  ``c.this_doc()`` ends the build rather than warning.
+
+- 🐛 :ref:`needpie` and :ref:`needbar` images are now byte-identical between builds of
+  unchanged sources.
+
+  Matplotlib writes the wall clock time into every SVG and PDF it produces, and — with
+  no hash salt configured — derives an SVG's internal element ids from a random
+  ``uuid4``, so two builds of the same chart never agreed byte for byte. The date is now
+  left out of both formats, and the ids are salted with the chart's own file name, which
+  is already derived from the directive's target id. This covers every image the
+  directives write: SVG for the HTML builders, PDF for the LaTeX builder, and PNG, which
+  already carried no timestamp. Nothing about the rendered chart changes.
+
+- 🐛 :ref:`needbar` no longer fails the build when ``:ylabels: FROM_DATA`` is given on
+  its own.
+
+  The default xlabels — ``1``, ``2``, … one per column — were derived before the ylabels
+  column had been taken out of the content, so there was always one too many of them and
+  the build ended with ``length of xlabels: N+1 is not equal with sum of columns: N``.
+  Grids that give both label options, or only ``:xlabels: FROM_DATA``, are unaffected.
+
+- 🐛 A :ref:`needpie` with a title now uses it as the image's ``alt`` text, as
+  :ref:`needbar` already did.
+
+  Until now every pie was published with the ``alt`` docutils falls back to — the
+  image's own file URI — which tells a screen reader nothing. A pie without a title
+  keeps that fallback.
+
+- 🐛 A :ref:`needpie` whose values are all zero no longer writes an unreferenced image
+  file.
+
+  Such a pie is replaced by the "No needs passed the filters" paragraph, but the chart
+  had already been rendered into ``_images/``, where it then stayed, referenced by
+  nothing.
+
 Documentation
 .............
+
+- 📚 The :ref:`needpie` and :ref:`needbar` pages are corrected against what the two
+  directives actually do.
+
+  Both claimed that several image files are written per chart, where exactly one is,
+  and both called a literal content value a "float/int", where only a non-negative
+  integer is read as one. The pages now also say what an invalid value really does —
+  a label, ``:explode:`` or grid-shape mismatch, an unknown color and an unknown style
+  all end the build — and that the rotation options take non-negative integers, that a
+  filter containing a comma needs a custom ``:separator:``, and that ``:colors:``
+  shorter than the data is extended with the default colors rather than repeated.
+  ``needpie`` gains the missing ``:filter_warning:`` section and states that content
+  and ``:filter-func:`` are alternatives; ``needbar`` states that it takes no filter
+  options at all.
 
 - 📚 :ref:`needs_string_links` documents the behaviour it always had: the ``,``/``;`` splitting
   and its lack of an escape, that the first entry naming a field wins with no fallthrough, that

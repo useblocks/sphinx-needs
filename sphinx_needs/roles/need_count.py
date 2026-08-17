@@ -32,6 +32,9 @@ def process_need_count(
     for node_need_count in found_nodes:
         needs_view = SphinxNeedsData(app.env).get_needs_view()
         filter = node_need_count["reftarget"]
+        # the document the role was written in, set by ``XRefRole``,
+        # so that filters can use ``c.this_doc()``
+        origin_docname: str | None = node_need_count.get("refdoc")
 
         if filter:
             filters = filter.split(" ? ")
@@ -44,6 +47,7 @@ def process_need_count(
                             needs_config,
                             filters[0],
                             location=node_need_count,
+                            origin_docname=origin_docname,
                         )
                     )
                 )
@@ -51,12 +55,20 @@ def process_need_count(
                 need_list = needs_view.to_list_with_parts()
                 amount_1 = len(
                     filter_needs_parts(
-                        need_list, needs_config, filters[0], location=node_need_count
+                        need_list,
+                        needs_config,
+                        filters[0],
+                        location=node_need_count,
+                        origin_docname=origin_docname,
                     )
                 )
                 amount_2 = len(
                     filter_needs_parts(
-                        need_list, needs_config, filters[1], location=node_need_count
+                        need_list,
+                        needs_config,
+                        filters[1],
+                        location=node_need_count,
+                        origin_docname=origin_docname,
                     )
                 )
                 amount = "inf" if amount_2 == 0 else f"{amount_1 / amount_2 * 100:2.1f}"
