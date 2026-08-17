@@ -276,6 +276,25 @@ Bug fixes
   had already been rendered into ``_images/``, where it then stayed, referenced by
   nothing.
 
+- 🐛 :ref:`needreport` reports a template it cannot render, instead of ending the build
+
+  A template with a Jinja syntax error — or one that merely applies a filter to a variable
+  that does not exist, which is what the stale example in these docs did — raised out of
+  the directive and took the whole build down with it. That is the failure mode
+  :pr:`1105` set out to remove, and the missing-file case has warned rather than aborted
+  ever since; the render case now does too, as a ``needs.needreport`` warning naming the
+  template and repeating the engine's own explanation. The directive then contributes
+  nothing to the page, exactly as it already did for a template that is missing.
+
+  Two smaller diagnostics come with it. A :ref:`needs_render_context` entry that takes
+  over one of the reserved context names — ``types``, ``links``, ``options`` or ``usage``
+  — is now reported; which value wins is deliberately unchanged, since these have been
+  silently overridable for years, and only ``report_directive`` is meant to be set this
+  way. And when :ref:`needs_report_template` holds a path that is absolute on the file
+  system, the "could not load" warning explains why it names a path nobody wrote down:
+  the value is always resolved relative to the source directory, so an absolute one is
+  appended to it rather than read from where it points.
+
 Documentation
 .............
 
