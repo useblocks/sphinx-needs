@@ -299,6 +299,26 @@ Documentation
   same-named capture groups, and that the templates are rendered with MiniJinja rather than
   Jinja2.
 
+- 📚 The :ref:`needreport` and :ref:`needs_report_template` pages are corrected against
+  what the directive actually does.
+
+  The "default template" the configuration page printed had drifted so far from the
+  packaged one that copying it — the customisation route both pages recommend — ends the
+  build, because it reads two context variables, ``fields`` and ``json_exclude_fields``,
+  that have never existed. The page now includes the packaged template from the source
+  tree, so the two cannot diverge again, and the context is described as it is: the key is
+  ``options``, ``report_directive`` is listed, and every number in ``usage`` is called out
+  as permanently ``0`` — real counts come from the :ref:`need_count` role that the
+  template emits, and those count need parts and :ref:`needs_external_needs` alike.
+
+  The ``:template:`` option, until now documented nowhere, gains a section of its own and
+  the three-level precedence it takes part in is written down. ``needs_report_template``
+  is described as resolved relative to the source directory rather than "must be an
+  absolute path"; the ``dropdown`` prerequisite and the ``report_directive`` escape hatch
+  now also appear on the configuration page; and an ``.rst`` template kept inside the
+  source directory is noted as being built as a document of its own, with the
+  ``exclude_patterns`` entry that avoids it.
+
 - 📚 ``docs/ubproject.toml``, the `ubCode`_ configuration of this documentation, is brought
   up to date with current ubCode releases
 
