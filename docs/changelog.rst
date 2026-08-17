@@ -323,8 +323,13 @@ Bug fixes
   so a project with a template of its own gains neither the substitution nor the warning
   unless it was actually rendering a ``dropdown``. A template that never produces one —
   because it writes its own directive, or shadows ``report_directive`` with a
-  ``{% set %}`` — is left exactly as it is, and so is one that writes ``.. dropdown::``
-  as a literal, which re-rendering cannot reach.
+  ``{% set %}`` — is left exactly as it is, and so is one with ``.. dropdown::``
+  hardcoded in it, which re-rendering cannot reach. If the substituted render fails where
+  the default one succeeded, the default is kept and nothing is reported.
+
+  The decision is a textual scan of the rendered report, so a template that merely shows
+  ``.. dropdown::`` as example markup while producing it through ``report_directive`` is
+  treated as though it used it.
 
 Documentation
 .............

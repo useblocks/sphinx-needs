@@ -36,10 +36,18 @@ FALLBACK_REPORT_DIRECTIVE = "admonition"
 
 #: Recognises :data:`DEFAULT_REPORT_DIRECTIVE` used as a directive in *rendered*
 #: text, the way docutils recognises one: an explicit markup start (``..``) at the
-#: beginning of a possibly indented line, whitespace, the name, and the ``::``
-#: marker -- which docutils lets a single space precede.
+#: beginning of a possibly indented line, whitespace, the name, the ``::`` marker
+#: -- which docutils lets a single space precede -- and then whitespace or the end
+#: of the line.  Without that last part ``.. dropdown::x`` would match, which
+#: docutils reads as a comment rather than as a directive.
+#:
+#: It is a textual scan with no notion of RST block context, so a report that
+#: merely *shows* ``.. dropdown::`` as example markup -- inside a literal block,
+#: say -- while producing it through ``report_directive`` is treated as though it
+#: used it.  Telling those apart needs the parsed document, which is out of all
+#: proportion here; the cost is a substitution inside the displayed example.
 DROPDOWN_MARKER = re.compile(
-    rf"^[ \t]*\.\.[ \t]+{re.escape(DEFAULT_REPORT_DIRECTIVE)}[ \t]?::",
+    rf"^[ \t]*\.\.[ \t]+{re.escape(DEFAULT_REPORT_DIRECTIVE)}[ \t]?::(?=[ \t]|$)",
     re.MULTILINE,
 )
 
@@ -54,7 +62,14 @@ class NeedReportDirective(SphinxDirective):
         "template": directives.unchanged,
     }
 
-    def _render(self, template: str, context: dict[str, Any], path: Path) -> str | None:
+    def _render(
+        self,
+        template: str,
+        context: dict[str, Any],
+        path: Path,
+        *,
+        warn: bool = True,
+    ) -> str | None:
         """Render the report template, or warn and return ``None``.
 
         A template that could not be rendered used to escape ``run()`` and end the
@@ -64,11 +79,18 @@ class NeedReportDirective(SphinxDirective):
         :param template: The template source.
         :param context: The render context.
         :param path: The file the template was read from, named in the warning.
+        :param warn: Whether a failure is reported. The speculative fallback render
+            passes ``False``: that attempt is this directive's own idea rather than
+            anything the author asked for, so its failure must cost nothing and say
+            nothing -- "could not render" would be false of the render the project
+            actually got.
         :returns: The rendered text, or ``None`` if it could not be rendered.
         """
         try:
             return render_template_string(template, context, autoescape=False)
         except Exception as exc:
+            if not warn:
+                return None
             # deliberately broad: MiniJinja raises ``TemplateError`` for a syntax
             # error or for an operation on an undefined value, but the context also
             # carries arbitrary objects from :ref:`needs_render_context`, and a
@@ -226,10 +248,13 @@ class NeedReportDirective(SphinxDirective):
                 needs_report_template_file_content,
                 {**report_info, "report_directive": FALLBACK_REPORT_DIRECTIVE},
                 need_report_template_path,
+                warn=False,
             )
-            if fallback_text is None:
-                return []
-            if not DROPDOWN_MARKER.search(fallback_text):
+            # a template that renders on the ``dropdown`` branch and breaks on the
+            # ``admonition`` one keeps the render it already has: the default text
+            # succeeded above, so the fallback logic can only ever leave the report
+            # as it was, never lose it
+            if fallback_text is not None and not DROPDOWN_MARKER.search(fallback_text):
                 # the substitution reached the output, so it is worth making and
                 # worth reporting.  If the marker survived it, the template wrote
                 # the directive itself, nothing was fixed, and announcing a

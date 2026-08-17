@@ -962,9 +962,18 @@ is used:
    The substitution is decided on the **rendered** report, and is made only when it
    changes it. A template of your own that never renders a ``dropdown`` — because it
    writes its own directive, or shadows ``report_directive`` with a ``{% set %}`` — is
-   left alone and warns about nothing. A template that writes ``.. dropdown::`` as a
-   literal is also left alone: re-rendering cannot reach a literal, so nothing would be
-   fixed, and that report keeps the errors it gets today.
+   left alone and warns about nothing. A template with ``.. dropdown::`` hardcoded in it
+   is also left alone: re-rendering cannot reach a name the template does not read from
+   the context, so nothing would be fixed, and that report keeps the errors it gets
+   today. Should the substituted render fail where the default one succeeded, the
+   default is kept and nothing is reported — the fallback can leave a report as it was,
+   never lose it.
+
+   The decision is a textual scan of the rendered report, so it has no notion of
+   reStructuredText block context: a report that merely *shows* ``.. dropdown::`` as
+   example markup — inside a literal block, say — while producing it through
+   ``report_directive`` is treated as though it used it, and the example shown will
+   name ``admonition`` instead.
 
 .. _`needs_report_template_context`:
 

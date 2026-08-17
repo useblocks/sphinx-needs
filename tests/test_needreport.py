@@ -22,6 +22,17 @@ def visible_text(html: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", html))
 
 
+def highlighted_block(html: str) -> str:
+    """Return the page's first syntax-highlighted literal block.
+
+    Its content is one ``<span>`` per token, so asserting on the page text does
+    not work: the tags collapse to spaces and split the directive marker up.
+    """
+    match = re.search(r'<div class="highlight[^"]*">.*?</div>', html, re.S)
+    assert match is not None, "no highlighted block on the page"
+    return match.group(0)
+
+
 def build_warnings(app) -> list[str]:
     """Return the warnings of a finished build, one per line.
 
@@ -750,6 +761,9 @@ def test_render_failure_detail_that_raises_cannot_end_the_build(test_app):
         ("..dropdown:: Title", False),
         # a different directive whose name merely starts the same way
         (".. dropdowns:: Title", False),
+        # docutils requires whitespace or end-of-line after ``::``; without it the
+        # line is a comment, so this must not count as a usage
+        (".. dropdown::x", False),
         # not at the start of a line
         ("see the .. dropdown:: directive", False),
         # the name in prose, and in a Jinja comment, are not directives
@@ -759,7 +773,14 @@ def test_render_failure_detail_that_raises_cannot_end_the_build(test_app):
     ],
 )
 def test_dropdown_marker_matches_docutils_recognition(text, expected):
-    """The marker recognises a directive the way docutils does, and nothing else."""
+    """The marker follows docutils' own recognition of a directive.
+
+    Tabs are tolerated where docutils writes a space, because docutils expands
+    them before the line is ever matched.  What the marker cannot know is RST
+    block context: example markup inside a literal block matches too, which is
+    the documented limitation recorded on ``DROPDOWN_MARKER`` and pinned by
+    ``test_example_markup_in_a_literal_block_is_substituted`` below.
+    """
     assert bool(DROPDOWN_MARKER.search(text)) is expected
 
 
@@ -810,3 +831,142 @@ def test_reserved_context_key_warns_once_per_build(test_app):
         "needs_render_context replaces the needreport context key 'types'"
         in (warnings[0])
     )
+
+
+# -- the heuristic's known edge, and its safety net ---------------------------
+#
+# The decision is a textual scan of the rendered report, so it cannot tell a
+# directive from example markup showing one.  A template that prints
+# ``{{ report_directive }}`` inside a literal block -- to document the report's
+# own markup, say -- therefore looks like a live usage.  These two tests pin what
+# that costs: the displayed example changes, and nothing else does.
+
+LITERAL_BLOCK_TEMPLATE = """\
+.. code-block:: rst
+
+   .. {{ report_directive }}:: Need Types
+"""
+
+# The same, plus a branch that only breaks when the fallback is being tried.
+LITERAL_BLOCK_SECOND_RENDER_FAILS_TEMPLATE = """\
+.. code-block:: rst
+
+   .. {{ report_directive }}:: Need Types
+{% if report_directive == "admonition" %}{{ no_such_variable|length }}{% endif %}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (Path("conf.py"), NO_PROVIDER_CONF),
+                (Path("index.rst"), REPORT_INDEX),
+                (Path("report_template.need"), LITERAL_BLOCK_TEMPLATE),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_example_markup_in_a_literal_block_is_substituted(test_app):
+    """Example markup showing the directive is treated as though it used it.
+
+    Distinguishing the two needs the parsed document rather than the rendered
+    text, which is out of proportion to the problem, so this is pinned as the
+    documented cost of the heuristic rather than left to be discovered.
+    """
+    app = test_app
+    app.build()
+
+    assert len(build_warnings(app)) == 1
+    assert "No loaded extension provides" in build_warnings(app)[0]
+
+    # the substitution reached the displayed example, which is the whole cost
+    block = highlighted_block(Path(app.outdir, "index.html").read_text(encoding="utf8"))
+    assert ">admonition<" in block
+    assert ">dropdown<" not in block
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (Path("conf.py"), NO_PROVIDER_CONF),
+                (Path("index.rst"), REPORT_INDEX),
+                (
+                    Path("report_template.need"),
+                    LITERAL_BLOCK_SECOND_RENDER_FAILS_TEMPLATE,
+                ),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_failed_fallback_render_keeps_the_report(test_app):
+    """A fallback render that fails costs the project nothing.
+
+    The default render has already succeeded by then, so the report it produced
+    is kept.  The failed attempt is this directive's own idea rather than
+    anything the author wrote, so it is not reported either: "could not render"
+    would be false of the render the page actually got.  The fallback logic can
+    therefore leave a report as it was, but never lose it.
+    """
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == []
+
+    # the default render is on the page, untouched
+    block = highlighted_block(Path(app.outdir, "index.html").read_text(encoding="utf8"))
+    assert ">dropdown<" in block
+    assert ">admonition<" not in block
+
+
+# The same safety net on a project that is genuinely broken today: the report
+# really does use the directive, and the fallback render really does fail.
+REAL_USE_SECOND_RENDER_FAILS_TEMPLATE = """\
+.. {{ report_directive }}:: Need Types
+
+   {% for type in types %}
+   * {{ type.title }}
+   {% endfor %}
+
+{% if report_directive == "admonition" %}{{ no_such_variable|length }}{% endif %}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (Path("conf.py"), NO_PROVIDER_CONF),
+                (Path("index.rst"), REPORT_INDEX),
+                (Path("report_template.need"), REAL_USE_SECOND_RENDER_FAILS_TEMPLATE),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_failed_fallback_on_a_real_usage_keeps_todays_behaviour(test_app):
+    """When the substitution cannot be rendered, today's diagnostics stand.
+
+    Nothing is claimed to have been fixed, and no "could not render" is reported
+    for a render that succeeded; the project keeps exactly the docutils error it
+    has always had for an unprovided ``dropdown``.
+    """
+    app = test_app
+    app.build()
+
+    reported = "\n".join(build_warnings(app))
+    assert 'ERROR: Unknown directive type "dropdown".' in reported
+    assert "No loaded extension provides" not in reported
+    assert "Could not render" not in reported
