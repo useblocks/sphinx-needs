@@ -24,7 +24,11 @@ from sphinx_needs.directives.utils import (
     no_needs_found_paragraph,
     report_max_items,
 )
-from sphinx_needs.filter_common import FilterBase, resolve_max_items
+from sphinx_needs.filter_common import (
+    FilterBase,
+    filter_single_need,
+    resolve_max_items,
+)
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.utils import add_doc, remove_node_from_tree
@@ -192,6 +196,7 @@ def process_needsequence(
                 all_needs_dict,
                 filter=current_needsequence["filter"],
                 counter=counter,
+                origin_docname=current_needsequence["docname"],
             )
             p_string += p_string_new
             c_string += c_string_new
@@ -339,7 +344,13 @@ def get_message_needs(
     filter: str | None = None,
     *,
     counter: _MessageCounter,
+    origin_docname: str | None = None,
 ) -> tuple[dict[str, dict[str, Any]], str, str]:
+    """Walk the messages sent by ``sender``, drawing each receiver that passes ``filter``.
+
+    :param origin_docname: The document the needsequence is written in, so that a
+        ``filter`` may test the receiver against it with ``c.this_doc()``.
+    """
     msg_needs: list[dict[str, Any]] = []
     if tracked_receivers is None:
         tracked_receivers = []
@@ -372,16 +383,14 @@ def get_message_needs(
         for link_type in link_types:
             receiver_ids = msg_need[link_type]
             for rec_id in receiver_ids:
-                if filter:
-                    from sphinx_needs.filter_common import filter_single_need
-
-                    if not filter_single_need(
-                        all_needs_dict[rec_id],
-                        NeedsSphinxConfig(app.config),
-                        filter,
-                        needs=all_needs_dict.values(),
-                    ):
-                        continue
+                if filter and not filter_single_need(
+                    all_needs_dict[rec_id],
+                    NeedsSphinxConfig(app.config),
+                    filter,
+                    needs=all_needs_dict.values(),
+                    origin_docname=origin_docname,
+                ):
+                    continue
 
                 rec_data = {
                     "id": rec_id,
@@ -403,6 +412,7 @@ def get_message_needs(
                         tracked_receivers,
                         filter=filter,
                         counter=counter,
+                        origin_docname=origin_docname,
                     )
                     p_string += p_string_new
                     c_string += c_string_new

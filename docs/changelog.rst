@@ -230,9 +230,18 @@ Bug fixes
   resolve it against their own document, as :ref:`needtable`, :ref:`needlist` and the
   other directives whose ``:filter:`` runs through ``process_filters`` already did.
 
-  Three filter options are still not covered — :ref:`needsequence` ``:filter:``,
-  :ref:`needflow` ``:highlight:`` and :ref:`needgantt` ``:milestone_filter:`` — where
-  ``c.this_doc()`` ends the build rather than warning.
+- 🐛 ``c.this_doc()`` now also works in :ref:`needsequence` ``:filter:``,
+  :ref:`needflow` ``:highlight:`` and :ref:`needgantt` ``:milestone_filter:``
+
+  These three options are evaluated with ``filter_single_need``, which *raises* on an
+  invalid filter, and none of the four call sites caught it — so ``c.this_doc()`` here
+  ended the build with ``this_doc can not be used in this context`` rather than merely
+  warning. Each now resolves the filter against the document its own directive is
+  written in, completing the coverage that the entry above began.
+
+  Filters configured in **conf.py**, such as :ref:`needs_constraints` and
+  :ref:`needs_warnings`, remain uncovered: they belong to the project rather than to any
+  document, so there is no origin document to resolve ``c.this_doc()`` against.
 
 - 🐛 :ref:`needpie` and :ref:`needbar` images are now byte-identical between builds of
   unchanged sources.
