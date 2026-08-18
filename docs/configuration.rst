@@ -888,105 +888,149 @@ needs_report_template
 
 .. versionadded:: 1.0.1
 
-You can customize the layout of :ref:`needreport` using `Jinja <http://jinja.pocoo.org/>`__.
+You can customise the layout of :ref:`needreport` with a template of your own.
+Set ``needs_report_template`` to the path of the template file:
 
-Set the value of ``needs_report_template`` to the path of the template you want to use.
+.. code-block:: python
+
+   needs_report_template = "/needs_templates/report_template.need"
+
+Finding the template
+++++++++++++++++++++
+
+``needs_report_template`` is resolved relative to the **source directory** — the directory
+Sphinx reads the documents from, which is also the directory holding ``conf.py`` unless
+``sphinx-build -c`` separates the two. A leading ``/`` is stripped before that join, so
+``"/needs_templates/report_template.need"`` and ``"needs_templates/report_template.need"``
+name the same file.
+
+A POSIX-style absolute path is therefore **not** read from where it points. It is stripped
+and joined onto the source directory like any other value, which normally ends in a
+``Could not load needs report template file ...`` warning naming a path that does not
+exist.
+
+On Windows a drive-letter path such as ``D:\templates\report.need`` is an exception: it
+is not a relative path, so joining it onto the source directory replaces it, and the file
+is read from where it points. The rebase above applies to POSIX-style absolute values.
+
+The first of the following that is set provides the template:
+
+#. the ``:template:`` option of an individual :ref:`needreport` directive
+   (see :ref:`template <needreport_template_option>`), resolved relative to the document
+   the directive is written in;
+#. ``needs_report_template``, resolved relative to the source directory as described
+   above;
+#. otherwise the packaged default template shown below.
 
 .. note::
 
-   The path must be an absolute path based on the **conf.py** directory.
-   Example: ``needs_report_template = '/needs_templates/report_template.need'``
+   The file extension is not checked, so any is accepted; ``.rst``, ``.need`` and ``.txt``
+   are the conventional ones. Prefer ``.need`` or ``.txt``: a template named ``.rst`` and
+   placed inside the source directory is also read by Sphinx as a document in its own
+   right, and its unrendered Jinja source then produces a cascade of parse warnings.
+   To keep the ``.rst`` extension, exclude the template from the build:
 
-   The template file should be a plain file with any of the following file extensions: ``.rst``, ``.need``, or ``.txt``.
+   .. code-block:: python
 
-If you do not set ``needs_report_template``, the default template used is:
+      exclude_patterns = ["needs_templates/*.rst"]
 
-.. code-block:: jinja
+The packaged default template
++++++++++++++++++++++++++++++
 
-   {# Output for needs_types #}
-   {% if types|length != 0 %}
-   .. dropdown:: Need Types
-      :class: needs_report_table
+If you do not set ``needs_report_template``, this template, shipped with Sphinx-Needs,
+is used:
 
-      .. list-table::
-        :widths: 40 20 20 20
-        :header-rows: 1
+.. literalinclude:: ../sphinx_needs/directives/needreport_template.rst
+   :language: jinja
+   :caption: sphinx_needs/directives/needreport_template.rst
 
-        * - TITLE
-          - DIRECTIVE
-          - PREFIX
-          - STYLE
-        {% for type in types %}
-        * - {{ type.title }}
-          - {{ type.directive }}
-          - `{{ type.prefix }}`
-          - {{ type.style }}
-        {% endfor %}
-   {% endif %}
-   {# Output for needs_types #}
+.. note::
 
-   {# Output for needs_links #}
-   {% if links|length != 0 %}
-   .. dropdown:: Need Links
-      :class: needs_report_table
+   ``dropdown`` is provided neither by Sphinx nor by Sphinx-Needs. It comes from an
+   extension that supplies one, for example
+   `sphinx-design <https://sphinx-design.readthedocs.io>`__. If no loaded extension
+   provides it, the report is rendered with ``admonition`` instead and a
+   ``needs.needreport`` warning says so. To choose the directive yourself — and to
+   silence that warning — name one through :ref:`needs_render_context`:
 
-      .. list-table::
-        :widths: 10 30 30 5 20
-        :header-rows: 1
+   .. code-block:: python
 
-        * - OPTION
-          - INCOMING
-          - OUTGOING
-          - COPY
-          - ALLOW DEAD LINKS
-        {% for link in links %}
-        * - {{ link.option | capitalize }}
-          - {{ link.incoming | capitalize }}
-          - {{ link.outgoing | capitalize }}
-          - {{ link.get('copy', None) | capitalize }}
-          - {{ link.get('allow_dead_links', False) | capitalize }}
-        {% endfor %}
-   {% endif %}
-   {# Output for needs_links #}
+      needs_render_context = {
+          "report_directive": "admonition",
+      }
 
-   {# Output for needs_fields #}
-   {% if fields|length != 0 %}
-   .. dropdown:: Need Fields
-      :class: needs_report_table
+   A value set that way is always used exactly as given, ``"dropdown"`` included: an
+   explicit choice is never substituted, so a project that asks for ``dropdown``
+   without a provider keeps failing as it did before.
 
-      {% for field in fields %}
-      * {{ json_exclude_fields }}
-      {% endfor %}
-   {% endif %}
-   {# Output for needs_fields #}
+   The substitution is decided on the **rendered** report, and is made only when it
+   changes it. A template of your own that never renders a ``dropdown`` — because it
+   writes its own directive, or shadows ``report_directive`` with a ``{% set %}`` — is
+   left alone and warns about nothing. A template with ``.. dropdown::`` hardcoded in it
+   is also left alone: re-rendering cannot reach a name the template does not read from
+   the context, so nothing would be fixed, and that report keeps the errors it gets
+   today. Should the substituted render fail where the default one succeeded, the
+   default is kept and nothing is reported — the fallback can leave a report as it was,
+   never lose it.
 
-   {# Output for needs metrics #}
-   {% if usage|length != 0 %}
-   .. dropdown:: Need Metrics
+   The decision is a textual scan of the rendered report, so it has no notion of
+   reStructuredText block context: a report that merely *shows* ``.. dropdown::`` as
+   example markup — inside a literal block, say — while producing it through
+   ``report_directive`` is treated as though it used it, and the example shown will
+   name ``admonition`` instead.
 
-      .. list-table::
-         :widths: 40 40
-         :header-rows: 1
+.. _`needs_report_template_context`:
 
-         * - NEEDS TYPES
-           - NEEDS PER TYPE
-         {% for k, v in usage["needs_types"].items() %}
-         * - {{ k | capitalize }}
-           - {{ v }}
-         {% endfor %}
-         * - **Total Needs Amount**
-           - {{ usage.get("needs_amount") }}
-   {% endif %}
-   {# Output for needs metrics #}
+Template context
+++++++++++++++++
 
-The plugin provides the following variables which you can use in your custom Jinja template:
+Templates are rendered with `MiniJinja <https://github.com/mitsuhiko/minijinja>`__, which
+implements a large subset of `Jinja <https://jinja.palletsprojects.com/>`__ but is not
+identical to it, so a template written strictly against the Jinja documentation may still
+fail here.
 
-* types - list of :ref:`need types <needs_types>`
-* links - list of :ref:`needs_links`
-* fields - list of :ref:`needs_fields`
-* usage - a dictionary object containing information about the following:
-    + needs_amount -> total amount of need objects in the project
-    + needs_types -> number of need objects per needs type
+The following five names are passed to every template, and are all **reserved**:
+:ref:`needs_render_context` is merged over them, so an entry of the same name replaces the
+value described below. That is the intended way to set ``report_directive``; doing it to
+any of the other four is reported as a ``needs.needreport`` warning.
+
+``types``
+   The :ref:`needs_types` configuration, as a list of dictionaries, plus any types
+   registered by a loaded service or extension.
+
+``links``
+   The :ref:`needs_links` configuration, as a list of dictionaries carrying the keys
+   ``option``, ``incoming``, ``outgoing``, ``copy`` and ``allow_dead_links``.
+
+``options``
+   The names of the configured :ref:`needs_fields`, as a list of strings, plus any
+   fields registered by a loaded service or extension.
+
+``report_directive``
+   The name of the directive each section of the packaged template is wrapped in.
+   ``dropdown``, unless :ref:`needs_render_context` names another one, or nothing
+   provides ``dropdown`` and substituting ``admonition`` changes what the report
+   renders — see the note above.
+
+``usage``
+   A dictionary with the keys ``needs_amount`` and ``needs_types``, the latter holding one
+   entry per directive name in :ref:`needs_types`.
+
+   .. warning::
+
+      Only the **keys** of ``usage["needs_types"]`` carry information. Every number in
+      ``usage`` — ``needs_amount`` included — is permanently ``0``, and is kept only for
+      backwards compatibility: the directive runs while the documents are still being
+      read, so no correct count exists yet at that point. A template that prints one of
+      these values reports ``0`` however many needs the project has.
+
+      Real counts come from the :ref:`need_count` role, which is evaluated once every
+      document has been read. That is why the packaged template above reads ``usage`` for
+      its type *names* only, and emits one role per name.
+
+      Such counts cover the whole project: needs from every document, needs pulled in by
+      :ref:`needs_external_needs`, and :ref:`need parts <need_part>`, which each count as
+      a need of their parent's type.
 
 needs_diagram_template
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -2465,6 +2509,14 @@ The value can be any data type (string, integer, list, dict, etc.)
 
    The value can also be a custom defined function,
    however, this will deactivate the caching and incremental build feature of Sphinx.
+
+.. note::
+
+   :ref:`needreport` reserves the five names ``types``, ``links``, ``options``, ``usage``
+   and ``report_directive`` in its own templates, and ``needs_render_context`` is merged
+   **over** them. ``report_directive`` is meant to be set this way; the other four are
+   reported as a ``needs.needreport`` warning. See
+   :ref:`needs_report_template_context`.
 
 The data passed via needs_render_context will be available as variable(s) when rendering Jinja templates or strings.
 You can use the data passed via needs_render_context as shown below:

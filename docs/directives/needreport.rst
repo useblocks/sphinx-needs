@@ -13,17 +13,26 @@ needreport
 
 and it also adds some needs metrics using the `usage`_ option.
 
-To use the ``needreport`` directive, you need to set the :ref:`needs_report_template`
-configuration variable. If you do not set the :ref:`needs_report_template`
-configuration variable, the plugin uses the default needs report template.
+``needreport`` renders a template, and out of the box that is the default template
+packaged with Sphinx-Needs — no configuration is required.
+To render a template of your own instead, either set the :ref:`needs_report_template`
+configuration variable, which applies to every ``needreport`` in the project, or give a
+single directive its own `template`_ option.
 
-The :ref:`needs_report_template` value is a path to the
-`jinja2 <https://jinja.palletsprojects.com/en/2.11.x/templates/>`_ template file.
-You can use the template file to customise the content generated  by ``needreport``.
+Templates are rendered with `MiniJinja <https://github.com/mitsuhiko/minijinja>`__, a
+`Jinja <https://jinja.palletsprojects.com/>`__-compatible engine. The packaged default
+template, how a template path is resolved, and the variables a template can read are all
+documented under :ref:`needs_report_template`.
 
 .. note::
 
-   The default needs report template is set to use ``dropdown`` directives for containing each configuration type, which requires the ``dropdown`` directive to be available in your Sphinx environment. If you do not have the ``dropdown`` directive available, you can use the following configuration to set the default needs report template to use ``admonition`` directives instead:
+   Each section of the default template is wrapped in a ``dropdown`` directive, which
+   neither Sphinx nor Sphinx-Needs provides — it needs an extension that supplies one,
+   for example `sphinx-design <https://sphinx-design.readthedocs.io>`__.
+   If none is loaded, the report is rendered with ``admonition`` instead and warns.
+   A template of your own is only affected if that substitution actually changes what
+   it renders; see :ref:`needs_report_template`.
+   To pick the directive yourself, and so render without a warning:
 
    .. code-block:: python
 
@@ -90,3 +99,26 @@ The flag does not require any values.
 
    .. needreport::
       :usage:
+
+.. _needreport_template_option:
+
+template
+~~~~~~~~
+
+Path to the template this directive should render, overriding
+:ref:`needs_report_template` for this one directive.
+Unlike the flags above, it takes a value.
+
+The path is resolved relative to the document the directive is written in, and a leading
+``/`` makes it relative to the source directory — the path convention Sphinx uses
+throughout, and *not* the one :ref:`needs_report_template` uses, which is always relative
+to the source directory whether or not it starts with a ``/``.
+
+.. code-block:: rst
+
+   .. needreport::
+      :types:
+      :template: report_templates/types_only.need
+
+If the file does not exist, a ``needs.needreport`` warning is emitted and the directive
+renders nothing.

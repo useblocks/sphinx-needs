@@ -276,6 +276,62 @@ Bug fixes
   had already been rendered into ``_images/``, where it then stayed, referenced by
   nothing.
 
+- 🐛 :ref:`needreport` reports a template it cannot render, instead of ending the build
+
+  A template with a Jinja syntax error — or one that merely applies a filter to a variable
+  that does not exist, which is what the stale example in these docs did — raised out of
+  the directive and took the whole build down with it. That is the failure mode
+  :pr:`1105` set out to remove, and the missing-file case has warned rather than aborted
+  ever since; the render case now does too, as a ``needs.needreport`` warning naming the
+  template and repeating the engine's own explanation. The directive then contributes
+  nothing to the page, exactly as it already did for a template that is missing.
+
+  Two smaller diagnostics come with it. A :ref:`needs_render_context` entry that takes
+  over one of the reserved context names — ``types``, ``links``, ``options`` or ``usage``
+  — is now reported; which value wins is deliberately unchanged, since these have been
+  silently overridable for years, and only ``report_directive`` is meant to be set this
+  way. The collision is a property of the configuration rather than of any one directive,
+  so it is reported once per build. And when :ref:`needs_report_template` holds a path
+  that is absolute in the POSIX sense, the "could not load" warning explains why it names
+  a path nobody wrote down: the value is always resolved relative to the source
+  directory, so such a path is appended to it rather than read from where it points.
+  A Windows drive-letter path is not relative, so it is used as it stands.
+
+  One consequence is worth calling out for ``-W`` builds: a project that overrides one of
+  those four reserved names renders exactly as it did before, but now emits a warning
+  where it emitted none, so a green build turns red until the entry is removed or the
+  warning is suppressed.
+
+- 🐛 :ref:`needreport` renders without an extension providing ``dropdown``
+  (:issue:`899`)
+
+  Each section of the default template is wrapped in a ``dropdown`` directive, which
+  neither Sphinx nor Sphinx-Needs provides. A project without an extension supplying one
+  got a docutils error per section — at line numbers belonging to the template rather
+  than to the document, so pointing at innocent lines — and, because Sphinx strips
+  ``system_message`` nodes, the report then vanished from the page altogether: an empty
+  section, four errors on the console, and a build that still exited ``0`` unless ``-W``
+  was in use.
+
+  When nothing provides ``dropdown``, the report is now rendered with ``admonition``
+  instead, and one ``needs.needreport`` warning names both remedies. Projects that do
+  load such an extension are unaffected: the directive is looked up in the registry, so
+  a provider is used exactly as before and nothing is warned about. Nor is an explicit
+  choice ever second-guessed — ``needs_render_context = {"report_directive": "dropdown"}``
+  is honoured as written, provider or not.
+
+  The substitution is decided on the rendered report and adopted only when it changes it,
+  so a project with a template of its own gains neither the substitution nor the warning
+  unless it was actually rendering a ``dropdown``. A template that never produces one —
+  because it writes its own directive, or shadows ``report_directive`` with a
+  ``{% set %}`` — is left exactly as it is, and so is one with ``.. dropdown::``
+  hardcoded in it, which re-rendering cannot reach. If the substituted render fails where
+  the default one succeeded, the default is kept and nothing is reported.
+
+  The decision is a textual scan of the rendered report, so a template that merely shows
+  ``.. dropdown::`` as example markup while producing it through ``report_directive`` is
+  treated as though it used it.
+
 Documentation
 .............
 
@@ -298,6 +354,26 @@ Documentation
   the pattern is searched rather than anchored, that :ref:`needs_render_context` shadows
   same-named capture groups, and that the templates are rendered with MiniJinja rather than
   Jinja2.
+
+- 📚 The :ref:`needreport` and :ref:`needs_report_template` pages are corrected against
+  what the directive actually does.
+
+  The "default template" the configuration page printed had drifted so far from the
+  packaged one that copying it — the customisation route both pages recommend — ends the
+  build, because it reads two context variables, ``fields`` and ``json_exclude_fields``,
+  that have never existed. The page now includes the packaged template from the source
+  tree, so the two cannot diverge again, and the context is described as it is: the key is
+  ``options``, ``report_directive`` is listed, and every number in ``usage`` is called out
+  as permanently ``0`` — real counts come from the :ref:`need_count` role that the
+  template emits, and those count need parts and :ref:`needs_external_needs` alike.
+
+  The ``:template:`` option, until now documented nowhere, gains a section of its own and
+  the three-level precedence it takes part in is written down. ``needs_report_template``
+  is described as resolved relative to the source directory rather than "must be an
+  absolute path"; the ``dropdown`` prerequisite and the ``report_directive`` escape hatch
+  now also appear on the configuration page; and an ``.rst`` template kept inside the
+  source directory is noted as being built as a document of its own, with the
+  ``exclude_patterns`` entry that avoids it.
 
 - 📚 ``docs/ubproject.toml``, the `ubCode`_ configuration of this documentation, is brought
   up to date with current ubCode releases
