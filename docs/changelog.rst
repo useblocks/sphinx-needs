@@ -333,6 +333,7 @@ Bug fixes
   treated as though it used it.
 
 - 🐛 :ref:`needgantt` draws each task once, in its type color **(changed output)**
+  (:pr:`1778`)
 
   Tasks are declared as ``[<title>] as [<id>]``, which binds every later ``[...]``
   reference to the *id*, but the completion and color lines addressed tasks by their
@@ -346,7 +347,7 @@ Bug fixes
   colored and shaded as configured.
 
 - 🐛 :ref:`needgantt_start_date` names the month it was given, and a December date no
-  longer ends the build **(changed output)**
+  longer ends the build **(changed output)** (:pr:`1778`)
 
   The date was reformatted through a month name table indexed with the 1-based month
   number, so the chart started one month later than asked for — ``2020-03-25`` became
@@ -360,7 +361,7 @@ Documentation
 .............
 
 - 📚 :ref:`needgantt` no longer claims that task elements are linked to their related
-  need when PlantUML's output format is ``svg``.
+  need when PlantUML's output format is ``svg`` (:pr:`1778`)
 
   No such link has ever been generated; the only link a chart produces is its caption,
   which points at the generated image file.
