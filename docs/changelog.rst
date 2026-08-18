@@ -292,9 +292,10 @@ Bug fixes
   silently overridable for years, and only ``report_directive`` is meant to be set this
   way. The collision is a property of the configuration rather than of any one directive,
   so it is reported once per build. And when :ref:`needs_report_template` holds a path
-  that is absolute on the file system, the "could not load" warning explains why it names
+  that is absolute in the POSIX sense, the "could not load" warning explains why it names
   a path nobody wrote down: the value is always resolved relative to the source
-  directory, so an absolute one is appended to it rather than read from where it points.
+  directory, so such a path is appended to it rather than read from where it points.
+  A Windows drive-letter path is not relative, so it is used as it stands.
 
   One consequence is worth calling out for ``-W`` builds: a project that overrides one of
   those four reserved names renders exactly as it did before, but now emits a warning

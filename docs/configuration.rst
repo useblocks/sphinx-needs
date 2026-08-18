@@ -904,10 +904,14 @@ Sphinx reads the documents from, which is also the directory holding ``conf.py``
 ``"/needs_templates/report_template.need"`` and ``"needs_templates/report_template.need"``
 name the same file.
 
-A path that is absolute on the file system is therefore **not** read from where it points.
-It is stripped and joined onto the source directory like any other value, which normally
-ends in a ``Could not load needs report template file ...`` warning naming a path that
-does not exist.
+A POSIX-style absolute path is therefore **not** read from where it points. It is stripped
+and joined onto the source directory like any other value, which normally ends in a
+``Could not load needs report template file ...`` warning naming a path that does not
+exist.
+
+On Windows a drive-letter path such as ``D:\templates\report.need`` is an exception: it
+is not a relative path, so joining it onto the source directory replaces it, and the file
+is read from where it points. The rebase above applies to POSIX-style absolute values.
 
 The first of the following that is set provides the template:
 

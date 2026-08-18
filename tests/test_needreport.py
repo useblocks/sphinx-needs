@@ -3,7 +3,7 @@
 import importlib.util
 import os
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import pytest
 from sphinx.util.console import strip_colors
@@ -229,6 +229,8 @@ import pathlib
 
 extensions = ["sphinx_needs"]
 needs_report_template = str(pathlib.Path(__file__).parent / "report_template.need")
+# pin the wrapper, so the template loader is the only thing that can warn here
+needs_render_context = {"report_directive": "admonition"}
 """
 
 TYPES_TEMPLATE = """\
@@ -256,18 +258,63 @@ TYPES_TEMPLATE = """\
     indirect=True,
 )
 def test_absolute_report_template_explains_the_rebase(test_app):
-    """The nonsense path in the warning is explained rather than left bare."""
+    """What an absolute ``needs_report_template`` does, on each platform.
+
+    The value is joined onto the source directory, and ``pathlib`` gives that
+    join two different meanings.  A POSIX-style absolute value has its leading
+    ``/`` stripped first, so it is appended and the file is looked for at a path
+    nobody wrote down.  A drive-letter absolute value is not relative at all, so
+    the join *replaces* the source directory with it and the file is read from
+    where it points -- ``lstrip("/")`` never touches a ``D:\\...`` value either.
+
+    So the rebase this warning explains is POSIX-only, and the two halves are
+    asserted rather than one of them skipped.
+    """
     app = test_app
     app.build()
 
     warnings = build_warnings(app)
-    assert len(warnings) == 1, warnings
-    assert "Could not load needs report template file" in warnings[0]
-    assert (
-        "needs_report_template is resolved relative to the source directory"
-        in warnings[0]
-    )
-    assert warnings[0].endswith("[needs.needreport]")
+
+    if os.name == "nt":
+        # the configured path is used as it stands: the template is found, and
+        # there is nothing to warn about
+        assert warnings == []
+        text = visible_text(Path(app.outdir, "index.html").read_text(encoding="utf8"))
+        assert "Need Types" in text
+        assert "Requirement" in text
+    else:
+        assert len(warnings) == 1, warnings
+        assert "Could not load needs report template file" in warnings[0]
+        assert (
+            "needs_report_template is resolved relative to the source directory"
+            in warnings[0]
+        )
+        assert warnings[0].endswith("[needs.needreport]")
+
+
+@pytest.mark.parametrize(
+    ("srcdir", "configured", "expected"),
+    [
+        # POSIX: the leading "/" is stripped, so the value is appended and the
+        # file is looked for somewhere nobody wrote down
+        ("/srcdir", "/templates/t.need", "/srcdir/templates/t.need"),
+        ("/srcdir", "templates/t.need", "/srcdir/templates/t.need"),
+        # Windows: a drive-letter value is not relative, so the join replaces the
+        # source directory with it -- and lstrip("/") never touches it
+        (r"D:\srcdir", r"D:\elsewhere\t.need", r"D:\elsewhere\t.need"),
+        (r"D:\srcdir", r"templates\t.need", r"D:\srcdir\templates\t.need"),
+    ],
+)
+def test_report_template_join_semantics(srcdir, configured, expected):
+    """Pin the ``pathlib`` behaviour the resolution of the config key rests on.
+
+    ``needreport.py`` resolves it as ``Path(srcdir) / value.lstrip("/")``, and
+    what that means differs by platform: appended on POSIX, replaced on Windows.
+    The test above asserts the consequence for a whole build on whichever
+    platform it runs; this asserts the cause on both, everywhere.
+    """
+    pure = PureWindowsPath if "\\" in srcdir else PurePosixPath
+    assert pure(srcdir) / configured.lstrip("/") == pure(expected)
 
 
 # -- the dropdown prerequisite (issue #899) ---------------------------------
