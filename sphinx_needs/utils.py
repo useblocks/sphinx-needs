@@ -38,22 +38,6 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-MONTH_NAMES = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-]
-
-
 class DummyOptionSpec(dict[str, Callable[[str], str]]):
     """An option_spec allows any options."""
 

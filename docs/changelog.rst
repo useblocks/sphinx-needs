@@ -332,8 +332,39 @@ Bug fixes
   ``.. dropdown::`` as example markup while producing it through ``report_directive`` is
   treated as though it used it.
 
+- 🐛 :ref:`needgantt` draws each task once, in its type color **(changed output)**
+  (:pr:`1778`)
+
+  Tasks are declared as ``[<title>] as [<id>]``, which binds every later ``[...]``
+  reference to the *id*, but the completion and color lines addressed tasks by their
+  *title*. PlantUML does not reject an unbound reference — it silently declares a second,
+  zero length task of that name — so every need carrying a type color or a completion
+  value was drawn twice, which, since :ref:`needs_types` entries carry a color by default,
+  is every need in almost every chart. The color and the completion landed on the phantom
+  bar, too, leaving the real one in PlantUML's default grey: a three need chart rendered
+  as six bars, three of them grey and full length, three of them zero length and correctly
+  colored. Both lines now address the task by its id, so a chart of N needs draws N bars,
+  colored and shaded as configured.
+
+- 🐛 :ref:`needgantt_start_date` names the month it was given, and a December date no
+  longer ends the build **(changed output)** (:pr:`1778`)
+
+  The date was reformatted through a month name table indexed with the 1-based month
+  number, so the chart started one month later than asked for — ``2020-03-25`` became
+  ``the 25th of April 2020`` — and any December date raised
+  ``IndexError: list index out of range``, aborting the build. The generated statement is
+  now the ISO date, which PlantUML also accepts (``Project starts 2020-03-25``) and which
+  renders the identical chart, and which cannot mis-suffix a date either: ``2020-01-01``
+  used to be written ``the 01th of February 2020``.
+
 Documentation
 .............
+
+- 📚 :ref:`needgantt` no longer claims that task elements are linked to their related
+  need when PlantUML's output format is ``svg`` (:pr:`1778`)
+
+  No such link has ever been generated; the only link a chart produces is its caption,
+  which points at the generated image file.
 
 - 📚 The :ref:`needpie` and :ref:`needbar` pages are corrected against what the two
   directives actually do.
