@@ -25,7 +25,7 @@ from sphinx_needs.directives.utils import (
 )
 from sphinx_needs.filter_common import FilterBase, filter_single_need, process_filters
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.utils import MONTH_NAMES, add_doc, remove_node_from_tree
+from sphinx_needs.utils import add_doc, remove_node_from_tree
 
 logger = get_logger(__name__)
 
@@ -221,7 +221,6 @@ def process_needgantt(
 
         # Project start date handling
         start_date_string = current_needgantt["start_date"]
-        start_date_plantuml = None
         if start_date_string:
             try:
                 start_date = datetime.strptime(start_date_string, "%Y-%m-%d")
@@ -234,10 +233,10 @@ def process_needgantt(
                     )
                 )
 
-            month = MONTH_NAMES[int(start_date.strftime("%m"))]
-            start_date_plantuml = start_date.strftime(f"%dth of {month} %Y")
-        if start_date_plantuml:
-            puml_node["uml"] += f"Project starts the {start_date_plantuml}\n"
+            # PlantUML also understands the ISO date, so it is passed through as given
+            puml_node["uml"] += "Project starts {}\n".format(
+                start_date.strftime("%Y-%m-%d")
+            )
 
         # Element handling
         puml_node["uml"] += "\n' Elements definition \n\n"
@@ -287,14 +286,17 @@ def process_needgantt(
                     need["title"], need["id"], duration
                 )
 
+            # tasks are declared as "[<title>] as [<id>]", which binds every later
+            # "[...]" reference to the id; a reference to the title would not raise,
+            # it would silently declare a second, zero length task of that name
             if complete:
                 el_completion_string += "[{}] is {}% completed\n".format(
-                    need["title"], complete
+                    need["id"], complete
                 )
 
             if need["type_color"]:
                 el_color_string += "[{}] is colored in {}\n".format(
-                    need["title"], need["type_color"]
+                    need["id"], need["type_color"]
                 )
 
             puml_node["uml"] += gantt_element
