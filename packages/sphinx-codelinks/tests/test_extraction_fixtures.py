@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 
 import pytest
+from tree_sitter import Node as TreeSitterNode
 import yaml
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
@@ -65,6 +66,22 @@ def _list_field_names(style: OneLineCommentStyle) -> set[str]:
     return {f["name"] for f in style.needs_fields if f.get("type") == "list[str]"}
 
 
+def _normalize_scope(node: TreeSitterNode | None) -> dict[str, str] | None:
+    """Normalize a ``tagged_scope`` node to a stable, legible snapshot value.
+
+    Production serialises the associated node's *entire* text
+    (``analyse/models.py:Metadata.to_dict``), which would put whole function
+    bodies into expected JSON — unreadable and brittle. The node's type plus
+    the first (stripped) line of its text proves the same declaration was
+    selected while staying legible. ``None`` when there is no associated scope.
+    """
+    if node is None or not node.text:
+        return None
+    text = node.text.decode("utf-8")
+    first_line = text.splitlines()[0] if text else ""
+    return {"scope_type": node.type, "scope_first_line": first_line.strip()}
+
+
 def _normalize(analyse: SourceAnalyse, style: OneLineCommentStyle) -> dict:
     core = {"id", "title", "type"}
     list_fields = _list_field_names(style)
@@ -84,6 +101,7 @@ def _normalize(analyse: SourceAnalyse, style: OneLineCommentStyle) -> dict:
                 "links": links,
                 "metadata": metadata,
                 "line": n.source_map["start"]["row"] + 1,
+                "scope": _normalize_scope(n.tagged_scope),
             }
         )
     needs.sort(key=lambda d: (d["line"], d["id"]))
@@ -91,7 +109,11 @@ def _normalize(analyse: SourceAnalyse, style: OneLineCommentStyle) -> dict:
     need_refs = []
     for ref in analyse.need_id_refs:
         line = ref.source_map["start"]["row"] + 1
-        need_refs.extend({"need_id": need_id, "line": line} for need_id in ref.need_ids)
+        scope = _normalize_scope(ref.tagged_scope)
+        need_refs.extend(
+            {"need_id": need_id, "line": line, "scope": scope}
+            for need_id in ref.need_ids
+        )
     need_refs.sort(key=lambda d: (d["line"], d["need_id"]))
 
     marked_rst = [

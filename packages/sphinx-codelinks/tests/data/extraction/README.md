@@ -55,16 +55,23 @@ shape, then compared to a committed snapshot under
 
 ```json
 {
-  "needs":      [{"id": "", "title": "", "type": "", "links": {"field": ["..."]}, "line": 1}],
-  "need_refs":  [{"need_id": "", "line": 1}],
+  "needs":      [{"id": "", "title": "", "type": "", "links": {"field": ["..."]}, "metadata": {}, "line": 1, "scope": {"scope_type": "function_definition", "scope_first_line": "void f()"}}],
+  "need_refs":  [{"need_id": "", "line": 1, "scope": null}],
   "marked_rst": [{"content": "", "start_line": 1, "end_line": 1}],
   "warnings":   [{"kind": "too_many_fields", "line": 1}]
 }
 ```
 
 Lines are 1-indexed. `needs`/`warnings` are sorted by line; `need_refs` by
-`(line, need_id)`. Volatile data (file paths, columns, URLs, tagged scope) is
-omitted so snapshots are stable.
+`(line, need_id)`. Volatile data (file paths, columns, URLs) is omitted so
+snapshots are stable.
+
+`scope` captures the marker's *associated declaration* (`tagged_scope`,
+computed by `find_associated_scope`): the node's type and the first (stripped)
+line of its text, or `null` when there is no associated scope. Production
+serialises the node's entire text; the first line is enough to prove the same
+declaration was selected without putting whole function bodies into expected
+JSON.
 
 ## Running / updating
 
