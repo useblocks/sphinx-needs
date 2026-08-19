@@ -44,7 +44,6 @@ class NeedtableDirective(FilterBase):
         "colwidths": directives.unchanged_required,
         "style": directives.unchanged_required,
         "style_row": directives.unchanged_required,
-        "style_col": directives.unchanged_required,
         "sort": directives.unchanged_required,
         "class": directives.unchanged_required,
         "max_items": directives.nonnegative_int,
@@ -90,7 +89,6 @@ class NeedtableDirective(FilterBase):
 
         style = self.options.get("style", "").upper()
         style_row = self.options.get("style_row", "")
-        style_col = self.options.get("style_col", "")
 
         sort = self.options.get("sort", "id_complete")
 
@@ -108,7 +106,6 @@ class NeedtableDirective(FilterBase):
             "colwidths": colwidths_list,
             "style": style,
             "style_row": style_row,
-            "style_col": style_col,
             "sort": sort,
             # As the following options are flags, the content is None, if set.
             # If not set, the options.get() method returns False
