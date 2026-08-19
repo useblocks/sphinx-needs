@@ -1,0 +1,23 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_CS_ABOVE",
+      "title": "Above Method",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_CS_ABOVE"
+        ]
+      },
+      "metadata": {},
+      "line": 3,
+      "scope": {
+        "scope_type": "method_declaration",
+        "scope_first_line": "public void Method() {}"
+      }
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

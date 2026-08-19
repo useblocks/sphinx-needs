@@ -1,0 +1,23 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_BASH_ABOVE",
+      "title": "Above Function",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_BASH_ABOVE"
+        ]
+      },
+      "metadata": {},
+      "line": 1,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "greet() { echo hi; }"
+      }
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

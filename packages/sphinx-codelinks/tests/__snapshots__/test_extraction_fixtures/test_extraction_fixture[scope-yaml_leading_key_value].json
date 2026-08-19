@@ -1,0 +1,23 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_YAML_PAIR",
+      "title": "Leading Pair Marker",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_YAML_PAIR"
+        ]
+      },
+      "metadata": {},
+      "line": 1,
+      "scope": {
+        "scope_type": "block_mapping_pair",
+        "scope_first_line": "key: value"
+      }
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

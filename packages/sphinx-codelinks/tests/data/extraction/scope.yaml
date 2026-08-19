@@ -1,0 +1,235 @@
+# Marker scope association (``scope`` in the snapshot).
+#
+# ``tagged_scope`` -- the declaration a marker is associated with -- is computed
+# by ``find_associated_scope`` per comment_type. Each case here pins one
+# association outcome: a marker immediately above a function/method binds to
+# that function, a marker at the end of a function body falls back to the
+# enclosing function, and a marker with nothing scope-like around it resolves
+# to no scope at all (``null``). Python additionally exercises the docstring
+# path (``find_enclosing_scope`` rather than ``find_next_scope``), and YAML
+# exercises its bespoke structure-association path (inline same-row
+# association, and leading comments bound to a following structure).
+
+cpp_above_function:
+  # Marker directly above a function definition -> binds to that function.
+  lang: cpp
+  config: default
+  source: |
+    // @Above Function, IMPL_CPP_ABOVE, impl, [REQ_CPP_ABOVE]
+    void dummy_func1() {}
+
+cpp_inside_function_body:
+  # Marker is the last statement in a function body; nothing follows it, so
+  # find_next_scope finds nothing and falls back to the enclosing function.
+  lang: cpp
+  config: default
+  source: |
+    void outer() {
+        int x = 1;
+        // @Inside Function, IMPL_CPP_INSIDE, impl, [REQ_CPP_INSIDE]
+    }
+
+cpp_no_scope:
+  # Marker followed by a plain declaration (not a function/class) at file
+  # scope, with nothing else around it -> no associated scope.
+  lang: cpp
+  config: default
+  source: |
+    // @No Scope, IMPL_CPP_NONE, impl, [REQ_CPP_NONE]
+    int global_var = 1;
+
+python_above_function:
+  # Marker directly above a function definition -> binds to that function.
+  lang: python
+  config: default
+  source: |
+    # @Above Function, IMPL_PY_ABOVE, impl, [REQ_PY_ABOVE]
+    def dummy_func1():
+        pass
+
+python_inside_function_body:
+  # Marker is the last line in a function body -> falls back to the
+  # enclosing function.
+  lang: python
+  config: default
+  source: |
+    def outer():
+        x = 1
+        # @Inside Function, IMPL_PY_INSIDE, impl, [REQ_PY_INSIDE]
+
+python_no_scope:
+  # Marker followed by a plain statement at module scope, with nothing else
+  # around it -> no associated scope.
+  lang: python
+  config: default
+  source: |
+    # @No Scope, IMPL_PY_NONE, impl, [REQ_PY_NONE]
+    x = 1
+
+python_docstring:
+  # A marker inside a function's docstring. Docstrings take the
+  # find_enclosing_scope path (rather than find_next_scope), so this binds to
+  # the enclosing function even though nothing follows the marker within the
+  # docstring itself.
+  lang: python
+  config: default
+  source: |
+    def dummy_func1():
+        """
+        @Docstring Marker, IMPL_PY_DOC, impl, [REQ_PY_DOC]
+        """
+        pass
+
+csharp_above_method:
+  # Marker directly above a method declaration -> binds to that method.
+  lang: csharp
+  config: default
+  source: |
+    public class DummyClass
+    {
+        // @Above Method, IMPL_CS_ABOVE, impl, [REQ_CS_ABOVE]
+        public void Method() {}
+    }
+
+csharp_inside_method_body:
+  # Marker is the last statement in a method body -> falls back to the
+  # enclosing method.
+  lang: csharp
+  config: default
+  source: |
+    public class DummyClass
+    {
+        public void Method()
+        {
+            int x = 1;
+            // @Inside Method, IMPL_CS_INSIDE, impl, [REQ_CS_INSIDE]
+        }
+    }
+
+csharp_no_scope:
+  # Marker at file scope, outside any class, followed by a plain using
+  # directive -> no associated scope.
+  lang: csharp
+  config: default
+  source: |
+    // @No Scope, IMPL_CS_NONE, impl, [REQ_CS_NONE]
+    using System;
+
+rust_above_function:
+  # Marker directly above a function item -> binds to that function.
+  lang: rust
+  config: default
+  source: |
+    // @Above Function, IMPL_RUST_ABOVE, impl, [REQ_RUST_ABOVE]
+    fn dummy_func1() {}
+
+rust_inside_function_body:
+  # Marker is the last statement in a function body -> falls back to the
+  # enclosing function.
+  lang: rust
+  config: default
+  source: |
+    fn outer() {
+        let x = 1;
+        // @Inside Function, IMPL_RUST_INSIDE, impl, [REQ_RUST_INSIDE]
+    }
+
+rust_no_scope:
+  # Marker followed by a plain static item at file scope, with nothing else
+  # around it -> no associated scope.
+  lang: rust
+  config: default
+  source: |
+    // @No Scope, IMPL_RUST_NONE, impl, [REQ_RUST_NONE]
+    static X: i32 = 1;
+
+go_above_function:
+  # Marker directly above a function declaration -> binds to that function.
+  lang: go
+  config: default
+  source: |
+    // @Above Function, IMPL_GO_ABOVE, impl, [REQ_GO_ABOVE]
+    func dummyFunc1() {}
+
+go_inside_function_body:
+  # Marker is the last statement in a function body -> falls back to the
+  # enclosing function.
+  lang: go
+  config: default
+  source: |
+    func outer() {
+        x := 1
+        // @Inside Function, IMPL_GO_INSIDE, impl, [REQ_GO_INSIDE]
+    }
+
+go_no_scope:
+  # Marker followed by a plain var declaration at file scope, with nothing
+  # else around it -> no associated scope.
+  lang: go
+  config: default
+  source: |
+    // @No Scope, IMPL_GO_NONE, impl, [REQ_GO_NONE]
+    var x = 1
+
+bash_above_function:
+  # Marker directly above a function definition -> binds to that function.
+  lang: bash
+  config: default
+  source: |
+    # @Above Function, IMPL_BASH_ABOVE, impl, [REQ_BASH_ABOVE]
+    greet() { echo hi; }
+
+bash_inside_function_body:
+  # Marker is the last statement in a function body -> falls back to the
+  # enclosing function.
+  lang: bash
+  config: default
+  source: |
+    greet() {
+        echo hi
+        # @Inside Function, IMPL_BASH_INSIDE, impl, [REQ_BASH_INSIDE]
+    }
+
+bash_no_scope:
+  # Marker followed by a plain command, with nothing else around it -> no
+  # associated scope.
+  lang: bash
+  config: default
+  source: |
+    # @No Scope, IMPL_BASH_NONE, impl, [REQ_BASH_NONE]
+    echo hi
+
+yaml_inline_same_row:
+  # An inline comment sharing a row with a key-value pair binds to that pair
+  # (find_prev_sibling_on_same_row), not to whatever follows.
+  lang: yaml
+  config: default
+  source: |
+    key: value  # @Inline Marker, IMPL_YAML_INLINE, impl, [REQ_YAML_INLINE]
+    other: 1
+
+yaml_leading_key_value:
+  # A leading comment with no same-row predecessor binds to the following
+  # key-value pair (find_yaml_next_structure).
+  lang: yaml
+  config: default
+  source: |
+    # @Leading Pair Marker, IMPL_YAML_PAIR, impl, [REQ_YAML_PAIR]
+    key: value
+
+yaml_leading_list_item:
+  # A leading comment binds to the following sequence item (a scalar target,
+  # as opposed to a key-value pair).
+  lang: yaml
+  config: default
+  source: |
+    # @Leading List Marker, IMPL_YAML_LIST, impl, [REQ_YAML_LIST]
+    - item1
+
+yaml_no_scope:
+  # A comment with nothing before it on the same row and nothing following
+  # it at all -> no associated structure.
+  lang: yaml
+  config: default
+  source: |
+    # @No Scope, IMPL_YAML_NONE, impl, [REQ_YAML_NONE]

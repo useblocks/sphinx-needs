@@ -1,0 +1,20 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_CPP_NONE",
+      "title": "No Scope",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_CPP_NONE"
+        ]
+      },
+      "metadata": {},
+      "line": 1,
+      "scope": null
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

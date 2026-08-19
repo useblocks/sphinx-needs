@@ -1,0 +1,23 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_PY_INSIDE",
+      "title": "Inside Function",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_PY_INSIDE"
+        ]
+      },
+      "metadata": {},
+      "line": 3,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "def outer():"
+      }
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

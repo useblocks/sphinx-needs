@@ -1,0 +1,20 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_YAML_NONE",
+      "title": "No Scope",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_YAML_NONE"
+        ]
+      },
+      "metadata": {},
+      "line": 1,
+      "scope": null
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

@@ -1,0 +1,23 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_YAML_LIST",
+      "title": "Leading List Marker",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_YAML_LIST"
+        ]
+      },
+      "metadata": {},
+      "line": 1,
+      "scope": {
+        "scope_type": "block_sequence_item",
+        "scope_first_line": "- item1"
+      }
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

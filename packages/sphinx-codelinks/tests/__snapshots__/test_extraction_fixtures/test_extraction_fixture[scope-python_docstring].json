@@ -1,0 +1,23 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_PY_DOC",
+      "title": "Docstring Marker",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_PY_DOC"
+        ]
+      },
+      "metadata": {},
+      "line": 3,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "def dummy_func1():"
+      }
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}
