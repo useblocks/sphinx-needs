@@ -10,7 +10,8 @@
         ]
       },
       "metadata": {},
-      "line": 5
+      "line": 5,
+      "scope": null
     },
     {
       "id": "IMPL_NOTB",
@@ -22,7 +23,8 @@
         ]
       },
       "metadata": {},
-      "line": 8
+      "line": 8,
+      "scope": null
     }
   ],
   "need_refs": [],

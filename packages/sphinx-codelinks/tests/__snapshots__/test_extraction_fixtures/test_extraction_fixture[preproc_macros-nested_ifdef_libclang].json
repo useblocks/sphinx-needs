@@ -10,7 +10,8 @@
         ]
       },
       "metadata": {},
-      "line": 1
+      "line": 1,
+      "scope": null
     },
     {
       "id": "IMPL_OUTER",
@@ -22,7 +23,8 @@
         ]
       },
       "metadata": {},
-      "line": 3
+      "line": 3,
+      "scope": null
     },
     {
       "id": "IMPL_INNER",
@@ -34,7 +36,8 @@
         ]
       },
       "metadata": {},
-      "line": 5
+      "line": 5,
+      "scope": null
     }
   ],
   "need_refs": [],

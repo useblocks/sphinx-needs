@@ -13,7 +13,11 @@
         "status": "open",
         "priority": "low"
       },
-      "line": 1
+      "line": 1,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "void f() {}"
+      }
     }
   ],
   "need_refs": [],

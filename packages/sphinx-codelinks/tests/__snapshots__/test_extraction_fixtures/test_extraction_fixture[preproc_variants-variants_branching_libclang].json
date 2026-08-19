@@ -10,7 +10,8 @@
         ]
       },
       "metadata": {},
-      "line": 1
+      "line": 1,
+      "scope": null
     },
     {
       "id": "IMPL_VAR_A",
@@ -22,7 +23,8 @@
         ]
       },
       "metadata": {},
-      "line": 5
+      "line": 5,
+      "scope": null
     },
     {
       "id": "IMPL_PROTO_3",
@@ -34,7 +36,8 @@
         ]
       },
       "metadata": {},
-      "line": 13
+      "line": 13,
+      "scope": null
     },
     {
       "id": "IMPL_LINUX_A",
@@ -46,7 +49,8 @@
         ]
       },
       "metadata": {},
-      "line": 18
+      "line": 18,
+      "scope": null
     }
   ],
   "need_refs": [],

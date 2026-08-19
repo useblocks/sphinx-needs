@@ -10,7 +10,11 @@
         ]
       },
       "metadata": {},
-      "line": 1
+      "line": 1,
+      "scope": {
+        "scope_type": "class_declaration",
+        "scope_first_line": "class C {}"
+      }
     }
   ],
   "need_refs": [],

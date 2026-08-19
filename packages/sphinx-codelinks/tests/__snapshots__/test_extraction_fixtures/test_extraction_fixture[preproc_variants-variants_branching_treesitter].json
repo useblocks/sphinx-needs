@@ -10,7 +10,11 @@
         ]
       },
       "metadata": {},
-      "line": 1
+      "line": 1,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "void always() {}"
+      }
     },
     {
       "id": "IMPL_VAR_A",
@@ -22,7 +26,11 @@
         ]
       },
       "metadata": {},
-      "line": 5
+      "line": 5,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "void variant_a() {}"
+      }
     },
     {
       "id": "IMPL_VAR_B",
@@ -34,7 +42,11 @@
         ]
       },
       "metadata": {},
-      "line": 8
+      "line": 8,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "void variant_b() {}"
+      }
     },
     {
       "id": "IMPL_PROTO_3",
@@ -46,7 +58,11 @@
         ]
       },
       "metadata": {},
-      "line": 13
+      "line": 13,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "void proto_v3() {}"
+      }
     },
     {
       "id": "IMPL_LINUX_A",
@@ -58,7 +74,11 @@
         ]
       },
       "metadata": {},
-      "line": 18
+      "line": 18,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "void linux_and_a() {}"
+      }
     }
   ],
   "need_refs": [],

@@ -10,7 +10,8 @@
         ]
       },
       "metadata": {},
-      "line": 1
+      "line": 1,
+      "scope": null
     },
     {
       "id": "IMPL_HALF",
@@ -22,7 +23,8 @@
         ]
       },
       "metadata": {},
-      "line": 4
+      "line": 4,
+      "scope": null
     },
     {
       "id": "IMPL_AFTER_HALF",
@@ -34,7 +36,8 @@
         ]
       },
       "metadata": {},
-      "line": 8
+      "line": 8,
+      "scope": null
     }
   ],
   "need_refs": [],

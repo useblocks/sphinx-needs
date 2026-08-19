@@ -10,7 +10,8 @@
         ]
       },
       "metadata": {},
-      "line": 1
+      "line": 1,
+      "scope": null
     },
     {
       "id": "IMPL_AFTER",
@@ -22,7 +23,8 @@
         ]
       },
       "metadata": {},
-      "line": 7
+      "line": 7,
+      "scope": null
     }
   ],
   "need_refs": [],

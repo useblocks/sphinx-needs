@@ -3,15 +3,27 @@
   "need_refs": [
     {
       "need_id": "REQ_1",
-      "line": 1
+      "line": 1,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "void f() {}"
+      }
     },
     {
       "need_id": "REQ_2",
-      "line": 1
+      "line": 1,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "void f() {}"
+      }
     },
     {
       "need_id": "REQ_3",
-      "line": 1
+      "line": 1,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "void f() {}"
+      }
     }
   ],
   "marked_rst": [],

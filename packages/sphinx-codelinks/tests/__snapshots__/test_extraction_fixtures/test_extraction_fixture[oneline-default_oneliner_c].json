@@ -10,7 +10,11 @@
         ]
       },
       "metadata": {},
-      "line": 1
+      "line": 1,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "void g(void) {}"
+      }
     }
   ],
   "need_refs": [],

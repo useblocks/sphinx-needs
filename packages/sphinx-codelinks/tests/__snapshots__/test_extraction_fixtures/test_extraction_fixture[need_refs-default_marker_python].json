@@ -3,7 +3,11 @@
   "need_refs": [
     {
       "need_id": "REQ_1",
-      "line": 1
+      "line": 1,
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_first_line": "def f():"
+      }
     }
   ],
   "marked_rst": [],

@@ -10,7 +10,11 @@
         ]
       },
       "metadata": {},
-      "line": 1
+      "line": 1,
+      "scope": {
+        "scope_type": "block_mapping_pair",
+        "scope_first_line": "key: value"
+      }
     }
   ],
   "need_refs": [],
