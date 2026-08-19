@@ -168,6 +168,7 @@ To change the prefix please read :ref:`needs_part_prefix`.
 
       .. req:: Test need with need parts
          :id: table_001
+         :tags: test_table
 
          :np:`(1) Part 1 of requirement`.
 
@@ -177,10 +178,12 @@ To change the prefix please read :ref:`needs_part_prefix`.
 
       .. spec:: Specifies part 1
          :id: table_002
+         :tags: test_table
          :links: table_001.1
 
       .. spec:: Specifies part 2
          :id: table_003
+         :tags: test_table
          :links: table_001.2
 
 .. _needtable_style_row:

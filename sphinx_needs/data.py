@@ -747,7 +747,6 @@ class NeedsTableType(NeedsFilteredBaseType):
     colwidths: list[int]
     style: str
     style_row: str
-    style_col: str
     sort: str
     show_filters: bool
     show_parts: bool
