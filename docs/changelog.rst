@@ -14,10 +14,10 @@ Unreleased
 Improvements
 ............
 
-- 🔧 The undocumented ``needtable`` ``:style_col:`` option was removed —
+- 🔧 The undocumented ``needtable`` ``:style_col:`` option is deprecated —
   it was declared but never read, so it has never had any effect.
-  A document that sets it must delete the line
-  (leaving it in place now raises an unknown-option error).
+  A document that sets it still builds and now gets a ``deprecated`` warning;
+  the line can simply be deleted.
 
 - ✨ New :ref:`needs_card_layouts` configuration, for describing layouts declaratively
   (:pr:`1765`)

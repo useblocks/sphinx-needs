@@ -18,3 +18,7 @@ TEST Styles
 .. needtable::
    :style: datatables
 
+
+.. needtable::
+   :style: table
+   :style_col: never_did_anything

@@ -21,9 +21,12 @@ from sphinx_needs.directives.utils import (
 from sphinx_needs.exceptions import NeedsInvalidException
 from sphinx_needs.filter_common import FilterBase, apply_max_items, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.needs_schema import LinkSchema
 from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, row_col_maker
+
+LOGGER = get_logger(__name__)
 
 
 class Needtable(nodes.General, nodes.Element):
@@ -44,6 +47,9 @@ class NeedtableDirective(FilterBase):
         "colwidths": directives.unchanged_required,
         "style": directives.unchanged_required,
         "style_row": directives.unchanged_required,
+        # Deprecated and unused: it has never had any effect (declared but never
+        # read); accepted so existing documents keep building, with a warning.
+        "style_col": directives.unchanged_required,
         "sort": directives.unchanged_required,
         "class": directives.unchanged_required,
         "max_items": directives.nonnegative_int,
@@ -89,6 +95,14 @@ class NeedtableDirective(FilterBase):
 
         style = self.options.get("style", "").upper()
         style_row = self.options.get("style_row", "")
+        if "style_col" in self.options:
+            log_warning(
+                LOGGER,
+                "The 'style_col' option has never had any effect (it was collected "
+                "but never applied) and will be removed; the line can be deleted.",
+                "deprecated",
+                location=self.get_location(),
+            )
 
         sort = self.options.get("sort", "id_complete")
 

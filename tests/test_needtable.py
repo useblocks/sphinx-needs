@@ -19,6 +19,11 @@ def test_doc_build_html(test_app):
     # We set unique ID's for node.table, so the following exception shall not occur anymore.
     assert "WARNING: Any IDs not assigned for table node" not in warnings
 
+    # The dead `style_col` option is accepted for compatibility but warns:
+    # it has never had any effect (declared but never read).
+    assert warnings.count("The 'style_col' option has never had any effect") == 1
+    assert "test_styles.rst" in warnings
+
     html = Path(app.outdir, "index.html").read_text()
     assert "SP_TOO_001" in html
     assert 'id="needtable-index-0"' in html
