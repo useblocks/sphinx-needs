@@ -62,8 +62,11 @@ def init_rust_tree_sitter() -> tuple[Parser, Query]:
 
 @pytest.fixture(scope="session")
 def init_typescript_tree_sitter() -> tuple[Parser, Query]:
-    # TSX grammar is a superset of the TypeScript grammar (parses plain .ts too),
-    # matching what utils.init_tree_sitter uses for CommentType.ts.
+    # The TSX grammar, matching what utils.init_tree_sitter picks for
+    # CommentType.ts when the file isn't one of TypeScript's own module
+    # variants (.ts/.mts/.cts) — see utils.ts_grammar_key. Fine for the plain
+    # TS fixtures below too, since none of them use a legacy angle-bracket
+    # cast (the one construct where the two grammars disagree).
     parsed_language = Language(tree_sitter_typescript.language_tsx())
     query = Query(parsed_language, utils.TYPE_SCRIPT_QUERY)
     parser = Parser(parsed_language)
@@ -791,6 +794,38 @@ def test_find_associated_scope_typescript_jsx_no_parse_error(
     parser, _ = init_typescript_tree_sitter
     tree = parser.parse(code)
     assert not tree.root_node.has_error
+
+
+def test_typescript_ts_suffix_recovers_markers_around_angle_bracket_cast():
+    """A ``.ts`` file must use the plain TypeScript grammar, not TSX.
+
+    ``<string>x`` is a legacy angle-bracket type assertion: valid TypeScript
+    syntax, but JSX syntax under the TSX grammar. There it parses as a
+    ``jsx_opening_element`` and swallows the rest of the file into a single
+    ``jsx_text`` node, silently dropping every marker after it (``has_error``
+    is also set). ``init_tree_sitter`` must pick the plain TypeScript grammar
+    for a ``.ts`` path, via ``ts_grammar_key``, so markers both above and
+    below the cast all survive.
+    """
+    code = b"""// @Top, IMPL_TOP
+const v = <string>x;
+// @Bottom, IMPL_BOTTOM
+const y = 2;
+// @Third, IMPL_THIRD
+"""
+    parser, query = utils.init_tree_sitter(CommentType.ts, Path("dummy.ts"))
+    tree = parser.parse(code)
+    assert not tree.root_node.has_error
+
+    comments = utils.extract_comments(code, parser, query)
+    assert comments is not None
+    comments.sort(key=lambda node: node.start_point.row)
+    texts = [node.text.decode("utf-8") for node in comments if node.text]
+    assert texts == [
+        "// @Top, IMPL_TOP",
+        "// @Bottom, IMPL_BOTTOM",
+        "// @Third, IMPL_THIRD",
+    ]
 
 
 @pytest.mark.parametrize(

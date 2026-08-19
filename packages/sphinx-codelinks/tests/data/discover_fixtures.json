@@ -399,11 +399,17 @@
   },
   {
     "name": "typescript_comment_type",
-    "description": "TypeScript comment type discovers .ts and .tsx files",
+    "description": "TypeScript comment type discovers the full TypeScript and JavaScript family",
     "git_init": false,
     "files": {
       "src/main.ts": "// main",
       "src/component.tsx": "// component",
+      "src/esm.mts": "// esm module",
+      "src/cjs.cts": "// cjs module",
+      "src/script.js": "// script",
+      "src/widget.jsx": "// widget",
+      "src/esm.mjs": "// esm js",
+      "src/legacy.cjs": "// legacy",
       "src/main.cpp": "// not ts",
       "src/util.py": "# not ts"
     },
@@ -415,8 +421,14 @@
       "comment_type": "ts"
     },
     "expected": [
+      "src/cjs.cts",
       "src/component.tsx",
-      "src/main.ts"
+      "src/esm.mjs",
+      "src/esm.mts",
+      "src/legacy.cjs",
+      "src/main.ts",
+      "src/script.js",
+      "src/widget.jsx"
     ]
   }
 ]

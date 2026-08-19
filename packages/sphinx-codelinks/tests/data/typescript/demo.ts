@@ -1,6 +1,6 @@
 // regular comment
 function testA() {
-    // @type,TS_REQ_002,TypeScript one-line test
+    // @TypeScript one-line test,TS_REQ_002,impl
     return 1;
 }
 

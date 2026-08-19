@@ -7,6 +7,7 @@ import pytest
 
 from sphinx_codelinks.source_discover.config import (
     COMMENT_FILETYPE,
+    TS_DEFAULT_EXCLUDE,
     SourceDiscoverConfig,
     SourceDiscoverConfigType,
 )
@@ -225,6 +226,87 @@ def test_jsonc_discover_gate() -> None:
     assert "demo.jsonc" in discovered
     assert "with_modeline.json" in discovered
     assert "plain.json" not in discovered
+
+
+def _make_generated_output_tree(tmp_path: Path) -> Path:
+    """Lay out a source file alongside checked-in generated output.
+
+    Mirrors a ``tsc``/bundler output tree: ``src/app.ts`` is the real source,
+    while ``lib/app.js``, ``dist/app.js`` and ``node_modules/pkg/index.js``
+    stand in for generated or vendored output that carries the same marker.
+    """
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "app.ts").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+    (tmp_path / "lib").mkdir()
+    (tmp_path / "lib" / "app.js").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+    (tmp_path / "dist").mkdir()
+    (tmp_path / "dist" / "app.js").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+    (tmp_path / "node_modules" / "pkg").mkdir(parents=True)
+    (tmp_path / "node_modules" / "pkg" / "index.js").write_text(
+        "// vendored\n", encoding="utf-8"
+    )
+    return tmp_path
+
+
+def test_default_exclude_skips_generated_output(tmp_path: Path) -> None:
+    """The ``ts``-derived default ``exclude`` keeps generated/vendored JS out
+    of discovery, while ``lib/`` — deliberately not in ``TS_DEFAULT_EXCLUDE``
+    — is still discovered (see the constant's docstring for why)."""
+    src_dir = _make_generated_output_tree(tmp_path)
+    config = SourceDiscoverConfig(src_dir=src_dir, comment_type="ts", gitignore=False)
+    assert config.exclude == TS_DEFAULT_EXCLUDE
+
+    discover = SourceDiscover(config)
+    discovered = sorted(str(p.relative_to(src_dir)) for p in discover.source_paths)
+    assert discovered == [
+        str(Path("lib") / "app.js"),
+        str(Path("src") / "app.ts"),
+    ]
+
+
+def test_cpp_project_default_exclude_is_empty_and_finds_lib_marker(
+    tmp_path: Path,
+) -> None:
+    """Regression guard for the D1 defect: the ``ts``-family default exclude
+    must not leak to other ``comment_type`` values. ``cpp`` projects very
+    commonly keep hand-written library source under ``lib/`` — unlike a
+    ``tsc``/bundler ``lib/`` output dir, it must still be discovered."""
+    lib_dir = tmp_path / "lib"
+    lib_dir.mkdir()
+    (lib_dir / "widget.cpp").write_text(
+        "// @Feature A, IMPL_1, impl\n", encoding="utf-8"
+    )
+
+    config = SourceDiscoverConfig(src_dir=tmp_path, comment_type="cpp", gitignore=False)
+    assert config.exclude == []
+
+    discover = SourceDiscover(config)
+    discovered = sorted(str(p.relative_to(tmp_path)) for p in discover.source_paths)
+    assert discovered == [str(Path("lib") / "widget.cpp")]
+
+
+def test_explicit_exclude_replaces_default(tmp_path: Path) -> None:
+    """An explicit ``exclude`` (even ``[]``) fully replaces the default list."""
+    src_dir = _make_generated_output_tree(tmp_path)
+    config = SourceDiscoverConfig(
+        src_dir=src_dir, comment_type="ts", gitignore=False, exclude=[]
+    )
+    assert config.exclude == []
+
+    discover = SourceDiscover(config)
+    discovered = sorted(str(p.relative_to(src_dir)) for p in discover.source_paths)
+    assert discovered == [
+        str(Path("dist") / "app.js"),
+        str(Path("lib") / "app.js"),
+        str(Path("node_modules") / "pkg" / "index.js"),
+        str(Path("src") / "app.ts"),
+    ]
 
 
 def test_follow_links(tmp_path: Path) -> None:

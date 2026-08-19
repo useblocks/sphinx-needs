@@ -43,6 +43,21 @@ LANG_MAP: dict[str, tuple[CommentType, str]] = {
     "go": (CommentType.go, "go"),
     "jsonc": (CommentType.jsonc, "jsonc"),
     "bash": (CommentType.bash, "sh"),
+    "typescript": (CommentType.ts, "ts"),
+    # `.tsx` matters here: extraction now picks the tree-sitter grammar per
+    # file from the suffix (utils.ts_grammar_key), and `.tsx` is one of the
+    # suffixes that gets the TSX grammar rather than the plain TypeScript one
+    # (the `.ts`/`.mts`/`.cts` suffixes get the latter — see
+    # utils.init_tree_sitter). What this case pins: a marker on its own line
+    # inside a multi-line JSX block comment anchors to that line, which
+    # requires the source (an arrow function returning JSX) to parse cleanly
+    # under the TSX grammar in the first place.
+    "tsx": (CommentType.ts, "tsx"),
+    # `.js` matters here: it is parsed with the TSX grammar (see
+    # utils.ts_grammar_key), which also emits legacy ``<!-- ... -->``
+    # ``html_comment`` nodes as a separate node kind from ``comment`` — this
+    # case pins that the query captures both.
+    "js": (CommentType.ts, "js"),
 }
 
 

@@ -100,20 +100,23 @@ class SourceDiscover:
         Include patterns are added as whitelist globs.
         Exclude patterns are added as negated globs (prefixed with ``!``).
         """
-        has_include = bool(self.src_discover_config.include)
-        has_exclude = bool(self.src_discover_config.exclude)
+        include = self.src_discover_config.include
+        # ``SourceDiscoverConfig.__post_init__`` always resolves ``exclude``
+        # to a concrete list (never leaves it ``None``); the ``| None`` on
+        # the field itself only exists to detect "not explicitly set".
+        exclude = self.src_discover_config.exclude
 
-        if not has_include and not has_exclude:
+        if not include and not exclude:
             return None
 
         ob = OverrideBuilder(self.src_discover_config.src_dir)
 
-        if has_include:
-            for pattern in self.src_discover_config.include:
+        if include:
+            for pattern in include:
                 ob.add(pattern)
 
-        if has_exclude:
-            for pattern in self.src_discover_config.exclude:
+        if exclude:
+            for pattern in exclude:
                 ob.add(f"!{pattern}")
 
         return ob

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from tree_sitter import Node as TreeSitterNode
+from tree_sitter import Parser, Query
 
 from sphinx_codelinks.analyse import multiline_parser, utils
 from sphinx_codelinks.analyse.models import (
@@ -186,9 +187,29 @@ class SourceAnalyse:
             yield src_path, text.encode("utf-8")
 
     def create_src_objects(self) -> None:
-        parser, query = utils.init_tree_sitter(self.analyse_config.comment_type)
+        comment_type = self.analyse_config.comment_type
+        # One (parser, query) pair per distinct grammar actually needed, built
+        # lazily so a parser is never rebuilt per file. Every comment type
+        # except TypeScript uses a single grammar for the whole run;
+        # TypeScript alone varies its grammar per file (utils.ts_grammar_key)
+        # because a legacy TypeScript-only cast parses as JSX under the wrong
+        # grammar — see the CommentType.ts branch of utils.init_tree_sitter.
+        parser_cache: dict[str, tuple[Parser, Query]] = {}
 
         for src_path, src_string in self.get_src_strings():
+            # `comment_type` is normally a CommentType member, but a few call
+            # sites carry it as a plain (possibly invalid) str instead — see
+            # SourceAnalyseConfig.comment_type — so key on `str(comment_type)`
+            # rather than `.value`, which only the enum has.
+            cache_key = (
+                utils.ts_grammar_key(src_path)
+                if comment_type == CommentType.ts
+                else str(comment_type)
+            )
+            if cache_key not in parser_cache:
+                parser_cache[cache_key] = utils.init_tree_sitter(comment_type, src_path)
+            parser, query = parser_cache[cache_key]
+
             comments: list[TreeSitterNode] | None = utils.extract_comments(
                 src_string, parser, query
             )

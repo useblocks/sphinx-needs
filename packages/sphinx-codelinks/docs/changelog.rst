@@ -117,9 +117,20 @@ New and Improved
   The row fix for marked-rst blocks below (#1982) landed days before this change replaced
   them; multi-line needs keep its rule, a block reported at the row of its open line.
 
-- ✨ TypeScript comment type: ``comment_type = "ts"`` analyses TypeScript sources, and source
-  discovery picks up ``.ts`` and ``.tsx`` files for it
+- ✨ TypeScript and JavaScript comment type: ``comment_type = "ts"`` analyses the whole
+  family, and source discovery picks up ``.ts``, ``.tsx``, ``.mts``, ``.cts``, ``.js``,
+  ``.jsx``, ``.mjs`` and ``.cjs`` files for it
   (`#1890 <https://github.com/useblocks/sphinx-needs/issues/1890>`__).
+
+  The grammar is chosen per file: ``.ts``, ``.mts`` and ``.cts`` are parsed as TypeScript,
+  where a ``<T>value`` type assertion is legal, and every other suffix as TSX, which also
+  reads JSX; a JSX comment, ``{/* … */}``, is a block comment like any other. Legacy
+  ``<!-- … -->`` comments, valid in JavaScript, are read too. For this comment type
+  ``exclude`` defaults to ``["**/node_modules/**", "**/dist/**", "**/build/**",
+  "**/out/**", "**/coverage/**"]``, so checked-in build output is not scanned beside the
+  sources it was built from (which would define every need twice); an explicit ``exclude``,
+  ``[]`` included, replaces the default, and ``lib/`` is deliberately not in it, being
+  hand-written source in many packages.
 
 - 🐛 A source file added to a ``src-trace`` directive's scope is seen by the next
   incremental build, with no ``-E`` (`#2040 <https://github.com/useblocks/sphinx-needs/issues/2040>`__).
