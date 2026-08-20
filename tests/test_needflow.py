@@ -1179,14 +1179,19 @@ Config direction
 
 
 @pytest.mark.parametrize(
-    "engine,config_name,emitted",
+    "engine,config_name,emitted,overridden",
     [
-        ("plantuml", "lefttoright", "top to bottom direction"),
-        ("graphviz", "lefttoright", 'rankdir="TB"'),
+        (
+            "plantuml",
+            "lefttoright",
+            "top to bottom direction",
+            "left to right direction",
+        ),
+        ("graphviz", "lefttoright", 'rankdir="TB"', 'rankdir="LR"'),
     ],
 )
 def test_explicit_direction_beats_the_engine_config(
-    make_app, tmp_path, plantuml_command, engine, config_name, emitted
+    make_app, tmp_path, plantuml_command, engine, config_name, emitted, overridden
 ):
     """An explicit ``:direction:`` must win over the config blob written beside it.
 
@@ -1194,6 +1199,12 @@ def test_explicit_direction_beats_the_engine_config(
     precedence both engines already give them -- but a *default* direction has to be
     restated to win, because emitting nothing would leave the blob's layout standing.
     The emitted source is asserted, so the test cannot pass on the warning alone.
+
+    *Where* it is restated is asserted too, because on both engines the later statement
+    is the one that takes effect: a ``rankdir`` written before the blob's ``graph [...]``
+    block -- which is where the shipped ``lefttoright`` config puts its own -- would be
+    emitted, matched by a containment check, and then overridden by the very blob it was
+    supposed to beat.
     """
     (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
     (tmp_path / "index.rst").write_text(
@@ -1213,6 +1224,8 @@ def test_explicit_direction_beats_the_engine_config(
 
     source = _debug_source(Path(app.outdir), "index.html")
     assert emitted in source
+    # the option's statement must come after the blob's, or the blob wins at render time
+    assert source.index(emitted) > source.index(overridden)
 
     warnings = strip_colors(app._warning.getvalue())
     assert "disagrees with the direction 'down'" in warnings
