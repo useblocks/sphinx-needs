@@ -47,81 +47,124 @@ custom_brackets_c:
 - `defines` (optional, libclang only): preprocessor defines, e.g.
   `["VARIANT_A=1", "PROTOCOL_VERSION=3"]`.
 
-## Snapshot (expected output) — normalized contract
+## Snapshot (expected output) — the real production shape
 
-Each case is run through the extractor and the result is normalized to this JSON
-shape, then compared to a committed snapshot under
-`tests/__snapshots__/extraction/`. The snapshot mirrors the real per-marker
-payload the extractor produces (`analyse/models.py:Metadata.to_dict` and its
-`OneLineNeed` / `NeedIdRefs` / `MarkedRst` subclasses) rather than a reduced
-projection of it, so a regression in any field production actually emits is
-caught here too:
+Each case is run through the extractor and its output is compared to **two**
+committed snapshots under `tests/__snapshots__/test_extraction_fixtures/`: one
+for the marked content, one for the warnings. These are not a reduced
+projection invented for the test — each is the real payload a production run
+writes to its own file, taken verbatim (only a temp-path portability rewrite
+and one additive field applied; see below):
+
+- **marked content** (the default, unnamed snapshot, `…json`) is exactly
+  `SourceAnalyse.dump_marked_content`'s payload: a flat list, in
+  `all_marked_content`'s order (sorted by `(filepath, source_map.start.row)`),
+  of each entry's own `Metadata.to_dict()` (`analyse/models.py`) —
+  `OneLineNeed`'s nested `need` dict, `NeedIdRefs`'s `need_ids` list +
+  `marker`, or `MarkedRst`'s `rst` text.
+- **warnings** (a second snapshot, named `"warnings"`, saved as
+  `…[warnings].json`) is exactly `AnalyseProjects.dump_warnings`'s payload: a
+  flat list of `AnalyseWarning.__dict__` records. Production never folds
+  warnings into the data stream — `dump_marked_content` and `dump_warnings`
+  are two independent files (data vs. warnings, stdout vs. stderr), and CLI
+  users additionally get the same warnings via `logger.warning`
+  (`cmd.py`) — so the test keeps them as two independent snapshots instead of
+  one merged object.
+
+A one-line need, with its need-ref and warning counterparts alongside for
+reference (a single case never emits all three at once — shown together here
+only to keep this example short):
 
 ```json
-{
-  "needs": [
-    {
-      "id": "IMPL_1",
-      "title": "My Title",
-      "type": "impl",
-      "links": {"links": ["REQ_1"]},
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {"start": {"row": 0, "column": 4}, "end": {"row": 0, "column": 35}},
-      "content_type": "need",
-      "scope": {"scope_type": "function_definition", "scope_text": "void f() {}"}
-    }
-  ],
-  "need_refs":  [{"need_id": "", "line": 1, "marker": "@need-ids:", "filepath": "case.cpp", "remote_url": null, "source_map": {"start": {"row": 0, "column": 0}, "end": {"row": 0, "column": 0}}, "content_type": "need-id-refs", "scope": null}],
-  "marked_rst": [{"content": "", "start_line": 1, "end_line": 1, "filepath": "case.cpp", "remote_url": null, "source_map": {"start": {"row": 0, "column": 0}, "end": {"row": 0, "column": 0}}, "content_type": "rst", "scope": null}],
-  "warnings":   [{"kind": "too_many_fields", "line": 1}]
-}
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {"start": {"row": 0, "column": 4}, "end": {"row": 0, "column": 35}},
+    "tagged_scope": "void f() {}",
+    "need": {"title": "My Title", "id": "IMPL_1", "type": "impl", "links": ["REQ_1"]},
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {"start": {"row": 0, "column": 13}, "end": {"row": 0, "column": 32}},
+    "tagged_scope": "void f() {}",
+    "need_ids": ["REQ_1", "REQ_2", "REQ_3"],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  }
+]
 ```
 
-Lines are 1-indexed. `needs`/`warnings` are sorted by line; `need_refs` by
-`(line, need_id)`.
+and the matching `warnings` snapshot for a case that emits one:
 
-Per-entry fields common to `needs`, `need_refs` and `marked_rst` (mirroring
-`Metadata`):
+```json
+[
+  {"file_path": "case.cpp", "lineno": 1, "msg": "5 given fields. They shall be less than 4", "type": "need", "sub_type": "too_many_fields"}
+]
+```
+
+`source_map` rows/columns are 0-indexed, exactly as production computes them.
+
+Common fields on every marked-content entry (mirroring `Metadata`):
 
 - `filepath` — the source file, **relative to the test's `tmp_path`** (e.g.
-  `case.cpp`). Production emits an absolute path; the temp directory differs
-  per run and per machine, so only the relative part is stable and snapshotted.
-- `remote_url` — always `null` in these fixtures: the harness forces
+  `case.cpp`). This is the *only* portability deviation from the real thing:
+  production emits an absolute path, but `tmp_path` differs per run and per
+  machine, so the harness snapshots it relative to `tmp_path` instead (see
+  `_relative_filepath` in `tests/test_extraction_fixtures.py`).
+- `remote_url` — always `null` here: the harness forces
   `analyse.git_remote_url`/`git_commit_rev` to `None` before `run()`, so this
-  field is deterministic here regardless of the host's git configuration.
+  field is deterministic regardless of the host's git configuration.
 - `source_map` — the full `{"start": {"row", "column"}, "end": {"row",
-  "column"}}` structure production computes (0-indexed). The pre-existing
-  `line` (and, for `marked_rst`, `start_line`/`end_line`) keys are kept
-  alongside it rather than dropped, since they duplicate the start row but a
-  second implementation's comparison tooling may already rely on them.
-- `content_type` — the `MarkedContentType` discriminator (`"need"` /
-  `"need-id-refs"` / `"rst"`). Named `content_type` rather than `type` because
-  a `needs` entry already has a `type` key for the need's own field (e.g.
-  `"impl"`).
-- `scope` — the marker's *associated declaration* (`tagged_scope`, computed by
-  `find_associated_scope`): `{"scope_type", "scope_text"}`, or `null` when
-  there is no associated scope. `scope_text` is the node's full decoded text,
-  exactly as production serialises it (`str(node.text.decode("utf-8"))`).
-  `scope_type` (the node's tree-sitter kind) is not part of production's
-  output, but it is cheap, deterministic, and useful for cross-language/
-  cross-implementation comparison, so it rides along.
+  "column"}}` structure production computes.
+- `tagged_scope` — the marker's *associated declaration* (computed by
+  `find_associated_scope`), as production serialises it: the node's full
+  decoded text (`str(node.text.decode("utf-8"))`), or `null` when there is no
+  associated scope.
+- `type` — the `MarkedContentType` discriminator's real value (`"need"` /
+  `"need-id-refs"` / `"rst"`); a need's own `type` field (e.g. `"impl"`) lives
+  one level down, inside `need`, so the two never collide.
+- `tagged_scope_type` — **the one additive, test-only field.** It is the
+  associated node's tree-sitter kind (e.g. `"function_definition"`), or
+  `null`. `Metadata.to_dict()` never emits this — it is not part of
+  production's output — but it costs nothing to add alongside the real
+  `tagged_scope` text: it lets a wrong-scope regression be told apart from a
+  same-text coincidence, and gives a second implementation a language-agnostic
+  value to compare against. It is always the last key on an entry, so it
+  never disturbs the real shape.
 
-`need_refs` entries additionally carry `marker` (the matched marker string,
-e.g. `"@need-ids:"`), which production attaches to `NeedIdRefs` but earlier
-revisions of this fixture dropped.
+Payload-specific fields: `need` (a plain dict — `id`/`title`/`type` as
+strings, `links` as a list, exactly as `OneLineNeed.need` holds it — not
+decomposed or re-wrapped); `need_ids` (list) + `marker` (string) for a
+need-id-reference; `rst` (string) for a marked-rst block. A need-id-reference
+entry is **one** record covering every id it references, not exploded per id.
 
-`needs` keep the id/title/type/links/metadata decomposition instead of
-production's raw `need` dict: the same data either way, but the decomposition
-is what makes the payload comparable against a second implementation whose
-needs are a typed struct rather than a dict.
+Warning records (`AnalyseWarning.__dict__`): `file_path` (relativized the same
+way as `filepath` above), `lineno`, `msg`, `type` (the `MarkedContentType` the
+warning occurred while parsing — currently always `"need"`, since only the
+one-line-need parser raises these), `sub_type` (the snake_case warning kind,
+e.g. `"too_many_fields"`).
 
 Genuinely excluded (the only non-deterministic things): the absolute prefix of
-`filepath` (see above), and the raw `SourceComment`/tree-sitter node objects
-(production itself drops `source_comment` from `to_dict()`; `tagged_scope` is
-captured as full text instead of embedding the node object).
+`filepath`/`file_path` (see above), and the raw `SourceComment`/tree-sitter
+node objects (production itself drops `source_comment` from `to_dict()`;
+`tagged_scope` is captured as full text instead of embedding the node object).
+
+Two known production quirks show up as-is in these snapshots (deliberately
+left unfixed — out of scope here):
+
+- a need-id-reference's `source_map` columns are shifted by the width of any
+  whitespace between the marker and its ids: `extract_marker`
+  (`analyse/analyse.py`) computes `start_column` from the pre-`strip()`
+  position but `end_column` from the post-`strip()` length.
+- a multi-line `rst` block's `source_map` collapses `start.row`/`end.row` to
+  the same row, with the `start`/`end` columns being raw offsets into the
+  flattened multi-line comment text rather than a real position past the
+  first line.
 
 ## Running / updating
 
@@ -134,4 +177,5 @@ python -m pytest tests/test_extraction_fixtures.py --snapshot-update
 ```
 
 Adding a case is just a new entry in a `*.yaml` file here, then
-`--snapshot-update` to capture its snapshot (review the diff before committing).
+`--snapshot-update` to capture its two snapshots (review the diff before
+committing).
