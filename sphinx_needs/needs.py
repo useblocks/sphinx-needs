@@ -74,6 +74,7 @@ from sphinx_needs.directives.needflow import (
     process_needflow_graphviz,
     process_needflow_plantuml,
 )
+from sphinx_needs.directives.needflow._options import validate_flow_config
 from sphinx_needs.directives.needgantt import (
     Needgantt,
     NeedganttDirective,
@@ -1124,6 +1125,15 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             schema.add_link_field(link_field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid link {name!r}: {exc}") from exc
+
+    # validated where the configuration is read, so that a project which misconfigures
+    # one of these and happens to have no needflow anywhere is still told, exactly once
+    validate_flow_config(
+        direction=needs_config.flow_direction,
+        show_links=needs_config.flow_show_links,
+        legends=needs_config.flow_legends,
+        show_legend=needs_config.flow_show_legend,
+    )
 
     if needs_config._global_options:
         log_warning(

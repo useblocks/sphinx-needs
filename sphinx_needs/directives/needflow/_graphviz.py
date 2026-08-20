@@ -32,7 +32,8 @@ from ._model import (
     build_graph,
     resolve_link_types,
 )
-from ._shared import create_filter_paragraph
+from ._options import LinkLabels, graphviz_rankdir
+from ._shared import create_filter_paragraph, create_legend_nodes
 
 try:
     from sphinx.writers.html5 import HTML5Translator
@@ -122,6 +123,16 @@ def process_needflow_graphviz(
                     content += f"  {key}={_quote(str(value))};\n"
                 content += "]\n"
 
+        # the config blob is a preamble of defaults, so the direction is written after
+        # all of it and wins -- including after the `graph [...]` block, since a graph
+        # attribute statement overrides an earlier one and that is where the shipped
+        # `lefttoright`/`toptobottom` configs put their `rankdir`.
+        # Nothing is written for a diagram already drawn the way it asks to be.
+        if (
+            rankdir := graphviz_rankdir(graph.direction, graph.config_direction)
+        ) is not None:
+            content += f"rankdir={_quote(rankdir)};\n"
+
         # calculate node definitions
         content += "\n// node definitions\n"
         cluster_ids: dict[str, str | None] = {}
@@ -137,12 +148,12 @@ def process_needflow_graphviz(
         # calculate edge definitions
         content += "\n// edge definitions\n"
         for edge in graph.edges:
-            content += _render_edge(edge, graph.show_link_names, cluster_ids)
+            content += _render_edge(edge, graph.link_labels, cluster_ids)
 
         # note this lists only the need types that were actually drawn, whereas the
-        # plantuml engine lists every configured type, so the same `:show_legend:` gives
-        # the two engines different legends; it is kept as is
-        if attributes["show_legend"]:
+        # plantuml engine lists every configured type, so the same bare `:show_legend:`
+        # gives the two engines different legends; it is kept as is
+        if graph.legend is not None and graph.legend.internal:
             content += _create_legend(
                 [drawn.need for drawn in graph.nodes.values()], needs_config
             )
@@ -158,6 +169,16 @@ def process_needflow_graphviz(
             code.source, code.line = node.source, node.line
             # add the debug code to after the surrounding figure
             node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, code)
+
+        # ...and beside it otherwise, as a document table identical on every engine;
+        # inserted last so that it ends up directly below the figure it describes
+        if graph.legend is not None and not graph.legend.internal:
+            for legend in create_legend_nodes(
+                graph.legend.parts, graph.drawn_types, graph.drawn_link_types
+            ):
+                node.parent.parent.insert(
+                    node.parent.parent.index(node.parent) + 1, legend
+                )
 
 
 def _get_link_to_need(
@@ -369,13 +390,13 @@ def _label(
 
 def _render_edge(
     edge: GraphEdge,
-    show_links: bool,
+    link_labels: LinkLabels,
     cluster_ids: dict[str, str | None],
 ) -> str:
     """Render an edge in the graphviz format.
 
     :param edge: The edge to render.
-    :param show_links: Whether to label the edge with the link type.
+    :param link_labels: What to label the edge with, if anything.
     :param cluster_ids: The cluster ids collected by :func:`_render_node`.
     """
     if not (edge.source_drawn and edge.target_drawn):
@@ -384,8 +405,8 @@ def _render_edge(
 
     params: list[tuple[str, str]] = []
 
-    if show_links:
-        params.append(("label", _quote(edge.link_type.display.outgoing)))
+    if (label := edge.label(link_labels)) is not None:
+        params.append(("label", _quote(label)))
 
     params.extend(
         # TODO also use link_type.display.color?

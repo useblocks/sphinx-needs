@@ -14,6 +14,59 @@ Unreleased
 Improvements
 ............
 
+- ✨ New :ref:`needflow` ``:direction:`` option and :ref:`needs_flow_direction`
+  configuration (:pr:`1782`)
+
+  A diagram says which way it flows as an intent — ``down`` (the default), ``up``,
+  ``right`` or ``left`` — and each engine spells that in its own language, so the same
+  document renders the same way on either engine.
+  The tokens ``TB``, ``TD``, ``BT``, ``LR`` and ``RL`` are accepted as aliases, so a
+  habit picked up from Graphviz or Mermaid does not have to be unlearned.
+
+  .. code-block:: rst
+
+     .. needflow::
+        :direction: right
+
+  PlantUML has no bottom-up or right-to-left layout, so ``up`` is drawn ``down`` and
+  ``left`` is drawn ``right``, with one ``needs.needflow`` warning per project;
+  Graphviz draws all four.
+  A diagram is never refused for asking: a plainer diagram is better than a failed build.
+
+  An explicit ``:direction:`` also wins over a layout that the ``:config:`` it is written
+  beside happens to set, on both engines, and the disagreement is reported.
+  A diagram that does not use the option keeps byte-identical diagram source.
+
+- ✨ :ref:`needflow` ``:show_legend:`` takes the name of a legend configuration
+  (:pr:`1782`)
+
+  Written bare it draws exactly the legend it always drew, so no existing diagram
+  changes — including the long-standing difference that ``plantuml`` lists every
+  configured need type while ``graphviz`` lists only the ones it drew.
+  Written with a value it names an entry of the new :ref:`needs_flow_legends`:
+
+  .. code-block:: python
+
+     needs_flow_legends = {
+         "beside": {"parts": ["types", "links"], "placement": "external"},
+     }
+
+  A legend with ``placement = "external"`` is rendered as a document table beside the
+  diagram, so it looks the same on both engines, its text is selectable and searchable,
+  and it can describe **link types** — which no in-diagram legend ever could.
+  It lists only what the diagram actually drew.
+  ``parts`` is an ordered list, and the order is contract: ``["links", "types"]`` puts
+  the link table first and keeps it there.
+
+  The new :ref:`needs_flow_show_legend` says *which* legend a diagram gets when it asks
+  for one without naming it — never *whether*: asking stays with the directive.
+  Resolution is a chain — the option's name, then the project default, then the engine's
+  own legend — and a name that is not defined warns and hands on to the next step, so a
+  typo in one diagram does not cost the project the legend it configured.
+
+  A ``needs_flow_legends`` entry that cannot be used is reported as a ``needs.config``
+  warning and skipped, rather than failing the build.
+
 - 🔧 The undocumented ``needtable`` ``:style_col:`` option is deprecated —
   it was declared but never read, so it has never had any effect.
   A document that sets it still builds and now gets a ``deprecated`` warning;
@@ -148,6 +201,40 @@ Improvements
 
   This is a deliberate change to the rendered page rather than a fix:
   a project that styles or scrapes the debug block sees the new markup.
+
+Breaking changes
+................
+
+- ‼️ :ref:`needflow` ``:show_link_names:`` takes an optional value, and now wins over
+  :ref:`needs_flow_show_links` (:pr:`1782`)
+
+  The option chooses what each connection is labelled with: ``none``, ``outgoing``,
+  ``incoming`` or ``type``.
+  Written bare it still means ``outgoing``, which is what the flag has always drawn, so
+  no existing document changes; the other three values are new.
+
+  ``needs_flow_show_links`` takes the same four values, and ``True``/``False`` keep
+  meaning ``outgoing``/``none``.
+  Any other non-string value is read for its truth, because that is what a value declared
+  a boolean for years actually did — ``1`` still draws labels.
+
+  **A string that is not one of the four values now warns and falls back to** ``none``,
+  where it used to be truthy and draw labels.
+  That is the one input whose behaviour changes.
+  If you build with ``-W``, note that the warning fails the build; silence it with
+  ``suppress_warnings = ["needs.config"]`` or, better, write one of the four values.
+
+  The option now overrides the configuration instead of being combined with it.
+  A project that turned labels on previously left no way of drawing a single unlabelled
+  diagram; ``:show_link_names: none`` is that way.
+
+  Enumerated ``needs_flow_*`` configuration values — ``needs_flow_show_links``,
+  :ref:`needs_flow_direction` and :ref:`needs_flow_engine` — are now matched without
+  regard to case or surrounding whitespace, exactly as the matching directive options
+  always have been.
+  A project whose value only differed in capitalisation stops warning and starts being
+  honoured.
+
 
 Internal changes
 ................

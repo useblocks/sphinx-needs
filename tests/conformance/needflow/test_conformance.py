@@ -141,19 +141,37 @@ DEGRADATION_IDS = frozenset(
 # is refused rather than quietly built without it.
 
 #: Portable configuration keys, mapped to the ``conf.py`` name that carries the same
-#: intent.  Deliberately empty: none of the format's configuration keys has a
-#: Sphinx-Needs counterpart yet.  ``needs_flow_show_links`` is the near miss -- it is the
-#: project default behind ``link_labels`` -- but no shipped case sets a project default,
-#: and a mapping row no case exercises is a claim nothing checks.
-CONFIG_KEYS: dict[str, str] = {}
+#: intent.  The neutral names are the corpus's, not this repository's user-facing
+#: spelling: ``link_labels`` is what the corpus calls the label selector that
+#: Sphinx-Needs spells ``needs_flow_show_links``, the flag it widened.
+#:
+#: ``styles`` is absent -- there is no ``needs_flow_styles`` here yet.
+CONFIG_KEYS: dict[str, str] = {
+    "direction": "needs_flow_direction",
+    "show_legend": "needs_flow_show_legend",
+    "link_labels": "needs_flow_show_links",
+}
+
+#: The portable ``engine_config`` configuration, mapped per engine.
+#:
+#: It is not a row of :data:`CONFIG_KEYS` because it is *split* rather than renamed:
+#: Sphinx-Needs keeps the two engines' registries in two separate configuration values
+#: instead of under one engine-keyed roof, so a case naming this key only ever reaches
+#: the registry of the engine being drawn with.
+ENGINE_CONFIG_KEYS = {
+    "plantuml": "needs_flow_configs",
+    "graphviz": "needs_graphviz_styles",
+}
 
 #: Portable directive options, mapped to the Sphinx-Needs option of the same intent.
 #: The neutral names are the corpus's, not either repository's user-facing spelling:
 #: ``link_labels`` is what the corpus calls the label selector that both tools spell
-#: ``:show_link_names:``.
+#: ``:show_link_names:``, and ``engine_config`` the escape hatch spelled ``:config:``.
 OPTION_NAMES = {
+    "direction": "direction",
     "show_legend": "show_legend",
     "link_labels": "show_link_names",
+    "engine_config": "config",
 }
 
 #: Written after the option name to mean "emit it as a bare flag, with no value".
@@ -161,16 +179,30 @@ _BARE: str | None = None
 
 #: The portable *values* each mapped option accepts here, and how to write each one.
 #:
-#: Both options are still bare flags in this repository, so only the value that the bare
-#: flag already means is mapped: ``link_labels: outgoing`` (the flag labels an edge with
-#: its link type's outgoing title) and ``show_legend: ""`` (a legend was asked for
-#: without naming a configuration).  ``none``/``incoming``/``type``, and naming a legend
-#: configuration, arrive with the slices that widen the two options -- and this is the
-#: case that pins the bytes those slices have to preserve.
+#: A closed enumeration is listed exhaustively, so that a value this repository cannot
+#: express is refused rather than written through and silently ignored.
 OPTION_VALUES: dict[str, dict[str, str | None]] = {
-    "show_legend": {"": _BARE},
-    "link_labels": {"outgoing": _BARE},
+    "direction": {
+        "down": "down",
+        "up": "up",
+        "right": "right",
+        "left": "left",
+    },
+    "link_labels": {
+        "none": "none",
+        # the bare flag is what this value has always meant, and the merged
+        # `legend-engine-default`/`edge-empty-label` cases pin those bytes, so it is
+        # deliberately still written bare rather than spelled out
+        "outgoing": _BARE,
+        "incoming": "incoming",
+        "type": "type",
+    },
 }
+
+#: Mapped options whose value is a *name* rather than a member of an enumeration -- a
+#: legend key, an engine config name -- and so is written through verbatim.
+#: An empty value stays special: it means the option was written bare.
+OPTION_FREE_VALUES = frozenset(("show_legend", "engine_config"))
 
 #: Keys of a ``types`` entry this repository can put into ``needs_types``.  ``shape`` is
 #: absent: the portable shape enum has no counterpart here yet, only the legacy plantuml
@@ -182,15 +214,37 @@ TYPE_KEYS = frozenset(("directive", "title", "prefix", "color"))
 #: emitter reads it, so mapping it would let a case claim a colour that never renders.
 LINK_KEYS = frozenset(("option", "incoming", "outgoing"))
 
-#: The degradations of the registry this repository can observe, each mapped to its tier
-#: and to the warning it emits.
+#: The degradations of the registry this repository can observe, each mapped to its
+#: tier, to the Sphinx-Needs warning subtype it is reported under, and to a pattern
+#: matching the message.
 #:
-#: Empty, because every registry entry degrades an option this repository does not have
-#: yet: there is no ``:direction:`` to fall back from, no portable shape enum to leave
-#: unmapped, no style classes to miss.  So every warning a corpus build emits here is an
-#: unexpected one -- which is exactly the fence the shipped cases assert -- and the slice
-#: that adds an option adds its degradation row along with it.
-DEGRADATIONS: dict[str, tuple[int, re.Pattern[str]]] = {}
+#: The subtype is part of the mapping rather than assumed, because a warning that says
+#: the right thing under the wrong subtype cannot be suppressed by the documented
+#: ``suppress_warnings`` entry -- so the pair is the contract, not the message alone.
+#: Several ids here share one subtype, which is why the message is matched too.
+#: ubCode maps the same ids onto its own ``needs.option_*`` diagnostic codes.
+#:
+#: The rest of the registry degrades options this repository does not have yet -- no
+#: portable shape enum to leave unmapped, no style classes to miss -- so a warning
+#: matching none of these is an unexpected one, which is the fence the shipped cases
+#: assert.
+DEGRADATIONS: dict[str, tuple[int, str, re.Pattern[str]]] = {
+    "direction-vertical-unsupported": (
+        2,
+        "needs.needflow",
+        re.compile(r"cannot draw 'up'"),
+    ),
+    "direction-horizontal-unsupported": (
+        2,
+        "needs.needflow",
+        re.compile(r"cannot draw 'left'"),
+    ),
+    "option-conflict-direction": (
+        3,
+        "needs.needflow",
+        re.compile(r"disagrees with the direction"),
+    ),
+}
 
 #: Warnings that are not degradations and must not be counted as unexpected ones.
 #: Nothing in the corpus may use a deprecated spelling, so a deprecation notice here
@@ -198,10 +252,9 @@ DEGRADATIONS: dict[str, tuple[int, re.Pattern[str]]] = {}
 _IGNORED_WARNINGS = re.compile(r"WARNING: (?:document isn't included|.*toctree)")
 
 #: The class the corpus reserves for out-of-diagram legend markup, and so what
-#: :func:`_legend_rows` reads.  No engine here renders one today (both draw their legend
-#: inside the diagram, where ``source`` asserts it byte-exactly), so the reader finds
-#: nothing for every shipped case; the slice that adds an external legend upstream must
-#: use this class for the harness to see it.
+#: :func:`_legend_rows` reads.  Both engines here render one for a legend whose
+#: ``placement`` is ``external``, and draw their own inside the diagram otherwise --
+#: where ``source`` asserts it byte-exactly and this reader correctly finds nothing.
 _LEGEND_CLASS = "needflow_legend"
 
 
@@ -389,13 +442,10 @@ def _conf_py(case: dict[str, Any], engine: str, plantuml_command: str) -> str:
     :return: The ``conf.py`` source.
     :raises AssertionError: If the case names configuration with no surface here.
     """
-    if case.get("legends"):
-        raise AssertionError(
-            "legends: the corpus format lets a case name legend configurations, but "
-            "this repository has no configuration surface for them yet; the slice that "
-            "adds one wires them here"
-        )
-    _require_mapped(case.get("config") or {}, CONFIG_KEYS, "config")
+    config = dict(case.get("config") or {})
+    # split rather than renamed, so it is popped before the simple renames are checked
+    engine_config = config.pop("engine_config", None)
+    _require_mapped(config, CONFIG_KEYS, "config")
 
     types = case.get("types") or [
         {"directive": "req", "title": "Requirement", "prefix": "R_"}
@@ -420,7 +470,15 @@ def _conf_py(case: dict[str, Any], engine: str, plantuml_command: str) -> str:
     ]
     if links:
         lines.append(f"needs_links = {links!r}")
-    for key, value in (case.get("config") or {}).items():
+    if legends := case.get("legends"):
+        lines.append(f"needs_flow_legends = {legends!r}")
+    if engine_config is not None:
+        # only this engine's half of the registry, which is where the split shows: a
+        # case naming an engine config for one engine says nothing about the other
+        lines.append(
+            f"{ENGINE_CONFIG_KEYS[engine]} = {(engine_config.get(engine) or {})!r}"
+        )
+    for key, value in config.items():
         lines.append(f"{CONFIG_KEYS[key]} = {value!r}")
     return "\n".join(lines) + "\n"
 
@@ -448,13 +506,18 @@ def _index_rst(case: dict[str, Any]) -> str:
     lines.append("   :debug:")
     for key, value in (case.get("options") or {}).items():
         _require_mapped([key], OPTION_NAMES, "options")
-        accepted = OPTION_VALUES[key]
-        if value not in accepted:
-            raise AssertionError(
-                f"options: this repository cannot express {key}: {value!r} yet, "
-                f"only {sorted(accepted)}; the slice that widens the option maps it here"
-            )
-        written = accepted[value]
+        if key in OPTION_FREE_VALUES:
+            # a name rather than an enumeration member, so it is written through as it
+            # stands; an empty one means the option was written bare
+            written = str(value) or _BARE
+        else:
+            accepted = OPTION_VALUES[key]
+            if value not in accepted:
+                raise AssertionError(
+                    f"options: this repository cannot express {key}: {value!r} yet, only "
+                    f"{sorted(accepted)}; the slice that widens the option maps it here"
+                )
+            written = accepted[value]
         name = OPTION_NAMES[key]
         lines.append(f"   :{name}:" if written is _BARE else f"   :{name}: {written}")
     lines.append("")
@@ -606,8 +669,8 @@ def _classify_warnings(text: str) -> tuple[list[str], list[str]]:
     for line in strip_colors(text).splitlines():
         if not line.strip() or _IGNORED_WARNINGS.search(line):
             continue
-        for name, (_tier, pattern) in DEGRADATIONS.items():
-            if pattern.search(line):
+        for name, (_tier, subtype, pattern) in DEGRADATIONS.items():
+            if subtype in line and pattern.search(line):
                 observed.append(name)
                 break
         else:
@@ -744,7 +807,7 @@ def test_conformance_case(
         # recorded, never asserted: under regeneration the rendered legend IS the new
         # expectation, so checking it against the old one would only ever reject the
         # rewrite this run exists to produce
-        _rewrite_expectation(path, engine, source, _legend_rows(app))
+        _rewrite_expectation(path, engine, source, _legend_rows(app), observed)
         pytest.skip(f"{path.stem}: {engine} expectation rewritten")
 
     _compare_legend(_legend_rows(app), expected.get("legend"))
@@ -765,23 +828,40 @@ def _rewrite_expectation(
     engine: str,
     source: str,
     legend: dict[str, list[str]] | None,
+    observed: list[str],
 ) -> None:
     """Write a freshly emitted source back into a case file.
 
     Only ever reached under ``UBC_UPDATE_CORPUS``; the result is a diff to read, not an
-    expectation to accept.  Degradations are not written: none of the registry's entries
-    is observable in this repository yet (see :data:`DEGRADATIONS`), so there is nothing
-    to record, and the slice that adds the first one teaches this to record it.
+    expectation to accept.
+
+    The observed degradations are written too, and have to be: a regeneration that kept
+    only the source would silently *delete* the degradation entries of every case whose
+    point is a degradation, leaving them asserting the fallback source and nothing about
+    the warning that produced it.  ``tier`` comes from :data:`DEGRADATIONS` rather than
+    from the build, since a warning does not carry its own tier, and ``once`` from
+    whether the tier is 2 (warn once per project) -- both are properties of the registry
+    entry, so a regenerated case states them as the registry does.
 
     :param path: The case file.
     :param engine: The engine whose expectation to replace.
     :param source: The emitted source.
     :param legend: The external legend rows rendered, if any.
+    :param observed: The neutral degradation ids the build emitted.
     """
     case = yaml.safe_load(path.read_text("utf8"))
     entry: dict[str, Any] = {"source": source}
     if legend:
         entry["legend"] = legend
+    if observed:
+        entry["degradations"] = [
+            {
+                "id": name,
+                "tier": DEGRADATIONS[name][0],
+                "once": DEGRADATIONS[name][0] == 2,
+            }
+            for name in sorted(set(observed))
+        ]
     case.setdefault("expect", {})[engine] = entry
     # engines in a stable order, so that a re-sync diff is about content
     case["expect"] = {
@@ -971,12 +1051,8 @@ def test_validation_ignores_what_only_the_other_repository_can_draw() -> None:
     "case,fragment",
     [
         (
-            _probe(config={"direction": "up"}),
-            "config: the corpus format defines ['direction']",
-        ),
-        (
-            _probe(legends={"compact": {"parts": ["types"]}}),
-            "legends: the corpus format lets a case name legend configurations",
+            _probe(config={"styles": {"critical": {"fill": "#FF0000"}}}),
+            "config: the corpus format defines ['styles']",
         ),
         (
             _probe(types=[{"directive": "req", "shape": "rectangle"}]),
@@ -987,7 +1063,7 @@ def test_validation_ignores_what_only_the_other_repository_can_draw() -> None:
             "links entry: the corpus format defines ['arrow']",
         ),
     ],
-    ids=["config-key", "legend-config", "type-shape", "link-arrow"],
+    ids=["config-key", "type-shape", "link-arrow"],
 )
 def test_conf_py_refuses_configuration_with_no_surface_here(
     case: dict[str, Any], fragment: str
@@ -1004,23 +1080,49 @@ def test_conf_py_refuses_configuration_with_no_surface_here(
 @pytest.mark.parametrize(
     "options,fragment",
     [
-        ({"direction": "up"}, "options: the corpus format defines ['direction']"),
-        ({"link_labels": "incoming"}, "cannot express link_labels: 'incoming' yet"),
-        ({"show_legend": "compact"}, "cannot express show_legend: 'compact' yet"),
+        (
+            {"styles": "[type == 'req']:critical"},
+            "options: the corpus format defines ['styles']",
+        ),
+        ({"link_labels": "incomming"}, "cannot express link_labels: 'incomming' yet"),
+        ({"direction": "sideways"}, "cannot express direction: 'sideways' yet"),
     ],
-    ids=["unmapped-option", "unmapped-value", "unmapped-legend-key"],
+    ids=["unmapped-option", "misspelt-value", "unmapped-value"],
 )
 def test_index_rst_refuses_options_with_no_surface_here(
     options: dict[str, str], fragment: str
 ) -> None:
     """An option, or an option *value*, this repository cannot express must fail.
 
-    The value half matters as much as the name: both mapped options are still bare flags
-    here, so a case asking for ``link_labels: none`` would otherwise be built as the bare
-    flag -- which means the opposite.
+    The value half matters as much as the name.  For an option that is still a bare flag
+    a wrong value would be built as the flag -- which can mean the opposite -- and for an
+    enumerated one it would be written through to a directive that then reports it, so
+    the case would assert the fallback rather than what it asked for.  A value outside the
+    enumeration is refused here instead, whether it is a typo or a member only the other
+    tool has.
     """
     with pytest.raises(AssertionError, match=re.escape(fragment)):
         _index_rst(_probe(options=options))
+
+
+@pytest.mark.parametrize(
+    "options,written",
+    [
+        ({"show_legend": "compact"}, ":show_legend: compact"),
+        ({"engine_config": "corporate"}, ":config: corporate"),
+    ],
+    ids=["legend-key", "engine-config-name"],
+)
+def test_index_rst_writes_a_name_valued_option_verbatim(
+    options: dict[str, str], written: str
+) -> None:
+    """A legend key and an engine config name are names, not enumeration members.
+
+    Neither is a closed set -- a project calls its legends and its engine configs
+    whatever it likes -- so the value is written through as it stands, and there is no
+    table of accepted values to keep in step with every project's ``conf.py``.
+    """
+    assert written in _index_rst(_probe(options=options))
 
 
 def test_index_rst_writes_a_mapped_option_as_the_bare_flag() -> None:
@@ -1052,8 +1154,8 @@ def test_declared_degradations_must_be_observable_here() -> None:
 def test_a_warning_outside_the_registry_is_unexpected() -> None:
     """Every warning a build emits is either a mapped degradation or a failure.
 
-    With the registry empty here, the second is the only outcome -- which is what makes
-    the no-warning fence of the shipped cases a fence at all.
+    A warning that matches no registry entry is what makes the no-warning fence of the
+    shipped cases a fence at all: it cannot be absorbed as "some degradation".
     """
     observed, unexpected = _classify_warnings(
         "index.rst:4: WARNING: something happened [needs.needflow]\n"

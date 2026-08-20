@@ -747,6 +747,114 @@ Select between the rendering engines for :ref:`needflow` diagrams,
 Any other value is reported as a ``needs.config`` warning, once for the project,
 and every diagram is drawn with the default engine.
 
+.. _`needs_flow_direction`:
+
+needs_flow_direction
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The direction :ref:`needflow` diagrams flow in by default:
+``down`` (the default), ``up``, ``right`` or ``left``.
+
+.. code-block:: python
+
+   needs_flow_direction = "right"
+
+A diagram overrides it with :ref:`needflow_direction`;
+only a diagram that does not set the option consults this value.
+
+.. _`needs_flow_legends`:
+
+needs_flow_legends
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Named legend configurations that a diagram selects by name with
+:ref:`show_legend <needflow_show_legend>`.
+
+.. code-block:: python
+
+   needs_flow_legends = {
+       "beside": {"parts": ["types", "links"], "placement": "external"},
+   }
+
+Default value: ``{}``.
+
+``parts`` is a **list** of the sections to describe -- ``types``, ``links`` or both --
+**in the order they are shown**; it defaults to ``["types"]``.
+
+Order is contract, not an artefact of how the list happens to be written:
+``["links", "types"]`` puts the link table first and keeps it there on every engine,
+so a reader scanning two diagrams finds the same section in the same place.
+
+Only a list is accepted.
+A bare string such as ``"both"`` is reported and ignored --
+a single name cannot express an order,
+and a second accepted spelling would have to keep meaning the same thing
+in every tool that reads this configuration.
+
+``placement`` is a *preference*, not a demand:
+
+``internal``
+   Draw the legend inside the picture where the engine can,
+   and beside it where the engine cannot.
+``external``
+   Draw the legend beside the picture, as a document table.
+   The table looks the same on every engine, its text is selectable and searchable,
+   and it can describe link types -- which no in-diagram legend ever could.
+
+Unset, ``placement`` takes **the engine's own default placement**.
+There is no single right answer to write down here:
+both engines in Sphinx-Needs can draw a legend of need types inside the picture and
+always have, so unset means ``internal`` for them,
+while an engine with no legend construct at all has only the external table to fall
+back on and unset means ``external`` for it.
+Naming the engine's default, rather than a fixed value, is what keeps one contract
+across the tools that read this key.
+
+An engine that cannot draw the legend asked for inside the picture substitutes the
+external one without warning.
+Both engines here draw an in-image legend of need types, and neither can describe link
+types that way, so a legend whose ``parts`` include ``links`` is always drawn beside the
+diagram however it was placed.
+
+That substitution is silent by design.
+The two legends carry identical information and differ only in where they sit,
+so it is a cosmetic one,
+and a warning about it would be unactionable on a project whose other engine can never
+satisfy the preference.
+
+An entry that cannot be used is reported as a ``needs.config`` warning, once for the
+project, and the rest of the configuration is still read.
+
+.. _`needs_flow_show_legend`:
+
+needs_flow_show_legend
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Which entry of :ref:`needs_flow_legends` a diagram gets
+when it asks for a legend without naming one.
+
+.. code-block:: python
+
+   needs_flow_show_legend = "beside"
+
+Default value: ``""``.
+
+This selects *which* legend, never *whether* one is drawn:
+a diagram still has to ask, with :ref:`show_legend <needflow_show_legend>`.
+There is deliberately no project-wide way of putting a legend on every diagram --
+a legend describes one picture, and the decision belongs with that picture.
+
+A diagram that names its own legend overrides this;
+a diagram whose name is not defined falls back to it, having said so.
+If this value names nothing either,
+that is reported once for the build and the engine's own legend is drawn.
+
 .. _`needs_flow_show_links`:
 
 needs_flow_show_links
@@ -754,15 +862,34 @@ needs_flow_show_links
 
 .. versionadded:: 0.3.11
 
-Used to de/activate the output of link type names beside the connection in the :ref:`needflow` directive:
+.. versionchanged:: 8.4.0
+   Accepts a value as well as a boolean.
+
+What :ref:`needflow` diagrams label their connections with by default:
+``none`` (the default), ``outgoing``, ``incoming`` or ``type``.
 
 .. code-block:: python
 
-   needs_flow_show_links = True
+   needs_flow_show_links = "outgoing"
 
-Default value: ``False``
+Default value: ``False``, i.e. ``none``.
 
-Can be configured also for each :ref:`needflow` directive via :ref:`needflow_show_link_names`.
+``True`` and ``False`` are also accepted, and mean ``outgoing`` and ``none``, which is
+what they have always meant.
+The same goes for any other non-string value: this option was declared a boolean for
+years, so a truthy one such as ``1`` still draws labels.
+A *string* that is not one of the four values is a mistake rather than a truth value, so
+it warns and falls back to ``none`` -- which is the one input whose behaviour changes,
+since it used to draw labels.
+
+A diagram overrides it with :ref:`show_link_names <needflow_show_link_names>`,
+including turning labels off again with ``none``.
+
+.. note::
+
+   Every enumerated ``needs_flow_*`` value -- this one, :ref:`needs_flow_direction`
+   and :ref:`needs_flow_engine` -- is matched without regard to case or surrounding
+   whitespace, exactly as the matching directive option is.
 
 .. _`needs_flow_link_types`:
 
