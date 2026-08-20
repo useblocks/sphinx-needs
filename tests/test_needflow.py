@@ -756,3 +756,74 @@ def test_graphviz_label_does_not_break_html_entities(test_app):
     assert "&lt;angled&gt;" in debug
     # no entity may be interrupted by a line break element
     assert not re.search(r"&[a-z]*<br[^>]*>[a-z]*;", debug)
+
+
+CLASS_AND_DEBUG = """\
+Class and debug
+===============
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :class: my-flow-class
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), CLASS_AND_DEBUG),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), CLASS_AND_DEBUG),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_debug_is_a_literal_block_on_both_engines(test_app):
+    """``:debug:`` must produce the same kind of block whichever engine draws.
+
+    It emitted raw HTML on plantuml and a literal block on graphviz, so the same
+    option gave the source line numbers and the theme's code styling on one engine
+    only. Both now emit a literal block.
+
+    ``:class:`` is pinned alongside it, because neither engine sets it deliberately:
+    plantuml gets it only because docutils copies the classes of a replaced node onto
+    the first node replacing it, which happens to be the figure, and graphviz writes
+    it on the image instead. Both honour the option, in different places.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    tree = html_parser.parse(Path(app.outdir) / "index.html")
+    if app.config.needs_flow_engine == "plantuml":
+        assert tree.xpath("//figure[contains(@class, 'my-flow-class')]")
+    else:
+        assert tree.xpath("//img[contains(@class, 'my-flow-class')]")
+
+    # a literal block, i.e. inside a highlight container, on either engine
+    blocks = tree.xpath(
+        "//div[contains(concat(' ', normalize-space(@class), ' '), ' highlight ')]//pre"
+    )
+    assert len(blocks) == 1
+    assert "AAAAA" in blocks[0].text_content()
