@@ -1,0 +1,54 @@
+id: link-line-arrow-color
+title: One link type exercising line, arrow and colour together
+purpose: |
+  The three neutral link properties are resolved independently but emitted into one construct on both engines -- a bracketed list on PlantUML, an attribute list on Graphviz -- so getting each right separately does not prove they compose. `colour` is additionally the property that no engine honoured before this vocabulary existed.
+needs:
+- id: REQ_1
+  type: req
+  title: Requirement one
+  links:
+    links:
+    - REQ_2
+- id: REQ_2
+  type: req
+  title: Requirement two
+links:
+- option: links
+  incoming: is linked by
+  outgoing: links to
+  line: dashed
+  arrow: circle
+  color: '#00AA00'
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**Requirement one**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]]
+      node "<size:12>Requirement</size>\n**Requirement two**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]]
+
+      ' Connection definition
+
+      REQ_1 -[dashed,#00AA00]-o REQ_2
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "REQ_1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement one</b><br align="left"/><font point-size="10">REQ_1</font><br align="left"/>>, tooltip="REQ_1", href="<NODE_URL:REQ_1>", target="_top", shape="box3d"];
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement two</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d"];
+
+      // edge definitions
+      "REQ_1" -> "REQ_2" [style="dashed", arrowhead=odot, color="#00AA00"];
+      }

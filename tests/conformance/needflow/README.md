@@ -65,6 +65,9 @@ needs:                                    # minimal neutral need records
     status: open                          # optional
     tags: [a, b]                          # optional
     links: { links: [REQ_2] }             # map: link-type name -> list of target ids
+    parts:                                # optional; need parts, drawn inside their need
+      - id: sub                           # the part id; its complete id is `REQ_1.sub`
+        title: A part of one
   - id: REQ_2
     type: req
     title: Requirement two
@@ -81,8 +84,11 @@ links:                                    # portable needs_links subset; omit fo
     incoming: "is linked by"
     outgoing: "links to"
     line: dashed                          # optional; portable enum
+    part_line: dotted                     # optional; portable enum. Unset => `line`
     arrow: open                           # optional; portable enum
-    color: "#00AA00"                      # optional
+    color: "#00AA00"                      # optional. Unset => the engine's edge colour,
+                                          # so "#000000" is a colour and not "unset"
+    part_color: "#777777"                 # optional. Unset => `color`
 
 legends:                                  # named legend configs (the mapping a case may pin)
   compact:
@@ -139,6 +145,11 @@ Rules:
   engine-specific blobs outside `engine_config`. Legacy-alias behaviour is each repo's own
   unit-test business, not corpus business.
 - Every case must state `purpose`.
+- A `parts` entry is addressed by its COMPLETE id (`<need id>.<part id>`) wherever an id
+  is written — in another need's `links`, and in the `<NODE_URL:...>` normalisation token.
+- `part_line` and `part_color` apply to an edge with a need part at either end, and each
+  falls back to its ordinary counterpart (`line`, `color`) when unset. An engine that
+  cannot style part links differently draws them as ordinary ones.
 - An omitted `types:` means the CORPUS default — a single `req` / `Requirement` / `R_`
   type — never the repository's own built-in types, which differ between the two tools
   and would make the copies structurally unable to agree.
@@ -225,7 +236,9 @@ different in the manifest.
    `highlight` byte-parity case.
 10. `link-line-arrow-color` — one link type exercising line/arrow/color together.
 11. `shape-enum-sample` — 2–3 portable shapes incl. one `shape-unmapped` degradation.
-12. One case per remaining degradation-registry id not covered above.
+12. `link-part-styling` — `part_line`/`part_color` drawn for a part edge and NOT for the
+    ordinary one beside it.
+13. One case per remaining degradation-registry id not covered above.
 
 ## Versioning discipline
 
