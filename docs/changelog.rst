@@ -136,6 +136,19 @@ Improvements
   as a list. A list, tuple, set or frozenset of names is accepted, as is an already-compiled
   ``re.Pattern`` for ``regex`` (a *bytes* pattern is not, as it could never match a field value).
 
+- 👌 :ref:`needflow` ``:debug:`` shows the generated diagram source as a code block under the
+  plantuml engine too **(changed output)**
+
+  The plantuml engine emitted raw HTML, an unnumbered and unstyled ``<pre>`` block,
+  where the graphviz engine emitted a literal block,
+  so the same option gave the source line numbers and the theme's code styling
+  on one engine only.
+  Both now emit a literal block.
+  The plantuml source is shown unhighlighted, because Pygments has no PlantUML lexer.
+
+  This is a deliberate change to the rendered page rather than a fix:
+  a project that styles or scrapes the debug block sees the new markup.
+
 Internal changes
 ................
 
@@ -225,6 +238,44 @@ Bug fixes
 - 🐛 The :ref:`needflow` warning for an unknown ``:link_types:`` value now carries the
   source location of the directive under the graphviz engine, as it already did under
   plantuml.
+
+- 🐛 A wrapped :ref:`needflow` graphviz label no longer breaks an HTML entity in two.
+
+  A need title is wrapped to the label width and escaped for graphviz's HTML-like labels,
+  but the escaping ran first,
+  so the wrapper counted the characters of an entity and could break inside one:
+  a title holding a quote wrapped to ``&quo<br/>t;``,
+  which graphviz refuses to render, ending the build with ``not well-formed (invalid token)``.
+  Wrapping now happens first,
+  which also makes the wrap width count what the reader sees rather than what the escaper wrote.
+
+- 🐛 A :ref:`needs_graphviz_styles` element type holding something other than a mapping of
+  attributes is now reported and ignored.
+
+  Such a value travelled unchecked into the emitter,
+  where ``'str' object has no attribute 'items'`` ended the whole build with a traceback
+  instead of a message.
+  It is now reported as a ``needs.needflow`` warning naming the config,
+  and the diagram is drawn without the offending style.
+
+- 🐛 An unknown :ref:`needs_flow_engine` value is now reported,
+  and the default engine draws the diagram.
+
+  The value was checked with a bare ``assert``,
+  which ends the build with a traceback rather than a message —
+  and which ``python -O`` strips altogether,
+  leaving the unknown name to fail somewhere further downstream.
+  It is now a ``needs.config`` warning, said once for the project.
+
+- 🐛 :ref:`needflow` naming several graphviz ``:config:`` styles no longer leaks the merged
+  style into the diagrams after it.
+
+  The merge took the first style's attributes by reference
+  and then updated that same dictionary with the second style's,
+  rewriting the configured (and built-in) styles in place:
+  every later diagram naming the first style inherited the second one's attributes,
+  for the rest of the build.
+  A page therefore rendered differently depending on which diagrams came before it.
 
 - 🐛 ``c.this_doc()`` now works in :ref:`needpie`, :ref:`needbar` and the
   :ref:`need_count` role (:issue:`1449`)

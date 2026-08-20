@@ -708,3 +708,290 @@ def test_get_entity_name_unmapped_id_falls_back_with_warning():
     finally:
         module_logger.removeHandler(handler)
         module_logger.setLevel(old_level)
+
+
+ENTITY_IN_TITLE = """\
+Entity in a wrapped title
+=========================
+
+.. spec:: A "quoted" and <angled> title that wraps
+   :id: AAAAA
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [(Path("conf.py"), CONF_PY), (Path("index.rst"), ENTITY_IN_TITLE)],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_graphviz_label_does_not_break_html_entities(test_app):
+    """A title holding a quote or a bracket must survive being wrapped.
+
+    The label was escaped and then wrapped, so the wrapper counted the characters of an
+    entity and could break inside one -- producing ``&quo<br/>t;``, which is invalid
+    markup and a visibly broken label. Wrapping first also makes the wrap width count
+    what the reader sees rather than what the escaper wrote.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    assert "&quot;" in debug
+    assert "&lt;angled&gt;" in debug
+    # no entity may be interrupted by a line break element
+    assert not re.search(r"&[a-z]*<br[^>]*>[a-z]*;", debug)
+
+
+CLASS_AND_DEBUG = """\
+Class and debug
+===============
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :class: my-flow-class
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), CLASS_AND_DEBUG),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), CLASS_AND_DEBUG),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_debug_is_a_literal_block_on_both_engines(test_app):
+    """``:debug:`` must produce the same kind of block whichever engine draws.
+
+    It emitted raw HTML on plantuml and a literal block on graphviz, so the same
+    option gave the source line numbers and the theme's code styling on one engine
+    only. Both now emit a literal block.
+
+    ``:class:`` is pinned alongside it, because neither engine sets it deliberately:
+    plantuml gets it only because docutils copies the classes of a replaced node onto
+    the first node replacing it, which happens to be the figure, and graphviz writes
+    it on the image instead. Both honour the option, in different places.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    tree = html_parser.parse(Path(app.outdir) / "index.html")
+    if app.config.needs_flow_engine == "plantuml":
+        assert tree.xpath("//figure[contains(@class, 'my-flow-class')]")
+    else:
+        assert tree.xpath("//img[contains(@class, 'my-flow-class')]")
+
+    # a literal block, i.e. inside a highlight container, on either engine
+    blocks = tree.xpath(
+        "//div[contains(concat(' ', normalize-space(@class), ' '), ' highlight ')]//pre"
+    )
+    assert len(blocks) == 1
+    assert "AAAAA" in blocks[0].text_content()
+
+
+MALFORMED_GRAPHVIZ_STYLE = """\
+Malformed graphviz style
+========================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), MALFORMED_GRAPHVIZ_STYLE),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+                "needs_graphviz_styles": {"default": "not-a-mapping"},
+            },
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), MALFORMED_GRAPHVIZ_STYLE),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+                "needs_graphviz_styles": {"default": {"node": "not-a-mapping"}},
+            },
+        },
+    ],
+    ids=["entry", "element"],
+    indirect=True,
+)
+def test_malformed_graphviz_style_warns_instead_of_crashing(test_app):
+    """A graphviz style that is not a mapping must not fail the whole build.
+
+    An element type holding something other than a mapping of attributes travelled
+    unchecked from the configuration into the emitter, where
+    ``'str' object has no attribute 'items'`` aborted the build with a traceback
+    instead of a message. Both shapes are now rejected where they are read, and the
+    diagram is drawn without the offending style.
+    """
+    app = test_app
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "malformed config 'default' in 'needs_graphviz_styles'" in warnings
+
+    assert "AAAAA" in _get_svg(
+        app.config, Path(app.outdir), "index.html", "needflow-index-0"
+    )
+
+
+INVALID_ENGINE = """\
+Invalid engine
+==============
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+
+.. needflow::
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), INVALID_ENGINE),
+            ],
+            "confoverrides": {"needs_flow_engine": "nosuchengine"},
+        }
+    ],
+    indirect=True,
+)
+def test_invalid_flow_engine_warns_and_falls_back(test_app):
+    """An unknown ``needs_flow_engine`` must warn, not end the build.
+
+    The value used to trip a bare ``assert``, which reports a traceback rather than a
+    message -- and which ``python -O`` strips altogether, leaving the unknown name to
+    fail somewhere further downstream. The default engine draws the diagram instead.
+    """
+    app = test_app
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "unknown 'needs_flow_engine' value 'nosuchengine'" in warnings
+    assert "'plantuml'" in warnings
+    # said once for the project, not once per diagram
+    assert warnings.count("unknown 'needs_flow_engine' value") == 1
+
+    # the fallback engine still drew a diagram, rather than the build ending
+    assert "needflow-index-0" in Path(app.outdir, "index.html").read_text()
+
+
+SHARED_GRAPHVIZ_STYLE = """\
+Shared graphviz style
+=====================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :config: lefttoright,transparent
+   :debug:
+
+.. needflow::
+   :config: lefttoright
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), SHARED_GRAPHVIZ_STYLE),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_merging_configs_does_not_leak_into_the_next_diagram(test_app):
+    """Naming several ``:config:`` styles must not edit the styles themselves.
+
+    The merge took the first style's attributes by reference and then updated that
+    same dictionary with the second style's, so the configured (and built-in) styles
+    were rewritten in place: every later diagram naming ``lefttoright`` inherited the
+    ``transparent`` background of the diagram before it, for the rest of the build.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    outdir = Path(app.outdir)
+    merged = _debug_source(outdir, "index.html", 0)
+    plain = _debug_source(outdir, "index.html", 1)
+
+    assert 'rankdir="LR"' in merged
+    assert 'bgcolor="transparent"' in merged
+
+    assert 'rankdir="LR"' in plain
+    assert 'bgcolor="transparent"' not in plain

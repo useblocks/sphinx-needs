@@ -493,9 +493,12 @@ debug
 
 .. versionadded:: 0.5.2
 
-If you set the ``:debug:``, we add a debug-output of the generated PlantUML code after the generated image.
+If you set the ``:debug:``, we add the generated diagram source after the generated image,
+as a line-numbered code block.
+Both engines do this, so the option shows PlantUML or Graphviz source
+according to which engine drew the diagram.
 
-Helpful to identify reasons why a PlantUML build may have thrown errors.
+Helpful to identify reasons why a diagram build may have thrown errors.
 
 .. syntax-example::
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from docutils import nodes
@@ -25,6 +25,11 @@ from sphinx_needs.utils import (
 )
 
 LOGGER = get_logger(__name__)
+
+#: The engines a diagram can be drawn with.
+#: The first is the ``needs_flow_engine`` default, and so also the fallback for a
+#: configured value that names no engine at all.
+_ENGINES = ("plantuml", "graphviz")
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -86,7 +91,21 @@ class NeedflowDirective(FilterBase):
         )
 
         engine = self.options.get("engine", needs_config.flow_engine)
-        assert engine in ["graphviz", "plantuml"], f"Unknown needflow engine '{engine}'"
+        if engine not in _ENGINES:
+            # the `:engine:` option is validated as it is parsed, so only the
+            # configuration can name an unknown engine here.
+            # This used to be a bare `assert`, which ends the build with a traceback
+            # rather than a message -- and which `python -O` strips altogether, leaving
+            # the unknown name to fail further downstream instead
+            log_warning(
+                LOGGER,
+                f"unknown 'needs_flow_engine' value {engine!r}, "
+                f"so the diagram is drawn with {_ENGINES[0]!r} instead",
+                "config",
+                location=self.get_location(),
+                once=True,
+            )
+            engine = _ENGINES[0]
 
         config_names: str = self.options.get("config", "")
         config = ""
@@ -117,10 +136,29 @@ class NeedflowDirective(FilterBase):
                         for key, value in needs_config.graphviz_styles[
                             config_name
                         ].items():
+                            if not isinstance(value, Mapping):
+                                # a value that is not a mapping of attributes used to
+                                # travel unchecked into the emitter, where
+                                # `'str' object has no attribute 'items'` ended the
+                                # whole build with a traceback instead of a message
+                                log_warning(
+                                    LOGGER,
+                                    f"malformed config {config_name!r} in 'needs_graphviz_styles': "
+                                    f"{key!r} must be a mapping of attributes, "
+                                    f"but is {type(value).__name__}",
+                                    "needflow",
+                                    location=self.get_location(),
+                                )
+                                continue
                             if key in graphviz_style:
                                 graphviz_style[key].update(value)  # type: ignore[literal-required]
                             else:
-                                graphviz_style[key] = value  # type: ignore[literal-required]
+                                # copied, so that merging several configs cannot edit
+                                # the configuration itself: the first config's
+                                # attributes used to be taken by reference and then
+                                # updated with the second's, which leaked one diagram's
+                                # styles into every later one naming the same config
+                                graphviz_style[key] = dict(value)  # type: ignore[literal-required]
                     elif config_name:
                         log_warning(
                             LOGGER,
