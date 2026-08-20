@@ -827,3 +827,171 @@ def test_debug_is_a_literal_block_on_both_engines(test_app):
     )
     assert len(blocks) == 1
     assert "AAAAA" in blocks[0].text_content()
+
+
+MALFORMED_GRAPHVIZ_STYLE = """\
+Malformed graphviz style
+========================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), MALFORMED_GRAPHVIZ_STYLE),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+                "needs_graphviz_styles": {"default": "not-a-mapping"},
+            },
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), MALFORMED_GRAPHVIZ_STYLE),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+                "needs_graphviz_styles": {"default": {"node": "not-a-mapping"}},
+            },
+        },
+    ],
+    ids=["entry", "element"],
+    indirect=True,
+)
+def test_malformed_graphviz_style_warns_instead_of_crashing(test_app):
+    """A graphviz style that is not a mapping must not fail the whole build.
+
+    An element type holding something other than a mapping of attributes travelled
+    unchecked from the configuration into the emitter, where
+    ``'str' object has no attribute 'items'`` aborted the build with a traceback
+    instead of a message. Both shapes are now rejected where they are read, and the
+    diagram is drawn without the offending style.
+    """
+    app = test_app
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "malformed config 'default' in 'needs_graphviz_styles'" in warnings
+
+    assert "AAAAA" in _get_svg(
+        app.config, Path(app.outdir), "index.html", "needflow-index-0"
+    )
+
+
+INVALID_ENGINE = """\
+Invalid engine
+==============
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+
+.. needflow::
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), INVALID_ENGINE),
+            ],
+            "confoverrides": {"needs_flow_engine": "nosuchengine"},
+        }
+    ],
+    indirect=True,
+)
+def test_invalid_flow_engine_warns_and_falls_back(test_app):
+    """An unknown ``needs_flow_engine`` must warn, not end the build.
+
+    The value used to trip a bare ``assert``, which reports a traceback rather than a
+    message -- and which ``python -O`` strips altogether, leaving the unknown name to
+    fail somewhere further downstream. The default engine draws the diagram instead.
+    """
+    app = test_app
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "unknown 'needs_flow_engine' value 'nosuchengine'" in warnings
+    assert "'plantuml'" in warnings
+    # said once for the project, not once per diagram
+    assert warnings.count("unknown 'needs_flow_engine' value") == 1
+
+    # the fallback engine still drew a diagram, rather than the build ending
+    assert "needflow-index-0" in Path(app.outdir, "index.html").read_text()
+
+
+SHARED_GRAPHVIZ_STYLE = """\
+Shared graphviz style
+=====================
+
+.. spec:: A
+   :id: AAAAA
+
+.. needflow::
+   :config: lefttoright,transparent
+   :debug:
+
+.. needflow::
+   :config: lefttoright
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY),
+                (Path("index.rst"), SHARED_GRAPHVIZ_STYLE),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_merging_configs_does_not_leak_into_the_next_diagram(test_app):
+    """Naming several ``:config:`` styles must not edit the styles themselves.
+
+    The merge took the first style's attributes by reference and then updated that
+    same dictionary with the second style's, so the configured (and built-in) styles
+    were rewritten in place: every later diagram naming ``lefttoright`` inherited the
+    ``transparent`` background of the diagram before it, for the rest of the build.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    outdir = Path(app.outdir)
+    merged = _debug_source(outdir, "index.html", 0)
+    plain = _debug_source(outdir, "index.html", 1)
+
+    assert 'rankdir="LR"' in merged
+    assert 'bgcolor="transparent"' in merged
+
+    assert 'rankdir="LR"' in plain
+    assert 'bgcolor="transparent"' not in plain

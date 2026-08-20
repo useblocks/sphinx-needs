@@ -744,6 +744,9 @@ Select between the rendering engines for :ref:`needflow` diagrams,
 * ``plantuml``: Use `PlantUML <https://plantuml.com/>`__ to render the diagrams (default).
 * ``graphviz``: Use `Graphviz <https://graphviz.org>`__ to render the diagrams.
 
+Any other value is reported as a ``needs.config`` warning, once for the project,
+and every diagram is drawn with the default engine.
+
 .. _`needs_flow_show_links`:
 
 needs_flow_show_links
@@ -828,6 +831,11 @@ needs_graphviz_styles
 
 This must be a dictionary which can store multiple `Graphviz configurations <https://graphviz.org>`__.
 These configs can then be selected when using :ref:`needflow` and the engine is set to ``graphviz``.
+
+Each configuration maps an element type -- ``root``, ``graph``, ``node`` or ``edge`` --
+to a mapping of the attributes to set on it.
+An element type holding anything else is reported as a ``needs.needflow`` warning
+and ignored, rather than failing the build.
 
 .. code-block:: python
 
