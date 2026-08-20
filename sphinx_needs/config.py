@@ -63,14 +63,14 @@ class NewFieldParams:
     """Whether variants are parsed in this field."""
     parse_dynamic_functions: bool | None = None
     """Whether dynamic functions are parsed in this field."""
-    predicates: None | list[tuple[str, Any]] = None
+    predicates: list[tuple[str, Any]] | None = None
     """List of (need filter, value) pairs for default predicate values.
 
     Used if the field has not been specifically set.
 
     The value from the first matching filter will be used, if any.
     """
-    default: None | Any = None
+    default: Any | None = None
     """Default value for the field.
     
     Used if the field has not been specifically set, and no predicate matches.
@@ -129,11 +129,11 @@ class _Config:
         | FieldNumberSchemaType
         | FieldMultiValueSchemaType
         | None = None,
-        nullable: None | bool = None,
-        default: None | Any = None,
-        predicates: None | list[tuple[str, Any]] = None,
-        parse_variants: None | bool = None,
-        parse_dynamic_functions: None | bool = None,
+        nullable: bool | None = None,
+        default: Any | None = None,
+        predicates: list[tuple[str, Any]] | None = None,
+        parse_variants: bool | None = None,
+        parse_dynamic_functions: bool | None = None,
         override: bool = False,
     ) -> None:
         """Adds a need field to the configuration."""
@@ -445,15 +445,13 @@ class NeedsSphinxConfig:
     def __getattribute__(self, name: str) -> Any:
         if name.startswith("__") or name in ("_config", "functions", "warnings"):
             return super().__getattribute__(name)
-        if name.startswith("_"):
-            name = name[1:]
+        name = name.removeprefix("_")
         return getattr(super().__getattribute__("_config"), f"needs_{name}")
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name.startswith("__") or name in ("_config", "functions", "warnings"):
             return super().__setattr__(name, value)
-        if name.startswith("_"):
-            name = name[1:]
+        name = name.removeprefix("_")
         return setattr(super().__getattribute__("_config"), f"needs_{name}", value)
 
     @classmethod
@@ -469,8 +467,7 @@ class NeedsSphinxConfig:
                     f"Config item {item.name} has no default value or factory."
                 )
             name = item.name
-            if name.startswith("_"):
-                name = name[1:]
+            name = name.removeprefix("_")
             app.add_config_value(
                 f"needs_{name}",
                 default,
@@ -482,7 +479,7 @@ class NeedsSphinxConfig:
     def field_names(cls) -> set[str]:
         """Get all config fields (without ``needs_`` prefix)"""
         names = [field.name for field in fields(cls)]
-        return {name[1:] if name.startswith("_") else name for name in names}
+        return {name.removeprefix("_") for name in names}
 
     @classmethod
     def convert_field_value(
@@ -648,7 +645,7 @@ class NeedsSphinxConfig:
         default=True, metadata={"rebuild": "html", "types": (bool,)}
     )
     """Show the link ID in the need incoming/outgoing roles."""
-    file: None | str = field(
+    file: str | None = field(
         default=None,
         metadata={"rebuild": "html", "types": (), "toml_convert": _abs_path},
     )
@@ -855,7 +852,7 @@ class NeedsSphinxConfig:
         default="clean", metadata={"rebuild": "html", "types": (str,)}
     )
     """The default layout to use for needs rendering."""
-    default_style: None | str = field(
+    default_style: str | None = field(
         default=None, metadata={"rebuild": "html", "types": ()}
     )
     """The default style to use for needs rendering."""
