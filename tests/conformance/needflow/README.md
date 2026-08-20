@@ -139,6 +139,9 @@ Rules:
   engine-specific blobs outside `engine_config`. Legacy-alias behaviour is each repo's own
   unit-test business, not corpus business.
 - Every case must state `purpose`.
+- An omitted `types:` means the CORPUS default — a single `req` / `Requirement` / `R_`
+  type — never the repository's own built-in types, which differ between the two tools
+  and would make the copies structurally unable to agree.
 - `expect.<engine>.source` is the full emitted diagram source for that engine, compared
   byte-exact AFTER normalisation (below). Upstream this is what `:debug:` exposes; in
   ubcode it is the string the mermaid emitter returns.
