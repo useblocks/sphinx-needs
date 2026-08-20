@@ -14,6 +14,49 @@ Unreleased
 Improvements
 ............
 
+- ✨ Portable link and need-type styling for :ref:`needflow` (:pr:`1783`)
+
+  ``needs_links`` gains ``line``, ``part_line``, ``arrow`` and ``part_color``, and
+  ``needs_types`` gains ``shape``. Each says what is *meant* rather than naming one
+  engine's syntax, and each engine writes it in its own — so the same configuration
+  draws the same diagram wherever it is built:
+
+  .. code-block:: python
+
+     needs_types = [
+         dict(directive="req", title="Requirement", prefix="R_", shape="hexagon"),
+     ]
+     needs_links = {
+         "blocks": {
+             "incoming": "is blocked by",
+             "outgoing": "blocks",
+             "line": "dashed",
+             "part_line": "dotted",
+             "arrow": "circle",
+             "color": "#AA0000",
+             "part_color": "#777777",
+         },
+     }
+
+  ``line`` and ``part_line`` are ``solid``, ``dashed``, ``dotted``, ``thick`` or
+  ``invisible``; ``arrow`` is ``normal``, ``none``, ``open``, ``circle``, ``cross`` or
+  ``both``; ``shape`` is one of ten members every engine can draw, and also accepts the
+  legacy PlantUML keywords of ``needs_types[].style`` as aliases, so a value can be
+  moved across unchanged.
+
+  ``needs_links[].color`` is **finally honoured** — an identical ``TODO`` had sat in
+  both emitters for years. It is now unset by default rather than ``#000000``, so a link
+  type that names no colour keeps the engine's own edge colour and draws byte-identical
+  source, while one that asks for black is given black. ``part_color`` and ``part_line``
+  fall back to ``color`` and ``line`` when unset, so a link type states the difference
+  once.
+
+  Where an engine has no form for a value it draws the nearest one and says so once for
+  the project: PlantUML has no ``diamond`` element and no crossed arrow head, so those
+  become a rectangle and a plain head. A diagram is never refused for naming a member of
+  its own vocabulary. An out-of-enum value is reported once against ``conf.py`` and the
+  deprecated spelling stays in charge.
+
 - ✨ New :ref:`needflow` ``:direction:`` option and :ref:`needs_flow_direction`
   configuration (:pr:`1782`)
 
@@ -243,6 +286,26 @@ These changes do not affect user-facing behaviour:
 
 - ♻️ :ref:`needflow`'s two engines now share one graph-model pass, with no change to the
   generated diagram source
+
+Deprecations
+............
+
+- ⚠️ ``needs_links[].style``, ``.style_part``, ``.style_start`` and ``.style_end`` →
+  ``.line``, ``.part_line``, ``.color``, ``.part_color`` and ``.arrow`` (:pr:`1783`)
+
+  The four old keys hold PlantUML tokens, which every other engine has to translate.
+  They keep working exactly as they did, and will keep working: they are aliases, not a
+  withdrawal. Using one emits a ``needs.deprecated`` warning naming the replacements, and
+  the warning names exactly the keys a link type actually wrote — so a project can
+  migrate one link type, and one key, at a time, and see what is left.
+
+  The fold is per key, not per link type: ``style`` is a compound of a colour and a line
+  keyword, so setting the neutral ``line`` beside a ``style`` of ``dotted,#FF0000``
+  displaces ``dotted`` and keeps ``#FF0000``.
+
+  Note that the ``arrow`` member reproducing today's default is ``open``, not
+  ``normal`` — the default ``style_end`` of ``->`` has always rendered as an open "V"
+  head on the graphviz engine. See :ref:`needflow_arrow_migration` for the full mapping.
 
 Bug fixes
 .........

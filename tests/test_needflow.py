@@ -2965,9 +2965,9 @@ def test_unusable_neutral_values_are_reported_without_any_needflow(
     A project that misconfigures one of these and happens to have no needflow anywhere
     would otherwise never be told.
     """
-    conf = NEUTRAL_CONF_PY.replace('"shape": "cylinder",', '"shape": "trapezium",').replace(
-        '"line": "dashed",', '"line": "wobbly",'
-    )
+    conf = NEUTRAL_CONF_PY.replace(
+        '"shape": "cylinder",', '"shape": "trapezium",'
+    ).replace('"line": "dashed",', '"line": "wobbly",')
     (tmp_path / "conf.py").write_text(conf, "utf8")
     (tmp_path / "index.rst").write_text(NO_NEEDFLOW, "utf8")
     app = make_app(

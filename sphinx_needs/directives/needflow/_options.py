@@ -740,9 +740,9 @@ SHAPE_ALIASES: Mapping[str, str] = {
 #: counterpart and take the nearest one silently (tier 1); ``diamond`` has no near form
 #: at all and is warned about (tier 2, see :func:`plantuml_shape`).
 #:
-#: .. note:: ``hexagon`` is nestable only from plantuml-1.2020.02 onwards.  An older
-#:    renderer draws the element but refuses to nest anything inside it, so a project
-#:    that both asks for this shape and nests its needs needs that version.
+#: .. note:: ``hexagon`` is a PlantUML element only from 1.2020.13 onwards.  An older
+#:    renderer reports a diagram error rather than drawing a different shape, so a
+#:    project supporting such builds should prefer another member.
 PLANTUML_SHAPES: Mapping[str, str] = {
     "rectangle": "rectangle",
     "rounded": "card",
