@@ -995,3 +995,460 @@ def test_merging_configs_does_not_leak_into_the_next_diagram(test_app):
 
     assert 'rankdir="LR"' in plain
     assert 'bgcolor="transparent"' not in plain
+
+
+DIRECTION_DOC = """\
+Direction
+=========
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :direction: {value}
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "value,plantuml_statement,rankdir",
+    [
+        ("down", None, None),
+        ("tb", None, None),
+        ("td", None, None),
+        ("right", "left to right direction", "LR"),
+        ("lr", "left to right direction", "LR"),
+        # PlantUML degrades `up` to its axis mate `down`, which is how it already draws,
+        # so the degraded diagram emits nothing at all -- byte-identical to the default
+        ("up", None, "BT"),
+        ("bt", None, "BT"),
+        ("left", "left to right direction", "RL"),
+        ("rl", "left to right direction", "RL"),
+    ],
+)
+@pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
+def test_direction_option_per_engine(
+    make_app,
+    tmp_path,
+    plantuml_command,
+    engine,
+    value,
+    plantuml_statement,
+    rankdir,
+):
+    """Every accepted ``:direction:`` spelling reaches both engines.
+
+    PlantUML has only ``top to bottom direction`` and ``left to right direction``, so a
+    reversed direction is drawn by its axis mate; Graphviz draws all four with
+    ``rankdir``. ``down`` and its aliases must emit *nothing at all*, because a diagram
+    already drawn that way must keep the source it had before the option existed.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(DIRECTION_DOC.format(value=value), "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "graphviz_output_format": "svg",
+            "needs_flow_engine": engine,
+        },
+    )
+    app.build()
+
+    source = _debug_source(Path(app.outdir), "index.html")
+    if engine == "plantuml":
+        assert ("' Direction" in source) is (plantuml_statement is not None)
+        if plantuml_statement is not None:
+            assert plantuml_statement in source
+    else:
+        assert ("rankdir=" in source) is (rankdir is not None)
+        if rankdir is not None:
+            assert f'rankdir="{rankdir}"' in source
+
+
+@pytest.mark.parametrize(
+    "value,warned",
+    [("up", "'up'"), ("bt", "'up'"), ("left", "'left'"), ("rl", "'left'")],
+)
+def test_plantuml_reports_the_direction_it_cannot_draw(
+    make_app, tmp_path, plantuml_command, value, warned
+):
+    """A direction PlantUML has no primitive for degrades with one warning per project.
+
+    ``bottom to top direction`` and ``right to left direction`` are syntax errors for
+    PlantUML (probed against 1.2020.02), so the axis mate is drawn instead. That is a
+    named intent going unhonoured rather than a decorative substitution, so it is
+    reported -- but once for the whole project, not once per diagram.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(
+        DIRECTION_DOC.format(value=value)
+        + f"\n.. needflow::\n   :direction: {value}\n",
+        "utf8",
+    )
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command},
+    )
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert f"the plantuml engine cannot draw {warned}" in warnings
+    # two diagrams ask for it, and the project is told once
+    assert warnings.count("the plantuml engine cannot draw") == 1
+
+
+def test_graphviz_draws_every_direction_without_warning(
+    make_app, tmp_path, plantuml_command
+):
+    """Graphviz supports all four directions, so none of them may warn.
+
+    The companion of the PlantUML degradation test: a tier-2 warning that fired on an
+    engine which *can* draw the direction would be noise, and would make an author
+    change a diagram that was already right.
+    """
+    document = "Directions\n==========\n\n.. spec:: A\n   :id: AAAAA\n\n"
+    for value in ("down", "up", "right", "left"):
+        document += f".. needflow::\n   :direction: {value}\n\n"
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(document, "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "graphviz_output_format": "svg",
+            "needs_flow_engine": "graphviz",
+        },
+    )
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+
+
+def test_unknown_direction_is_rejected_as_the_option_is_parsed(
+    make_app, tmp_path, plantuml_command
+):
+    """``:direction:`` is a closed enumeration, so docutils reports a bad value.
+
+    A layout nobody can draw is a mistake in the document rather than a degradation, and
+    docutils already reports it against the directive with the accepted values listed.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(DIRECTION_DOC.format(value="sideways"), "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command},
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    # docutils' own `choice` message, which lists what the option accepts
+    assert '"sideways" unknown; choose from' in warnings
+    for accepted in ("down", "up", "right", "left", "tb", "td", "bt", "lr", "rl"):
+        assert f'"{accepted}"' in warnings
+
+
+CONFIG_DIRECTION_DOC = """\
+Config direction
+================
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :config: {config}
+   :direction: {value}
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "engine,config_name,emitted",
+    [
+        ("plantuml", "lefttoright", "top to bottom direction"),
+        ("graphviz", "lefttoright", 'rankdir="TB"'),
+    ],
+)
+def test_explicit_direction_beats_the_engine_config(
+    make_app, tmp_path, plantuml_command, engine, config_name, emitted
+):
+    """An explicit ``:direction:`` must win over the config blob written beside it.
+
+    The blob is a preamble of defaults and the option a per-element value, which is the
+    precedence both engines already give them -- but a *default* direction has to be
+    restated to win, because emitting nothing would leave the blob's layout standing.
+    The emitted source is asserted, so the test cannot pass on the warning alone.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(
+        CONFIG_DIRECTION_DOC.format(config=config_name, value="down"), "utf8"
+    )
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "graphviz_output_format": "svg",
+            "needs_flow_engine": engine,
+        },
+    )
+    app.build()
+
+    source = _debug_source(Path(app.outdir), "index.html")
+    assert emitted in source
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "disagrees with the direction 'down'" in warnings
+
+
+@pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
+def test_agreeing_engine_config_does_not_warn_or_restate(
+    make_app, tmp_path, plantuml_command, engine
+):
+    """A config blob that already draws the asked-for direction is left alone.
+
+    Nothing disagrees, so nothing is reported; and the direction is already in force, so
+    restating it would move the bytes of a diagram whose author changed nothing.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(
+        CONFIG_DIRECTION_DOC.format(config="lefttoright", value="right"), "utf8"
+    )
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "graphviz_output_format": "svg",
+            "needs_flow_engine": engine,
+        },
+    )
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+
+    source = _debug_source(Path(app.outdir), "index.html")
+    if engine == "plantuml":
+        assert "' Direction" not in source
+        assert source.count("left to right direction") == 1
+    else:
+        # the blob's own `rankdir` stands, and no second one is written after it
+        assert source.count("rankdir=") == 1
+
+
+def test_project_direction_default_applies_without_the_option(
+    make_app, tmp_path, plantuml_command
+):
+    """``needs_flow_direction`` is the default a diagram without the option gets."""
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(
+        "Default\n=======\n\n.. spec:: A\n   :id: AAAAA\n\n.. needflow::\n   :debug:\n",
+        "utf8",
+    )
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_direction": "right",
+        },
+    )
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+    assert "left to right direction" in _debug_source(Path(app.outdir), "index.html")
+
+
+def test_option_beats_the_project_direction_default(
+    make_app, tmp_path, plantuml_command
+):
+    """A diagram always has the last word over ``needs_flow_direction``."""
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(DIRECTION_DOC.format(value="down"), "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_direction": "right",
+        },
+    )
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+    source = _debug_source(Path(app.outdir), "index.html")
+    assert "left to right direction" not in source
+    assert "' Direction" not in source
+
+
+NO_NEEDFLOW = """\
+No needflow at all
+==================
+
+.. spec:: A
+   :id: AAAAA
+"""
+
+
+def test_bad_flow_config_is_reported_without_any_needflow(
+    make_app, tmp_path, plantuml_command
+):
+    """An unusable ``needs_flow_*`` value is reported where the configuration is read.
+
+    Checking these as a diagram is drawn means a project that misconfigures one and
+    happens to have no needflow anywhere is never told about it -- and then gets a
+    different diagram the day somebody adds one.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(NO_NEEDFLOW, "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_direction": "sideways",
+        },
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "Invalid 'needs_flow_direction' value 'sideways'" in warnings
+    assert "allowed values: down, up, right, left" in warnings
+
+
+def test_bad_flow_config_is_reported_once_not_once_per_diagram(
+    make_app, tmp_path, plantuml_command
+):
+    """The read-time report is the only one, however many diagrams the project draws.
+
+    The resolution falls back through the same validator, with the same message, so
+    Sphinx's ``once`` filter collapses the two -- and the surviving warning is the one
+    without a directive location, because a ``conf.py`` mistake must not be reported
+    against whichever ``index.rst`` line happened to be drawn first.
+    """
+    document = "Two diagrams\n============\n\n.. spec:: A\n   :id: AAAAA\n\n"
+    document += ".. needflow::\n\n.. needflow::\n"
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(document, "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_direction": "sideways",
+        },
+    )
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert warnings.count("Invalid 'needs_flow_direction' value") == 1
+    # reported against the project, not against a line of the document
+    assert "index.rst" not in warnings
+
+
+NORMALISED_CONFIG = """\
+Config value normalisation
+==========================
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "override,needle",
+    [
+        ({"needs_flow_direction": "  RIGHT  "}, "left to right direction"),
+        ({"needs_flow_engine": "  GraphViz  "}, "digraph needflow"),
+    ],
+    ids=["direction", "engine"],
+)
+def test_enum_config_values_ignore_case_and_padding(
+    make_app, tmp_path, plantuml_command, override, needle
+):
+    """A configured enum value is matched the way the matching option value is.
+
+    The directive options go through docutils' ``choice``, which lowercases and strips
+    before matching, so ``:engine: PlantUML`` has always been accepted. The configuration
+    side matched exactly, so the same word in ``conf.py`` warned and fell back --
+    silently drawing something else.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(NORMALISED_CONFIG, "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "graphviz_output_format": "svg",
+            **override,
+        },
+    )
+    app.build()
+
+    # the value is usable, so nothing is reported and nothing falls back
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+    assert needle in _debug_source(Path(app.outdir), "index.html")
+
+
+@pytest.mark.parametrize(
+    "override,message",
+    [
+        ({"needs_flow_direction": "  sideways  "}, "Invalid 'needs_flow_direction'"),
+        ({"needs_flow_engine": "  crayon  "}, "unknown 'needs_flow_engine'"),
+    ],
+    ids=["direction", "engine"],
+)
+def test_normalisation_does_not_silence_a_genuinely_wrong_value(
+    make_app, tmp_path, plantuml_command, override, message
+):
+    """Tolerating case and padding must not turn a wrong value into a silent fallback.
+
+    The point of normalising is to accept what the author plainly meant, not to accept
+    anything -- so a value that is wrong after normalisation is still reported, and the
+    message quotes what was actually written.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(NORMALISED_CONFIG, "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command, **override},
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert message in warnings
+    # the author's own spelling is echoed, padding and all, so it can be found in conf.py
+    assert repr(next(iter(override.values()))) in warnings

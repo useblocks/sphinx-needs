@@ -819,6 +819,13 @@ class NeedsSphinxConfig:
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )
     """If True, show links in needflow diagrams by default."""
+    flow_direction: Literal["down", "up", "right", "left"] = field(
+        default="down", metadata={"rebuild": "html", "types": (str,)}
+    )
+    """The default direction needflow diagrams are drawn in.
+
+    .. versionadded:: 8.4.0
+    """
     flow_link_types: list[str] = field(
         default_factory=lambda: ["links"], metadata={"rebuild": "html", "types": ()}
     )

@@ -25,6 +25,7 @@ from ._model import (
     build_graph,
     resolve_link_types,
 )
+from ._options import plantuml_direction
 from ._shared import create_filter_paragraph
 
 logger = get_logger(__name__)
@@ -291,6 +292,15 @@ def process_needflow_plantuml(
                 puml_node["uml"] += "\n' Config\n\n"
                 puml_node["uml"] += config
                 puml_node["uml"] += "\n\n"
+
+            # the config blob is a preamble of defaults, so the direction is written
+            # after it and wins; nothing is written for a diagram already drawn that way
+            if (
+                direction := plantuml_direction(
+                    graph.direction, graph.config_direction, location=node
+                )
+            ) is not None:
+                puml_node["uml"] += f"\n' Direction\n\n{direction}\n"
 
             # the entity names must be assigned for the whole diagram at once,
             # so that ids sanitising to the same name stay distinct nodes

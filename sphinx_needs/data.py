@@ -40,8 +40,16 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 6
+ENV_DATA_VERSION: Final = 7
 """Version of the data stored in the environment.
+
+Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
+handing a pickled doctree to code that no longer understands it.
+
+Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
+They are read while the diagram is rendered, i.e. from the doctree, so an unbumped
+rebuild over an existing ``_build`` keeps the old doctrees and ends with a ``KeyError``
+rather than re-reading the document.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -685,6 +693,16 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
 
     max_items: int | None
     """Maximum number of needs to show, ``None`` if the option was not given."""
+
+    direction: Literal["down", "up", "right", "left"] | None
+    """The direction to draw the diagram in,
+    ``None`` if the option was not given, in which case the configuration is consulted."""
+
+    config_direction: Literal["down", "up", "right", "left"] | None
+    """The direction the selected engine configuration sets, if any.
+
+    Detected when the engine configuration is resolved, i.e. while the engine is still
+    known, so that the model can honour it without knowing which engine it is for."""
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):
