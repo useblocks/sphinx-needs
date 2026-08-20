@@ -166,6 +166,46 @@ left unfixed — out of scope here):
   flattened multi-line comment text rather than a real position past the
   first line.
 
+## Portability guarantees
+
+These snapshots hold real positions (`source_map` rows/columns) and real
+captured text (`tagged_scope`, `rst`, ...), so anything that changes a byte
+on disk before extraction runs — not just the extractor itself — can shift a
+value and break the comparison. The harness (`tests/test_extraction_fixtures.py`)
+and the repository make three guarantees so one committed snapshot is valid
+on Linux, macOS and Windows alike:
+
+- **LF-pinned inputs.** `.gitattributes` (repository root) forces
+  `tests/data/**` and `tests/__snapshots__/**` to check out with LF line
+  endings regardless of the platform or the user's `core.autocrlf` (the
+  Git-for-Windows default, `true`, rewrites LF to CRLF on checkout
+  otherwise). Without this, the fixture YAMLs and the committed snapshots
+  themselves could arrive corrupted on Windows before the test even runs.
+- **Byte-exact source writing.** The harness writes each case's `source`
+  (and, for `libclang` cases, `compile_commands.json`) with
+  `Path.write_bytes(text.encode("utf-8"))`, never `Path.write_text(...)`.
+  `write_text` opens the file in text mode, which translates every `\n` to
+  `os.linesep` on write — on Windows that turns an LF-only fixture into CRLF
+  on disk, shifting tree-sitter/libclang column positions at line ends and
+  injecting `\r` into any multi-line `tagged_scope` text. Writing exact bytes
+  means the file on disk always matches the fixture verbatim, independent of
+  platform. `test_extraction_is_crlf_insensitive` pins the consequence: the
+  same source, written once as LF and once as genuine CRLF, produces
+  identical normalized output.
+- **Relative, slash-normalised paths.** `_relative_filepath` renders
+  `filepath`/`file_path` with `Path.as_posix()`, so a nested case can never
+  render with backslashes (`sub\case.h`) on Windows where every existing
+  snapshot uses `/`. `_assert_portable_path` enforces this as an invariant
+  rather than a remembered convention: it asserts the value is relative
+  (checked against both `PurePosixPath` and `PureWindowsPath`, since neither
+  alone recognises every absolute form — POSIX-absolute, drive-absolute, and
+  UNC) and contains no backslash, so a non-portable path can never reach a
+  committed snapshot silently.
+
+These fixtures and snapshots are also mirrored byte-for-byte into a second
+implementation's test suite, so a platform-dependent value breaks that
+comparison too, not only Windows CI here.
+
 ## Running / updating
 
 ```bash
