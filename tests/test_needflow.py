@@ -3099,3 +3099,119 @@ def test_every_arrow_renders_on_plantuml_beside_a_line(
     else:
         assert warnings == ""
     assert expected in _debug_source(Path(app.outdir), "index.html")
+
+
+#: The mirror of the half migration above: the *colour* has moved to the neutral key
+#: while the line keyword is still in the deprecated compound.
+COLOR_MIGRATED_CONF_PY = HALF_MIGRATED_CONF_PY.replace(
+    '"style": "#00AA00",\n        "line": "dashed",',
+    '"style": "dotted,#FF0000",\n        "color": "#00AA00",',
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), COLOR_MIGRATED_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), COLOR_MIGRATED_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_a_migrated_color_supersedes_only_the_colour_token(test_app):
+    """Migrating the colour out of ``style`` must not take the line keyword with it.
+
+    This is the other direction of the same per-key fold: a neutral ``color`` supersedes
+    the colour token of the deprecated compound -- the two cannot both be emitted -- and
+    leaves everything else in that string doing exactly what it did. Dropping the string
+    wholesale would silently turn a dotted edge solid.
+    """
+    app = test_app
+    app.build()
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert "-[dotted,#00AA00]->" in debug
+    else:
+        assert 'style="dotted"' in debug
+        assert 'color="#00AA00"' in debug
+    # the superseded colour is emitted by neither engine
+    assert "#FF0000" not in debug
+
+
+#: A link type that states its line and colour once, for both edge kinds.
+PART_FALLBACK_CONF_PY = PART_STYLING_CONF_PY.replace(
+    '        "part_line": "dotted",\n        "part_color": "#777777",\n', ""
+).replace('"line": "solid"', '"line": "dashed"')
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PART_FALLBACK_CONF_PY),
+                (Path("index.rst"), PART_STYLING),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PART_FALLBACK_CONF_PY),
+                (Path("index.rst"), PART_STYLING),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_part_line_and_part_color_fall_back_to_their_counterparts(test_app):
+    """A link type that wants no distinction states its line and colour once.
+
+    ``part_line`` and ``part_color`` are *overrides*, so an unset one takes ``line`` and
+    ``color``. The two are symmetric on purpose: a rule that held for the colour and not
+    for the line would have to be learnt rather than guessed, and it would leave a
+    fully-migrated link type drawing its part edges from a deprecated default it never
+    wrote.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        # both edges: the ordinary line and the ordinary colour
+        assert debug.count("-[dashed,#00AA00]->") == 2
+        assert "dotted" not in debug
+        assert "#777777" not in debug
+    else:
+        assert debug.count('style="dashed"') == 2
+        assert debug.count('color="#00AA00"') == 2
+        assert "dotted" not in debug

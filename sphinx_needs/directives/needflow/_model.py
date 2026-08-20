@@ -257,11 +257,21 @@ class GraphEdge:
     def line(self) -> LineStyle | None:
         """How this link's line is drawn, as an intent rather than an engine token.
 
-        ``None`` when the link type only carries the deprecated ``style`` value, which
-        each engine then emits exactly as it always has.
+        ``part_line`` falls back to ``line`` when it is unset, exactly as ``part_color``
+        falls back to ``color``: the part keys are *overrides*, so a link type that wants
+        no distinction states its line once.  The symmetry is the point -- a rule that
+        held for the colour and not for the line would have to be learnt rather than
+        guessed, and it would leave a fully migrated link type drawing its part edges
+        from a deprecated default it never wrote.
+
+        ``None`` when the link type carries neither neutral key, which hands the decision
+        back to the deprecated ``style``/``style_part`` -- emitted exactly as they always
+        have been.
         """
         display = self.link_type.display
-        return resolve_line(display.part_line if self.is_part else display.line)
+        return resolve_line(
+            (display.part_line or display.line) if self.is_part else display.line
+        )
 
     @property
     def arrow(self) -> ArrowStyle | None:

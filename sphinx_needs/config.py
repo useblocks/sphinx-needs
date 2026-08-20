@@ -294,7 +294,9 @@ class NeedLinksConfig(TypedDict, total=False):
 
     One of 'solid', 'dashed', 'dotted', 'thick' or 'invisible'."""
     part_line: str
-    """How the line to a need part is drawn in needflow diagrams (see ``line``)."""
+    """How the line to a need part is drawn in needflow diagrams (see ``line``).
+
+    Defaults to ``line``."""
     arrow: str
     """Which arrow heads the line carries in needflow diagrams.
 

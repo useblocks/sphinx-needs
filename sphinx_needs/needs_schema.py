@@ -609,7 +609,8 @@ class LinkDisplayConfig:
     part_line: str = ""
     """How the line to a need part is drawn (see ``line``).
 
-    Empty means the deprecated ``style_part`` is consulted instead."""
+    Empty means the link type's ``line`` is used for part links too; if that is unset as
+    well, the deprecated ``style_part`` is consulted."""
     arrow: str = ""
     """Which arrow heads a line carries in needflow diagrams.
 
