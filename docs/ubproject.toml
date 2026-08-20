@@ -249,59 +249,66 @@ style = "rectangle"
 incoming = "is blocked by"
 outgoing = "blocks"
 copy = true
-style = "#AA0000"
-style_part = "dotted,#AA0000"
-style_start = "-"
-style_end = "-o"
+part_line = "dotted"
+arrow = "circle"
+color = "#AA0000"
 allow_dead_links = true
 
 [needs.links.tests]
 incoming = "is tested by"
 outgoing = "tests"
 copy = true
-style = "#00AA00"
-style_part = "dotted,#00AA00"
+part_line = "dotted"
+color = "#00AA00"
 
 [needs.links.checks]
 incoming = "is checked by"
 outgoing = "checks"
 copy = false
-style = "#00AA00"
-style_part = "dotted,#00AA00"
+part_line = "dotted"
+color = "#00AA00"
 
 [needs.links.triggers]
 incoming = "triggered by"
 outgoing = "triggers"
 copy = false
-style = "#00AA00"
-style_part = "solid,#777777"
+line = "solid"
+part_line = "solid"
+color = "#00AA00"
+part_color = "#777777"
 allow_dead_links = true
 
 [needs.links.starts_with]
 incoming = "triggers directly"
 outgoing = "starts with"
 copy = false
-style = "#00AA00"
-style_part = "solid,#777777"
+line = "solid"
+part_line = "solid"
+color = "#00AA00"
+part_color = "#777777"
 
 [needs.links.starts_after]
 incoming = "triggers at end"
 outgoing = "starts after"
 copy = false
-style = "#00AA00"
-style_part = "solid,#777777"
+line = "solid"
+part_line = "solid"
+color = "#00AA00"
+part_color = "#777777"
 
 [needs.links.ends_with]
 incoming = "triggers to end with"
 outgoing = "ends with"
 copy = false
-style = "#00AA00"
-style_part = "solid,#777777"
+line = "solid"
+part_line = "solid"
+color = "#00AA00"
+part_color = "#777777"
 
 [needs.links.tutorial_required_by]
 incoming = "requires"
 outgoing = "required by"
-style = "#00AA00"
+color = "#00AA00"
 
 [needs.links.tutorial_specifies]
 incoming = "specified by"

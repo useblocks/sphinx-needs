@@ -27,7 +27,7 @@ either of them draws -- and are called out at the point where they happen:
 
 from __future__ import annotations
 
-from collections.abc import Callable, Container, Iterable
+from collections.abc import Callable, Container, Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -48,13 +48,19 @@ from sphinx_needs.variants import match_variants
 from sphinx_needs.views import NeedsView
 
 from ._options import (
+    ArrowStyle,
     FlowDirection,
     LegendSpec,
+    LineStyle,
     LinkLabels,
     compile_legends,
+    legacy_style_color,
+    resolve_arrow,
     resolve_direction,
     resolve_legend,
+    resolve_line,
     resolve_link_labels,
+    resolve_shape,
 )
 
 LOGGER = get_logger(__name__)
@@ -181,6 +187,13 @@ class NodePresentation:
     applies -- a highlight always takes precedence over a border color.
     """
 
+    shape: str | None = None
+    """The neutral shape of the need type, see :data:`~._options.SHAPES`.
+
+    ``None`` unless the type opted in to ``needs_types[].shape``, in which case the
+    legacy ``needs_types[].style`` keeps deciding and :attr:`type_style` carries it.
+    """
+
 
 @dataclass
 class GraphNode:
@@ -238,6 +251,70 @@ class GraphEdge:
             self.link_type.display.style_part
             if self.is_part
             else self.link_type.display.style
+        )
+
+    @property
+    def line(self) -> LineStyle | None:
+        """How this link's line is drawn, as an intent rather than an engine token.
+
+        ``None`` when the link type only carries the deprecated ``style`` value, which
+        each engine then emits exactly as it always has.
+        """
+        display = self.link_type.display
+        return resolve_line(display.part_line if self.is_part else display.line)
+
+    @property
+    def arrow(self) -> ArrowStyle | None:
+        """Which arrow heads this link carries.
+
+        ``None`` when the link type only carries the deprecated start/end tokens.
+        """
+        return resolve_arrow(self.link_type.display.arrow)
+
+    @property
+    def _neutral_color(self) -> str:
+        """The color the neutral vocabulary gives this link, empty if it gives none.
+
+        ``part_color`` falls back to ``color`` when it is unset, exactly as
+        ``part_line`` falls back to ``line``.
+        """
+        display = self.link_type.display
+        return ((display.part_color if self.is_part else "") or display.color).strip()
+
+    @property
+    def color(self) -> str | None:
+        """The color of this link, or ``None`` to leave it to the engine.
+
+        An unset color means "leave the engine's own edge color alone", so nothing is
+        emitted -- which is what keeps a diagram that names no color byte-identical to
+        one drawn before colors were honoured at all.  An explicit color is drawn,
+        black included.
+
+        A link type part way through its migration -- a neutral ``line``, but its color
+        still only in the deprecated ``style`` -- keeps its color: the neutral line
+        supersedes that string, and dropping it wholesale would take the color with it.
+        """
+        if neutral := self._neutral_color:
+            return neutral
+        if self.line is not None:
+            return legacy_style_color(self.style)
+        return None
+
+    @property
+    def legacy_style(self) -> str:
+        """The deprecated ``style`` value that is still in force.
+
+        A neutral color supersedes the color token of that string, so the two cannot
+        both be emitted for a link type that sets both spellings.  Everything else is
+        passed through untouched, which is what keeps a purely legacy link type drawing
+        exactly what it always drew.
+        """
+        if not self._neutral_color:
+            return self.style
+        return ",".join(
+            token
+            for raw in self.style.split(",")
+            if (token := raw.strip()) and not token.startswith("#")
         )
 
     def label(self, labels: LinkLabels) -> str | None:
@@ -415,12 +492,25 @@ def build_graph(
         found_needs, attributes.get("max_items"), needs_config
     )
 
+    # `needs_types[].shape` is the neutral counterpart of `needs_types[].style`, which
+    # holds PlantUML element keywords; the old key is left doing exactly what it does
+    # today, and only a type that opts in to the new one is drawn from the neutral
+    # vocabulary, so no existing project's diagram moves.
+    # An unusable value has already been reported against `conf.py` at read time, with
+    # the same text, so Sphinx's `once` filter collapses these onto that one
+    type_shapes = {
+        need_type["directive"]: shape
+        for need_type in needs_config.types
+        if (raw := need_type.get("shape")) and (shape := resolve_shape(raw)) is not None
+    }
+
     roots, drawn = build_node_tree(
         found_needs,
         lambda need: resolve_presentation(
             need,
             highlight=attributes["highlight"],
             border_color=attributes["border_color"],
+            type_shapes=type_shapes,
             config=needs_config,
             needs=needs_view.values(),
             location=variant_location,
@@ -484,6 +574,7 @@ def resolve_presentation(
     *,
     highlight: str,
     border_color: str | None,
+    type_shapes: Mapping[str, str] | None = None,
     config: NeedsSphinxConfig,
     needs: Iterable[NeedItem | NeedPartItem],
     location: LocationType,
@@ -494,6 +585,7 @@ def resolve_presentation(
     :param need: The need or need part to be drawn.
     :param highlight: The ``highlight`` filter, empty if the option was not given.
     :param border_color: The ``border_color`` option, in variant syntax.
+    :param type_shapes: The neutral shape of each need type that opted in to one.
     :param config: The Sphinx-Needs configuration.
     :param needs: All needs, for a ``highlight`` filter that consults them.
     :param location: Where to report ``border_color`` variant problems.
@@ -521,6 +613,8 @@ def resolve_presentation(
         type_color=need["type_color"] or None,
         highlight=is_highlighted,
         border_color=resolved_border,
+        # a need part has no type of its own to take a shape from
+        shape=(type_shapes or {}).get(need["type"]) if need["is_need"] else None,
     )
 
 
