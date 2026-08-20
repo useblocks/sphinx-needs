@@ -16,6 +16,9 @@ TEST DOCUMENT LIST2NEED
          the **content** by :ref:`test`
 
 
+.. spec:: Spec from normal directive
+   :id: NEED-004
+
 .. _test:
 
 Test chapter

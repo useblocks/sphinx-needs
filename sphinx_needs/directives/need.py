@@ -160,9 +160,21 @@ class NeedDirective(SphinxDirective):
                 self._log_warning(f"Invalid value for '{key}' option: {err}")
                 return []
 
+        source_path, source_lineno = self.state_machine.get_source_and_line(self.lineno)
+        if "\0" in source_path:
+            # Retrieve line number mapping encoded in source name
+            source_path, lineno_mapping = source_path.split("\0", 1)
+
+            def parse_pair(s: str) -> tuple[int, int]:
+                k, v = s.split(":")
+                return int(k), int(v)
+
+            lineno_mapping = dict(map(parse_pair, lineno_mapping.split("\0")))
+            source_lineno = int(lineno_mapping[source_lineno])
+        docname = self.env.path2doc(source_path)
         source = NeedItemSourceDirective(
-            docname=self.env.docname,
-            lineno=self.lineno,
+            docname=source_path if docname is None else docname,
+            lineno=source_lineno,
             lineno_content=self.content_offset + 1,
         )
 
