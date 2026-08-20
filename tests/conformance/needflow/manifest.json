@@ -1,0 +1,11 @@
+{
+  "corpus_version": 1,
+  "readme": "98e1ebde016249b3dee7def42ff6de12912a530f77b5d65633a8490d2e0c5b5d",
+  "cases": {
+    "baseline-defaults.yaml": "4390170ffc2039bea4457893ad07af8d5e745fb9c1d11a6c15ffad2d6694d678",
+    "edge-empty-label.yaml": "7700590a537cfd0eeaf5d09b8cfca2629189e08c51a4b0ffb2c5e70c74fdeac4",
+    "legend-engine-default.yaml": "e9fd26952a1885c4cf29762370c517165649e5b0d708e0d53ed0f00c6a089c3a",
+    "node-id-injectivity.yaml": "5fa3f6058c6acd5c60f741133d451eb917a26f4e32622bc0521eb6bb2854fbf6",
+    "percent-neutralisation.yaml": "f265c0123c31ef32f49ca229c06207f3c38aa285482485c59cbd4dc026124bf6"
+  }
+}

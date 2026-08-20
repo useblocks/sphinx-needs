@@ -255,6 +255,24 @@ def sphinx_test_tempdir(request) -> Path:
     return sphinx_test_tempdir
 
 
+@pytest.fixture(scope="session")
+def plantuml_command(sphinx_test_tempdir) -> str:
+    """The plantuml command every test project must build its diagrams with.
+
+    CI runners have java and the vendored jar but no ``plantuml`` on ``PATH``, so a
+    project left on sphinxcontrib-plantuml's default command fails to render there while
+    passing on any machine that happens to have one installed. Every test therefore
+    points at the jar this fixture set copies, whether it goes through :func:`test_app`
+    or calls ``make_app`` itself.
+
+    :param sphinx_test_tempdir: The directory holding the copied jar.
+    :return: The value for the ``plantuml`` configuration.
+    """
+    return "java -Djava.awt.headless=true -jar {}".format(
+        os.path.join(sphinx_test_tempdir, "utils", "plantuml.jar")
+    )
+
+
 def _check_parent_child(app: Sphinx, doctree: document, docname: str):
     for idx, node in enumerate(doctree.findall()):
         if idx == 0:
@@ -263,7 +281,7 @@ def _check_parent_child(app: Sphinx, doctree: document, docname: str):
 
 
 @pytest.fixture(scope="function")
-def test_app(make_app, sphinx_test_tempdir, request):
+def test_app(make_app, sphinx_test_tempdir, plantuml_command, request):
     """
     Fixture for creating a Sphinx application for testing.
 
@@ -274,6 +292,7 @@ def test_app(make_app, sphinx_test_tempdir, request):
 
     :param make_app: A fixture for creating Sphinx applications.
     :param sphinx_test_tempdir: A fixture for providing the Sphinx test temporary directory.
+    :param plantuml_command: A fixture for the plantuml command to render with.
     :param request: A pytest request object for accessing fixture parameters.
 
     :return: A Sphinx application object.
@@ -284,10 +303,7 @@ def test_app(make_app, sphinx_test_tempdir, request):
     if not builder_params.get("no_plantuml", False):
         # Since we don't want copy the plantuml.jar file for each test function,
         # we need to override the plantuml conf variable and set it to what we have already
-        plantuml = "java -Djava.awt.headless=true -jar {}".format(
-            os.path.join(sphinx_test_tempdir, "utils", "plantuml.jar")
-        )
-        sphinx_conf_overrides.update(plantuml=plantuml)
+        sphinx_conf_overrides.update(plantuml=plantuml_command)
 
     srcdir = builder_params.get("srcdir")
     files = builder_params.get("files")
