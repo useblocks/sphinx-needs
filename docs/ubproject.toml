@@ -348,6 +348,10 @@ on_fail = []
 style = ["yellow_bar"]
 force_style = false
 
+[needs.flow_legends.beside]
+parts = ["types", "links"]
+placement = "external"
+
 [needs.flow_configs]
 my_config = """
 skinparam monochrome true
