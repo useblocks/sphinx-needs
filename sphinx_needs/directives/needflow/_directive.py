@@ -29,6 +29,7 @@ from ._options import (
     direction_option,
     graphviz_config_direction,
     plantuml_config_direction,
+    show_legend_option,
     show_link_names_option,
 )
 
@@ -71,7 +72,7 @@ class NeedflowDirective(FilterBase):
         "direction": direction_option,
         "highlight": directives.unchanged_required,
         "border_color": directives.unchanged_required,
-        "show_legend": directives.flag,
+        "show_legend": show_legend_option,
         "show_filters": directives.flag,
         "show_link_names": show_link_names_option,
         "config": directives.unchanged_required,
@@ -208,6 +209,7 @@ class NeedflowDirective(FilterBase):
             "root_direction": self.options.get("root_direction", "both"),
             "root_depth": self.options.get("root_depth", None),
             "show_legend": "show_legend" in self.options,
+            "show_legend_key": self.options.get("show_legend", ""),
             "show_filters": "show_filters" in self.options,
             # the flag records only that the option was *given*; what it was given goes
             # into the value beside it, because the flag is shared with the other diagram

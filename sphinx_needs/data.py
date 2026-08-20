@@ -718,6 +718,12 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     with the other diagram directives, which still take it as a flag, so needflow's
     widened value lands beside it rather than changing its type."""
 
+    show_legend_key: str
+    """The legend configuration ``show_legend`` named, empty when written bare.
+
+    Whether a legend is shown at all is the ``show_legend`` flag of
+    :class:`NeedsFilteredDiagramBaseType`; this only says which one."""
+
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) gantt chart."""

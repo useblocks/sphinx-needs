@@ -1131,6 +1131,8 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
     validate_flow_config(
         direction=needs_config.flow_direction,
         show_links=needs_config.flow_show_links,
+        legends=needs_config.flow_legends,
+        show_legend=needs_config.flow_show_legend,
     )
 
     if needs_config._global_options:

@@ -33,7 +33,7 @@ from ._model import (
     resolve_link_types,
 )
 from ._options import LinkLabels, graphviz_rankdir
-from ._shared import create_filter_paragraph
+from ._shared import create_filter_paragraph, create_legend_nodes
 
 try:
     from sphinx.writers.html5 import HTML5Translator
@@ -151,9 +151,9 @@ def process_needflow_graphviz(
             content += _render_edge(edge, graph.link_labels, cluster_ids)
 
         # note this lists only the need types that were actually drawn, whereas the
-        # plantuml engine lists every configured type, so the same `:show_legend:` gives
-        # the two engines different legends; it is kept as is
-        if attributes["show_legend"]:
+        # plantuml engine lists every configured type, so the same bare `:show_legend:`
+        # gives the two engines different legends; it is kept as is
+        if graph.legend is not None and graph.legend.internal:
             content += _create_legend(
                 [drawn.need for drawn in graph.nodes.values()], needs_config
             )
@@ -169,6 +169,16 @@ def process_needflow_graphviz(
             code.source, code.line = node.source, node.line
             # add the debug code to after the surrounding figure
             node.parent.parent.insert(node.parent.parent.index(node.parent) + 1, code)
+
+        # ...and beside it otherwise, as a document table identical on every engine;
+        # inserted last so that it ends up directly below the figure it describes
+        if graph.legend is not None and not graph.legend.internal:
+            for legend in create_legend_nodes(
+                graph.legend.parts, graph.drawn_types, graph.drawn_link_types
+            ):
+                node.parent.parent.insert(
+                    node.parent.parent.index(node.parent) + 1, legend
+                )
 
 
 def _get_link_to_need(

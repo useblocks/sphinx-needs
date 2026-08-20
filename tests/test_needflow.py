@@ -1695,3 +1695,564 @@ def test_needgantt_and_needsequence_keep_their_bare_flag(
     warnings = strip_colors(app._warning.getvalue())
     assert "unknown option" not in warnings
     assert "no arguments allowed" not in warnings
+
+
+LEGEND_CONF = (
+    CONF_PY
+    + """
+needs_types.append(
+    {
+        "directive": "undrawn",
+        "title": "Never Drawn",
+        "prefix": "U_",
+        "color": "#CCCCCC",
+        "style": "node",
+    }
+)
+needs_flow_legends = {
+    "inside": {"parts": ["types"]},
+    "beside": {"parts": ["types"], "placement": "external"},
+    "links": {"parts": ["links"], "placement": "external"},
+    "both": {"parts": ["types", "links"], "placement": "external"},
+    "reversed": {"parts": ["links", "types"], "placement": "external"},
+}
+"""
+)
+
+LEGEND_DOC = """\
+Legend
+======
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :show_legend:{value}
+   :debug:
+"""
+
+
+def _legend_sections(outdir: Path, file: str = "index.html") -> list[str]:
+    """The out-of-diagram legend sections rendered on a page, in document order.
+
+    :param outdir: The build output directory.
+    :param file: The page holding the needflow.
+    :return: The section name of each rendered legend table, in order.
+    """
+    tree = html_parser.parse(outdir / file)
+    tables = tree.xpath(
+        "//table[contains(concat(' ', normalize-space(@class), ' '),"
+        " ' needflow_legend_table ')]"
+    )
+    sections = []
+    for table in tables:
+        classes = str(table.get("class", "")).split()
+        for part in ("types", "links"):
+            if f"needflow_legend_{part}" in classes:
+                sections.append(part)
+    return sections
+
+
+def _legend_rows(outdir: Path, part: str, file: str = "index.html") -> list[str]:
+    """The label column of one rendered legend section.
+
+    :param outdir: The build output directory.
+    :param part: The section to read, ``types`` or ``links``.
+    :param file: The page holding the needflow.
+    :return: The label of each row, in order.
+    """
+    tree = html_parser.parse(outdir / file)
+    column = 2 if part == "types" else 1
+    tables = tree.xpath(
+        "//table[contains(concat(' ', normalize-space(@class), ' '),"
+        f" ' needflow_legend_{part} ')]"
+    )
+    assert len(tables) == 1, f"expected one {part!r} legend table, got {len(tables)}"
+    return [
+        cell.text_content().strip()
+        for cell in tables[0].xpath(f".//tbody/tr/td[{column}]")
+    ]
+
+
+def _build_legend(make_app, tmp_path, plantuml_command, engine, written, **overrides):
+    """Build the legend project with one ``:show_legend:`` spelling.
+
+    :param engine: The needflow engine to draw with.
+    :param written: What to write after ``:show_legend:``, empty for a bare option.
+    :param overrides: Extra configuration overrides.
+    :return: The built application.
+    """
+    (tmp_path / "conf.py").write_text(LEGEND_CONF, "utf8")
+    (tmp_path / "index.rst").write_text(LEGEND_DOC.format(value=written), "utf8")
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "graphviz_output_format": "svg",
+            "needs_flow_engine": engine,
+            **overrides,
+        },
+    )
+    app.build()
+    return app
+
+
+@pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
+def test_bare_show_legend_still_draws_the_in_diagram_legend(
+    make_app, tmp_path, plantuml_command, engine
+):
+    """A bare ``:show_legend:`` must draw exactly the legend it always drew.
+
+    The option is widened to take a key, not replaced, so a document written before
+    keys existed keeps its in-image legend -- including the long-standing difference
+    that plantuml lists every configured type while graphviz lists only what it drew.
+    """
+    app = _build_legend(make_app, tmp_path, plantuml_command, engine, "")
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+
+    source = _debug_source(Path(app.outdir), "index.html")
+    if engine == "plantuml":
+        assert "' Legend definition" in source
+        # every configured type, drawn or not
+        assert "Never Drawn" in source
+    else:
+        assert "<B>Legend</B>" in source
+        assert "Never Drawn" not in source
+
+    # and nothing beside the diagram
+    assert _legend_sections(Path(app.outdir)) == []
+
+
+@pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
+def test_show_legend_key_selects_a_configured_legend(
+    make_app, tmp_path, plantuml_command, engine
+):
+    """A named legend renders the same table beside the diagram on either engine.
+
+    An external legend lists only what the diagram actually drew, which is the scope
+    rule the two in-image legends disagree about.
+    """
+    app = _build_legend(make_app, tmp_path, plantuml_command, engine, " beside")
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+
+    outdir = Path(app.outdir)
+    assert _legend_sections(outdir) == ["types"]
+    assert _legend_rows(outdir, "types") == ["Specification"]
+
+    # the in-diagram legend is not drawn as well
+    source = _debug_source(outdir, "index.html")
+    assert "' Legend definition" not in source
+    assert "<B>Legend</B>" not in source
+
+
+@pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
+def test_show_legend_can_describe_link_types(
+    make_app, tmp_path, plantuml_command, engine
+):
+    """A link legend describes the link types the diagram drew edges for.
+
+    No in-diagram legend here can do this, so a legend asking for links is always
+    drawn beside the diagram.
+    """
+    app = _build_legend(make_app, tmp_path, plantuml_command, engine, " links")
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+
+    outdir = Path(app.outdir)
+    assert _legend_sections(outdir) == ["links"]
+    assert _legend_rows(outdir, "links") == ["links"]
+
+
+@pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
+@pytest.mark.parametrize(
+    "key,expected",
+    [(" both", ["types", "links"]), (" reversed", ["links", "types"])],
+    ids=["both", "reversed"],
+)
+def test_legend_sections_keep_their_configured_order(
+    make_app, tmp_path, plantuml_command, engine, key, expected
+):
+    """``parts`` is an ordered list, and the order is contract.
+
+    A reader scanning two diagrams should find the same section in the same place, so
+    ``["links", "types"]`` puts links first and keeps it there. A tool treating ``parts``
+    as a set, or as an enum with a fixed section order, renders these the same way round
+    and fails one of the two.
+    """
+    app = _build_legend(make_app, tmp_path, plantuml_command, engine, key)
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+    assert _legend_sections(Path(app.outdir)) == expected
+
+
+@pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
+def test_internal_placement_that_cannot_be_honoured_degrades_silently(
+    make_app, tmp_path, plantuml_command, engine
+):
+    """A legend asking for links inside the diagram gets the table instead, silently.
+
+    Neither in-image legend here can describe link types, so the preference cannot be
+    met; the two legends carry identical information and differ only in where they sit,
+    so the substitution is decorative rather than an intent gone unhonoured.
+    """
+    (tmp_path / "conf.py").write_text(
+        LEGEND_CONF
+        + '\nneeds_flow_legends["inside"] = {"parts": ["types", "links"]}\n',
+        "utf8",
+    )
+    (tmp_path / "index.rst").write_text(LEGEND_DOC.format(value=" inside"), "utf8")
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "graphviz_output_format": "svg",
+            "needs_flow_engine": engine,
+        },
+    )
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+    assert _legend_sections(Path(app.outdir)) == ["types", "links"]
+
+
+def test_needs_flow_show_legend_supplies_the_key(make_app, tmp_path, plantuml_command):
+    """``needs_flow_show_legend`` says *which* legend a bare option gets."""
+    app = _build_legend(
+        make_app,
+        tmp_path,
+        plantuml_command,
+        "plantuml",
+        "",
+        needs_flow_show_legend="beside",
+    )
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+    assert _legend_sections(Path(app.outdir)) == ["types"]
+
+
+def test_needs_flow_show_legend_never_says_whether(
+    make_app, tmp_path, plantuml_command
+):
+    """A project default cannot give a legend to a diagram that never asked for one.
+
+    Whether there is a legend stays with the directive; the configuration only ever
+    says which one. There is deliberately no project-wide way of putting a legend on
+    every diagram -- a legend describes one picture.
+    """
+    (tmp_path / "conf.py").write_text(LEGEND_CONF, "utf8")
+    (tmp_path / "index.rst").write_text(
+        "No legend\n=========\n\n.. spec:: A\n   :id: AAAAA\n\n.. needflow::\n   :debug:\n",
+        "utf8",
+    )
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_show_legend": "beside",
+        },
+    )
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+    assert _legend_sections(Path(app.outdir)) == []
+    assert "' Legend definition" not in _debug_source(Path(app.outdir), "index.html")
+
+
+def test_option_key_beats_the_project_key(make_app, tmp_path, plantuml_command):
+    """The directive's own key wins over ``needs_flow_show_legend``."""
+    app = _build_legend(
+        make_app,
+        tmp_path,
+        plantuml_command,
+        "plantuml",
+        " reversed",
+        needs_flow_show_legend="beside",
+    )
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+    assert _legend_sections(Path(app.outdir)) == ["links", "types"]
+
+
+def test_unknown_option_key_warns_and_hands_on_to_the_project_key(
+    make_app, tmp_path, plantuml_command
+):
+    """An unknown option key is treated as unset, so the chain continues.
+
+    A key that names nothing warns and then behaves as though it had not been written,
+    which is the rule the rest of this vocabulary follows. A typo in one directive must
+    not silently cost the project the legend it configured.
+    """
+    app = _build_legend(
+        make_app,
+        tmp_path,
+        plantuml_command,
+        "plantuml",
+        " besidee",
+        needs_flow_show_legend="reversed",
+    )
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "legend key 'besidee' is not defined in 'needs_flow_legends'" in warnings
+    assert "available: beside, both, inside, links, reversed" in warnings
+    # ...and the project's own legend is still drawn
+    assert _legend_sections(Path(app.outdir)) == ["links", "types"]
+
+
+def test_unknown_option_key_falls_back_to_the_engine_legend(
+    make_app, tmp_path, plantuml_command
+):
+    """With nothing configured either, the chain ends at the engine's own legend."""
+    app = _build_legend(make_app, tmp_path, plantuml_command, "plantuml", " besidee")
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "legend key 'besidee' is not defined in 'needs_flow_legends'" in warnings
+    assert _legend_sections(Path(app.outdir)) == []
+    assert "' Legend definition" in _debug_source(Path(app.outdir), "index.html")
+
+
+def test_unknown_option_key_is_reported_per_directive(
+    make_app, tmp_path, plantuml_command
+):
+    """An option key is the directive's own text, so it is reported every time.
+
+    The author can act on each one, and two diagrams with the same typo are two
+    mistakes to fix.
+    """
+    (tmp_path / "conf.py").write_text(LEGEND_CONF, "utf8")
+    (tmp_path / "index.rst").write_text(
+        "Two typos\n=========\n\n.. spec:: A\n   :id: AAAAA\n\n"
+        ".. needflow::\n   :show_legend: besidee\n\n"
+        ".. needflow::\n   :show_legend: besidee\n",
+        "utf8",
+    )
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command},
+    )
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert warnings.count("legend key 'besidee' is not defined") == 2
+    # reported against the directives, under the needflow subtype
+    assert warnings.count("needs.needflow") == 2
+
+
+def test_unknown_project_key_is_reported_once_for_the_project(
+    make_app, tmp_path, plantuml_command
+):
+    """An unknown ``needs_flow_show_legend`` is one ``conf.py`` mistake, said once.
+
+    Repeating it at every needflow would bury the directive-level warnings an author
+    can act on, and reporting it against whichever ``index.rst`` line was drawn first
+    would point at the wrong file altogether.
+    """
+    (tmp_path / "conf.py").write_text(LEGEND_CONF, "utf8")
+    (tmp_path / "index.rst").write_text(
+        "Two diagrams\n============\n\n.. spec:: A\n   :id: AAAAA\n\n"
+        ".. needflow::\n   :show_legend:\n\n.. needflow::\n   :show_legend:\n",
+        "utf8",
+    )
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_show_legend": "besidee",
+        },
+    )
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    # said once, although two needflows asked for a legend
+    assert warnings.count("legend key 'besidee'") == 1
+    assert "of 'needs_flow_show_legend'" in warnings
+    # a conf.py problem, so no directive location and the config subtype
+    assert "needs.config" in warnings
+    assert "index.rst" not in warnings
+
+
+@pytest.mark.parametrize(
+    "legends,message",
+    [
+        ({"bad": {"parts": 5}}, "'parts' of legend 'bad' must be a list"),
+        ({"bad": {"parts": "both"}}, "'parts' of legend 'bad' must be a list"),
+        ({"bad": {"parts": ["sideways"]}}, "unknown legend section 'sideways'"),
+        ({"bad": {"placement": "nearby"}}, "unknown placement 'nearby'"),
+        ({"bad": {"nonsense": 1}}, "unknown key(s) ['nonsense'] of legend 'bad'"),
+        ({"bad": "types"}, "legend 'bad' in 'needs_flow_legends' must be a mapping"),
+        ({" bad ": {}}, "can never be selected"),
+        ({"": {}}, "can never be selected"),
+    ],
+    ids=[
+        "parts-int",
+        "parts-string",
+        "unknown-section",
+        "unknown-placement",
+        "unknown-key",
+        "not-a-mapping",
+        "padded-name",
+        "empty-name",
+    ],
+)
+def test_unusable_legend_config_warns_and_never_crashes(
+    make_app, tmp_path, plantuml_command, legends, message
+):
+    """A malformed ``needs_flow_legends`` entry is reported, and the build finishes.
+
+    ``parts: 5`` is not the hypothetical it looks like: a number is not iterable and
+    ended a build with a traceback, and a bare string iterates character by character,
+    warning about single letters and then drawing the default legend anyway.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(LEGEND_DOC.format(value=" bad"), "utf8")
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_legends": legends,
+        },
+    )
+    app.build()  # must not raise
+
+    assert message in strip_colors(app._warning.getvalue())
+
+
+def test_unusable_legend_config_is_reported_without_any_needflow(
+    make_app, tmp_path, plantuml_command
+):
+    """The legend configuration is checked where it is read, not where it is used."""
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(NO_NEEDFLOW, "utf8")
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_legends": {"bad": {"parts": 5}},
+            "needs_flow_show_legend": "nowhere",
+        },
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "'parts' of legend 'bad' must be a list" in warnings
+    assert "legend key 'nowhere' of 'needs_flow_show_legend'" in warnings
+
+
+@pytest.mark.parametrize(
+    "project_key,quoted",
+    [(5, "'5'"), (None, "'None'"), (True, "'True'")],
+    ids=["int", "none", "bool"],
+)
+def test_non_string_show_legend_key_is_reported_not_crashed(
+    make_app, tmp_path, plantuml_command, project_key, quoted
+):
+    """A non-string ``needs_flow_show_legend`` must warn, not end the build.
+
+    Its ``types: (str,)`` metadata makes Sphinx warn about the wrong type and then hand
+    the raw value through, so one line of ``conf.py`` reached ``str.strip`` on an ``int``
+    and killed the build with a traceback -- the very outcome the read-time validation
+    exists to prevent, and which every sibling key already guards against.
+
+    This is the read-time path, exercised with **no needflow anywhere**: the value is
+    coerced, fails the key lookup, and is reported as any other unknown name would be.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(NO_NEEDFLOW, "utf8")
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_show_legend": project_key,
+        },
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert f"legend key {quoted} of 'needs_flow_show_legend' is not defined" in warnings
+
+
+@pytest.mark.parametrize(
+    "project_key,quoted",
+    [(5, "'5'"), (None, "'None'"), (True, "'True'")],
+    ids=["int", "none", "bool"],
+)
+def test_non_string_show_legend_key_still_resolves_the_chain(
+    make_app, tmp_path, plantuml_command, project_key, quoted
+):
+    """The same value must not crash the *per-diagram* resolution either.
+
+    The read-time check and the chain each read this value, so guarding only the first
+    would move the crash to build time rather than remove it. Two needflows ask for a
+    legend without naming one, so the chain reaches the project key both times: it is
+    coerced, names nothing, and hands on to the engine's own legend -- which is drawn.
+
+    The warning is emitted once for the build, not once per diagram: the read-time site
+    and the chain produce the *same* text, which is what lets Sphinx's ``once`` filter
+    collapse them onto the one without a directive location.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(
+        "Two diagrams\n============\n\n.. spec:: A\n   :id: AAAAA\n\n"
+        ".. needflow::\n   :show_legend:\n   :debug:\n\n"
+        ".. needflow::\n   :show_legend:\n   :debug:\n",
+        "utf8",
+    )
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_show_legend": project_key,
+        },
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert f"legend key {quoted} of 'needs_flow_show_legend' is not defined" in warnings
+    # said once for the project, although two needflows consulted it
+    assert warnings.count(f"legend key {quoted}") == 1
+    # a conf.py problem, so no directive location
+    assert "index.rst" not in warnings
+
+    # the chain handed on rather than being replaced: the engine drew its own legend
+    outdir = Path(app.outdir)
+    assert "' Legend definition" in _debug_source(outdir, "index.html")
+    assert _legend_sections(outdir) == []
+
+
+def test_a_legend_beside_a_plantuml_figure_keeps_the_directive_classes(
+    make_app, tmp_path, plantuml_command
+):
+    """``:class:`` reaches the plantuml figure, which is where the option says it goes.
+
+    The option was collected and then dropped by this engine, so the same option styled
+    a graphviz diagram and did nothing to a plantuml one.
+    """
+    (tmp_path / "conf.py").write_text(LEGEND_CONF, "utf8")
+    (tmp_path / "index.rst").write_text(
+        "Classes\n=======\n\n.. spec:: A\n   :id: AAAAA\n\n"
+        ".. needflow::\n   :class: my-flow\n   :show_legend: beside\n",
+        "utf8",
+    )
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command},
+    )
+    app.build()
+
+    html = Path(app.outdir, "index.html").read_text()
+    assert "my-flow" in html

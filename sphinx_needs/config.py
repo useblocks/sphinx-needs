@@ -833,6 +833,22 @@ class NeedsSphinxConfig:
 
     .. versionadded:: 8.4.0
     """
+    flow_legends: dict[str, dict[str, Any]] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": ()}
+    )
+    """Named legend configurations that the needflow ``:show_legend:`` option selects.
+
+    .. versionadded:: 8.4.0
+    """
+    flow_show_legend: str = field(
+        default="", metadata={"rebuild": "html", "types": (str,)}
+    )
+    """Which legend a needflow shows when it asks for one without naming it.
+
+    This selects *which* legend, never *whether*: asking for one stays per directive.
+
+    .. versionadded:: 8.4.0
+    """
     flow_link_types: list[str] = field(
         default_factory=lambda: ["links"], metadata={"rebuild": "html", "types": ()}
     )

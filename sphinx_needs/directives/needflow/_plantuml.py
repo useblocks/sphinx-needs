@@ -26,7 +26,7 @@ from ._model import (
     resolve_link_types,
 )
 from ._options import plantuml_direction
-from ._shared import create_filter_paragraph
+from ._shared import create_filter_paragraph, create_legend_nodes
 
 logger = get_logger(__name__)
 
@@ -314,11 +314,11 @@ def process_needflow_plantuml(
             puml_node["uml"] += "\n' Connection definition \n\n"
             puml_node["uml"] += render_connections(graph, entity_names)
 
-            # Create a legend
+            # Create a legend, inside the diagram where that is what was asked for
             # note this lists every configured need type, whereas the graphviz engine
-            # lists only the types it actually drew, so the same `:show_legend:` gives
-            # the two engines different legends; it is kept as is
-            if current_needflow["show_legend"]:
+            # lists only the types it actually drew, so the same bare `:show_legend:`
+            # gives the two engines different legends; it is kept as is
+            if graph.legend is not None and graph.legend.internal:
                 puml_node["uml"] += create_legend(needs_config.types)
 
             puml_node["uml"] += "\n@enduml"
@@ -329,6 +329,12 @@ def process_needflow_plantuml(
             puml_node["scale"] = scale
 
             puml_node = nodes.figure("", puml_node)
+            # `:class:` is assigned explicitly. docutils already copies the classes of
+            # the node being replaced onto its replacement, so this changes nothing today
+            # and is not a fix; it states the intent locally, so that returning a legend
+            # node alongside the figure cannot come to depend on that copy
+            # -- verified: the rendered class attribute is identical with and without it
+            puml_node["classes"] += current_needflow["classes"]
 
             if current_needflow["align"]:
                 puml_node["align"] = current_needflow["align"]
@@ -362,6 +368,13 @@ def process_needflow_plantuml(
             puml_node.line = current_needflow["lineno"]
 
             content.append(puml_node)
+            # ...and beside it otherwise, as a document table identical on every engine
+            if graph.legend is not None and not graph.legend.internal:
+                content.extend(
+                    create_legend_nodes(
+                        graph.legend.parts, graph.drawn_types, graph.drawn_link_types
+                    )
+                )
         else:  # no needs found
             content.append(
                 no_needs_found_paragraph(current_needflow.get("filter_warning"))
