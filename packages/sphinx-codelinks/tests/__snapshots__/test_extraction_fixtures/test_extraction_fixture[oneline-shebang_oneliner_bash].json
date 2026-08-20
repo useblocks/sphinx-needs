@@ -11,9 +11,22 @@
       },
       "metadata": {},
       "line": 2,
+      "filepath": "case.sh",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 1,
+          "column": 3
+        },
+        "end": {
+          "row": 1,
+          "column": 50
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "function greet { echo hi; }"
+        "scope_text": "function greet { echo hi; }"
       }
     }
   ],

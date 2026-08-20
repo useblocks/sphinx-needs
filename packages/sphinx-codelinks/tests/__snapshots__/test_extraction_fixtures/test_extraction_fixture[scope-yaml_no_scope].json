@@ -11,6 +11,19 @@
       },
       "metadata": {},
       "line": 1,
+      "filepath": "case.yaml",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 3
+        },
+        "end": {
+          "row": 0,
+          "column": 50
+        }
+      },
+      "content_type": "need",
       "scope": null
     }
   ],

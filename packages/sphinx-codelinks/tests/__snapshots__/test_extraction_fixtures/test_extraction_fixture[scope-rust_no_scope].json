@@ -11,6 +11,19 @@
       },
       "metadata": {},
       "line": 1,
+      "filepath": "case.rs",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 4
+        },
+        "end": {
+          "row": 0,
+          "column": 51
+        }
+      },
+      "content_type": "need",
       "scope": null
     }
   ],

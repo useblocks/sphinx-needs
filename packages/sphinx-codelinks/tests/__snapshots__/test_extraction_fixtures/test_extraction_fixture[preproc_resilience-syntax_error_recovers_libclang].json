@@ -11,6 +11,19 @@
       },
       "metadata": {},
       "line": 1,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 4
+        },
+        "end": {
+          "row": 0,
+          "column": 46
+        }
+      },
+      "content_type": "need",
       "scope": null
     },
     {
@@ -24,6 +37,19 @@
       },
       "metadata": {},
       "line": 7,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 6,
+          "column": 4
+        },
+        "end": {
+          "row": 6,
+          "column": 44
+        }
+      },
+      "content_type": "need",
       "scope": null
     }
   ],

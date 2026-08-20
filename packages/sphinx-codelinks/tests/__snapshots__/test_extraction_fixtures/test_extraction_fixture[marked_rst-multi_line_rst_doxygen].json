@@ -4,8 +4,25 @@
   "marked_rst": [
     {
       "content": " .. impl:: Multi\n    :id: M_1\n\n    Body line.\n ",
-      "start_line": 2,
-      "end_line": 2
+      "start_line": 3,
+      "end_line": 3,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 2,
+          "column": 12
+        },
+        "end": {
+          "row": 2,
+          "column": 69
+        }
+      },
+      "content_type": "rst",
+      "scope": {
+        "scope_type": "function_definition",
+        "scope_text": "void f() {}"
+      }
     }
   ],
   "warnings": []

@@ -11,6 +11,19 @@
       },
       "metadata": {},
       "line": 1,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 4
+        },
+        "end": {
+          "row": 0,
+          "column": 49
+        }
+      },
+      "content_type": "need",
       "scope": null
     },
     {
@@ -24,6 +37,19 @@
       },
       "metadata": {},
       "line": 5,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 4,
+          "column": 4
+        },
+        "end": {
+          "row": 4,
+          "column": 53
+        }
+      },
+      "content_type": "need",
       "scope": null
     },
     {
@@ -37,6 +63,19 @@
       },
       "metadata": {},
       "line": 13,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 12,
+          "column": 4
+        },
+        "end": {
+          "row": 12,
+          "column": 48
+        }
+      },
+      "content_type": "need",
       "scope": null
     },
     {
@@ -50,6 +89,19 @@
       },
       "metadata": {},
       "line": 18,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 17,
+          "column": 4
+        },
+        "end": {
+          "row": 17,
+          "column": 48
+        }
+      },
+      "content_type": "need",
       "scope": null
     }
   ],

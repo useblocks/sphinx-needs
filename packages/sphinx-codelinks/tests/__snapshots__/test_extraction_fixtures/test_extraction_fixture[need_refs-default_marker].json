@@ -4,25 +4,67 @@
     {
       "need_id": "REQ_1",
       "line": 1,
+      "marker": "@need-ids:",
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 13
+        },
+        "end": {
+          "row": 0,
+          "column": 32
+        }
+      },
+      "content_type": "need-id-refs",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "void f() {}"
+        "scope_text": "void f() {}"
       }
     },
     {
       "need_id": "REQ_2",
       "line": 1,
+      "marker": "@need-ids:",
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 13
+        },
+        "end": {
+          "row": 0,
+          "column": 32
+        }
+      },
+      "content_type": "need-id-refs",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "void f() {}"
+        "scope_text": "void f() {}"
       }
     },
     {
       "need_id": "REQ_3",
       "line": 1,
+      "marker": "@need-ids:",
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 13
+        },
+        "end": {
+          "row": 0,
+          "column": 32
+        }
+      },
+      "content_type": "need-id-refs",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "void f() {}"
+        "scope_text": "void f() {}"
       }
     }
   ],

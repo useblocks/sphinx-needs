@@ -14,9 +14,22 @@
         "priority": "low"
       },
       "line": 1,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 5
+        },
+        "end": {
+          "row": 0,
+          "column": 52
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "void f() {}"
+        "scope_text": "void f() {}"
       }
     }
   ],

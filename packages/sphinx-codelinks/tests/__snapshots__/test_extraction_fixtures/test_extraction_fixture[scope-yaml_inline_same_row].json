@@ -11,9 +11,22 @@
       },
       "metadata": {},
       "line": 1,
+      "filepath": "case.yaml",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 3
+        },
+        "end": {
+          "row": 0,
+          "column": 59
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "block_mapping_pair",
-        "scope_first_line": "key: value"
+        "scope_text": "key: value"
       }
     }
   ],

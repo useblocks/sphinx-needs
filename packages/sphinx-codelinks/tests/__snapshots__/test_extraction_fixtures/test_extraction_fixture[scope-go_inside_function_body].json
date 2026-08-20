@@ -11,9 +11,22 @@
       },
       "metadata": {},
       "line": 3,
+      "filepath": "case.go",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 2,
+          "column": 4
+        },
+        "end": {
+          "row": 2,
+          "column": 58
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_declaration",
-        "scope_first_line": "func outer() {"
+        "scope_text": "func outer() {\n    x := 1\n    // @Inside Function, IMPL_GO_INSIDE, impl, [REQ_GO_INSIDE]\n}"
       }
     }
   ],

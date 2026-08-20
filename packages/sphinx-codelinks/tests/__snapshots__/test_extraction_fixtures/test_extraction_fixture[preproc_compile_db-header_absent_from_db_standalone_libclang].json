@@ -11,6 +11,19 @@
       },
       "metadata": {},
       "line": 2,
+      "filepath": "case.h",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 1,
+          "column": 4
+        },
+        "end": {
+          "row": 1,
+          "column": 43
+        }
+      },
+      "content_type": "need",
       "scope": null
     },
     {
@@ -24,6 +37,19 @@
       },
       "metadata": {},
       "line": 4,
+      "filepath": "case.h",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 3,
+          "column": 4
+        },
+        "end": {
+          "row": 3,
+          "column": 39
+        }
+      },
+      "content_type": "need",
       "scope": null
     }
   ],

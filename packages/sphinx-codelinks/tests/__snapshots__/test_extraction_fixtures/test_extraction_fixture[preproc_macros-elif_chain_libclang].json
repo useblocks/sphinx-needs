@@ -11,6 +11,19 @@
       },
       "metadata": {},
       "line": 4,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 3,
+          "column": 4
+        },
+        "end": {
+          "row": 3,
+          "column": 34
+        }
+      },
+      "content_type": "need",
       "scope": null
     }
   ],

@@ -11,9 +11,22 @@
       },
       "metadata": {},
       "line": 3,
+      "filepath": "case.cs",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 2,
+          "column": 4
+        },
+        "end": {
+          "row": 2,
+          "column": 53
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "method_declaration",
-        "scope_first_line": "public void Method() {}"
+        "scope_text": "public void Method() {}"
       }
     }
   ],

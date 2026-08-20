@@ -13,6 +13,7 @@ from tree_sitter import Node as TreeSitterNode
 import yaml
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
+from sphinx_codelinks.analyse.models import Metadata
 from sphinx_codelinks.config import (
     NeedIdRefsConfig,
     OneLineCommentStyle,
@@ -66,23 +67,87 @@ def _list_field_names(style: OneLineCommentStyle) -> set[str]:
     return {f["name"] for f in style.needs_fields if f.get("type") == "list[str]"}
 
 
-def _normalize_scope(node: TreeSitterNode | None) -> dict[str, str] | None:
-    """Normalize a ``tagged_scope`` node to a stable, legible snapshot value.
+# ---------------------------------------------------------------------------
+# Normalization contract
+#
+# The snapshot mirrors the real per-marker payload the extractor produces
+# (``analyse/models.py:Metadata.to_dict`` and its ``OneLineNeed`` /
+# ``NeedIdRefs`` / ``MarkedRst`` subclasses), not a reduced projection of it,
+# so a regression in ``filepath``, ``remote_url``, ``source_map`` (columns and
+# end positions included), the scope text, or the ``MarkedContentType``
+# discriminator is caught here. Common ``Metadata`` fields are surfaced on
+# every entry (needs, need_refs, marked_rst) as: ``filepath``, ``remote_url``,
+# ``source_map``, ``content_type`` (the ``MarkedContentType`` value — named
+# ``content_type`` rather than ``type`` because a *need* entry already has a
+# ``type`` key for the need's own field, e.g. "impl"), and ``scope``.
+#
+# ``needs`` keep the existing id/title/type/links/metadata decomposition
+# instead of production's raw ``need`` dict: it is the same data either way,
+# but the decomposition is what makes the payload comparable against a second
+# implementation whose needs are a typed struct rather than a dict.
+#
+# The pre-existing ``line`` (and, for marked_rst, ``start_line``/``end_line``)
+# keys are kept alongside the new full ``source_map`` rather than dropped:
+# they duplicate the start row, but a second implementation's comparison
+# tooling may already rely on them, and keeping them is free.
+#
+# Deliberately excluded (the only non-deterministic things here):
+#   - the absolute prefix of ``filepath``: pytest's ``tmp_path`` differs per
+#     run and per machine, so it is snapshotted relative to ``tmp_path``
+#     instead (see ``_relative_filepath``).
+#   - the raw ``SourceComment``/tree-sitter node objects: production itself
+#     drops ``source_comment`` from ``to_dict()``, and ``tagged_scope`` is
+#     captured as its full decoded text (see ``_normalize_scope``), so no
+#     information is lost by not embedding the node objects themselves.
+#
+# ``remote_url`` is *not* excluded: the test body forces
+# ``analyse.git_remote_url``/``git_commit_rev`` to ``None`` before ``run()``,
+# so it is deterministically ``null`` regardless of the ambient git config of
+# the machine running the tests, and is included like any other field.
+# ---------------------------------------------------------------------------
 
-    Production serialises the associated node's *entire* text
-    (``analyse/models.py:Metadata.to_dict``), which would put whole function
-    bodies into expected JSON — unreadable and brittle. The node's type plus
-    the first (stripped) line of its text proves the same declaration was
-    selected while staying legible. ``None`` when there is no associated scope.
+
+def _relative_filepath(filepath: Path, root: Path) -> str:
+    """Snapshot ``filepath`` relative to the test root (``tmp_path``).
+
+    Production emits an absolute path; ``tmp_path`` is unique per test run and
+    per machine, so a plain ``str()`` would make the snapshot non-deterministic.
+    Relative-to-root (rather than ``.name``) keeps the value meaningful even if
+    a future fixture nests its source file under a subdirectory of ``tmp_path``.
+    """
+    return filepath.relative_to(root).as_posix()
+
+
+def _normalize_scope(node: TreeSitterNode | None) -> dict[str, str] | None:
+    """Normalize a ``tagged_scope`` node exactly as production serializes it.
+
+    ``Metadata.to_dict`` stores the associated node's full decoded text
+    (``str(node.text.decode("utf-8"))``); this reproduces that verbatim so the
+    snapshot can catch a wrong scope being selected, not just a
+    differently-typed one. ``scope_type`` (the node's tree-sitter kind) is not
+    part of production's output, but it is cheap, deterministic, and makes
+    cross-language/cross-implementation comparison easier, so it rides along.
+    ``None`` when there is no associated scope, matching production.
     """
     if node is None or not node.text:
         return None
-    text = node.text.decode("utf-8")
-    first_line = text.splitlines()[0] if text else ""
-    return {"scope_type": node.type, "scope_first_line": first_line.strip()}
+    return {"scope_type": node.type, "scope_text": node.text.decode("utf-8")}
 
 
-def _normalize(analyse: SourceAnalyse, style: OneLineCommentStyle) -> dict:
+def _normalize_common(entry: Metadata, root: Path) -> dict:
+    """The ``Metadata`` fields shared by every marked-content entry."""
+    return {
+        "filepath": _relative_filepath(entry.filepath, root),
+        "remote_url": entry.remote_url,
+        "source_map": entry.source_map,
+        "content_type": entry.type.value,
+        "scope": _normalize_scope(entry.tagged_scope),
+    }
+
+
+def _normalize(
+    analyse: SourceAnalyse, style: OneLineCommentStyle, tmp_path: Path
+) -> dict:
     core = {"id", "title", "type"}
     list_fields = _list_field_names(style)
 
@@ -101,7 +166,7 @@ def _normalize(analyse: SourceAnalyse, style: OneLineCommentStyle) -> dict:
                 "links": links,
                 "metadata": metadata,
                 "line": n.source_map["start"]["row"] + 1,
-                "scope": _normalize_scope(n.tagged_scope),
+                **_normalize_common(n, tmp_path),
             }
         )
     needs.sort(key=lambda d: (d["line"], d["id"]))
@@ -109,9 +174,14 @@ def _normalize(analyse: SourceAnalyse, style: OneLineCommentStyle) -> dict:
     need_refs = []
     for ref in analyse.need_id_refs:
         line = ref.source_map["start"]["row"] + 1
-        scope = _normalize_scope(ref.tagged_scope)
+        common = _normalize_common(ref, tmp_path)
         need_refs.extend(
-            {"need_id": need_id, "line": line, "scope": scope}
+            {
+                "need_id": need_id,
+                "line": line,
+                "marker": ref.marker,
+                **common,
+            }
             for need_id in ref.need_ids
         )
     need_refs.sort(key=lambda d: (d["line"], d["need_id"]))
@@ -121,6 +191,7 @@ def _normalize(analyse: SourceAnalyse, style: OneLineCommentStyle) -> dict:
             "content": m.rst,
             "start_line": m.source_map["start"]["row"] + 1,
             "end_line": m.source_map["end"]["row"] + 1,
+            **_normalize_common(m, tmp_path),
         }
         for m in analyse.marked_rst
     ]
@@ -215,4 +286,4 @@ def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> 
     analyse.git_commit_rev = None
     analyse.run()
 
-    assert snapshot_extraction == _normalize(analyse, style)
+    assert snapshot_extraction == _normalize(analyse, style, tmp_path)

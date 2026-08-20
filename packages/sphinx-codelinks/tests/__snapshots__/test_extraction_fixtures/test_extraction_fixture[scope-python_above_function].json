@@ -11,9 +11,22 @@
       },
       "metadata": {},
       "line": 1,
+      "filepath": "case.py",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 3
+        },
+        "end": {
+          "row": 0,
+          "column": 54
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "def dummy_func1():"
+        "scope_text": "def dummy_func1():\n    pass"
       }
     }
   ],

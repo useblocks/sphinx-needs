@@ -11,9 +11,22 @@
       },
       "metadata": {},
       "line": 3,
+      "filepath": "case.py",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 2,
+          "column": 3
+        },
+        "end": {
+          "row": 2,
+          "column": 57
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "def outer():"
+        "scope_text": "def outer():\n    x = 1\n    # @Inside Function, IMPL_PY_INSIDE, impl, [REQ_PY_INSIDE]"
       }
     }
   ],

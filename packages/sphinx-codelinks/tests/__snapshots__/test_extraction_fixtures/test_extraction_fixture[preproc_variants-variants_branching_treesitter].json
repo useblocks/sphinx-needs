@@ -11,9 +11,22 @@
       },
       "metadata": {},
       "line": 1,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 4
+        },
+        "end": {
+          "row": 0,
+          "column": 49
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "void always() {}"
+        "scope_text": "void always() {}"
       }
     },
     {
@@ -27,9 +40,22 @@
       },
       "metadata": {},
       "line": 5,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 4,
+          "column": 4
+        },
+        "end": {
+          "row": 4,
+          "column": 53
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "void variant_a() {}"
+        "scope_text": "void variant_a() {}"
       }
     },
     {
@@ -43,9 +69,22 @@
       },
       "metadata": {},
       "line": 8,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 7,
+          "column": 4
+        },
+        "end": {
+          "row": 7,
+          "column": 53
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "void variant_b() {}"
+        "scope_text": "void variant_b() {}"
       }
     },
     {
@@ -59,9 +98,22 @@
       },
       "metadata": {},
       "line": 13,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 12,
+          "column": 4
+        },
+        "end": {
+          "row": 12,
+          "column": 48
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "void proto_v3() {}"
+        "scope_text": "void proto_v3() {}"
       }
     },
     {
@@ -75,9 +127,22 @@
       },
       "metadata": {},
       "line": 18,
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 17,
+          "column": 4
+        },
+        "end": {
+          "row": 17,
+          "column": 48
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "void linux_and_a() {}"
+        "scope_text": "void linux_and_a() {}"
       }
     }
   ],

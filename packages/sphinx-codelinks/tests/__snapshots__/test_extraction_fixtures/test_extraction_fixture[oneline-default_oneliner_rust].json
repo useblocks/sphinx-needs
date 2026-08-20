@@ -11,9 +11,22 @@
       },
       "metadata": {},
       "line": 1,
+      "filepath": "case.rs",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 4
+        },
+        "end": {
+          "row": 0,
+          "column": 37
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_item",
-        "scope_first_line": "fn f() {}"
+        "scope_text": "fn f() {}"
       }
     }
   ],

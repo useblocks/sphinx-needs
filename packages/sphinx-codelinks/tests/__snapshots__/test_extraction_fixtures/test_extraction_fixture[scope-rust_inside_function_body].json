@@ -11,9 +11,22 @@
       },
       "metadata": {},
       "line": 3,
+      "filepath": "case.rs",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 2,
+          "column": 4
+        },
+        "end": {
+          "row": 2,
+          "column": 62
+        }
+      },
+      "content_type": "need",
       "scope": {
         "scope_type": "function_item",
-        "scope_first_line": "fn outer() {"
+        "scope_text": "fn outer() {\n    let x = 1;\n    // @Inside Function, IMPL_RUST_INSIDE, impl, [REQ_RUST_INSIDE]\n}"
       }
     }
   ],

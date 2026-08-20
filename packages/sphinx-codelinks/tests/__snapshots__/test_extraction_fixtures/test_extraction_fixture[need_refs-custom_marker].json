@@ -4,17 +4,45 @@
     {
       "need_id": "REQ_A",
       "line": 1,
+      "marker": "REFS:",
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 8
+        },
+        "end": {
+          "row": 0,
+          "column": 20
+        }
+      },
+      "content_type": "need-id-refs",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "void f() {}"
+        "scope_text": "void f() {}"
       }
     },
     {
       "need_id": "REQ_B",
       "line": 1,
+      "marker": "REFS:",
+      "filepath": "case.cpp",
+      "remote_url": null,
+      "source_map": {
+        "start": {
+          "row": 0,
+          "column": 8
+        },
+        "end": {
+          "row": 0,
+          "column": 20
+        }
+      },
+      "content_type": "need-id-refs",
       "scope": {
         "scope_type": "function_definition",
-        "scope_first_line": "void f() {}"
+        "scope_text": "void f() {}"
       }
     }
   ],
