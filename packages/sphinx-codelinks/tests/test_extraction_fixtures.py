@@ -6,7 +6,7 @@ compared to a committed JSON snapshot. See ``tests/data/extraction/README.md``.
 """
 
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 import pytest
 import yaml
@@ -109,6 +109,45 @@ def _build_oneline_style(config) -> OneLineCommentStyle:
 # ---------------------------------------------------------------------------
 
 
+def _write_exact(path: Path, text: str) -> None:
+    """Write ``text`` to ``path`` with exactly the bytes it contains.
+
+    ``Path.write_text`` opens the file in text mode (``newline=None``), which
+    makes Python translate every ``\\n`` to ``os.linesep`` on write. On
+    Windows that turns an LF-only fixture into CRLF on disk, which shifts
+    tree-sitter/libclang column positions at line ends, injects ``\\r`` into
+    any multi-line ``tagged_scope`` text, and moves warning positions —
+    breaking both the snapshot and the byte-for-byte parity with the mirrored
+    fixtures. Writing through ``write_bytes`` bypasses text-mode translation
+    entirely, so the file on disk always matches the fixture verbatim,
+    independent of platform.
+    """
+    path.write_bytes(text.encode("utf-8"))
+
+
+def _assert_portable_path(value: str) -> None:
+    """Guard invariant: a snapshot path must be relative and slash-normalized.
+
+    This is the enforced counterpart to ``_relative_filepath``'s
+    ``as_posix()`` call — it exists so a future change to that function (or
+    to production's path handling) can never silently let a non-portable
+    path slip into a snapshot again.
+
+    Checked in an OS-agnostic way: absoluteness is asked of the path types
+    themselves rather than guessed from a leading character, because neither
+    alone is sufficient — ``PureWindowsPath`` doesn't recognise a POSIX
+    ``/abs/path`` as absolute (Windows absoluteness needs a drive), and
+    ``PurePosixPath`` doesn't recognise a drive-relative ``C:\\Users\\a`` or a
+    UNC ``\\\\server\\share`` as absolute. Testing with both catches every
+    form: POSIX-absolute, drive-absolute, and UNC.
+    """
+    assert not PurePosixPath(value).is_absolute(), f"path must be relative: {value!r}"
+    assert not PureWindowsPath(value).is_absolute(), f"path must be relative: {value!r}"
+    assert "\\" not in value, (
+        f"path must be slash-normalized (no backslashes): {value!r}"
+    )
+
+
 def _relative_filepath(filepath: Path, root: Path) -> str:
     """Snapshot a filepath relative to the test root (``tmp_path``).
 
@@ -116,8 +155,17 @@ def _relative_filepath(filepath: Path, root: Path) -> str:
     per machine, so a plain ``str()`` would make the snapshot non-deterministic.
     Relative-to-root (rather than ``.name``) keeps the value meaningful even if
     a future fixture nests its source file under a subdirectory of ``tmp_path``.
+
+    The result is always forward-slash separated (``Path.as_posix()``), even
+    on Windows, so a snapshot can never acquire a backslash path separator —
+    every existing snapshot uses ``/`` and a mixed separator would break
+    byte-for-byte parity with the mirrored fixtures. ``_assert_portable_path``
+    turns that guarantee into an enforced invariant rather than a remembered
+    convention.
     """
-    return filepath.relative_to(root).as_posix()
+    relative = filepath.relative_to(root).as_posix()
+    _assert_portable_path(relative)
+    return relative
 
 
 def _build_marked_content(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
@@ -176,11 +224,11 @@ def _build_preprocessor(case: dict, tmp_path: Path) -> PreprocessorConfig:
             {"directory": str(tmp_path), "file": e["file"], "arguments": e["arguments"]}
             for e in case["compile_commands"]
         ]
-        db.write_text(json.dumps(entries), encoding="utf-8")
+        _write_exact(db, json.dumps(entries))
         compile_commands = db
     elif "compile_commands_raw" in case:
         db = tmp_path / "compile_commands.json"
-        db.write_text(case["compile_commands_raw"], encoding="utf-8")
+        _write_exact(db, case["compile_commands_raw"])
         compile_commands = db
     elif "compile_commands_path" in case:
         compile_commands = tmp_path / case["compile_commands_path"]
@@ -215,7 +263,7 @@ def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> 
         preprocessor = _build_preprocessor(case, tmp_path)
 
     src_path = tmp_path / f"case.{ext}"
-    src_path.write_text(case["source"], encoding="utf-8")
+    _write_exact(src_path, case["source"])
 
     cfg = SourceAnalyseConfig(
         src_files=[src_path],
