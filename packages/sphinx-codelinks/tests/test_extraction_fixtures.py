@@ -287,3 +287,82 @@ def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> 
     # separately named one.
     assert snapshot_extraction == _build_marked_content(analyse, tmp_path)
     assert snapshot_extraction(name="warnings") == _build_warnings(analyse, tmp_path)
+
+
+def _run_extraction(source: str, case_dir: Path) -> tuple[list[dict], list[dict]]:
+    """Write ``source`` and run it through the same path ``test_extraction_fixture``
+    uses, returning the normalized (marked content, warnings) pair.
+    """
+    case_dir.mkdir()
+    src_path = case_dir / "case.cpp"
+    _write_exact(src_path, source)
+    cfg = SourceAnalyseConfig(
+        src_files=[src_path],
+        src_dir=case_dir,
+        comment_type=CommentType.cpp,
+        get_oneline_needs=True,
+        get_need_id_refs=True,
+        get_rst=True,
+        oneline_comment_style=OneLineCommentStyle(),
+        # A non-``@`` marker, so ``// REFS: ...`` below isn't also parsed (and
+        # warned about) as a malformed one-line need — see need_refs.yaml's
+        # ``custom_marker`` case for the same reasoning.
+        need_id_refs_config=NeedIdRefsConfig(markers=["REFS:"]),
+        preprocessor=None,
+    )
+    analyse = SourceAnalyse(cfg)
+    analyse.git_remote_url = None
+    analyse.git_commit_rev = None
+    analyse.run()
+    return (
+        _build_marked_content(analyse, case_dir),
+        _build_warnings(analyse, case_dir),
+    )
+
+
+def test_extraction_is_crlf_insensitive(tmp_path: Path) -> None:
+    """Pin Defect 1's fix at the output level: line-ending style must never
+    change extraction results.
+
+    ``_write_exact`` stops ``write_text``'s platform-dependent CRLF
+    translation from ever mutating a fixture's bytes on disk (on Windows,
+    ``write_text`` turns an LF-only fixture into CRLF; this test's "crlf"
+    branch reproduces exactly that on-disk shape, on any platform, by writing
+    genuine ``\\r\\n`` bytes via the same ``_write_exact`` path the main test
+    uses). The case deliberately spans multiple lines so a regression has
+    somewhere to hide: a real Defect 1 (CRLF surviving into ``tagged_scope``)
+    would show up as an embedded ``\\r`` in this multi-line scope's captured
+    text, and would also shift the ``need-id-refs`` marker's ``source_map``
+    on the closing lines.
+
+    This also verifies, independent of the write fix, that production's own
+    CRLF handling (``get_src_strings`` on the tree-sitter path;
+    ``libclang_parser.extract_active_comments`` on the libclang path)
+    genuinely normalizes line endings before computing positions/text — the
+    property that makes the write-side fix safe rather than merely
+    plausible.
+    """
+    source_lf = (
+        "// @Multi-line title, IMPL_CRLF, impl, [REQ_1]\n"
+        "void f(\n"
+        "    int a,\n"
+        "    int b\n"
+        ") {\n"
+        "    return;\n"
+        "}\n"
+        "// REFS: REQ_2, REQ_3\n"
+        "void g() {}\n"
+        "// @extra, IMPL_2, impl, [REQ_1], oops\n"
+        "void h() {}\n"
+    )
+    source_crlf = source_lf.replace("\n", "\r\n")
+
+    lf_content, lf_warnings = _run_extraction(source_lf, tmp_path / "lf")
+    crlf_content, crlf_warnings = _run_extraction(source_crlf, tmp_path / "crlf")
+
+    assert crlf_content == lf_content
+    assert crlf_warnings == lf_warnings
+    for entry in crlf_content:
+        scope = entry.get("tagged_scope")
+        if scope:
+            assert "\r" not in scope
