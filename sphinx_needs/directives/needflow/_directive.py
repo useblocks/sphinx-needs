@@ -29,6 +29,7 @@ from ._options import (
     direction_option,
     graphviz_config_direction,
     plantuml_config_direction,
+    show_link_names_option,
 )
 
 LOGGER = get_logger(__name__)
@@ -72,7 +73,7 @@ class NeedflowDirective(FilterBase):
         "border_color": directives.unchanged_required,
         "show_legend": directives.flag,
         "show_filters": directives.flag,
-        "show_link_names": directives.flag,
+        "show_link_names": show_link_names_option,
         "config": directives.unchanged_required,
         "max_items": directives.nonnegative_int,
         # ubCode compatibility: accepted and ignored by Sphinx-Needs.
@@ -208,7 +209,11 @@ class NeedflowDirective(FilterBase):
             "root_depth": self.options.get("root_depth", None),
             "show_legend": "show_legend" in self.options,
             "show_filters": "show_filters" in self.options,
+            # the flag records only that the option was *given*; what it was given goes
+            # into the value beside it, because the flag is shared with the other diagram
+            # directives, which still take it as a bare flag
             "show_link_names": "show_link_names" in self.options,
+            "show_link_names_value": self.options.get("show_link_names"),
             "link_types": link_types,
             "config_names": config_names,
             "config": config,

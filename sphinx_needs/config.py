@@ -815,10 +815,17 @@ class NeedsSphinxConfig:
         default="plantuml", metadata={"rebuild": "env", "types": (str,)}
     )
     """The rendering engine to use for needflow diagrams."""
-    flow_show_links: bool = field(
-        default=False, metadata={"rebuild": "html", "types": (bool,)}
+    flow_show_links: bool | str = field(
+        default=False, metadata={"rebuild": "html", "types": (bool, str)}
     )
-    """If True, show links in needflow diagrams by default."""
+    """What needflow diagrams label their edges with, by default.
+
+    One of ``none``, ``outgoing``, ``incoming`` or ``type``.
+    ``True`` and ``False`` are also accepted, and mean ``outgoing`` and ``none``.
+
+    .. versionchanged:: 8.4.0
+       Accepts a value as well as a boolean.
+    """
     flow_direction: Literal["down", "up", "right", "left"] = field(
         default="down", metadata={"rebuild": "html", "types": (str,)}
     )

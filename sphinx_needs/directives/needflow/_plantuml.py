@@ -415,9 +415,8 @@ def render_connections(graph: NeedflowGraph, entity_names: Mapping[str, str]) ->
     """
     puml_connections = ""
     for edge in graph.edges:
-        if graph.show_link_names:
-            desc = edge.link_type.display.outgoing + "\\n"
-            comment = f": {desc}"
+        if (label := edge.label(graph.link_labels)) is not None:
+            comment = f": {label}\\n"
         else:
             comment = ""
 

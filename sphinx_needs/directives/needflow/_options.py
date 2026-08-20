@@ -81,6 +81,10 @@ _PLANTUML_DIRECTION: Mapping[FlowDirection, str] = {
 }
 
 
+LinkLabels = Literal["none", "outgoing", "incoming", "type"]
+"""What to write on an edge, if anything."""
+
+
 def direction_option(argument: str) -> FlowDirection:
     """Parse the ``:direction:`` option value.
 
@@ -93,6 +97,24 @@ def direction_option(argument: str) -> FlowDirection:
         (argument or "").strip().lower(), tuple(DIRECTION_ALIASES)
     )
     return DIRECTION_ALIASES[value]
+
+
+def show_link_names_option(argument: str | None) -> LinkLabels:
+    """Parse the ``:show_link_names:`` option value.
+
+    The option began as a bare flag meaning "label edges with the outgoing title", which
+    is exactly one of the values below -- so it is widened rather than replaced, and a
+    bare ``:show_link_names:`` still means what it always did.  docutils hands a
+    valueless option ``None`` or ``''`` depending on how it was written, and both mean
+    bare.
+
+    :param argument: The raw option value, ``None`` or empty when written bare.
+    :return: What to label edges with.
+    :raises ValueError: If the value is not a known kind of label.
+    """
+    if not (value := (argument or "").strip().lower()):
+        return "outgoing"
+    return directives.choice(value, get_args(LinkLabels))  # type: ignore[no-any-return]
 
 
 def plantuml_direction(
@@ -282,7 +304,55 @@ def validated_config_enum(
     return default
 
 
-def validate_flow_config(*, direction: str) -> None:
+def validated_config_show_links(
+    value: bool | str, *, location: LocationType
+) -> LinkLabels:
+    """Check the configured project default for edge labels.
+
+    The value was a boolean before it named a kind of label, and both spellings stay
+    valid: ``True`` is the ``outgoing`` it has always drawn and ``False`` is ``none``.
+    An unusable string warns once and falls back, like every other enumerated value.
+
+    Anything that is neither a string nor a boolean is read for its truth, because that
+    is what a value declared ``bool`` for years actually did: ``1`` drew labels and drew
+    them silently, so it still does. Only a *string* is held to the enumeration, since a
+    string is someone naming a value rather than leaning on truthiness.
+
+    :param value: The ``needs_flow_show_links`` configuration value.
+    :param location: Where to report an unusable value, if anywhere.
+    :return: What to label edges with by default.
+    """
+    if not isinstance(value, str):
+        return "outgoing" if value else "none"
+    return validated_config_enum(  # type: ignore[return-value]
+        str(value),
+        get_args(LinkLabels),
+        "none",
+        name="needs_flow_show_links",
+        location=location,
+    )
+
+
+def resolve_link_labels(
+    option: LinkLabels | None, project_default: bool | str
+) -> LinkLabels:
+    """Decide what a diagram's edges are labelled with.
+
+    Only an unset option consults the configuration, so a diagram always has the last
+    word -- which it did not before the option took a value: the flag and the
+    configuration were OR-ed together, so a project that turned labels on left no way of
+    turning them off again for one diagram.
+
+    :param option: The ``:show_link_names:`` option, ``None`` if it was not given.
+    :param project_default: The ``needs_flow_show_links`` configuration value.
+    :return: What to label edges with.
+    """
+    if option is not None:
+        return option
+    return validated_config_show_links(project_default, location=None)
+
+
+def validate_flow_config(*, direction: str, show_links: bool | str) -> None:
     """Report every unusable needflow configuration value, once, as it is read.
 
     Checking these as a diagram is drawn means a project that misconfigures one and
@@ -293,6 +363,7 @@ def validate_flow_config(*, direction: str) -> None:
     first, because this call has no directive location to attach.
 
     :param direction: The ``needs_flow_direction`` value.
+    :param show_links: The ``needs_flow_show_links`` value.
     """
     validated_config_enum(
         direction,
@@ -301,3 +372,4 @@ def validate_flow_config(*, direction: str) -> None:
         name="needs_flow_direction",
         location=None,
     )
+    validated_config_show_links(show_links, location=None)

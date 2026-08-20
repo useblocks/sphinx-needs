@@ -634,6 +634,13 @@ class NeedsFilteredDiagramBaseType(NeedsFilteredBaseType):
     show_legend: bool
     show_filters: bool
     show_link_names: bool
+    """Whether to label edges with the link type.
+
+    .. versionchanged:: 8.4.0
+       For :class:`NeedsFlowType` this records only that the option was *given*; what it
+       was given is in ``show_link_names_value``, since needflow's widened option cannot
+       narrow a key the other diagram directives share.
+    """
     link_types: list[str]
     config: str
     config_names: str
@@ -703,6 +710,13 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
 
     Detected when the engine configuration is resolved, i.e. while the engine is still
     known, so that the model can honour it without knowing which engine it is for."""
+
+    show_link_names_value: Literal["none", "outgoing", "incoming", "type"] | None
+    """What to label edges with, ``None`` if ``show_link_names`` was not given.
+
+    The bare ``show_link_names`` flag of :class:`NeedsFilteredDiagramBaseType` is shared
+    with the other diagram directives, which still take it as a flag, so needflow's
+    widened value lands beside it rather than changing its type."""
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):

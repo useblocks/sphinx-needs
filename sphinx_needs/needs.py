@@ -1128,7 +1128,10 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
 
     # validated where the configuration is read, so that a project which misconfigures
     # one of these and happens to have no needflow anywhere is still told, exactly once
-    validate_flow_config(direction=needs_config.flow_direction)
+    validate_flow_config(
+        direction=needs_config.flow_direction,
+        show_links=needs_config.flow_show_links,
+    )
 
     if needs_config._global_options:
         log_warning(

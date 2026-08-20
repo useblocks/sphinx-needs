@@ -1452,3 +1452,246 @@ def test_normalisation_does_not_silence_a_genuinely_wrong_value(
     assert message in warnings
     # the author's own spelling is echoed, padding and all, so it can be found in conf.py
     assert repr(next(iter(override.values()))) in warnings
+
+
+LINK_LABELS_DOC = """\
+Link labels
+===========
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :show_link_names:{value}
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "written,label",
+    [
+        ("", "links outgoing"),
+        (" outgoing", "links outgoing"),
+        (" incoming", "links incoming"),
+        (" type", "links"),
+        (" none", None),
+        # docutils' `choice` lowercases and strips, so these are the same values
+        (" Incoming ", "links incoming"),
+    ],
+    ids=["bare", "outgoing", "incoming", "type", "none", "padded"],
+)
+@pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
+def test_show_link_names_takes_a_value(
+    make_app, tmp_path, plantuml_command, engine, written, label
+):
+    """Each accepted ``:show_link_names:`` value labels edges with what it names.
+
+    Written bare the option means ``outgoing``, which is exactly what the flag has
+    always drawn -- the option is widened rather than replaced, so no existing document
+    changes. ``none``, ``incoming`` and ``type`` are new: the flag could only ever say
+    "outgoing", and could not say "off" at all.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(LINK_LABELS_DOC.format(value=written), "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "graphviz_output_format": "svg",
+            "needs_flow_engine": engine,
+        },
+    )
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+
+    source = _debug_source(Path(app.outdir), "index.html")
+    # only the edges are inspected: a graphviz *node* always carries an HTML label
+    edges = source.split(
+        "Connection definition" if engine == "plantuml" else "edge definitions"
+    )[-1]
+    if label is None:
+        # `none` must leave the edge bare, not label it with an empty string
+        assert ": " not in edges
+        assert "label=" not in edges
+    elif engine == "plantuml":
+        assert f": {label}\\n" in edges
+    else:
+        assert f'label="{label}"' in edges
+
+
+def test_unknown_show_link_names_value_is_rejected_as_it_is_parsed(
+    make_app, tmp_path, plantuml_command
+):
+    """``:show_link_names:`` is a closed enumeration once it takes a value."""
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(
+        LINK_LABELS_DOC.format(value=" sideways"), "utf8"
+    )
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command},
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert '"sideways" unknown; choose from' in warnings
+    for accepted in ("none", "outgoing", "incoming", "type"):
+        assert f'"{accepted}"' in warnings
+
+
+@pytest.mark.parametrize(
+    "configured,label",
+    [
+        (True, "links outgoing"),
+        (False, None),
+        ("outgoing", "links outgoing"),
+        ("incoming", "links incoming"),
+        ("type", "links"),
+        ("none", None),
+        ("  Type  ", "links"),
+        # a value declared `bool` for years: a truthy non-boolean drew labels silently,
+        # so it still does rather than being held to the enumeration
+        (1, "links outgoing"),
+        (0, None),
+    ],
+    ids=[
+        "true",
+        "false",
+        "outgoing",
+        "incoming",
+        "type",
+        "none",
+        "padded",
+        "truthy-int",
+        "falsey-int",
+    ],
+)
+def test_needs_flow_show_links_accepts_a_value_or_a_boolean(
+    make_app, tmp_path, plantuml_command, configured, label
+):
+    """The project default takes a value, and keeps meaning what a boolean meant.
+
+    ``True`` is the ``outgoing`` it has always drawn and ``False`` is ``none``. Anything
+    that is neither a string nor a boolean is read for its truth, because that is what a
+    value declared ``bool`` for years actually did.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(
+        "Configured\n==========\n\n.. spec:: A\n   :id: AAAAA\n\n"
+        ".. spec:: B\n   :id: BBBBB\n   :links: AAAAA\n\n.. needflow::\n   :debug:\n",
+        "utf8",
+    )
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_show_links": configured,
+        },
+    )
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+
+    source = _debug_source(Path(app.outdir), "index.html")
+    if label is None:
+        assert ": " not in source.split("Connection definition")[-1]
+    else:
+        assert f": {label}\\n" in source
+
+
+def test_unusable_needs_flow_show_links_string_warns_and_falls_back(
+    make_app, tmp_path, plantuml_command
+):
+    """A *string* is someone naming a value, so it is held to the enumeration.
+
+    This is the one input whose behaviour changes: a non-enumerated string used to be
+    truthy and draw labels. It is reported where the configuration is read, once.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(NO_NEEDFLOW, "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_show_links": "yes please",
+        },
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "Invalid 'needs_flow_show_links' value 'yes please'" in warnings
+    assert "allowed values: none, outgoing, incoming, type" in warnings
+    assert "'none' is used" in warnings
+
+
+def test_show_link_names_option_beats_the_project_default(
+    make_app, tmp_path, plantuml_command
+):
+    """A diagram has the last word, which it could not have before.
+
+    The flag and the configuration used to be OR-ed, so a project that turned labels on
+    left no way of drawing one unlabelled diagram.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(LINK_LABELS_DOC.format(value=" none"), "utf8")
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "needs_flow_show_links": "outgoing",
+        },
+    )
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+    source = _debug_source(Path(app.outdir), "index.html")
+    assert "links outgoing" not in source
+
+
+@pytest.mark.parametrize("engine", ["plantuml", "graphviz"])
+def test_needgantt_and_needsequence_keep_their_bare_flag(
+    make_app, tmp_path, plantuml_command, engine
+):
+    """The widened option must not narrow the flag the other diagrams share.
+
+    ``show_link_names`` lives on the shared diagram data type, and needgantt and
+    needsequence still take it as a bare flag, so needflow's value lands beside it.
+    """
+    (tmp_path / "conf.py").write_text(CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(
+        "Shared flag\n===========\n\n.. spec:: A\n   :id: AAAAA\n\n"
+        ".. spec:: B\n   :id: BBBBB\n   :links: AAAAA\n\n"
+        ".. needsequence::\n   :start: AAAAA\n   :show_link_names:\n\n"
+        ".. needgantt::\n   :show_link_names:\n",
+        "utf8",
+    )
+
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={
+            "plantuml": plantuml_command,
+            "graphviz_output_format": "svg",
+            "needs_flow_engine": engine,
+        },
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "unknown option" not in warnings
+    assert "no arguments allowed" not in warnings
