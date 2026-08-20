@@ -1,33 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_RUST_NONE",
+[
+  {
+    "filepath": "case.rs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 51
+      }
+    },
+    "tagged_scope": null,
+    "need": {
       "title": "No Scope",
+      "id": "IMPL_RUST_NONE",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ_RUST_NONE"
-        ]
-      },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.rs",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 51
-        }
-      },
-      "content_type": "need",
-      "scope": null
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "links": [
+        "REQ_RUST_NONE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

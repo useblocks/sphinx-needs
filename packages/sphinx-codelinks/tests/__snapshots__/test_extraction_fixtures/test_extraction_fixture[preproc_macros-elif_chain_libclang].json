@@ -1,33 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_M2",
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 3,
+        "column": 4
+      },
+      "end": {
+        "row": 3,
+        "column": 34
+      }
+    },
+    "tagged_scope": null,
+    "need": {
       "title": "Mode Two",
+      "id": "IMPL_M2",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
-      },
-      "metadata": {},
-      "line": 4,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 3,
-          "column": 4
-        },
-        "end": {
-          "row": 3,
-          "column": 34
-        }
-      },
-      "content_type": "need",
-      "scope": null
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

@@ -98,12 +98,20 @@ class ExtractionSnapshotExtension(SingleFileSnapshotExtension):
     file_extension = "json"
 
     def serialize(self, data, **_kwargs):
-        if not isinstance(data, dict):
-            raise TypeError(f"Expected dict, got {type(data)}")
+        if not isinstance(data, dict | list):
+            raise TypeError(f"Expected dict or list, got {type(data)}")
         return json.dumps(data, indent=2)
 
 
 @pytest.fixture
 def snapshot_extraction(snapshot):
-    """Snapshot fixture for the normalized extraction output (one JSON per case)."""
+    """Snapshot fixture for the normalized extraction output.
+
+    Two JSON files per case, matching production's two independent
+    artefacts: the default (unnamed) snapshot holds the marked-content list
+    (``SourceAnalyse.dump_marked_content``'s payload); ``snapshot(name=...)``
+    is used for a second, separately named snapshot holding the warnings
+    list (``AnalyseProjects.dump_warnings``'s payload). See
+    ``tests/test_extraction_fixtures.py`` for the normalization contract.
+    """
     return snapshot.with_defaults(extension_class=ExtractionSnapshotExtension)

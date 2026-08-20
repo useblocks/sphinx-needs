@@ -1,36 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_PY_DOC",
-      "title": "Docstring Marker",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_PY_DOC"
-        ]
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 5
       },
-      "metadata": {},
-      "line": 3,
-      "filepath": "case.py",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 2,
-          "column": 5
-        },
-        "end": {
-          "row": 2,
-          "column": 54
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "def dummy_func1():\n    \"\"\"\n    @Docstring Marker, IMPL_PY_DOC, impl, [REQ_PY_DOC]\n    \"\"\"\n    pass"
+      "end": {
+        "row": 2,
+        "column": 54
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "def dummy_func1():\n    \"\"\"\n    @Docstring Marker, IMPL_PY_DOC, impl, [REQ_PY_DOC]\n    \"\"\"\n    pass",
+    "need": {
+      "title": "Docstring Marker",
+      "id": "IMPL_PY_DOC",
+      "type": "impl",
+      "links": [
+        "REQ_PY_DOC"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

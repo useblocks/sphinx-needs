@@ -1,29 +1,20 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "marked_rst": [
-    {
-      "content": " .. impl:: X\\n   :id: Y\\n",
-      "start_line": 2,
-      "end_line": 2,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 1,
-          "column": 7
-        },
-        "end": {
-          "row": 1,
-          "column": 32
-        }
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 7
       },
-      "content_type": "rst",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void f() {}"
+      "end": {
+        "row": 1,
+        "column": 32
       }
-    }
-  ],
-  "warnings": []
-}
+    },
+    "tagged_scope": "void f() {}",
+    "rst": " .. impl:: X\\n   :id: Y\\n",
+    "type": "rst",
+    "tagged_scope_type": "function_definition"
+  }
+]

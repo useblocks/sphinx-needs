@@ -1,36 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_CS",
-      "title": "Cs Title",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_CS"
-        ]
+[
+  {
+    "filepath": "case.cs",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.cs",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 37
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "class_declaration",
-        "scope_text": "class C {}"
+      "end": {
+        "row": 0,
+        "column": 37
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "class C {}",
+    "need": {
+      "title": "Cs Title",
+      "id": "IMPL_CS",
+      "type": "impl",
+      "links": [
+        "REQ_CS"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "class_declaration"
+  }
+]

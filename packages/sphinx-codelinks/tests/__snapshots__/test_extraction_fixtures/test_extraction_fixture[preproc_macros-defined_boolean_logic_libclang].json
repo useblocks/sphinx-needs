@@ -1,59 +1,52 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_AORB",
-      "title": "A or B",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 4
       },
-      "metadata": {},
-      "line": 5,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 4,
-          "column": 4
-        },
-        "end": {
-          "row": 4,
-          "column": 34
-        }
-      },
-      "content_type": "need",
-      "scope": null
+      "end": {
+        "row": 4,
+        "column": 34
+      }
     },
-    {
-      "id": "IMPL_NOTB",
-      "title": "Not B",
+    "tagged_scope": null,
+    "need": {
+      "title": "A or B",
+      "id": "IMPL_AORB",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
       },
-      "metadata": {},
-      "line": 8,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 7,
-          "column": 4
-        },
-        "end": {
-          "row": 7,
-          "column": 33
-        }
-      },
-      "content_type": "need",
-      "scope": null
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 7,
+        "column": 33
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "Not B",
+      "id": "IMPL_NOTB",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

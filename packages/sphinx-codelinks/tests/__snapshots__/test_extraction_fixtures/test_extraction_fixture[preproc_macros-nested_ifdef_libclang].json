@@ -1,85 +1,77 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_TOP",
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 30
+      }
+    },
+    "tagged_scope": null,
+    "need": {
       "title": "Top",
+      "id": "IMPL_TOP",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
-      },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 30
-        }
-      },
-      "content_type": "need",
-      "scope": null
+      "links": [
+        "REQ"
+      ]
     },
-    {
-      "id": "IMPL_OUTER",
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
+      },
+      "end": {
+        "row": 2,
+        "column": 37
+      }
+    },
+    "tagged_scope": null,
+    "need": {
       "title": "Outer On",
+      "id": "IMPL_OUTER",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
-      },
-      "metadata": {},
-      "line": 3,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 2,
-          "column": 4
-        },
-        "end": {
-          "row": 2,
-          "column": 37
-        }
-      },
-      "content_type": "need",
-      "scope": null
+      "links": [
+        "REQ"
+      ]
     },
-    {
-      "id": "IMPL_INNER",
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 4
+      },
+      "end": {
+        "row": 4,
+        "column": 37
+      }
+    },
+    "tagged_scope": null,
+    "need": {
       "title": "Inner On",
+      "id": "IMPL_INNER",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
-      },
-      "metadata": {},
-      "line": 5,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 4,
-          "column": 4
-        },
-        "end": {
-          "row": 4,
-          "column": 37
-        }
-      },
-      "content_type": "need",
-      "scope": null
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

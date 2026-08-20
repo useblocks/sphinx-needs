@@ -1,59 +1,52 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_ALWAYS",
-      "title": "Always",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 36
-        }
-      },
-      "content_type": "need",
-      "scope": null
+      "end": {
+        "row": 0,
+        "column": 36
+      }
     },
-    {
-      "id": "IMPL_VAR_A",
-      "title": "Variant A",
+    "tagged_scope": null,
+    "need": {
+      "title": "Always",
+      "id": "IMPL_ALWAYS",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
       },
-      "metadata": {},
-      "line": 3,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 2,
-          "column": 4
-        },
-        "end": {
-          "row": 2,
-          "column": 38
-        }
-      },
-      "content_type": "need",
-      "scope": null
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 2,
+        "column": 38
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "Variant A",
+      "id": "IMPL_VAR_A",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

@@ -1,59 +1,52 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_BEFORE",
-      "title": "Before the error",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 46
-        }
-      },
-      "content_type": "need",
-      "scope": null
+      "end": {
+        "row": 0,
+        "column": 46
+      }
     },
-    {
-      "id": "IMPL_AFTER",
-      "title": "After the error",
+    "tagged_scope": null,
+    "need": {
+      "title": "Before the error",
+      "id": "IMPL_BEFORE",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 6,
+        "column": 4
       },
-      "metadata": {},
-      "line": 7,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 6,
-          "column": 4
-        },
-        "end": {
-          "row": 6,
-          "column": 44
-        }
-      },
-      "content_type": "need",
-      "scope": null
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 6,
+        "column": 44
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "After the error",
+      "id": "IMPL_AFTER",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

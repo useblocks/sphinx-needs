@@ -1,29 +1,20 @@
-{
-  "needs": [],
-  "need_refs": [],
-  "marked_rst": [
-    {
-      "content": " .. impl:: Multi\n    :id: M_1\n\n    Body line.\n ",
-      "start_line": 3,
-      "end_line": 3,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 2,
-          "column": 12
-        },
-        "end": {
-          "row": 2,
-          "column": 69
-        }
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 12
       },
-      "content_type": "rst",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void f() {}"
+      "end": {
+        "row": 2,
+        "column": 69
       }
-    }
-  ],
-  "warnings": []
-}
+    },
+    "tagged_scope": "void f() {}",
+    "rst": " .. impl:: Multi\n    :id: M_1\n\n    Body line.\n ",
+    "type": "rst",
+    "tagged_scope_type": "function_definition"
+  }
+]

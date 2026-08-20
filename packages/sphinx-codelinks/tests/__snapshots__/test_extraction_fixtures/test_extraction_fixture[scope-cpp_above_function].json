@@ -1,36 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_CPP_ABOVE",
-      "title": "Above Function",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_CPP_ABOVE"
-        ]
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 57
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void dummy_func1() {}"
+      "end": {
+        "row": 0,
+        "column": 57
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "void dummy_func1() {}",
+    "need": {
+      "title": "Above Function",
+      "id": "IMPL_CPP_ABOVE",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_ABOVE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

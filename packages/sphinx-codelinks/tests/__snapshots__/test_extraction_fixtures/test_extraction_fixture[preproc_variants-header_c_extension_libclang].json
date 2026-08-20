@@ -1,59 +1,52 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_HDR_BASE",
-      "title": "Header Base",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_HDR"
-        ]
+[
+  {
+    "filepath": "case.h",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 1,
+        "column": 4
       },
-      "metadata": {},
-      "line": 2,
-      "filepath": "case.h",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 1,
-          "column": 4
-        },
-        "end": {
-          "row": 1,
-          "column": 47
-        }
-      },
-      "content_type": "need",
-      "scope": null
+      "end": {
+        "row": 1,
+        "column": 47
+      }
     },
-    {
-      "id": "IMPL_HDR_FEATURE",
-      "title": "Header Feature On",
+    "tagged_scope": null,
+    "need": {
+      "title": "Header Base",
+      "id": "IMPL_HDR_BASE",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ_HDR_FEAT"
-        ]
+      "links": [
+        "REQ_HDR"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.h",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 5,
+        "column": 4
       },
-      "metadata": {},
-      "line": 6,
-      "filepath": "case.h",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 5,
-          "column": 4
-        },
-        "end": {
-          "row": 5,
-          "column": 61
-        }
-      },
-      "content_type": "need",
-      "scope": null
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 5,
+        "column": 61
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "Header Feature On",
+      "id": "IMPL_HDR_FEATURE",
+      "type": "impl",
+      "links": [
+        "REQ_HDR_FEAT"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

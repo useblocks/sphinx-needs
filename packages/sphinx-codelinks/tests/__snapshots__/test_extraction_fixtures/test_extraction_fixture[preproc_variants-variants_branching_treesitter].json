@@ -1,152 +1,127 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_ALWAYS",
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 49
+      }
+    },
+    "tagged_scope": "void always() {}",
+    "need": {
       "title": "Always Present",
+      "id": "IMPL_ALWAYS",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ_BASE"
-        ]
+      "links": [
+        "REQ_BASE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 4,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 49
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void always() {}"
+      "end": {
+        "row": 4,
+        "column": 53
       }
     },
-    {
-      "id": "IMPL_VAR_A",
+    "tagged_scope": "void variant_a() {}",
+    "need": {
       "title": "Variant A Feature",
+      "id": "IMPL_VAR_A",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ_FEAT_A"
-        ]
+      "links": [
+        "REQ_FEAT_A"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 7,
+        "column": 4
       },
-      "metadata": {},
-      "line": 5,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 4,
-          "column": 4
-        },
-        "end": {
-          "row": 4,
-          "column": 53
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void variant_a() {}"
+      "end": {
+        "row": 7,
+        "column": 53
       }
     },
-    {
-      "id": "IMPL_VAR_B",
+    "tagged_scope": "void variant_b() {}",
+    "need": {
       "title": "Variant B Feature",
+      "id": "IMPL_VAR_B",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ_FEAT_B"
-        ]
+      "links": [
+        "REQ_FEAT_B"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 12,
+        "column": 4
       },
-      "metadata": {},
-      "line": 8,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 7,
-          "column": 4
-        },
-        "end": {
-          "row": 7,
-          "column": 53
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void variant_b() {}"
+      "end": {
+        "row": 12,
+        "column": 48
       }
     },
-    {
-      "id": "IMPL_PROTO_3",
+    "tagged_scope": "void proto_v3() {}",
+    "need": {
       "title": "Protocol V3",
+      "id": "IMPL_PROTO_3",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ_PROTO"
-        ]
+      "links": [
+        "REQ_PROTO"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 17,
+        "column": 4
       },
-      "metadata": {},
-      "line": 13,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 12,
-          "column": 4
-        },
-        "end": {
-          "row": 12,
-          "column": 48
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void proto_v3() {}"
+      "end": {
+        "row": 17,
+        "column": 48
       }
     },
-    {
-      "id": "IMPL_LINUX_A",
+    "tagged_scope": "void linux_and_a() {}",
+    "need": {
       "title": "Linux And A",
+      "id": "IMPL_LINUX_A",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ_COMBO"
-        ]
-      },
-      "metadata": {},
-      "line": 18,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 17,
-          "column": 4
-        },
-        "end": {
-          "row": 17,
-          "column": 48
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void linux_and_a() {}"
-      }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "links": [
+        "REQ_COMBO"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

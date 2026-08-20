@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 1,
+    "msg": "Field links with 'type': 'list[str]' must start with '[' and end with ']'",
+    "type": "need",
+    "sub_type": "not_start_or_end_with_square_brackets"
+  }
+]

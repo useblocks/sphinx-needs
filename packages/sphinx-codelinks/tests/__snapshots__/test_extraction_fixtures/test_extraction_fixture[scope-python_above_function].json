@@ -1,36 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_PY_ABOVE",
-      "title": "Above Function",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_PY_ABOVE"
-        ]
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
       },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.py",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 3
-        },
-        "end": {
-          "row": 0,
-          "column": 54
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "def dummy_func1():\n    pass"
+      "end": {
+        "row": 0,
+        "column": 54
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "def dummy_func1():\n    pass",
+    "need": {
+      "title": "Above Function",
+      "id": "IMPL_PY_ABOVE",
+      "type": "impl",
+      "links": [
+        "REQ_PY_ABOVE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

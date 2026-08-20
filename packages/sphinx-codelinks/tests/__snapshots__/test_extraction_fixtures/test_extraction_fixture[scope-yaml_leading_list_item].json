@@ -1,36 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_YAML_LIST",
-      "title": "Leading List Marker",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_YAML_LIST"
-        ]
+[
+  {
+    "filepath": "case.yaml",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
       },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.yaml",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 3
-        },
-        "end": {
-          "row": 0,
-          "column": 61
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "block_sequence_item",
-        "scope_text": "- item1"
+      "end": {
+        "row": 0,
+        "column": 61
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "- item1",
+    "need": {
+      "title": "Leading List Marker",
+      "id": "IMPL_YAML_LIST",
+      "type": "impl",
+      "links": [
+        "REQ_YAML_LIST"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "block_sequence_item"
+  }
+]

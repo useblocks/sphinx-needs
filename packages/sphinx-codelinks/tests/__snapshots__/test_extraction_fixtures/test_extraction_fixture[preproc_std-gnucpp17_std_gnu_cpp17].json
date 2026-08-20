@@ -1,33 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_GNUCPP17",
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
+      },
+      "end": {
+        "row": 0,
+        "column": 49
+      }
+    },
+    "tagged_scope": null,
+    "need": {
       "title": "GNU C++17 dialect",
+      "id": "IMPL_GNUCPP17",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
-      },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 49
-        }
-      },
-      "content_type": "need",
-      "scope": null
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

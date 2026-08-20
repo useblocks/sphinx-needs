@@ -1,36 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_CPP_INSIDE",
-      "title": "Inside Function",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_CPP_INSIDE"
-        ]
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
       },
-      "metadata": {},
-      "line": 3,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 2,
-          "column": 4
-        },
-        "end": {
-          "row": 2,
-          "column": 60
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void outer() {\n    int x = 1;\n    // @Inside Function, IMPL_CPP_INSIDE, impl, [REQ_CPP_INSIDE]\n}"
+      "end": {
+        "row": 2,
+        "column": 60
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "void outer() {\n    int x = 1;\n    // @Inside Function, IMPL_CPP_INSIDE, impl, [REQ_CPP_INSIDE]\n}",
+    "need": {
+      "title": "Inside Function",
+      "id": "IMPL_CPP_INSIDE",
+      "type": "impl",
+      "links": [
+        "REQ_CPP_INSIDE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

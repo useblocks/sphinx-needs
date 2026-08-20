@@ -1,59 +1,52 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_BASE",
-      "title": "Base",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 32
-        }
-      },
-      "content_type": "need",
-      "scope": null
+      "end": {
+        "row": 0,
+        "column": 32
+      }
     },
-    {
-      "id": "IMPL_FALLBACK",
-      "title": "Fallback On",
+    "tagged_scope": null,
+    "need": {
+      "title": "Base",
+      "id": "IMPL_BASE",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ"
-        ]
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  },
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
       },
-      "metadata": {},
-      "line": 3,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 2,
-          "column": 4
-        },
-        "end": {
-          "row": 2,
-          "column": 43
-        }
-      },
-      "content_type": "need",
-      "scope": null
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "end": {
+        "row": 2,
+        "column": 43
+      }
+    },
+    "tagged_scope": null,
+    "need": {
+      "title": "Fallback On",
+      "id": "IMPL_FALLBACK",
+      "type": "impl",
+      "links": [
+        "REQ"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

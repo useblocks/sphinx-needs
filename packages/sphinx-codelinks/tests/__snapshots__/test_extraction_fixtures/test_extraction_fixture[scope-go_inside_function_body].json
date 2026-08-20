@@ -1,36 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_GO_INSIDE",
-      "title": "Inside Function",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_GO_INSIDE"
-        ]
+[
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 4
       },
-      "metadata": {},
-      "line": 3,
-      "filepath": "case.go",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 2,
-          "column": 4
-        },
-        "end": {
-          "row": 2,
-          "column": 58
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_declaration",
-        "scope_text": "func outer() {\n    x := 1\n    // @Inside Function, IMPL_GO_INSIDE, impl, [REQ_GO_INSIDE]\n}"
+      "end": {
+        "row": 2,
+        "column": 58
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "func outer() {\n    x := 1\n    // @Inside Function, IMPL_GO_INSIDE, impl, [REQ_GO_INSIDE]\n}",
+    "need": {
+      "title": "Inside Function",
+      "id": "IMPL_GO_INSIDE",
+      "type": "impl",
+      "links": [
+        "REQ_GO_INSIDE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]

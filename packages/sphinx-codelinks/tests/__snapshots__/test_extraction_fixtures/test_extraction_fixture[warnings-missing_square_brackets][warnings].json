@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 1,
+    "msg": "Field links with 'type': 'list[str]' must be given with '[]' brackets",
+    "type": "need",
+    "sub_type": "missing_square_brackets"
+  }
+]

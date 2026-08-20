@@ -1,39 +1,29 @@
-{
-  "needs": [
-    {
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 5
+      },
+      "end": {
+        "row": 0,
+        "column": 52
+      }
+    },
+    "tagged_scope": "void f() {}",
+    "need": {
       "id": "IMPL_13",
       "title": "title\\ 13",
       "type": "impl",
-      "links": {
-        "links": [
-          "[SPEC,_1]"
-        ]
-      },
-      "metadata": {
-        "status": "open",
-        "priority": "low"
-      },
-      "line": 1,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 5
-        },
-        "end": {
-          "row": 0,
-          "column": 52
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void f() {}"
-      }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "links": [
+        "[SPEC,_1]"
+      ],
+      "status": "open",
+      "priority": "low"
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

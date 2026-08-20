@@ -9,11 +9,9 @@ import json
 from pathlib import Path
 
 import pytest
-from tree_sitter import Node as TreeSitterNode
 import yaml
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
-from sphinx_codelinks.analyse.models import Metadata
 from sphinx_codelinks.config import (
     NeedIdRefsConfig,
     OneLineCommentStyle,
@@ -63,52 +61,56 @@ def _build_oneline_style(config) -> OneLineCommentStyle:
     return OneLineCommentStyle(**kwargs)
 
 
-def _list_field_names(style: OneLineCommentStyle) -> set[str]:
-    return {f["name"] for f in style.needs_fields if f.get("type") == "list[str]"}
-
-
 # ---------------------------------------------------------------------------
 # Normalization contract
 #
-# The snapshot mirrors the real per-marker payload the extractor produces
-# (``analyse/models.py:Metadata.to_dict`` and its ``OneLineNeed`` /
-# ``NeedIdRefs`` / ``MarkedRst`` subclasses), not a reduced projection of it,
-# so a regression in ``filepath``, ``remote_url``, ``source_map`` (columns and
-# end positions included), the scope text, or the ``MarkedContentType``
-# discriminator is caught here. Common ``Metadata`` fields are surfaced on
-# every entry (needs, need_refs, marked_rst) as: ``filepath``, ``remote_url``,
-# ``source_map``, ``content_type`` (the ``MarkedContentType`` value — named
-# ``content_type`` rather than ``type`` because a *need* entry already has a
-# ``type`` key for the need's own field, e.g. "impl"), and ``scope``.
+# The snapshots mirror production's real output, not a projection invented
+# for the test. Production writes two independent artefacts, and so does
+# this harness — as two separate snapshot assertions rather than one merged
+# object (see the module docstring on ``snapshot_extraction`` usage in the
+# test function below for why):
 #
-# ``needs`` keep the existing id/title/type/links/metadata decomposition
-# instead of production's raw ``need`` dict: it is the same data either way,
-# but the decomposition is what makes the payload comparable against a second
-# implementation whose needs are a typed struct rather than a dict.
+#   - marked content is exactly what ``SourceAnalyse.dump_marked_content``
+#     writes to ``marked_content.json``: a flat list, taken verbatim from
+#     ``analyse.all_marked_content`` (already sorted by ``(filepath,
+#     source_map.start.row)`` by ``merge_marked_content``), with each entry's
+#     real ``Metadata.to_dict()`` — the nested ``need`` / ``need_ids`` +
+#     ``marker`` / ``rst`` payload, ``links`` as a plain list inside ``need``,
+#     ``tagged_scope`` as the associated node's full decoded text (or
+#     ``null``), and the real ``type`` discriminator value (``"need"`` /
+#     ``"need-id-refs"`` / ``"rst"``). See ``_build_marked_content``.
 #
-# The pre-existing ``line`` (and, for marked_rst, ``start_line``/``end_line``)
-# keys are kept alongside the new full ``source_map`` rather than dropped:
-# they duplicate the start row, but a second implementation's comparison
-# tooling may already rely on them, and keeping them is free.
+#   - warnings are a separate artefact, matching
+#     ``AnalyseProjects.update_warnings()``/``dump_warnings()``: a flat list
+#     of ``AnalyseWarning.__dict__`` records (``file_path``, ``lineno``,
+#     ``msg``, ``type``, ``sub_type``). Production never folds these into the
+#     data stream: ``dump_marked_content`` and ``dump_warnings`` are two
+#     independent files, and CLI users are additionally handed the same
+#     warnings via ``logger.warning`` (``cmd.py``). See ``_build_warnings``.
 #
-# Deliberately excluded (the only non-deterministic things here):
-#   - the absolute prefix of ``filepath``: pytest's ``tmp_path`` differs per
-#     run and per machine, so it is snapshotted relative to ``tmp_path``
-#     instead (see ``_relative_filepath``).
-#   - the raw ``SourceComment``/tree-sitter node objects: production itself
-#     drops ``source_comment`` from ``to_dict()``, and ``tagged_scope`` is
-#     captured as its full decoded text (see ``_normalize_scope``), so no
-#     information is lost by not embedding the node objects themselves.
+# Two deviations from the real thing, both deliberate:
 #
-# ``remote_url`` is *not* excluded: the test body forces
-# ``analyse.git_remote_url``/``git_commit_rev`` to ``None`` before ``run()``,
-# so it is deterministically ``null`` regardless of the ambient git config of
-# the machine running the tests, and is included like any other field.
+#   1. Portability: ``filepath``/``file_path`` are rewritten relative to
+#      ``tmp_path`` (see ``_relative_filepath``), since production emits an
+#      absolute path that differs per run and per machine.
+#   2. Additive: each marked-content entry gets one extra top-level key,
+#      ``tagged_scope_type`` — the associated node's tree-sitter kind. This
+#      is NOT part of production's output (``Metadata.to_dict()`` never emits
+#      it); it rides alongside the real ``tagged_scope`` text so a
+#      wrong-scope regression can be told apart from a same-text
+#      coincidence, and so a second implementation has a language-agnostic
+#      value to compare against. It is appended after the real fields, so it
+#      never disturbs the real shape.
+#
+# Nothing else is added, renamed, wrapped, or exploded: no ``content_type``
+# rename of ``type``, no flattening of the ``need`` payload, no
+# ``{scope_type, scope_text}`` wrapper around ``tagged_scope``, no per-need-id
+# explosion of a ``need_ids`` entry, no ``line`` key.
 # ---------------------------------------------------------------------------
 
 
 def _relative_filepath(filepath: Path, root: Path) -> str:
-    """Snapshot ``filepath`` relative to the test root (``tmp_path``).
+    """Snapshot a filepath relative to the test root (``tmp_path``).
 
     Production emits an absolute path; ``tmp_path`` is unique per test run and
     per machine, so a plain ``str()`` would make the snapshot non-deterministic.
@@ -118,96 +120,41 @@ def _relative_filepath(filepath: Path, root: Path) -> str:
     return filepath.relative_to(root).as_posix()
 
 
-def _normalize_scope(node: TreeSitterNode | None) -> dict[str, str] | None:
-    """Normalize a ``tagged_scope`` node exactly as production serializes it.
+def _build_marked_content(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
+    """Reproduce ``SourceAnalyse.dump_marked_content``'s payload verbatim.
 
-    ``Metadata.to_dict`` stores the associated node's full decoded text
-    (``str(node.text.decode("utf-8"))``); this reproduces that verbatim so the
-    snapshot can catch a wrong scope being selected, not just a
-    differently-typed one. ``scope_type`` (the node's tree-sitter kind) is not
-    part of production's output, but it is cheap, deterministic, and makes
-    cross-language/cross-implementation comparison easier, so it rides along.
-    ``None`` when there is no associated scope, matching production.
+    Consumes ``analyse.all_marked_content`` — the exact list production dumps,
+    already sorted by ``(filepath, source_map.start.row)`` — and calls each
+    entry's own ``to_dict()``, so both the shape and the ordering come from
+    production itself rather than being re-derived from ``oneline_needs`` /
+    ``need_id_refs`` / ``marked_rst`` separately.
     """
-    if node is None or not node.text:
-        return None
-    return {"scope_type": node.type, "scope_text": node.text.decode("utf-8")}
+    items = []
+    for entry in analyse.all_marked_content:
+        scope_type = entry.tagged_scope.type if entry.tagged_scope is not None else None
+        item = entry.to_dict()
+        item["filepath"] = _relative_filepath(entry.filepath, tmp_path)
+        # Additive, test-only field — see the module docstring above. Not
+        # part of production's Metadata.to_dict().
+        item["tagged_scope_type"] = scope_type
+        items.append(item)
+    return items
 
 
-def _normalize_common(entry: Metadata, root: Path) -> dict:
-    """The ``Metadata`` fields shared by every marked-content entry."""
-    return {
-        "filepath": _relative_filepath(entry.filepath, root),
-        "remote_url": entry.remote_url,
-        "source_map": entry.source_map,
-        "content_type": entry.type.value,
-        "scope": _normalize_scope(entry.tagged_scope),
-    }
+def _build_warnings(analyse: SourceAnalyse, tmp_path: Path) -> list[dict]:
+    """Reproduce ``AnalyseProjects.dump_warnings()``'s payload for this case.
 
-
-def _normalize(
-    analyse: SourceAnalyse, style: OneLineCommentStyle, tmp_path: Path
-) -> dict:
-    core = {"id", "title", "type"}
-    list_fields = _list_field_names(style)
-
-    needs = []
-    for n in analyse.oneline_needs:
-        need = n.need
-        links = {name: need[name] for name in list_fields if name in need}
-        metadata = {
-            k: v for k, v in need.items() if k not in core and k not in list_fields
-        }
-        needs.append(
-            {
-                "id": need.get("id", ""),
-                "title": need.get("title", ""),
-                "type": need.get("type", ""),
-                "links": links,
-                "metadata": metadata,
-                "line": n.source_map["start"]["row"] + 1,
-                **_normalize_common(n, tmp_path),
-            }
-        )
-    needs.sort(key=lambda d: (d["line"], d["id"]))
-
-    need_refs = []
-    for ref in analyse.need_id_refs:
-        line = ref.source_map["start"]["row"] + 1
-        common = _normalize_common(ref, tmp_path)
-        need_refs.extend(
-            {
-                "need_id": need_id,
-                "line": line,
-                "marker": ref.marker,
-                **common,
-            }
-            for need_id in ref.need_ids
-        )
-    need_refs.sort(key=lambda d: (d["line"], d["need_id"]))
-
-    marked_rst = [
-        {
-            "content": m.rst,
-            "start_line": m.source_map["start"]["row"] + 1,
-            "end_line": m.source_map["end"]["row"] + 1,
-            **_normalize_common(m, tmp_path),
-        }
-        for m in analyse.marked_rst
-    ]
-    marked_rst.sort(key=lambda d: d["start_line"])
-
-    warnings = [
-        {"kind": w.sub_type, "line": w.lineno} for w in analyse.oneline_warnings
-    ]
-    warnings.sort(key=lambda d: (d["line"], d["kind"]))
-
-    return {
-        "needs": needs,
-        "need_refs": need_refs,
-        "marked_rst": marked_rst,
-        "warnings": warnings,
-    }
+    ``update_warnings()`` builds its list the same way: ``__dict__`` of every
+    ``AnalyseWarning`` collected during the run. The harness runs a single
+    ``SourceAnalyse`` rather than a multi-project ``AnalyseProjects``, so
+    ``analyse.oneline_warnings`` is the equivalent source list for one case.
+    """
+    records = []
+    for warning in analyse.oneline_warnings:
+        record = dict(warning.__dict__)
+        record["file_path"] = _relative_filepath(Path(record["file_path"]), tmp_path)
+        records.append(record)
+    return records
 
 
 def _build_preprocessor(case: dict, tmp_path: Path) -> PreprocessorConfig:
@@ -286,4 +233,9 @@ def test_extraction_fixture(case: dict, tmp_path: Path, snapshot_extraction) -> 
     analyse.git_commit_rev = None
     analyse.run()
 
-    assert snapshot_extraction == _normalize(analyse, style, tmp_path)
+    # Two independent snapshots per case, mirroring the two independent files
+    # production writes (see the normalization-contract comment above):
+    # marked content under the default (unnamed) snapshot, warnings under a
+    # separately named one.
+    assert snapshot_extraction == _build_marked_content(analyse, tmp_path)
+    assert snapshot_extraction(name="warnings") == _build_warnings(analyse, tmp_path)

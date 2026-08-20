@@ -1,0 +1,9 @@
+[
+  {
+    "file_path": "case.cpp",
+    "lineno": 1,
+    "msg": "1 given fields. They shall be more than 2",
+    "type": "need",
+    "sub_type": "too_few_fields"
+  }
+]

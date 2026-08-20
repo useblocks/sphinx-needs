@@ -1,32 +1,24 @@
-{
-  "needs": [
-    {
-      "id": "FEAT_001",
-      "title": "MyFeature",
-      "type": "feature",
-      "links": {},
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 30
-        }
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void f() {}"
+      "end": {
+        "row": 0,
+        "column": 30
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "void f() {}",
+    "need": {
+      "title": "MyFeature",
+      "id": "FEAT_001",
+      "type": "feature"
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

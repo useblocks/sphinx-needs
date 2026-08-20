@@ -1,36 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_YAML_INLINE",
-      "title": "Inline Marker",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_YAML_INLINE"
-        ]
+[
+  {
+    "filepath": "case.yaml",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
       },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.yaml",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 3
-        },
-        "end": {
-          "row": 0,
-          "column": 59
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "block_mapping_pair",
-        "scope_text": "key: value"
+      "end": {
+        "row": 0,
+        "column": 59
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "key: value",
+    "need": {
+      "title": "Inline Marker",
+      "id": "IMPL_YAML_INLINE",
+      "type": "impl",
+      "links": [
+        "REQ_YAML_INLINE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "block_mapping_pair"
+  }
+]

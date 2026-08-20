@@ -1,33 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_PY_NONE",
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
+      },
+      "end": {
+        "row": 0,
+        "column": 46
+      }
+    },
+    "tagged_scope": null,
+    "need": {
       "title": "No Scope",
+      "id": "IMPL_PY_NONE",
       "type": "impl",
-      "links": {
-        "links": [
-          "REQ_PY_NONE"
-        ]
-      },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.py",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 3
-        },
-        "end": {
-          "row": 0,
-          "column": 46
-        }
-      },
-      "content_type": "need",
-      "scope": null
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+      "links": [
+        "REQ_PY_NONE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": null
+  }
+]

@@ -1,32 +1,24 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_1",
-      "title": "Implementation",
-      "type": "impl",
-      "links": {},
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.cpp",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 25
-        }
+[
+  {
+    "filepath": "case.cpp",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "void f() {}"
+      "end": {
+        "row": 0,
+        "column": 25
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "void f() {}",
+    "need": {
+      "title": "Implementation",
+      "id": "IMPL_1",
+      "type": "impl"
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

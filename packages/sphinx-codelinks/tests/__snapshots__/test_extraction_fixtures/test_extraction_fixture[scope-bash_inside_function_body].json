@@ -1,36 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_BASH_INSIDE",
-      "title": "Inside Function",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_BASH_INSIDE"
-        ]
+[
+  {
+    "filepath": "case.sh",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 2,
+        "column": 3
       },
-      "metadata": {},
-      "line": 3,
-      "filepath": "case.sh",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 2,
-          "column": 3
-        },
-        "end": {
-          "row": 2,
-          "column": 61
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "greet() {\n    echo hi\n    # @Inside Function, IMPL_BASH_INSIDE, impl, [REQ_BASH_INSIDE]\n}"
+      "end": {
+        "row": 2,
+        "column": 61
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "greet() {\n    echo hi\n    # @Inside Function, IMPL_BASH_INSIDE, impl, [REQ_BASH_INSIDE]\n}",
+    "need": {
+      "title": "Inside Function",
+      "id": "IMPL_BASH_INSIDE",
+      "type": "impl",
+      "links": [
+        "REQ_BASH_INSIDE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

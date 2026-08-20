@@ -1,36 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_PY",
-      "title": "Py Title",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_PY"
-        ]
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 3
       },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.py",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 3
-        },
-        "end": {
-          "row": 0,
-          "column": 36
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "def f():\n    pass"
+      "end": {
+        "row": 0,
+        "column": 36
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "def f():\n    pass",
+    "need": {
+      "title": "Py Title",
+      "id": "IMPL_PY",
+      "type": "impl",
+      "links": [
+        "REQ_PY"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_definition"
+  }
+]

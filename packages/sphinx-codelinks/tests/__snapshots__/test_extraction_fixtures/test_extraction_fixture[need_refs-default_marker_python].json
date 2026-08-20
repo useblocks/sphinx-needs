@@ -1,29 +1,23 @@
-{
-  "needs": [],
-  "need_refs": [
-    {
-      "need_id": "REQ_1",
-      "line": 1,
-      "marker": "@need-ids:",
-      "filepath": "case.py",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 12
-        },
-        "end": {
-          "row": 0,
-          "column": 17
-        }
+[
+  {
+    "filepath": "case.py",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 12
       },
-      "content_type": "need-id-refs",
-      "scope": {
-        "scope_type": "function_definition",
-        "scope_text": "def f():\n    pass"
+      "end": {
+        "row": 0,
+        "column": 17
       }
-    }
-  ],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "def f():\n    pass",
+    "need_ids": [
+      "REQ_1"
+    ],
+    "marker": "@need-ids:",
+    "type": "need-id-refs",
+    "tagged_scope_type": "function_definition"
+  }
+]

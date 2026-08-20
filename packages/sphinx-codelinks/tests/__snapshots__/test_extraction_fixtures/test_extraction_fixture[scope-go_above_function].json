@@ -1,36 +1,27 @@
-{
-  "needs": [
-    {
-      "id": "IMPL_GO_ABOVE",
-      "title": "Above Function",
-      "type": "impl",
-      "links": {
-        "links": [
-          "REQ_GO_ABOVE"
-        ]
+[
+  {
+    "filepath": "case.go",
+    "remote_url": null,
+    "source_map": {
+      "start": {
+        "row": 0,
+        "column": 4
       },
-      "metadata": {},
-      "line": 1,
-      "filepath": "case.go",
-      "remote_url": null,
-      "source_map": {
-        "start": {
-          "row": 0,
-          "column": 4
-        },
-        "end": {
-          "row": 0,
-          "column": 55
-        }
-      },
-      "content_type": "need",
-      "scope": {
-        "scope_type": "function_declaration",
-        "scope_text": "func dummyFunc1() {}"
+      "end": {
+        "row": 0,
+        "column": 55
       }
-    }
-  ],
-  "need_refs": [],
-  "marked_rst": [],
-  "warnings": []
-}
+    },
+    "tagged_scope": "func dummyFunc1() {}",
+    "need": {
+      "title": "Above Function",
+      "id": "IMPL_GO_ABOVE",
+      "type": "impl",
+      "links": [
+        "REQ_GO_ABOVE"
+      ]
+    },
+    "type": "need",
+    "tagged_scope_type": "function_declaration"
+  }
+]
