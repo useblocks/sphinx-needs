@@ -54,8 +54,12 @@ Improvements
   Where an engine has no form for a value it draws the nearest one and says so once for
   the project: PlantUML has no ``diamond`` element and no crossed arrow head, so those
   become a rectangle and a plain head. A diagram is never refused for naming a member of
-  its own vocabulary. An out-of-enum value is reported once against ``conf.py`` and the
-  deprecated spelling stays in charge.
+  its own vocabulary. An out-of-enum value is reported once and the deprecated spelling
+  stays in charge.
+
+  The stored environment version is bumped to 8, because the pickled link-display
+  configuration gained a field in the middle of its layout, so the first build after
+  upgrading re-reads every document.
 
 - ✨ New :ref:`needflow` ``:direction:`` option and :ref:`needs_flow_direction`
   configuration (:pr:`1782`)

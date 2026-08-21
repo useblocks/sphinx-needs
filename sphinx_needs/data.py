@@ -40,16 +40,36 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 7
+ENV_DATA_VERSION: Final = 8
 """Version of the data stored in the environment.
 
 Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
 handing a pickled doctree to code that no longer understands it.
 
-Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
-They are read while the diagram is rendered, i.e. from the doctree, so an unbumped
-rebuild over an existing ``_build`` keeps the old doctrees and ends with a ``KeyError``
-rather than re-reading the document.
+Version 8 guards the **positional layout of the pickled field schema**, not a doctree
+key. :class:`~sphinx_needs.needs_schema.LinkDisplayConfig` gained ``part_color`` between
+``color`` and ``style`` -- an insertion, not an append -- along with ``line``,
+``part_line`` and ``arrow`` at the end.
+
+That schema is stored on the environment (``env._needs_schema``), so it is pickled, and a
+frozen ``slots=True`` dataclass pickles **positionally**: ``__getstate__`` returns a list
+of field values in declaration order and ``__setstate__`` ``zip``s that list back onto
+the fields. A stale entry therefore does not fail to load -- it loads with every field
+after the insertion point holding its *neighbour's* value (``part_color`` holding a line
+keyword such as ``dashed,#00AA00``), and with the fields beyond the end of the shorter
+list never set at all. Four plausible-looking wrong values and four ``AttributeError``\ s.
+
+Nothing reads that object today: ``Builder.read()`` emits ``env-before-read-docs``
+unconditionally, and ``create_schema`` replaces the schema wholesale there before any
+reader runs. The bump is taken anyway, because the failure mode is a silent misread rather
+than a crash, and because the only thing standing between the two is an unversioned
+ordering invariant -- a handler added later on ``builder-inited``, ``env-get-outdated`` or
+``env-purge-doc`` would read the shifted values and, for the first four fields, get no
+error at all. One full re-read on upgrade is the cheaper side of that trade.
+
+Note that appending rather than inserting would not have been enough on its own: ``zip``
+stops at the shorter sequence either way, so a stale ``display.line`` raises
+``AttributeError`` however the fields are ordered.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
