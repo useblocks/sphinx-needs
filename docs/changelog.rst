@@ -15,7 +15,7 @@ Improvements
 ............
 
 - 👌 :ref:`needs_variant_data` is resolved while the configuration is being initialised
-  (:issue:`1783`)
+  (:issue:`1783`, :pr:`1787`)
 
   The :ref:`needs_variant_data_file` is loaded, and the inline
   :ref:`needs_variant_data` merged on top of it, during ``config-inited`` instead of
@@ -274,7 +274,7 @@ These changes do not affect user-facing behaviour:
 Bug fixes
 .........
 
-- 🐛 Fix :ref:`needs_variant_data_file` triggering full rebuilds (:issue:`1783`)
+- 🐛 Fix :ref:`needs_variant_data_file` triggering full rebuilds (:issue:`1783`, :pr:`1787`)
 
   The merged variant data was written back onto the configuration after Sphinx's
   ``config-inited`` checkpoint, so the pickled configuration held the merged map while
