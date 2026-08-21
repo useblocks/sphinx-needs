@@ -278,15 +278,29 @@ class NeedLinksConfig(TypedDict, total=False):
     copy: bool
     """Copy to common links data. Default: False"""
     color: str
-    """Used for needflow. Default: #000000"""
+    """Used for needflow. Unset by default, i.e. the engine's own edge color."""
+    part_color: str
+    """Used for needflow, for links to need parts. Defaults to ``color``."""
     style: str
-    """Used for needflow. Default: solid"""
+    """Used for needflow (deprecated, use ``line``). Default: solid"""
     style_part: str
-    """Used for needflow. Default: '[dotted]'"""
+    """Used for needflow (deprecated, use ``part_line``). Default: '[dotted]'"""
     style_start: str
-    """Used for needflow. Default: '-'"""
+    """Used for needflow (deprecated, use ``arrow``). Default: '-'"""
     style_end: str
-    """Used for needflow. Default: '->'"""
+    """Used for needflow (deprecated, use ``arrow``). Default: '->'"""
+    line: str
+    """How the line is drawn in needflow diagrams.
+
+    One of 'solid', 'dashed', 'dotted', 'thick' or 'invisible'."""
+    part_line: str
+    """How the line to a need part is drawn in needflow diagrams (see ``line``).
+
+    Defaults to ``line``."""
+    arrow: str
+    """Which arrow heads the line carries in needflow diagrams.
+
+    One of 'normal', 'none', 'open', 'circle', 'cross' or 'both'."""
     allow_dead_links: bool
     """If True, add a 'forbidden' class to dead links"""
     schema: NotRequired[LinkSchemaType]
@@ -329,7 +343,16 @@ class NeedType(TypedDict):
     """The default color to use in diagrams.
     If unset or empty, no color is applied and the diagram engine's default is used."""
     style: NotRequired[str]
-    """The default node style to use in diagrams (default: "node")."""
+    """The default node style to use in diagrams (default: "node").
+
+    Holds a PlantUML element keyword; prefer ``shape``, which every engine
+    understands."""
+    shape: NotRequired[str]
+    """The default shape to draw the need with, in every diagram engine.
+
+    One of ``rectangle``, ``rounded``, ``circle``, ``ellipse``, ``diamond``,
+    ``hexagon``, ``cylinder``, ``document``, ``folder`` or ``box3d``; the legacy
+    PlantUML keywords of ``style`` are also accepted. Takes precedence over ``style``."""
 
 
 class NeedFields(TypedDict):

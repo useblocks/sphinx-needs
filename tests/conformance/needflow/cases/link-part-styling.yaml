@@ -1,0 +1,82 @@
+id: link-part-styling
+title: A link to a need part takes part_line and part_color
+purpose: |
+  Part links are the axis where the deprecated vocabulary was briefly more expressive than the neutral one: `style_part` could give part links their own colour, and `part_line` alone could not. `part_color` closes that, and both fall back to their ordinary counterpart when unset -- so this case pins the distinction being drawn AND the fallback not being drawn for the ordinary edge.
+needs:
+- id: REQ_1
+  type: req
+  title: Requirement one
+  parts:
+  - id: sub
+    title: A part of one
+- id: REQ_2
+  type: req
+  title: Requirement two
+  links:
+    links:
+    - REQ_1
+- id: REQ_3
+  type: req
+  title: Requirement three
+  links:
+    links:
+    - REQ_1.sub
+links:
+- option: links
+  incoming: is linked by
+  outgoing: links to
+  line: solid
+  color: '#00AA00'
+  part_line: dotted
+  part_color: '#777777'
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**Requirement one**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]]{
+      'parts:
+      rectangle "<size:12>Requirement (part)</size>\n** A part of one**\n<size:10>REQ_1.**sub**</size>" as REQ_1.sub [[<NODE_URL:REQ_1.sub>]]
+      }
+      node "<size:12>Requirement</size>\n**Requirement two**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]]
+      node "<size:12>Requirement</size>\n**Requirement**\n**three**\n<size:10>REQ_3</size>" as REQ_3 [[<NODE_URL:REQ_3>]]
+
+      ' Connection definition
+
+      REQ_2 -[#00AA00]-> REQ_1
+      REQ_3 -[dotted,#777777]-> REQ_1.sub
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      subgraph "cluster_REQ_1" {
+        label=<<font point-size="12">Requirement</font><br align="center"/><b>Requirement one</b><br align="center"/><font point-size="10">REQ_1</font><br align="center"/>>;
+        tooltip="REQ_1";
+        href="<NODE_URL:REQ_1>";
+        target="_top";
+        shape="node";
+
+        "REQ_1" [style=invis, width=0, height=0, label=""];
+        // parts:
+        "REQ_1.sub" [label=<<font point-size="12">Requirement (part)</font><br align="left"/><b> A part of one</b><br align="left"/><font point-size="10">REQ_1.<b align="left">sub</b></font><br align="left"/>>, tooltip="REQ_1.sub", href="<NODE_URL:REQ_1.sub>", target="_top", shape=rectangle];
+
+      };
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement two</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d"];
+      "REQ_3" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement<br align="left"/>three</b><br align="left"/><font point-size="10">REQ_3</font><br align="left"/>>, tooltip="REQ_3", href="<NODE_URL:REQ_3>", target="_top", shape="box3d"];
+
+      // edge definitions
+      "REQ_2" -> "REQ_1" [style="solid", arrowhead=vee, color="#00AA00", lhead="cluster_REQ_1"];
+      "REQ_3" -> "REQ_1.sub" [style="dotted", arrowhead=vee, color="#777777"];
+      }

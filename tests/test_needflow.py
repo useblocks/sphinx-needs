@@ -2269,3 +2269,949 @@ def test_a_legend_beside_a_plantuml_figure_keeps_the_directive_classes(
 
     html = Path(app.outdir, "index.html").read_text()
     assert "my-flow" in html
+
+
+#: A ``conf.py`` whose link type and need type use only the neutral styling keys.
+NEUTRAL_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "shape": "cylinder",
+    },
+]
+needs_links = {
+    "links": {
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "line": "dashed",
+        "arrow": "circle",
+        "color": "#00AA00",
+    },
+}
+"""
+
+NEUTRAL_LINKS = """\
+Neutral link and type styling
+=============================
+
+.. spec:: A
+   :id: AAAAA
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), NEUTRAL_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), NEUTRAL_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_neutral_link_and_type_styling(test_app):
+    """``needs_links[].line/arrow/color`` and ``needs_types[].shape`` reach both engines.
+
+    The old keys held PlantUML tokens that graphviz had to translate through a lookup
+    table with a documented "cheat", and ``color`` was carried by the configuration but
+    honoured by neither engine. The neutral values say what is meant, and each engine
+    writes it in its own syntax.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert "database " in debug  # the neutral cylinder
+        assert "[dashed,#00AA00]" in debug
+        assert "-o " in debug  # the neutral circle head
+    else:
+        assert 'shape="cylinder"' in debug
+        assert 'style="dashed"' in debug
+        assert "arrowhead=odot" in debug
+        assert 'color="#00AA00"' in debug
+
+
+LEGACY_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+]
+needs_links = {
+    "links": {
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "style": "dotted",
+    },
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGACY_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), LEGACY_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_legacy_link_display_keys_are_deprecated_but_honoured(test_app):
+    """The PlantUML-token link keys keep drawing exactly what they always drew.
+
+    The deprecation is an alias, not a withdrawal: a project can move one link type at
+    a time, and one that never moves keeps its diagrams.
+
+    Graphviz matters as much as plantuml here, because it reaches these tokens through
+    a whole translation layer of its own -- and that layer is what the entire
+    deprecation story rests on.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "uses deprecated display key(s) style" in warnings
+    assert "'line', 'part_line' and 'arrow'" in warnings
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+    if app.config.needs_flow_engine == "plantuml":
+        assert "-[dotted]->" in debug
+    else:
+        assert 'style="dotted"' in debug
+        assert "arrowhead=vee" in debug
+
+
+#: A link type that styles part links differently from ordinary ones.
+PART_STYLING_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+]
+needs_links = {
+    "links": {
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "line": "solid",
+        "color": "#00AA00",
+        "part_line": "dotted",
+        "part_color": "#777777",
+    },
+}
+"""
+
+PART_STYLING = """\
+Part styling
+============
+
+.. spec:: A
+   :id: AAAAA
+
+   :np:`(subpart) a part of A`
+
+.. spec:: B
+   :id: BBBBB
+   :links: AAAAA
+
+.. spec:: C
+   :id: CCCCC
+   :links: AAAAA.subpart
+
+.. needflow::
+   :debug:
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PART_STYLING_CONF_PY),
+                (Path("index.rst"), PART_STYLING),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PART_STYLING_CONF_PY),
+                (Path("index.rst"), PART_STYLING),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_part_links_take_their_own_line_and_color(test_app):
+    """A link to a need part can be drawn differently from an ordinary link.
+
+    ``part_line`` and ``part_color`` each fall back to their ordinary counterpart when
+    unset, so a link type says the difference once rather than describing both cases.
+    Without ``part_color`` the deprecated ``style``/``style_part`` pair could express a
+    distinction the neutral vocabulary could not, which left real configurations --
+    including this project's own -- stuck on the deprecated spelling.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        # the ordinary link: solid (no keyword) and green
+        assert "-[#00AA00]->" in debug
+        # the part link: dotted and grey
+        assert "-[dotted,#777777]->" in debug
+    else:
+        assert 'style="solid"' in debug
+        assert 'color="#00AA00"' in debug
+        assert 'style="dotted"' in debug
+        assert 'color="#777777"' in debug
+
+
+#: A link type migrated halfway: a neutral ``line``, but its color still legacy.
+HALF_MIGRATED_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "style": "node",
+    },
+]
+needs_links = {
+    "links": {
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "style": "#00AA00",
+        "line": "dashed",
+    },
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), HALF_MIGRATED_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), HALF_MIGRATED_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_half_migrated_link_type_keeps_its_legacy_color(test_app):
+    """Migrating one key of a link type must not silently drop another.
+
+    The deprecated ``style`` is a compound of a color and a line keyword. Setting the
+    neutral ``line`` supersedes that string, and dropping it wholesale took the color
+    with it -- so a project migrating link types one at a time, which the changelog
+    explicitly invites, lost its edge colors halfway through and was told nothing.
+    """
+    app = test_app
+    app.build()
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert "-[dashed,#00AA00]->" in debug
+    else:
+        assert 'style="dashed"' in debug
+        assert 'color="#00AA00"' in debug
+
+
+#: The same half migration written the way a graphviz project writes it: the deprecated
+#: ``style`` is a comma separated compound there, so the colour is one token of several.
+HALF_MIGRATED_COMPOUND_CONF_PY = HALF_MIGRATED_CONF_PY.replace(
+    '"style": "#00AA00",', '"style": "dotted,#FF0000",'
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), HALF_MIGRATED_COMPOUND_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), HALF_MIGRATED_COMPOUND_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_legacy_style_folds_in_per_key_not_per_type(test_app):
+    """Only the half of the legacy compound that was migrated is displaced.
+
+    ``style`` may name a line *and* a colour at once. The neutral ``line`` supersedes
+    the line keyword of that string and nothing else, so the colour token survives while
+    ``dotted`` does not -- the fold is per key, not per link type.
+    """
+    app = test_app
+    app.build()
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert "-[dashed,#FF0000]->" in debug
+        assert "dotted" not in debug
+    else:
+        assert 'style="dashed"' in debug
+        assert 'color="#FF0000"' in debug
+        assert "dotted" not in debug
+
+
+EXPLICIT_BLACK_CONF_PY = HALF_MIGRATED_CONF_PY.replace(
+    '"style": "#00AA00",\n        "line": "dashed",', '"color": "#000000",'
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), EXPLICIT_BLACK_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        }
+    ],
+    indirect=True,
+)
+def test_an_explicitly_black_link_color_is_drawn(test_app):
+    """A link type may ask for black, and be given black.
+
+    Treating black as "the same as unset" made the one color a user could not express
+    the one the engine happens to default to -- which stops being harmless the moment
+    an engine config sets an edge color of its own. Unset is the sentinel instead.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    assert 'color="#000000"' in _debug_source(Path(app.outdir), "index.html")
+
+
+UNDRAWABLE_SHAPE_AND_ARROW_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "shape": "diamond",
+    },
+]
+needs_links = {
+    "links": {
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "arrow": "cross",
+    },
+}
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), UNDRAWABLE_SHAPE_AND_ARROW_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), UNDRAWABLE_SHAPE_AND_ARROW_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_shapes_and_arrows_plantuml_cannot_draw_degrade_with_a_location(test_app):
+    """A shape or arrow an engine has no form for degrades, once, and says where.
+
+    Both are tier-2 gaps: the intent is named and this engine cannot honour it, so the
+    project hears once and gets the nearest drawable form. Graphviz can draw both, so
+    it must say nothing at all -- which is what makes these degradations and not errors.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).replace(
+        str(app.srcdir) + os.path.sep, "<srcdir>/"
+    )
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert warnings.count("has no 'diamond' shape") == 1
+        assert warnings.count("has no crossed arrow head") == 1
+        # the warning names the needflow it came from, not just the project
+        assert re.search(r"<srcdir>/index\.rst:\d+: WARNING: the plantuml", warnings)
+        # ...and the nearest drawable forms are used
+        assert "rectangle " in debug
+        assert "-> " in debug
+    else:
+        assert warnings.strip() == ""
+        assert 'shape="diamond"' in debug
+        assert "arrowhead=tee" in debug
+
+
+#: A ``conf.py`` template whose single link type sets exactly one deprecated key.
+_ONE_LEGACY_KEY_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {{
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "style": "node",
+    }},
+]
+needs_links = {{
+    "links": {{
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "{key}": "{value}",
+    }},
+}}
+"""
+
+
+@pytest.mark.parametrize(
+    "key,value",
+    [
+        ("style", "dotted"),
+        ("style_part", "dashed"),
+        ("style_start", "<"),
+        ("style_end", "->"),
+    ],
+)
+def test_each_legacy_display_key_is_deprecated_on_its_own(
+    make_app, tmp_path, plantuml_command, key, value
+):
+    """Every one of the four deprecated keys is reported, and only the ones used are.
+
+    The warning is usage gated: it names exactly the keys the project wrote, so a
+    project migrating one key at a time can see what is left to move -- and a project
+    that has finished migrating hears nothing at all.
+    """
+    (tmp_path / "conf.py").write_text(
+        _ONE_LEGACY_KEY_CONF_PY.format(key=key, value=value), "utf8"
+    )
+    (tmp_path / "index.rst").write_text(NEUTRAL_LINKS, "utf8")
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command},
+    )
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue())
+    # the list of keys names exactly the one the project wrote, and nothing else
+    named = re.findall(r"uses deprecated display key\(s\) ([^.]+)\.", warnings)
+    assert named == [key]
+
+
+NEUTRAL_ONLY_CONF_PY = """\
+extensions = ["sphinx_needs", "sphinxcontrib.plantuml"]
+plantuml_output_format = "svg"
+needs_types = [
+    {
+        "directive": "spec",
+        "title": "Specification",
+        "prefix": "SP_",
+        "color": "#FEDCD2",
+        "shape": "rounded",
+    },
+]
+needs_links = {
+    "links": {
+        "incoming": "is required by",
+        "outgoing": "requires",
+        "line": "thick",
+        "part_line": "invisible",
+        "arrow": "both",
+        "color": "#112233",
+        "part_color": "#445566",
+    },
+}
+"""
+
+
+def test_the_deprecation_is_silent_for_a_fully_migrated_project(
+    make_app, tmp_path, plantuml_command
+):
+    """A project on the neutral keys alone hears nothing.
+
+    This is the other half of the usage gate: the deprecation must be triggered by the
+    *use* of a legacy key and by nothing else -- not by the neutral replacements being
+    present, and not by the link type merely existing.
+    """
+    (tmp_path / "conf.py").write_text(NEUTRAL_ONLY_CONF_PY, "utf8")
+    (tmp_path / "index.rst").write_text(NEUTRAL_LINKS, "utf8")
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command},
+    )
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+
+
+@pytest.mark.parametrize(
+    "link,message,drawn",
+    [
+        (
+            {"line": "wobbly", "style": "dotted"},
+            "unknown 'line' 'wobbly' of link type 'links'",
+            "-[dotted]->",
+        ),
+        (
+            {"part_line": "wobbly", "style": "dotted"},
+            "unknown 'part_line' 'wobbly' of link type 'links'",
+            "-[dotted]->",
+        ),
+        (
+            {"arrow": "boomerang", "style_end": "-*"},
+            "unknown 'arrow' 'boomerang' of link type 'links'",
+            "-*",
+        ),
+    ],
+    ids=["line", "part_line", "arrow"],
+)
+def test_unusable_neutral_link_value_warns_and_falls_back(
+    make_app, tmp_path, plantuml_command, link, message, drawn
+):
+    """An out-of-enum neutral value warns once and hands back to the legacy spelling.
+
+    Every value here reaches a lookup table sooner or later, and reaching one unchecked
+    is how a typo in one line of ``conf.py`` becomes a ``KeyError`` that ends the build.
+    The documented fallback is the deprecated key, which is what the project had before
+    it started migrating -- so a typo costs it the new value, never the diagram.
+    """
+    conf = LEGACY_CONF_PY.replace(
+        '"style": "dotted",',
+        "".join(f'"{key}": "{value}",\n        ' for key, value in link.items()),
+    )
+    (tmp_path / "conf.py").write_text(conf, "utf8")
+    (tmp_path / "index.rst").write_text(NEUTRAL_LINKS, "utf8")
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command},
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert message in warnings
+    # said once for the project, not once per link or per diagram
+    assert warnings.count(message) == 1
+    assert drawn in _debug_source(Path(app.outdir), "index.html")
+
+
+def test_unusable_neutral_type_shape_warns_and_falls_back(
+    make_app, tmp_path, plantuml_command
+):
+    """An out-of-enum ``needs_types[].shape`` warns once and leaves ``style`` in charge."""
+    conf = UNDRAWABLE_SHAPE_AND_ARROW_CONF_PY.replace(
+        '"shape": "diamond",', '"shape": "trapezium",\n        "style": "card",'
+    ).replace('"arrow": "cross",', "")
+    (tmp_path / "conf.py").write_text(conf, "utf8")
+    (tmp_path / "index.rst").write_text(NEUTRAL_LINKS, "utf8")
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command},
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "unknown shape 'trapezium'" in warnings
+    assert warnings.count("unknown shape 'trapezium'") == 1
+    # the legacy `style` still draws the node
+    assert "card " in _debug_source(Path(app.outdir), "index.html")
+
+
+def test_unusable_neutral_values_are_reported_without_any_needflow(
+    make_app, tmp_path, plantuml_command
+):
+    """The new keys are checked where they are read, as every sibling key already is.
+
+    A project that misconfigures one of these and happens to have no needflow anywhere
+    would otherwise never be told.
+    """
+    conf = NEUTRAL_CONF_PY.replace(
+        '"shape": "cylinder",', '"shape": "trapezium",'
+    ).replace('"line": "dashed",', '"line": "wobbly",')
+    (tmp_path / "conf.py").write_text(conf, "utf8")
+    (tmp_path / "index.rst").write_text(NO_NEEDFLOW, "utf8")
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command},
+    )
+    app.build()  # must not raise
+
+    warnings = strip_colors(app._warning.getvalue())
+    assert "unknown 'line' 'wobbly' of link type 'links'" in warnings
+    assert "unknown shape 'trapezium'" in warnings
+
+
+@pytest.mark.parametrize(
+    "engine", ["plantuml", "graphviz"], ids=["plantuml", "graphviz"]
+)
+def test_neutral_values_ignore_case_and_padding(
+    make_app, tmp_path, plantuml_command, engine
+):
+    """The new configuration values are matched the way the options already are.
+
+    docutils' ``choice`` lowercases and strips before matching, so a value accepted in a
+    directive must be accepted in ``conf.py`` too -- otherwise the asymmetry is internal
+    to Sphinx-Needs, and it would make two implementations of this vocabulary disagree.
+    """
+    conf = (
+        NEUTRAL_CONF_PY.replace('"shape": "cylinder",', '"shape": " Cylinder ",')
+        .replace('"line": "dashed",', '"line": "  DASHED",')
+        .replace('"arrow": "circle",', '"arrow": "Circle  ",')
+    )
+    (tmp_path / "conf.py").write_text(conf, "utf8")
+    (tmp_path / "index.rst").write_text(NEUTRAL_LINKS, "utf8")
+    confoverrides = {"plantuml": plantuml_command, "needs_flow_engine": engine}
+    if engine == "graphviz":
+        confoverrides["graphviz_output_format"] = "svg"
+    app = make_app(srcdir=tmp_path, buildername="html", confoverrides=confoverrides)
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+    debug = _debug_source(Path(app.outdir), "index.html")
+    if engine == "plantuml":
+        assert "database " in debug
+        assert "[dashed,#00AA00]" in debug
+    else:
+        assert 'shape="cylinder"' in debug
+        assert 'style="dashed"' in debug
+        assert "arrowhead=odot" in debug
+
+
+@pytest.mark.parametrize(
+    "keyword,plantuml,graphviz",
+    [
+        ("database", "database ", 'shape="cylinder"'),
+        ("card", "card ", 'shape="box", style="filled,rounded"'),
+        ("usecase", "usecase ", 'shape="ellipse"'),
+        ("artifact", "artifact ", 'shape="note"'),
+    ],
+)
+@pytest.mark.parametrize(
+    "engine", ["plantuml", "graphviz"], ids=["plantuml", "graphviz"]
+)
+def test_legacy_plantuml_keywords_are_accepted_as_shape_aliases(
+    make_app, tmp_path, plantuml_command, keyword, plantuml, graphviz, engine
+):
+    """``shape`` accepts the values ``style`` has always held.
+
+    That is what lets a project move a value from the old key to the new one unchanged
+    and have it keep its meaning -- which is the whole point of the new key being an
+    alias rather than a second, subtly different vocabulary.
+    """
+    conf = NEUTRAL_CONF_PY.replace('"shape": "cylinder",', f'"shape": "{keyword}",')
+    (tmp_path / "conf.py").write_text(conf, "utf8")
+    (tmp_path / "index.rst").write_text(NEUTRAL_LINKS, "utf8")
+    confoverrides = {"plantuml": plantuml_command, "needs_flow_engine": engine}
+    if engine == "graphviz":
+        confoverrides["graphviz_output_format"] = "svg"
+    app = make_app(srcdir=tmp_path, buildername="html", confoverrides=confoverrides)
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+    debug = _debug_source(Path(app.outdir), "index.html")
+    assert (plantuml if engine == "plantuml" else graphviz) in debug
+
+
+#: Every member of the neutral arrow enum, with the plantuml arrow each must produce
+#: when a line style is set as well -- which is where the tokens are concatenated with
+#: the ``[...]`` between them, and so where a malformed pair actually shows up.
+_ARROWS_WITH_A_LINE = [
+    ("normal", "-[dashed,#00AA00]->"),
+    ("none", "-[dashed,#00AA00]-"),
+    ("open", "-[dashed,#00AA00]->"),
+    ("circle", "-[dashed,#00AA00]-o"),
+    ("cross", "-[dashed,#00AA00]->"),
+    ("both", "<-[dashed,#00AA00]->"),
+]
+
+
+@pytest.mark.parametrize("arrow,expected", _ARROWS_WITH_A_LINE)
+def test_every_arrow_renders_on_plantuml_beside_a_line(
+    make_app, tmp_path, plantuml_command, arrow, expected
+):
+    """Each arrow of the enum must still be valid PlantUML once a line style joins it.
+
+    The line style is written *between* the two arrow tokens (``-[dashed]->``), so a
+    pair that only ever concatenates to a bare arrow renders on its own and becomes a
+    syntax error the moment the link type also sets a line or a colour. PlantUML reports
+    that as a render failure rather than as anything this vocabulary would notice, so the
+    fence here is the whole build staying silent.
+    """
+    conf = NEUTRAL_CONF_PY.replace('"arrow": "circle",', f'"arrow": "{arrow}",')
+    (tmp_path / "conf.py").write_text(conf, "utf8")
+    (tmp_path / "index.rst").write_text(NEUTRAL_LINKS, "utf8")
+    app = make_app(
+        srcdir=tmp_path,
+        buildername="html",
+        confoverrides={"plantuml": plantuml_command},
+    )
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    # a malformed token pair reaches plantuml as a render failure, not as anything this
+    # vocabulary would notice, so that is the assertion that matters here
+    assert "error while running plantuml" not in warnings
+    # `cross` is the one member plantuml has no head for, and says so (tier 2);
+    # every other member must leave the build silent
+    if arrow == "cross":
+        assert warnings.count("has no crossed arrow head") == 1
+    else:
+        assert warnings == ""
+    assert expected in _debug_source(Path(app.outdir), "index.html")
+
+
+#: The mirror of the half migration above: the *colour* has moved to the neutral key
+#: while the line keyword is still in the deprecated compound.
+COLOR_MIGRATED_CONF_PY = HALF_MIGRATED_CONF_PY.replace(
+    '"style": "#00AA00",\n        "line": "dashed",',
+    '"style": "dotted,#FF0000",\n        "color": "#00AA00",',
+)
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), COLOR_MIGRATED_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), COLOR_MIGRATED_CONF_PY),
+                (Path("index.rst"), NEUTRAL_LINKS),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_a_migrated_color_supersedes_only_the_colour_token(test_app):
+    """Migrating the colour out of ``style`` must not take the line keyword with it.
+
+    This is the other direction of the same per-key fold: a neutral ``color`` supersedes
+    the colour token of the deprecated compound -- the two cannot both be emitted -- and
+    leaves everything else in that string doing exactly what it did. Dropping the string
+    wholesale would silently turn a dotted edge solid.
+    """
+    app = test_app
+    app.build()
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        assert "-[dotted,#00AA00]->" in debug
+    else:
+        assert 'style="dotted"' in debug
+        assert 'color="#00AA00"' in debug
+    # the superseded colour is emitted by neither engine
+    assert "#FF0000" not in debug
+
+
+#: A link type that states its line and colour once, for both edge kinds.
+PART_FALLBACK_CONF_PY = PART_STYLING_CONF_PY.replace(
+    '        "part_line": "dotted",\n        "part_color": "#777777",\n', ""
+).replace('"line": "solid"', '"line": "dashed"')
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PART_FALLBACK_CONF_PY),
+                (Path("index.rst"), PART_STYLING),
+            ],
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), PART_FALLBACK_CONF_PY),
+                (Path("index.rst"), PART_STYLING),
+            ],
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_part_line_and_part_color_fall_back_to_their_counterparts(test_app):
+    """A link type that wants no distinction states its line and colour once.
+
+    ``part_line`` and ``part_color`` are *overrides*, so an unset one takes ``line`` and
+    ``color``. The two are symmetric on purpose: a rule that held for the colour and not
+    for the line would have to be learnt rather than guessed, and it would leave a
+    fully-migrated link type drawing its part edges from a deprecated default it never
+    wrote.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir), "index.html")
+
+    if app.config.needs_flow_engine == "plantuml":
+        # both edges: the ordinary line and the ordinary colour
+        assert debug.count("-[dashed,#00AA00]->") == 2
+        assert "dotted" not in debug
+        assert "#777777" not in debug
+    else:
+        assert debug.count('style="dashed"') == 2
+        assert debug.count('color="#00AA00"') == 2
+        assert "dotted" not in debug

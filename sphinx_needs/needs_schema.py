@@ -584,16 +584,38 @@ class LinkDisplayConfig:
     """Title for incoming links (e.g., 'links incoming')."""
     outgoing: str
     """Title for outgoing links (e.g., 'links outgoing')."""
-    color: str = "#000000"
-    """Color used for needflow diagrams."""
+    color: str = ""
+    """Color used for needflow diagrams.
+
+    Empty means unset, i.e. the engine's own edge color is left alone; any other value
+    is drawn, including an explicit black."""
+    part_color: str = ""
+    """Color used for links to need parts in needflow diagrams (see ``color``).
+
+    Empty means the link type's ``color`` is used for part links too."""
     style: str = ""
-    """Line style used for needflow diagrams."""
+    """Line style used for needflow diagrams (deprecated, use ``line``)."""
     style_part: str = "dotted"
-    """Line style used for need parts in needflow diagrams."""
+    """Line style used for need parts in needflow diagrams (deprecated, use ``part_line``)."""
     style_start: str = "-"
-    """Arrow start style for needflow diagrams."""
+    """Arrow start style for needflow diagrams (deprecated, use ``arrow``)."""
     style_end: str = "->"
-    """Arrow end style for needflow diagrams."""
+    """Arrow end style for needflow diagrams (deprecated, use ``arrow``)."""
+    line: str = ""
+    """How the line is drawn in needflow diagrams.
+
+    One of ``solid``, ``dashed``, ``dotted``, ``thick`` or ``invisible``;
+    empty means the deprecated ``style`` is consulted instead."""
+    part_line: str = ""
+    """How the line to a need part is drawn (see ``line``).
+
+    Empty means the link type's ``line`` is used for part links too; if that is unset as
+    well, the deprecated ``style_part`` is consulted."""
+    arrow: str = ""
+    """Which arrow heads a line carries in needflow diagrams.
+
+    One of ``normal``, ``none``, ``open``, ``circle``, ``cross`` or ``both``;
+    empty means the deprecated ``style_start``/``style_end`` are consulted instead."""
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)

@@ -23,7 +23,7 @@ build stays silent.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from typing import Any, Literal, get_args
 
@@ -643,6 +643,7 @@ def validate_flow_config(
     show_links: bool | str,
     legends: Mapping[str, Any],
     show_legend: Any,
+    types: Iterable[Mapping[str, Any]] = (),
 ) -> None:
     """Report every unusable needflow configuration value, once, as it is read.
 
@@ -658,7 +659,14 @@ def validate_flow_config(
     :param legends: The ``needs_flow_legends`` value.
     :param show_legend: The ``needs_flow_show_legend`` value, which the configuration
         hands through unchanged and so need not be a string.
+    :param types: The ``needs_types`` value, for the neutral ``shape`` of each type.
     """
+    for need_type in types:
+        if raw := need_type.get("shape"):
+            # the same call the model makes per diagram, with the same text, so Sphinx's
+            # `once` filter collapses the two onto this one -- which has no directive
+            # location and so is reported against the project, where the mistake is
+            resolve_shape(raw, location=None)
     validated_config_enum(
         direction,
         get_args(FlowDirection),
@@ -681,3 +689,356 @@ def validate_flow_config(
             location=None,
             once=True,
         )
+
+
+#: The neutral shape vocabulary.
+#:
+#: Each member is drawable by every engine, either directly or as a near enough form;
+#: the names say what the shape *is* rather than what one engine calls it.
+SHAPES: Mapping[str, None] = dict.fromkeys(
+    (
+        "rectangle",
+        "rounded",
+        "circle",
+        "ellipse",
+        "diamond",
+        "hexagon",
+        "cylinder",
+        "document",
+        "folder",
+        "box3d",
+    )
+)
+
+#: Legacy PlantUML element keywords accepted wherever a neutral shape is expected.
+#:
+#: These are the values ``needs_types[].style`` has always held, so a project moving to
+#: the neutral vocabulary can move a value across unchanged and have it keep its
+#: meaning.  Derived from the PlantUML "nestable elements" list.
+SHAPE_ALIASES: Mapping[str, str] = {
+    "agent": "rectangle",
+    "artifact": "document",
+    "card": "rounded",
+    "component": "rectangle",
+    "database": "cylinder",
+    "file": "document",
+    "folder": "folder",
+    "frame": "rectangle",
+    "hexagon": "hexagon",
+    "node": "box3d",
+    "package": "folder",
+    "queue": "cylinder",
+    "rectangle": "rectangle",
+    "stack": "rectangle",
+    "storage": "ellipse",
+    "usecase": "ellipse",
+}
+
+#: How each neutral shape is drawn in PlantUML.
+#:
+#: PlantUML's nestable elements are a short list, so several shapes have no exact
+#: counterpart and take the nearest one silently (tier 1); ``diamond`` has no near form
+#: at all and is warned about (tier 2, see :func:`plantuml_shape`).
+#:
+#: .. note:: ``hexagon`` is a PlantUML element only from 1.2020.13 onwards.  An older
+#:    renderer reports a diagram error rather than drawing a different shape, so a
+#:    project supporting such builds should prefer another member.
+PLANTUML_SHAPES: Mapping[str, str] = {
+    "rectangle": "rectangle",
+    "rounded": "card",
+    "circle": "usecase",
+    "ellipse": "usecase",
+    "hexagon": "hexagon",
+    "cylinder": "database",
+    "document": "artifact",
+    "folder": "folder",
+    "box3d": "node",
+}
+
+#: How each neutral shape is drawn in Graphviz, which has one for every member.
+#:
+#: ``rounded`` is a box with a style rather than a shape of its own, which the emitter
+#: handles; the shape recorded here is the box.
+GRAPHVIZ_SHAPES: Mapping[str, str] = {
+    "rectangle": "rectangle",
+    "rounded": "box",
+    "circle": "circle",
+    "ellipse": "ellipse",
+    "diamond": "diamond",
+    "hexagon": "hexagon",
+    "cylinder": "cylinder",
+    "document": "note",
+    "folder": "folder",
+    "box3d": "box3d",
+}
+
+
+def resolve_shape(value: Any, *, location: LocationType = None) -> str | None:
+    """Normalise a shape name, accepting the legacy PlantUML keywords as aliases.
+
+    Case and surrounding whitespace are ignored, for the reason spelled out in
+    :func:`validated_config_enum`: a value a directive would accept has to be accepted
+    in ``conf.py`` too.
+
+    :param value: The configured shape.
+    :param location: Where to report an unknown shape, ``None`` for the project.
+    :return: The neutral shape name, or ``None`` if it is not a known shape.
+    """
+    shape = str(value).strip().lower()
+    if shape in SHAPES:
+        return shape
+    if (aliased := SHAPE_ALIASES.get(shape)) is not None:
+        return aliased
+    log_warning(
+        LOGGER,
+        f"unknown shape {value!r}, allowed values: {', '.join(SHAPES)}; "
+        "the deprecated 'style' is used instead",
+        "config",
+        location=location,
+        once=True,
+    )
+    return None
+
+
+def plantuml_shape(shape: str, *, location: LocationType) -> str:
+    """Translate a neutral shape into a PlantUML element keyword.
+
+    :param shape: The neutral shape name.
+    :param location: Where to report a shape PlantUML cannot draw.
+    :return: The element keyword to emit.
+    """
+    if (keyword := PLANTUML_SHAPES.get(shape)) is not None:
+        return keyword
+    log_warning(
+        LOGGER,
+        f"the plantuml engine has no {shape!r} shape, so a rectangle is drawn instead",
+        "needflow",
+        location=location,
+        once=True,
+    )
+    return "rectangle"
+
+
+LineStyle = Literal["solid", "dashed", "dotted", "thick", "invisible"]
+"""How a line between two needs is drawn."""
+
+ArrowStyle = Literal["normal", "none", "open", "circle", "cross", "both"]
+"""Which arrow heads a line carries.
+
+The members are the ones every engine can draw; anything beyond them would be
+expressible in one engine's syntax only.
+"""
+
+#: The legacy PlantUML line keywords, mapped onto the neutral vocabulary.
+#: ``needs_links[].style`` has always held these, so a project can move a value across
+#: unchanged and have it keep its meaning.
+LINE_ALIASES: Mapping[str, LineStyle] = {
+    "solid": "solid",
+    "dashed": "dashed",
+    "dotted": "dotted",
+    "bold": "thick",
+    "thick": "thick",
+    "hidden": "invisible",
+    "invisible": "invisible",
+}
+
+#: How each neutral line is written in PlantUML, inside the ``[...]`` of an arrow.
+_PLANTUML_LINES: Mapping[LineStyle, str] = {
+    "solid": "",
+    "dashed": "dashed",
+    "dotted": "dotted",
+    "thick": "bold",
+    "invisible": "hidden",
+}
+
+#: How each neutral line is written as a Graphviz ``style``.
+_GRAPHVIZ_LINES: Mapping[LineStyle, str] = {
+    "solid": "solid",
+    "dashed": "dashed",
+    "dotted": "dotted",
+    "thick": "bold",
+    "invisible": "invis",
+}
+
+#: How each neutral arrow is written in PlantUML, as a (start, end) token pair.
+#: PlantUML has no crossed head, so ``cross`` degrades to a plain one (see
+#: :func:`plantuml_arrow`).
+#:
+#: The line style goes *between* the two tokens, as ``-[dashed]->``, so every start
+#: token has to end in a ``-``: ``both`` is ``<-`` rather than ``<``, because ``<[...]->``
+#: is a PlantUML syntax error while ``<-[...]->`` renders.  A pair that only ever
+#: concatenated to a bare arrow would pass unnoticed until a link type set a line or a
+#: colour as well.
+_PLANTUML_ARROWS: Mapping[ArrowStyle, tuple[str, str]] = {
+    "normal": ("-", "->"),
+    "none": ("-", "-"),
+    "open": ("-", "->"),
+    "circle": ("-", "-o"),
+    "cross": ("-", "->"),
+    "both": ("<-", "->"),
+}
+
+#: How each neutral arrow is written as Graphviz attributes.
+_GRAPHVIZ_ARROWS: Mapping[ArrowStyle, tuple[tuple[str, str], ...]] = {
+    "normal": (("arrowhead", "normal"),),
+    "none": (("arrowhead", "none"),),
+    "open": (("arrowhead", "vee"),),
+    "circle": (("arrowhead", "odot"),),
+    "cross": (("arrowhead", "tee"),),
+    "both": (("dir", "both"), ("arrowtail", "normal"), ("arrowhead", "normal")),
+}
+
+#: The deprecated ``needs_links`` display keys, and the neutral keys that replace them.
+#: They stay valid indefinitely -- the deprecation is an alias, not a withdrawal -- so
+#: this table is what the notice is built from rather than a schedule for removal.
+DEPRECATED_LINK_DISPLAY_KEYS: Mapping[str, str] = {
+    "style": "line",
+    "style_part": "part_line",
+    "style_start": "arrow",
+    "style_end": "arrow",
+}
+
+#: The neutral ``needs_links`` display keys that name a closed enumeration, and the
+#: values each accepts.  ``color``/``part_color`` are free strings and so are absent.
+_LINK_DISPLAY_ENUMS: Mapping[str, tuple[str, ...]] = {
+    "line": tuple(LINE_ALIASES),
+    "part_line": tuple(LINE_ALIASES),
+    "arrow": get_args(ArrowStyle),
+}
+
+
+def resolve_line(line: str) -> LineStyle | None:
+    """Decide how a line is drawn, preferring the neutral value over the legacy one.
+
+    An unset -- or unrecognised -- neutral value hands the decision back to the
+    deprecated ``style``/``style_part``, which each engine then emits exactly as it
+    always has, rather than guessing at what was meant.  An unrecognised one has already
+    been reported by :func:`validate_link_display`, where the link type's name is known.
+
+    :param line: The configured ``line`` (or ``part_line``), empty if unset.
+    :return: The neutral line style, or ``None`` if the legacy value is to be emitted
+        as it always has been.
+    """
+    if line and (resolved := LINE_ALIASES.get(line.strip().lower())) is not None:
+        return resolved
+    return None
+
+
+def resolve_arrow(arrow: str) -> ArrowStyle | None:
+    """Decide which arrow heads a line carries.
+
+    :param arrow: The configured ``arrow``, empty if unset.
+    :return: The neutral arrow style, or ``None`` if the legacy start/end tokens are
+        to be emitted as they always have been.
+    """
+    if not arrow:
+        return None
+    value = arrow.strip().lower()
+    return value if value in get_args(ArrowStyle) else None  # type: ignore[return-value]
+
+
+def legacy_style_color(style: str) -> str | None:
+    """Pick the color out of a deprecated ``style``/``style_part`` value.
+
+    That value is a compound: a color token and any number of line keywords, comma
+    separated.  The neutral vocabulary splits the two apart, so a link type migrated one
+    key at a time needs the half it has not migrated yet to keep working.
+
+    :param style: The deprecated value, possibly empty.
+    :return: The color token, or ``None`` if the value carries none.
+    """
+    for raw in style.split(","):
+        if (token := raw.strip()).startswith("#"):
+            return token
+    return None
+
+
+def plantuml_line(line: LineStyle) -> str:
+    """Write a neutral line style as PlantUML.
+
+    :param line: The neutral line style.
+    :return: What to put inside the ``[...]`` of the arrow, empty for a plain line.
+    """
+    return _PLANTUML_LINES[line]
+
+
+def plantuml_arrow(arrow: ArrowStyle, *, location: LocationType) -> tuple[str, str]:
+    """Write a neutral arrow style as a PlantUML (start, end) token pair.
+
+    :param arrow: The neutral arrow style.
+    :param location: Where to report an arrow PlantUML cannot draw.
+    :return: The start and end tokens of the arrow.
+    """
+    if arrow == "cross":
+        log_warning(
+            LOGGER,
+            "the plantuml engine has no crossed arrow head, "
+            "so a plain one is drawn instead",
+            "needflow",
+            location=location,
+            once=True,
+        )
+    return _PLANTUML_ARROWS[arrow]
+
+
+def graphviz_line(line: LineStyle) -> str:
+    """Write a neutral line style as a Graphviz ``style`` value.
+
+    :param line: The neutral line style.
+    :return: The ``style`` value.
+    """
+    return _GRAPHVIZ_LINES[line]
+
+
+def graphviz_arrow(arrow: ArrowStyle) -> tuple[tuple[str, str], ...]:
+    """Write a neutral arrow style as Graphviz attributes.
+
+    :param arrow: The neutral arrow style.
+    :return: The attributes to add.
+    """
+    return _GRAPHVIZ_ARROWS[arrow]
+
+
+def validate_link_display(
+    name: str, display: Mapping[str, Any], *, location: LocationType
+) -> None:
+    """Check one link type's needflow display keys, once, as they are read.
+
+    The two halves belong together: which spellings are deprecated and which values the
+    neutral keys accept are one vocabulary, and both are decided from the same mapping.
+
+    The deprecation notice is *usage gated* -- it names exactly the deprecated keys the
+    project wrote, and says nothing at all about a link type that writes none -- so a
+    project can migrate one key of one link type at a time and see what is left, while a
+    project that has finished migrating hears nothing.
+
+    An out-of-enum neutral value warns and is then treated as unset, which hands the
+    decision back to the deprecated key: every value here reaches a lookup table sooner
+    or later, and reaching one unchecked is how a typo becomes a ``KeyError`` that ends
+    the build.
+
+    :param name: The link type's name, for the messages.
+    :param display: The link type's configuration, as it was written.
+    :param location: Where to report, ``None`` for the project.
+    """
+    if legacy := sorted(key for key in DEPRECATED_LINK_DISPLAY_KEYS if key in display):
+        log_warning(
+            LOGGER,
+            f"needs_links {name!r} uses deprecated display key(s) "
+            f"{', '.join(legacy)}. "
+            "Please use 'line', 'part_line' and 'arrow' instead.",
+            "deprecated",
+            location=location,
+        )
+    for key, allowed in _LINK_DISPLAY_ENUMS.items():
+        if not (raw := str(display.get(key, "")).strip()):
+            continue
+        if raw.lower() not in allowed:
+            log_warning(
+                LOGGER,
+                f"unknown {key!r} {raw!r} of link type {name!r}, allowed values: "
+                f"{', '.join(allowed)}; the deprecated spelling is used instead",
+                "config",
+                location=location,
+                once=True,
+            )

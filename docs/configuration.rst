@@ -173,6 +173,31 @@ By default it is set to:
 * **prefix**: A prefix for generated IDs, to easily identify that an ID belongs to a specific type. Can also be ""
 * **color**: A color as hex value. Used in diagrams and some days maybe in other representations as well. Can also be ""
 * **style**: A plantuml node type, like node, artifact, frame, storage or database. See `plantuml documentation <http://plantuml.com/deployment-diagram>`__ for more.
+* **shape** (optional): The shape to draw the need with, in *every* diagram engine --
+  one of ``rectangle``, ``rounded``, ``circle``, ``ellipse``, ``diamond``, ``hexagon``,
+  ``cylinder``, ``document``, ``folder`` or ``box3d``.
+  Takes precedence over ``style``, and accepts the legacy plantuml keywords of ``style``
+  as aliases, so a value can be moved across unchanged. *New in version 8.4.0.*
+
+.. code-block:: python
+
+   needs_types = [
+       dict(directive="req", title="Requirement", prefix="R_", color="#BFD8D2",
+            shape="rectangle"),
+       dict(directive="test", title="Test Case", prefix="T_", color="#DCB239",
+            shape="hexagon"),
+   ]
+
+Where an engine has no form for a shape it draws the nearest one it has, and says so
+once for the project -- a diagram is never refused for asking.
+An unknown shape is reported once and leaves ``style`` in charge.
+
+.. note::
+
+   ``hexagon`` is emitted to PlantUML as its ``hexagon`` element, which older PlantUML
+   releases do not have; such a release reports a diagram error rather than drawing a
+   different shape.
+   If you support PlantUML builds older than 1.2020.13, prefer another member.
 
 .. note::
 
@@ -390,11 +415,30 @@ Each configured link can define:
   Default: False.
 - ``allow_dead_links`` (optional): True/False. If True, dead links are allowed and do not throw a warning.
   See :ref:`allow_dead_links` for details. Default: False.
+- ``line`` (optional): How the line is drawn in :ref:`needflow` diagrams --
+  ``solid``, ``dashed``, ``dotted``, ``thick`` or ``invisible``.
+  Every engine draws all five. *New in version 8.4.0.*
+- ``part_line`` (optional): Same as ``line``, for a link connected to a :ref:`need_part`.
+  Defaults to ``line``. *New in version 8.4.0.*
+- ``arrow`` (optional): Which arrow heads the line carries --
+  ``normal``, ``none``, ``open``, ``circle``, ``cross`` or ``both``.
+  See :ref:`needflow_arrow_migration`. *New in version 8.4.0.*
+- ``color`` (optional): The line color, e.g. ``#FFCC00``. Unset by default, which leaves
+  the engine's own edge color alone. *Honoured since version 8.4.0; previously accepted
+  and ignored.*
+- ``part_color`` (optional): Same as ``color``, for a link connected to a
+  :ref:`need_part`. Defaults to ``color``. *New in version 8.4.0.*
 - ``style`` (optional): A plantuml style description, e.g. "#FFCC00". Used for :ref:`needflow`. See :ref:`links_style`.
 - ``style_part`` (optional): Same as ``style``, but get used if link is connected to a :ref:`need_part`.
   See :ref:`links_style`.
 - ``style_start`` (optional): See :ref:`needflow_style_start`.
 - ``style_end`` (optional): See :ref:`needflow_style_start`.
+
+.. deprecated:: 8.4.0
+   ``style``, ``style_part``, ``style_start`` and ``style_end`` hold PlantUML tokens,
+   which every other engine has to translate.
+   Use ``line``, ``part_line``, ``color``, ``part_color`` and ``arrow`` instead;
+   the old keys are still honoured, so a link type can move one key at a time.
 
 Configuration example:
 
@@ -412,10 +456,9 @@ Configuration example:
            "outgoing": "triggers",
            "copy": False,
            "allow_dead_links": True,
-           "style": "#00AA00",
-           "style_part": "#00AA00",
-           "style_start": "-",
-           "style_end": "--o",
+           "line": "solid",
+           "color": "#00AA00",
+           "arrow": "circle",
        },
    }
 
@@ -500,10 +543,72 @@ with ``allow_dead_links`` not set or set to ``False``.
 
 By default not allowed dead links will be shown in red , allowed ones in gray (see above example).
 
+.. _`needflow_arrow_migration`:
+
+Migrating style_start / style_end to arrow
+++++++++++++++++++++++++++++++++++++++++++
+
+.. versionadded:: 8.4.0
+
+``arrow`` names the arrow heads a link carries, rather than spelling them as PlantUML
+tokens that every other engine then has to translate.
+Its members are the ones every engine can draw:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20,40,40
+
+   - * ``arrow``
+     * Drawn as
+     * Replaces
+   - * ``normal``
+     * A solid arrow head
+     * ``style_start = "-"``, ``style_end = "->>"`` -- see the note below
+   - * ``none``
+     * No head at all
+     * ``style_start = "-"``, ``style_end = "-"``
+   - * ``open``
+     * An open "V" head -- **the default of today's diagrams**
+     * ``style_start = "-"``, ``style_end = "->"``
+   - * ``circle``
+     * A hollow circle
+     * ``style_start = "-"``, ``style_end = "-o"``
+   - * ``cross``
+     * A crossbar
+     * no PlantUML equivalent
+   - * ``both``
+     * A head at each end
+     * ``style_start = "<"``, ``style_end = "->"``
+
+.. important::
+
+   The member that reproduces what a link type draws **today** is ``open``, not
+   ``normal``.
+   The default ``style_end`` of ``->`` has always rendered as an open "V" head on the
+   graphviz engine, and ``normal`` is the solid head instead.
+   On the plantuml engine the two are identical, so the difference only shows once a
+   diagram is rendered with graphviz.
+
+   The ``normal`` row is a mapping of *intent*, not of rendered output.
+   ``style_end = "->>"`` asks PlantUML for a solid head, and ``arrow: normal`` is how
+   that intent is spelled -- but the graphviz translation of the deprecated keys reads
+   only the first and last character of ``style_start + style_end``, so ``->>`` has in
+   fact been collapsing to the same open "V" as ``->``.
+   Migrating that spelling therefore *changes* graphviz output, from ``vee`` to
+   ``normal``. That is the head the configuration always asked for, but it is a change;
+   ``arrow: open`` keeps the arrowheads exactly as they are drawn today.
+
+Where an engine cannot draw a member it degrades and says so once:
+``cross`` has no PlantUML form, so PlantUML draws a plain head.
+
 .. _`links_style`:
 
 style / style_part
 ++++++++++++++++++
+
+.. deprecated:: 8.4.0
+   Use ``line``, ``color`` and ``part_color`` instead, which every engine understands.
+   These keys are still honoured.
 
 The style string can contain the following comma separated information:
 
@@ -522,6 +627,11 @@ An empty string uses the default plantuml settings.
 
 style_start / style_end
 +++++++++++++++++++++++
+
+.. deprecated:: 8.4.0
+   Use ``arrow`` instead, which every engine understands --
+   see :ref:`needflow_arrow_migration` for the mapping.
+   These keys are still honoured.
 
 These two options can define the arrow type, line type and line length.
 

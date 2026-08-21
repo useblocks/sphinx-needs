@@ -1,0 +1,54 @@
+id: link-arrow-both
+title: A head at each end, beside a line and a colour
+purpose: |
+  `both` is the one arrow member whose two tokens are not a prefix-plus-suffix of an ordinary arrow, so it is the member an implementation is most likely to get wrong -- and the line style is written BETWEEN those tokens on PlantUML, which means a token pair that looks right for a bare arrow can be a syntax error as soon as the link type also sets a line or a colour. This case pins the composition rather than the member: it names `both` together with `line` and `color`, which is the shape that fails.
+needs:
+- id: REQ_1
+  type: req
+  title: Requirement one
+  links:
+    links:
+    - REQ_2
+- id: REQ_2
+  type: req
+  title: Requirement two
+links:
+- option: links
+  incoming: is linked by
+  outgoing: links to
+  line: dashed
+  arrow: both
+  color: '#00AA00'
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**Requirement one**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]]
+      node "<size:12>Requirement</size>\n**Requirement two**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]]
+
+      ' Connection definition
+
+      REQ_1 <-[dashed,#00AA00]-> REQ_2
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "REQ_1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement one</b><br align="left"/><font point-size="10">REQ_1</font><br align="left"/>>, tooltip="REQ_1", href="<NODE_URL:REQ_1>", target="_top", shape="box3d"];
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement two</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d"];
+
+      // edge definitions
+      "REQ_1" -> "REQ_2" [style="dashed", dir=both, arrowtail=normal, arrowhead=normal, color="#00AA00"];
+      }

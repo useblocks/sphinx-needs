@@ -1,0 +1,80 @@
+id: link-part-fallback
+title: An unset part_line and part_color take the ordinary line and colour
+purpose: |
+  `part_line` and `part_color` are overrides, so a link type that wants no distinction between an ordinary edge and a part edge states its line and colour once. The fallback is the half of the part-key contract that `link-part-styling` cannot pin -- that case sets both part keys explicitly, so it would pass whatever an unset one did. Getting this wrong is silent: an implementation that instead fell back to its own default would draw part edges in a style the project never asked for, and the two implementations would disagree without either of them warning.
+needs:
+- id: REQ_1
+  type: req
+  title: Requirement one
+  parts:
+  - id: sub
+    title: A part of one
+- id: REQ_2
+  type: req
+  title: Requirement two
+  links:
+    links:
+    - REQ_1
+- id: REQ_3
+  type: req
+  title: Requirement three
+  links:
+    links:
+    - REQ_1.sub
+links:
+- option: links
+  incoming: is linked by
+  outgoing: links to
+  line: dashed
+  color: '#00AA00'
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**Requirement one**\n<size:10>REQ_1</size>" as REQ_1 [[<NODE_URL:REQ_1>]]{
+      'parts:
+      rectangle "<size:12>Requirement (part)</size>\n** A part of one**\n<size:10>REQ_1.**sub**</size>" as REQ_1.sub [[<NODE_URL:REQ_1.sub>]]
+      }
+      node "<size:12>Requirement</size>\n**Requirement two**\n<size:10>REQ_2</size>" as REQ_2 [[<NODE_URL:REQ_2>]]
+      node "<size:12>Requirement</size>\n**Requirement**\n**three**\n<size:10>REQ_3</size>" as REQ_3 [[<NODE_URL:REQ_3>]]
+
+      ' Connection definition
+
+      REQ_2 -[dashed,#00AA00]-> REQ_1
+      REQ_3 -[dashed,#00AA00]-> REQ_1.sub
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      subgraph "cluster_REQ_1" {
+        label=<<font point-size="12">Requirement</font><br align="center"/><b>Requirement one</b><br align="center"/><font point-size="10">REQ_1</font><br align="center"/>>;
+        tooltip="REQ_1";
+        href="<NODE_URL:REQ_1>";
+        target="_top";
+        shape="node";
+
+        "REQ_1" [style=invis, width=0, height=0, label=""];
+        // parts:
+        "REQ_1.sub" [label=<<font point-size="12">Requirement (part)</font><br align="left"/><b> A part of one</b><br align="left"/><font point-size="10">REQ_1.<b align="left">sub</b></font><br align="left"/>>, tooltip="REQ_1.sub", href="<NODE_URL:REQ_1.sub>", target="_top", shape=rectangle];
+
+      };
+      "REQ_2" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement two</b><br align="left"/><font point-size="10">REQ_2</font><br align="left"/>>, tooltip="REQ_2", href="<NODE_URL:REQ_2>", target="_top", shape="box3d"];
+      "REQ_3" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Requirement<br align="left"/>three</b><br align="left"/><font point-size="10">REQ_3</font><br align="left"/>>, tooltip="REQ_3", href="<NODE_URL:REQ_3>", target="_top", shape="box3d"];
+
+      // edge definitions
+      "REQ_2" -> "REQ_1" [style="dashed", arrowhead=vee, color="#00AA00", lhead="cluster_REQ_1"];
+      "REQ_3" -> "REQ_1.sub" [style="dashed", arrowhead=vee, color="#00AA00"];
+      }

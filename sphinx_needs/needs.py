@@ -74,7 +74,10 @@ from sphinx_needs.directives.needflow import (
     process_needflow_graphviz,
     process_needflow_plantuml,
 )
-from sphinx_needs.directives.needflow._options import validate_flow_config
+from sphinx_needs.directives.needflow._options import (
+    validate_flow_config,
+    validate_link_display,
+)
 from sphinx_needs.directives.needgantt import (
     Needgantt,
     NeedganttDirective,
@@ -780,7 +783,6 @@ def merge_default_configs(_app: Sphinx, config: Config) -> None:
             "outgoing": "links outgoing",
             "incoming": "links incoming",
             "copy": False,
-            "color": "#000000",
         }
     if "parent_needs" not in needs_config._links:
         needs_config._links["parent_needs"] = {
@@ -1087,9 +1089,23 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 "outgoing": link.get("outgoing", name),
             }
             # Only override optional fields if explicitly set in config
-            for key in ("color", "style", "style_part", "style_start", "style_end"):
+            for key in (
+                "color",
+                "part_color",
+                "style",
+                "style_part",
+                "style_start",
+                "style_end",
+                "line",
+                "part_line",
+                "arrow",
+            ):
                 if key in link:
                     display_kwargs[key] = link[key]
+            # the deprecated keys are folded into the neutral ones by the needflow model
+            # and keep working indefinitely, so a project can migrate one at a time;
+            # `location=None` because this is a `conf.py` matter, not a document one
+            validate_link_display(name, link, location=None)
             display_config = LinkDisplayConfig(**display_kwargs)
             link_field = LinkSchema(
                 name=name,
@@ -1133,6 +1149,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         show_links=needs_config.flow_show_links,
         legends=needs_config.flow_legends,
         show_legend=needs_config.flow_show_legend,
+        types=needs_config.types,
     )
 
     if needs_config._global_options:

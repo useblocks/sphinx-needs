@@ -110,13 +110,24 @@ SPEC_OPTION_KEYS = frozenset(
 )
 
 #: Keys a case's ``needs`` entries may set.
-NEED_KEYS = frozenset(("id", "type", "title", "status", "tags", "links"))
+NEED_KEYS = frozenset(("id", "type", "title", "status", "tags", "links", "parts"))
 
 #: Keys a case's ``types`` entries may set.
 SPEC_TYPE_KEYS = frozenset(("directive", "title", "prefix", "color", "shape"))
 
 #: Keys a case's ``links`` entries may set.
-SPEC_LINK_KEYS = frozenset(("option", "incoming", "outgoing", "line", "arrow", "color"))
+SPEC_LINK_KEYS = frozenset(
+    (
+        "option",
+        "incoming",
+        "outgoing",
+        "line",
+        "part_line",
+        "arrow",
+        "color",
+        "part_color",
+    )
+)
 
 #: The sections ``expect.<engine>.legend`` may name.
 LEGEND_SECTIONS = frozenset(("types", "links"))
@@ -204,15 +215,26 @@ OPTION_VALUES: dict[str, dict[str, str | None]] = {
 #: An empty value stays special: it means the option was written bare.
 OPTION_FREE_VALUES = frozenset(("show_legend", "engine_config"))
 
-#: Keys of a ``types`` entry this repository can put into ``needs_types``.  ``shape`` is
-#: absent: the portable shape enum has no counterpart here yet, only the legacy plantuml
-#: ``style`` keyword it is meant to replace.
-TYPE_KEYS = frozenset(("directive", "title", "prefix", "color"))
+#: Keys of a ``types`` entry this repository can put into ``needs_types``.
+TYPE_KEYS = frozenset(("directive", "title", "prefix", "color", "shape"))
 
-#: Keys of a ``links`` entry this repository can put into ``needs_links``.  ``line`` and
-#: ``arrow`` have no counterpart yet; ``color`` has one in the configuration but no
-#: emitter reads it, so mapping it would let a case claim a colour that never renders.
-LINK_KEYS = frozenset(("option", "incoming", "outgoing"))
+#: Keys of a ``links`` entry this repository can put into ``needs_links``.
+#:
+#: The whole portable set is mapped: ``needs_links`` takes each of these under the same
+#: name, and both emitters read all of them -- ``color`` included, which the
+#: configuration carried for years while neither engine honoured it.
+LINK_KEYS = frozenset(
+    (
+        "option",
+        "incoming",
+        "outgoing",
+        "line",
+        "part_line",
+        "arrow",
+        "color",
+        "part_color",
+    )
+)
 
 #: The degradations of the registry this repository can observe, each mapped to its
 #: tier, to the Sphinx-Needs warning subtype it is reported under, and to a pattern
@@ -224,10 +246,9 @@ LINK_KEYS = frozenset(("option", "incoming", "outgoing"))
 #: Several ids here share one subtype, which is why the message is matched too.
 #: ubCode maps the same ids onto its own ``needs.option_*`` diagnostic codes.
 #:
-#: The rest of the registry degrades options this repository does not have yet -- no
-#: portable shape enum to leave unmapped, no style classes to miss -- so a warning
-#: matching none of these is an unexpected one, which is the fence the shipped cases
-#: assert.
+#: The rest of the registry degrades options this repository does not have yet -- there
+#: are no style classes to miss -- so a warning matching none of these is an unexpected
+#: one, which is the fence the shipped cases assert.
 DEGRADATIONS: dict[str, tuple[int, str, re.Pattern[str]]] = {
     "direction-vertical-unsupported": (
         2,
@@ -238,6 +259,16 @@ DEGRADATIONS: dict[str, tuple[int, str, re.Pattern[str]]] = {
         2,
         "needs.needflow",
         re.compile(r"cannot draw 'left'"),
+    ),
+    "shape-unmapped": (
+        2,
+        "needs.needflow",
+        re.compile(r"has no '[a-z0-9]+' shape"),
+    ),
+    "arrow-unsupported": (
+        2,
+        "needs.needflow",
+        re.compile(r"has no crossed arrow head"),
     ),
     "option-conflict-direction": (
         3,
@@ -501,6 +532,10 @@ def _index_rst(case: dict[str, Any]) -> str:
         for link_type, targets in (need.get("links") or {}).items():
             lines.append(f"   :{link_type}: {', '.join(targets)}")
         lines.append("")
+        for part in need.get("parts") or []:
+            # a need part is content of its need, so it is written inside the directive
+            lines.append(f"   :np:`({part['id']}) {part.get('title', part['id'])}`")
+            lines.append("")
 
     lines.append(".. needflow::")
     lines.append("   :debug:")
@@ -800,7 +835,13 @@ def test_conformance_case(
     # the doctree and so runs the needflow post-transform (and its warnings) a second time
     observed, unexpected = _classify_warnings(app._warning.getvalue())
 
+    # the complete ids, parts included: a part's node carries a hyperlink of its own
     need_ids = [need["id"] for need in case["needs"]]
+    need_ids += [
+        f"{need['id']}.{part['id']}"
+        for need in case["needs"]
+        for part in need.get("parts") or []
+    ]
     source = _normalise(_emitted_source(app), need_ids)
 
     if updating:
@@ -1054,16 +1095,8 @@ def test_validation_ignores_what_only_the_other_repository_can_draw() -> None:
             _probe(config={"styles": {"critical": {"fill": "#FF0000"}}}),
             "config: the corpus format defines ['styles']",
         ),
-        (
-            _probe(types=[{"directive": "req", "shape": "rectangle"}]),
-            "types entry: the corpus format defines ['shape']",
-        ),
-        (
-            _probe(links=[{"option": "links", "arrow": "open"}]),
-            "links entry: the corpus format defines ['arrow']",
-        ),
     ],
-    ids=["config-key", "type-shape", "link-arrow"],
+    ids=["config-key"],
 )
 def test_conf_py_refuses_configuration_with_no_surface_here(
     case: dict[str, Any], fragment: str
@@ -1072,6 +1105,11 @@ def test_conf_py_refuses_configuration_with_no_surface_here(
 
     Silently building the project without it would leave the case asserting the output of
     a diagram that was never asked for the thing the case exists to check.
+
+    ``types`` and ``links`` entries used to be probed here too, for ``shape`` and
+    ``arrow``; both are now mapped, and the whole of :data:`SPEC_TYPE_KEYS` and
+    :data:`SPEC_LINK_KEYS` with them, so ``styles`` is what is left unmapped. The
+    parametrisation is kept for the slice that adds the next row.
     """
     with pytest.raises(AssertionError, match=re.escape(fragment)):
         _conf_py(case, "plantuml", "plantuml")
@@ -1144,10 +1182,14 @@ def test_declared_degradations_must_be_observable_here() -> None:
 
     It would be a comparison that can only fail, and it would fail with a message about
     a missing warning rather than about the option that does not exist yet.
+
+    The probe names ``style-class-unknown`` because that is the registry id still
+    unmapped here; it used to name ``shape-unmapped``, which the portable shape enum
+    now makes observable.
     """
     with pytest.raises(AssertionError, match=re.escape("has no surface for it yet")):
         _wanted_degradations(
-            {"degradations": [{"id": "shape-unmapped", "tier": 2}]}, "plantuml"
+            {"degradations": [{"id": "style-class-unknown", "tier": 3}]}, "plantuml"
         )
 
 
