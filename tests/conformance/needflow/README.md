@@ -237,8 +237,15 @@ different in the manifest.
 10. `link-line-arrow-color` — one link type exercising line/arrow/color together.
 11. `shape-enum-sample` — 2–3 portable shapes incl. one `shape-unmapped` degradation.
 12. `link-part-styling` — `part_line`/`part_color` drawn for a part edge and NOT for the
-    ordinary one beside it.
-13. One case per remaining degradation-registry id not covered above.
+    ordinary one beside it; plus `link-part-fallback`, the other half of that contract —
+    both keys UNSET, so the part edge must take `line`/`color` and not an
+    implementation's own default.
+13. `link-arrow-both` — `arrow: both` beside a `line` and a `color`. Listed separately
+    from `link-line-arrow-color` because `both` is the only member whose two tokens are
+    not a prefix-plus-suffix of an ordinary arrow, and because PlantUML writes the line
+    style BETWEEN them: a pair that renders as a bare arrow can be a syntax error as soon
+    as a line or colour joins it.
+14. One case per remaining degradation-registry id not covered above.
 
 ## Versioning discipline
 

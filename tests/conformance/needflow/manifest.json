@@ -1,6 +1,6 @@
 {
   "corpus_version": 3,
-  "readme": "947f42cd89a173d917a1fa351ac4d6fbc5a1046c39450243dc106e8623ca91d8",
+  "readme": "3ce1bfd7a32f06c6b70e191a18a8c9adecbcc4a304ab28227aebf0e68cabc136",
   "cases": {
     "arrow-unsupported.yaml": "0ecae35149b3e646be79dd904fb2a998db8a369152781e602fd4884aac172b03",
     "baseline-defaults.yaml": "4390170ffc2039bea4457893ad07af8d5e745fb9c1d11a6c15ffad2d6694d678",
@@ -17,6 +17,7 @@
     "legend-option-beats-config.yaml": "399de65e68da88f484fb39443a6186a5151dc78a7a9b4ec16108ece98a3ddfc7",
     "legend-order.yaml": "e312ef05c9b8fa5504f1c93cde46509deb442b3ae3884243ac6d4a0ea1d86c4a",
     "legend-types.yaml": "3991702aed8bed93367cd1c98f577486fbb810b6bfe691969bbb996fa690ee3b",
+    "link-arrow-both.yaml": "43ee485c0f0dbce1603c1ea1882dc9cb2ef47b6c9f5ddd2fec8ca5e5f0b6f430",
     "link-labels-config-default.yaml": "6f034fb6f0fbde52e2f74bd02315e2d4984b1afd0724d905d1d8c1669241a872",
     "link-labels-incoming.yaml": "26599499d8b9029cd68fd61d1d225a423df6e10f3645168a956778dc6de908ea",
     "link-labels-none.yaml": "84c9f3549698c56e2e86da9e9f021b9aa41c5b0c4bc379e7d18ecbd8b5f51986",
@@ -24,6 +25,7 @@
     "link-labels-outgoing.yaml": "dd0122bb7aa3896470d7751e7f6d9d164db6c3984e36811734776d715f007787",
     "link-labels-type.yaml": "c053eb59e6283462612be593441817308c3a51e7dc69130adffd25bb06ee62a8",
     "link-line-arrow-color.yaml": "63eba2a2bfac7777fac49c8677412db73c4ccd90191870ff2f4f150f958d5554",
+    "link-part-fallback.yaml": "b9d590a1540b7f3ee05719ca0043f8b7adf520ca3412e1274f8500eddff412a7",
     "link-part-styling.yaml": "9685a369e7342a68ae72b556debd0e0d3685e5842bfdb9ea6ee21cda1c4082d0",
     "node-id-injectivity.yaml": "5fa3f6058c6acd5c60f741133d451eb917a26f4e32622bc0521eb6bb2854fbf6",
     "option-conflict-direction.yaml": "7534bb58e3c45c2f5001bdb5fc018afc0f1a8b7a26f4be86e2b8c00bc098ca30",
