@@ -14,6 +14,27 @@ Unreleased
 Improvements
 ............
 
+- 👌 :ref:`needs_variant_data` is resolved while the configuration is being initialised
+
+  The :ref:`needs_variant_data_file` is loaded, and the inline
+  :ref:`needs_variant_data` merged on top of it, during ``config-inited`` instead of
+  when document reading starts. What is merged, and which value wins — inline over
+  file, ``sphinx-build -D`` over :ref:`needs_from_toml` — is unchanged, as are the
+  errors reported for a file that is missing or does not contain valid variant data.
+  Only the point in the build at which the work happens has moved.
+
+  Two things follow for a project that loads variant data from a file. Such a file now
+  fails the build during configuration, before any document is read, rather than once
+  reading has begun. And an unchanged file is finally recognised as unchanged: the
+  merged map is now in place before Sphinx compares this build's configuration with the
+  last one, so a project stops re-reading every document on every build. Editing the
+  file's contents still re-reads them, which is what the :ref:`variant role
+  <role_variant>` previously advised a clean build for.
+
+  An extension that handles ``config-inited`` after Sphinx-Needs can now read the merged
+  map, which matters because configuration deciding which documents exist at all — such
+  as ``exclude_patterns`` — can only be changed while that event is running.
+
 - ✨ New :ref:`needflow` ``:direction:`` option and :ref:`needs_flow_direction`
   configuration (:pr:`1782`)
 
