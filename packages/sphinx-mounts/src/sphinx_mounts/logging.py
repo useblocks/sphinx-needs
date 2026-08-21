@@ -39,7 +39,10 @@ if TYPE_CHECKING:
 #: subtype should be a visible, reviewable diff.
 WarningTopics = Literal[
     "attach_to_missing",
+    "deprecated_location",
     "docname_conflict",
+    "empty_docname",
+    "ignored_option",
     "missing_path",
     "mount_at_occupied",
     "path_escape",

@@ -1073,6 +1073,309 @@ def test_docname_conflict_warns_and_first_mount_wins(
     assert count_mount_warnings(app) == 1
 
 
+def test_intra_mount_basename_collision_warns_and_skips_the_mount(
+    make_app, make_host_project, tmp_path
+):
+    """Two listed files sharing a basename collide on docname, and that must
+    be reported — not silently resolved by last-one-wins.
+
+    File-list mode flattens the namespace (subdirectories in the paths are
+    dropped), so ``d1/notes.rst`` and ``d2/notes.rst`` both want
+    ``_g/fl/notes``. The pre-check only compared against docnames the *host
+    or an earlier mount* already provided, so two entries of the same mount
+    were invisible to each other: the second registration overwrote the
+    first, one document disappeared with zero diagnostics, and
+    ``_path_to_docname`` stopped being one-to-one.
+    """
+    d1 = tmp_path / "d1"
+    d2 = tmp_path / "d2"
+    d1.mkdir()
+    d2.mkdir()
+    (d1 / "notes.rst").write_text("D1 notes\n========\n\nD1_MARKER\n", encoding="utf-8")
+    (d2 / "notes.rst").write_text("D2 notes\n========\n\nD2_MARKER\n", encoding="utf-8")
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "files": [str(d1 / "notes.rst"), str(d2 / "notes.rst")],
+                "mount_at": "_g/fl",
+            }
+        ],
+    )
+    # The host must not reference the mount, so the skip leaves it clean and
+    # the conflict is the only warning.
+    _set_index_rst(host, "Host\n====\n\nOnly page, no dangling reference.\n")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "mounts.docname_conflict" in warnings
+    assert "'_g/fl/notes'" in warnings
+    # BOTH contributing paths must be named — knowing only one is not
+    # actionable, since either side could be the one to rename.
+    assert str(d1 / "notes.rst") in warnings
+    assert str(d2 / "notes.rst") in warnings
+    # The consequence of the whole-mount skip is spelled out (DP1).
+    assert "dropping all 2 files" in warnings
+    # ...and the remedy is the one that applies to a FILE-LIST mount.
+    # include / exclude are directory-mode patterns and are ignored here, so
+    # offering them would describe an action with no effect.
+    assert "remove one of the two entries from the mount's `files` list" in warnings, (
+        warnings
+    )
+    assert "include / exclude" not in warnings, warnings
+    assert count_warnings(app) == 1, warnings
+    assert count_mount_warnings(app) == 1
+    # Whole-mount skip: neither document was mounted.
+    assert not (Path(app.outdir) / "_g/fl/notes.html").exists()
+
+
+def test_intra_mount_suffix_collision_warns_and_skips_the_mount(
+    make_app, make_host_project, tmp_path
+):
+    """``index.rst`` beside ``index.md`` in one directory mount collides on
+    docname, and must be reported rather than silently resolved.
+
+    Both suffixes are registered (``myst_parser`` is loaded), so discovery
+    strips either one and lands on the same docname. Discovery walks in
+    sorted path order, so ``.md`` registered first and ``.rst`` overwrote it
+    — the Markdown page vanished, with no warning at all. Core Sphinx
+    reports ``multiple files found for the document`` for exactly this
+    situation inside the host srcdir, so a mount used to be strictly less
+    safe than the host project it is grafted onto.
+    """
+    bundle = tmp_path / "dual"
+    bundle.mkdir()
+    (bundle / "index.rst").write_text(
+        "Dir index RST\n=============\n\nRST_VERSION_MARKER\n", encoding="utf-8"
+    )
+    (bundle / "index.md").write_text(
+        "# Dir index MD\n\nMD_VERSION_MARKER\n", encoding="utf-8"
+    )
+
+    host = make_host_project()
+    conf = host / "conf.py"
+    conf.write_text(
+        conf.read_text(encoding="utf-8").replace(
+            'extensions = ["sphinx_mounts"]',
+            'extensions = ["sphinx_mounts", "myst_parser"]',
+        ),
+        encoding="utf-8",
+    )
+    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_g/dm"}])
+    _set_index_rst(host, "Host\n====\n\nOnly page, no dangling reference.\n")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "mounts.docname_conflict" in warnings
+    assert "'_g/dm/index'" in warnings
+    assert str(bundle / "index.md") in warnings
+    assert str(bundle / "index.rst") in warnings
+    # A directory mount DOES have a walker, so include / exclude is the right
+    # remedy to offer here.
+    assert "include / exclude" in warnings, warnings
+    assert "`files` list" not in warnings, warnings
+    assert count_warnings(app) == 1, warnings
+    assert count_mount_warnings(app) == 1
+    assert not (Path(app.outdir) / "_g/dm/index.html").exists()
+
+
+def test_single_entry_conflict_message_uses_singular_file(
+    make_app, make_host_project, bundle_simple, tmp_path
+):
+    """The dropped-count phrasing must read naturally for a one-file mount.
+
+    Edge case on the DP1 consequence text. "dropping all 1 file it provides"
+    agrees in number but reads like a formatting bug, so a one-file mount gets
+    its own wording.
+    """
+    solo = tmp_path / "solo"
+    solo.mkdir()
+    (solo / "index.rst").write_text("Solo\n====\n", encoding="utf-8")
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {"dir": str(bundle_simple), "mount_at": "_g/clash"},
+            {"dir": str(solo), "mount_at": "_g/clash"},
+        ],
+    )
+    _replace_index_toctree(host, "_g/clash/index")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    warnings = app._warning.getvalue()
+    assert "dropping the only file it provides" in warnings, warnings
+    assert "dropping all 1 file" not in warnings, warnings
+    assert "mount_at" in warnings  # the remedy for a host/earlier-mount clash
+
+
+def test_listed_file_that_is_only_a_suffix_is_rejected(
+    make_app, make_host_project, tmp_path
+):
+    """A listed file named exactly like a source suffix has no docname, and
+    must be rejected rather than mounted under a nonsense name.
+
+    ``.rst`` leaves an empty docname tail, so the docname became the bare
+    mount prefix with a trailing slash (``"_g/b/"``) — or, for a root mount,
+    the empty string, which wrote a dotfile ``.html`` at the very root of the
+    site. Neither is addressable, and no diagnostic was emitted. Directory
+    mode never produces this (its walker skips hidden entries), so rejecting
+    it also makes the two modes agree about dotfiles.
+    """
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / ".rst").write_text("Nameless\n========\n", encoding="utf-8")
+
+    host = make_host_project()
+    write_ubproject_toml(host, [{"files": [str(pkg / ".rst")], "mount_at": "_g/b"}])
+    _set_index_rst(host, "Host\n====\n\nOnly page, no dangling reference.\n")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "mounts.empty_docname" in warnings, warnings
+    assert "no name before its '.rst' suffix" in warnings, warnings
+    assert count_warnings(app) == 1, warnings
+    assert count_mount_warnings(app) == 1
+    # Whole-mount skip: nothing was mounted, and no dotfile page was written.
+    assert "_g/b" not in app.env.project.docnames
+    assert not (Path(app.outdir) / "_g" / "b" / ".html").exists()
+    assert not (Path(app.outdir) / ".html").exists()
+
+
+def test_root_mounted_suffix_only_file_does_not_write_a_dotfile_page(
+    make_app, make_host_project, tmp_path
+):
+    """The root-mount face of the same problem: without ``mount_at`` the empty
+    docname tail produced the docname ``""`` and an output file ``.html`` at
+    the site root."""
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / ".rst").write_text("Nameless\n========\n", encoding="utf-8")
+
+    host = make_host_project()
+    write_ubproject_toml(host, [{"files": [str(pkg / ".rst")]}])
+    _set_index_rst(host, "Host\n====\n\nOnly page, no dangling reference.\n")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    assert "mounts.empty_docname" in app._warning.getvalue()
+    assert "" not in app.env.project.docnames
+    assert not (Path(app.outdir) / ".html").exists()
+
+
+def test_include_on_a_file_list_mount_warns_that_it_is_ignored(
+    make_app, make_host_project, tmp_path
+):
+    """``include`` / ``exclude`` on a file-list mount must not be silent.
+
+    They are gitignore-style patterns for the directory walker, and a
+    file-list mount has none — the ``files`` list is the selection. So
+    ``include = ["one.rst"]`` on a two-file mount still mounts both files, and
+    nothing said so. Every other contradictory key combination in this
+    extension is rejected at config time; this one silently did nothing.
+    """
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / "one.rst").write_text(":orphan:\n\nOne\n===\n", encoding="utf-8")
+    (pkg / "two.rst").write_text(":orphan:\n\nTwo\n===\n", encoding="utf-8")
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "files": [str(pkg / "one.rst"), str(pkg / "two.rst")],
+                "mount_at": "_g/m",
+                "include": ["one.rst"],
+            }
+        ],
+    )
+    _set_index_rst(host, "Host\n====\n\nNo dangling references.\n")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    warnings = app._warning.getvalue()
+    assert "mounts.ignored_option" in warnings, warnings
+    assert "include" in warnings, warnings
+    assert count_mount_warnings(app) == 1, warnings
+    # The filter really had no effect: both files are still mounted. The
+    # warning describes the situation rather than changing it.
+    assert (Path(app.outdir) / "_g" / "m" / "one.html").exists()
+    assert (Path(app.outdir) / "_g" / "m" / "two.html").exists()
+
+
+def test_exclude_on_a_file_list_mount_warns_that_it_is_ignored(
+    make_app, make_host_project, tmp_path
+):
+    """Same for ``exclude``, and both keys at once are named in one warning."""
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    (pkg / "one.rst").write_text(":orphan:\n\nOne\n===\n", encoding="utf-8")
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "files": [str(pkg / "one.rst")],
+                "mount_at": "_g/m",
+                "include": ["*.rst"],
+                "exclude": ["one.rst"],
+            }
+        ],
+    )
+    _set_index_rst(host, "Host\n====\n\nNo dangling references.\n")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    warnings = app._warning.getvalue()
+    assert "mounts.ignored_option" in warnings, warnings
+    assert "include and exclude" in warnings, warnings
+    assert count_mount_warnings(app) == 1, warnings
+    # `exclude` did not drop the file either.
+    assert (Path(app.outdir) / "_g" / "m" / "one.html").exists()
+
+
+def test_directory_mount_with_include_does_not_warn(
+    make_app, make_host_project, bundle_simple
+):
+    """The complement: a directory mount reads both keys, so setting them must
+    stay silent."""
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "dir": str(bundle_simple),
+                "mount_at": "_g/m",
+                "include": ["**/*.rst"],
+                "exclude": ["details.rst"],
+            }
+        ],
+    )
+    _replace_index_toctree(host, "_g/m/index", "_g/m/intro")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    assert count_mount_warnings(app) == 0, app._warning.getvalue()
+    # ...and the patterns genuinely applied.
+    assert not (Path(app.outdir) / "_g" / "m" / "details.html").exists()
+
+
 def test_docname_conflict_warning_is_suppressible(
     make_app, make_host_project, bundle_simple
 ):
@@ -1305,6 +1608,218 @@ def test_toml_overrides_conf_py_mounts(
     assert not (outdir / "_generated/from-py/index.html").exists()
 
 
+def test_namespaced_mounts_table_mounts_end_to_end(
+    make_app, make_host_project, bundle_simple
+):
+    """``[[source.mounts]]`` mounts exactly like the top-level spelling.
+
+    ``[source]`` is the table that owns source discovery in the shared
+    ``ubproject.toml`` vocabulary, so it is the natural home for a mount and
+    the spelling the docs now recommend. This is the end-to-end proof that
+    choosing it changes nothing about the build.
+    """
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [{"dir": str(bundle_simple), "mount_at": "_generated/api-foo"}],
+        namespaced=True,
+    )
+
+    outdir = _build_clean(make_app, host)
+
+    html = _read_html(outdir, "_generated/api-foo/details")
+    assert "BUNDLE_SIMPLE_DETAILS_MARKER" in html
+    assert not (host / "_generated").exists()
+
+
+def test_namespaced_mounts_table_overrides_conf_py(
+    make_app, make_host_project, bundle_simple, bundle_nested
+):
+    """The TOML-wins rule is a property of the file declaring mounts, not of
+    which table they are written in."""
+    host = make_host_project()
+    patch_conf_py(
+        host,
+        f"[{{'dir': r'{bundle_nested}', 'mount_at': '_generated/from-py'}}]",
+    )
+    write_ubproject_toml(
+        host,
+        [{"dir": str(bundle_simple), "mount_at": "_generated/from-toml"}],
+        namespaced=True,
+    )
+    _replace_index_toctree(host, "_generated/from-toml/index")
+
+    outdir = _build_clean(make_app, host)
+
+    assert (outdir / "_generated/from-toml/details.html").exists()
+    assert not (outdir / "_generated/from-py/index.html").exists()
+
+
+def test_empty_namespaced_mounts_array_overrides_conf_py(
+    make_app, make_host_project, bundle_simple
+):
+    """An explicitly empty ``[source].mounts`` is a deliberate "no mounts" and
+    must switch a legacy ``conf.py`` list off — the same as the empty
+    top-level array does. A *missing* key would instead leave ``conf.py`` in
+    charge, which is what makes the empty array meaningful."""
+    host = make_host_project()
+    patch_conf_py(
+        host,
+        f"[{{'dir': r'{bundle_simple}', 'mount_at': '_generated/from-py'}}]",
+    )
+    (host / "ubproject.toml").write_text("[source]\nmounts = []\n", encoding="utf-8")
+    _set_index_rst(host, "Host\n====\n\nNo mounts at all.\n")
+
+    outdir = _build_clean(make_app, host)
+
+    assert not (outdir / "_generated/from-py/index.html").exists()
+
+
+def test_source_table_without_mounts_leaves_conf_py_in_charge(
+    make_app, make_host_project, bundle_simple
+):
+    """A ``ubproject.toml`` present for *other* tools must not switch mounts
+    off. The rule is "the TOML wins if it declares mounts", so a ``[source]``
+    table with no ``mounts`` key falls through to ``conf.py``."""
+    host = make_host_project()
+    patch_conf_py(
+        host,
+        f"[{{'dir': r'{bundle_simple}', 'mount_at': '_generated/api-foo'}}]",
+    )
+    (host / "ubproject.toml").write_text(
+        '[source]\nrespect_gitignore = true\ninclude = ["*.rst"]\n', encoding="utf-8"
+    )
+
+    outdir = _build_clean(make_app, host)
+
+    assert (outdir / "_generated/api-foo/details.html").exists()
+
+
+def test_top_level_mounts_table_warns_that_it_is_deprecated(
+    make_app, make_host_project, bundle_simple
+):
+    """The top-level ``[[mounts]]`` spelling still works, and now says it is
+    deprecated.
+
+    Both spellings load identically, so keeping them as equal citizens would be
+    harmless in isolation — but the sibling tooling that reads this file will
+    only honour ``[[source.mounts]]``, and two readers disagreeing about which
+    tables count is exactly the divergence the mapping contract exists to
+    prevent. The warning is the migration prompt; nothing about the mount
+    changes.
+    """
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [{"dir": str(bundle_simple), "mount_at": "_generated/api-foo"}],
+        namespaced=False,
+    )
+    _replace_index_toctree(host, "_generated/api-foo/index")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    warnings = app._warning.getvalue()
+    assert "mounts.deprecated_location" in warnings, warnings
+    assert "[[source.mounts]]" in warnings, warnings
+    assert count_mount_warnings(app) == 1, warnings
+    # The mount itself is unaffected — deprecated, not broken.
+    html = _read_html(Path(app.outdir), "_generated/api-foo/details")
+    assert "BUNDLE_SIMPLE_DETAILS_MARKER" in html
+
+
+def test_namespaced_mounts_table_does_not_warn(
+    make_app, make_host_project, bundle_simple
+):
+    """The recommended spelling must stay warning-free, or the deprecation is
+    unactionable."""
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [{"dir": str(bundle_simple), "mount_at": "_generated/api-foo"}],
+        namespaced=True,
+    )
+    _replace_index_toctree(host, "_generated/api-foo/index")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    assert count_warnings(app) == 0, app._warning.getvalue()
+
+
+def test_deprecated_location_warning_is_suppressible(
+    make_app, make_host_project, bundle_simple
+):
+    """The escape hatch for a project that cannot migrate yet.
+
+    It matters because ``sphinx-build -W`` is the recommended CI setting, so a
+    new warning would otherwise turn into a hard failure for every project
+    still on the top-level spelling. Suppressing it keeps ``-W`` usable during
+    the migration without disabling the other mount warnings.
+    """
+    host = make_host_project()
+    conf = host / "conf.py"
+    conf.write_text(
+        conf.read_text(encoding="utf-8")
+        + '\nsuppress_warnings = ["mounts.deprecated_location"]\n',
+        encoding="utf-8",
+    )
+    write_ubproject_toml(
+        host,
+        [{"dir": str(bundle_simple), "mount_at": "_generated/api-foo"}],
+        namespaced=False,
+    )
+    _replace_index_toctree(host, "_generated/api-foo/index")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    assert count_warnings(app) == 0, app._warning.getvalue()
+
+
+def test_conf_py_mounts_fallback_is_not_deprecated(
+    make_app, make_host_project, bundle_simple
+):
+    """The legacy ``mounts = [...]`` in ``conf.py`` is deliberately untouched.
+
+    The deprecation is about which *TOML table* the array lives in. The
+    conf.py fallback is a different mechanism with its own trade-offs, and
+    warning about it here would conflate two migrations.
+    """
+    host = make_host_project()
+    patch_conf_py(
+        host,
+        f"[{{'dir': r'{bundle_simple}', 'mount_at': '_generated/api-foo'}}]",
+    )
+    assert not (host / "ubproject.toml").exists()
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    assert "deprecated" not in app._warning.getvalue(), app._warning.getvalue()
+    assert count_warnings(app) == 0, app._warning.getvalue()
+
+
+def test_declaring_mounts_in_both_tables_fails_the_build(
+    make_app, make_host_project, bundle_simple
+):
+    """Both spellings in one file is a hard, non-suppressible config error
+    naming both locations."""
+    host = make_host_project()
+    # as_posix(): a Windows path's backslashes are escape characters inside
+    # a double-quoted TOML string, so the file would fail to parse before
+    # the two-tables check ever ran.
+    (host / "ubproject.toml").write_text(
+        f'[[mounts]]\ndir = "{bundle_simple.as_posix()}"\n\n'
+        f'[[source.mounts]]\ndir = "{bundle_simple.as_posix()}"\n',
+        encoding="utf-8",
+    )
+
+    with pytest.raises(Exception, match=r"declares mounts in two places"):
+        app = make_app(srcdir=host, freshenv=True)
+        app.build()
+
+
 def test_toml_in_subdir_anchors_paths_to_toml_directory(
     make_app, make_host_project, bundle_simple
 ):
@@ -1329,7 +1844,8 @@ def test_toml_in_subdir_anchors_paths_to_toml_directory(
     subdir.mkdir()
     toml = subdir / "mounts.toml"
     toml.write_text(
-        '[[mounts]]\ndir = "../../files/bundle"\nmount_at = "_generated/api-foo"\n',
+        '[[source.mounts]]\ndir = "../../files/bundle"\n'
+        'mount_at = "_generated/api-foo"\n',
         encoding="utf-8",
     )
     (host / "conf.py").write_text(
@@ -1987,6 +2503,479 @@ def test_incremental_rereads_changed_file_in_file_list_mount(
     assert "_generated/m/page_b" not in read, (
         f"unchanged file-list doc re-read; read={read}"
     )
+
+
+# ---------- incremental attach_to re-wiring ----------
+#
+# ``_on_doctree_read`` can only inject toctree entries into documents Sphinx
+# decides to re-read, and a host doc's own mtime never moves when a *bundle*
+# gains or loses its entry doc. The ``env-get-outdated`` handler is what makes
+# the host doc outdated in exactly those cases; without it the wiring went
+# permanently stale in both directions and only ``-E`` cleared it. These tests
+# therefore never pass ``freshenv=True`` on the follow-up builds — a fresh env
+# is precisely what hides the bug.
+
+
+def _make_solo_bundle(tmp_path: Path, name: str = "solo") -> Path:
+    """Create a writable one-document bundle directory and return it.
+
+    A single ``index.rst`` with no toctree of its own keeps the warning
+    budget at zero: adding or removing it changes exactly the docname that
+    ``attach_to`` wires, with no sibling left orphaned.
+    """
+    bundle = tmp_path / name
+    bundle.mkdir()
+    (bundle / "index.rst").write_text(
+        "Bundle entry\n============\n\nBUNDLE_ENTRY_MARKER\n", encoding="utf-8"
+    )
+    return bundle
+
+
+def test_disappearing_mount_entry_unwires_host_toctree_incrementally(
+    make_app, make_host_project, tmp_path
+):
+    """When a bundle's entry doc disappears, the next incremental build must
+    drop it from the host toctree — no dead link, no ``toc.not_readable``.
+
+    Previously the host doc was never re-read (its mtime did not move), so
+    the injected entry survived in the cached doctree: every later build
+    shipped a dead ``href`` and repeated ``toctree contains reference to
+    non-existing document``, which fails ``sphinx-build -W``. It never
+    converged either, because Sphinx guards the env pickling behind
+    ``if updated_docnames:`` and a removal-only build updated nothing.
+    """
+    host = make_host_project()
+    bundle = _make_solo_bundle(tmp_path)
+    write_ubproject_toml(
+        host,
+        [{"dir": str(bundle), "mount_at": "_g/m", "attach_to": "index"}],
+    )
+    _set_index_rst(host, "Host\n====\n\nHost prose, no toctree of its own.\n")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    index_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
+    assert "_g/m/index.html" in index_html, "entry doc was not wired on build 1"
+
+    offset = len(app._status.getvalue())
+    (bundle / "index.rst").unlink()
+
+    app.build()
+    removal_log = app._status.getvalue()[offset:]
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    index_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
+    assert "_g/m/index.html" not in index_html, (
+        "host page still links to the removed mount entry"
+    )
+    # The host doc had to be re-read for the entry to go away.
+    assert "index" in _docs_read_in_log(removal_log), (
+        f"host doc not re-read on the removal build; log={removal_log!r}"
+    )
+    # Re-reading it also un-sticks the env: Sphinx pickles the environment
+    # (and runs the consistency checks) only ``if updated_docnames``, so a
+    # removal-only build used to persist nothing and recompute the same
+    # "1 removed" for ever.
+    assert "pickling environment" in removal_log, (
+        f"env was not persisted on the removal build; log={removal_log!r}"
+    )
+
+    # ...and the next build has genuinely nothing left to do.
+    offset = len(app._status.getvalue())
+    app.build()
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert "no targets are out of date" in app._status.getvalue()[offset:], (
+        "removal did not converge — the build still finds outdated targets"
+    )
+
+
+def test_appearing_mount_entry_wires_host_toctree_incrementally(
+    make_app, make_host_project, tmp_path
+):
+    """When a bundle's entry doc appears, the next incremental build must wire
+    it into the host toctree.
+
+    This is the mirror image and the common case in a build-system flow: the
+    developer finally runs the upstream build, the bundle is mounted and
+    rendered — and used to be silently absent from the navigation (plus a
+    ``toc.not_included`` warning) until someone touched the host doc or wiped
+    ``.doctrees``.
+    """
+    host = make_host_project()
+    bundle = tmp_path / "late"
+    bundle.mkdir()
+    write_ubproject_toml(
+        host,
+        [{"dir": str(bundle), "mount_at": "_g/m", "attach_to": "index"}],
+    )
+    _set_index_rst(host, "Host\n====\n\nHost prose, no toctree of its own.\n")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    index_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
+    assert "_g/m/index.html" not in index_html, "nothing should be wired yet"
+
+    # No mtime bump: a docname Sphinx has never seen is "added" outright, so
+    # this does not depend on filesystem mtime resolution. (Bumping the mtime
+    # into the future would instead keep the doc permanently "changed", which
+    # would defeat the convergence assertion below.)
+    (bundle / "index.rst").write_text(
+        "Bundle entry\n============\n\nBUNDLE_ENTRY_MARKER\n", encoding="utf-8"
+    )
+
+    app.build()
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    index_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
+    assert "_g/m/index.html" in index_html, (
+        "appearing entry doc was not wired into the host toctree"
+    )
+
+    offset = len(app._status.getvalue())
+    app.build()
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert "no targets are out of date" in app._status.getvalue()[offset:], (
+        "wiring did not converge — the build still finds outdated targets"
+    )
+
+
+def test_bundle_churn_without_attach_to_does_not_reread_host(
+    make_app, make_host_project, tmp_path
+):
+    """A mount with no ``attach_to`` never touches a host toctree, so adding a
+    file to its bundle must NOT drag any host doc into the re-read set, and
+    the handler must not even claim it did.
+
+    Two properties are checked, and it is worth being precise about which
+    mechanism supplies which — the two are easy to conflate:
+
+    * no host doc is re-read. This is guaranteed by the *entry-doc gate* in
+      ``_wired_entries``: adding ``extra.rst`` to a bundle that already has
+      its entry doc leaves the wired-entry set untouched, so the signature
+      does not move. It holds even for a mount that *does* carry
+      ``attach_to``, which is why this assertion alone does not exercise the
+      no-``attach_to`` filter (see
+      ``TestWiringSignature::test_mounts_without_attach_to_are_omitted``).
+    * the build log carries no "mount wiring changed" line. This is what the
+      ``attach_to`` filter in ``_wiring_signature`` supplies: without it a
+      mount that cannot wire anything still enters the signature, and its
+      entry doc appearing or disappearing announces a re-read of nothing.
+    """
+    host = make_host_project()
+    bundle = _make_solo_bundle(tmp_path, "plain")
+    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_g/m"}])
+    _replace_index_toctree(host, "_g/m/index")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    offset = len(app._status.getvalue())
+
+    # A brand-new docname is reported as "added" without any mtime comparison.
+    (bundle / "extra.rst").write_text(":orphan:\n\nExtra\n=====\n", encoding="utf-8")
+
+    app.build()
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    churn_log = app._status.getvalue()[offset:]
+    read = _docs_read_in_log(churn_log)
+    assert read == {"_g/m/extra"}, (
+        f"expected only the new bundle file to be read; read={read}"
+    )
+    assert "mount wiring changed" not in churn_log, (
+        f"handler announced a re-read for a mount that wires nothing; log={churn_log!r}"
+    )
+
+
+def test_no_attach_to_mount_entry_doc_appearing_is_silent(
+    make_app, make_host_project, tmp_path
+):
+    """The sharper form of the same fence: the *entry doc* of a mount with no
+    ``attach_to`` appearing must also produce no wiring activity.
+
+    This is the one change that moves a no-``attach_to`` mount's wired-entry
+    set, so it is the only shape that can reach the ``attach_to`` filter in
+    ``_wiring_signature``. General file churn cannot (the entry-doc gate stops
+    it first), and ``attach_each`` without ``attach_to`` is rejected as a
+    config error, so this is the whole surface the filter protects.
+    """
+    host = make_host_project()
+    wired = _make_solo_bundle(tmp_path, "wired")
+    late = tmp_path / "late"
+    late.mkdir()
+    write_ubproject_toml(
+        host,
+        [
+            {"dir": str(wired), "mount_at": "_g/w", "attach_to": "index"},
+            {"dir": str(late), "mount_at": "_g/l"},
+        ],
+    )
+    _set_index_rst(host, "Host\n====\n\nHost prose, no toctree of its own.\n")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    offset = len(app._status.getvalue())
+
+    # The second mount gains its entry doc. It wires nothing, so nothing
+    # should be reported, re-read, or logged about the host doc.
+    (late / "index.rst").write_text(":orphan:\n\nLate\n====\n", encoding="utf-8")
+
+    app.build()
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    appear_log = app._status.getvalue()[offset:]
+    assert _docs_read_in_log(appear_log) == {"_g/l/index"}, appear_log
+    assert "mount wiring changed" not in appear_log, (
+        f"a mount that wires nothing entered the signature; log={appear_log!r}"
+    )
+
+
+def test_entry_doc_with_trailing_slash_wires_like_the_clean_form(
+    make_app, make_host_project, tmp_path
+):
+    """``entry_doc = "index/"`` must wire exactly as ``"index"`` does.
+
+    It previously mounted the bundle and then never wired it: the wired
+    docname was built as ``"<mount_at>/index/"``, which is not among the
+    docnames the mount produced, so the entry-doc gate in ``_wired_entries``
+    dropped it. The only symptom was a ``toc.not_included`` pointing at the
+    bundle's own file — nowhere near the setting responsible — while the
+    contract and the changelog both promised that all three docname fields
+    normalise trailing slashes.
+    """
+    bundle = _make_solo_bundle(tmp_path, "trailing")
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "dir": str(bundle),
+                "mount_at": "_g/m",
+                "attach_to": "index",
+                "entry_doc": "index/",
+            }
+        ],
+    )
+    _set_index_rst(host, "Host\n====\n\nHost prose, no toctree of its own.\n")
+
+    # A warning-free build is the whole point: no toc.not_included.
+    outdir = _build_clean(make_app, host)
+
+    index_html = (outdir / "index.html").read_text(encoding="utf-8")
+    assert "_g/m/index.html" in index_html, (
+        "entry_doc with a trailing slash was mounted but never wired"
+    )
+
+
+def test_dangling_attach_to_does_not_announce_a_re_read(
+    make_app, make_host_project, tmp_path
+):
+    """A mount whose ``attach_to`` names a document that does not exist must
+    not claim to re-read it — on this build or any later one.
+
+    Sphinx intersects the names this handler returns with ``env.found_docs``,
+    so returning a nonexistent one was harmless in effect. But the handler
+    logged before that intersection, so a single typo produced
+    ``re-reading ['nosuchdoc']`` on every incremental build for ever,
+    announcing an action nothing could perform. The missing target itself is
+    still reported exactly once, by the consistency check.
+    """
+    host = make_host_project()
+    bundle = _make_solo_bundle(tmp_path, "orphaned")
+    write_ubproject_toml(
+        host,
+        [{"dir": str(bundle), "mount_at": "_g/m", "attach_to": "nosuchdoc"}],
+    )
+    _replace_index_toctree(host, "_g/m/index")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+    # Exactly one diagnostic, and it is the missing target.
+    assert count_mount_warnings(app) == 1, app._warning.getvalue()
+    assert "mounts.attach_to_missing" in app._warning.getvalue()
+
+    # Removing the entry doc moves the wiring signature, which is what used to
+    # make the handler announce the re-read. It is also the shape that repeats
+    # for ever in a real build: with nothing re-readable, Sphinx persists no
+    # environment, so the next run recomputes the same change.
+    offset = len(app._status.getvalue())
+    (bundle / "index.rst").unlink()
+    app.build()
+
+    later_log = app._status.getvalue()[offset:]
+    assert "mount wiring changed" not in later_log, (
+        f"announced re-reading a document that does not exist; log={later_log!r}"
+    )
+    assert "nosuchdoc" not in later_log, later_log
+
+
+def test_mounts_confval_rebuilds_the_env(make_app, make_host_project, bundle_simple):
+    """``mounts`` must stay registered with ``rebuild="env"``.
+
+    The wiring signature is keyed on each mount's position in the config list,
+    so inserting or reordering mounts shifts every key. That is only safe
+    because any change to the ``mounts`` value makes Sphinx re-read every
+    document, which re-derives the wiring from scratch. Pinning the setting
+    here turns that coupling from a comment into a mechanical check: if the
+    rebuild trigger is ever weakened, index-keying would silently
+    mis-converge on a reorder instead.
+    """
+    host = make_host_project()
+    write_ubproject_toml(host, [{"dir": str(bundle_simple), "mount_at": "_g/m"}])
+    _replace_index_toctree(host, "_g/m/index", "_g/m/intro", "_g/m/details")
+
+    app = make_app(srcdir=host, freshenv=True)
+
+    assert app.config.values["mounts"].rebuild == "env"
+    assert app.config.values["mounts_from_toml"].rebuild == "env"
+
+
+def test_attach_each_rewires_when_the_listed_set_changes(
+    make_app, make_host_project, tmp_path
+):
+    """``attach_each`` wires every listed file, so the signature must track the
+    whole set — not just the entry doc.
+
+    A file-list mount whose files come and go is exactly the generated-bundle
+    case ``attach_each`` exists for, so the re-wiring has to follow the set.
+    """
+    pkg = tmp_path / "pkg"
+    pkg.mkdir()
+    page_a = pkg / "page_a.rst"
+    page_b = pkg / "page_b.rst"
+    page_a.write_text("Page A\n======\n\nA_MARKER\n", encoding="utf-8")
+    page_b.write_text("Page B\n======\n\nB_MARKER\n", encoding="utf-8")
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "files": [str(page_a), str(page_b)],
+                "mount_at": "_g/m",
+                "attach_to": "index",
+                "attach_each": True,
+            }
+        ],
+    )
+    _set_index_rst(host, "Host\n====\n\nHost prose, no toctree of its own.\n")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    index_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
+    assert "_g/m/page_a.html" in index_html
+    assert "_g/m/page_b.html" in index_html
+
+    # One listed file goes missing: the whole mount is skipped (existing
+    # doctrine), so BOTH entries must disappear from the host toctree.
+    page_b.unlink()
+    app.build()
+    index_html = (Path(app.outdir) / "index.html").read_text(encoding="utf-8")
+    assert "_g/m/page_a.html" not in index_html, (
+        "skipped mount still wired into the host toctree"
+    )
+    assert "_g/m/page_b.html" not in index_html
+
+
+# ---------- env pickle contents ----------
+
+
+def test_setup_declares_an_env_version(make_app, make_host_project, bundle_simple):
+    """The extension puts its own state into the build environment, so it must
+    declare an ``env_version``.
+
+    ``env.project`` is an instance of this extension's own private subclass
+    (so restoring ``.doctrees`` imports that class by name) and the
+    toctree-wiring signature is persisted as an env attribute. Without an
+    ``env_version`` there was nothing to bump when either shape changed, and a
+    stale cache would be restored into a shape its writer never produced.
+
+    The assertion reads ``env.version`` rather than the ``setup()`` return
+    value, because that mapping is what ``BuildEnvironment.setup`` actually
+    compares when deciding whether a cache is current.
+    """
+    host = make_host_project()
+    write_ubproject_toml(host, [{"dir": str(bundle_simple), "mount_at": "_g/m"}])
+    _replace_index_toctree(host, "_g/m/index", "_g/m/intro", "_g/m/details")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    assert app.extensions["sphinx_mounts"].metadata["env_version"] == 1
+    assert app.env.version["sphinx_mounts"] == 1
+
+
+def test_env_pickle_carries_no_mount_config_objects(
+    make_app, make_host_project, bundle_simple
+):
+    """``environment.pickle`` must not contain this extension's config objects.
+
+    ``BuildEnvironment.__getstate__`` keeps ``env.project``, so the whole
+    ``_MountAwareProject`` — including its tuple of frozen ``MountConfig``
+    dataclasses, the per-doc roots and the per-mount docname lists — was
+    serialised into every user's ``.doctrees`` cache. All three are rebuilt on
+    each ``discover()``, so this was pure cache weight plus an import-by-name
+    coupling to private class names.
+
+    The byte scan is deliberate: it tests the *serialised artefact* rather
+    than the in-memory object, which is the thing that actually has to survive
+    a version change.
+    """
+    host = make_host_project()
+    write_ubproject_toml(host, [{"dir": str(bundle_simple), "mount_at": "_g/m"}])
+    _replace_index_toctree(host, "_g/m/index", "_g/m/intro", "_g/m/details")
+
+    app = make_app(srcdir=host, freshenv=True)
+    app.build()
+
+    pickled = (Path(app.doctreedir) / "environment.pickle").read_bytes()
+    assert b"MountConfig" not in pickled, (
+        "mount config dataclasses are still serialised into the env pickle"
+    )
+    # The subclass reference itself cannot be removed without a custom
+    # ``__reduce__``; ``env_version`` is what guards a change to it.
+    assert b"_MountAwareProject" in pickled
+
+
+def test_restored_env_still_mounts_correctly(
+    make_app, make_host_project, bundle_simple
+):
+    """A build that restores the pickled env must mount exactly as before.
+
+    This is the check that the trimmed ``__getstate__`` did not break env
+    restore: a second ``SphinxTestApp`` over the same srcdir goes through
+    ``BuildEnvironment.setup`` -> ``app.project.restore(self.project)`` on the
+    unpickled project, before ``builder-inited`` installs a freshly-discovered
+    one. Building in-process twice would not exercise that path at all,
+    because the env object never leaves memory.
+    """
+    host = make_host_project()
+    write_ubproject_toml(host, [{"dir": str(bundle_simple), "mount_at": "_g/m"}])
+    _replace_index_toctree(host, "_g/m/index", "_g/m/intro", "_g/m/details")
+
+    first = make_app(srcdir=host, freshenv=True)
+    first.build()
+    assert count_warnings(first) == 0, first._warning.getvalue()
+
+    # freshenv defaults to False, so this one loads environment.pickle.
+    second = make_app(srcdir=host)
+    second.build()
+    # Not ``count_warnings``: building a SECOND app in one process makes
+    # docutils re-register its nodes, directives and roles, which emits dozens
+    # of ``app.add_node`` / ``app.add_directive`` warnings that have nothing to
+    # do with mounting. Assert on the categories this test is about instead.
+    warnings = second._warning.getvalue()
+    assert count_mount_warnings(second) == 0, warnings
+    assert "toc.not_readable" not in warnings, warnings
+    assert "toc.not_included" not in warnings, warnings
+
+    # The mount is fully present, and the paths point at the external files.
+    assert second.env.project.doc2path("_g/m/intro", absolute=True) == (
+        first.env.project.doc2path("_g/m/intro", absolute=True)
+    )
+    html = _read_html(Path(second.outdir), "_g/m/details")
+    assert "BUNDLE_SIMPLE_DETAILS_MARKER" in html
 
 
 # ---------- stored path type ----------

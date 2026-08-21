@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING
 import zlib
 
 import pytest
+from sphinx.errors import ExtensionError
 
 from tests.conftest import count_mount_warnings, count_warnings, write_ubproject_toml
 
@@ -113,13 +114,63 @@ def test_doc_roots_records_bundle_root_and_path_check(
 
     app = _build(make_app, host)
 
-    roots = app.env.project._doc_roots
-    assert roots["_g/api/index"] == (bundle.resolve(), "error")
+    recorded = app.env.project._doc_roots["_g/api/index"]
+    # A directory mount has exactly one root: its own dir.
+    assert recorded.roots == (bundle.resolve(),)
+    # The default, which is "warn".
+    assert recorded.path_check == "warn"
+    # The mount's label travels with the roots so an escape message can name
+    # the mount whose config has to change.
+    assert recorded.label == f"mounts[0] (dir={bundle.resolve()})"
 
 
-def test_doc_roots_files_mode_uses_file_parent_dir(
+def test_doc_roots_files_mode_uses_the_union_of_listed_parents(
     make_app, make_host_project, tmp_path
 ):
+    """A file-list mount's root SET is the parent directory of every listed
+    file, and every document of the mount shares the whole set.
+
+    Confining each document to its own file's parent made the ``path_check``
+    verdict depend on how deep a file sat — see
+    ``test_files_mode_sibling_reference_within_the_mounts_roots_is_allowed``.
+    Collapsing to the listed files' common ancestor fixed that but admitted
+    directories the mount never named — see
+    ``test_files_mode_reference_into_the_unlisted_shared_parent_is_flagged``.
+    """
+    pkg = tmp_path / "pkg"
+    (pkg / "notes").mkdir(parents=True)
+    (pkg / "index.rst").write_text("Index\n=====\n", encoding="utf-8")
+    (pkg / "notes" / "page.rst").write_text("Page\n====\n", encoding="utf-8")
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "files": [str(pkg / "index.rst"), str(pkg / "notes" / "page.rst")],
+                "mount_at": "_g/api",
+                "path_check": "warn",
+            }
+        ],
+    )
+    _replace_index_toctree(host, "_g/api/index", "_g/api/page")
+
+    app = _build(make_app, host)
+
+    roots = app.env.project._doc_roots
+    expected = (pkg.resolve(), (pkg / "notes").resolve())
+    # Both docs carry the whole set, in ``files`` order.
+    assert roots["_g/api/index"].roots == expected
+    assert roots["_g/api/page"].roots == expected
+    assert roots["_g/api/page"].path_check == "warn"
+
+
+def test_doc_roots_single_file_mount_root_is_its_parent(
+    make_app, make_host_project, tmp_path
+):
+    """Edge case of the union rule: one listed file contributes exactly one
+    root, its own parent directory — the behaviour a single-file mount always
+    had."""
     pkg = tmp_path / "pkg"
     pkg.mkdir()
     (pkg / "page.rst").write_text("Page\n====\n", encoding="utf-8")
@@ -139,7 +190,9 @@ def test_doc_roots_files_mode_uses_file_parent_dir(
 
     app = _build(make_app, host)
 
-    assert app.env.project._doc_roots["_g/api/page"] == (pkg.resolve(), "warn")
+    recorded = app.env.project._doc_roots["_g/api/page"]
+    assert recorded.roots == (pkg.resolve(),)
+    assert recorded.path_check == "warn"
 
 
 # ---------- Task 4: happy path — directives resolve inside the bundle ----------
@@ -507,15 +560,17 @@ def _leaking_literalinclude_bundle(tmp_path: Path, ref: str) -> Path:
     return bundle
 
 
-def test_escape_via_leading_slash_fails_by_default(
+def test_escape_via_leading_slash_fails_at_path_check_error(
     make_app, make_host_project, tmp_path
 ):
     """A leading-slash reference resolves to the host srcdir (outside the
-    bundle); the default path_check='error' fails the build."""
+    bundle); ``path_check = "error"`` fails the build."""
     bundle = _leaking_literalinclude_bundle(tmp_path, "/host_secret.py")
     host = make_host_project()
     (host / "host_secret.py").write_text("HOST_SECRET = 1\n", encoding="utf-8")
-    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_g/api"}])
+    write_ubproject_toml(
+        host, [{"dir": str(bundle), "mount_at": "_g/api", "path_check": "error"}]
+    )
     _replace_index_toctree(host, "_g/api/index")
 
     with pytest.raises(Exception, match=r"outside its bundle root"):
@@ -523,10 +578,11 @@ def test_escape_via_leading_slash_fails_by_default(
         app.build()
 
 
-def test_escape_via_parent_climb_fails_by_default(
+def test_escape_via_parent_climb_fails_at_path_check_error(
     make_app, make_host_project, tmp_path
 ):
-    """A ``../`` reference that climbs above the bundle root fails by default."""
+    """A ``../`` reference that climbs above the bundle root fails at
+    ``path_check = "error"``."""
     bundle = tmp_path / "bundle"
     (bundle / "sub").mkdir(parents=True)
     (tmp_path / "outside.py").write_text("OUTSIDE = 1\n", encoding="utf-8")
@@ -537,7 +593,9 @@ def test_escape_via_parent_climb_fails_by_default(
         "Idx\n===\n\n.. toctree::\n\n   sub/page\n", encoding="utf-8"
     )
     host = make_host_project()
-    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_g/api"}])
+    write_ubproject_toml(
+        host, [{"dir": str(bundle), "mount_at": "_g/api", "path_check": "error"}]
+    )
     _replace_index_toctree(host, "_g/api/index")
 
     with pytest.raises(Exception, match=r"outside its bundle root"):
@@ -559,12 +617,68 @@ def test_enforcement_is_directive_agnostic_include(
         "Bundle\n======\n\n.. include:: ../outside_inc.txt\n", encoding="utf-8"
     )
     host = make_host_project()
-    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_g/api"}])
+    write_ubproject_toml(
+        host, [{"dir": str(bundle), "mount_at": "_g/api", "path_check": "error"}]
+    )
     _replace_index_toctree(host, "_g/api/index")
 
     with pytest.raises(Exception, match=r"outside its bundle root"):
         app = make_app(srcdir=host, freshenv=True)
         app.build()
+
+
+def test_escape_at_the_default_path_check_warns_and_builds(
+    make_app, make_host_project, tmp_path
+):
+    """With no ``path_check`` set, an escape is a warning and the build
+    succeeds — and ``sphinx-build -W`` is what turns it into a failure.
+
+    The default was ``"error"``, which fought this extension's own stated
+    doctrine (every mount-specific problem is a typed, suppressible warning
+    that ``-W`` escalates) and could not deliver the guarantee it implied
+    anyway: the check runs from ``env-check-consistency``, which Sphinx skips
+    on a build that reads no document, so a hard default was never a standing
+    invariant.
+
+    Asserted with no ``path_check`` key at all, so the *default* is what is
+    under test rather than an explicit ``"warn"``.
+    """
+    bundle = _leaking_literalinclude_bundle(tmp_path, "../outside.txt")
+    (tmp_path / "outside.txt").write_text("OUTSIDE_AT_DEFAULT\n", encoding="utf-8")
+    host = make_host_project()
+    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_g/api"}])
+    _replace_index_toctree(host, "_g/api/index")
+
+    app = _build(make_app, host)  # must NOT raise
+
+    warnings = app._warning.getvalue()
+    assert "mounts.path_escape" in warnings, warnings
+    assert "outside its bundle root" in warnings, warnings
+    assert count_mount_warnings(app) == 1, warnings
+    # The build really completed: the page exists, unlike under "error".
+    assert (Path(app.outdir) / "_g" / "api" / "index.html").exists()
+
+
+def test_escape_at_the_default_path_check_is_suppressible(
+    make_app, make_host_project, tmp_path
+):
+    """The default being a typed warning means it can be suppressed, which an
+    abort could not be. That is the point of the doctrine it now follows."""
+    bundle = _leaking_literalinclude_bundle(tmp_path, "../outside.txt")
+    (tmp_path / "outside.txt").write_text("OUTSIDE\n", encoding="utf-8")
+    host = make_host_project()
+    conf = host / "conf.py"
+    conf.write_text(
+        conf.read_text(encoding="utf-8")
+        + '\nsuppress_warnings = ["mounts.path_escape"]\n',
+        encoding="utf-8",
+    )
+    write_ubproject_toml(host, [{"dir": str(bundle), "mount_at": "_g/api"}])
+    _replace_index_toctree(host, "_g/api/index")
+
+    app = _build(make_app, host)
+
+    assert count_warnings(app) == 0, app._warning.getvalue()
 
 
 def test_path_check_warn_emits_warning_not_error(make_app, make_host_project, tmp_path):
@@ -621,7 +735,9 @@ def test_self_contained_bundle_passes_under_default_error(
 
 
 def test_files_mode_escape_fails(make_app, make_host_project, tmp_path):
-    """In file-list mode the bundle root is the listed file's parent dir."""
+    """In file-list mode each listed file contributes its own parent directory
+    as a root; with a single listed file that is the only root, so a ``../``
+    reference still escapes."""
     pkg = tmp_path / "pkg"
     pkg.mkdir()
     (tmp_path / "secret.py").write_text("SECRET = 1\n", encoding="utf-8")  # outside pkg
@@ -630,13 +746,389 @@ def test_files_mode_escape_fails(make_app, make_host_project, tmp_path):
     )
     host = make_host_project()
     write_ubproject_toml(
-        host, [{"files": [str(pkg / "page.rst")], "mount_at": "_g/api"}]
+        host,
+        [
+            {
+                "files": [str(pkg / "page.rst")],
+                "mount_at": "_g/api",
+                "path_check": "error",
+            }
+        ],
     )
     _replace_index_toctree(host, "_g/api/page")
 
     with pytest.raises(Exception, match=r"outside its bundle root"):
         app = make_app(srcdir=host, freshenv=True)
         app.build()
+
+
+def test_files_mode_sibling_reference_within_the_mounts_roots_is_allowed(
+    make_app, make_host_project, tmp_path
+):
+    """A deeper listed file may reference a file that sits inside the mount's
+    own tree, above that file's own directory.
+
+    This reproduces the shape of the project's own ``release-notes`` example:
+    the mount lists ``index.rst`` and ``notes/2026-q1.rst``, so the bundle
+    spans ``rn/``. A reference from ``index.rst`` *down* into ``notes/``
+    always passed, while the mirror-image reference from
+    ``notes/2026-q1.rst`` *up* to ``../shared.txt`` was rejected as leaving
+    "the bundle root" — same mount, same tree, opposite verdicts purely
+    because of which file was deeper. Both are inside the mount, so both must
+    pass.
+    """
+    rn = tmp_path / "rn"
+    (rn / "notes").mkdir(parents=True)
+    (rn / "shared.txt").write_text("SHARED_TEXT\n", encoding="utf-8")
+    (rn / "index.rst").write_text("RN index\n========\n", encoding="utf-8")
+    (rn / "notes" / "2026-q1.rst").write_text(
+        "Q1 notes\n========\n\n.. literalinclude:: ../shared.txt\n", encoding="utf-8"
+    )
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "files": [str(rn / "index.rst"), str(rn / "notes" / "2026-q1.rst")],
+                "mount_at": "_g/rn",
+            }
+        ],
+    )
+    _replace_index_toctree(host, "_g/rn/index", "_g/rn/2026-q1")
+
+    app = _build(make_app, host)
+
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    html = (Path(app.outdir) / "_g" / "rn" / "2026-q1.html").read_text(encoding="utf-8")
+    assert "SHARED_TEXT" in html
+
+
+def test_files_mode_reference_into_the_unlisted_shared_parent_is_flagged(
+    make_app, make_host_project, tmp_path
+):
+    """A directory the mount never named must NOT become in-bundle, even when
+    it is the shared parent of two listed files.
+
+    This is the bound on the widening. Collapsing a file-list mount to the
+    *common ancestor* of its listed files let the ``files`` list drive the root
+    arbitrarily wide: two entries in sibling subtrees promoted their shared
+    parent, so every file under it — here ``secret.txt``, which sits in
+    neither listed directory — became reachable with no diagnostic at all,
+    even at ``path_check = "error"``. Entries on unrelated filesystem
+    branches promoted the root to ``/``, permitting the whole machine.
+
+    The union of the listed parents has no such hole: ``treeA/d1`` and
+    ``treeB/d2`` are roots, their shared parent is not.
+    """
+    (tmp_path / "secret.txt").write_text("SECRET_OUTSIDE_BOTH_DIRS\n", encoding="utf-8")
+    a = tmp_path / "treeA" / "d1"
+    b = tmp_path / "treeB" / "d2"
+    a.mkdir(parents=True)
+    b.mkdir(parents=True)
+    (a / "x.rst").write_text(
+        "X\n=\n\n.. literalinclude:: ../../secret.txt\n", encoding="utf-8"
+    )
+    (b / "y.rst").write_text("Y\n=\n\nplain\n", encoding="utf-8")
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "files": [str(a / "x.rst"), str(b / "y.rst")],
+                "mount_at": "_g/fl",
+                "path_check": "error",
+            }
+        ],
+    )
+    _replace_index_toctree(host, "_g/fl/x", "_g/fl/y")
+
+    # path_check = "error" aborts the build, which is what pins the message.
+    app = make_app(srcdir=host, freshenv=True)
+    with pytest.raises(ExtensionError) as excinfo:
+        app.build()
+
+    message = str(excinfo.value)
+    assert "outside its bundle root" in message, message
+    assert str((tmp_path / "secret.txt").resolve()) in message, message
+    # Both roots are named, so the author can see the set they may move into.
+    assert str(a.resolve()) in message, message
+    assert str(b.resolve()) in message, message
+    # ...and the unlisted shared parent is not presented as a root.
+    assert f"roots ({a.resolve()}, {b.resolve()})" in message, message
+
+
+def test_files_mode_disjoint_branches_do_not_widen_to_the_filesystem_root(
+    make_app, make_host_project, tmp_path
+):
+    """Two listed files with no meaningful shared parent must not make every
+    path on the machine in-bundle.
+
+    The common-ancestor rule promoted the shared parent of the two branches to
+    the sole root, so a third directory beside them became in-bundle. Taken to
+    its extreme with entries on unrelated filesystem branches the computed root
+    was ``/`` and every path on the machine was permitted. Two sibling
+    directories under ``tmp_path`` reproduce the mechanism hermetically.
+    """
+    outside = tmp_path / "elsewhere"
+    outside.mkdir()
+    (outside / "host_secret.txt").write_text("LEAKED\n", encoding="utf-8")
+    a = tmp_path / "branch_a"
+    b = tmp_path / "branch_b"
+    a.mkdir()
+    b.mkdir()
+    (a / "x.rst").write_text(
+        "X\n=\n\n.. literalinclude:: ../elsewhere/host_secret.txt\n",
+        encoding="utf-8",
+    )
+    (b / "y.rst").write_text("Y\n=\n\nplain\n", encoding="utf-8")
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "files": [str(a / "x.rst"), str(b / "y.rst")],
+                "mount_at": "_g/fl",
+                "path_check": "warn",
+            }
+        ],
+    )
+    _replace_index_toctree(host, "_g/fl/x", "_g/fl/y")
+
+    app = _build(make_app, host)
+
+    warnings = app._warning.getvalue()
+    assert "mounts.path_escape" in warnings, warnings
+    assert count_mount_warnings(app) == 1, warnings
+
+
+def test_files_mode_escape_above_every_root_still_fails(
+    make_app, make_host_project, tmp_path
+):
+    """Widening to a root set must not disable the check: a reference that
+    lands outside every root is still an escape."""
+    rn = tmp_path / "rn"
+    (rn / "notes").mkdir(parents=True)
+    (tmp_path / "above").mkdir()
+    (tmp_path / "above" / "outside.txt").write_text("ABOVE_TEXT\n", encoding="utf-8")
+    (rn / "index.rst").write_text("RN index\n========\n", encoding="utf-8")
+    (rn / "notes" / "2026-q1.rst").write_text(
+        "Q1 notes\n========\n\n.. literalinclude:: ../../above/outside.txt\n",
+        encoding="utf-8",
+    )
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {
+                "files": [str(rn / "index.rst"), str(rn / "notes" / "2026-q1.rst")],
+                "mount_at": "_g/rn",
+                "path_check": "error",
+            }
+        ],
+    )
+    _replace_index_toctree(host, "_g/rn/index", "_g/rn/2026-q1")
+
+    with pytest.raises(Exception, match=r"outside its bundle root"):
+        app = make_app(srcdir=host, freshenv=True)
+        app.build()
+
+
+def test_path_escape_message_names_the_mount(make_app, make_host_project, tmp_path):
+    """The escape message must name the mount whose ``path_check`` fired.
+
+    "The bundle root" is ambiguous in a project with several mounts, and it is
+    the named mount's config block that has to change.
+    """
+    a = tmp_path / "a"
+    a.mkdir()
+    b = tmp_path / "b"
+    b.mkdir()
+    (a / "index.rst").write_text("A\n=\n", encoding="utf-8")
+    (tmp_path / "outside.txt").write_text("OUT\n", encoding="utf-8")
+    (b / "index.rst").write_text(
+        "B\n=\n\n.. literalinclude:: ../outside.txt\n", encoding="utf-8"
+    )
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host,
+        [
+            {"dir": str(a), "mount_at": "_g/a"},
+            {"dir": str(b), "mount_at": "_g/b", "path_check": "warn"},
+        ],
+    )
+    _replace_index_toctree(host, "_g/a/index", "_g/b/index")
+
+    app = _build(make_app, host)
+
+    warnings = app._warning.getvalue()
+    # The SECOND mount is the offender, and it is named as such.
+    assert f"mounts[1] (dir={b.resolve()})" in warnings, warnings
+    assert f"dir={a.resolve()}" not in warnings, warnings
+
+
+def test_path_check_error_is_attributed_to_this_extension(
+    make_app, make_host_project, tmp_path
+):
+    """``path_check = "error"`` must name sphinx-mounts and print the
+    actionable line before the crash report.
+
+    A bundle-authoring mistake is rendered by Sphinx as a crash: from Sphinx
+    8.2 on, ``sphinx/_cli/util/errors.py:handle_exception`` prints Versions /
+    Last Messages / Loaded Extensions / Traceback blocks for *every*
+    ``SphinxError``, plus an invitation to open an issue against Sphinx
+    itself. This raise used to pass no ``modname``, so the header read a bare
+    ``Extension error!`` and the sentence explaining what the author did wrong
+    was buried in the middle of that report.
+
+    ``ExtensionError.category`` is asserted directly because it is literally
+    what the CLI prints as the first line
+    (``print_red(f'{exception.category}!')``).
+    """
+    bundle = _leaking_literalinclude_bundle(tmp_path, "../outside.txt")
+    (tmp_path / "outside.txt").write_text("OUTSIDE\n", encoding="utf-8")
+    host = make_host_project()
+    write_ubproject_toml(
+        host, [{"dir": str(bundle), "mount_at": "_g/api", "path_check": "error"}]
+    )
+    _replace_index_toctree(host, "_g/api/index")
+
+    app = make_app(srcdir=host, freshenv=True)
+    with pytest.raises(ExtensionError) as excinfo:
+        app.build()
+
+    assert excinfo.value.modname == "sphinx_mounts"
+    assert excinfo.value.category == "Extension error (sphinx_mounts)"
+    # The human message is logged before the raise, so it is not buried.
+    logged = app._warning.getvalue()
+    assert "outside its bundle root" in logged, logged
+    assert "ERROR" in logged, logged
+
+
+def test_path_escape_message_names_recorded_and_resolved_paths(
+    make_app, make_host_project, tmp_path
+):
+    """The message must print the recorded dependency next to the resolved
+    one, so it is clear which directive argument produced the escape.
+
+    Sphinx records the dependency as ``srcdir / rel_fn`` with the ``..``
+    segments still in place; the resolved path alone does not show what was
+    written in the source.
+    """
+    bundle = _leaking_literalinclude_bundle(tmp_path, "../outside.txt")
+    (tmp_path / "outside.txt").write_text("OUTSIDE\n", encoding="utf-8")
+    host = make_host_project()
+    write_ubproject_toml(
+        host, [{"dir": str(bundle), "mount_at": "_g/api", "path_check": "warn"}]
+    )
+    _replace_index_toctree(host, "_g/api/index")
+
+    app = _build(make_app, host)
+
+    warnings = app._warning.getvalue()
+    assert "recorded dependency" in warnings, warnings
+    # The resolved target is named...
+    assert str((tmp_path / "outside.txt").resolve()) in warnings
+    # ...and so is the un-normalised form Sphinx actually stored.
+    recorded = list(app.env.dependencies["_g/api/index"])
+    assert recorded, "no dependency recorded for the mounted doc"
+    assert any(str(dep) in warnings for dep in recorded), warnings
+
+
+@pytest.mark.skipif(
+    os.name == "nt", reason="symlink creation needs elevated rights on Windows"
+)
+def test_path_escape_via_symlink_message_mentions_symlinks(
+    make_app, make_host_project, tmp_path
+):
+    """An escape through an in-bundle symlink must say so.
+
+    The author wrote a plain bundle-relative name — no leading ``/``, no
+    ``..`` — so advice to avoid those two things describes something they
+    never did. Nothing in the message used to explain why the reference was
+    rejected.
+
+    Naming the authored path is not an option here: Sphinx resolves the
+    symlink *before* recording the dependency, so ``env.dependencies`` holds
+    the link target expressed relative to srcdir and the name written in the
+    directive is not recoverable at check time (asserted below, so a future
+    Sphinx that keeps the link path makes this visible). That is exactly why
+    the message has to state the symlink rule outright.
+    """
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    outside = tmp_path / "outside.txt"
+    outside.write_text("OUTSIDE_VIA_LINK\n", encoding="utf-8")
+    (bundle / "looks_local.txt").symlink_to(outside)
+    (bundle / "index.rst").write_text(
+        "Bundle\n======\n\n.. literalinclude:: looks_local.txt\n", encoding="utf-8"
+    )
+
+    host = make_host_project()
+    write_ubproject_toml(
+        host, [{"dir": str(bundle), "mount_at": "_g/api", "path_check": "warn"}]
+    )
+    _replace_index_toctree(host, "_g/api/index")
+
+    app = _build(make_app, host)
+
+    warnings = app._warning.getvalue()
+    assert "outside its bundle root" in warnings, warnings
+    # Match the whole sentence, not the bare word "symlink": the warning
+    # quotes filesystem paths that contain pytest's tmp_path, which embeds
+    # this test's own name — asserting on the word alone passes vacuously.
+    assert "A symlink pointing out of the bundle counts as an escape" in warnings, (
+        warnings
+    )
+    # The escape really did land on the link's target...
+    assert str(outside.resolve()) in warnings, warnings
+    # ...and Sphinx recorded the target, not the authored link name, which is
+    # what makes the explicit symlink sentence necessary.
+    recorded = [str(d) for d in app.env.dependencies["_g/api/index"]]
+    assert recorded, "no dependency recorded for the mounted doc"
+    assert not any("looks_local.txt" in dep for dep in recorded), (
+        f"Sphinx now records the authored link path ({recorded}) — the message "
+        f"could name it directly"
+    )
+
+
+@pytest.mark.skipif(
+    os.name == "nt", reason="symlink creation needs elevated rights on Windows"
+)
+def test_symlinked_bundle_root_is_not_an_escape(make_app, make_host_project, tmp_path):
+    """Reaching the bundle through a symlinked directory must NOT be flagged.
+
+    This is the documented Bazel flow — ``bazel-bin`` is itself a symlink into
+    the execroot — so a false positive here would break the extension's
+    flagship use case. It holds because both sides of the comparison are
+    resolved: ``_resolve_dir`` resolves the configured ``dir`` at config time
+    and the check resolves each dependency. Nothing pinned that symmetry.
+    """
+    real = tmp_path / "real_bundle"
+    real.mkdir()
+    (real / "snippet.py").write_text("IN_BUNDLE = 1\n", encoding="utf-8")
+    (real / "index.rst").write_text(
+        "Bundle\n======\n\n.. literalinclude:: snippet.py\n", encoding="utf-8"
+    )
+    link = tmp_path / "link_bundle"
+    link.symlink_to(real, target_is_directory=True)
+
+    host = make_host_project()
+    # Mounted through the LINK, with the strictest setting.
+    write_ubproject_toml(
+        host, [{"dir": str(link), "mount_at": "_g/api", "path_check": "error"}]
+    )
+    _replace_index_toctree(host, "_g/api/index")
+
+    app = _build(make_app, host)  # must NOT raise
+
+    assert count_warnings(app) == 0, app._warning.getvalue()
+    html = (Path(app.outdir) / "_g" / "api" / "index.html").read_text(encoding="utf-8")
+    assert "IN_BUNDLE" in html
 
 
 # ---------- Task 6: leak boundaries (documented with path_check='off') ----------

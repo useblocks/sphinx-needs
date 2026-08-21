@@ -164,9 +164,10 @@ Run the commands below from this directory (`tests/example/`).
   kitchen sink (below). Open a folder to see
   the directive sitting next to the file it references. Every path is
   relative to the bundle root, so each bundle is self-contained and passes
-  `sphinx-mounts`' `path_check` (default `"error"`) once mounted; a path
+  `sphinx-mounts`' `path_check` (default `"warn"`) once mounted; a path
   that pointed into the host (a leading `/`) or climbed out with `..`
-  would fail the build instead. These are plain files mounted in place —
+  would be reported as a `mounts.path_escape` warning instead — or fail
+  the build under `path_check = "error"` or `sphinx-build -W`. These are plain files mounted in place —
   not Bazel-generated — so each directive's usage is visible at a glance.
 - **Sphinx-Needs, and the limits of `path_check`.** `showcase/needs/` is the
   one showcase covering several directives, because

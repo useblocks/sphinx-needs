@@ -9,7 +9,7 @@ trees should follow to stay reusable.
 Event handlers
 --------------
 
-The extension registers five event handlers in ``setup()``. Sphinx
+The extension registers seven event handlers in ``setup()``. Sphinx
 event priority is "lower number runs earlier"; the default is 500.
 
 .. list-table::
@@ -29,9 +29,12 @@ event priority is "lower number runs earlier"; the default is 500.
      - 500
      - ``_on_config_inited`` runs ``parse_mounts`` on ``config.mounts``,
        resolves relative paths against ``confdir`` (for legacy
-       ``conf.py``-declared mounts), checks that ``dir`` directories
-       or each ``files`` entry exist, and caches the validated tuple of
-       ``MountConfig`` instances on the application object.
+       ``conf.py``-declared mounts) and caches the validated tuple of
+       ``MountConfig`` instances on the application object. It validates
+       *shape*, not existence: a path that resolves but is not on disk is
+       not an error here, so a build whose upstream bundle has not been
+       produced yet can still proceed. Existence is checked later, at
+       ``discover()`` time, as a ``mounts.missing_path`` warning.
    * - ``builder-inited``
      - default
      - ``_on_builder_inited`` replaces ``app.project`` with a
@@ -39,6 +42,14 @@ event priority is "lower number runs earlier"; the default is 500.
        list. The build environment is repointed at the new project so
        the subsequent ``env.find_files`` → ``project.discover()`` call
        runs through it.
+   * - ``env-get-outdated``
+     - default
+     - ``_on_env_get_outdated`` reports an ``attach_to`` document as
+       outdated when the set of entries its mount would wire differs from
+       the signature the previous build left on the environment. Without
+       it, ``_on_doctree_read`` below never gets a chance to fix wiring
+       that went stale because a *bundle* changed — the host doc's own
+       mtime does not move. See :ref:`incremental-rebuilds`.
    * - ``doctree-read``
      - **400**
      - ``_on_doctree_read`` extends or creates a toctree in any host
@@ -50,6 +61,13 @@ event priority is "lower number runs earlier"; the default is 500.
      - ``_on_check_consistency`` emits a warning if a mount's
        ``attach_to`` does not resolve to a real docname after every
        doc has been read.
+   * - ``env-check-consistency``
+     - default
+     - ``_on_check_path_confinement`` resolves every dependency Sphinx
+       recorded for each mounted doc and requires it to stay under that
+       mount's bundle root, reacting as the mount's ``path_check`` says.
+       This is the handler behind the whole feature; see
+       :ref:`path-confinement` for what it can and cannot catch.
 
 .. _doctree-read-priority:
 
@@ -93,14 +111,41 @@ subclasses it:
    class _MountAwareProject(Project):
        def discover(self, exclude_paths=(), include_paths=("**",)):
            docs = super().discover(exclude_paths, include_paths)
-           for mount in self._mounts:
-               docs |= _attach_mount(self, mount)
+           self._doc_roots = {}
+           self._mount_entry_docnames = {}
+           for index, mount in enumerate(self._mounts):
+               if _enforce_strict_mount_at(Path(self.srcdir), mount, index):
+                   self._mount_entry_docnames[index] = []
+                   continue
+               added = _attach_mount(self, mount, index)
+               docs.update(added)
+               self._mount_entry_docnames[index] = added
            return docs
 
 After ``super().discover()`` populates docnames from the host
 ``srcdir``, every configured mount is walked and its files are
 registered with **absolute** filesystem paths in the project's
 ``_docname_to_path`` dictionary.
+
+Two side tables are rebuilt on the way, and both are rebuilt *from
+scratch* on every call, which is why nothing from a previous build can
+leak forward:
+
+- ``_doc_roots`` maps each mounted docname to its bundle root, that
+  mount's ``path_check`` mode, and a label naming the mount — everything
+  :ref:`path-confinement` needs.
+- ``_mount_entry_docnames`` records, per mount, the docnames it actually
+  produced. The toctree wiring reads it to gate itself on what exists
+  (a skipped mount must not inject a dangling reference), and the
+  ``env-get-outdated`` handler compares it across builds.
+
+The mount index is passed down so every warning can name the mount by its
+position in the config list plus its source path, rather than leaving the
+reader to count TOML blocks.
+
+Neither table is carried in the environment pickle: ``__getstate__``
+empties them, along with the parsed mount list, precisely because
+``discover()`` recreates all three. See :ref:`env-and-caching`.
 
 The absolute-path trick
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -181,6 +226,41 @@ these is exercised in ``tests/test_warning_locations.py``.
    stock display choice in Sphinx's asset collector, not something the
    mount controls — the location prefix that tooling jumps to is still
    the absolute path of the referencing document.
+
+.. _env-and-caching:
+
+What ends up in the environment cache
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are **two** places this extension touches Sphinx internals, and the
+second is easy to miss. The first is the documented one above:
+``Project._docname_to_path`` / ``_path_to_docname``. The second is
+``environment.pickle``.
+
+``BuildEnvironment.__getstate__`` clears only its own unpickleable fields,
+so ``env.project`` is serialised — and for a project with mounts that is a
+``_MountAwareProject``, this extension's own subclass. Two consequences:
+
+- **The class reference is in the cache**, so restoring a
+  ``.doctrees`` directory imports it by name. ``setup()`` therefore
+  declares an ``env_version``; Sphinx folds every extension's value into
+  what it compares when deciding whether a cache is current, so a change
+  to what this extension stores invalidates stale caches instead of being
+  restored into a shape their writer never produced.
+- **Nothing else of the mount state is stored.** ``__getstate__`` empties
+  the parsed mount list, ``_doc_roots`` and ``_mount_entry_docnames``,
+  because ``discover()`` rebuilds all three on every build. Restoring them
+  would only add cache weight and pin the private layout of the config
+  dataclasses.
+
+The one thing that *is* deliberately persisted is the toctree-wiring
+signature the ``env-get-outdated`` handler compares across builds — a
+small mapping of mount index to wired docnames. It has to survive between
+builds; that is the whole point of it. See :ref:`incremental-rebuilds`.
+
+Dropping ``sphinx_mounts`` from ``extensions`` is safe: the missing
+``env_version`` changes the comparison, Sphinx reports the environment as
+not current and starts a fresh one.
 
 .. _docname-mapping:
 
@@ -273,9 +353,19 @@ Suffix matching iterates whatever Sphinx has registered in
 - ``.rst`` is the default.
 - ``.md`` is registered when ``myst_parser`` is loaded; mounting
   Markdown bundles "just works" once the host enables the parser.
-- Multi-dot suffixes (e.g. a parser registering ``.rst.txt``) are
-  matched by full-string suffix comparison, so the docname tail
-  strips the entire matched suffix.
+- Matching is a full-string suffix comparison, and the suffix removed is
+  the **first** registered entry the filename ends with — in registration
+  order, not the longest match. This is what Sphinx core does for the host
+  ``srcdir``, so mounted and host files derive docnames identically, but
+  it means overlapping suffixes are order-sensitive: with
+  ``source_suffix`` ordered ``.rst``, ``.txt``, ``.rst.txt``, the file
+  ``a.rst.txt`` yields the docname tail ``a.rst``, because ``.txt``
+  matched first. Register longer suffixes before the shorter ones they
+  end with. See :ref:`docname-derivation`.
+- Two files in one mount that differ *only* in registered suffix — say
+  ``index.rst`` beside ``index.md`` — land on the same docname. That is a
+  ``docname conflict`` and the whole mount is skipped, as with any other
+  collision.
 - Any parser extension a project plugs in is honoured the same way.
   See :ref:`source-formats`.
 

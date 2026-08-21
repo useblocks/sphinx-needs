@@ -4,6 +4,6 @@
 # path ../bazel-bin/docs points at <workspace>/bazel-bin/docs — where the
 # genrule outputs land.
 
-[[mounts]]
+[[source.mounts]]
 dir = "../bazel-bin/docs"
 mount_at = "_bazel"

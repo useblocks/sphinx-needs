@@ -14,17 +14,31 @@ import tomllib
 from typing import Any
 
 from sphinx.errors import ExtensionError
+from sphinx.util import logging
+
+from sphinx_mounts.logging import log_warning
+
+logger = logging.getLogger(__name__)
 
 
 class TomlConfigError(ExtensionError):
     """Raised when the TOML config file cannot be parsed or is malformed.
 
     Subclasses :class:`sphinx.errors.ExtensionError`, so Sphinx aborts the
-    build with a concise ``Extension error`` message instead of a raw
-    traceback (the crash report on Sphinx ≥ 8 also names this extension via
-    its ``modname``). Config errors are deliberately *not* suppressible:
-    sphinx-mounts cannot proceed at all when the configuration is
-    unreadable.
+    build rather than continuing with a configuration it cannot read. Config
+    errors are deliberately *not* suppressible: sphinx-mounts cannot proceed
+    at all when the configuration is unreadable.
+
+    Passing ``modname`` is what makes the report's first line read
+    ``Extension error (sphinx_mounts)!`` rather than a bare ``Extension
+    error!``, which is the only part of the presentation this extension
+    controls. How much surrounds that line is up to the running Sphinx: 7.x
+    prints the message and nothing else, while from 8.2 on
+    ``sphinx/_cli/util/errors.py`` prints Versions / Last Messages / Loaded
+    Extensions / Traceback blocks and an invitation to open an issue against
+    Sphinx for *every* ``SphinxError``. Naming the module is therefore the
+    difference between a user filing the report in the right place and the
+    wrong one.
     """
 
     def __init__(self, message: str) -> None:
@@ -36,7 +50,8 @@ class MountConfigError(ExtensionError):
 
     Subclasses :class:`sphinx.errors.ExtensionError` for the same reason as
     :class:`TomlConfigError` — a malformed entry means the build cannot
-    proceed, and users must not be able to suppress it away.
+    proceed, and users must not be able to suppress it away. See that class
+    for what ``modname`` does and does not control.
     """
 
     def __init__(self, message: str) -> None:
@@ -133,15 +148,26 @@ class MountConfig:
             the host srcdir always exists; that combination is rejected
             at config validation.
         path_check: How to react when a directive inside a mounted doc
-            references a file outside the bundle root (the bundle root is
-            ``dir`` in directory mode, or the listed file's parent
-            directory in file-list mode). One of ``"error"`` (the
-            default — fail the build), ``"warn"`` (log a warning;
-            escalates to an error under ``sphinx-build -W``), or
-            ``"off"`` (disable the check). An escaping reference would
-            otherwise drag an outside file into the host build (and, for
-            asset directives, copy it into the host's output), so the
-            default is a hard error that keeps bundles self-contained.
+            references a file outside the bundle root (in directory mode
+            that is ``dir``; in file-list mode it is any listed file's
+            parent directory). One of ``"warn"`` (the default — log a
+            ``mounts.path_escape`` warning, which ``sphinx-build -W``
+            escalates to a build failure), ``"error"`` (abort the build
+            immediately), or ``"off"`` (disable the check).
+
+            ``"warn"`` is the default because it is what the rest of
+            this extension does: every mount-specific problem is a typed,
+            suppressible warning that ``-W`` turns into a failure, and
+            :mod:`sphinx_mounts.logging` states that as the doctrine. An
+            escaping reference is a mount-specific problem like any
+            other. It is also not something a hard default could
+            actually guarantee: the check runs from
+            ``env-check-consistency``, which Sphinx skips entirely on a
+            build that reads no document, so ``"error"`` was never a
+            standing invariant — only a reaction on the builds that
+            happened to read something.
+
+            Set ``"error"`` where a hard stop is wanted without ``-W``.
     """
 
     mount_at: str | None = None
@@ -155,7 +181,7 @@ class MountConfig:
     entry_doc: str = "index"
     attach_each: bool = False
     strict_mount_at: bool = False
-    path_check: str = "error"
+    path_check: str = "warn"
 
     def __post_init__(self) -> None:
         if self.mount_at is not None:
@@ -192,6 +218,17 @@ class MountConfig:
             raise MountConfigError(msg)
 
         _validate_relative_docname("entry_doc", self.entry_doc)
+        # Same normalisation as mount_at / attach_to above. Without it,
+        # ``entry_doc = "index/"`` was accepted and then never matched: the
+        # wired docname became ``"<mount_at>/index/"``, which is not among the
+        # docnames the mount produced, so the entry-doc gate dropped it and
+        # the mount was mounted-but-unwired. The only symptom was a
+        # ``toc.not_included`` pointing at the bundle file rather than at the
+        # configuration. A leading '/' is already rejected above, so rstrip is
+        # equivalent to strip here.
+        normalized_entry = self.entry_doc.rstrip("/")
+        if normalized_entry != self.entry_doc:
+            object.__setattr__(self, "entry_doc", normalized_entry)
 
         _validate_attach_each(
             self.attach_each, self.files, self.attach_to, self.entry_doc
@@ -269,7 +306,7 @@ class MountConfig:
             entry_doc=entry.get("entry_doc", "index"),
             attach_each=entry.get("attach_each", False),
             strict_mount_at=entry.get("strict_mount_at", False),
-            path_check=entry.get("path_check", "error"),
+            path_check=entry.get("path_check", "warn"),
         )
 
 
@@ -419,10 +456,36 @@ def _validate_relative_docname(field_name: str, value: object) -> None:
     """Validate a relative docname-shaped string field.
 
     Used by :class:`MountConfig` for ``mount_at``, ``attach_to``, and
-    ``entry_doc``. Rejects non-strings, empty strings, leading slashes,
-    and ``..`` components. Does *not* normalize — that is the caller's
-    responsibility, since each field has a slightly different normalization
-    rule (mount_at strips slashes; entry_doc keeps its shape).
+    ``entry_doc``. The accepted shape is exactly:
+
+    * a non-empty string;
+    * no leading ``/`` — a docname is always relative;
+    * no ``..`` component;
+    * no *interior* empty segment (``a//b``) and no ``.`` segment
+      (``a/./b``, or a bare ``.``);
+    * no leading or trailing whitespace, in the value or in any segment.
+
+    Everything outside that is a hard :class:`MountConfigError`, in line with
+    the doctrine that a configuration this extension cannot interpret is not
+    suppressible. Those shapes used to be accepted verbatim, and a docname is
+    matched **literally** rather than resolved as a filesystem path, so each
+    of them produced something no host document can ever be:
+
+    * ``a//b`` and ``" a/b "`` gave a docname holding an empty segment or a
+      space, leaving the mount silently unreferenceable;
+    * ``.`` was worse than unreferenceable. Written to mean "the project
+      root", it produced the docname ``./index`` alongside the host's own
+      ``index``: two distinct docnames resolving to one output file, so the
+      mounted page was overwritten with no diagnostic at all. Omitting
+      ``mount_at`` is how a root mount is expressed.
+
+    Being strict here also keeps the accepted shape describable in a few lines
+    for a second implementation, which "accepted but never usable" is not.
+
+    Trailing slashes are the one thing normalised rather than rejected
+    (``a/b/`` -> ``a/b``), because a docname written with a trailing separator
+    is a natural way to write it and means exactly one thing. This function
+    does not normalise; the caller does, uniformly for all three fields.
     """
     if not isinstance(value, str):
         msg = f"{field_name} must be a string; got {type(value).__name__}."
@@ -438,6 +501,31 @@ def _validate_relative_docname(field_name: str, value: object) -> None:
         raise MountConfigError(msg)
     if ".." in Path(value).parts:
         msg = f"{field_name} must not contain '..' components; got {value!r}."
+        raise MountConfigError(msg)
+    if value != value.strip():
+        msg = (
+            f"{field_name} must not have leading or trailing whitespace; "
+            f"got {value!r}. Docnames are matched exactly, so the surrounding "
+            f"space would make it unreferenceable."
+        )
+        raise MountConfigError(msg)
+    # Trailing slashes are stripped by the caller, so only interior empties
+    # are a problem here. ``"a//b".strip("/").split("/")`` is ``['a', '', 'b']``.
+    segments = value.strip("/").split("/")
+    if any(segment in ("", ".") for segment in segments):
+        msg = (
+            f"{field_name} must not contain an empty or '.' path segment; got "
+            f"{value!r}. Docnames are matched literally, not resolved as "
+            f"filesystem paths, so 'a/./b' is a different docname from 'a/b' "
+            f"and '.' is not a way to write the project root — omit "
+            f"{field_name} instead."
+        )
+        raise MountConfigError(msg)
+    if any(segment != segment.strip() for segment in segments):
+        msg = (
+            f"{field_name} must not have whitespace around a path segment; "
+            f"got {value!r}."
+        )
         raise MountConfigError(msg)
 
 
@@ -524,20 +612,26 @@ def _resolve_files(files: tuple[Path, ...], confdir: Path) -> tuple[Path, ...]:
     )
 
 
+#: Spelling recommended for new projects: ``[source]`` is the table that owns
+#: source *discovery* in the shared ``ubproject.toml`` vocabulary, which is
+#: where a mount belongs, and namespacing keeps the file's root from becoming
+#: a flat bag of keys.
+NAMESPACED_MOUNTS_LOCATION = "[[source.mounts]]"
+
+#: The original spelling. Still fully supported — projects that use it do not
+#: need to change anything — but new projects should prefer
+#: :data:`NAMESPACED_MOUNTS_LOCATION`.
+TOP_LEVEL_MOUNTS_LOCATION = "[[mounts]]"
+
+
 def load_mounts_from_toml(toml_path: Path) -> list[dict[str, Any]] | None:
     """Load the raw ``mounts`` list from a TOML configuration file.
 
-    The TOML file is expected to declare a top-level ``[[mounts]]`` array of
-    tables, one block per mount, with the same keys accepted by
-    :class:`MountConfig`:
+    The array of tables is declared under ``[source]``:
 
     .. code-block:: toml
 
-       [[mounts]]
-       dir = "/abs/path/to/bundle"
-       mount_at = "_generated/api-foo"
-
-       [[mounts]]
+       [[source.mounts]]
        dir = "../other/docs"
        mount_at = "guides/other"
        include = ["**/*.rst"]       # optional allowlist
@@ -546,6 +640,21 @@ def load_mounts_from_toml(toml_path: Path) -> list[dict[str, Any]] | None:
        attach_to = "index"          # extend a toctree in index.rst
        toctree_index = 0            # which toctree (0-based)
        entry_doc = "index"          # which file inside the mount
+
+    ``[source]`` is the table that owns source *discovery* in the
+    ``ubproject.toml`` vocabulary shared with sibling tooling, and namespacing
+    keeps the file's root from becoming a flat bag of keys.
+
+    The original top-level ``[[mounts]]`` spelling is **deprecated**. It is
+    still read, with identical meaning in every respect, and reported as
+    ``mounts.deprecated_location``. It is deliberately still honoured rather
+    than ignored: sibling readers of this same file recognise only
+    ``[[source.mounts]]``, so warning-while-honouring is what keeps both
+    readers agreeing about the project during a migration.
+
+    Declaring **both** in one file is a hard error rather than a precedence
+    puzzle: which one wins is not something a reader should have to know. A
+    deprecated declaration is still a declaration.
 
     The TOML file is the *primary* config target so that non-Python tooling
     (IDE extensions, language servers, build-system integrations) can read
@@ -560,11 +669,13 @@ def load_mounts_from_toml(toml_path: Path) -> list[dict[str, Any]] | None:
 
     :param toml_path: Absolute path to a TOML file. May or may not exist.
     :return: The raw list of mount tables (each a ``dict``), or ``None`` if
-        ``toml_path`` does not exist or contains no top-level ``mounts``
-        array. Returning ``None`` is not an error — callers fall back to
-        the ``mounts`` value from ``conf.py``.
-    :raises TomlConfigError: If the file exists but is not valid TOML, or
-        if the top-level ``mounts`` key has the wrong shape.
+        ``toml_path`` does not exist or declares neither spelling. Returning
+        ``None`` is not an error — callers fall back to the ``mounts`` value
+        from ``conf.py``. Note that an explicitly declared *empty* array is
+        not ``None``: it is a deliberate "this project has no mounts" and
+        does override ``conf.py``.
+    :raises TomlConfigError: If the file exists but is not valid TOML, if it
+        declares both spellings, or if the mounts array has the wrong shape.
     """
     if not toml_path.is_file():
         return None
@@ -575,24 +686,66 @@ def load_mounts_from_toml(toml_path: Path) -> list[dict[str, Any]] | None:
         msg = f"sphinx-mounts: failed to parse TOML config {toml_path}: {e}"
         raise TomlConfigError(msg) from e
 
-    raw_mounts = data.get("mounts")
-    if raw_mounts is None:
+    extracted = _extract_toml_mounts(data, toml_path)
+    if extracted is None:
         return None
+    _anchor_toml_paths(extracted, toml_path.parent)
+    return extracted
+
+
+def _extract_toml_mounts(
+    data: Mapping[str, Any], toml_path: Path
+) -> list[dict[str, Any]] | None:
+    """Pick the mounts array out of parsed TOML data and validate its shape.
+
+    :return: The raw list, or ``None`` when neither spelling is declared.
+    :raises TomlConfigError: If both spellings are declared, or the declared
+        one is not an array of tables.
+    """
+    source = data.get("source")
+    declared: list[tuple[str, Any]] = []
+    if isinstance(source, Mapping) and "mounts" in source:
+        declared.append((NAMESPACED_MOUNTS_LOCATION, source["mounts"]))
+    if "mounts" in data:
+        declared.append((TOP_LEVEL_MOUNTS_LOCATION, data["mounts"]))
+
+    if len(declared) > 1:
+        locations = " and ".join(location for location, _ in declared)
+        msg = (
+            f"sphinx-mounts: {toml_path} declares mounts in two places: "
+            f"{locations}. Keep exactly one — merging them silently, or "
+            f"picking a winner, would make the effective mount list depend on "
+            f"a precedence rule nobody reading the file can see. "
+            f"{NAMESPACED_MOUNTS_LOCATION} is the recommended spelling."
+        )
+        raise TomlConfigError(msg)
+    if not declared:
+        return None
+
+    location, raw_mounts = declared[0]
+    if location == TOP_LEVEL_MOUNTS_LOCATION:
+        msg = (
+            f"sphinx-mounts: `{TOP_LEVEL_MOUNTS_LOCATION}` in {toml_path} is "
+            f"deprecated; rename the table header to "
+            f"`{NAMESPACED_MOUNTS_LOCATION}`. Nothing else changes — the keys, "
+            f"path anchoring and validation are identical. Suppress with "
+            f'suppress_warnings = ["mounts.deprecated_location"] if you cannot '
+            f"migrate yet."
+        )
+        log_warning(logger, msg, "deprecated_location")
     if not isinstance(raw_mounts, list):
         msg = (
-            f"sphinx-mounts: top-level `mounts` in {toml_path} must be an "
+            f"sphinx-mounts: `{location}` in {toml_path} must be an "
             f"array of tables; got {type(raw_mounts).__name__}."
         )
         raise TomlConfigError(msg)
     for index, entry in enumerate(raw_mounts):
         if not isinstance(entry, dict):
             msg = (
-                f"sphinx-mounts: `mounts[{index}]` in {toml_path} must be a "
-                f"table; got {type(entry).__name__}."
+                f"sphinx-mounts: entry {index} of `{location}` in "
+                f"{toml_path} must be a table; got {type(entry).__name__}."
             )
             raise TomlConfigError(msg)
-
-    _anchor_toml_paths(raw_mounts, toml_path.parent)
     return raw_mounts
 
 

@@ -32,7 +32,7 @@ A TOML file is the opposite:
   shelling out to Python.
 - **Composable**: the same ``ubproject.toml`` can carry sections owned by
   different tools (``[needs]`` for `Sphinx-Needs`_, ``[codelinks]`` for
-  `sphinx-codelinks`_, ``[[mounts]]`` for sphinx-mounts, etc.). The
+  `sphinx-codelinks`_, ``[[source.mounts]]`` for sphinx-mounts, etc.). The
   project has one source of truth.
 - **Diffable & reviewable**: a structured TOML diff is easier to review
   than a Python diff that may include expressions and side-effects.
@@ -48,6 +48,20 @@ A TOML file is the opposite:
 For a side-by-side comparison with the generic, driver-based
 ``sphinx-collections`` extension that solves a superset of the same
 problem, see :ref:`vs-sphinx-collections` in the motivation page.
+
+.. _writing-a-second-reader:
+
+.. admonition:: Writing a second reader?
+   :class: tip
+
+   "Declarative TOML so any language can read the mapping" is only a real
+   promise if the mapping is written down. `design/mapping-contract.md
+   <https://github.com/useblocks/sphinx-mounts/blob/main/design/mapping-contract.md>`__
+   in the repository is the normative specification: per-key types and
+   defaults, path anchoring and resolution, the pattern dialect, docname
+   derivation including suffix iteration order, every collision tie-break,
+   and the warning subtypes declared as a stable contract. This page is
+   the user-facing guide; that document is the one to implement against.
 
 The conf.py-side configuration
 ------------------------------
@@ -94,16 +108,22 @@ docnames of the form ``<mount_at>/<tail>``; whether or not a
 directory exists at that path inside ``srcdir`` is irrelevant to
 discovery.
 
-**Mounting never shadows host files.** On Linux, mounting onto a
+**Mounting never shadows anything.** On Linux, mounting onto a
 non-empty directory hides the original contents until you unmount.
 In sphinx-mounts, a mount that would produce a docname already
 provided by the host project (or by an earlier mount) is **skipped
 entirely** with a ``docname conflict`` warning — the colliding file
 *and* its siblings, so the host project stays completely untouched.
-Nothing is silently hidden; conflicts have to be resolved by the
-author (rename one side, narrow the mount's ``include`` /
-``exclude``, or move the host file). See :ref:`warnings-and-errors`
-for how to suppress or escalate the warning.
+The same applies when two files of the *same* mount land on one
+docname, which happens in both modes: two listed files sharing a
+basename (file-list mode flattens the namespace), or two files
+differing only in registered suffix such as ``index.rst`` beside
+``index.md``. Nothing is silently hidden in either case; conflicts have
+to be resolved by the author (rename one side, drop an entry from
+``files``, narrow a directory mount's ``include`` / ``exclude``, or move
+the host file). The warning names both contributing paths, how many files
+the skip drops, and the remedy that applies to that mount's mode. See
+:ref:`warnings-and-errors` for how to suppress or escalate it.
 
 **There is no "unmount".** The mount mapping is read once per
 ``sphinx-build`` invocation and has no runtime lifecycle. Removing a
@@ -120,7 +140,9 @@ materialize a staging tree.
 The TOML schema
 ---------------
 
-``ubproject.toml`` declares a top-level ``[[mounts]]`` array of tables.
+``ubproject.toml`` declares a ``[[source.mounts]]`` array of tables (see
+:ref:`where-mounts-live`, and note that the old top-level ``[[mounts]]``
+spelling is deprecated).
 Each table is one mount entry, and is in one of two **mutually
 exclusive** modes:
 
@@ -137,11 +159,11 @@ and never neither.
    # ubproject.toml
 
    # Directory mode: walk an entire tree.
-   [[mounts]]
+   [[source.mounts]]
    dir = "/abs/path/to/bazel-bin/docs/api-foo"
    mount_at = "_generated/api-foo"
 
-   [[mounts]]
+   [[source.mounts]]
    dir = "../shared-bundles/api-bar"
    mount_at = "_generated/api-bar"
    include = ["**/*.rst"]                # optional allowlist
@@ -149,7 +171,7 @@ and never neither.
    gitignore = false                     # opt out of the bundle's .gitignore
 
    # File-list mode: cherry-pick individual files.
-   [[mounts]]
+   [[source.mounts]]
    files = [
      "/abs/path/to/release-notes/2026-q1.md",
      "/abs/path/to/release-notes/2026-q2.md",
@@ -232,10 +254,11 @@ and never neither.
        ``source_discover.gitignore``.
    * - ``attach_to``
      - no
-     - Host docname whose toctree should receive the mount entry. When
-       set, the extension wires ``{mount_at}/{entry_doc}`` into that
-       doc's toctree automatically. See
-       :ref:`toctree-integration` below.
+     - Docname whose toctree should receive the mount entry — usually a
+       host doc, but another mount's document works too (see
+       :ref:`nested-mounts`). When set, the extension wires
+       ``{mount_at}/{entry_doc}`` into that doc's toctree automatically.
+       See :ref:`toctree-integration` below.
    * - ``toctree_index``
      - no
      - 0-based index selecting *which* toctree in ``attach_to`` to
@@ -262,8 +285,8 @@ and never neither.
    * - ``path_check``
      - no
      - How to react when a directive inside a mounted doc references a
-       file outside the bundle root. One of ``"error"`` (default),
-       ``"warn"``, or ``"off"``. See :ref:`path-confinement` below.
+       file outside the bundle root. One of ``"warn"`` (default),
+       ``"error"``, or ``"off"``. See :ref:`path-confinement` below.
 
 .. _root-mount:
 
@@ -276,7 +299,7 @@ project as-is, with no prefix renaming:
 
 .. code-block:: toml
 
-   [[mounts]]
+   [[source.mounts]]
    dir = "./api"
    # mount_at omitted — files under ./api appear as bare docnames
    # (e.g. ./api/tutorial.rst → docname "tutorial").
@@ -314,7 +337,7 @@ directory at ``<srcdir>/<mount_at>/`` skip the whole mount with a
 
 .. code-block:: toml
 
-   [[mounts]]
+   [[source.mounts]]
    dir = "/path/to/bundle"
    mount_at = "_generated/api-foo"
    strict_mount_at = true
@@ -352,7 +375,7 @@ build time*, only when the mount is actually present:
 
 .. code-block:: toml
 
-   [[mounts]]
+   [[source.mounts]]
    dir = "/path/to/bazel-bin/docs/api-foo"
    mount_at = "_generated/api-foo"
    attach_to = "index"          # extend the toctree in index.rst
@@ -369,9 +392,63 @@ shorter) toctree:
       :maxdepth: 2
 
 The extension appends ``_generated/api-foo/index`` to that toctree
-during the build. When the mount is absent, ``mounts_from_toml`` resolves
-no mounts and the host builds cleanly with whatever was already in the
-toctree.
+during the build. When the mount's entry doc is absent — the bundle was
+never built, or its directory is empty — nothing is appended and the host
+builds cleanly with whatever was already in the toctree.
+
+That holds on **incremental** builds too, in both directions: a bundle
+that appears is wired in on the very build it appears, and a bundle that
+disappears is unwired on the build it disappears. Neither needs
+``sphinx-build -E``. See :ref:`incremental-rebuilds` for the mechanism and
+its one caveat.
+
+.. _nested-mounts:
+
+Attaching one mount into another
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``attach_to`` names a docname, and a *mounted* docname is a perfectly
+good one. So a mount can be wired into another mount's toctree, which
+lets an outer bundle act as the section index for a family of inner
+bundles without the host project having to know about any of them:
+
+.. code-block:: toml
+
+   [[source.mounts]]
+   dir = "../bundles/api"           # provides _generated/api/index
+   mount_at = "_generated/api"
+   attach_to = "index"              # ...wired into the HOST index
+
+   [[source.mounts]]
+   dir = "../bundles/api-foo"
+   mount_at = "_generated/api/foo"
+   attach_to = "_generated/api/index"   # ...wired into the OUTER MOUNT
+
+Two things to keep in mind. Declaration order does not matter for
+wiring — the injection happens while each document is read, not while
+the config is parsed — but it *does* decide which mount wins a
+:ref:`docname conflict <mount-semantics>`, since the first provider of a
+docname keeps it.
+
+.. warning::
+
+   If the outer mount is skipped or absent — the normal state of a bundle
+   whose upstream build has not run — the inner mount's ``attach_to`` target
+   does not exist. The inner bundle is still mounted, just not referenced
+   from anywhere, and that costs **N + 1 warnings**: one
+   ``mounts.attach_to_missing``, plus one ``toc.not_included`` for *every*
+   file of the inner bundle. Under ``sphinx-build -W`` a composed-mounts
+   layout therefore fails whenever the outer bundle is missing.
+
+   Unlike the out-of-range ``toctree_index`` case, the extension cannot
+   collapse this to a single warning by marking the docs as orphans: Sphinx
+   emits the ``toc.not_included`` warnings inside ``check_consistency()``
+   *before* it fires the ``env-check-consistency`` event this extension
+   listens on, so by the time the missing target is known the warnings have
+   already been reported. (The ``toctree_index`` path can do it because it
+   runs during the read phase.) Either add ``:orphan:`` to the inner
+   bundle's files, or expect N + 1 warnings while the outer bundle is
+   absent.
 
 Picking a specific toctree
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -382,15 +459,19 @@ top-level navigation toctree plus per-section sub-toctrees. Use
 
 .. code-block:: toml
 
-   [[mounts]]
+   [[source.mounts]]
    dir = "/path/to/api-foo"
    mount_at = "_generated/api-foo"
    attach_to = "index"
    toctree_index = 1            # extend the second toctree in index.rst
 
 If ``toctree_index`` exceeds the number of toctrees actually present in
-``attach_to``, the build fails with an explicit ``ExtensionError`` —
-silent misconfiguration would leave the mount unreferenced.
+``attach_to``, a ``mounts.toctree_index`` warning is emitted and the mount
+is left unwired — the host doc is never restructured to fit an index the
+author did not write. Its documents are marked as orphans so the single
+warning is not joined by one "not included in any toctree" per file. Use
+``sphinx-build -W`` to make the misconfiguration fail the build; see
+:ref:`warnings-and-errors`.
 
 If ``attach_to`` is set but the doc contains **no** toctree at all, the
 extension adds one at the **end** of the first top-level section and
@@ -410,7 +491,7 @@ different entry point (say ``overview.rst``), set ``entry_doc``:
 
 .. code-block:: toml
 
-   [[mounts]]
+   [[source.mounts]]
    dir = "../shared-bundles/api-bar"
    mount_at = "_generated/api-bar"
    attach_to = "index"
@@ -437,7 +518,7 @@ makes ``attach_to`` append *every* listed file to the host toctree, in
 
 .. code-block:: toml
 
-   [[mounts]]
+   [[source.mounts]]
    files = [
      "../fragments/note-one.rst",
      "../fragments/note-two.rst",
@@ -458,6 +539,74 @@ enforced at config validation:
   flag has nothing to do.
 - **Mutually exclusive with ``entry_doc``.** ``attach_each`` attaches all
   files, so a single entry doc is meaningless; setting both is an error.
+
+.. _where-mounts-live:
+
+Where the mounts array lives: ``[[source.mounts]]``
+---------------------------------------------------
+
+Declare the array of tables under ``[source]``:
+
+.. code-block:: toml
+
+   # ubproject.toml
+   [[source.mounts]]
+   dir = "../shared-bundles/api-bar"
+   mount_at = "_generated/api-bar"
+
+``[source]`` is the table that owns source *discovery* in the
+``ubproject.toml`` vocabulary shared with sibling tooling, which is what a
+mount is, and namespacing keeps the file's root from growing into a flat
+bag of keys.
+
+.. deprecated:: next
+
+   The original top-level ``[[mounts]]`` spelling still loads, identically
+   — same keys, same :ref:`path anchoring <path-anchoring>`, same
+   validation, same :ref:`conf.py fallback <conf-py-fallback>` semantics —
+   but it now emits a ``mounts.deprecated_location`` warning. **Migrating
+   is a rename of the table header and nothing else:**
+
+   .. code-block:: diff
+
+      -[[mounts]]
+      +[[source.mounts]]
+       dir = "../shared-bundles/api-bar"
+       mount_at = "_generated/api-bar"
+
+   The reason is not aesthetics. Other tools read this same file, and they
+   honour only ``[[source.mounts]]``. Two readers disagreeing about which
+   tables count is precisely the divergence the
+   :ref:`mapping contract <writing-a-second-reader>` exists to prevent — an
+   editor showing a page the build does not, or the reverse.
+
+   If you cannot migrate yet, and especially if you build with ``-W`` (where
+   any new warning is a hard failure), suppress just this one:
+
+   .. code-block:: python
+
+      # conf.py
+      suppress_warnings = ["mounts.deprecated_location"]
+
+   That leaves every other mount warning escalating as before. Removal of
+   the top-level spelling is not scheduled here.
+
+.. warning::
+
+   Declaring **both** in one file is a hard configuration error naming
+   both locations. Picking a winner (or merging the two) would make the
+   effective mount list depend on a precedence rule that nobody reading
+   the file can see.
+
+.. note::
+
+   ``[source]`` keys other than ``mounts`` are **not** read by
+   sphinx-mounts, and a mount does not inherit anything from them. In
+   particular ``[source].include`` / ``[source].exclude`` (owned by other
+   tools) are a different pattern dialect from a mount's own
+   ``include`` / ``exclude`` — see :ref:`file-discovery`. Nesting the
+   array inside ``[source]`` is a naming decision, not an inheritance
+   one.
 
 .. _conf-py-fallback:
 
@@ -484,8 +633,19 @@ cannot adopt a TOML file yet.
        },
    ]
 
-If both ``ubproject.toml`` and ``mounts`` in ``conf.py`` are present, the
-TOML file wins.
+The precise rule is that the TOML wins when it **declares mounts** — not
+merely when the file exists:
+
+- The TOML declares a mounts array (in either
+  :ref:`location <where-mounts-live>`) → the TOML wins and ``conf.py``'s
+  ``mounts`` is ignored.
+- The TOML declares an **empty** array (``mounts = []``) → that is still a
+  declaration, and a deliberate one: the project has no mounts, and
+  ``conf.py``'s list is switched off.
+- The TOML declares no mounts key at all → ``conf.py``'s ``mounts`` still
+  applies. This is the common case for a ``ubproject.toml`` that exists
+  only to configure *other* tools, and it means adding such a file to a
+  project never silently disables its mounts.
 
 .. _path-anchoring:
 
@@ -506,10 +666,36 @@ never to the current working directory of the build:
   ``confdir`` (the directory that holds ``conf.py``). This matches
   Sphinx's own conventions for ``conf.py``-relative paths.
 
-Absolute paths are taken as-is in both cases. A path-resolution rule
-that surprises is worse than one that is verbose, so prefer absolute
-paths (or the TOML-anchored form) when a project is bundled across
-unusual directory layouts.
+Once anchored, **every** ``dir`` and ``files`` path is resolved: made
+absolute, ``..`` segments collapsed, and symlinks followed. That applies to
+paths that were already absolute too. Resolution is what makes
+:ref:`path confinement <path-confinement>` correct for a bundle reached
+through a symlink — the canonical Bazel case, where ``bazel-bin`` is a
+symlink into the execroot — but it also means warnings and messages name
+the resolved location rather than the path you wrote. A mount configured as
+``bazel-bin/docs/api-foo`` is reported by its execroot path.
+
+A path-resolution rule that surprises is worse than one that is verbose,
+so prefer absolute paths (or the TOML-anchored form) when a project is
+bundled across unusual directory layouts.
+
+.. note::
+
+   Because the resolved, absolute paths are what the extension hands to
+   Sphinx as the ``mounts`` config value, **relocating or renaming the
+   checkout changes that value and forces a full environment rebuild**,
+   even when nothing about the project actually changed. That is the same
+   mechanism that makes editing ``ubproject.toml`` correctly invalidate the
+   cache, so it is a deliberate trade rather than an oversight. Editing
+   only *comments* in the TOML changes nothing and correctly rebuilds
+   nothing.
+
+``mounts_from_toml`` itself is documented as a path relative to
+``confdir``, and that is how it should be used. It does also accept an
+absolute path, and a relative one may climb out of ``confdir`` with
+``..``; neither is rejected. Keep in mind that the TOML's own directory
+then becomes the anchor for the mount paths inside it, which is easy to
+lose track of once the file lives outside the documentation tree.
 
 .. _source-formats:
 
@@ -532,7 +718,7 @@ With ``myst_parser`` enabled, a mount may contain Markdown files:
 .. code-block:: toml
 
    # ubproject.toml
-   [[mounts]]
+   [[source.mounts]]
    dir = "../shared-bundles/release-notes"
    mount_at = "_generated/release-notes"
 
@@ -576,13 +762,62 @@ Walk policy used by sphinx-mounts:
   ``bazel-bin/docs/`` must still see every generated file.
 - The user's global git config and ``.git/info/exclude`` are **not**
   consulted, so builds are reproducible across machines.
-- Hidden entries (dotfiles, ``.git/``) are skipped.
+- Hidden entries (dotfiles, ``.git/``) are skipped. File-list mode has no
+  walker, so it has no such rule — but a listed file whose whole name is a
+  suffix (``.rst``) would have no docname at all, and is rejected with
+  ``mounts.empty_docname``.
 - ``include`` entries are added as positive gitignore-style overrides
   (allowlist): if non-empty, only files matching at least one
   pattern reach Sphinx. ``exclude`` entries are added as negated
   overrides (``!pattern``). Both lists are evaluated relative to
   ``dir``. Patterns like ``**/*.rst``, ``internal/**``, or
   ``draft.rst`` work as you would expect from a ``.gitignore`` file.
+
+Both keys, and ``gitignore``, are read **only in directory mode**. A
+file-list mount has no walker — the ``files`` list *is* the selection — so
+setting ``include`` or ``exclude`` on one has no effect at all, and is
+reported as ``mounts.ignored_option``. To filter a tree, use ``dir``.
+
+The override list is **last-match-wins**, which is the one place the
+gitignore intuition misleads: a broad ``exclude`` beats a narrow
+``include`` regardless of the order the keys appear in the TOML, because
+all ``include`` patterns are added before any ``exclude`` pattern. So
+
+.. code-block:: toml
+
+   [[source.mounts]]
+   dir = "../bundle"
+   mount_at = "_g/b"
+   include = ["keep.rst"]
+   exclude = ["**/*.rst"]
+
+mounts **nothing**. To keep one file out of a broad exclude, narrow the
+exclude rather than trying to out-specify it with an include.
+
+.. _docname-derivation:
+
+How a docname is derived
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+A file's docname is ``mount_at`` plus a *tail*, and the tail is the file's
+path with one matched source suffix removed:
+
+- **Directory mode**: the tail is the file's path relative to ``dir``, so
+  the bundle's directory structure is preserved.
+- **File-list mode**: the tail is the file's *basename*. Subdirectories in
+  the listed paths are dropped, giving a flat namespace under
+  ``mount_at`` — which is why two listed files with the same basename
+  collide.
+
+The suffix removed is the **first** entry of
+:confval:`sphinx:source_suffix` that the filename ends with, in the order
+the parsers registered them — not the longest match. That is exactly what
+Sphinx core does for the host ``srcdir``, so mounted and host files behave
+alike, but it does mean a multi-dot suffix can be partly stripped: with
+``source_suffix`` ordered ``.rst``, ``.txt``, ``.rst.txt``, the file
+``a.rst.txt`` becomes the docname tail ``a.rst`` because ``.txt`` matched
+first. If a project registers overlapping suffixes, register the longer
+ones first.
 
 Bundle discipline
 -----------------
@@ -592,6 +827,12 @@ Each mount should be a *self-contained* tree of source files: relative
 on host project labels or substitutions. This guarantees the bundle is
 reusable across host projects and that the IDE/language-server view of
 the project matches the build view.
+
+**dir** must not contain the host ``srcdir``. Nothing detects this, and
+no collision warning can fire — the docnames differ, because every host page
+simply gains a second docname under ``mount_at``. The symptom is the whole
+host project appearing twice in the output. Point ``dir`` at the bundle, not
+at an ancestor of the documentation tree.
 
 **Single attachment point.** This rule applies to both directory and
 file-list mounts: the extension auto-wires *only* the ``entry_doc``
@@ -620,13 +861,49 @@ against the document's own location. For a mounted doc, that location is
 the bundle on disk, so a relative reference resolves *inside the bundle*,
 exactly as it would when the bundle is built standalone.
 
-Two reference shapes escape the bundle root:
+**What the bundle root is.** In directory mode it is ``dir`` — one root.
+In file-list mode the mount has one root **per listed file**: the parent
+directory of each entry in ``files``, with duplicates collapsed (several
+entries in one directory contribute one root) and ``files`` order preserved.
+A reference is inside the bundle when it is under **any** of them.
+
+That union is deliberately bounded on both sides:
+
+- It is wide enough to fix the asymmetry a per-*document* rule had. A mount
+  listing ``rn/index.rst`` and ``rn/notes/2026-q1.rst`` has the roots
+  ``rn/`` and ``rn/notes/``, so ``notes/2026-q1.rst`` may reference
+  ``../shared.txt`` — that file is under ``rn/``, a directory the mount
+  named. Confining each document to its own parent instead made the verdict
+  depend on how deep a file happened to sit: the reference *down* from
+  ``index.rst`` into ``notes/`` passed while the mirror-image reference *up*
+  from ``notes/2026-q1.rst`` was rejected.
+- It is narrow enough that it can never admit a directory you did not name.
+  In particular it is **not** the common ancestor of the listed files. An
+  ancestor is driven arbitrarily wide by the ``files`` list itself: two
+  entries in sibling subtrees would make their shared parent the root, and
+  two entries on unrelated filesystem branches would make it ``/`` — at
+  which point ``path_check`` permits every file on the machine.
+
+So listing files from unrelated trees widens the bundle by exactly those
+trees' directories, and nothing else.
+
+Bundle roots are always **resolved** (symlinks followed) before
+comparison, and so are the references being checked, so a bundle reached
+through a symlinked directory is not an escape. This is what makes the
+Bazel layout work, where ``bazel-bin`` is itself a symlink. The flip side
+is cosmetic: warnings name the *resolved* path, which for a Bazel mount is
+a deep execroot path rather than the ``bazel-bin/...`` path you wrote.
+
+Three reference shapes escape the bundle root:
 
 - A **leading slash** (``/foo``) is "absolute from the source root" — for
   a mounted doc that is the **host** ``srcdir``, not the bundle. The same
   bundle would then read a different file in every host project.
 - A path that **climbs out** with ``..`` (e.g. ``../../foo``) resolves to
   a location above the bundle root.
+- A **symlink inside the bundle whose target is outside it**. The path
+  written in the directive looks perfectly local; only its resolved form
+  reveals the escape, which is why the warning says so explicitly.
 
 Either way the bundle is no longer self-contained, and the outside file is
 dragged into the host build — for asset directives Sphinx even copies it
@@ -637,21 +914,83 @@ with the host project's own files.
 
 .. code-block:: toml
 
-   [[mounts]]
+   [[source.mounts]]
    dir = "/path/to/bundle"
    mount_at = "_generated/api-foo"
-   path_check = "error"   # default — fail the build on any escape
+   path_check = "error"   # opt in to a hard stop without -W
 
-- ``"error"`` (default): an escaping reference fails the build, naming the
-  doc, the resolved path, and the bundle root.
-- ``"warn"``: log a warning instead (escalates to an error under
-  ``sphinx-build -W``).
+- ``"warn"`` (default): log a ``mounts.path_escape`` warning naming the doc,
+  the recorded and resolved paths, and the mount's bundle root(s). Like every
+  other mount warning it is suppressible, and ``sphinx-build -W`` escalates it
+  to a build failure — which is how a CI job turns it into a gate.
+- ``"error"``: abort the build immediately instead. Use it where a hard stop
+  is wanted without ``-W``.
 - ``"off"``: disable the check for this mount.
+
+``"warn"`` is the default because it is what the rest of this extension does:
+:ref:`warnings-and-errors` states the doctrine that every mount-specific
+problem is a typed, suppressible warning which ``-W`` turns into a failure,
+and an escaping reference is a mount-specific problem like any other. A hard
+default also could not deliver the guarantee it implied — see the second limit
+below.
 
 The check is directive-agnostic: it inspects the files Sphinx records as
 dependencies of each mounted doc, so it covers every file-referencing
 directive — including ones from third-party extensions — without
 enumerating them.
+
+Two limits are worth knowing, because both follow from *where* in the
+build the check runs (``env-check-consistency``) and neither is a bug you
+can configure away.
+
+**It detects, it does not prevent.** By the time the check runs, the
+offending doc has already been read and parsed, and its doctree and the
+environment have been written to disk. For content directives
+(``include``, ``literalinclude``, ``csv-table``, ``raw``) the outside
+text is therefore already inside ``.doctrees``. What a *failing* build
+prevents — ``path_check = "error"``, or the default under ``-W`` — is the
+*output*: it stops before the write phase, so no escaped asset is copied into
+``_images`` / ``_downloads`` and no HTML ships. Treat ``path_check`` as a gate
+on what gets published, not as a sandbox on what gets read.
+
+**It is not evaluated on a build that reads nothing.** Sphinx runs the
+consistency checks only when at least one document was read
+(``if updated_docnames:`` in its builder), so an unchanged re-run prints
+``no targets are out of date`` and skips them. What that means for a second
+build depends on the mode:
+
+- With the default ``"warn"``, a re-run over an untouched tree is
+  **silent** — it reports success for a project the previous run flagged. So
+  make the *first* build the CI gate, and use ``-E`` (or a clean output
+  directory) if a run has to be self-contained. The same applies under
+  ``-W``: the escalation only fires on a build that actually re-read the doc.
+- With ``path_check = "error"`` there is nothing to slip through: the raised
+  error propagates out of the build, and Sphinx deletes the cached
+  environment on its way out. Every subsequent run therefore starts from a
+  fresh environment, reads everything, and fires the check again. The failure
+  is sticky until it is fixed. That is the one thing ``"error"`` buys over
+  the default plus ``-W``.
+
+This is also why a hard *default* was the wrong choice: it read as a standing
+invariant and never was one.
+
+A build where only the *host* changed does still fire the check for every
+mounted doc, in both modes, because dependencies persist in the environment
+and the bundle roots are recomputed on each build.
+
+.. note::
+
+   ``path_check`` is about references that *leave* the bundle. It says
+   nothing about a much likelier collision *inside* one: two bundles (or a
+   bundle and the host) that both ship ``diagram.png`` produce
+   ``_images/diagram.png`` and ``_images/diagram1.png``, and which side
+   gets the unsuffixed name depends on the order Sphinx reads the
+   documents. That order follows the docnames, so **renaming or adding a
+   mount can change the published asset URL of a page that has nothing to
+   do with it**. Sphinx assigns those names, not sphinx-mounts, so there
+   is nothing to configure here — but give bundles distinctive asset names
+   (or a per-bundle asset subdirectory) if anything deep-links to
+   ``_images``.
 
 .. _needs-file-references:
 
@@ -705,7 +1044,7 @@ List it under ``exclude``:
 
 .. code-block:: toml
 
-   [[mounts]]
+   [[source.mounts]]
    dir = "../showcase/needs"
    mount_at = "_generated/showcase/needs"
    exclude = ["report-template.rst"]
@@ -743,9 +1082,20 @@ at once), and escalated to a failed build:
      - Meaning
    * - ``mounts.attach_to_missing``
      - ``attach_to`` references a docname that does not exist
+   * - ``mounts.deprecated_location``
+     - the mounts array is declared as top-level ``[[mounts]]`` rather than
+       ``[[source.mounts]]``; it still loads, identically
    * - ``mounts.docname_conflict``
      - a mount would shadow a docname already provided by the host
-       project or an earlier mount; the whole mount is skipped
+       project or an earlier mount, **or** two of the mount's own files
+       map to one docname; the whole mount is skipped
+   * - ``mounts.empty_docname``
+     - a file-list entry's name is nothing but a registered suffix (e.g. a
+       file called ``.rst``), so it has no docname; the whole mount is
+       skipped
+   * - ``mounts.ignored_option``
+     - a file-list mount sets ``include`` or ``exclude``, which only
+       directory mounts read; the keys have no effect
    * - ``mounts.missing_path``
      - a configured ``dir`` / ``files`` path does not exist on disk;
        the whole mount is skipped
@@ -753,8 +1103,8 @@ at once), and escalated to a failed build:
      - ``strict_mount_at`` is set and the host already has a directory
        at the mount point; the whole mount is skipped
    * - ``mounts.path_escape``
-     - a mounted doc references a file outside its bundle root (with
-       ``path_check = "warn"``)
+     - a mounted doc references a file outside its bundle root (the default
+       ``path_check = "warn"``; ``"error"`` aborts instead of warning)
    * - ``mounts.toctree_index``
      - ``toctree_index`` exceeds the number of toctrees in the
        ``attach_to`` document; the mount is left unwired and its docs are

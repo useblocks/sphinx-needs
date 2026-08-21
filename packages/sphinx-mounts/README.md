@@ -43,7 +43,7 @@ extensions = ["sphinx_mounts"]
 Describe your mounts in `ubproject.toml` next to `conf.py`:
 
 ```toml
-[[mounts]]
+[[source.mounts]]
 dir = "/abs/path/to/bazel-bin/docs/api-foo"
 mount_at = "_generated/api-foo"
 ```

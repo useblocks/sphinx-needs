@@ -12,11 +12,11 @@ a parser extension registers.
    :alt: Two external source bundles (one under bazel-out/, one in a sibling
          directory outside the docs folder) appear in the host Sphinx
          project as virtual mount slots (docs/api/, docs/shared/) declared
-         by [[mounts]] entries in ubproject.toml. A second arrow shows
+         by [[source.mounts]] entries in ubproject.toml. A second arrow shows
          ubproject.toml driving the toctree attachment in index.rst.
    :align: center
 
-   ``[[mounts]]`` entries in ``ubproject.toml`` map external directories
+   ``[[source.mounts]]`` entries in ``ubproject.toml`` map external directories
    onto docname slots in the host project. Those slots (``docs/api/``,
    ``docs/shared/``) do **not** exist on disk — sphinx-mounts populates
    them virtually and the host's ``index.rst`` toctree attaches them into

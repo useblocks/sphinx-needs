@@ -20,11 +20,27 @@ from sphinx_mounts.config import (
     parse_mounts,
 )
 from sphinx_mounts.logging import log_warning
-from sphinx_mounts.mounter import _MountAwareProject, install_mount_aware_project
+from sphinx_mounts.mounter import (
+    DocRoot,
+    _is_within_any,
+    _MountAwareProject,
+    install_mount_aware_project,
+)
 
 logger = logging.getLogger(__name__)
 
 _CACHED_KEY = "_sphinx_mounts_parsed"
+
+#: Name of the :class:`~sphinx.environment.BuildEnvironment` attribute holding
+#: the previous build's toctree-wiring signature.
+#:
+#: ``env-get-outdated`` compares the wiring the current build *would* produce
+#: against this value, so an ``attach_to`` host doc is re-read exactly when a
+#: mount's contribution to its toctree changed. The attribute travels inside
+#: ``environment.pickle`` — ``BuildEnvironment.__getstate__`` clears only its
+#: own unpickleable fields and keeps everything else — which is what lets the
+#: comparison span two builds.
+_WIRING_SIGNATURE_ATTR = "sphinx_mounts_wiring_signature"
 
 #: Default file name for the declarative TOML configuration. The file is
 #: resolved relative to Sphinx's ``confdir``. ``ubproject.toml`` is the
@@ -40,10 +56,13 @@ def _on_load_toml(app: Sphinx, config: Config) -> None:
     """Load mount entries from the TOML config file, if present.
 
     Runs on ``config-inited`` *before* :func:`_on_config_inited`. If
-    ``mounts_from_toml`` resolves to an existing file, its top-level
-    ``[[mounts]]`` array replaces any value of ``mounts`` set in
-    ``conf.py``. If the file does not exist, ``config.mounts`` is left
-    untouched and any legacy conf.py-style value is used instead.
+    ``mounts_from_toml`` resolves to an existing file, the mounts array it
+    declares — ``[[source.mounts]]`` or top-level ``[[mounts]]``, see
+    :func:`~sphinx_mounts.config.load_mounts_from_toml` for the two spellings
+    and the rule against declaring both — replaces any value of ``mounts``
+    set in ``conf.py``. If the file does not exist, or declares no mounts
+    array at all, ``config.mounts`` is left untouched and any legacy
+    conf.py-style value is used instead.
     """
     toml_setting = getattr(config, "mounts_from_toml", None)
     if not toml_setting:
@@ -127,16 +146,7 @@ def _on_doctree_read(app: Sphinx, doctree: nodes.document) -> None:
     toctrees: list[addnodes.toctree] = list(doctree.findall(addnodes.toctree))
 
     for index, mount in targets:
-        entries = _mount_toctree_entries(mount, index, mount_docnames)
-        # Gate on what THIS mount actually produced: a mount that was
-        # skipped entirely (missing bundle, docname conflict, strict
-        # mount_at violation) or whose entry doc is not among its files
-        # must not inject a reference into the host toctree — a dangling
-        # entry would be an un-suppressible ``toc.not_readable`` /
-        # ``toc.circular`` warning that modifies the host project despite
-        # the problem.
-        produced = set(mount_docnames.get(index, []))
-        entries = [e for e in entries if e in produced]
+        entries = _wired_entries(mount, index, mount_docnames)
         if not entries:
             continue
         target = _select_or_create_toctree(
@@ -183,6 +193,148 @@ def _mount_toctree_entries(
     if mount.mount_at is None:
         return [mount.entry_doc]
     return [f"{mount.mount_at}/{mount.entry_doc}"]
+
+
+def _wired_entries(
+    mount: MountConfig, index: int, mount_docnames: dict[int, list[str]]
+) -> list[str]:
+    """Return the entries ``mount`` may actually wire into its host toctree.
+
+    This is :func:`_mount_toctree_entries` gated on what the mount really
+    produced during ``discover()``. A mount that was skipped entirely
+    (missing bundle, docname conflict, strict ``mount_at`` violation) or
+    whose ``entry_doc`` is not among its files must not inject a reference
+    into the host toctree — a dangling entry would be an un-suppressible
+    ``toc.not_readable`` / ``toc.circular`` warning, i.e. the mount would
+    modify the host project despite the problem.
+
+    The same value is what :func:`_wiring_signature` compares across
+    builds, so the "would wire" decision is made in exactly one place.
+    """
+    produced = set(mount_docnames.get(index, []))
+    entries = _mount_toctree_entries(mount, index, mount_docnames)
+    return [entry for entry in entries if entry in produced]
+
+
+def _wiring_signature(
+    parsed: tuple[MountConfig, ...], mount_docnames: dict[int, list[str]]
+) -> dict[int, tuple[str, tuple[str, ...]]]:
+    """Summarise the toctree wiring the current mount state implies.
+
+    Maps the config-list index of every ``attach_to``-carrying mount to the
+    pair ``(attach_to docname, entries it would inject)``.
+
+    Mounts without ``attach_to`` never touch a host toctree, so they are
+    **omitted entirely**. That omission is the only place the distinction is
+    made: :func:`_on_env_get_outdated` walks this mapping rather than the
+    mount list, so a mount that is not here cannot cause a host doc to be
+    re-read. Keeping it as a single filter is deliberate — a second,
+    redundant check in the handler would be untestable by construction, since
+    nothing could observe its removal.
+
+    Carrying ``attach_to`` in the value rather than looking it up again also
+    means a mount that is re-pointed at a *different* host doc registers as a
+    change.
+
+    **Coupling worth knowing:** the mapping is keyed on the mount's position
+    in the ``mounts`` config list, so inserting or reordering mounts shifts
+    every key. That is safe only because ``mounts`` is registered with
+    ``rebuild="env"`` (see :func:`setup`), which makes Sphinx re-read every
+    document on any change to the config value — including a reorder. The
+    signature therefore only has to survive changes to a bundle's *file set*,
+    which never shift indices. If ``mounts`` ever loses ``rebuild="env"``, or
+    a future mount source stops flowing through a config value, index-keying
+    would silently mis-converge; ``test_mounts_confval_rebuilds_the_env``
+    pins the setting so that cannot happen quietly. For the same reason
+    ``toctree_index`` is not part of the signature.
+    """
+    return {
+        index: (mount.attach_to, tuple(_wired_entries(mount, index, mount_docnames)))
+        for index, mount in enumerate(parsed)
+        if mount.attach_to is not None
+    }
+
+
+def _on_env_get_outdated(
+    app: Sphinx,
+    env: Any,
+    _added: set[str],
+    _changed: set[str],
+    _removed: set[str],
+) -> list[str]:
+    """Report the ``attach_to`` host docs whose mount wiring went stale.
+
+    :func:`_on_doctree_read` can only inject toctree entries into documents
+    Sphinx decided to re-read, and a host doc's own mtime never moves when a
+    *bundle* gains or loses its entry doc (``rebuild="env"`` does not help
+    either — it fires on a change to the ``mounts`` config *value*, not to
+    the bundle's file set). Without this handler the wiring goes permanently
+    stale in both directions: a bundle that disappears leaves a dead
+    ``href`` in the shipped HTML plus a ``toc.not_readable`` warning on every
+    subsequent build, and a bundle that appears is never wired in at all —
+    rendered, but missing from the navigation. Only ``sphinx-build -E``
+    cleared either state.
+
+    So compare the wiring this build would produce against the signature the
+    previous build persisted on the env, and report every changed mount's
+    ``attach_to`` docname as outdated.
+
+    Reporting the host doc outdated has a second, load-bearing effect on a
+    build that only *lost* documents: Sphinx guards both the env pickling
+    and ``check_consistency()`` behind ``if updated_docnames:``, so such a
+    build used to persist nothing and recompute the same "1 removed" for
+    ever. One re-read makes it persist its env and converge. That only works
+    when the ``attach_to`` target actually exists — see the ``found_docs``
+    filtering below — so a mounted docname referenced solely by a
+    hand-written host toctree keeps Sphinx's own removal-only behaviour.
+
+    A missing previous signature means a fresh environment, where every
+    document is read regardless, so nothing is reported and nothing is
+    logged: the signature is simply recorded for the next build to compare
+    against. An environment written by an older version of this extension
+    cannot reach this branch, because adding ``env_version`` to
+    :func:`setup` already invalidates it.
+
+    The ``added`` / ``changed`` / ``removed`` sets Sphinx passes are not
+    consulted — the decision rests entirely on the mount wiring, which is
+    derived from ``discover()`` and not from what Sphinx already considers
+    outdated — so they are named with a leading underscore.
+    """
+    parsed: tuple[MountConfig, ...] = getattr(app, _CACHED_KEY, ())
+    if not parsed:
+        return []
+    mount_docnames: dict[int, list[str]] = getattr(
+        getattr(env, "project", None), "_mount_entry_docnames", {}
+    )
+    current = _wiring_signature(parsed, mount_docnames)
+    previous = getattr(env, _WIRING_SIGNATURE_ATTR, None)
+    setattr(env, _WIRING_SIGNATURE_ATTR, current)
+    if previous is None or previous == current:
+        return []
+    # Walking the signature, not ``parsed``: a mount without ``attach_to`` is
+    # not in it and so cannot reach this loop at all.
+    outdated: list[str] = []
+    for index, entry in current.items():
+        if previous.get(index) == entry:
+            continue
+        attach_to = entry[0]
+        if attach_to not in outdated:
+            outdated.append(attach_to)
+    # Sphinx intersects the returned names with ``env.found_docs`` anyway
+    # (``sphinx/builders/__init__.py``: ``changed.update(set(docs) &
+    # self.env.found_docs)``), so returning a name it will drop is harmless —
+    # but *claiming* to re-read it is not. A mount whose ``attach_to`` is a
+    # typo would otherwise announce "re-reading ['nosuchdoc']" on every build
+    # for ever, an action it cannot perform. The missing target itself is
+    # reported once, by ``_on_check_consistency``.
+    found: frozenset[str] = frozenset(getattr(env, "found_docs", ()))
+    actionable = [docname for docname in outdated if docname in found]
+    if actionable:
+        logger.info(
+            "sphinx-mounts: mount wiring changed — re-reading %r",
+            actionable,
+        )
+    return actionable
 
 
 def _select_or_create_toctree(  # noqa: PLR0913
@@ -254,31 +406,80 @@ def _on_check_path_confinement(app: Sphinx, env: Any) -> None:  # noqa: ARG001
     into the host's ``_images``/``_downloads`` output, risking collisions
     with host files). ``path_check`` selects the reaction per mount.
     """
-    doc_roots: dict[str, tuple[Path, str]] = getattr(
+    doc_roots: dict[str, DocRoot] = getattr(
         getattr(env, "project", None), "_doc_roots", {}
     )
     if not doc_roots:
         return
     srcdir = Path(env.srcdir)
-    for docname, (root, mode) in doc_roots.items():
-        if mode == "off":
+    for docname, doc_root in doc_roots.items():
+        if doc_root.path_check == "off":
             continue
-        resolved_root = root.resolve()
         for dep in env.dependencies.get(docname, ()):
             abs_dep = (srcdir / dep).resolve()
-            if abs_dep == resolved_root or resolved_root in abs_dep.parents:
+            if _is_within_any(doc_root.roots, abs_dep):
                 continue
-            msg = (
-                f"sphinx-mounts: mounted doc {docname!r} references a file "
-                f"outside its bundle root: {abs_dep} is not under {resolved_root}. "
-                f"Mounted bundles must be self-contained — use a path "
-                f"relative to the bundle root (no leading '/', and no '..' "
-                f'climbing above the bundle). Set path_check = "warn" or '
-                f'"off" on the mount to relax this check.'
+            msg = _path_escape_message(
+                docname, dep, abs_dep, doc_root.roots, doc_root.label
             )
-            if mode == "error":
-                raise ExtensionError(msg)
+            if doc_root.path_check == "error":
+                # Log the actionable line FIRST. On Sphinx >= 8.2 every
+                # ``SphinxError`` is rendered by
+                # ``sphinx/_cli/util/errors.py:handle_exception``, which
+                # unconditionally prints Versions / Last Messages / Loaded
+                # Extensions / Traceback blocks and an invitation to open an
+                # issue against Sphinx. Without this line the one sentence the
+                # bundle author needs is buried inside a crash report about
+                # someone else's project.
+                logger.error(msg)
+                # ``modname`` is what makes the header read "Extension error
+                # (sphinx_mounts)" rather than a bare "Extension error", so the
+                # report at least names the extension that objected. Matches
+                # what ``TomlConfigError`` / ``MountConfigError`` pass.
+                raise ExtensionError(msg, modname="sphinx_mounts")
             log_warning(logger, msg, "path_escape", location=docname)
+
+
+def _path_escape_message(
+    docname: str, dep: Any, abs_dep: Path, roots: tuple[Path, ...], label: str
+) -> str:
+    """Compose the ``path_check`` message for one escaping dependency.
+
+    Both the recorded dependency and its resolved form are printed. They can
+    differ in two ways that change what the author has to fix, and printing
+    only the resolved path made the advice misleading in each:
+
+    * Sphinx records the dependency as ``srcdir / rel_fn`` with the ``..``
+      segments still in it, so the resolved path alone hides which directive
+      argument produced it.
+    * A symlink inside the bundle that points outside it is an escape even
+      though the path written in the directive is plainly bundle-relative.
+      Telling that author to avoid a leading ``/`` or ``..`` describes
+      something they never wrote.
+
+    ``label`` names the *mount* whose ``path_check`` fired. "The bundle root"
+    on its own is ambiguous in a project with several mounts, and it is the
+    mount's config block that has to change.
+
+    A file-list mount has one root per listed file's directory, so every one
+    of them is printed: the author needs to see the whole set they could move
+    the file into, not just one arbitrary member of it.
+    """
+    if len(roots) == 1:
+        where = f"which is not under {roots[0]}"
+    else:
+        listed = ", ".join(str(root) for root in roots)
+        where = f"which is not under any of this mount's roots ({listed})"
+    return (
+        f"sphinx-mounts: mounted doc {docname!r} references a file outside its "
+        f"bundle root, which belongs to {label}: the recorded dependency {dep} "
+        f"resolves to {abs_dep}, {where}. Mounted "
+        f"bundles must be self-contained — use a path relative to the bundle "
+        f"root (no leading '/', and no '..' climbing above the bundle). A "
+        f"symlink pointing out of the bundle counts as an escape too, even "
+        f"when the path written in the directive is plainly bundle-relative. "
+        f'Set path_check = "warn" or "off" on the mount to relax this check.'
+    )
 
 
 def _build_toctree_node(parent: str, entry: str) -> addnodes.toctree:
@@ -337,6 +538,10 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.connect("config-inited", _on_load_toml, priority=400)
     app.connect("config-inited", _on_config_inited, priority=500)
     app.connect("builder-inited", _on_builder_inited)
+    # Must run before the read phase: it is what makes an ``attach_to`` host
+    # doc be re-read when a mount's set of wired entries changed, which is
+    # the only way ``_on_doctree_read`` gets a chance to fix the wiring.
+    app.connect("env-get-outdated", _on_env_get_outdated)
     # ``doctree-read`` priority 400 (< 500) places our toctree
     # mutation *before* Sphinx's TocTreeCollector.process_doc, so the
     # collector's pass sees the injected entries and includes them in
@@ -348,6 +553,23 @@ def setup(app: Sphinx) -> dict[str, Any]:
 
     return {
         "version": __version__,
+        # This extension contributes to the pickled build environment, so it
+        # must declare a version Sphinx can fold into ``env.version``:
+        #
+        # * ``env.project`` is an instance of our own ``_MountAwareProject``
+        #   subclass, so the class reference is in ``environment.pickle`` and
+        #   restoring the cache imports it by name;
+        # * ``env-get-outdated`` persists the toctree-wiring signature as an
+        #   env attribute (``_WIRING_SIGNATURE_ATTR``).
+        #
+        # Sphinx sums every extension's ``env_version`` into the value
+        # ``BuildEnvironment.setup`` compares, so bumping this makes stale
+        # ``.doctrees`` caches start a fresh env instead of being restored
+        # into a shape their writer never produced. Bump it whenever what
+        # this extension puts into the env changes — the pickled shape of
+        # ``_MountAwareProject`` (see its ``__getstate__``) or the layout of
+        # the wiring signature.
+        "env_version": 1,
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

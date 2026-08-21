@@ -22,7 +22,7 @@ id_required = true
 # file's directory (docs/), so ``../bazel-bin/bundles/api-foo`` lands
 # at ``tests/example/bazel-bin/bundles/api-foo`` regardless of which
 # OS or working directory the build is invoked from.
-[[mounts]]
+[[source.mounts]]
 dir = "../bazel-bin/bundles/api-foo"
 mount_at = "_generated/api-foo"
 attach_to = "index"
@@ -34,7 +34,7 @@ entry_doc = "index"
 # auto-attach (api-foo) and manual reference (api-bar).
 # ``myst-parser`` (loaded in conf.py) makes ``.md`` part of ``source_suffix``,
 # so the entry doc is ``index.md``.
-[[mounts]]
+[[source.mounts]]
 dir = "../bazel-bin/bundles/api-bar"
 mount_at = "_generated/api-bar"
 
@@ -45,49 +45,49 @@ mount_at = "_generated/api-bar"
 # are plain files on disk (open the folder to see the directive next to the
 # file it references), mounted in place just like the Bazel bundles above.
 # Because every reference is bundle-relative, each survives ``path_check``
-# (default ``"error"``) after mounting. Each entry doc is wired into the
+# (default ``"warn"``) after mounting. Each entry doc is wired into the
 # host ``index`` toctree via ``attach_to``.
-[[mounts]]
+[[source.mounts]]
 dir = "../showcase/literalinclude"
 mount_at = "_generated/showcase/literalinclude"
 attach_to = "index"
 
-[[mounts]]
+[[source.mounts]]
 dir = "../showcase/include"
 mount_at = "_generated/showcase/include"
 attach_to = "index"
 
-[[mounts]]
+[[source.mounts]]
 dir = "../showcase/csv-table"
 mount_at = "_generated/showcase/csv-table"
 attach_to = "index"
 
-[[mounts]]
+[[source.mounts]]
 dir = "../showcase/raw"
 mount_at = "_generated/showcase/raw"
 attach_to = "index"
 
-[[mounts]]
+[[source.mounts]]
 dir = "../showcase/image"
 mount_at = "_generated/showcase/image"
 attach_to = "index"
 
-[[mounts]]
+[[source.mounts]]
 dir = "../showcase/figure"
 mount_at = "_generated/showcase/figure"
 attach_to = "index"
 
-[[mounts]]
+[[source.mounts]]
 dir = "../showcase/graphviz"
 mount_at = "_generated/showcase/graphviz"
 attach_to = "index"
 
-[[mounts]]
+[[source.mounts]]
 dir = "../showcase/uml"
 mount_at = "_generated/showcase/uml"
 attach_to = "index"
 
-[[mounts]]
+[[source.mounts]]
 dir = "../showcase/mermaid"
 mount_at = "_generated/showcase/mermaid"
 attach_to = "index"
@@ -104,7 +104,7 @@ attach_to = "index"
 # orphan page of unrendered Jinja. The bundle's other referenced files
 # (``.puml``, ``.json``) need no exclude: their suffixes are not in
 # ``source_suffix``, so discovery never picks them up.
-[[mounts]]
+[[source.mounts]]
 dir = "../showcase/needs"
 mount_at = "_generated/showcase/needs"
 attach_to = "index"
@@ -122,7 +122,7 @@ exclude = ["report-template.rst"]
 # ``exclude`` / ``gitignore`` do not apply in this mode — the list *is* the
 # filter. The entry doc is wired into the host ``index`` toctree via
 # ``attach_to``, exactly like the directory mounts above.
-[[mounts]]
+[[source.mounts]]
 files = [
   "../release-notes/index.rst",
   "../release-notes/notes/2026-q1.rst",
@@ -139,7 +139,7 @@ attach_to = "index"
 # into the host ``index`` toctree (in list order) instead of a single entry
 # doc — so the fragments need no index to stitch them together and raise no
 # orphan warnings. ``attach_each`` is file-list mode only.
-[[mounts]]
+[[source.mounts]]
 files = ["../fragments/note-one.rst", "../fragments/note-two.rst"]
 mount_at = "_generated/fragments"
 attach_to = "index"
@@ -161,7 +161,7 @@ attach_each = true
 #    ../warnings/bundles/conflicts/index.rst collides with the host's own
 #    index.rst because this mount has no mount_at (a root mount). The WHOLE
 #    mount is skipped — nothing is mounted, so no orphaned docs follow.
-# [[mounts]]
+# [[source.mounts]]
 # dir = "../warnings/bundles/conflicts"
 
 # 2. mounts.missing_path
@@ -169,7 +169,7 @@ attach_each = true
 #    is not checked in). The whole mount is skipped, so a build whose
 #    upstream bundle is absent (e.g. CI that has not run the Bazel build
 #    yet) can still proceed.
-# [[mounts]]
+# [[source.mounts]]
 # dir = "../warnings/bundles/absent"
 # mount_at = "_generated/warnings-absent"
 
@@ -178,7 +178,7 @@ attach_each = true
 #    source_suffix (``.adoc`` is not parsed). The whole mount is skipped;
 #    add a parser extension (e.g. myst_parser for ``.md``) or remove the
 #    file from the list.
-# [[mounts]]
+# [[source.mounts]]
 # files = ["../warnings/bundles/suffix/notes.adoc"]
 # mount_at = "_generated/warnings-suffix"
 
@@ -192,7 +192,7 @@ attach_each = true
 #    modifying the host, so the whole mount is skipped. Remove the
 #    directory afterwards (``rmdir _generated/warnings-occupied``) so the
 #    example stays warning-clean.
-# [[mounts]]
+# [[source.mounts]]
 # dir = "../warnings/bundles/conflicts"
 # mount_at = "_generated/warnings-occupied"
 # strict_mount_at = true
@@ -204,7 +204,7 @@ attach_each = true
 #    shows exactly this warning; a real mount would additionally report its
 #    docs as not included in any toctree (toc.not_included) unless the host
 #    references them.
-# [[mounts]]
+# [[source.mounts]]
 # dir = "../warnings/bundles/empty"
 # mount_at = "_generated/warnings-attached"
 # attach_to = "no_such_doc"
@@ -214,7 +214,7 @@ attach_each = true
 #    attach_to document (the host index has one toctree). The mount is
 #    left unwired and its docs are marked as orphans, so exactly this one
 #    warning appears — the host project is left completely untouched.
-# [[mounts]]
+# [[source.mounts]]
 # dir = "../warnings/bundles/single"
 # mount_at = "_generated/warnings-single"
 # attach_to = "index"
@@ -223,12 +223,11 @@ attach_each = true
 # 7. mounts.path_escape
 #    A mounted doc references a file outside its bundle root:
 #    ../warnings/bundles/escape/index.rst literalincludes ../secret.txt,
-#    which lives in ../warnings/bundles/, not in the escape/ subdir. With
-#    path_check = "warn" this is a warning; the default "error" would fail
-#    the build. attach_to wires the entry doc into the host toctree, so no
-#    orphan noise appears.
-# [[mounts]]
+#    which lives in ../warnings/bundles/, not in the escape/ subdir. At the
+#    default path_check = "warn" this is a warning; set path_check = "error"
+#    on the mount to fail the build instead. attach_to wires the entry doc
+#    into the host toctree, so no orphan noise appears.
+# [[source.mounts]]
 # dir = "../warnings/bundles/escape"
 # mount_at = "_generated/warnings-escape"
 # attach_to = "index"
-# path_check = "warn"

@@ -57,7 +57,7 @@ two files: a minimal ``conf.py`` and the declarative ``ubproject.toml``.
 
    # Relative to confdir (sphinx_project/), so ../bazel-bin/docs
    # resolves to <workspace>/bazel-bin/docs.
-   [[mounts]]
+   [[source.mounts]]
    dir = "../bazel-bin/docs"
    mount_at = "_bazel"
 
@@ -112,7 +112,7 @@ version-controlled ``ubproject.toml`` is enough.
 When the mount *list itself* needs to be dynamic — assembled across
 repositories, gated by Bazel ``select()`` choices, or emitted by a
 configuration repo — pair sphinx-mounts with `needs-config-writer`_.
-It can populate ``ubproject.toml`` with the ``[[mounts]]`` section
+It can populate ``ubproject.toml`` with the ``[[source.mounts]]`` section
 (among others) from Python-side configuration at build time. The
 generated TOML is then the artefact sphinx-mounts and `ubCode`_ both
 consume, exactly as if it had been hand-written. See `Generating
@@ -212,7 +212,7 @@ A typical pipeline looks like:
    ``conf.py`` imports).
 2. A first Sphinx pass runs with `needs-config-writer`_ enabled. The
    extension writes a static ``ubproject.toml`` (including its
-   ``[[mounts]]`` section) next to ``conf.py``.
+   ``[[source.mounts]]`` section) next to ``conf.py``.
 3. A second Sphinx pass — the actual documentation build — runs
    ``sphinx-mounts``, which reads the now-static ``ubproject.toml``
    exactly like a hand-written one. The same file is what
@@ -229,7 +229,7 @@ mount list is itself a build-system artefact.
 
 ``needs-config-writer`` is primarily oriented at the Sphinx-Needs
 config sections today, but the same mechanism can populate any TOML
-section the project needs — including ``[[mounts]]``. See its
+section the project needs — including ``[[source.mounts]]``. See its
 `motivation
 <https://needs-config-writer.useblocks.com/motivation.html>`__ for the
 distributed-build use case in detail.

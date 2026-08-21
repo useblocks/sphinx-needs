@@ -211,7 +211,7 @@ Practical consequences:
      - 1 — directory or file list on the filesystem
    * - Configuration surface
      - One ``collections`` dict in ``conf.py`` with per-driver knobs
-     - One declarative ``ubproject.toml`` ``[[mounts]]`` array
+     - One declarative ``ubproject.toml`` ``[[source.mounts]]`` array
    * - IDE story
      - Editor sees ``_collections/`` only after a Sphinx build;
        contents may not be in version control

@@ -173,10 +173,23 @@ uv run prek run --all-files
 ## Testing Guidelines
 
 - Tests use `pytest` with `sphinx.testing.fixtures`.
+- **External binaries are a prerequisite, not an optional extra.** The
+  graphviz and PlantUML cases in `tests/test_path_directives.py` render for
+  real, and `_require_renderer` **asserts** that `dot` and `plantuml` are on
+  `PATH` rather than skipping — the point of those tests is to exercise the
+  whole mounts chain including the render step, so tolerating a missing
+  binary would silently drop coverage. Five tests fail without them. Install
+  with e.g. `apt install graphviz plantuml` (CI does the same). Mermaid uses
+  `raw` output, so `mmdc` is not needed.
 - Bazel integration tests live in `tests/test_bazel.py` and are marked with
   `@pytest.mark.bazel`. They skip when `bazel` is not on `PATH`.
+  `tests/test_example.py` needs it too.
 - Fixture bundles in `tests/fixtures/` are checked-in static RST trees;
   they are not generated.
+- Two mount modes, two code paths: `_attach_mount_dir` and
+  `_attach_mount_files` differ in docname derivation, in dotfile handling,
+  and in how the bundle root is computed. A behaviour change to one usually
+  needs a test for the other.
 
 ## Commit Message Format
 

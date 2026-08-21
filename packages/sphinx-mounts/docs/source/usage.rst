@@ -16,7 +16,7 @@ A minimal setup
    .. code-block:: toml
 
       # ubproject.toml
-      [[mounts]]
+      [[source.mounts]]
       dir = "/abs/path/to/bazel-bin/docs/api-foo"
       mount_at = "_generated/api-foo"
 
@@ -81,7 +81,7 @@ build time only when the mount actually resolves:
 
 .. code-block:: toml
 
-   [[mounts]]
+   [[source.mounts]]
    dir = "/path/to/bazel-bin/docs/api-foo"
    mount_at = "_generated/api-foo"
    attach_to = "index"          # extend the toctree in index.rst
@@ -91,6 +91,8 @@ toctree; the extension appends ``_generated/api-foo/index`` to it during
 the build. See :ref:`toctree-integration` for picking a specific toctree
 in a multi-toctree host doc and for choosing a non-``index`` entry file.
 
+.. _incremental-rebuilds:
+
 Incremental rebuilds
 --------------------
 
@@ -98,6 +100,52 @@ Sphinx's standard mtime-based change detection works for mounted files
 because the docname-to-path mapping is rebuilt every time
 ``project.discover()`` runs. New files appear, deleted files disappear,
 and changed files are re-read. No extra configuration is required.
+
+``attach_to`` wiring tracks those appearances and disappearances as well.
+Because the mapping is rebuilt on every build, the extension can compare
+the set of entries each mount *would* wire against what it wired last
+time, and ask Sphinx to re-read the ``attach_to`` document when the two
+differ. So both directions converge on the build where the change
+happened, with no ``-E``:
+
+- A bundle whose entry doc **appears** — the upstream build finally ran —
+  is wired into the host toctree on that build.
+- A bundle whose entry doc **disappears** is unwired on that build. No
+  dead link is left in the output and no repeating "toctree contains
+  reference to non-existing document" warning accumulates.
+
+Only documents named by an ``attach_to`` are re-read this way, and only
+when that mount's contribution actually changed, so an unrelated bundle
+churning does not drag host pages into the rebuild.
+
+.. important::
+
+   The guarantee covers documents reached through ``attach_to``, and only
+   when the ``attach_to`` target itself exists. A mounted docname that a host
+   page references by **hand** — written into a toctree in the source — is
+   not covered: nothing marks that host page outdated when the mount
+   disappears, so its dead link persists *silently*. The
+   ``toc.not_readable`` warning is **not** re-emitted, because Sphinx
+   re-resolves a toctree only when the page is re-read — so even ``-W``
+   passes. The warning appears, and the dead link goes away, only once the
+   page is touched or ``-E`` is used.
+
+   That residue is Sphinx's own behaviour, not something mounting
+   introduces: deleting an ordinary host document leaves exactly the same
+   dead link in exactly the same way. If you want the automatic convergence,
+   let ``attach_to`` do the wiring rather than naming mounted docnames by
+   hand.
+
+One consequence is worth knowing, because it looks like the extension
+doing extra work: a build that *only removes* documents used to persist
+nothing at all. Sphinx pickles the environment and runs its consistency
+checks only when at least one document was read, so such a build
+recomputed the same "1 removed" every time. Re-reading the ``attach_to``
+document is what lets that build save its environment and settle.
+
+What incremental rebuilds do **not** cover: the consistency checks —
+including :ref:`path_check <path-confinement>` — are skipped entirely on a
+build that reads no document at all. See the note in that section.
 
 Caveats
 -------

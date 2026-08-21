@@ -73,20 +73,28 @@ def write_ubproject_toml(
     srcdir: Path,
     mounts: Iterable[dict[str, Any]],
     filename: str = "ubproject.toml",
+    *,
+    namespaced: bool = True,
 ) -> Path:
     """Write a ``ubproject.toml`` file declaring the given mounts.
 
-    Produces a top-level ``[[mounts]]`` array of tables — the schema the
-    extension expects. Returns the absolute path of the written file.
+    Returns the absolute path of the written file.
 
     :param srcdir: Sphinx confdir / srcdir.
     :param mounts: Iterable of mount dicts with the same keys
         ``MountConfig.from_dict`` accepts.
     :param filename: TOML file name. Defaults to ``ubproject.toml``.
+    :param namespaced: Write the recommended ``[[source.mounts]]`` spelling
+        (the default) rather than the deprecated top-level ``[[mounts]]`` one.
+        Both load identically, but the top-level spelling now emits
+        ``mounts.deprecated_location``, so tests that assert a warning count
+        would all have to account for it. Pass ``namespaced=False`` only to
+        exercise the deprecated spelling itself.
     """
+    header = "[[source.mounts]]" if namespaced else "[[mounts]]"
     lines: list[str] = []
     for mount in mounts:
-        lines.append("[[mounts]]")
+        lines.append(header)
         if "dir" in mount:
             lines.append(f"dir = {_toml_string(str(mount['dir']))}")
         if "files" in mount:

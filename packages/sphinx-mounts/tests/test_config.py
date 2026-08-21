@@ -55,6 +55,112 @@ class TestMountConfig:
         with pytest.raises(MountConfigError, match="must not contain"):
             MountConfig(dir=tmp_path, mount_at="_generated/../escape")
 
+    @pytest.mark.parametrize("field", ["mount_at", "attach_to", "entry_doc"])
+    @pytest.mark.parametrize(
+        ("value", "match"),
+        [
+            pytest.param(
+                "a//b", "empty or '.' path segment", id="interior-double-slash"
+            ),
+            pytest.param(
+                "a///b", "empty or '.' path segment", id="interior-triple-slash"
+            ),
+            pytest.param(" a/b", "leading or trailing whitespace", id="leading-space"),
+            pytest.param("a/b ", "leading or trailing whitespace", id="trailing-space"),
+            pytest.param("a/ b", "whitespace around a path segment", id="inner-lead"),
+            pytest.param("a /b", "whitespace around a path segment", id="inner-trail"),
+            pytest.param("a/./b", "empty or '.' path segment", id="interior-dot"),
+            pytest.param("./a", "empty or '.' path segment", id="leading-dot"),
+            pytest.param("a/.", "empty or '.' path segment", id="trailing-dot"),
+            pytest.param(".", "empty or '.' path segment", id="bare-dot"),
+        ],
+    )
+    def test_malformed_docname_shapes_rejected(
+        self, tmp_path: Path, field: str, value: str, match: str
+    ) -> None:
+        """Empty segments, ``.`` segments and stray whitespace are hard errors.
+
+        All of these used to be accepted verbatim, because ``.strip("/")``
+        only trims the ends and nothing looked inside the segments. A docname
+        is matched **literally**, not resolved as a filesystem path, so each
+        shape produced something no host document can ever be — the mount was
+        accepted and then silently unreferenceable, the worst of the three
+        possible outcomes (accept-and-work, reject, accept-and-never-work).
+
+        The bare ``.`` is worse still and has its own test below.
+
+        Config errors are hard and non-suppressible by this extension's own
+        doctrine, and being strict keeps the accepted shape describable in a
+        few lines for a second implementation.
+        """
+        with pytest.raises(MountConfigError, match=match):
+            MountConfig(dir=tmp_path, **{field: value})
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            pytest.param("a/b", "a/b", id="plain"),
+            pytest.param("a/b/", "a/b", id="one-trailing-slash"),
+            pytest.param("a/b//", "a/b", id="two-trailing-slashes"),
+            pytest.param("a-b_c/d.e", "a-b_c/d.e", id="punctuation-is-fine"),
+        ],
+    )
+    def test_accepted_mount_at_shapes(
+        self, tmp_path: Path, value: str, expected: str
+    ) -> None:
+        """The complement of the rejection list, so the boundary is pinned from
+        both sides. Trailing slashes are normalised, not rejected: a prefix
+        written with a separator means exactly one thing."""
+        assert MountConfig(dir=tmp_path, mount_at=value).mount_at == expected
+
+    @pytest.mark.parametrize("field", ["mount_at", "attach_to", "entry_doc"])
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            pytest.param("a/b/", "a/b", id="one-trailing-slash"),
+            pytest.param("a/b//", "a/b", id="two-trailing-slashes"),
+            pytest.param("index/", "index", id="single-segment"),
+        ],
+    )
+    def test_trailing_slashes_normalised_on_every_docname_field(
+        self, tmp_path: Path, field: str, value: str, expected: str
+    ) -> None:
+        """All three docname fields normalise trailing slashes identically.
+
+        ``entry_doc`` did not, while the contract and the changelog both said
+        the three fields are validated identically and that trailing slashes
+        are stripped. The consequence was silent: the wired docname became
+        ``"<mount_at>/index/"``, which is not among the docnames the mount
+        produced, so the entry-doc gate dropped it and the mount was
+        mounted-but-never-wired — reported only as a ``toc.not_included``
+        against the bundle file, nowhere near the setting that caused it.
+        """
+        assert getattr(MountConfig(dir=tmp_path, **{field: value}), field) == expected
+
+    def test_bare_dot_mount_at_is_rejected(self, tmp_path: Path) -> None:
+        """``mount_at = "."`` is the one shape whose old behaviour was worse
+        than unreferenceable.
+
+        Written to mean "the project root", it produced the docname
+        ``./index`` alongside the host project's own ``index``: two distinct
+        docnames resolving to one output file, so the mounted page was
+        overwritten with no diagnostic at all. Omitting ``mount_at`` is how a
+        root mount is expressed, and the error message says so.
+        """
+        with pytest.raises(MountConfigError) as excinfo:
+            MountConfig(dir=tmp_path, mount_at=".")
+        message = str(excinfo.value)
+        assert "'.' path segment" in message, message
+        assert "omit mount_at" in message, message
+
+    def test_leading_double_slash_is_rejected_as_absolute(self, tmp_path: Path) -> None:
+        """``//a/b`` is caught by the leading-slash rule, not the empty-segment
+        one. Worth pinning because the contract states the leading-slash rule
+        first and a second reader must apply it in that order — stripping
+        surrounding slashes first would accept it."""
+        with pytest.raises(MountConfigError, match="must not start with '/'"):
+            MountConfig(dir=tmp_path, mount_at="//a/b")
+
     def test_extra_keys_rejected(self, tmp_path: Path) -> None:
         with pytest.raises(MountConfigError, match="Unknown mount keys"):
             MountConfig.from_dict(
@@ -300,9 +406,22 @@ class TestMountConfig:
         with pytest.raises(MountConfigError, match=r"strict_mount_at.*mount_at"):
             MountConfig(dir=tmp_path, strict_mount_at=True)
 
-    def test_path_check_defaults_to_error(self, tmp_path: Path) -> None:
-        m = MountConfig(dir=tmp_path, mount_at="x")
-        assert m.path_check == "error"
+    def test_path_check_defaults_to_warn(self, tmp_path: Path) -> None:
+        """The default is the extension's own doctrine: a typed warning that
+        ``sphinx-build -W`` escalates.
+
+        It was ``"error"``. That fought the doctrine
+        (``sphinx_mounts.logging``: every mount-specific problem is a
+        suppressible warning that ``-W`` turns into a failure) and could not
+        deliver what it promised anyway, since the check is skipped entirely
+        on a build that reads no document.
+        """
+        assert MountConfig(dir=tmp_path, mount_at="x").path_check == "warn"
+        # ...and via the TOML/dict path, which has its own default literal.
+        assert (
+            MountConfig.from_dict({"dir": str(tmp_path), "mount_at": "x"}).path_check
+            == "warn"
+        )
 
     def test_path_check_accepts_warn_and_off(self, tmp_path: Path) -> None:
         assert (
@@ -469,6 +588,141 @@ class TestLoadMountsFromToml:
         toml.write_text("[mounts]\nfoo = 1\n", encoding="utf-8")
         with pytest.raises(TomlConfigError, match="must be an array of tables"):
             load_mounts_from_toml(toml)
+
+
+class TestNamespacedMountsTable:
+    """``[[source.mounts]]`` is accepted alongside the top-level ``[[mounts]]``.
+
+    ``[source]`` is the table that owns source discovery in the
+    ``ubproject.toml`` vocabulary shared with sibling tooling, so it is the
+    natural home for a mount and the spelling the docs now recommend. The
+    original top-level spelling stays supported, and the two must be
+    indistinguishable in every respect except where they are written.
+    """
+
+    def test_namespaced_table_is_loaded(self, tmp_path: Path) -> None:
+        toml = tmp_path / "ubproject.toml"
+        toml.write_text(
+            '[[source.mounts]]\ndir = "bundle_a"\nmount_at = "_generated/api-a"\n',
+            encoding="utf-8",
+        )
+        raw = load_mounts_from_toml(toml)
+        assert raw is not None
+        assert len(raw) == 1
+        assert raw[0]["mount_at"] == "_generated/api-a"
+
+    def test_namespaced_table_anchors_paths_identically(self, tmp_path: Path) -> None:
+        """Path anchoring is a property of the file, not of the table it is
+        written in, so both spellings must produce the same absolute paths."""
+        subdir = tmp_path / "configs"
+        subdir.mkdir()
+        top = subdir / "top.toml"
+        top.write_text('[[mounts]]\ndir = "../shared"\n', encoding="utf-8")
+        namespaced = subdir / "namespaced.toml"
+        namespaced.write_text(
+            '[[source.mounts]]\ndir = "../shared"\n', encoding="utf-8"
+        )
+
+        assert load_mounts_from_toml(top) == load_mounts_from_toml(namespaced)
+        loaded = load_mounts_from_toml(namespaced)
+        assert loaded is not None
+        assert loaded[0]["dir"] == str((tmp_path / "shared").resolve())
+
+    def test_namespaced_table_coexists_with_other_source_keys(
+        self, tmp_path: Path
+    ) -> None:
+        """A ``[source]`` table carrying keys owned by other tools must not
+        disturb the mounts array nested inside it."""
+        toml = tmp_path / "ubproject.toml"
+        toml.write_text(
+            "[source]\n"
+            "respect_gitignore = true\n"
+            'include = ["*.rst"]\n'
+            "\n"
+            "[[source.mounts]]\n"
+            'dir = "bundle"\n'
+            'mount_at = "_g/x"\n',
+            encoding="utf-8",
+        )
+        raw = load_mounts_from_toml(toml)
+        assert raw is not None
+        assert len(raw) == 1
+        assert raw[0]["mount_at"] == "_g/x"
+
+    def test_declaring_both_spellings_raises(self, tmp_path: Path) -> None:
+        """Two declarations in one file is a hard error, not a precedence
+        puzzle: which one wins is not something a reader of the file could
+        know, and silently merging them would be worse."""
+        toml = tmp_path / "ubproject.toml"
+        toml.write_text(
+            '[[mounts]]\ndir = "a"\n\n[[source.mounts]]\ndir = "b"\n',
+            encoding="utf-8",
+        )
+        with pytest.raises(TomlConfigError) as excinfo:
+            load_mounts_from_toml(toml)
+        message = str(excinfo.value)
+        # BOTH locations are named, so the user knows what to delete.
+        assert "[[source.mounts]]" in message
+        assert "[[mounts]]" in message
+        assert str(toml) in message
+
+    def test_source_table_without_mounts_is_not_a_declaration(
+        self, tmp_path: Path
+    ) -> None:
+        """A ``[source]`` table that declares no ``mounts`` key returns
+        ``None``, so a legacy ``mounts`` in ``conf.py`` still applies.
+
+        This is the namespaced half of the "declares mounts" rule: a TOML file
+        present for *other* tools must not silently switch mounts off.
+        """
+        toml = tmp_path / "ubproject.toml"
+        toml.write_text("[source]\nrespect_gitignore = true\n", encoding="utf-8")
+        assert load_mounts_from_toml(toml) is None
+
+    def test_empty_namespaced_array_is_an_explicit_override(
+        self, tmp_path: Path
+    ) -> None:
+        """An explicitly empty array is a declaration of "no mounts" and must
+        be distinguishable from an absent key, in the namespaced form exactly
+        as in the top-level one."""
+        toml = tmp_path / "ubproject.toml"
+        toml.write_text("[source]\nmounts = []\n", encoding="utf-8")
+        assert load_mounts_from_toml(toml) == []
+
+    def test_empty_top_level_array_is_an_explicit_override(
+        self, tmp_path: Path
+    ) -> None:
+        toml = tmp_path / "ubproject.toml"
+        toml.write_text("mounts = []\n", encoding="utf-8")
+        assert load_mounts_from_toml(toml) == []
+
+    def test_namespaced_mounts_not_a_list_raises(self, tmp_path: Path) -> None:
+        toml = tmp_path / "ubproject.toml"
+        toml.write_text("[source.mounts]\nfoo = 1\n", encoding="utf-8")
+        with pytest.raises(TomlConfigError, match="must be an array of tables"):
+            load_mounts_from_toml(toml)
+
+    def test_namespaced_shape_error_names_the_namespaced_location(
+        self, tmp_path: Path
+    ) -> None:
+        """The shape error must name the table the user actually wrote, not
+        always the top-level one."""
+        toml = tmp_path / "ubproject.toml"
+        toml.write_text("[source]\nmounts = [1]\n", encoding="utf-8")
+        with pytest.raises(TomlConfigError) as excinfo:
+            load_mounts_from_toml(toml)
+        assert "[[source.mounts]]" in str(excinfo.value)
+
+    def test_source_that_is_not_a_table_is_ignored(self, tmp_path: Path) -> None:
+        """``source`` owned by another tool as a scalar must not crash the
+        lookup; the top-level array still applies."""
+        toml = tmp_path / "ubproject.toml"
+        toml.write_text(
+            'source = "somewhere"\n[[mounts]]\ndir = "a"\n', encoding="utf-8"
+        )
+        raw = load_mounts_from_toml(toml)
+        assert raw is not None
+        assert len(raw) == 1
 
     def test_pipeline_loads_and_validates(self, tmp_path: Path) -> None:
         """Round-trip: TOML → load_mounts_from_toml → parse_mounts."""
