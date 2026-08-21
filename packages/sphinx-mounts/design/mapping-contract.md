@@ -425,10 +425,14 @@ so no diagnostic accompanies root computation.
 Every file the document is recorded as depending on must resolve into that root
 set.
 The comparison is per path component, on both sides passed through the platform's
-case normalisation, because resolving a path does not fold case and both macOS and
-Windows are case-insensitive but case-preserving.
-A second implementation on those platforms must fold too, or it will reject
-legitimate references.
+case normalisation, because resolving a path does not fold case.
+That normalisation is `os.path.normcase`, which folds on **Windows only** — on
+POSIX, macOS included, it is the identity function.
+So on macOS the comparison is case-sensitive even though the default filesystem is
+not: a reference whose written case differs from the root's own spelling is
+reported as an escape there, and matching the case is the fix.
+A second implementation must fold on Windows or it will reject legitimate
+references; on macOS it may match this behaviour or fold, but must say which.
 
 Three shapes escape:
 
@@ -471,3 +475,53 @@ not this extension's.
 - Anything about `[source]` other than a nested `mounts` array (§1).
 - A machine-readable schema. The key table in §4 is currently the only
   specification of types and defaults besides the implementation's own validator.
+
+## 11. Known second readers: ubCode's declared divergences
+
+ubCode's `[[source.mounts]]` support is the first second reader of this contract.
+The table below records, as of that implementation's first shipped version, every
+point where it deliberately diverges from the behaviour specified above — plus the
+handful of points where it deliberately *matches* and the match is worth stating.
+
+§1–§9 remain the normative contract for sphinx-mounts, and each reader's own
+documentation is normative for that reader; nothing in this section amends either.
+What the table is for is the case this document opens with. A user running both
+tools over one project can read off exactly where the two will disagree about that
+project, and why — instead of discovering it as "the editor shows a page the build
+does not".
+
+Every entry here is **declared**: chosen, reviewed, and written down. This is not
+a catalogue of drift found after the fact, and a divergence that is not in the
+table is a defect in one of the two implementations rather than a third position.
+
+| Point | sphinx-mounts | ubCode | Why the difference is deliberate |
+| --- | --- | --- | --- |
+| Invalid `mount_at` (§4.1) | Hard `MountConfigError`; the build stops. | Reported (`config.mount_invalid`) and the mount is **dropped**. | ubCode has no config-time equivalent of `-W`, so an unusable entry follows its established posture for unusable configuration — report and carry on — the same one its intersphinx handling takes. |
+| Spelling a root mount (§4.1) | A root mount is spelled by **omitting** `mount_at`; the empty string is a hard error (§4.1 rule 1). | `""` means exactly what an absent key means, and is reported (`config.mount_at_root`). | Both spellings have to mean one thing, and `[project] root_doc` already treats `""` as unset in the same shared TOML vocabulary. |
+| NFC normalisation of `mount_at` (§4.1) | Not normalised: a decomposed (NFD) prefix yields a docname distinct from its composed form. | NFC-normalised at resolve time. | ubCode writes docnames NFC throughout, so a prefix in any other normalisation would yield a docname nothing can reference. |
+| Backslashes in docname-shaped values (§4.1) | `a\..\b` is rejected on Windows only — the component split is delegated to the platform. | `\` is refused anywhere in `mount_at`, `attach_to` and `entry_doc`, on every platform. | Splitting on `/` alone accepts on POSIX a value that *is* a parent traversal wherever `\` separates, so one file would describe two different projects depending on the reader's platform. |
+| A listed file named only a suffix (§5.2) | No docname; the **whole mount** is skipped (`mounts.empty_docname`). | The tail `".rst"` is minted and the file is mounted. | ubCode's mount tails come from its host-side suffix handling; the difference is recorded as a declared divergence rather than repaired. |
+| A docname collision, and `strict_mount_at` (§7) | Any collision skips the whole mount; `strict_mount_at` is a mount-level pre-check with the same reaction. | Per-**file** loss (`std.duplicate_docname`), and `strict_mount_at` itself is reported as a key ubCode does not model. | ubCode's collision handling is per docname across the whole project. The dangling-sibling cascade a whole-mount skip prevents is mitigated instead by naming the mount in the message. |
+| A mount `dir` containing the host source directory (§5.1) | The host project is published a **second** time under the prefix, and nothing detects it. | Published **zero** times: the host claims every path first, so the mount contributes no docnames, no confinement reports, and nothing for the absent-root row's retention to hold. Its configuration diagnostics (absent root, root mount, unhonoured `attach_to`) still fire. | Neither result is a check firing. Both fall out of the precedence each reader already applies to a contested path, which is why §5.1 states the constraint instead of promising a diagnostic. |
+| Naming the mount in a collision message (§7.1) | The label renders `mounts[0] (dir=/abs/path)`, so the resolved root's absolute, machine-specific path appears in the diagnostic. | The label is index-only (`mounts[0]`), and every claimant path is rendered relative to the configuration folder in climbing (`../`) form, so no absolute path appears in the message. | Both name the root; they differ in where. Upstream puts it in the label, ubCode puts it in the claimant paths it prints. |
+| `include` / `exclude` on a `files` mount (§5.2) | Reported (`mounts.ignored_option`); the keys change nothing. | Reported (`config.mount_dead_option`); the keys change nothing. | **Parity**, adopted deliberately. A dead filter that neither reader silently honours is one less way for the two to disagree about a mount's file set. |
+| `attach_each` misuse (§4) | Hard `MountConfigError` in all three shapes: without `files`, without `attach_to`, and with a non-default `entry_doc`. | Reported and normalised away; where `attach_each` meets a non-default `entry_doc`, **`attach_each` wins**. | With no hard stop available an outcome has to be chosen, and `attach_each` wires a superset of what `entry_doc` would wire, so choosing it loses nothing. |
+| `path_check` severity (§9) | Per-mount `warn` / `error` / `off`. | One fixed-severity warning (`build.mount_path_escape`), suppressible project-wide with `lint.ignore`, per tree with `lint.per_file_ignores` globbed on the mount root, and escalatable with `[build.html] deny`. | A fourth severity mechanism inside ubCode would be a support burden for no gain. The **default** reaction agrees on both sides (`"warn"`). |
+| The escape diagnostic's name (§7.1) | `mounts.path_escape`. | `build.mount_path_escape`. | `build.*` is where ubCode's asset-resolution diagnostics already live; a `mounts.*` namespace for one code was not worth introducing. |
+| When the escape check runs (§9) | From `env-check-consistency`, so it is skipped on a build that reads no document (§9 states the limit). | A project-level scan on every pass, so it survives a warm rebuild. | Strictly stronger, and recorded as a deliberate improvement rather than a violation: §9 already asks a second implementation to state its own position on that limit instead of inheriting it silently. |
+| Ignore files in parent directories (§5.1) | Never consulted, so a gitignored parent cannot strip a mount. | Consulted — ubCode's shared walker reads them, so a mount root under a gitignored parent yields nothing unless the mount sets `gitignore = false`. | That walk is shared with ubCode's other per-tree features and is fenced there; the recipe is documented on its side. |
+| Hidden entries in directory mode (§5.1) | Skipped. | Walked, exactly as ubCode's host walk treats them everywhere. | Internal consistency within one tool beats per-feature parity across two, and a dotfile that should not publish can be excluded. |
+| Case folding in the containment check (§9) | Folds on **Windows only**: `os.path.normcase` is the identity on POSIX, macOS included. | Folds on Windows only, by an explicit platform-gated fold. | **Parity in behaviour.** §9 states the shared position: on macOS the comparison is case-sensitive even though the default filesystem is not, so the written case must match the root's spelling there. |
+| An absent mount root, across incremental builds (§7, §8) | The mount contributes nothing, and pages it previously contributed drop out of the build — Sphinx's environment owns deletion. | Contributes nothing, and the pages already indexed from that mount are **exempted from the deletion sweep** until the root returns or the mount leaves the configuration. | ubCode has a persistent index and chooses retention, so a temporarily unbuilt bundle does not thrash downstream consumers. Sphinx rebuilds its environment and cannot retain. |
+| A mount root's own spelling | `normcase` is applied and no spelling is ever rejected. | No config-time spelling diagnostic ships either. | **Parity**, recorded because a spelling check was considered and deliberately not shipped: a mount root is an OS path in every consumer, so refusing spellings would refuse legitimate absolute roots. Confinement (§9) is the only guard on where references may point. |
+
+Two entries are worth reading twice, because the disagreement is about *which
+documents exist* rather than about how a problem is reported:
+
+- While a mount root is absent, sphinx-mounts has already lost that bundle's
+  pages from the build while ubCode still holds them in its index. It is the
+  largest declared divergence in the table, and it resolves itself the moment the
+  root comes back.
+- A mount whose `dir` contains the host source directory is published twice by one
+  reader and not at all by the other — the widest possible spread from a
+  configuration neither reader rejects.

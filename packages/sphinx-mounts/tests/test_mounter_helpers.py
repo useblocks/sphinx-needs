@@ -63,17 +63,19 @@ class TestIsWithin:
     def test_case_fold_is_applied(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """The containment comparison must go through ``os.path.normcase``.
 
-        On a case-insensitive but case-preserving filesystem (APFS/HFS+,
-        Windows) a bundle configured as ``/x/Bundle`` whose real directory is
-        ``bundle`` produces two paths that differ only in case, and
-        ``Path.resolve()`` does not fold case. Rejecting that as an escape
-        would be a false positive on every macOS and Windows run — the
-        platforms CI covers but no test exercised.
+        On Windows — case-insensitive but case-preserving — a bundle
+        configured as ``C:/x/Bundle`` whose real directory is ``bundle``
+        produces two paths that differ only in case, and ``Path.resolve()``
+        does not fold case. Rejecting that as an escape would be a false
+        positive on every Windows run, a platform CI covers but no test
+        exercised.
 
-        ``normcase`` is the identity function on POSIX, so this monkeypatches
-        it to a case-folding stand-in. Without that the assertion is
-        untestable on Linux, and a regression would only ever surface on
-        another platform.
+        ``normcase`` is the identity function on POSIX — macOS included, so
+        the fold is Windows-only and macOS keeps the case-sensitive
+        comparison asserted by the next test. That is also why this
+        monkeypatches ``normcase`` to a case-folding stand-in: without it the
+        assertion is untestable on any POSIX runner, and a regression would
+        only ever surface on Windows.
         """
         monkeypatch.setattr(os.path, "normcase", str.lower)
         assert _is_within(Path("/x/Bundle"), Path("/x/bundle/page.rst"))

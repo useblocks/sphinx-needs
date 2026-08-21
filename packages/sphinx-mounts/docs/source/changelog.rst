@@ -118,10 +118,13 @@ Unreleased
    was hiding. That is the intended outcome; review the suppression.
 
 - The ``path_check`` containment comparison now applies the platform's path
-  case normalisation. Resolving a path does not fold case, and macOS and
-  Windows are case-insensitive but case-preserving, so a bundle configured as
-  ``/x/Bundle`` whose real directory is ``bundle`` could have a perfectly
-  legitimate in-bundle reference rejected as an escape.
+  case normalisation, which folds on **Windows only** — on POSIX, macOS
+  included, it is the identity function. Resolving a path does not fold case,
+  so on Windows a bundle configured as ``C:/x/Bundle`` whose real directory is
+  ``bundle`` could have a perfectly legitimate in-bundle reference rejected as
+  an escape. On macOS the comparison stays case-sensitive even though the
+  default filesystem is not, so a reference's written case must match the
+  bundle root's own spelling there.
 
 - A ``path_check = "error"`` failure is now attributed to this extension —
   the report reads ``Extension error (sphinx_mounts)`` instead of a bare
@@ -212,6 +215,14 @@ Unreleased
   differs from the same-named ``[source]`` keys owned by other tools),
   docname derivation, every collision tie-break, and the warning subtypes
   declared as a stable contract.
+
+- ``design/mapping-contract.md`` also records, in a new §11, the divergences
+  declared by ubCode as the contract's first second reader — what each tool
+  does at every such point, and why the difference was chosen — so a project
+  built by both can predict where they disagree. §9's case-folding note is
+  corrected in the same change: the fold is Windows-only, so on macOS the
+  containment comparison is case-sensitive even though the default filesystem
+  is not.
 
 .. _`release:0.1.4`:
 

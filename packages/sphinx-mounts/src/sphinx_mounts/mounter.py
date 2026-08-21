@@ -100,13 +100,20 @@ def _is_within(root: Path, candidate: Path) -> bool:
     """Whether ``candidate`` is ``root`` itself or lives underneath it.
 
     Both sides pass through :func:`os.path.normcase` first.
-    :meth:`pathlib.Path.resolve` normalises symlinks but **not** case, and
-    macOS (APFS/HFS+) and Windows are case-insensitive but case-preserving:
-    a bundle configured as ``/Users/x/Bundle`` whose real directory is
-    ``bundle``, or an ``include:: SUB/x.txt`` where the directory is ``sub``,
-    would otherwise compare unequal component by component, and a perfectly
-    legitimate in-bundle reference would be reported as an escape. On POSIX
-    ``normcase`` is the identity function, so the fold costs nothing there.
+    :meth:`pathlib.Path.resolve` normalises symlinks but **not** case, so on
+    Windows — case-insensitive but case-preserving — a bundle configured with
+    a directory spelled ``Bundle`` that is really ``bundle`` on disk, or an
+    ``include:: SUB/x.txt`` where the directory is ``sub``, would otherwise
+    compare unequal component by component, and a perfectly legitimate
+    in-bundle reference would be reported as an escape.
+
+    ``normcase`` folds on **Windows only**: on POSIX it is
+    :func:`os.fspath`, the identity function, macOS included. So this
+    comparison is case-sensitive on macOS even though the default filesystem
+    (APFS/HFS+) is not, and a reference whose written case differs from the
+    root's own spelling is reported as an escape there. That is the position
+    ``design/mapping-contract.md`` §9 records; folding on macOS too would
+    take a fold this function does not perform.
 
     ``PurePath`` is used for the comparison rather than the concrete
     ``Path``, because after ``normcase`` the strings are no longer required
