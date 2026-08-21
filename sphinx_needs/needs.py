@@ -690,6 +690,20 @@ def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
     pass
 
 
+def _derive_variant_data_proxy(config: NeedsSphinxConfig) -> None:
+    """Derive the ``var`` proxy from the variant data map as it currently stands.
+
+    This is a derivation, not a resolution: no file is read, nothing is merged and
+    nothing is validated. It exists so that the map and the proxy built from it can
+    never drift apart, whichever build phase last wrote the map.
+
+    :param config: The Sphinx-Needs configuration.
+    """
+    config.variant_data_proxy = (
+        VariantDataProxy(config.variant_data) if config.variant_data else None
+    )
+
+
 def resolve_variant_data_config(app: Sphinx, config: Config) -> None:
     """Resolve variant data from file + inline config, validate, and store back.
 
@@ -721,11 +735,7 @@ def resolve_variant_data_config(app: Sphinx, config: Config) -> None:
         needs_config.variant_data = resolved
 
     # Cache the variant data proxy for use in filter expressions
-    needs_config.variant_data_proxy = (
-        VariantDataProxy(needs_config.variant_data)
-        if needs_config.variant_data
-        else None
-    )
+    _derive_variant_data_proxy(needs_config)
 
 
 def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
@@ -734,6 +744,13 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
     """
     needs_config = NeedsSphinxConfig(app.config)
     data = SphinxNeedsData(env)
+
+    # The map may have been written after it was resolved, e.g. by another extension's
+    # ``config-inited`` handler. Such a value is used as-is (it is not merged with the
+    # file, nor validated), but the ``variant`` role reads the map while filter
+    # expressions read the proxy, so the proxy is derived again here to keep the two
+    # read paths from disagreeing within one build.
+    _derive_variant_data_proxy(needs_config)
 
     # Register embedded services
     services = data.get_or_create_services()
