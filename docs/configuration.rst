@@ -650,7 +650,7 @@ The file is read once per build, during configuration initialisation, so a missi
 or one whose contents are not valid variant data fails the build before any document is
 read. The merged result becomes the value of :ref:`needs_variant_data`, which means it is
 also what Sphinx compares between builds: editing the file changes the configuration and
-re-reads the affected documents, while leaving it alone no longer does.
+re-reads every document, while leaving it alone no longer does.
 
 Configuration example:
 
