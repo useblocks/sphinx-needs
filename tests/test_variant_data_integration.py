@@ -215,29 +215,14 @@ def test_variant_data_nested_inline_overrides_file(test_app):
     assert "REQ_OPT" in index_html
 
 
-@pytest.mark.parametrize(
-    ("file_content", "message", "names_file"),
-    [
-        pytest.param(None, "Variant data file not found", True, id="missing"),
-        pytest.param("{not json", "Invalid JSON in", True, id="malformed"),
-        # the two shape errors below are raised by the validator, which has never
-        # been told which file the data came from
-        pytest.param(
-            '["not", "an", "object"]', "must contain a JSON object", False, id="list"
-        ),
-        pytest.param(
-            '{"x": null}', "expected str/bool/int/float", False, id="bad_value"
-        ),
-    ],
-)
-def test_variant_data_file_errors_fail_the_build(
-    tmpdir, make_app, write_fixture_files, file_content, message, names_file
-):
-    """A missing or malformed variant data file fails the build, naming the file.
+def _write_variant_data_file_project(
+    tmpdir, write_fixture_files, file_content: str | None
+) -> Path:
+    """Write a project configured with ``needs_variant_data_file``.
 
-    Only the phase in which this is reported changed; the exception type -- and so
-    the severity -- and the message are unchanged, which is what is pinned here by
-    wrapping both the application creation and the build.
+    :param file_content: The contents to write to the file, or ``None`` to leave the
+        configured file missing.
+    :returns: The project's source directory.
     """
     write_fixture_files(
         tmpdir,
@@ -249,17 +234,69 @@ def test_variant_data_file_errors_fail_the_build(
             "rst": "Title\n=====\n",
         },
     )
+    srcdir = Path(str(tmpdir))
     if file_content is not None:
-        Path(str(tmpdir), "variant_data.json").write_text(
-            file_content, encoding="utf-8"
-        )
+        (srcdir / "variant_data.json").write_text(file_content, encoding="utf-8")
+    return srcdir
+
+
+@pytest.mark.parametrize(
+    ("file_content", "expected"),
+    [
+        pytest.param(
+            None, ("Variant data file not found", "variant_data.json"), id="missing"
+        ),
+        pytest.param(
+            "{not json", ("Invalid JSON in", "variant_data.json"), id="malformed"
+        ),
+        # The two shape errors below come from the validator, which is not told which
+        # file the data was read from, so their messages name no file. Naming it there
+        # would be an improvement (a follow-up), so this test does not pin the absence.
+        pytest.param(
+            '["not", "an", "object"]', ("must contain a JSON object",), id="list"
+        ),
+        pytest.param('{"x": null}', ("expected str/bool/int/float",), id="bad_value"),
+    ],
+)
+def test_variant_data_file_errors_fail_the_build(
+    tmpdir, make_app, write_fixture_files, file_content, expected
+):
+    """A missing or malformed variant data file fails the build.
+
+    Only the phase in which this is reported changed; the exception type -- and so
+    the severity -- and the message are unchanged, which is what is pinned here by
+    wrapping both the application creation and the build. The phase itself is pinned
+    separately, by ``test_variant_data_file_missing_fails_at_application_creation``.
+    """
+    srcdir = _write_variant_data_file_project(tmpdir, write_fixture_files, file_content)
 
     with pytest.raises(NeedsConfigException) as excinfo:
-        app = make_app(srcdir=Path(str(tmpdir)), freshenv=True)
+        app = make_app(srcdir=srcdir, freshenv=True)
         app.build()
 
-    assert message in str(excinfo.value)
-    assert ("variant_data.json" in str(excinfo.value)) is names_file
+    for fragment in expected:
+        assert fragment in str(excinfo.value)
+
+
+def test_variant_data_file_missing_fails_at_application_creation(
+    tmpdir, make_app, write_fixture_files
+):
+    """The error must escape application creation, before any document is read.
+
+    This is the one part of the error behaviour that is new, and the test that wraps
+    both creation and the build cannot see it: a version that resolved during
+    ``config-inited`` but deferred the raise to the read phase would satisfy that one
+    while making the documented "before any document is read" false. Wrapping only
+    ``make_app`` is the assertion -- reaching ``app.build()`` is impossible, because no
+    application is ever returned.
+    """
+    srcdir = _write_variant_data_file_project(tmpdir, write_fixture_files, None)
+
+    with pytest.raises(NeedsConfigException) as excinfo:
+        make_app(srcdir=srcdir, freshenv=True)
+
+    assert "Variant data file not found" in str(excinfo.value)
+    assert "variant_data.json" in str(excinfo.value)
 
 
 def test_variant_data_file_confoverride_wins_over_toml(
@@ -297,3 +334,41 @@ def test_variant_data_file_confoverride_wins_over_toml(
 
     assert app.config.needs_variant_data == {"source": "override"}
     assert "Source: override" in Path(app.outdir, "index.html").read_text()
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_variant_data_extension_write",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_variant_data_extension_write_stays_coherent(test_app):
+    """The role and ``var.*`` filters must read the same map, whatever it holds.
+
+    Resolution happens during ``config-inited``, so an extension that writes
+    ``needs_variant_data`` from its own handler afterwards no longer has the file
+    merged in or its values validated. That is a deliberate narrowing. What must
+    never happen is the two read paths disagreeing inside one build: the ``variant``
+    role reads ``needs_variant_data`` directly, while filter expressions read the
+    ``var`` proxy derived from it.
+    """
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
+    assert warnings == []
+
+    index_html = Path(app.outdir, "index.html").read_text()
+
+    # the role renders the value the extension wrote ...
+    assert "Role renders: from_extension" in index_html
+    # ... so a filter must match that same value, and not the one from the file
+    assert "Extension value: 1" in index_html
+    assert "File value: 0" in index_html
