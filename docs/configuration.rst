@@ -563,7 +563,7 @@ Its members are the ones every engine can draw:
      * Replaces
    - * ``normal``
      * A solid arrow head
-     * ``style_start = "-"``, ``style_end = "->>"``
+     * ``style_start = "-"``, ``style_end = "->>"`` -- see the note below
    - * ``none``
      * No head at all
      * ``style_start = "-"``, ``style_end = "-"``
@@ -588,6 +588,15 @@ Its members are the ones every engine can draw:
    graphviz engine, and ``normal`` is the solid head instead.
    On the plantuml engine the two are identical, so the difference only shows once a
    diagram is rendered with graphviz.
+
+   The ``normal`` row is a mapping of *intent*, not of rendered output.
+   ``style_end = "->>"`` asks PlantUML for a solid head, and ``arrow: normal`` is how
+   that intent is spelled -- but the graphviz translation of the deprecated keys reads
+   only the first and last character of ``style_start + style_end``, so ``->>`` has in
+   fact been collapsing to the same open "V" as ``->``.
+   Migrating that spelling therefore *changes* graphviz output, from ``vee`` to
+   ``normal``. That is the head the configuration always asked for, but it is a change;
+   ``arrow: open`` keeps the arrowheads exactly as they are drawn today.
 
 Where an engine cannot draw a member it degrades and says so once:
 ``cross`` has no PlantUML form, so PlantUML draws a plain head.
