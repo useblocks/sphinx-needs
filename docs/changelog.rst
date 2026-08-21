@@ -14,7 +14,7 @@ Unreleased
 Improvements
 ............
 
-- ✨ Portable link and need-type styling for :ref:`needflow` (:pr:`1783`)
+- ✨ Portable link and need-type styling for :ref:`needflow` (:pr:`1785`)
 
   ``needs_links`` gains ``line``, ``part_line``, ``arrow`` and ``part_color``, and
   ``needs_types`` gains ``shape``. Each says what is *meant* rather than naming one
@@ -295,7 +295,7 @@ Deprecations
 ............
 
 - ⚠️ ``needs_links[].style``, ``.style_part``, ``.style_start`` and ``.style_end`` →
-  ``.line``, ``.part_line``, ``.color``, ``.part_color`` and ``.arrow`` (:pr:`1783`)
+  ``.line``, ``.part_line``, ``.color``, ``.part_color`` and ``.arrow`` (:pr:`1785`)
 
   The four old keys hold PlantUML tokens, which every other engine has to translate.
   They keep working exactly as they did, and will keep working: they are aliases, not a
