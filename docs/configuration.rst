@@ -634,6 +634,10 @@ needs_variant_data_file
 
 .. versionadded:: 8.2.0
 
+.. versionchanged:: 8.4.0
+   The file is loaded while the configuration is being initialised, rather than
+   once document reading starts.
+
 Path to a JSON file containing variant data. The file is loaded and its contents
 are made available under the ``var`` namespace, just like :ref:`needs_variant_data`.
 
@@ -641,6 +645,12 @@ If both ``needs_variant_data_file`` and ``needs_variant_data`` are set, the file
 and the inline dictionary is deep-merged on top (inline values win on conflict).
 
 The path is resolved relative to the Sphinx ``confdir`` (the directory containing ``conf.py``).
+
+The file is read once per build, during configuration initialisation, so a missing file
+or one whose contents are not valid variant data fails the build before any document is
+read. The merged result becomes the value of :ref:`needs_variant_data`, which means it is
+also what Sphinx compares between builds: editing the file changes the configuration and
+re-reads every document, while leaving it alone no longer does.
 
 Configuration example:
 
