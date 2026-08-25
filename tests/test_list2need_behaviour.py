@@ -625,7 +625,7 @@ def test_malformed_input_aborts_the_build(
 ):
     """Pin that these eleven inputs abort the whole build rather than warning.
 
-    Each raises out of ``List2NeedDirective.run`` -- three of them a bare Python
+    Each raises out of ``List2NeedDirective.run`` -- six of them a bare Python
     exception -- so Sphinx stops with a traceback and no location, and the rest of the
     project is never built. They are pinned by exception type and message because that
     is all a caller can currently observe.
