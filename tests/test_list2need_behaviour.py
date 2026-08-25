@@ -19,6 +19,7 @@ that every case's input sits next to the output it produces.
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import re
 from pathlib import Path
 from typing import Any
@@ -678,6 +679,19 @@ def myst_params(index: str) -> dict[str, object]:
     }
 
 
+requires_myst = pytest.mark.skipif(
+    importlib.util.find_spec("myst_parser") is None,
+    reason="myst-parser is not installed",
+)
+"""Skip a Markdown-hosted case when myst-parser is absent.
+
+The projects below name ``myst_parser`` in their ``extensions``, so the application
+cannot even be created without it. The check therefore has to be a mark, which pytest
+evaluates before the ``test_app`` fixture builds anything.
+"""
+
+
+@requires_myst
 @pytest.mark.parametrize("test_app", [myst_params(MYST_INDEX)], indirect=True)
 def test_the_directive_does_not_run_in_a_markdown_document(test_app: SphinxTestApp):
     """Pin that a ``{list2need}`` fence in a MyST document creates no needs.
@@ -688,7 +702,6 @@ def test_the_directive_does_not_run_in_a_markdown_document(test_app: SphinxTestA
     wrote, and the list produces nothing. A need directive in the same document is
     unaffected, which locates the fault precisely.
     """
-    pytest.importorskip("myst_parser")
     app = test_app
     app.build()
     built = needs(app)
@@ -703,6 +716,7 @@ def test_the_directive_does_not_run_in_a_markdown_document(test_app: SphinxTestA
     assert built["MD-CONTROL"]["title"] == "A control need"
 
 
+@requires_myst
 @pytest.mark.parametrize("test_app", [myst_params(MYST_EVAL_RST_INDEX)], indirect=True)
 def test_a_markdown_document_can_reach_the_directive_through_eval_rst(
     test_app: SphinxTestApp,
@@ -713,7 +727,6 @@ def test_a_markdown_document_can_reach_the_directive_through_eval_rst(
     parse, so ``insert_input`` exists and the directive behaves as it does in an
     ``.rst`` document.
     """
-    pytest.importorskip("myst_parser")
     app = test_app
     app.build()
     built = needs(app)
