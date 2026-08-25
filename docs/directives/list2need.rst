@@ -69,12 +69,16 @@ This is called the indentation level and each level must have a need-type define
 The indentation must be a multiple of 2 spaces, and one level is always exactly 2 spaces:
 4 spaces mean level 2, not a second level 1.
 An indentation that is not a multiple of 2 ends the build with an error.
-Tabs cannot be used for the indentation, as a tab counts as a single character,
-so a tab-indented line ends the build as well.
+
+Tabs cannot be used for the indentation.
+Before the directive sees the line, a tab is expanded to the next tab stop (8 columns by default),
+so the indentation it ends up producing depends on the column that tab happens to sit in.
+A tab-indented line therefore usually ends the build,
+and where the expansion does come out as a multiple of 2 it silently lands on a level that was never written.
 
 A line starting **without** a ``*`` will be added to the prior one.
 So it can be used to structure longer titles or content, and has no impact on the later representation.
-Such a line must be indented further than the ``*`` it belongs to.
+Such a line must not start in the first column of the list; a line that does loses its first word.
 
 .. _list2need_ids:
 
@@ -113,9 +117,12 @@ If a line contains no bracketed group, the ID gets generated from the title:
 
    <prefix of the need type> + SHA1(<title>) as uppercase hex, cut to needs_id_length
 
-Only the title is used. The content, the document, the position in the list
-and the need type itself do not take part, so the ID stays the same when the list gets reordered
-or the document gets renamed, and it changes whenever the title changes.
+Only the title feeds the hash.
+The content, the document and the position in the list take no part in it,
+and the need type contributes its prefix but nothing to the hash.
+So the ID stays the same when the list gets reordered or the document gets renamed,
+it changes whenever the title changes,
+and the same title used at two levels of one list gives two different IDs, one per prefix.
 See :ref:`needs_id_length` for the length and :ref:`needs_types` for the prefix of each type.
 
 .. warning::
