@@ -102,6 +102,7 @@ IDS = """
    * (AAA)(BBB) Two bracketed groups
    * ()Empty parentheses title
    * A title with no parentheses
+   *NoSpaceAfterBullet
 """
 
 
@@ -148,6 +149,10 @@ def test_id_capture(test_app: SphinxTestApp):
 
     # No brackets at all: list2need hashes the title itself.
     assert built["R_93AAC"]["title"] == "A title with no parentheses"
+
+    # The space after the bullet is optional: ``\\s*`` in LINE_REGEX is ``*``-quantified,
+    # so the text may start immediately after the ``*``.
+    assert built["R_DEF68"]["title"] == "NoSpaceAfterBullet"
 
 
 AUTO_ID = """
@@ -235,7 +240,15 @@ COLLIDING = """
 .. list2need::
    :types: req, spec
 
+   * Same title in one list
+   * Same title in one list
    * Duplicate title in two documents
+
+.. list2need::
+   :types: req, spec
+
+   * Shared title at two levels
+     * Shared title at two levels
 
 .. toctree::
 
@@ -256,17 +269,34 @@ OTHER
 @pytest.mark.parametrize(
     "test_app", [params(COLLIDING, **{"other.rst": OTHER})], indirect=True
 )
-def test_auto_ids_collide_across_documents(test_app: SphinxTestApp):
-    """Pin that the generated id ignores the document, so equal titles collide.
+def test_equal_titles_collide_unless_the_type_prefix_differs(test_app: SphinxTestApp):
+    """Pin which equal titles produce the same generated id, and which do not.
 
-    Because only the title and the type prefix feed the hash, the same item written in
-    two documents produces the same id, and the second need is dropped.
+    Neither the document nor the item's position feeds the hash, so equal titles of the
+    same type collide wherever they are written. The type contributes its prefix,
+    though, so the same title at two levels of one list is safe -- which is the only
+    reason nested lists of repeated titles work at all.
     """
     app = test_app
     app.build()
+    built = needs(app)
+
     # NOTE: current behaviour; see PR discussion.
+    # Twice in the same list: the second need is dropped.
+    assert "A need with ID 'R_C6376' already exists" in warnings(app)
+    assert built["R_C6376"]["title"] == "Same title in one list"
+
+    # NOTE: current behaviour; see PR discussion.
+    # Once in each of two documents: likewise, and the survivor is the first read.
     assert "A need with ID 'R_1776A' already exists" in warnings(app)
-    assert needs(app)["R_1776A"]["docname"] == "index"
+    assert built["R_1776A"]["docname"] == "index"
+
+    # The same title at two levels is safe, because the prefixes differ. Both needs are
+    # created, from one hash and two prefixes, and nothing is reported.
+    assert built["R_E8D5C"]["type"] == "req"
+    assert built["S_E8D5C"]["type"] == "spec"
+    assert built["S_E8D5C"]["parent_need"] == "R_E8D5C"
+    assert "E8D5C" not in warnings(app)
 
 
 # ---------------------------------------------------------------------------
@@ -279,7 +309,6 @@ OPTIONS = """
 
    * (OPT-DOUBLE) Double quoted ((status="open"))
    * (OPT-SINGLE) Single quoted ((status='open'))
-   * (OPT-UNQUOTED) Unquoted ((status=open))
    * (OPT-MISMATCH) Mismatched quotes ((status='open"))
    * (OPT-GREEDY) Title ((status="open")) middle ((tags="z"))
    * (OPT-SPLIT) Delimiter inside a value ((tags="a.b"))
@@ -303,12 +332,6 @@ def test_inline_options(test_app: SphinxTestApp):
     assert built["OPT-SINGLE"]["status"] == "open"
 
     # NOTE: current behaviour; see PR discussion.
-    # ``OPTIONS_REGEX`` requires a quoted value, so an unquoted one matches nothing and
-    # is dropped without a diagnostic.
-    assert built["OPT-UNQUOTED"]["status"] is None
-    assert "OPT-UNQUOTED" not in warnings(app)
-
-    # NOTE: current behaviour; see PR discussion.
     # The opening and closing quote are not required to match.
     assert built["OPT-MISMATCH"]["status"] == "open"
 
@@ -327,6 +350,34 @@ def test_inline_options(test_app: SphinxTestApp):
     assert built["OPT-SPLIT"]["title"] == 'Delimiter inside a value ((tags="a'
     assert built["OPT-SPLIT"]["content"] == 'b"))'
     assert built["OPT-SPLIT"]["tags"] == ["ab"]
+
+
+UNQUOTED_OPTION = """
+.. list2need::
+   :types: req, spec
+
+   * (OPT-UNQUOTED) Unquoted ((status=open))
+"""
+
+
+@pytest.mark.parametrize("test_app", [params(UNQUOTED_OPTION)], indirect=True)
+def test_an_unquoted_option_value_is_dropped_without_a_diagnostic(
+    test_app: SphinxTestApp,
+):
+    """Pin that an unquoted option value is discarded, and that nothing is reported.
+
+    ``OPTIONS_REGEX`` requires the value to be quoted, so ``status=open`` matches no
+    pair at all and the option simply never exists.
+
+    The project holds this one item and nothing else, so asserting that the whole
+    warning stream is empty is what pins the *silence*: any diagnostic sphinx-needs
+    might grow for this input would fail here, whether or not it named the need.
+    """
+    app = test_app
+    app.build()
+    # NOTE: current behaviour; see PR discussion.
+    assert needs(app)["OPT-UNQUOTED"]["status"] is None
+    assert warnings(app) == ""
 
 
 # ---------------------------------------------------------------------------
