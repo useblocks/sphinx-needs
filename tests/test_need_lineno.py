@@ -1,13 +1,14 @@
 """Regression tests for the ``lineno`` a need records for its own directive.
 
 A directive's ``self.lineno`` counts the lines of what the *parser* was handed, which
-stops being the lines of the file as soon as anything has put text into it. Three
-ordinary things do: Sphinx prepends ``rst_prolog`` to every document it parses, and
-both docutils' ``.. include::`` and sphinx-needs' own ``.. list2need::`` splice text
-in mid-parse with ``StateMachine.insert_input``. Each one advances the counter by the
-length of the text it added, the shifts compound, and a need directive after them used
-to record its real line *plus* all of that drift -- routinely past the end of the
-file. That is issue #1349.
+stops being the lines of the file as soon as anything has put text into it. Sphinx
+prepends ``rst_prolog`` to every document it parses, and docutils' ``.. include::``
+splices text in mid-parse with ``StateMachine.insert_input`` -- as sphinx-needs' own
+``.. list2need::`` did too, until it was reimplemented to build its needs rather than
+generate text for the parser to read back. Each one advances the counter by the length
+of the text it added, the shifts compound, and a need directive after them used to
+record its real line *plus* all of that drift -- routinely past the end of the file.
+That is issue #1349.
 
 ``NeedDirective`` now takes the line from ``self.get_source_info()``, the
 ``SphinxDirective`` accessor that maps that counter back onto a real
@@ -111,12 +112,15 @@ def needs(app: SphinxTestApp) -> dict[str, dict[str, Any]]:
     indirect=True,
 )
 def test_inserted_text_no_longer_shifts_the_recorded_lineno(test_app: SphinxTestApp):
-    """Every ordinary need directive records the line it is written on (#1349).
+    """Every need records the line it is written on (#1349).
 
-    The three needs asserted first sit after one, two and three such insertions
-    respectively, so before this fix each was wrong by a larger amount than the one
-    before it: lines 4, 9 and 18 were recorded as 7, 24 and 47 -- and this document is
-    nineteen lines long.
+    The three ordinary need directives asserted first sit after one, two and three
+    such insertions respectively, so before this fix each was wrong by a larger amount
+    than the one before it: lines 4, 9 and 18 were recorded as 7, 24 and 47 -- and this
+    document is nineteen lines long.
+
+    The two needs the ``.. list2need::`` produces were wrong in a second way, and are
+    right for a second reason -- see the note beside them.
     """
     app = test_app
     app.build()
@@ -139,14 +143,15 @@ def test_inserted_text_no_longer_shifts_the_recorded_lineno(test_app: SphinxTest
     assert built["LN-INSIDE-INCLUDE"]["lineno"] == 4
     assert built["LN-INSIDE-INCLUDE"]["docname"] == "index"
 
-    # NOTE: current behaviour. The needs list2need *generates* are re-parsed from a
-    # block whose source is the document but whose offsets restart at 1, so they record
-    # their position inside that generated block rather than the line of the list item
-    # that produced them. That is where their warnings already point, and it is no
-    # worse than before; it is fixed by giving the needs their line at construction
-    # time instead of round-tripping them through the parser.
-    assert built["LN-GENERATED-A"]["lineno"] == 1
-    assert built["LN-GENERATED-B"]["lineno"] == 7
+    # The needs list2need produces record the line of the list item they were written
+    # as -- lines 15 and 16 -- rather than a position inside a block of generated text.
+    # They are not resolved through ``get_source_info()`` like the three above: the
+    # directive builds them itself and gives each one the line of its own item, taken
+    # from the source mapping of the directive's content. Neither the ``rst_prolog``
+    # nor the ``.. include::`` above them shifts what they record, which is what makes
+    # this the strongest of the five assertions.
+    assert built["LN-GENERATED-A"]["lineno"] == 15
+    assert built["LN-GENERATED-B"]["lineno"] == 16
 
 
 MYST_CONF = """\
