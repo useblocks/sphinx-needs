@@ -15,7 +15,7 @@ Improvements
 ............
 
 - ✨ :ref:`list2need` works in Markdown documents, and records the line each need was
-  written on (:issue:`1349`, :pr:`1789`)
+  written on (:issue:`1349`, :pr:`1790`)
 
   The directive used to render every item into a need directive through a template and
   hand the result back to the parser. That step is gone: the items are built directly,
@@ -278,7 +278,7 @@ Breaking changes
 ................
 
 - ‼️ A :ref:`list2need` item written ``()`` gets the same generated ID as one written
-  without brackets (:pr:`1789`)
+  without brackets (:pr:`1790`)
 
   Writing an empty bracketed group used to suppress the ID of the generated need, which
   sent it down the need directives' own ID generator — a different one, which reads
