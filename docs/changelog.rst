@@ -274,7 +274,7 @@ These changes do not affect user-facing behaviour:
 Bug fixes
 .........
 
-- 🐛 A need records the line it is actually written on **(changed output)** (:issue:`1349`)
+- 🐛 A need records the line it is actually written on **(changed output)** (:issue:`1349`, :pr:`1789`)
 
   ``rst_prolog``, ``.. include::`` and :ref:`list2need` each put text into the document
   being parsed, and each one used to shift the ``lineno`` recorded for every need after
