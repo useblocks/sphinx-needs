@@ -161,15 +161,31 @@ class TestMountConfig:
         with pytest.raises(MountConfigError, match="must not start with '/'"):
             MountConfig(dir=tmp_path, mount_at="//a/b")
 
-    def test_extra_keys_rejected(self, tmp_path: Path) -> None:
-        with pytest.raises(MountConfigError, match="Unknown mount keys"):
-            MountConfig.from_dict(
-                {
-                    "dir": tmp_path,
-                    "mount_at": "ok",
-                    "unknown_key": True,
-                }
-            )
+    def test_extra_keys_are_reported_and_ignored(self, tmp_path: Path) -> None:
+        """An unknown key is reported and the rest of the mount is honoured.
+
+        This changed from a hard error deliberately. A ``ubproject.toml`` is
+        shared with tools on independent release cadences, so a key this
+        reader does not model is routine — and aborting takes down every build
+        of the project on every older sphinx-mounts, including builds of
+        variants the key would not have changed.
+
+        It also has to ship no later than the release that makes
+        ``[[source.mounts]]`` readable, because that is the release which would
+        otherwise open the window a future gating key falls into: a reader that
+        mounts a bundle while ignoring a key saying *not to* publishes content
+        the author gated. Tolerance in the same release closes the window
+        before it opens.
+        """
+        mount = MountConfig.from_dict(
+            {
+                "dir": tmp_path,
+                "mount_at": "ok",
+                "unknown_key": True,
+            }
+        )
+        assert mount.mount_at == "ok"
+        assert mount.dir == tmp_path
 
     def test_missing_required_key_rejected(self) -> None:
         # Neither `dir` nor `files` present.

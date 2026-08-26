@@ -37,7 +37,7 @@ How it works
 ------------
 
 When a build starts, ``sphinx-mounts`` loads ``ubproject.toml`` (or the
-file referenced by ``mounts_from_toml``), then swaps in a subclass of
+file referenced by ``sources_from_toml``), then swaps in a subclass of
 :class:`sphinx.project.Project` whose ``discover()`` does two things:
 
 1. The normal srcdir walk, populating docnames from your host project.

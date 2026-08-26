@@ -1,0 +1,366 @@
+# VENDORED COPY — do not edit to make a test pass.
+#
+# Source repository: useblocks/ubcode (private)
+# Source path:       rust/ubc_config/tests/fixtures/variant_condition_conformance.toml
+# Source commit:     cfabc9005
+#
+# ubCode's copy is CANONICAL. This file is a byte-identical vendored copy of it,
+# with this block prepended and nothing else changed. The corpus travels
+# private -> public (ubcode is private, sphinx-mounts is public), so vendoring
+# with a recorded source commit is the only sync mechanism that works in both
+# CIs; a submodule of a private repo would break public CI.
+#
+# `tests/test_variant_conditions.py` runs every `[[case]]` below against
+# `sphinx_mounts.variants` AND asserts the case COUNT, so a truncated or
+# silently-trimmed vendor is a red test rather than reduced coverage.
+#
+# The header below is the original, unchanged. Two notes on reading it from
+# here:
+#
+# * its "PREMISE, TO BE CONFIRMED IN P3" paragraph is confirmed by this
+#   repository: `sphinx_mounts.variants` interprets a condition over the
+#   variant data with no namespace object, no builtins and no `eval` at all,
+#   so the `var`-only, builtin-less premise is implemented by construction
+#   rather than assumed;
+# * `sphinx_mounts` is the second engine the header speaks of.
+
+# Conformance corpus for the `[[source.variant_sources]]` `if` grammar.
+#
+# This file is the CONTRACT for the rule-condition grammar, expressed as data so
+# that more than one implementation can be held to it. ubCode's Rust tests read
+# it directly (`rust/ubc_config/tests/test_variant_sources.rs`); it is plain TOML
+# so that a Python suite can read it with `tomllib` and assert the same
+# verdicts. That second reader is the point: a narrowed grammar only removes the
+# "one rule string, two document sets" hazard if BOTH engines refuse the same
+# forms, and prose cannot enforce that across two repositories on independent
+# release cadences.
+#
+# Each `[[case]]` has:
+#   expr     - the condition, exactly as it would be written in `if = "…"`
+#   verdict  - "accept" (a valid rule condition) or "reject" (a config error)
+#   value    - for an accepted case, the truth value under `[variant_data]`
+#              below; omitted when the case is rejected
+#   value    - for an accepted case that cannot be EVALUATED against
+#              `[variant_data]` (an unknown key, a type mismatch), use
+#              `error = true` instead: the grammar accepts it, the evaluation
+#              fails, and the rule's files are excluded
+#   why      - one line saying what the case pins
+#
+# One rule is worth stating up front, because it is the one place this key is
+# narrower than the `.. if::` directive for a reason a reader might not guess:
+# every field reference must be rooted at `var`. `var.edition` is accepted;
+# `edition` and `build_tags` are REJECTED, even though `.. if::` tolerates the
+# prefix-less spelling. The reasoning is that a bare name raises NameError in the
+# second engine and therefore EXCLUDES there, while it would evaluate here and
+# INCLUDE. That is statically knowable, so it is a config error rather than an
+# evaluation failure — unlike an unknown `var.*` KEY, which depends on the
+# variant data and therefore stays accept-plus-evaluation-error.
+#
+# PREMISE, TO BE CONFIRMED IN P3: that the second engine evaluates a rule
+# condition over a `var`-only namespace with no builtins. Everything above, and
+# the `why` on every row that cites the second engine, rests on it. It is stated
+# from the engine's `.. if::` implementation rather than from a released
+# `variant_sources` reader, because there is no such reader yet — so no test in
+# this repository can check it, and the P3 issue must confirm it before this file
+# is treated as a two-sided contract. The direction is deliberately the safe one:
+# if the premise turns out wrong, the cost is a config error on a form that would
+# have been fine, never a rule that quietly stops gating.
+#
+# Adding a case is cheap and is the preferred way to pin a grammar question.
+# Removing or loosening one should be a deliberate, reviewed act: the fence
+# tests re-run every case, so a validator that stops refusing a form turns this
+# file red.
+
+# The variant data every accepted case is evaluated against.
+[variant_data]
+edition = "pro"
+count = 2
+ratio = 1.5
+debug = false
+name = "Widget"
+tags = ["alpha", "beta"]
+
+[variant_data.build]
+debug = true
+features = ["core", "net"]
+
+[variant_data.empty]
+
+# --------------------------------------------------------------------------
+# Accepted: comparisons
+# --------------------------------------------------------------------------
+
+[[case]]
+expr = "var.edition == 'pro'"
+verdict = "accept"
+value = true
+why = "the canonical rule shape"
+
+[[case]]
+expr = "var.edition != 'pro'"
+verdict = "accept"
+value = false
+why = "inequality is a boolean top level"
+
+[[case]]
+expr = "edition == 'pro'"
+verdict = "reject"
+why = "a prefix-less field name is not in the second engine's namespace ON THE PREMISE recorded in the header (P3 to confirm), so it would raise NameError and EXCLUDE there while evaluating here — one rule string, two document sets. The content `.. if::` directive tolerates it; this key must not, and that difference is the whole point of the narrowing"
+
+[[case]]
+expr = "var.count > 1"
+verdict = "accept"
+value = true
+why = "numeric comparison"
+
+[[case]]
+expr = "var.count >= 2"
+verdict = "accept"
+value = true
+why = "the boundary of the comparison above"
+
+[[case]]
+expr = "var.count < 2"
+verdict = "accept"
+value = false
+why = "the other side of the same boundary"
+
+[[case]]
+expr = "var.ratio > 1"
+verdict = "accept"
+value = true
+why = "a float compares against an integer literal"
+
+[[case]]
+expr = "var.debug == False"
+verdict = "accept"
+value = true
+why = "the rewrite a bare `var.debug` must be given; the literals are Python-spelled"
+
+[[case]]
+expr = "var.build.debug == True"
+verdict = "accept"
+value = true
+why = "nested attribute access"
+
+[[case]]
+expr = "var.build.debug == var.debug"
+verdict = "accept"
+value = false
+why = "two fields compared against each other"
+
+# --------------------------------------------------------------------------
+# Accepted: membership, null tests, string predicates, boolean algebra
+# --------------------------------------------------------------------------
+
+[[case]]
+expr = "'net' in var.build.features"
+verdict = "accept"
+value = true
+why = "a literal in a list-valued field"
+
+[[case]]
+expr = "'usb' not in var.build.features"
+verdict = "accept"
+value = true
+why = "`not in` is supported and is a boolean top level"
+
+[[case]]
+expr = "var.edition in ['pro', 'enterprise']"
+verdict = "accept"
+value = true
+why = "a list-literal right-hand side"
+
+[[case]]
+expr = "var.edition is None"
+verdict = "accept"
+value = false
+why = "`is None` on a present key is false, not an error"
+
+[[case]]
+expr = "var.edition is not None"
+verdict = "accept"
+value = true
+why = "`is not None` is the presence test"
+
+[[case]]
+expr = "var.name.startswith('Wid')"
+verdict = "accept"
+value = true
+why = "a string predicate returns a boolean, so it is a legal top level"
+
+[[case]]
+expr = "var.name.endswith('get')"
+verdict = "accept"
+value = true
+why = "the second string predicate"
+
+[[case]]
+expr = "var.name.upper() == 'WIDGET'"
+verdict = "accept"
+value = true
+why = "a string method is legal INSIDE a comparison; only a bare call is not"
+
+[[case]]
+expr = "var.edition == 'pro' and var.count > 1"
+verdict = "accept"
+value = true
+why = "conjunction"
+
+[[case]]
+expr = "var.edition == 'basic' or var.count > 1"
+verdict = "accept"
+value = true
+why = "disjunction"
+
+[[case]]
+expr = "not var.edition == 'basic'"
+verdict = "accept"
+value = true
+why = "negation of a comparison"
+
+[[case]]
+expr = "(var.edition == 'pro' or var.count < 1) and var.debug == False"
+verdict = "accept"
+value = true
+why = "parentheses group as written"
+
+[[case]]
+expr = "True"
+verdict = "accept"
+value = true
+why = "a bare boolean literal is a Python keyword, available even with builtins removed"
+
+[[case]]
+expr = "False"
+verdict = "accept"
+value = false
+why = "the other literal; a rule written this way always excludes"
+
+# --------------------------------------------------------------------------
+# Accepted grammar, failing evaluation: the rule's files are EXCLUDED
+# --------------------------------------------------------------------------
+
+[[case]]
+expr = "var.missing == 'x'"
+verdict = "accept"
+error = true
+why = "an unknown key is an evaluation error, not a grammar error; it excludes"
+
+[[case]]
+expr = "var.build.missing == 1"
+verdict = "accept"
+error = true
+why = "an unknown nested key behaves the same way"
+
+[[case]]
+expr = "'html' in build_tags"
+verdict = "reject"
+why = "`build_tags` belongs to `.. only::`, not to a variant condition, and it is a bare non-`var` root — refused for the same statically-known reason as any other prefix-less name rather than left to fail at evaluation time. Note that #2722's proposal text says the rule `if` would get the `var.*` / `build_tags` context; the header premise (P3 to confirm) is what this row rests on instead"
+
+[[case]]
+expr = "var.debug == false"
+verdict = "reject"
+why = "the literals are Python-spelled `True` / `False`; a TOML-spelled `false` is read as a FIELD NAME, and a bare field name is refused — so this is caught at config time with a message naming the real mistake, rather than at evaluation time. It excluded either way; the config error is louder and earlier"
+
+# --------------------------------------------------------------------------
+# Rejected: a non-boolean top level
+# --------------------------------------------------------------------------
+
+[[case]]
+expr = "var.debug"
+verdict = "reject"
+why = "bare-field truthiness has no boolean top level; write `var.debug == False`"
+
+[[case]]
+expr = "var.count"
+verdict = "reject"
+why = "the same for an integer field, where the coercion is easiest to misread"
+
+[[case]]
+expr = "var.build.features"
+verdict = "reject"
+why = "the same for a list field"
+
+[[case]]
+expr = "var.build"
+verdict = "reject"
+why = "a mapping used as a condition"
+
+[[case]]
+expr = "not var.debug"
+verdict = "reject"
+why = "refused too: the flattened form cannot tell a negated leaf from a negated top level, and narrower is the safe direction"
+
+[[case]]
+expr = "var.name.upper()"
+verdict = "reject"
+why = "a bare string-method call returns a string, not a boolean"
+
+[[case]]
+expr = "var.name.lower()"
+verdict = "reject"
+why = "the second bare string-method call"
+
+[[case]]
+expr = "var.edition == 'pro' and var.debug"
+verdict = "reject"
+why = "one non-boolean operand is enough to refuse the whole condition"
+
+# --------------------------------------------------------------------------
+# Rejected: forms a builtin-less `eval` would raise NameError on
+# --------------------------------------------------------------------------
+
+[[case]]
+expr = "len(var.build.features) > 1"
+verdict = "reject"
+why = "`len` is a builtin, and the second engine evaluates with builtins removed (the header premise; P3 to confirm)"
+
+[[case]]
+expr = "search('pro', var.edition)"
+verdict = "reject"
+why = "`search` is a need-filter extension, not a name in this namespace"
+
+[[case]]
+expr = "c.this_doc()"
+verdict = "reject"
+why = "a rule has no document context, and the second engine has no such name"
+
+# --------------------------------------------------------------------------
+# Rejected: outside the grammar entirely
+# --------------------------------------------------------------------------
+
+[[case]]
+expr = ""
+verdict = "reject"
+why = "an empty condition"
+
+[[case]]
+expr = "   "
+verdict = "reject"
+why = "whitespace only"
+
+[[case]]
+expr = "var.count + 1 > 2"
+verdict = "reject"
+why = "arithmetic is outside the grammar; the second engine would evaluate it"
+
+[[case]]
+expr = "1 < var.count < 3"
+verdict = "reject"
+why = "a chained comparison"
+
+[[case]]
+expr = "var.build.features[0] == 'core'"
+verdict = "reject"
+why = "indexing"
+
+[[case]]
+expr = "var.edition =="
+verdict = "reject"
+why = "a syntax error"
+
+[[case]]
+expr = "var.edition == 'pro' and"
+verdict = "reject"
+why = "a truncated conjunction"

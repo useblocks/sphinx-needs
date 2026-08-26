@@ -21,7 +21,7 @@ event priority is "lower number runs earlier"; the default is 500.
      - Purpose
    * - ``config-inited``
      - 400
-     - ``_on_load_toml`` resolves ``mounts_from_toml`` against ``confdir``
+     - ``_on_load_toml`` resolves ``sources_from_toml`` against ``confdir``
        and replaces ``config.mounts`` with the array parsed from the TOML
        (paths anchored to the TOML's own directory). Runs before
        validation so the validator sees the final list.

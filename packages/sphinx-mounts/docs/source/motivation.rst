@@ -7,6 +7,23 @@ IDE-extension layer that has grown up around Docs-as-Code workflows
 and the traceability work demanded by safety-critical software
 projects.
 
+One more thing this extension is for
+------------------------------------
+
+Beside mounting, sphinx-mounts is the Sphinx-side reader for
+:ref:`[[source.variant_sources]] <variant-sources>` — the shared
+``ubproject.toml`` key that decides which **files** are in the build for
+the current variant. A project with no mounts at all can install
+sphinx-mounts purely to have ``sphinx-build`` narrow its document set per
+variant, exactly as `ubCode`_ does.
+
+It lives here for the same reason mounts do: the answer to "which
+documents does this project have" belongs to whoever owns discovery, and
+these rules are read out of the same declarative file by the same tools.
+Before it landed, a project could declare variant rules that ubCode
+honoured and ``sphinx-build`` ignored — one file, two document sets, which
+is the exact divergence the shared configuration exists to prevent.
+
 Two valid wishes in tension
 ---------------------------
 

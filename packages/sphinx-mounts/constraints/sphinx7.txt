@@ -1,0 +1,16 @@
+# Constraints that keep the `sphinx7` tox factor on the DECLARED FLOOR.
+#
+# The factor pin in `tox.ini` alone does not hold it there. tox installs
+# `deps` first and the `testing` dependency group second, and the group's
+# `myst-parser>=4.0.0` now resolves to 5.1.0, whose own floor is `sphinx>=8` —
+# so the second install silently upgraded Sphinx 7.4.7 to 9.1.0 and the leg
+# named `py312-sphinx7` ran Sphinx 9. The floor was never exercised, locally or
+# in CI, while the branch claimed it was.
+#
+# A constraints file is what both installs see (`UV_CONSTRAINT` /
+# `PIP_CONSTRAINT`), so it survives the second resolve.
+#
+# `tests/test_sphinx_version.py` asserts the outcome rather than trusting this
+# file, so a future silent upgrade is a red test rather than an invisible one.
+sphinx<8
+myst-parser<5

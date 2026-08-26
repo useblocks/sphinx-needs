@@ -74,10 +74,12 @@ Add the extension and (optionally) point at the TOML file:
    extensions = ["sphinx_mounts"]
 
    # Default — can be omitted.
-   mounts_from_toml = "ubproject.toml"
+   sources_from_toml = "ubproject.toml"
 
-``mounts_from_toml``
-~~~~~~~~~~~~~~~~~~~~
+.. _sources-from-toml:
+
+``sources_from_toml``
+~~~~~~~~~~~~~~~~~~~~~
 
 Type: ``str | None``
 
@@ -85,10 +87,47 @@ Default: ``"ubproject.toml"``
 
 Rebuild trigger: ``env``
 
-Path (relative to ``confdir``) of the TOML file from which to load the
-mount configuration. Set to ``None`` to disable TOML loading entirely;
-the extension then falls back to a ``mounts = [...]`` value in
-``conf.py`` (see :ref:`conf-py-fallback`).
+Path (relative to ``confdir``) of the TOML file this extension reads.
+
+.. warning::
+
+   Setting it to ``None`` disables **everything** this extension reads from
+   TOML — not only :ref:`the mounts array <where-mounts-live>` but also
+   :ref:`variant rules <variant-sources>`. With no rules read, nothing is
+   gated and every file is published. Name that coupling to yourself before
+   reaching for ``None``: it fails **open**, and the content a rule existed
+   to withhold is exactly what gets published.
+
+   With TOML loading off, the extension falls back to a ``mounts = [...]``
+   value in ``conf.py`` (see :ref:`conf-py-fallback`). There is no
+   ``conf.py`` equivalent for variant rules; they live in the shared file
+   by design, because a second tool has to be able to read them.
+
+``mounts_from_toml``
+~~~~~~~~~~~~~~~~~~~~
+
+.. deprecated:: next
+
+   Renamed to :ref:`sources-from-toml`. The old name still works and reads
+   exactly the same file; setting it explicitly emits a
+   ``mounts.deprecated_confval`` warning.
+
+   The rename is not cosmetic. This extension now also reads
+   :ref:`variant rules <variant-sources>` out of the same file, and a
+   project with **no mounts at all** may want only those — which should not
+   require setting a confval whose name says otherwise.
+
+   Setting both names explicitly, to different values, is a hard
+   configuration error rather than a precedence puzzle: which file is read
+   has to be readable off ``conf.py``. Setting only the old one is
+   honoured.
+
+   If you cannot migrate yet and build with ``-W``:
+
+   .. code-block:: python
+
+      # conf.py
+      suppress_warnings = ["mounts.deprecated_confval"]
 
 .. _mount-semantics:
 
@@ -613,7 +652,7 @@ bag of keys.
 Fallback: ``mounts`` in ``conf.py``
 -----------------------------------
 
-If the TOML file is not present (or ``mounts_from_toml`` is set to
+If the TOML file is not present (or ``sources_from_toml`` is set to
 ``None``), the extension reads the ``mounts`` value from ``conf.py``
 instead. This is the legacy code path; it is retained for projects that
 cannot adopt a TOML file yet.
@@ -690,7 +729,7 @@ bundled across unusual directory layouts.
    only *comments* in the TOML changes nothing and correctly rebuilds
    nothing.
 
-``mounts_from_toml`` itself is documented as a path relative to
+``sources_from_toml`` itself is documented as a path relative to
 ``confdir``, and that is how it should be used. It does also accept an
 absolute path, and a relative one may climb out of ``confdir`` with
 ``..``; neither is rejected. Keep in mind that the TOML's own directory
@@ -1052,6 +1091,367 @@ List it under ``exclude``:
 Files whose suffix is outside ``source_suffix`` — ``.puml``, ``.json`` — need no
 exclude, since discovery never picks them up.
 
+.. _variant-sources:
+
+Variant-gated source selection: ``[[source.variant_sources]]``
+--------------------------------------------------------------
+
+sphinx-mounts is also the Sphinx-side reader for
+``[[source.variant_sources]]`` — the shared ``ubproject.toml`` key that
+decides **which files are part of the build for the current variant**. A
+project with no mounts at all can install sphinx-mounts purely to have
+``sphinx-build`` narrow its document set per variant, exactly as
+`ubCode`_ does.
+
+Each rule pairs a condition with a set of globs:
+
+.. code-block:: toml
+
+   # ubproject.toml
+   [needs.variant_data]
+   edition = "basic"
+
+   [[source.variant_sources]]
+   if = "var.edition == 'pro'"
+   files = ["reference/pro/**/*.rst"]
+
+   [[source.variant_sources]]
+   if = "'networking' in var.build.features"
+   files = ["chapters/networking.rst", "specs/net/**"]
+
+The rule, in one sentence:
+
+   Every rule whose condition is **false** excludes its ``files``; a file
+   no false rule matches is unaffected.
+
+Equivalently, a file is in the build unless some rule matching it is false
+— an AND over the conditions of every rule matching that file. Several
+rules may name one file. **Order does not matter**, and rules only ever
+*narrow*: they never pull in a file that discovery would not have found.
+
+A removed file is not read at all. It produces no page, has no document
+name, declares no needs, and nothing in it reaches search, ``objects.inv``
+or cross-references. That is the difference from Sphinx-Needs' ``if``
+*directive*, which gates content *within* a document that still exists.
+
+Where the variant data comes from
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The conditions are evaluated against a merged **variant map**: the JSON
+file named by ``variant_data_file`` first, with the inline
+``[needs.variant_data]`` table deep-merged on top.
+
+.. code-block:: toml
+
+   [needs]
+   variant_data_file = "variants.json"      # loaded first
+
+   [needs.variant_data]                     # merged on top; wins on conflict
+   edition = "basic"
+
+sphinx-mounts computes that map itself rather than depending on
+Sphinx-Needs, so the rules work whether or not Sphinx-Needs is installed.
+When it *is* installed, its own resolved values are the input to the merge
+and the merge is a no-op, so the two tools cannot disagree about which
+documents exist.
+
+.. note::
+
+   The reader takes the map from Sphinx-Needs whenever Sphinx-Needs is
+   **installed**, so that the two tools cannot disagree — the TOML fallback
+   is for the case where nothing else computes one.
+
+   A project that installs Sphinx-Needs but never points it at this file (no
+   ``needs_from_toml``) is therefore **refused**, not merely warned about: the
+   map would be empty, every rule would report an unknown key and exclude, and
+   the whole gated document set would disappear. The message names the
+   one-line fix. A project that supplies the map from ``conf.py`` or ``-D``
+   instead is unaffected — its map is not empty.
+
+   The sibling corner has no diagnostic and is worth knowing about:
+   :ref:`sources-from-toml` and ``needs_from_toml`` may point at **different
+   files**, in which case the rules come from one and the variant map from the
+   other. Point both at the same file unless you mean otherwise.
+
+**Two anchors, and they are different on purpose.** A relative
+``variant_data_file``:
+
+- declared in ``ubproject.toml`` resolves against **the directory holding
+  that TOML file** (so the file stays self-describing when it moves as a
+  unit — the same rule mount paths follow, see :ref:`path-anchoring`);
+- declared in ``conf.py``, or overridden with ``sphinx-build -D``, resolves
+  against **confdir**.
+
+.. note::
+
+   On Sphinx-Needs 8.3.1 and earlier, a ``-D needs_variant_data_file=…``
+   override reaches sphinx-mounts but is **not** applied by Sphinx-Needs'
+   own ``if`` directives, because that release resolves the variant map
+   later in the build than the override is read. A project on that version
+   can therefore have the two tools disagree about the map when — and only
+   when — the file is overridden from the command line. This is a
+   Sphinx-Needs-side limitation that sphinx-mounts neither creates nor
+   fixes; upgrading Sphinx-Needs resolves it.
+
+What the globs mean
+~~~~~~~~~~~~~~~~~~~
+
+``files`` patterns are anchored at the project's source root and use the
+same dialect as the corresponding ``[source]`` key in ubCode. Two
+consequences are worth knowing before writing a rule.
+
+**A pattern with no path separator matches by file name, at every depth.**
+``files = ["internal.rst"]`` gates *every* ``internal.rst`` in the project
+— and in every mounted tree — not one file. Give a pattern a path
+(``reference/internal.rst``) to gate one place.
+
+**A pattern that carries a separator is root-anchored**, which is the
+opposite of the intuition the rule above creates. ``pro/**`` gates nothing
+unless ``pro/`` sits at the source root.
+
+.. note::
+
+   **Variant rules do not gate a file-list mount** — one declared with
+   ``files = [...]`` rather than ``dir`` — in *either* reader, under any rule
+   spelling. A file-list mount's entries are an explicit request for named
+   files and bypass pattern matching entirely, so there is nothing for a rule
+   to narrow. Use a **directory mount** for a bundle that has to be gateable.
+
+   It is stated here rather than reported per build because ubCode is silent
+   about it too, and a diagnostic only one reader emits is itself a difference
+   between the two.
+
+Four spellings are **refused**, and each refusal fails the whole
+configuration rather than skipping its rule:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 22 78
+
+   * - Spelling
+     - Why
+   * - ``{a,b}`` alternation
+     - Alternation for one engine, three literal characters for another.
+       Write one pattern per alternative.
+   * - a ``..`` climb
+     - Gate files inside the project; gate an external tree from the mount
+       that contributes it.
+   * - an absolute path
+     - Rule globs are relative to the folder holding ``ubproject.toml``.
+   * - ``?`` beside a path separator
+     - ``?`` may cross a separator in one engine and never does in another,
+       so the pattern has no faithful spelling for every reader. Write the
+       segment out in full, or use ``**``.
+
+Refusing rather than skipping is deliberate. Skipping a rule leaves every
+file it names in the build — **including the files its other, perfectly
+valid patterns name** — behind a diagnostic the project could suppress.
+For a key whose only purpose is keeping content out of a build, failing
+open is the one outcome that must not be possible.
+
+The condition
+~~~~~~~~~~~~~
+
+``if`` holds a Python-*like* expression over the variant map. It supports
+comparisons (``== != < <= > >=``), membership (``in`` / ``not in``, with a
+list literal on the right), ``is None`` / ``is not None``,
+``.startswith(…)`` / ``.endswith(…)``, ``and`` / ``or`` / ``not`` with
+parentheses, nested ``var.*`` access, and the literals ``True`` / ``False``.
+
+Nothing is executed to evaluate it: the expression is parsed, checked
+against that grammar, and then **interpreted** over the variant map. There
+is no namespace object, no builtins, and no ``eval`` anywhere in the
+extension.
+
+.. important::
+
+   **The grammar and its semantics are those of the other reader, not
+   Python's.** The same ``if`` string decides which files two tools build, so
+   where the two could disagree this one follows the other rather than
+   CPython. The differences are small in number and consequential in effect:
+
+   ``var.debug == 0`` is **false** when ``debug = false``, where Python says
+   true — and ``var.debug != 0`` is **true**, where Python says false. A value
+   is only ever compared with a value of the same kind: an integer against an
+   integer or a float, a string against a string, a boolean against a boolean.
+   Any other pairing is simply *false* rather than coerced.
+
+   A few forms are **evaluation errors** rather than values, and an evaluation
+   error excludes the rule's files: an ordering comparison against anything
+   that is not a number (``var.debug > 0``), a list on either side of ``==``
+   (``var.tags == var.build.features``), a wrongly-typed literal in a
+   membership test (``2 in var.tags``), and ``'key' in var.some_table``.
+
+   **Spelling matters too**, and this is the part most likely to catch you.
+   A condition is accepted only if the other reader's own grammar can derive
+   it: sphinx-mounts recognises the raw text with a port of that grammar
+   before it parses anything, so a spelling only one of the two tools accepts
+   is refused rather than guessed at.
+
+   In practice that means ``not(x)``, ``x and(y)``, ``in['pro']``,
+   ``var . name``, ``.upper( )``, ``.startswith( 'x' )``, a **trailing comma**
+   in a list (``['pro',]``), a tuple (``('pro','x')``), a ``# comment``,
+   a doubled ``not not``, parentheses around an *operand* (``var.count == (2)``),
+   a non-ASCII field name, and numerals written as ``0x2`` / ``0b10`` / ``2_0``
+   / ``.5`` are all configuration errors. That list is illustrative, not
+   exhaustive — the rule is the grammar, not the list.
+
+   Whitespace *is* free wherever that grammar allows it: ``var.count>=2``,
+   ``[ 'a' , 'b' ]``, extra spaces, tabs, ``2.``, ``2e1``, ``-2`` and
+   ``not (not (x))`` are all fine.
+
+   String escapes are read that reader's way: ``\n``, ``\t``, ``\r``, ``\b``,
+   ``\f``, ``\v``, ``\a``, ``\0``, ``\\``, ``\'`` and ``\"`` are decoded and
+   everything else keeps its backslash, so ``'a\x41b'`` is six characters
+   rather than four.
+
+   The full tables are in `design/mapping-contract.md
+   <https://github.com/useblocks/sphinx-mounts/blob/main/design/mapping-contract.md>`__
+   §12.5. If the two engines ever move to Python's semantics, they move
+   together.
+
+Two narrowings, both configuration errors:
+
+**The condition must be a boolean.** A bare field (``var.debug``) is
+refused — write ``var.debug == False``. So is a bare ``.upper()`` /
+``.lower()`` call, which returns a string. A bare ``.startswith(…)`` /
+``.endswith(…)`` **is** accepted, because it returns a boolean.
+
+**Every field reference must be rooted at** ``var``. ``var.edition ==
+'pro'`` is fine; a prefix-less ``edition == 'pro'`` is a configuration
+error, as is any other bare name — ``build_tags`` included, which belongs
+to ``only`` rather than to a variant condition. A field segment starting
+with an underscore (``var._x``) is also refused here — ubCode instead
+evaluates it, fails on the unknown key, and warns while excluding the
+rule's files, so both tools keep the files out of the build and only the
+severity differs.
+
+Both narrowings exist because the same string is read by more than one
+tool, and a form the two would evaluate differently is one rule string
+producing two document sets.
+
+.. note::
+
+   The boolean literals are Python's ``True`` and ``False``, not TOML's
+   ``true`` and ``false``: ``if`` holds an *expression*, not a TOML value,
+   so a lower-case spelling is read as a **field name**. The error message
+   says so and suggests the right spelling.
+
+A condition that cannot be **evaluated** — an unknown ``var.*`` key is the
+common case — is reported as ``mounts.variant_rule_unevaluable`` and the
+rule's files are **excluded**. That is the safe direction for a rule whose
+purpose is keeping content out.
+
+.. admonition:: The grammar is a two-engine contract, expressed as data
+   :class: tip
+
+   ``tests/fixtures/variant_condition_conformance.toml`` in the repository
+   is a vendored copy of ubCode's conformance corpus: 46 conditions with
+   their verdicts and truth values, and the test suite runs every row. It is
+   the shared **test-vector set**.
+
+   It is not the whole grammar, and a reader implementing only it lands on
+   Python's semantics — which are not these. The **contract** is
+   ``design/mapping-contract.md`` §12.5: the accept-set, the lexical rules and
+   the comparison semantics as tables, each mirrored on the other reader's
+   shipped engine. A prose summary of a grammar is exactly the thing that turns
+   out to be imprecise in the corner that matters, which is why both live as
+   tables and as a 209-row parity suite.
+
+Toctrees, and the ``-W`` posture
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A ``toctree`` entry naming a document this variant excluded would normally
+warn — Sphinx is right that the document is missing. In a 150% model a
+shared index listing every edition's pages is the normal shape, so
+sphinx-mounts **reclassifies** those references: the record is reworded to
+name the rule that removed the document, downgraded to INFO, and carries
+``[mounts.variant_excluded_reference]``.
+
+Three cases are covered: an explicit entry naming a rule-excluded host
+document, an explicit entry naming a document under a narrowed mount, and
+a ``:glob:`` entry whose only matches were excluded.
+
+It is a downgrade, never a suppression. The record is still printed,
+because it is the only place left where a rule that removed more than you
+meant is visible — the file itself is gone from search, ``objects.inv``,
+cross-references and the page tree. And it is exact: a reference to a
+document **no rule mentions** still warns and still fails ``-W``, so a
+genuine typo cannot hide behind this.
+
+With that in place, ``sphinx-build -W`` on a correctly configured variant
+build exits 0 — serially, under ``-j``, and under
+``--exception-on-warning``.
+
+.. warning::
+
+   **A gating flip leaves the excluded page on disk.** Sphinx does not
+   delete output for documents that have left the build, so after flipping
+   a variant in a warm build directory the gated page is still there,
+   still live, still reachable by URL — absent only from navigation,
+   ``objects.inv`` and search. A per-variant CI that publishes
+   ``_build/html`` from a shared directory **will ship it**.
+
+   Build each variant into its **own** doctree and output directory, or
+   run ``sphinx-build -E`` with a clean ``outdir``, whenever variants share
+   a checkout. This is upstream Sphinx behaviour rather than anything this
+   feature introduces, and it is the single most important operational
+   consequence of using variant rules.
+
+Where the rules may be anchored
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A rule glob is anchored at the project's **source root**; a Sphinx
+``exclude_patterns`` entry is anchored at ``srcdir``. sphinx-mounts
+supports the layouts where those two coincide, which is the default:
+``ubproject.toml`` beside ``conf.py``, with ``srcdir`` equal to
+``confdir``.
+
+When they differ — ``conf.py`` in ``docs/`` and the sources in
+``docs/source/``, say — either move ``ubproject.toml`` beside the source
+directory, or declare that directory as the source root in the file you
+already have:
+
+.. code-block:: toml
+
+   # docs/ubproject.toml
+   [source]
+   dir = "source"
+
+.. warning::
+
+   ``dir`` is a **string**, not an array: it names one source root, and the
+   sibling tools reading this file reject any other shape. And it is *their*
+   **discovery root** as well, so choose a value that is right for them too —
+   widening it to the repository root to satisfy a Sphinx-side check would
+   make them index the whole repository.
+
+   The deprecated ``[project] srcdir`` is honoured as the anchor when
+   ``[source] dir`` is unset, with the same precedence the sibling tools use.
+
+Without one of those, the configuration is refused with a message naming both
+directories and both remedies. Silently gating a root that happens to coincide
+is the failure the whole key exists to prevent. A source root that is also a
+**mount** root is not a layout problem: that one is reached through the
+mount's own walk.
+
+A rule that would remove the root document
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A rule that is **false for the current variant** and whose pattern would
+exclude ``root_doc`` is a hard configuration error. The root document is
+what the navigation tree and the document ordering are built from, so a
+build without it is not a smaller site — it is a build Sphinx aborts, with
+a message blaming the source directory for something that is really an
+exclusion.
+
+Note the difference between this refusal and the glob-dialect ones above.
+This one is variant-*dependent*: a rule matching the root document is
+perfectly legal while its condition holds, so ``files = ["**"]`` with a
+true condition is a valid "this whole tree, this variant only". A refused
+glob spelling is variant-*independent* — it is unusable in every variant,
+so it is refused before any condition is evaluated, and you fix it once.
+
 .. _warnings-and-errors:
 
 Warnings and errors
@@ -1060,10 +1460,18 @@ Warnings and errors
 sphinx-mounts distinguishes two classes of problems:
 
 **Hard errors — the configuration is unreadable.** Malformed TOML, wrong
-types, unknown keys, and contradictory options are reported as
-``Extension error`` messages and abort the build. sphinx-mounts cannot
-proceed at all when the configuration is uninterpretable, so these
-errors are deliberately *not* suppressible.
+types and contradictory options are reported as ``Extension error``
+messages and abort the build. sphinx-mounts cannot proceed at all when the
+configuration is uninterpretable, so these errors are deliberately *not*
+suppressible.
+
+An unknown *key* is the exception, and deliberately so: it is reported as
+``mounts.unknown_key`` and ignored. A ``ubproject.toml`` is shared with
+tools on independent release cadences, so a key this reader does not model
+is routine — and aborting on it would take down every build of the project
+on every older sphinx-mounts, including builds the key would not have
+changed. A misspelled key is still a mistake, which is why it is reported
+rather than passed over in silence.
 
 **Warnings — mount-specific problems.** Everything that affects a single
 mount is reported as a warning, the build continues with the **whole
@@ -1082,6 +1490,9 @@ at once), and escalated to a failed build:
      - Meaning
    * - ``mounts.attach_to_missing``
      - ``attach_to`` references a docname that does not exist
+   * - ``mounts.deprecated_confval``
+     - ``mounts_from_toml`` is set explicitly; it is honoured, and renaming
+       it to :ref:`sources-from-toml` is the whole migration
    * - ``mounts.deprecated_location``
      - the mounts array is declared as top-level ``[[mounts]]`` rather than
        ``[[source.mounts]]``; it still loads, identically
@@ -1109,9 +1520,30 @@ at once), and escalated to a failed build:
      - ``toctree_index`` exceeds the number of toctrees in the
        ``attach_to`` document; the mount is left unwired and its docs are
        marked as orphans, so no ``toc.not_included`` follows
+   * - ``mounts.unknown_key``
+     - a mount entry or a :ref:`variant rule <variant-sources>` carries a
+       key this reader does not model; the key is ignored and the rest of
+       the entry is honoured
    * - ``mounts.unknown_suffix``
      - a file-list entry has no extension registered in
        ``source_suffix``; the whole mount is skipped
+   * - ``mounts.variant_rule_dropped``
+     - a variant rule lists no files, so it gates nothing; the rule is
+       dropped and the document set is unchanged
+   * - ``mounts.variant_rule_unevaluable``
+     - a variant rule's condition could not be evaluated against the
+       variant data (an unknown ``var.*`` key is the usual cause); the
+       rule's files are **excluded**
+
+Four codes name a *hard* failure rather than a warning, so they cannot be
+suppressed and appear only in an ``Extension error`` message:
+``mounts.variant_glob_dialect`` (a rule glob spelling no reader can share),
+``mounts.variant_layout`` (rules declared where no glob can be anchored),
+``mounts.variant_root_doc`` (a false rule would remove the root document)
+and ``mounts.variant_data_unreadable`` (no variant map, and no Sphinx-Needs
+installed to report it). One more,
+``mounts.variant_excluded_reference``, marks an **INFO** record: the
+:ref:`downgraded toctree reference <variant-sources>`.
 
 .. _suppressing-mount-warnings:
 

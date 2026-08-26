@@ -273,11 +273,30 @@ class MountConfig:
         allowed = {f.name for f in fields(cls)}
         unknown = set(entry) - allowed
         if unknown:
+            # Reported, never fatal. A `ubproject.toml` is shared with tools on
+            # independent release cadences, so a key this reader does not model
+            # is routine rather than a mistake — and aborting on it takes down
+            # every build of the project on every older sphinx-mounts,
+            # including builds of variants the key would not have changed.
+            #
+            # The posture is deliberately the same as ubCode's
+            # `config.mount_unknown_key`, which is what makes a gating key such
+            # as `if` safe to introduce later: a reader that mounts the bundle
+            # but ignores the key would publish content the author gated, and
+            # the way that window never opens is for the tolerant path to ship
+            # no later than the release that makes `[[source.mounts]]`
+            # readable. That release is this one.
+            #
+            # `mapping-contract.md` §4 records the change and the reasoning.
             msg = (
-                f"Unknown mount keys: {sorted(unknown)}. "
-                f"Allowed keys are {sorted(allowed)}."
+                f"sphinx-mounts: unknown mount key(s) {sorted(unknown)} on "
+                f"{_entry_label(entry)}; they are ignored. Supported keys are "
+                f"{sorted(allowed)}. A key another tool reads is not an error "
+                f"here — but a misspelling is, so check the spelling if you "
+                f"expected this key to do something."
             )
-            raise MountConfigError(msg)
+            log_warning(logger, msg, "unknown_key")
+            entry = {key: value for key, value in entry.items() if key in allowed}
         if "dir" not in entry and "files" not in entry:
             msg = (
                 "Mount entry must declare either 'dir' (directory mode) "
@@ -308,6 +327,21 @@ class MountConfig:
             strict_mount_at=entry.get("strict_mount_at", False),
             path_check=entry.get("path_check", "warn"),
         )
+
+
+def _entry_label(entry: Mapping[str, Any]) -> str:
+    """Name a raw mount entry by its source, for a message about that entry.
+
+    ``from_dict`` does not know the entry's position in the array, so the
+    source path is the only handle a user has on it. Falls back to the whole
+    key set when the entry declares neither ``dir`` nor ``files`` — a shape
+    that is about to be rejected anyway.
+    """
+    if "dir" in entry:
+        return f"the mount with dir={entry['dir']!r}"
+    if "files" in entry:
+        return f"the mount with files={entry['files']!r}"
+    return f"the mount entry with keys {sorted(entry)}"
 
 
 def mount_label(mount: MountConfig, index: int) -> str:
@@ -770,3 +804,288 @@ def _anchor_one_path(value: Any, base_dir: Path) -> Any:
     if p.is_absolute():
         return value
     return str((base_dir / p).resolve())
+
+
+# ---------------------------------------------------------------------------
+# `[[source.variant_sources]]` — the variant rule reader
+# ---------------------------------------------------------------------------
+
+
+class VariantRuleError(ExtensionError):
+    """Raised when a ``[[source.variant_sources]]`` rule cannot be honoured.
+
+    Subclasses :class:`sphinx.errors.ExtensionError` for the same reason as
+    :class:`TomlConfigError`, and for one more that is specific to this key:
+    **report-and-drop fails OPEN.** Skipping a rule this reader cannot
+    interpret leaves every file the rule named — including the files its
+    perfectly valid patterns named — in the build, behind a diagnostic a
+    project could suppress. For a key whose only purpose is keeping content out
+    of a build, that is the one outcome that must not be possible, so the whole
+    configuration is refused instead.
+
+    Every message lists **every** offender at once. Fixing one refused pattern
+    only to meet the next on the following build is the behaviour this avoids.
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, modname="sphinx_mounts")
+
+
+#: The key holding the rule array, nested under ``[source]``.
+VARIANT_SOURCES_LOCATION = "[[source.variant_sources]]"
+
+#: Keys a ``variant_sources`` entry may carry. Anything else is reported and
+#: ignored, matching the mount-entry posture (see :meth:`MountConfig.from_dict`)
+#: and ubCode's ``config.variant_source_unknown_key``.
+VARIANT_RULE_KEYS = frozenset({"if", "files"})
+
+
+@dataclass(frozen=True, slots=True)
+class VariantRule:
+    """One ``[[source.variant_sources]]`` entry, as authored.
+
+    Fields:
+        index: Position in the rule array, for messages that must name a rule.
+        condition: The ``if`` expression, exactly as written.
+        files: The rule's glob patterns, exactly as written. Kept authored
+            rather than translated because a message has to be able to quote
+            the spelling the user can edit, and because the two translations
+            (:mod:`sphinx_mounts.dialect`) are per-target.
+    """
+
+    index: int
+    condition: str
+    files: tuple[str, ...]
+
+    @property
+    def label(self) -> str:
+        """Human-readable identifier used in every message about this rule."""
+        return f"{VARIANT_SOURCES_LOCATION}[{self.index}] (if = {self.condition!r})"
+
+
+@dataclass(frozen=True, slots=True)
+class VariantSourcesConfig:
+    """Everything the variant reader takes out of one TOML file.
+
+    Deliberately only three things, and never a general ``[source]`` bridge:
+    the rule array, the source roots the rules anchor at, and the ``[needs]``
+    variant-data fallback. ``mapping-contract.md`` §1 rule 5 — nesting under
+    ``[source]`` implies no inheritance — still holds for everything else.
+
+    Fields:
+        toml_path: The file these values came from.
+        source_root: The resolved root a rule glob is anchored at. The layout
+            guard compares it against Sphinx's ``srcdir``.
+        rules: The declared rules, in array order.
+        declared: Whether the ``variant_sources`` key was present at all. An
+            empty array is a declaration ("this project has no rules") and is
+            distinct from an absent key, exactly as ``mounts = []`` is.
+        variant_data: The ``[needs] variant_data`` table, or ``None``.
+        variant_data_file: The ``[needs] variant_data_file`` path, anchored at
+            the TOML's own directory (the anchor sphinx-needs' own
+            ``toml_convert`` applies to the same key).
+    """
+
+    toml_path: Path
+    source_root: Path
+    rules: tuple[VariantRule, ...]
+    declared: bool
+    variant_data: dict[str, Any] | None
+    variant_data_file: Path | None
+
+
+def load_variant_sources_from_toml(toml_path: Path) -> VariantSourcesConfig | None:
+    """Read ``[[source.variant_sources]]`` and its data fallback from a TOML file.
+
+    .. code-block:: toml
+
+       [source]
+       dir = "source"                   # optional; the rules' anchor
+
+       [[source.variant_sources]]
+       if = "var.edition == 'pro'"
+       files = ["reference/pro/**/*.rst"]
+
+       [needs]                          # read only when sphinx-needs is absent
+       variant_data_file = "variants.json"
+
+       [needs.variant_data]
+       edition = "basic"
+
+    **Only these keys are read.** This is not a general ``[source]`` bridge:
+    everything else under ``[source]`` belongs to whichever tool owns it, and
+    ``[needs]`` is consulted purely as a fallback for the variant map when
+    sphinx-needs is not installed to provide it.
+
+    :param toml_path: Absolute path to a TOML file. May or may not exist.
+    :return: The parsed values, or ``None`` when the file does not exist.
+    :raises TomlConfigError: If the file is not valid TOML, or the rule array
+        or an entry has the wrong shape.
+    """
+    if not toml_path.is_file():
+        return None
+    try:
+        with toml_path.open("rb") as handle:
+            data = tomllib.load(handle)
+    except tomllib.TOMLDecodeError as exc:
+        msg = f"sphinx-mounts: failed to parse TOML config {toml_path}: {exc}"
+        raise TomlConfigError(msg) from exc
+
+    source = data.get("source")
+    source = source if isinstance(source, Mapping) else {}
+    project = data.get("project")
+    project = project if isinstance(project, Mapping) else {}
+    needs = data.get("needs")
+    needs = needs if isinstance(needs, Mapping) else {}
+
+    raw_rules = source.get("variant_sources")
+    declared = "variant_sources" in source
+    rules = _extract_variant_rules(raw_rules, toml_path) if declared else ()
+
+    return VariantSourcesConfig(
+        toml_path=toml_path,
+        source_root=_extract_source_root(source, project, toml_path),
+        rules=rules,
+        declared=declared,
+        variant_data=_extract_variant_data(needs.get("variant_data"), toml_path),
+        variant_data_file=_extract_variant_data_file(
+            needs.get("variant_data_file"), toml_path
+        ),
+    )
+
+
+def _extract_source_root(
+    source: Mapping[str, Any], project: Mapping[str, Any], toml_path: Path
+) -> Path:
+    """Resolve the single root a rule glob is anchored at.
+
+    ubCode's precedence, reproduced: ``[source] dir`` wins; the deprecated
+    ``[project] srcdir`` stands when ``dir`` is unset; otherwise the root is
+    the TOML file's own directory. Reading only the first of those was a
+    fail-open hole — a project on the legacy key anchored its rules at the TOML
+    directory here and at ``<toml dir>/<srcdir>`` in ubCode, and the layout
+    guard passed on the wrong root with nothing said.
+
+    **``dir`` is a STRING, not an array.** ubCode declares it as one
+    (``Field<PathBuf>``, ``"type": "string"`` in its published schema), so an
+    array is a hard deserialization failure there. Accepting one here would be
+    a divergence of its own, and — worse — the layout refusal used to *advise*
+    the array form, which would have left the project unreadable by the other
+    tool. Both are fixed together.
+
+    An empty string means unset, matching ubCode's documented ``""`` ≡ unset
+    sentinel.
+
+    Anchored at the TOML's own directory and then resolved, exactly as a
+    mount's ``dir`` is (``mapping-contract.md`` §3), so the two cannot drift.
+    """
+    raw = source.get("dir")
+    key = "[source] dir"
+    if raw is None or raw == "":
+        raw = project.get("srcdir")
+        key = "[project] srcdir"
+    if raw is None or raw == "":
+        return toml_path.parent.resolve()
+    if not isinstance(raw, str):
+        shape = "an array" if isinstance(raw, list) else type(raw).__name__
+        msg = (
+            f"sphinx-mounts: `{key}` in {toml_path} must be a string; got "
+            f"{shape}. It names ONE source root — sibling tools that read this "
+            f"same file declare it as a string and reject any other shape, so "
+            f'a project writing `dir = ["source"]` becomes unreadable to them. '
+            f'Write `dir = "source"`.'
+        )
+        raise TomlConfigError(msg)
+    candidate = Path(raw)
+    if candidate.is_absolute():
+        return candidate.resolve()
+    return (toml_path.parent / candidate).resolve()
+
+
+def _extract_variant_rules(raw: Any, toml_path: Path) -> tuple[VariantRule, ...]:
+    """Validate the rule array's shape and turn it into :class:`VariantRule` s.
+
+    Shape problems are hard :class:`TomlConfigError` s, matching
+    :func:`_extract_toml_mounts`: a rule array this reader cannot even parse
+    says nothing about which files the variant contains, and guessing is how a
+    gating key fails open. Unknown *keys* are the exception — reported and
+    ignored, per :data:`VARIANT_RULE_KEYS`.
+    """
+    if not isinstance(raw, list):
+        msg = (
+            f"sphinx-mounts: `{VARIANT_SOURCES_LOCATION}` in {toml_path} must "
+            f"be an array of tables; got {type(raw).__name__}."
+        )
+        raise TomlConfigError(msg)
+    rules: list[VariantRule] = []
+    for index, entry in enumerate(raw):
+        rules.append(_extract_variant_rule(entry, index, toml_path))
+    return tuple(rules)
+
+
+def _extract_variant_rule(entry: Any, index: int, toml_path: Path) -> VariantRule:
+    """Validate one rule entry."""
+    where = f"entry {index} of `{VARIANT_SOURCES_LOCATION}` in {toml_path}"
+    if not isinstance(entry, Mapping):
+        msg = f"sphinx-mounts: {where} must be a table; got {type(entry).__name__}."
+        raise TomlConfigError(msg)
+    unknown = sorted(set(entry) - VARIANT_RULE_KEYS)
+    if unknown:
+        msg = (
+            f"sphinx-mounts: unknown `variant_sources` key(s) {unknown} on "
+            f"{where}; they are ignored. Supported keys are "
+            f"{sorted(VARIANT_RULE_KEYS)}."
+        )
+        log_warning(logger, msg, "unknown_key")
+    condition = entry.get("if")
+    if not isinstance(condition, str):
+        msg = (
+            f"sphinx-mounts: {where} must declare `if` as a string condition; "
+            f"got {type(condition).__name__}."
+        )
+        raise TomlConfigError(msg)
+    files = entry.get("files")
+    if not isinstance(files, list) or not all(isinstance(item, str) for item in files):
+        msg = (
+            f"sphinx-mounts: {where} must declare `files` as an array of glob "
+            f"strings; got {type(files).__name__}."
+        )
+        raise TomlConfigError(msg)
+    return VariantRule(index=index, condition=condition, files=tuple(files))
+
+
+def _extract_variant_data(raw: Any, toml_path: Path) -> dict[str, Any] | None:
+    """Pick ``[needs] variant_data`` out of the file, checking only its type."""
+    if raw is None:
+        return None
+    if not isinstance(raw, Mapping):
+        msg = (
+            f"sphinx-mounts: `[needs] variant_data` in {toml_path} must be a "
+            f"table; got {type(raw).__name__}."
+        )
+        raise TomlConfigError(msg)
+    return dict(raw)
+
+
+def _extract_variant_data_file(raw: Any, toml_path: Path) -> Path | None:
+    """Anchor ``[needs] variant_data_file`` at the TOML's own directory.
+
+    This is the first of the **two anchors** a reader of this key has to
+    reproduce. sphinx-needs absolutises a TOML-declared ``variant_data_file``
+    against the TOML file's directory (its ``toml_convert`` metadata), and
+    leaves a ``conf.py``- or ``-D``-declared one to be absolutised against
+    ``confdir``. Reading only one of the two anchors means reading the wrong
+    file for one of the two routes.
+    """
+    if raw is None:
+        return None
+    if not isinstance(raw, str):
+        msg = (
+            f"sphinx-mounts: `[needs] variant_data_file` in {toml_path} must "
+            f"be a string; got {type(raw).__name__}."
+        )
+        raise TomlConfigError(msg)
+    candidate = Path(raw)
+    if candidate.is_absolute():
+        return candidate.resolve()
+    return (toml_path.parent / candidate).resolve()

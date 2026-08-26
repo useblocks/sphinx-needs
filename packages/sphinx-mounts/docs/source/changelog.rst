@@ -12,6 +12,124 @@ Unreleased
    the first build after upgrading discards its cached build environment and
    re-reads every document once. No action is required.
 
+   It is at ``2`` rather than ``1`` because
+   :ref:`variant rules <variant-sources>` change *which docnames a project
+   produces*, and an environment written before that reader existed describes
+   a document set this version would not have built.
+
+- **sphinx-mounts now reads** :ref:`[[source.variant_sources]] <variant-sources>`,
+  the shared ``ubproject.toml`` key that decides which files are part of the
+  build for the current build variant. Every rule whose ``if`` condition is
+  false excludes its ``files``; a file no false rule matches is unaffected.
+  Rules only ever narrow, and their order does not matter.
+
+  Host files leave through ``exclude_patterns``, and files in a **directory**
+  mount leave through that mount's own walk, so a rule reaches a bundle without
+  knowing where it is mounted. A gating flip converges on the build where it
+  happened, in both directions, without ``sphinx-build -E``.
+
+  **A file-list mount** — one declared with ``files = [...]`` rather than
+  ``dir`` — is **not gated at all**, under any rule spelling, and neither is
+  ubCode's: a file-list mount's entries are an explicit request for named files
+  and bypass pattern matching entirely. Use a directory mount for a bundle that
+  has to be gateable.
+
+  **A project with no mounts at all can install sphinx-mounts purely for
+  this**, to have ``sphinx-build`` narrow its document set per variant exactly
+  as `ubCode`_ does. Before this release the same ``ubproject.toml`` gave the
+  two tools different document sets.
+
+  The variant map is computed here rather than depended on: the JSON file named
+  by ``variant_data_file`` is deep-merged under the inline
+  ``[needs.variant_data]`` table, unconditionally. That is a no-op when
+  Sphinx-Needs has already resolved, supplies the merge it has not performed
+  yet on 8.3.1 and earlier, and is the whole computation when Sphinx-Needs is
+  not installed — so the rules work with or without it, and the two tools
+  cannot disagree about which documents exist.
+
+  ``if`` conditions are **interpreted, never evaluated**: there is no ``eval``,
+  no ``exec`` and no namespace object anywhere in the extension.
+
+  **The condition grammar and its semantics are ubCode's, not Python's**, and
+  deliberately so — the same string decides which files two tools build, so
+  matching CPython where the two disagree would mean one rule string and two
+  document sets. ``var.debug == 0`` is **false** when ``debug = false`` (Python
+  says true), its twin ``var.debug != 0`` is **true**, a handful of forms are
+  evaluation errors rather than values (``var.debug > 0``,
+  ``var.tags == var.build.features``, ``2 in var.tags``, ``'k' in var.table``),
+  and spellings ubCode's lexer has no token for are configuration errors here
+  too — ``not(x)``, ``x and(y)``, ``in['a']``, ``var . name``, ``.upper( )``,
+  a trailing comma in a list, a tuple, and ``0x2`` / ``0b10`` / ``2_0`` / ``.5``.
+  Whitespace stays free where that grammar allows it (``var.count>=2``,
+  ``[ 'a' , 'b' ]``). Both tables are published in
+  ``design/mapping-contract.md`` §12.5 and pinned by a 209-row parity suite,
+  alongside the vendored 46-row conformance corpus the test suite still runs in
+  full.
+
+  Six categories of glob spelling refuse the whole configuration rather than
+  skipping their rule — an **empty** pattern, one ending in a **path
+  separator**, ``{a,b}`` alternation, a ``..`` climb, an absolute path, and
+  ``?`` beside a separator — plus a cap on how many ``**`` components one
+  pattern may carry. Skipping a rule leaves every file it names in the build,
+  including the files its valid patterns name; an empty pattern selected
+  *nothing* on one arm and an entire mounted bundle on the other. A rule that
+  is false for this variant and would remove ``root_doc`` is refused too, so
+  Sphinx's own "unable to load the master document" abort — which blames the
+  source directory for an exclusion — is not reachable through a rule that
+  names a host document, whatever suffix it carries. (A root document provided
+  by a *mount* is not covered: the guard runs at configuration time and cannot
+  know what a mount will produce.)
+
+  See :ref:`variant-sources`, and in particular the **stale-output caveat**:
+  Sphinx does not delete output for documents that have left the build, so
+  build each variant into its own doctree and output directory, or use ``-E``
+  with a clean ``outdir``.
+
+- New ``sources_from_toml`` config value, replacing ``mounts_from_toml``
+  (which still works). Same default, same semantics, and the same file. The
+  rename is because the extension now reads more than mounts out of that file,
+  and a project that wants only variant rules should not have to set a confval
+  whose name says otherwise. Setting it to ``None`` disables **everything**
+  read from TOML, variant rules included — a coupling worth knowing, because
+  it fails open.
+
+.. warning::
+
+   **Behavior change, not opt-in:** a ``toctree`` entry naming a document a
+   variant rule excluded is no longer a warning. It is reworded to name the
+   rule that removed the document, downgraded to **INFO**, and carries
+   ``[mounts.variant_excluded_reference]``. The same applies to a ``:glob:``
+   entry whose only matches were excluded, and to an entry under a narrowed
+   mount.
+
+   Without it, ``sphinx-build -W`` failed a correctly configured variant build:
+   in a 150% model a shared index listing every edition's pages is the normal
+   shape. It is a downgrade rather than a suppression — the record is still
+   printed, because it is the only place left where a rule that removed more
+   than you meant is visible — and it is exact: a reference to a document **no
+   rule mentions** still warns and still fails ``-W``. "Exact" means the
+   attributed set is rebuilt with the same inputs and the same post-filters
+   Sphinx's own discovery uses, including the builder's asset paths, so a name
+   that was never a document in any variant cannot get into it.
+
+.. warning::
+
+   **Behavior change, not opt-in:** an unknown key on a mount entry is now
+   reported as ``mounts.unknown_key`` and ignored, where it previously aborted
+   the build. The same applies to a ``variant_sources`` entry.
+
+   A ``ubproject.toml`` is shared with tools on independent release cadences,
+   so a key this reader does not model is routine, and aborting on it takes
+   down every build of the project on every older sphinx-mounts. It matters
+   most for a key that has not been introduced yet: a reader that mounts a
+   bundle while ignoring a key saying *not to* would publish content the author
+   gated, and the way that window never opens is for the tolerant path to ship
+   no later than the release that makes ``[[source.mounts]]`` readable — which
+   is this one.
+
+   If you relied on the abort to catch typos, note the key is still reported;
+   it is the severity that changed.
+
 .. warning::
 
    **Deprecation:** declaring the mounts array as top-level ``[[mounts]]`` now

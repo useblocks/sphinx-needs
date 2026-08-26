@@ -13,12 +13,17 @@ way.
 - **No materialization**: sources are read directly from their original
   location. No copy, no symlink, no staging step.
 - **Declarative TOML config**: the mount mapping lives in `ubproject.toml`
-  (or any TOML file you name via `mounts_from_toml`). `conf.py` only
+  (or any TOML file you name via `sources_from_toml`). `conf.py` only
   references it.
 - **Language-agnostic & toolable**: because the config is static TOML, IDE
   plugins, language servers, indexers, and build-system integrations
   written in any language can read the same mount mapping that
   `sphinx-build` reads — without having to evaluate `conf.py`.
+- **Variant-gated source selection**: sphinx-mounts is also the Sphinx-side
+  reader for `[[source.variant_sources]]`, the shared `ubproject.toml` key
+  that decides which files are in the build for the current variant — so a
+  project with no mounts at all can install it purely to have
+  `sphinx-build` narrow its document set the way ubCode already does.
 - **Toctree auto-wiring**: an optional `attach_to` per mount injects the
   bundle's entry doc into a host toctree at build time, so the host stays
   buildable when a mount is absent (a developer hasn't run the upstream

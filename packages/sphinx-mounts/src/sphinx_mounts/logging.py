@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 #: subtype should be a visible, reviewable diff.
 WarningTopics = Literal[
     "attach_to_missing",
+    "deprecated_confval",
     "deprecated_location",
     "docname_conflict",
     "empty_docname",
@@ -47,8 +48,44 @@ WarningTopics = Literal[
     "mount_at_occupied",
     "path_escape",
     "toctree_index",
+    "unknown_key",
     "unknown_suffix",
+    "variant_rule_dropped",
+    "variant_rule_unevaluable",
 ]
+
+#: Codes that name a *hard* failure or an *informational* record rather than a
+#: warning, so they never reach :func:`log_warning`. They are listed here
+#: because they appear in user-facing message text and users grep for them.
+#:
+#: ``mounts.variant_data_unreadable``
+#:     The variant data file is missing, undecodable, or not a JSON object,
+#:     and sphinx-needs is not installed to report it. A hard
+#:     ``VariantRuleError``: with no variant map there is no defensible answer
+#:     to "which files does this variant contain".
+#: ``mounts.variant_root_doc``
+#:     A rule that is false for this variant would exclude ``root_doc``. A hard
+#:     ``VariantRuleError``, so that Sphinx's own "unable to load the master
+#:     document" abort — which blames the source directory for something that
+#:     is really an exclusion — is never reachable through a variant rule.
+#: ``mounts.variant_glob_dialect``
+#:     A rule glob whose spelling has no faithful form for every reader
+#:     (``{a,b}``, a ``..`` climb, an absolute path, or ``?`` beside a
+#:     separator). A hard ``VariantRuleError`` listing every offender at once.
+#: ``mounts.variant_layout``
+#:     Rules are declared but the source root they anchor at is not Sphinx's
+#:     ``srcdir``, so no rule glob can be expressed as an ``exclude_patterns``
+#:     entry. A hard ``VariantRuleError`` naming both directories.
+#: ``mounts.variant_excluded_reference``
+#:     The downgraded toctree record — INFO, not a warning. See
+#:     :mod:`sphinx_mounts.warnings`.
+NON_WARNING_CODES = (
+    "mounts.variant_data_unreadable",
+    "mounts.variant_excluded_reference",
+    "mounts.variant_glob_dialect",
+    "mounts.variant_layout",
+    "mounts.variant_root_doc",
+)
 
 #: Warning ``type`` shared by every sphinx-mounts warning. Combined with a
 #: ``subtype``, ``suppress_warnings = ["mounts"]`` silences all of them.
