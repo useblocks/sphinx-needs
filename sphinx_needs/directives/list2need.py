@@ -3,27 +3,26 @@ from __future__ import annotations
 import hashlib
 import re
 from collections.abc import Sequence
+from collections.abc import Set as AbstractSet
 from contextlib import suppress
 from typing import Any
 
 from docutils import nodes
 from docutils.parsers.rst import directives
+from docutils.statemachine import StringList
 from sphinx.errors import SphinxError, SphinxWarning
 from sphinx.util.docutils import SphinxDirective
 
-from sphinx_needs._jinja import render_template_string
+from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
+from sphinx_needs.directives.need import _get_title
+from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
+from sphinx_needs.need_item import NeedItemSourceDirective
+from sphinx_needs.nodes import Need
+from sphinx_needs.utils import add_doc, coerce_to_boolean
 
-NEED_TEMPLATE = """.. {{type}}:: {{title}}
-   {% if need_id is not none %}:id: {{need_id}}{%endif%}
-   {% if set_links_down %}:{{links_down_type}}: {{ links_down|join(', ') }}{%endif%}
-   {%- for name, value in options.items() %}:{{name}}: {{value}}
-   {% endfor %}
-
-   {{content}}
-
-"""
+LOGGER = get_logger(__name__)
 
 LINE_REGEX = re.compile(
     r"(?P<indent>[^\S\n]*)\*\s*(?P<text>.*)|[\S\*]*(?P<more_text>.*)"
@@ -33,6 +32,28 @@ ID_REGEX = re.compile(
 )  # Exclude some chars, which are used by option list
 OPTION_AREA_REGEX = re.compile(r"\(\((.*)\)\)")
 OPTIONS_REGEX = re.compile(r"([^=,\s]*)=[\"']([^\"]*)[\"']")
+
+#: Need options an inline ``((name="value"))`` may set, on top of the extra fields
+#: and link types the project configures. Mirrors what the need directives accept.
+#: ``id`` is taken out earlier, and so are the three the need directives read as a
+#: boolean rather than as a string (``delete``, ``jinja_content``,
+#: ``title_from_content``), so only the rest are matched against this set.
+CORE_OPTIONS = frozenset(
+    {
+        "collapse",
+        "constraints",
+        "hide",
+        "id",
+        "jinja_content",
+        "layout",
+        "post_template",
+        "pre_template",
+        "status",
+        "style",
+        "tags",
+        "template",
+    }
+)
 
 
 class List2Need(nodes.General, nodes.Element):
@@ -102,6 +123,12 @@ class List2NeedDirective(SphinxDirective):
         else:
             down_links_raw_list = [x.strip() for x in down_links_raw.split(",")]
         needs_schema = SphinxNeedsData(self.env).get_schema()
+        # the options an item may set inline, on top of the ones list2need computes
+        known_options = (
+            CORE_OPTIONS
+            | set(needs_schema.iter_extra_field_names())
+            | set(needs_schema.iter_link_field_names())
+        )
         link_types = [link.name for link in needs_schema.iter_link_fields()]
         for i, down_link_raw in enumerate(down_links_raw_list):
             down_links_types[i] = down_link_raw
@@ -116,7 +143,7 @@ class List2NeedDirective(SphinxDirective):
 
         list_needs = []
         # Storing the data in a sorted list
-        for content_line in content_raw.split("\n"):
+        for line_index, content_line in enumerate(content_raw.split("\n")):
             # for groups in line.findall(content_raw):
             match = LINE_REGEX.search(content_line)
             if not match:
@@ -151,12 +178,15 @@ class List2NeedDirective(SphinxDirective):
                         splitted_text[1:]
                     )  # Put the content together again
 
+                need_id = None
                 need_id_result = ID_REGEX.search(title)
                 if need_id_result:
                     need_id = need_id_result.group(2)
                     title = ID_REGEX.sub("", title)
-                else:
-                    # Calculate the hash value, so that we can later reuse it
+                if need_id is None:
+                    # Note the id is hashed from the title *before* any inline option
+                    # area is removed from it, which is what the id of a title
+                    # carrying options has always been.
                     prefix = ""
                     needs_id_length = needs_config.id_length
                     for need_type in needs_config.types:
@@ -170,33 +200,45 @@ class List2NeedDirective(SphinxDirective):
                     "title": title,
                     "need_id": need_id,
                     "type": types[level],
-                    "content": content.lstrip(),
+                    # the content is kept line by line, so that every line can be
+                    # handed to the need with the source position it was written at
+                    "content": [content.lstrip()],
+                    "content_lines": [line_index],
                     "level": level,
+                    "line": line_index,
                     "options": {},
                 }
                 list_needs.append(need)
             else:
                 more_text = more_text.lstrip()
                 if more_text.startswith(":"):
+                    # a continuation line is stripped of the indentation it was written
+                    # with, so this restores the one indentation a line beginning with
+                    # ":" is likely to have needed: the options of a directive written
+                    # in the content of an item, which are one field list line each
                     more_text = f"   {more_text}"
-                list_needs[-1]["content"] = (
-                    f"{list_needs[-1]['content']}\n   {more_text}"
-                )
+                list_needs[-1]["content"].append(more_text)
+                list_needs[-1]["content_lines"].append(line_index)
 
-        # Finally creating the rst code
-        overall_text = []
-        for index, list_need in enumerate(list_needs):
+        # Extract the inline options of every item
+        for list_need in list_needs:
             # Search for meta data in the complete title/content
-            search_string = list_need["title"] + list_need["content"]
+            content_text = "\n".join(list_need["content"])
+            search_string = list_need["title"] + content_text
             result = OPTION_AREA_REGEX.search(search_string)
             if result is not None:  # An option was found
                 option_str = result.group(1)  # We only deal with the first finding
                 option_result = OPTIONS_REGEX.findall(option_str)
                 list_need["options"] = {x[0]: x[1] for x in option_result}
 
-                # Remove possible option-strings from title and content
+                # Remove possible option-strings from title and content.
+                # The option area cannot span a line break, so substituting on the
+                # joined content and splitting it up again preserves the line count,
+                # and with it every line's mapping back to its source position.
                 list_need["title"] = OPTION_AREA_REGEX.sub("", list_need["title"])
-                list_need["content"] = OPTION_AREA_REGEX.sub("", list_need["content"])
+                list_need["content"] = OPTION_AREA_REGEX.sub("", content_text).split(
+                    "\n"
+                )
 
             # Add tags defined at list level (if exists) to the ones potentially defined in the content
             if tags:
@@ -208,31 +250,214 @@ class List2NeedDirective(SphinxDirective):
                 else:
                     list_need["options"]["tags"] = tags
 
-            data = list_need
+            # an explicitly given id wins over the one derived from the title,
+            # and has to be known before the links-down of any other item are built.
+            # An empty one is handed on as it stands, so that it is refused with a
+            # diagnostic instead of being silently replaced by the title hash.
+            if (given_id := list_need["options"].pop("id", None)) is not None:
+                list_need["need_id"] = given_id
+
+        # Finally creating the needs
+        node_list: list[nodes.Node] = []
+        # the needs a nested item can be placed inside, innermost last
+        open_needs: list[tuple[int, Need]] = []
+        created = False
+        for index, list_need in enumerate(list_needs):
+            options = dict(list_need["options"])
+
             need_links_down = self.get_down_needs(list_needs, index)
             if (
                 down_links_types
                 and list_need["level"] in down_links_types
                 and need_links_down
             ):
-                data["links_down"] = need_links_down
-                data["links_down_type"] = down_links_types[list_need["level"]]
-                data["set_links_down"] = True
-            else:
-                data["set_links_down"] = False
+                links_down_type = down_links_types[list_need["level"]]
+                given = options.get(links_down_type)
+                joined = ", ".join(need_links_down)
+                options[links_down_type] = f"{given}, {joined}" if given else joined
 
-            text = render_template_string(NEED_TEMPLATE, list_need, autoescape=False)
-            text_list = text.split("\n")
+            need_nodes = self._create_need(list_need, options, known_options)
+            created = created or bool(need_nodes)
+
             if presentation == "nested":
-                indented_text_list = ["   " * list_need["level"] + x for x in text_list]
-                text_list = indented_text_list
-            overall_text += text_list
+                while open_needs and open_needs[-1][0] >= list_need["level"]:
+                    open_needs.pop()
+                if open_needs:
+                    parent_node = open_needs[-1][1]
+                    parent_node += need_nodes
+                else:
+                    node_list += need_nodes
+                for node in need_nodes:
+                    if isinstance(node, Need):
+                        # a hidden need is taken out of the document once it has been
+                        # read, so a child placed inside one would be rendered nowhere
+                        # and referenced by an anchor that never reaches the page
+                        if not node.get("hidden"):
+                            open_needs.append((list_need["level"], node))
+                        break
+            else:
+                node_list += need_nodes
 
-        self.state_machine.insert_input(
-            overall_text, self.state_machine.document.attributes["source"]
+        if created:
+            add_doc(self.env, self.env.docname)
+
+        return node_list
+
+    def _create_need(
+        self,
+        list_need: dict[str, Any],
+        options: dict[str, str],
+        known_options: AbstractSet[str],
+    ) -> list[nodes.Node]:
+        """Create a single need from one parsed list item.
+
+        :param list_need: The parsed item.
+        :param options: Its inline options, plus any ``links-down`` values.
+        :param known_options: The option names a need accepts.
+        :return: The nodes of the created need, or nothing if it could not be created.
+        """
+        lineno = self._source_line(list_need["line"])
+        location = (self.env.docname, lineno)
+        needs_config = NeedsSphinxConfig(self.env.config)
+
+        def warn(message: str, code: WarningSubTypes = "directive") -> None:
+            log_warning(LOGGER, message, code, location=location)
+
+        # the options a need directive reads as a boolean rather than as a string
+        flags: dict[str, bool] = {}
+        for name in ("delete", "jinja_content", "title_from_content"):
+            if name not in options:
+                continue
+            try:
+                flags[name] = coerce_to_boolean(options.pop(name))
+            except ValueError as err:
+                warn(f"Invalid value for {name!r} option: {err}")
+                return []
+        if flags.get("delete"):  # the item asked for no need to be created
+            return []
+
+        kwargs: dict[str, Any] = {}
+        if "jinja_content" in flags:
+            kwargs["jinja_content"] = flags["jinja_content"]
+
+        for key, option_value in options.items():
+            if key in known_options:
+                kwargs[key] = option_value
+            else:
+                warn(f"Unknown option '{key}'")
+
+        content, content_index = self._content(list_need)
+
+        # the title is decided exactly as it is for a need directive: an item whose
+        # own title is empty is one written without a directive argument
+        title, full_title = _get_title(
+            [list_need["title"]] if list_need["title"].strip() else [],
+            content,
+            title_optional=needs_config.title_optional,
+            title_from_content=flags.get(
+                "title_from_content", needs_config.title_from_content
+            ),
+            max_title_length=needs_config.max_title_length,
+            warn=warn,
         )
 
-        return []
+        try:
+            return add_need(
+                app=self.env.app,
+                state=self.state,
+                need_source=NeedItemSourceDirective(
+                    docname=self.env.docname,
+                    lineno=lineno,
+                    # ``lineno_content`` and ``parser_lineno`` are parser coordinates
+                    # rather than source lines, exactly as a need directive gives them:
+                    # both are handed to ``nested_parse`` as the offset at which to
+                    # parse the item's content and its rendered pre/post template.
+                    # ``self.content_offset`` counts in that space, so the item's line
+                    # in it is the directive's first content line plus the item's own
+                    # index -- which is not the line it is written on as soon as
+                    # anything above has put text into the document (``rst_prolog``,
+                    # ``.. include::``).
+                    lineno_content=self.content_offset + 1 + content_index,
+                    parser_lineno=self.content_offset + 1 + list_need["line"],
+                ),
+                need_type=list_need["type"],
+                title=title,
+                full_title=full_title,
+                id=list_need["need_id"],
+                content=content,
+                **kwargs,
+            )
+        except InvalidNeedException as err:
+            warn(f"Need could not be created: {err.message}", "create_need")
+            return []
+
+    def _content(self, list_need: dict[str, Any]) -> tuple[StringList, int]:
+        """Build the source mapped content of one parsed list item.
+
+        Blank lines are stripped from both ends, as the parser does for the content
+        block of any directive, so that an item whose title carries no content at all
+        contributes an empty content rather than a leading empty line.
+
+        :return: The content, and the index within the directive's own content of the
+            line it starts at -- the item's own line, if the item has no content.
+        """
+        lines: list[str] = list(list_need["content"])
+        indexes: list[int] = list(list_need["content_lines"])
+        while lines and not lines[0].strip():
+            del lines[0], indexes[0]
+        while lines and not lines[-1].strip():
+            del lines[-1], indexes[-1]
+
+        items = [self._source_info(index) for index in indexes]
+        content = StringList(
+            lines, source=str(self.env.doc2path(self.env.docname)), items=items
+        )
+        return content, indexes[0] if indexes else list_need["line"]
+
+    def _content_is_source_mapped(self) -> bool:
+        """Whether the content lines carry their true position in the source.
+
+        Content read from a reStructuredText file does, and that mapping is
+        authoritative: it survives ``.. include::`` and anything else that moves the
+        parser's flat line counter away from the file being read.
+
+        Under myst-parser it does not. Its mock state machine hands the directive a
+        content block whose entries are numbered from zero, so line *i* reports
+        offset *i* regardless of where the fence was written. There is no expression
+        for "the source line of content line *i*" that is correct in both hosts, so
+        the two are told apart here, once per directive, by whether the first content
+        line claims to be at offset 0 -- which content read from a file never does,
+        the directive marker itself always occupying an earlier line.
+
+        The question is therefore "is this content source-mapped", not "is this
+        reStructuredText": content that was itself generated -- a list inside the
+        rendered content of a ``:jinja_content:`` need, say -- is not mapped either,
+        and takes the second branch, which puts its needs at the line of the need
+        that generated them.
+        """
+        try:
+            _, offset = self.content.info(0)
+        except (IndexError, TypeError):
+            return False
+        return bool(offset)
+
+    def _source_info(self, index: int) -> tuple[str, int]:
+        """Return the source and 0-based source offset of content line ``index``."""
+        if self._content_is_source_mapped():
+            source, offset = self.content.info(index)
+            return str(source), int(offset)
+        # myst-parser: rebuild the offset from the position of the directive itself
+        _, lineno = self.get_source_info()
+        if lineno is None:
+            lineno = self.lineno
+        return (
+            str(self.env.doc2path(self.env.docname)),
+            lineno + self.content_offset + index,
+        )
+
+    def _source_line(self, index: int) -> int:
+        """Return the 1-based source line number of content line ``index``."""
+        return self._source_info(index)[1] + 1
 
     def make_hashed_id(self, type_prefix: str, title: str, id_length: int) -> str:
         hashable_content = title
