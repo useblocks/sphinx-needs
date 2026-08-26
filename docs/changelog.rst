@@ -274,7 +274,7 @@ These changes do not affect user-facing behaviour:
 Bug fixes
 .........
 
-- 🐛 An invalid ``predicates`` expression warns instead of ending the build
+- 🐛 An invalid ``predicates`` expression warns instead of ending the build (:pr:`1791`)
 
   A ``predicates`` match expression on a :ref:`needs_fields` or :ref:`needs_links`
   default that cannot be evaluated — one naming ``section_name`` or ``content``, say,
