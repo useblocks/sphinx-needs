@@ -344,6 +344,8 @@ For ``predicates``, the match expression is a string, using Python syntax, that 
 - :ref:`needs_links` (``tuple[str, ...]``)
 - :ref:`needs_variant_data` (via the ``var`` namespace)
 
+An expression that cannot be evaluated, such as one naming something not in this list, is reported as a ``needs.config`` warning and then skipped, so that the remaining predicates and the ``default`` apply just as they would for an expression that did not match.
+
 For example:
 
 .. code-block:: python
@@ -455,6 +457,8 @@ For ``predicates``, the match expression is a string, using Python syntax, that 
 - :ref:`needs_fields`
 - :ref:`needs_links` (``tuple[str, ...]``)
 - :ref:`needs_variant_data` (via the ``var`` namespace)
+
+An expression that cannot be evaluated, such as one naming something not in this list, is reported as a ``needs.config`` warning and then skipped, so that the remaining predicates and the ``default`` apply just as they would for an expression that did not match.
 
 For example:
 

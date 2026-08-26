@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from copy import copy, deepcopy
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, TypedDict, TypeVar, cast
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -25,7 +25,7 @@ from sphinx_needs.data import (
     SphinxNeedsData,
 )
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
-from sphinx_needs.exceptions import InvalidNeedException
+from sphinx_needs.exceptions import InvalidNeedException, NeedsInvalidFilter
 from sphinx_needs.filter_common import (
     PredicateContextData,
     apply_default_predicate,
@@ -334,6 +334,7 @@ def generate_need(
         "core": defaults_ctx,
         "extras": defaults_extras_ctx,
         "links": defaults_links_ctx,
+        "location": location,
     }
 
     # Apply defaults to core fields (title excluded - always required)
@@ -1062,6 +1063,54 @@ class DefaultContextData(TypedDict):
     core: PredicateContextData
     extras: dict[str, AllowedTypes | None]
     links: dict[str, list[str]]
+    location: tuple[str | None, int | None] | None
+
+
+_PredicateValue = TypeVar("_PredicateValue")
+
+
+def _match_predicate_default(
+    predicate_defaults: Sequence[tuple[str, _PredicateValue]],
+    config_name: str,
+    field_name: str,
+    config: NeedsSphinxConfig,
+    core: PredicateContextData,
+    extras: dict[str, AllowedTypes | None],
+    links: dict[str, list[str]],
+    location: tuple[str | None, int | None] | None,
+) -> _PredicateValue | None:
+    """Return the value of the first predicate that matches this need, if any.
+
+    A predicate that cannot be evaluated is reported and skipped:
+    it used to raise out of the need's creation and end the whole build with a
+    traceback, so a single mistake in the configuration cost the project every need.
+    The remaining predicates are still evaluated, and if none of them matches then
+    the caller falls back to the plain ``default``, exactly as an unmatched
+    predicate has always done.
+    """
+    for predicate, value in predicate_defaults:
+        try:
+            matched = apply_default_predicate(predicate, config, core, extras, links)
+        except NeedsInvalidFilter as err:
+            # once=True: a configuration mistake that breaks the expression outright
+            # would otherwise be repeated for every need in the project. The dedup
+            # key is the whole message, so a predicate that fails only for SOME
+            # needs, or for different reasons on different needs, is still reported
+            # once per distinct error -- evaluability is data-dependent, which is
+            # why the predicate must keep being evaluated per need rather than
+            # being marked broken and skipped wholesale.
+            log_warning(
+                logger,
+                f"{config_name}[{field_name!r}]['predicates']: {err} "
+                "The predicate is skipped.",
+                "config",
+                location,
+                once=True,
+            )
+            continue
+        if matched:
+            return value
+    return None
 
 
 def _get_field_default(
@@ -1070,13 +1119,24 @@ def _get_field_default(
     core: PredicateContextData,
     extras: dict[str, AllowedTypes | None],
     links: dict[str, list[str]],
+    location: tuple[str | None, int | None] | None,
 ) -> None | FieldLiteralValue | FieldFunctionArray:
     if scheme is None:
         return None  # TODO except (and catch upstream)
     # TODO if we stored default lists as tuples we could avoid the deepcopy here
-    for predicate, v in scheme.predicate_defaults:
-        if apply_default_predicate(predicate, config, core, extras, links):
-            return deepcopy(v)
+    if (
+        value := _match_predicate_default(
+            scheme.predicate_defaults,
+            "needs_fields",
+            scheme.name,
+            config,
+            core,
+            extras,
+            links,
+            location,
+        )
+    ) is not None:
+        return deepcopy(value)
     if scheme.default is not None:
         return deepcopy(scheme.default)
     return None
@@ -1088,13 +1148,24 @@ def _get_links_default(
     core: PredicateContextData,
     extras: dict[str, AllowedTypes | None],
     links: dict[str, list[str]],
+    location: tuple[str | None, int | None] | None,
 ) -> None | LinksLiteralValue | LinksFunctionArray:
     if scheme is None:
         return None  # TODO except (and catch upstream)
     # TODO if we stored default lists as tuples we could avoid the deepcopy here
-    for predicate, v in scheme.predicate_defaults:
-        if apply_default_predicate(predicate, config, core, extras, links):
-            return deepcopy(v)
+    if (
+        value := _match_predicate_default(
+            scheme.predicate_defaults,
+            "needs_links",
+            scheme.name,
+            config,
+            core,
+            extras,
+            links,
+            location,
+        )
+    ) is not None:
+        return deepcopy(value)
     if scheme.default is not None:
         return deepcopy(scheme.default)
     return None

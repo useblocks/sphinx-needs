@@ -343,6 +343,28 @@ These changes do not affect user-facing behaviour:
 Bug fixes
 .........
 
+- 🐛 An invalid ``predicates`` expression warns instead of ending the build (:pr:`1791`)
+
+  A ``predicates`` match expression on a :ref:`needs_fields` or :ref:`needs_links`
+  default that cannot be evaluated — one naming ``section_name`` or ``content``, say,
+  neither of which a predicate has access to — used to raise out of the need's creation
+  and end the whole build with a traceback and a "please report this to the developers"
+  banner. No need was created, no other warning in the project was ever reported, and
+  nothing said which document the expression had failed on.
+
+  Such an expression is now reported as a ``needs.config`` warning, located at a need it
+  was evaluated against and naming the field, the expression and the underlying error,
+  and is then skipped: the remaining predicates are still evaluated, and if none of them
+  matches then the plain ``default`` applies, exactly as it does for a predicate that
+  simply did not match. A statically malformed ``predicates`` value — the wrong number
+  of items in a pair, say — has always been reported this way; only the expression
+  itself was left to end the build.
+
+  The warning is deduplicated on its full message, so a single configuration mistake --
+  such as the name typo above, which fails identically for every need -- is reported once
+  rather than once per need. An expression that fails only for some needs, or for
+  different reasons on different needs, is reported once per distinct error.
+
 - 🐛 A need records the line it is actually written on **(changed output)** (:issue:`1349`, :pr:`1789`)
 
   ``rst_prolog``, ``.. include::`` and :ref:`list2need` each put text into the document
