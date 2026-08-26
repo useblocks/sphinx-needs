@@ -2908,8 +2908,10 @@ def test_setup_declares_an_env_version(make_app, make_host_project, bundle_simpl
 
     Pinned to the exact number rather than "declares one", so that a bump has
     to be a deliberate edit here as well as in ``setup()``. It went 1 -> 2 when
-    the ``[[source.variant_sources]]`` reader landed, because that reader
-    changes which docnames the project produces.
+    the ``[[source.variant_sources]]`` reader landed and 2 -> 3 when ``if`` on
+    a mount entry did, because each reader changes which docnames the project
+    produces — and the second one also added a field to the pickled shape of
+    ``_MountAwareProject``.
     """
     host = make_host_project()
     write_ubproject_toml(host, [{"dir": str(bundle_simple), "mount_at": "_g/m"}])
@@ -2918,8 +2920,8 @@ def test_setup_declares_an_env_version(make_app, make_host_project, bundle_simpl
     app = make_app(srcdir=host, freshenv=True)
     app.build()
 
-    assert app.extensions["sphinx_mounts"].metadata["env_version"] == 2
-    assert app.env.version["sphinx_mounts"] == 2
+    assert app.extensions["sphinx_mounts"].metadata["env_version"] == 3
+    assert app.env.version["sphinx_mounts"] == 3
 
 
 def test_env_pickle_carries_no_mount_config_objects(

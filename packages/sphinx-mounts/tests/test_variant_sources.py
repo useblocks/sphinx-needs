@@ -1182,7 +1182,7 @@ def test_an_out_of_grammar_condition_refuses_the_configuration(make_app, tmp_pat
     debug = false
     """
     confdir, _ = make_project(tmp_path, toml=toml)
-    with pytest.raises(Exception, match="outside the rule grammar"):
+    with pytest.raises(Exception, match="outside the condition grammar"):
         _build(make_app, confdir)
 
 

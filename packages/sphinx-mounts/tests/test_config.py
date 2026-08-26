@@ -462,6 +462,107 @@ class TestMountConfig:
             MountConfig(dir=tmp_path, mount_at="x", path_check=True)  # type: ignore[arg-type]
 
 
+class TestMountGateKey:
+    """``if`` on a mount entry, as :class:`MountConfig` sees it.
+
+    The reader at ``config-inited`` priority 450 owns the decision (see
+    ``tests/test_variant_sources.py``); what is pinned here is the contract
+    between that reader and the parser at 500, plus the fail-closed reading
+    of the one route the reader never sees.
+    """
+
+    def test_absent_condition_leaves_the_mount_live(self, tmp_path: Path) -> None:
+        """The state a gated-ON mount reaches the parser in: no ``if`` at all.
+
+        The reader strips the key when the condition holds, which is what
+        keeps a correctly-gated project free of ``mounts.unknown_key`` — the
+        key is a Python keyword, so no dataclass field could ever model it.
+        """
+        assert MountConfig.from_dict({"dir": tmp_path}).gated_by is None
+
+    def test_surviving_condition_gates_the_mount_off(self, tmp_path: Path) -> None:
+        """A surviving ``if`` is the gate marker, carrying its own text."""
+        mount = MountConfig.from_dict({"dir": tmp_path, "if": "var.edition == 'pro'"})
+        assert mount.gated_by == "var.edition == 'pro'"
+
+    def test_the_condition_is_not_an_unknown_key(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """``if`` is taken off the entry *before* the unknown-key check.
+
+        Reporting it would be the trap this key has to avoid: the warning is
+        a warning, so ``sphinx-build -W`` would fail a project whose only sin
+        is using the key as documented.
+        """
+        with caplog.at_level("WARNING"):
+            MountConfig.from_dict({"dir": tmp_path, "if": "var.edition == 'pro'"})
+        assert "unknown mount key" not in caplog.text
+
+    def test_gated_by_is_not_a_user_key(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Writing the internal field name in TOML must not gate a mount.
+
+        ``from_dict`` derives its allowed set from the dataclass fields, so
+        without the explicit subtraction ``gated_by`` would become an
+        accepted mount key — a switch that silently removes a whole bundle
+        and that no documentation mentions.
+        """
+        with caplog.at_level("WARNING"):
+            mount = MountConfig.from_dict({"dir": tmp_path, "gated_by": "anything"})
+        assert mount.gated_by is None
+        assert "unknown mount key" in caplog.text
+
+    @pytest.mark.parametrize(
+        ("written", "expected"),
+        [(3, "3"), ("", "''"), ("   ", "'   '"), (True, "True")],
+    )
+    def test_an_unusable_condition_still_gates_off(
+        self, tmp_path: Path, written: object, expected: str
+    ) -> None:
+        """Fail closed: a condition this parser cannot read keeps content out.
+
+        Unreachable from a project the reader saw — it refuses the whole
+        configuration over a non-string ``if`` — so this covers the route it
+        never sees, where publishing the bundle would be the one outcome a
+        gating key must not have.
+        """
+        mount = MountConfig.from_dict({"dir": tmp_path, "if": written})
+        assert mount.gated_by == expected
+
+    def test_non_string_gate_is_rejected_on_the_dataclass(self, tmp_path: Path) -> None:
+        with pytest.raises(MountConfigError, match="gated_by must be a string"):
+            MountConfig(dir=tmp_path, gated_by=3)  # type: ignore[arg-type]
+
+    def test_the_unknown_key_message_advertises_the_condition_key(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A user who typed ``iff`` must find ``if`` in the list they are sent to.
+
+        The advertised list is derived from the dataclass fields, and ``if``
+        can never be one — it is a Python keyword. So the message told a user
+        to check their spelling against a list missing the very key they meant,
+        which is worse than saying nothing.
+        """
+        with caplog.at_level("WARNING"):
+            MountConfig.from_dict({"dir": tmp_path, "iff": "var.edition == 'pro'"})
+        assert "unknown mount key" in caplog.text
+        assert "'if'" in caplog.text, caplog.text
+
+    def test_from_dict_does_not_mutate_its_argument(self, tmp_path: Path) -> None:
+        """The caller's table is not the parser's scratch space.
+
+        ``_on_load_variants`` hands the parser the same tables it left on
+        ``config["mounts"]``, and Sphinx compares that value against the
+        previous build's to decide whether to re-read every document.
+        Popping ``if`` out of the caller's dict would erase the gate from the
+        config value and take the convergence with it.
+        """
+        entry: dict[str, object] = {"dir": tmp_path, "if": "var.edition == 'pro'"}
+        MountConfig.from_dict(entry)
+        assert entry["if"] == "var.edition == 'pro'"
+
+
 class TestParseMounts:
     def test_empty_list(self, tmp_path: Path) -> None:
         assert parse_mounts([], tmp_path) == ()
@@ -514,6 +615,21 @@ class TestParseMounts:
             tmp_path,
         )
         assert mounts[0].path_check == "warn"
+
+    def test_preserves_the_gate(self, tmp_path: Path) -> None:
+        """The gate has to survive the re-construction ``parse_mounts`` does.
+
+        It rebuilds every :class:`MountConfig` field by field to absolutise
+        the paths, so a field it forgets is dropped silently — and dropping
+        *this* one un-gates the mount, publishing the bundle the author
+        gated. Nothing else in the pipeline would notice.
+        """
+        (tmp_path / "bundle").mkdir()
+        mounts = parse_mounts(
+            [{"dir": "bundle", "if": "var.edition == 'pro'"}],
+            tmp_path,
+        )
+        assert mounts[0].gated_by == "var.edition == 'pro'"
 
 
 class TestLoadMountsFromToml:

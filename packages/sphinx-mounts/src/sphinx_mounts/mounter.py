@@ -33,7 +33,58 @@ from sphinx_mounts.logging import log_warning
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+    from sphinx_mounts.logging import WarningTopics
+
 logger = logging.getLogger(__name__)
+
+
+def _mount_problem(  # noqa: PLR0913
+    project: _MountAwareProject,
+    index: int,
+    message: str,
+    topic: WarningTopics,
+    *,
+    gated: bool,
+    skip_reason: str | None = None,
+) -> None:
+    """Report a mount-level problem, unless the mount is gated off.
+
+    Two of the problems this covers are genuinely *hypothetical* for a mount a
+    variant condition gated out of the build, and suppressing those is plainly
+    right: an absent bundle root does not matter to a bundle nobody is
+    building, and a host directory at its ``mount_at`` is not occupied by a
+    mount that is not there. These are warnings, so reporting them would not
+    merely be noise — it would fail ``sphinx-build -W`` on a project whose only
+    sin is gating a bundle its CI has not checked out.
+
+    The other four are **properties of the bundle itself**, true in every
+    variant: a ``docname_conflict`` between two of the mount's own files, an
+    ``unknown_suffix``, an ``empty_docname``, and ``ignored_option`` — a plain
+    configuration typo. Suppressing those is a recorded trade-off rather than
+    an obvious win: a CI that only ever builds the gated variant never learns
+    the bundle is broken. It is taken because the alternative reintroduces the
+    ``-W`` failure this suppression exists to remove, and because a variant
+    that DOES build the bundle reports every one of them. Splitting the two
+    classes is a follow-up candidate, not something to change under a gating
+    key's own review.
+
+    A ``docname_conflict`` against the HOST or an earlier LIVE mount is a third
+    thing again — a contest, not a defect — and the caller records it so the
+    gated record can say the attribution was suppressed by it.
+
+    Whatever is suppressed, the problem still changes the OUTCOME for a gated
+    mount, and that is the point: the whole-mount skips are exactly the
+    reductions the attribution has to reproduce, which is why the real pipeline
+    runs for a gated mount at all. Only the report is suppressed.
+    """
+    if gated:
+        if skip_reason is not None:
+            # First one wins: the pipeline stops at the first whole-mount skip,
+            # so a later reason could only come from a different `discover()`.
+            project._gated_skips.setdefault(index, skip_reason)
+        logger.debug("sphinx-mounts: (gated-off mount) %s", message)
+        return
+    log_warning(logger, message, topic)
 
 
 class DocRoot(NamedTuple):
@@ -175,6 +226,22 @@ class _MountAwareProject(Project):
         # wiring, which attaches every file rather than only the entry doc.
         # Rebuilt each discover().
         self._mount_entry_docnames: dict[int, list[str]] = {}
+        # Ordered docnames each GATED-OFF mount would have produced, keyed the
+        # same way. Deliberately a SECOND dictionary rather than entries in the
+        # one above: `_wired_entries` treats that one as "what the mount
+        # produced" and would wire a docname no document backs, which is a
+        # dangling toctree entry — the host project modified by a mount that is
+        # not even in the build. Consumed by the toctree downgrade's
+        # attribution. Rebuilt each discover().
+        self._gated_entry_docnames: dict[int, list[str]] = {}
+        # For each gated-off mount whose attribution came out EMPTY because
+        # the pipeline took a whole-mount skip, why. Every one of those skips
+        # leaves references to the bundle's pages as bare `toc.not_readable`
+        # warnings rather than downgraded records, so the gated record has to
+        # stop promising a downgrade and say what happened instead. Keyed by
+        # index into `self._mounts`, the same key `_gated_entry_docnames` uses.
+        # Rebuilt each discover().
+        self._gated_skips: dict[int, str] = {}
 
     def __getstate__(self) -> dict[str, Any]:
         """Keep mount state out of ``environment.pickle``.
@@ -194,7 +261,7 @@ class _MountAwareProject(Project):
         name, which would turn a rename into a hard failure inside someone
         else's CI rather than a cache miss.
 
-        The three fields are *emptied* rather than removed from the state.
+        The five fields are *emptied* rather than removed from the state.
         The unpickled instance is handed to ``Project.restore`` before it is
         discarded, and an emptied field keeps it structurally valid — whereas
         a missing attribute would make any future read a crash instead of a
@@ -209,6 +276,8 @@ class _MountAwareProject(Project):
         state["_mounts"] = ()
         state["_doc_roots"] = {}
         state["_mount_entry_docnames"] = {}
+        state["_gated_entry_docnames"] = {}
+        state["_gated_skips"] = {}
         return state
 
     def discover(
@@ -216,23 +285,68 @@ class _MountAwareProject(Project):
         exclude_paths: Iterable[str] = (),
         include_paths: Iterable[str] = ("**",),
     ) -> set[str]:
-        """Discover host srcdir docs plus all mounted external trees."""
+        """Discover host srcdir docs plus all mounted external trees.
+
+        **Two passes, and the order is load-bearing.** The live mounts register
+        first; the mounts a variant condition gated OFF run afterwards, through
+        the same per-mount pipeline, with their docnames recorded in
+        ``_gated_entry_docnames`` and added to nothing.
+
+        Running the real pipeline for a gated mount rather than a cheaper
+        attribution-only walk is what keeps the downgrade honest. ``discover``
+        applies five reductions no second implementation would reproduce for
+        free — suffix matching, host precedence, first-mount-wins,
+        first-file-wins inside one mount, and the whole-mount skips
+        (``strict_mount_at``, an absent root, an unregistered suffix, a
+        docname that is only a suffix). Every one of them, missed, invents a
+        docname that was never a document, and one such phantom is enough to
+        downgrade a **genuine** toctree warning and stop ``-W`` from failing.
+        That is the one thing the downgrade is not allowed to do.
+
+        The second pass has to come second for the same reason. Two mounts with
+        mutually exclusive conditions at one ``mount_at`` is the natural shape
+        for this key — one variant mounts the pro bundle at ``guides``, another
+        the basic one — and a gated mount evaluated before the live mount that
+        replaces it would see the docname as free and attribute a page the
+        build really provides. Deferring the pass means every gated docname is
+        tested against the *complete* document set.
+        """
         docs = super().discover(exclude_paths, include_paths)
         self._doc_roots = {}
         self._mount_entry_docnames = {}
+        self._gated_entry_docnames = {}
+        self._gated_skips = {}
         for index, mount in enumerate(self._mounts):
-            if _enforce_strict_mount_at(Path(self.srcdir), mount, index):
+            if mount.gated_by is not None:
+                # Recorded as "produced nothing" rather than omitted, so
+                # `_wiring_signature` still sees the index and a gating flip
+                # registers as a change. The second pass fills in what it
+                # WOULD have produced.
+                self._mount_entry_docnames[index] = []
+                continue
+            if _enforce_strict_mount_at(self, mount, index, gated=False):
                 # strict_mount_at violation — the whole mount is skipped,
                 # so the host project stays completely untouched.
                 self._mount_entry_docnames[index] = []
                 continue
-            added = _attach_mount(self, mount, index)
+            added = _attach_mount(self, mount, index, gated=False)
             docs.update(added)
             self._mount_entry_docnames[index] = added
+        for index, mount in enumerate(self._mounts):
+            if mount.gated_by is None:
+                continue
+            if _enforce_strict_mount_at(self, mount, index, gated=True):
+                self._gated_entry_docnames[index] = []
+                continue
+            self._gated_entry_docnames[index] = _attach_mount(
+                self, mount, index, gated=True
+            )
         return docs
 
 
-def _enforce_strict_mount_at(srcdir: Path, mount: MountConfig, index: int) -> bool:
+def _enforce_strict_mount_at(
+    project: _MountAwareProject, mount: MountConfig, index: int, *, gated: bool
+) -> bool:
     """Warn (and report "skip") if ``mount.strict_mount_at`` is set and
     the host srcdir already contains a directory at ``mount.mount_at``.
 
@@ -256,7 +370,7 @@ def _enforce_strict_mount_at(srcdir: Path, mount: MountConfig, index: int) -> bo
     """
     if not mount.strict_mount_at or mount.mount_at is None:
         return False
-    candidate = srcdir / mount.mount_at
+    candidate = Path(project.srcdir) / mount.mount_at
     if candidate.is_dir():
         msg = (
             f"sphinx-mounts: strict_mount_at violation: host project "
@@ -266,13 +380,20 @@ def _enforce_strict_mount_at(srcdir: Path, mount: MountConfig, index: int) -> bo
             f"directory, or set strict_mount_at = false to fall back "
             f"to per-docname collision checking."
         )
-        log_warning(logger, msg, "mount_at_occupied")
+        _mount_problem(
+            project,
+            index,
+            msg,
+            "mount_at_occupied",
+            gated=gated,
+            skip_reason="the host already has a directory at the mount point",
+        )
         return True
     return False
 
 
 def _attach_mount(
-    project: _MountAwareProject, mount: MountConfig, index: int
+    project: _MountAwareProject, mount: MountConfig, index: int, *, gated: bool
 ) -> list[str]:
     """Inject ``mount`` into ``project`` — either a directory or a file list.
 
@@ -301,9 +422,9 @@ def _attach_mount(
         guarantees exactly one is set.
     """
     if mount.dir is not None:
-        return _attach_mount_dir(project, mount, mount.dir, index)
+        return _attach_mount_dir(project, mount, mount.dir, index, gated=gated)
     if mount.files is not None:
-        return _attach_mount_files(project, mount, mount.files, index)
+        return _attach_mount_files(project, mount, mount.files, index, gated=gated)
     # MountConfig.__post_init__ guarantees exactly one of dir/files is
     # set, so this branch is unreachable in practice.
     msg = f"sphinx-mounts: {mount_label(mount, index)} has neither dir nor files."
@@ -311,7 +432,12 @@ def _attach_mount(
 
 
 def _attach_mount_dir(
-    project: _MountAwareProject, mount: MountConfig, mount_dir: Path, index: int
+    project: _MountAwareProject,
+    mount: MountConfig,
+    mount_dir: Path,
+    index: int,
+    *,
+    gated: bool,
 ) -> list[str]:
     """Walk ``mount_dir`` with the ``ignore-python`` walker (a Rust
     binding to the same crate used by ``sphinx-codelinks`` and ubCode).
@@ -333,7 +459,14 @@ def _attach_mount_dir(
             f"sphinx-mounts: mount directory does not exist and the whole "
             f"mount is skipped: {mount_dir}"
         )
-        log_warning(logger, msg, "missing_path")
+        _mount_problem(
+            project,
+            index,
+            msg,
+            "missing_path",
+            gated=gated,
+            skip_reason="the bundle root is not on disk",
+        )
         return []
     suffixes = tuple(project.source_suffix)
 
@@ -364,7 +497,9 @@ def _attach_mount_dir(
         docname_tail = rel_path.as_posix()[: -len(suffix)]
         docname = _join_mount(mount.mount_at, docname_tail)
         entries.append((docname, abs_path))
-    return _attach_entries(project, mount, entries, _dir_root(mount_dir), index)
+    return _attach_entries(
+        project, mount, entries, _dir_root(mount_dir), index, gated=gated
+    )
 
 
 def _build_walker(
@@ -416,7 +551,9 @@ def _build_walker(
     return builder.build()
 
 
-def _warn_ignored_walk_options(mount: MountConfig, index: int) -> None:
+def _warn_ignored_walk_options(
+    project: _MountAwareProject, mount: MountConfig, index: int, *, gated: bool
+) -> None:
     """Warn when a file-list mount sets options only directory mode reads.
 
     ``include`` and ``exclude`` are gitignore-style patterns handed to the
@@ -443,11 +580,16 @@ def _warn_ignored_walk_options(mount: MountConfig, index: int) -> None:
         f"Remove it, or switch the mount to `dir` if you meant to filter a "
         f"tree."
     )
-    log_warning(logger, msg, "ignored_option")
+    _mount_problem(project, index, msg, "ignored_option", gated=gated)
 
 
 def _attach_mount_files(
-    project: _MountAwareProject, mount: MountConfig, files: Iterable[Path], index: int
+    project: _MountAwareProject,
+    mount: MountConfig,
+    files: Iterable[Path],
+    index: int,
+    *,
+    gated: bool,
 ) -> list[str]:
     """Mount an explicit list of files under ``mount.mount_at``.
 
@@ -455,7 +597,7 @@ def _attach_mount_files(
     tail, so the result is a flat namespace. All of them share the mount's
     confinement root *set* — see :func:`_listed_roots`.
     """
-    _warn_ignored_walk_options(mount, index)
+    _warn_ignored_walk_options(project, mount, index, gated=gated)
     suffixes = tuple(project.source_suffix)
     listed = list(files)
     entries: list[tuple[str, Path]] = []
@@ -465,7 +607,14 @@ def _attach_mount_files(
                 f"sphinx-mounts: listed file does not exist and the whole "
                 f"mount is skipped: {abs_path}"
             )
-            log_warning(logger, msg, "missing_path")
+            _mount_problem(
+                project,
+                index,
+                msg,
+                "missing_path",
+                gated=gated,
+                skip_reason="a listed file is not on disk",
+            )
             return []
         suffix = _match_suffix(abs_path.name, suffixes)
         if suffix is None:
@@ -476,7 +625,14 @@ def _attach_mount_files(
                 f"myst_parser for .md) or remove the file from the "
                 f"mount's `files` list."
             )
-            log_warning(logger, msg, "unknown_suffix")
+            _mount_problem(
+                project,
+                index,
+                msg,
+                "unknown_suffix",
+                gated=gated,
+                skip_reason="a listed file has no registered source suffix",
+            )
             return []
         docname_tail = abs_path.name[: -len(suffix)]
         if not docname_tail:
@@ -492,19 +648,30 @@ def _attach_mount_files(
                 f"mount is skipped. Give the file a name (e.g. "
                 f"index{suffix}) or remove it from the mount's `files` list."
             )
-            log_warning(logger, msg, "empty_docname")
+            _mount_problem(
+                project,
+                index,
+                msg,
+                "empty_docname",
+                gated=gated,
+                skip_reason="a listed file has no name before its suffix",
+            )
             return []
         entries.append((_join_mount(mount.mount_at, docname_tail), abs_path))
 
-    return _attach_entries(project, mount, entries, _listed_roots(listed), index)
+    return _attach_entries(
+        project, mount, entries, _listed_roots(listed), index, gated=gated
+    )
 
 
-def _attach_entries(
+def _attach_entries(  # noqa: PLR0913
     project: _MountAwareProject,
     mount: MountConfig,
     entries: list[tuple[str, Path]],
     roots: tuple[Path, ...],
     index: int,
+    *,
+    gated: bool,
 ) -> list[str]:
     """Register a mount's ``(docname, abs_path)`` entries.
 
@@ -540,8 +707,14 @@ def _attach_entries(
         one check for the whole mount rather than one per document.
     :param index: The mount's position in the ``mounts`` config list,
         used in the warning's :func:`mount_label`.
-    :return: The docnames actually registered (``[]`` when the whole
-        mount was skipped).
+    :param gated: Whether this mount is gated OFF for the current variant.
+        The collision checks still run — they are reductions the attribution
+        must reproduce, and the first of them is what keeps a gated mount from
+        claiming a docname a live mount or the host still provides — but
+        nothing is registered and nothing is reported.
+    :return: The docnames actually registered, or — when ``gated`` — the
+        docnames the mount would have provided. ``[]`` when the whole mount
+        was skipped, in both cases.
     """
     seen: dict[str, Path] = {}
     for docname, abs_path in entries:
@@ -554,7 +727,20 @@ def _attach_entries(
                 f"{_skip_consequence(entries)} Mount the bundle under a "
                 f"different mount_at, or {_drop_one_file_remedy(mount)}."
             )
-            log_warning(logger, msg, "docname_conflict")
+            _mount_problem(
+                project,
+                index,
+                msg,
+                "docname_conflict",
+                gated=gated,
+                # A contest, not a conflict: this variant has no conflict at
+                # all, because the mount is not in it. What it costs is the
+                # attribution, and the gated record is where the user learns
+                # that — so the contested docname is named.
+                skip_reason=(
+                    f"docname(s) contested by the live build, first {docname!r}"
+                ),
+            )
             return []
         if docname in seen:
             msg = (
@@ -565,9 +751,25 @@ def _attach_entries(
                 f"or {_drop_one_file_remedy(mount)}; changing mount_at does "
                 f"not help, because both files move with it."
             )
-            log_warning(logger, msg, "docname_conflict")
+            _mount_problem(
+                project,
+                index,
+                msg,
+                "docname_conflict",
+                gated=gated,
+                skip_reason=(
+                    f"two of the mount's own files map to the docname {docname!r}"
+                ),
+            )
             return []
         seen[docname] = abs_path
+    if gated:
+        # Attribution only. The mount is not in this variant's build, so
+        # nothing is registered — no docname, no path mapping, no confinement
+        # root. What is returned is the set of docnames the mount WOULD have
+        # provided, past every reduction above, which is exactly what the
+        # toctree downgrade has to be told and nothing more.
+        return [docname for docname, _ in entries]
     added: list[str] = []
     doc_root = DocRoot(roots, mount.path_check, mount_label(mount, index))
     for docname, abs_path in entries:
@@ -633,7 +835,7 @@ def install_mount_aware_project(
     the resulting project would look complete and simply be missing
     something.
 
-    The three fields this subclass owns are excluded (the constructor has
+    The five fields this subclass owns are excluded (the constructor has
     just set them, and they are per-mount state that has nothing to do with
     the project being replaced), and the three docname/path dictionaries are
     re-copied afterwards so *those* are not shared. Any other attribute is
@@ -650,7 +852,13 @@ def install_mount_aware_project(
         app_project.source_suffix,
         mounts,
     )
-    owned = {"_mounts", "_doc_roots", "_mount_entry_docnames"}
+    owned = {
+        "_mounts",
+        "_doc_roots",
+        "_mount_entry_docnames",
+        "_gated_entry_docnames",
+        "_gated_skips",
+    }
     for name, value in getattr(app_project, "__dict__", {}).items():
         if name not in owned:
             setattr(new, name, value)

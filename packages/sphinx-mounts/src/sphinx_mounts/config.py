@@ -58,6 +58,26 @@ class MountConfigError(ExtensionError):
         super().__init__(message, modname="sphinx_mounts")
 
 
+#: The key a mount entry uses to declare its variant condition.
+#:
+#: Spelled the same as a ``[[source.variant_sources]]`` rule's ``if`` and
+#: evaluated by the same validator and the same interpreter — one grammar, both
+#: keys. It is **not** a :class:`MountConfig` field, and could not be: ``if`` is
+#: a Python keyword, so no dataclass field can carry that name. The reader at
+#: ``config-inited`` priority 450 is what turns it into :attr:`MountConfig.
+#: gated_by`; see :func:`~sphinx_mounts.extension._on_load_variants`.
+MOUNT_CONDITION_KEY = "if"
+
+#: :class:`MountConfig` fields that are **not** user-writable TOML keys.
+#:
+#: ``from_dict`` derives its allowed-key set from the dataclass fields, so a
+#: field added for internal bookkeeping would otherwise become an accepted
+#: mount key by accident. Subtracting it here keeps ``gated_by = true`` in a
+#: user's TOML an unknown key (reported, ignored) rather than a hidden switch
+#: that silently removes a bundle from the build.
+_INTERNAL_MOUNT_FIELDS = frozenset({"gated_by"})
+
+
 @dataclass(frozen=True, slots=True)
 class MountConfig:
     """One mounted external source tree, in one of two modes.
@@ -168,6 +188,24 @@ class MountConfig:
             happened to read something.
 
             Set ``"error"`` where a hard stop is wanted without ``-W``.
+        gated_by: The ``if`` condition that gated this whole mount **off**
+            for the current variant, exactly as written — or ``None``, the
+            default, meaning the mount is live.
+
+            Not a user key. A mount entry declares :data:`
+            MOUNT_CONDITION_KEY`, and the reader at ``config-inited``
+            priority 450 either strips it (the condition holds) or leaves it
+            in place as the gate marker (it does not, or it could not be
+            evaluated). By the time a :class:`MountConfig` exists, a
+            surviving ``if`` therefore means *gated off* — which is also the
+            fail-closed reading for the one route that reader cannot reach:
+            a ``conf.py``-declared mapping in a project whose TOML reading is
+            switched off with ``sources_from_toml = None``. A gating key that
+            was never evaluated must not publish.
+
+            A ``conf.py``-declared :class:`MountConfig` *instance* cannot
+            carry a condition at all, for the reason :data:`
+            MOUNT_CONDITION_KEY` gives. TOML is the primary config target.
     """
 
     mount_at: str | None = None
@@ -182,6 +220,7 @@ class MountConfig:
     attach_each: bool = False
     strict_mount_at: bool = False
     path_check: str = "warn"
+    gated_by: str | None = None
 
     def __post_init__(self) -> None:
         if self.mount_at is not None:
@@ -248,13 +287,12 @@ class MountConfig:
             )
             raise MountConfigError(msg)
 
-        if not isinstance(self.path_check, str):
-            msg = f"path_check must be a string; got {type(self.path_check).__name__}."
-            raise MountConfigError(msg)
-        if self.path_check not in {"error", "warn", "off"}:
+        _validate_path_check(self.path_check)
+
+        if self.gated_by is not None and not isinstance(self.gated_by, str):
             msg = (
-                f"path_check must be one of 'error', 'warn', 'off'; "
-                f"got {self.path_check!r}."
+                f"gated_by must be a string or None; "
+                f"got {type(self.gated_by).__name__}."
             )
             raise MountConfigError(msg)
 
@@ -268,9 +306,16 @@ class MountConfig:
         coerced to :class:`pathlib.Path`; lists of patterns are
         coerced to tuples.
 
+        A surviving :data:`MOUNT_CONDITION_KEY` is taken off the entry
+        **before** the unknown-key check and read as :attr:`gated_by` — see
+        that field for why a surviving ``if`` means *gated off* rather than
+        *unevaluated*.
+
         :raises MountConfigError: If the mapping is malformed.
         """
-        allowed = {f.name for f in fields(cls)}
+        entry = dict(entry)
+        gated_by = _gate_from_entry(entry)
+        allowed = {f.name for f in fields(cls)} - _INTERNAL_MOUNT_FIELDS
         unknown = set(entry) - allowed
         if unknown:
             # Reported, never fatal. A `ubproject.toml` is shared with tools on
@@ -288,10 +333,16 @@ class MountConfig:
             # readable. That release is this one.
             #
             # `mapping-contract.md` §4 records the change and the reasoning.
+            # `MOUNT_CONDITION_KEY` is advertised but is NOT in `allowed`:
+            # it is a Python keyword, so no dataclass field can carry its name,
+            # and it is taken off the entry above rather than matched here.
+            # Leaving it out of the DISPLAY list told a user who typed `iff` to
+            # check their spelling against a list missing the key they meant.
+            advertised = sorted({*allowed, MOUNT_CONDITION_KEY})
             msg = (
                 f"sphinx-mounts: unknown mount key(s) {sorted(unknown)} on "
                 f"{_entry_label(entry)}; they are ignored. Supported keys are "
-                f"{sorted(allowed)}. A key another tool reads is not an error "
+                f"{advertised}. A key another tool reads is not an error "
                 f"here — but a misspelling is, so check the spelling if you "
                 f"expected this key to do something."
             )
@@ -326,7 +377,47 @@ class MountConfig:
             attach_each=entry.get("attach_each", False),
             strict_mount_at=entry.get("strict_mount_at", False),
             path_check=entry.get("path_check", "warn"),
+            gated_by=gated_by,
         )
+
+
+def normalise_condition(raw: Any) -> str:
+    """Render a raw ``if`` value as the string every seam will compare.
+
+    **One function, so that two seams cannot disagree.** The reader at
+    ``config-inited`` priority 450 records the conditions it decided and the
+    parser at 500 matches what it finds against them; if the two derived their
+    strings separately, a value that is not a usable condition would be spelled
+    one way by one and another way by the other, and a gate the reader had
+    already reported would be reported a second time under a different label.
+
+    A usable condition — a non-blank string — is returned verbatim, so the
+    grammar sees exactly what the author wrote. Anything else is rendered
+    through :func:`repr`, which keeps it printable and keeps ``""`` distinct
+    from ``"   "`` and from ``3``. Such a value cannot arrive from a project
+    the reader evaluated (a non-string ``if`` is one of the offenders it
+    refuses the whole configuration over); it belongs to the routes nothing
+    evaluates, where fail-closed is the only defensible reading.
+    """
+    if isinstance(raw, str) and raw.strip():
+        return raw
+    return repr(raw)
+
+
+def _gate_from_entry(entry: dict[str, Any]) -> str | None:
+    """Pop :data:`MOUNT_CONDITION_KEY` off a raw entry and read it as the gate.
+
+    Mutates ``entry``. ``None`` when the key is absent, which is the state a
+    live mount reaches this function in — the reader at priority 450 strips
+    the key from every mount whose condition holds.
+
+    A value that is not a usable condition string still gates the mount off;
+    see :func:`normalise_condition` for how it is rendered and why that
+    rendering is shared.
+    """
+    if MOUNT_CONDITION_KEY not in entry:
+        return None
+    return normalise_condition(entry.pop(MOUNT_CONDITION_KEY))
 
 
 def _entry_label(entry: Mapping[str, Any]) -> str:
@@ -486,6 +577,21 @@ def _validate_attach_each(
         raise MountConfigError(msg)
 
 
+def _validate_path_check(path_check: object) -> None:
+    """Enforce the type and the accepted values of ``path_check``.
+
+    Extracted from ``MountConfig.__post_init__`` to keep that method's branch
+    count inside ruff's threshold, exactly as :func:`_validate_dir_or_files`
+    and :func:`_validate_attach_each` already are.
+    """
+    if not isinstance(path_check, str):
+        msg = f"path_check must be a string; got {type(path_check).__name__}."
+        raise MountConfigError(msg)
+    if path_check not in {"error", "warn", "off"}:
+        msg = f"path_check must be one of 'error', 'warn', 'off'; got {path_check!r}."
+        raise MountConfigError(msg)
+
+
 def _validate_relative_docname(field_name: str, value: object) -> None:
     """Validate a relative docname-shaped string field.
 
@@ -609,6 +715,7 @@ def parse_mounts(raw: Any, confdir: Path) -> tuple[MountConfig, ...]:
                 attach_each=mount.attach_each,
                 strict_mount_at=mount.strict_mount_at,
                 path_check=mount.path_check,
+                gated_by=mount.gated_by,
             )
         )
     return tuple(resolved)
@@ -656,6 +763,23 @@ NAMESPACED_MOUNTS_LOCATION = "[[source.mounts]]"
 #: need to change anything — but new projects should prefer
 #: :data:`NAMESPACED_MOUNTS_LOCATION`.
 TOP_LEVEL_MOUNTS_LOCATION = "[[mounts]]"
+
+
+def mount_gate_label(index: int, condition: str) -> str:
+    """Identify a mount's ``if`` gate, in every message about that gate.
+
+    Deliberately the same shape as :attr:`VariantRule.label` — the array's
+    spelling, the entry's index, and the condition as written. The two keys
+    are one grammar and one validator, so a message that names one of them
+    must not read as a different kind of thing from a message that names the
+    other. It is also what the toctree downgrade interpolates, where the two
+    arrive side by side in one build's output.
+
+    Not :func:`mount_label`: that one names the mount's *source* for a message
+    about the bundle (``mounts[0] (dir=/abs/path)``), which is the wrong
+    handle for a message about the condition the author wrote.
+    """
+    return f"{NAMESPACED_MOUNTS_LOCATION}[{index}] (if = {condition!r})"
 
 
 def load_mounts_from_toml(toml_path: Path) -> list[dict[str, Any]] | None:

@@ -20,10 +20,12 @@ way.
   written in any language can read the same mount mapping that
   `sphinx-build` reads — without having to evaluate `conf.py`.
 - **Variant-gated source selection**: sphinx-mounts is also the Sphinx-side
-  reader for `[[source.variant_sources]]`, the shared `ubproject.toml` key
-  that decides which files are in the build for the current variant — so a
-  project with no mounts at all can install it purely to have
-  `sphinx-build` narrow its document set the way ubCode already does.
+  reader for the shared `ubproject.toml` keys that decide which files are in
+  the build for the current variant — `[[source.variant_sources]]`, which
+  narrows a file set by glob, and `if` on a `[[source.mounts]]` entry, which
+  gates a whole mounted bundle. A project with no mounts at all can install it
+  purely for the first, to have `sphinx-build` narrow its document set the way
+  ubCode already does.
 - **Toctree auto-wiring**: an optional `attach_to` per mount injects the
   bundle's entry doc into a host toctree at build time, so the host stays
   buildable when a mount is absent (a developer hasn't run the upstream

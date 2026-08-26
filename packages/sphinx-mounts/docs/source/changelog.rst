@@ -12,10 +12,12 @@ Unreleased
    the first build after upgrading discards its cached build environment and
    re-reads every document once. No action is required.
 
-   It is at ``2`` rather than ``1`` because
-   :ref:`variant rules <variant-sources>` change *which docnames a project
-   produces*, and an environment written before that reader existed describes
-   a document set this version would not have built.
+   It is at ``3`` rather than ``1`` because both variant-gating keys —
+   :ref:`variant rules <variant-sources>` and :ref:`if on a mount entry
+   <mount-gating>` — change *which docnames a project produces*, and an
+   environment written before those readers existed describes a document set
+   this version would not have built. The second bump also covers a new field
+   in the pickled shape of the mount-aware project.
 
 - **sphinx-mounts now reads** :ref:`[[source.variant_sources]] <variant-sources>`,
   the shared ``ubproject.toml`` key that decides which files are part of the
@@ -28,11 +30,16 @@ Unreleased
   knowing where it is mounted. A gating flip converges on the build where it
   happened, in both directions, without ``sphinx-build -E``.
 
-  **A file-list mount** — one declared with ``files = [...]`` rather than
-  ``dir`` — is **not gated at all**, under any rule spelling, and neither is
-  ubCode's: a file-list mount's entries are an explicit request for named files
-  and bypass pattern matching entirely. Use a directory mount for a bundle that
-  has to be gateable.
+  **No rule narrows a file-list mount** — one declared with ``files = [...]``
+  rather than ``dir`` — under any rule spelling, and neither does ubCode's: a
+  file-list mount's entries are an explicit request for named files and bypass
+  pattern matching entirely. Use a directory mount for a bundle whose *file
+  set* has to be narrowable by a rule.
+
+  That is a statement about rules. A **whole-mount** ``if`` (below) gates a
+  file-list mount exactly as it gates a directory one, in both tools. The two
+  questions have opposite answers; per-file rule gating of a file-list mount
+  stays unsupported.
 
   **A project with no mounts at all can install sphinx-mounts purely for
   this**, to have ``sphinx-build`` narrow its document set per variant exactly
@@ -84,6 +91,81 @@ Unreleased
   Sphinx does not delete output for documents that have left the build, so
   build each variant into its own doctree and output directory, or use ``-E``
   with a clean ``outdir``.
+
+- **sphinx-mounts now reads** :ref:`if on a [[source.mounts]] entry
+  <mount-gating>`, the shared ``ubproject.toml`` key that gates a **whole
+  mounted bundle** for the current build variant. When the condition is false,
+  the mount contributes nothing: no documents, no toctree wiring, and no
+  diagnostics of its own.
+
+  It is the same condition grammar as ``[[source.variant_sources]]``, through
+  the same validator and the same interpreter — one grammar, both keys, and one
+  configuration error listing every offender from either. What the two keys do
+  differs: a rule narrows a file set by glob, an ``if`` removes a bundle.
+
+  **Both mount modes are gated**, ``dir`` and ``files`` alike, because dropping
+  a whole bundle touches neither ``include`` nor ``exclude``. Note the contrast
+  with the rule key above: no rule narrows a file-list mount in either tool, and
+  that limitation is unchanged.
+
+  **A project with no rules at all can gate mounts**, and it may live in any
+  layout — the ``[source] dir`` refusal that applies to rule globs does not
+  apply here, because a mount ``if`` anchors nothing.
+
+  Every failure keeps the bundle **out**: a false condition gates it, a
+  condition outside the grammar refuses the whole configuration, a condition
+  that cannot be evaluated gates it with a warning, and so does a condition this
+  reader never gets to evaluate — ``sources_from_toml = None``, or a
+  ``ubproject.toml`` that is not there, with the mount declared in ``conf.py``.
+  A gating key that publishes what it could not evaluate is the one outcome that
+  must not be possible.
+
+  **A gated-off mount is reported even when nothing references it**, as an INFO
+  record carrying ``[mounts.mount_gated]``. A rule names a glob you wrote beside
+  the files it removed; a mount ``if`` can remove hundreds of pages that live in
+  another repository, so without the record "where did my pages go" is
+  answerable only by re-reading ``ubproject.toml``. It is INFO rather than a
+  warning because gating is what you asked for — ``sphinx-build -W`` passes on a
+  correctly gated build, in both variants, serially and under ``-j``.
+
+  **The exception is a gated mount whose discovery takes a whole-mount skip**,
+  because then there is nothing to downgrade. The shape you are most likely to
+  reach for is pointing two bundles at the *same* ``mount_at`` with mutually
+  exclusive conditions: both would supply the same ``index``, so the gated one
+  hits the ordinary docname-collision rule, its whole attribution is dropped,
+  and a toctree entry naming one of its other pages warns and fails ``-W``.
+  Giving each bundle its own ``mount_at`` removes that cost entirely — see
+  :ref:`mount-gating-contest`. An occupied ``strict_mount_at`` and a bundle
+  root that is not on disk do the same thing. In every case the
+  ``mounts.mount_gated`` record says which skip it was, so the warning is
+  traceable back to the gate rather than arriving as a bare
+  ``toc.not_readable``.
+
+  A ``toctree`` entry naming a page in a gated bundle is reworded to name the
+  mount and its condition and downgraded to INFO, exactly as a rule-excluded
+  reference already is.
+
+  A ``conf.py``-declared ``MountConfig`` *instance* cannot carry ``if`` —
+  it is a Python keyword, so no dataclass field can be named for it. A
+  ``conf.py`` mount written as a plain ``dict`` is read like any TOML table.
+
+  .. warning::
+
+     **This key requires a matching ubCode**, and vice versa. Neither tool can
+     detect the other's version while it builds, so these release notes are the
+     only mechanism there is.
+
+     A reader too old for the key reports it as an unknown key and **builds the
+     bundle anyway** — which under ``sphinx-build -W`` is a failed build, and
+     without it is a published bundle you gated. The two tools ship the key in
+     coordinated releases for that reason.
+
+     One older combination is a **hard stop** rather than a degradation: the
+     deprecated top-level ``[[mounts]]`` spelling carrying ``if``, read by
+     sphinx-mounts 0.1.4, aborts the build with ``MountConfigError: Unknown
+     mount keys: ['if']`` and exit code 2. That is fail-closed — nothing is
+     published — but it is not survivable, so migrate the table header to
+     ``[[source.mounts]]`` before adopting the key.
 
 - New ``sources_from_toml`` config value, replacing ``mounts_from_toml``
   (which still works). Same default, same semantics, and the same file. The

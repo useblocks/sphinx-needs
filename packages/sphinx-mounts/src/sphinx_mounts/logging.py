@@ -46,6 +46,7 @@ WarningTopics = Literal[
     "ignored_option",
     "missing_path",
     "mount_at_occupied",
+    "mount_gate_unevaluable",
     "path_escape",
     "toctree_index",
     "unknown_key",
@@ -79,13 +80,24 @@ WarningTopics = Literal[
 #: ``mounts.variant_excluded_reference``
 #:     The downgraded toctree record — INFO, not a warning. See
 #:     :mod:`sphinx_mounts.warnings`.
+#: ``mounts.mount_gated``
+#:     A mount entry's ``if`` is false for this variant, so the whole bundle is
+#:     gated off — INFO, not a warning, because gating is what the author asked
+#:     for and a warning would fail ``sphinx-build -W`` on a correct build. It
+#:     is emitted once per gated mount **whether or not anything references the
+#:     bundle**, which is the only signal a large silent absence gets.
 NON_WARNING_CODES = (
+    "mounts.mount_gated",
     "mounts.variant_data_unreadable",
     "mounts.variant_excluded_reference",
     "mounts.variant_glob_dialect",
     "mounts.variant_layout",
     "mounts.variant_root_doc",
 )
+
+#: The INFO record marking one gated-off mount. Named so tests and the
+#: extension quote one string; see :data:`NON_WARNING_CODES` for what it means.
+MOUNT_GATED_CODE = "mounts.mount_gated"
 
 #: Warning ``type`` shared by every sphinx-mounts warning. Combined with a
 #: ``subtype``, ``suppress_warnings = ["mounts"]`` silences all of them.
