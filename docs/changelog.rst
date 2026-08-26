@@ -274,6 +274,26 @@ These changes do not affect user-facing behaviour:
 Bug fixes
 .........
 
+- 🐛 A need records the line it is actually written on **(changed output)** (:issue:`1349`, :pr:`1789`)
+
+  ``rst_prolog``, ``.. include::`` and :ref:`list2need` each put text into the document
+  being parsed, and each one used to shift the ``lineno`` recorded for every need after
+  it by the length of that text. The shifts compound, so in a document with a prolog and
+  a couple of includes the recorded line was routinely past the end of the file. The
+  line is now resolved back to the one the directive stands on — the same line the
+  directive's own warnings have always reported.
+
+  **No warning location regresses.** The only warning locations that move are the
+  ones this corrects — sites that report at a need's stored line now name the true
+  one. Everything anchored through the directive's own location helper, including
+  the content a :ref:`need_pre_template` or :ref:`need_post_template` renders, is
+  byte-identical to before.
+
+  Two things are deliberately unchanged: the needs :ref:`list2need` *generates* still
+  record their position inside the generated block rather than the line of the list
+  item that produced them, and ``lineno_content`` is still the parser's own counter,
+  because that is what it is used as.
+
 - 🐛 Fix :ref:`needs_variant_data_file` triggering full rebuilds (:issue:`1783`, :pr:`1787`)
 
   The merged variant data was written back onto the configuration after Sphinx's

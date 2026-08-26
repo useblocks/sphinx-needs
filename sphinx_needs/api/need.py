@@ -34,6 +34,7 @@ from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import (
     NeedItem,
+    NeedItemSourceDirective,
     NeedItemSourceProtocol,
     NeedItemSourceUnknown,
     NeedLink,
@@ -729,6 +730,27 @@ def add_need(
     return _create_need_node(needs_info, app.env, state, content)
 
 
+def _template_parse_offset(data: NeedItem) -> int:
+    """The offset at which to parse a need's rendered ``pre``/``post`` template content.
+
+    That content exists in no file, so the only sensible place to anchor a warning
+    raised inside it is the need's own directive. ``nested_parse`` resolves a nested
+    parse's locations through the *enclosing* state machine
+    (``abs_line_number()`` = ``line_offset + input_offset + 1``), so the anchor has to be
+    given in that machine's line space -- the same space ``lineno_content`` is kept in,
+    and **not** the resolved source line a need records since #1349. A need directive
+    keeps the unresolved number as ``parser_lineno`` for exactly this; every other kind
+    of source still stores it in ``lineno`` itself.
+    """
+    source = data.source
+    parser_lineno = (
+        source.parser_lineno if isinstance(source, NeedItemSourceDirective) else None
+    )
+    if parser_lineno is None:
+        parser_lineno = data["lineno"]
+    return (parser_lineno - 1) if parser_lineno else 0
+
+
 @contextmanager
 def _reset_rst_titles(state: RSTState) -> Iterator[None]:
     """Temporarily reset the title styles and section level in the parser state,
@@ -786,7 +808,7 @@ def _create_need_node(
         with _reset_rst_titles(state):
             state.nested_parse(
                 StringList(pre_content.splitlines(), source=source),
-                (data["lineno"] - 1) if data["lineno"] else 0,
+                _template_parse_offset(data),
                 node,
                 match_titles=True,
             )
@@ -854,7 +876,7 @@ def _create_need_node(
         with _reset_rst_titles(state):
             state.nested_parse(
                 StringList(post_content.splitlines(), source=source),
-                (data["lineno"] - 1) if data["lineno"] else 0,
+                _template_parse_offset(data),
                 node,
                 match_titles=True,
             )
