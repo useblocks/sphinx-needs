@@ -358,10 +358,10 @@ Bug fixes
   the content a :ref:`need_pre_template` or :ref:`need_post_template` renders, is
   byte-identical to before.
 
-  Two things are deliberately unchanged: the needs :ref:`list2need` *generates* still
-  record their position inside the generated block rather than the line of the list
-  item that produced them, and ``lineno_content`` is still the parser's own counter,
-  because that is what it is used as.
+  One thing is deliberately unchanged: ``lineno_content`` is still the parser's own
+  counter, because that is what it is used as. (The needs :ref:`list2need` *generates*
+  recorded their position inside the generated block when this entry was written;
+  :pr:`1790` builds them directly, so they now record the line of their own list item.)
 
 - 🐛 Fix :ref:`needs_variant_data_file` triggering full rebuilds (:issue:`1783`, :pr:`1787`)
 
