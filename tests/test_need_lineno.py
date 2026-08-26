@@ -1,13 +1,14 @@
 """Regression tests for the ``lineno`` a need records for its own directive.
 
 A directive's ``self.lineno`` counts the lines of what the *parser* was handed, which
-stops being the lines of the file as soon as anything has put text into it. Three
-ordinary things do: Sphinx prepends ``rst_prolog`` to every document it parses, and
-both docutils' ``.. include::`` and sphinx-needs' own ``.. list2need::`` splice text
-in mid-parse with ``StateMachine.insert_input``. Each one advances the counter by the
-length of the text it added, the shifts compound, and a need directive after them used
-to record its real line *plus* all of that drift -- routinely past the end of the
-file. That is issue #1349.
+stops being the lines of the file as soon as anything has put text into it. Sphinx
+prepends ``rst_prolog`` to every document it parses, and docutils' ``.. include::``
+splices text in mid-parse with ``StateMachine.insert_input`` -- as sphinx-needs' own
+``.. list2need::`` did too, until it was reimplemented to build its needs rather than
+generate text for the parser to read back. Each one advances the counter by the length
+of the text it added, the shifts compound, and a need directive after them used to
+record its real line *plus* all of that drift -- routinely past the end of the file.
+That is issue #1349.
 
 ``NeedDirective`` now takes the line from ``self.get_source_info()``, the
 ``SphinxDirective`` accessor that maps that counter back onto a real
@@ -27,6 +28,7 @@ from typing import Any
 
 import pytest
 from sphinx.testing.util import SphinxTestApp
+from sphinx.util.console import strip_colors
 
 from sphinx_needs.api import get_needs_view
 
@@ -111,12 +113,15 @@ def needs(app: SphinxTestApp) -> dict[str, dict[str, Any]]:
     indirect=True,
 )
 def test_inserted_text_no_longer_shifts_the_recorded_lineno(test_app: SphinxTestApp):
-    """Every ordinary need directive records the line it is written on (#1349).
+    """Every need records the line it is written on (#1349).
 
-    The three needs asserted first sit after one, two and three such insertions
-    respectively, so before this fix each was wrong by a larger amount than the one
-    before it: lines 4, 9 and 18 were recorded as 7, 24 and 47 -- and this document is
-    nineteen lines long.
+    The three ordinary need directives asserted first sit after one, two and three
+    such insertions respectively, so before this fix each was wrong by a larger amount
+    than the one before it: lines 4, 9 and 18 were recorded as 7, 24 and 47 -- and this
+    document is nineteen lines long.
+
+    The two needs the ``.. list2need::`` produces were wrong in a second way, and are
+    right for a second reason -- see the note beside them.
     """
     app = test_app
     app.build()
@@ -139,14 +144,15 @@ def test_inserted_text_no_longer_shifts_the_recorded_lineno(test_app: SphinxTest
     assert built["LN-INSIDE-INCLUDE"]["lineno"] == 4
     assert built["LN-INSIDE-INCLUDE"]["docname"] == "index"
 
-    # NOTE: current behaviour. The needs list2need *generates* are re-parsed from a
-    # block whose source is the document but whose offsets restart at 1, so they record
-    # their position inside that generated block rather than the line of the list item
-    # that produced them. That is where their warnings already point, and it is no
-    # worse than before; it is fixed by giving the needs their line at construction
-    # time instead of round-tripping them through the parser.
-    assert built["LN-GENERATED-A"]["lineno"] == 1
-    assert built["LN-GENERATED-B"]["lineno"] == 7
+    # The needs list2need produces record the line of the list item they were written
+    # as -- lines 15 and 16 -- rather than a position inside a block of generated text.
+    # They are not resolved through ``get_source_info()`` like the three above: the
+    # directive builds them itself and gives each one the line of its own item, taken
+    # from the source mapping of the directive's content. Neither the ``rst_prolog``
+    # nor the ``.. include::`` above them shifts what they record, which is what makes
+    # this the strongest of the five assertions.
+    assert built["LN-GENERATED-A"]["lineno"] == 15
+    assert built["LN-GENERATED-B"]["lineno"] == 16
 
 
 MYST_CONF = """\
@@ -199,3 +205,74 @@ def test_a_markdown_need_keeps_the_lineno_it_always_had(test_app: SphinxTestApp)
     app.build()
     built = needs(app)
     assert built["LN-MD"]["lineno"] == 5
+
+
+NO_PROLOG_CONF = CONF.replace(f"rst_prolog = {PROLOG!r}\n", "")
+""":data:`CONF` without the ``rst_prolog``, to build the same document both ways."""
+
+DRIFT_INDEX = """\
+TEST DOCUMENT
+=============
+
+.. list2need::
+   :types: req, spec
+
+   * (LN-DRIFT) An item ((pre_template="pre_content"))
+     Its content carries a bad role: :unknown_content:`x`
+"""
+"""The item is written on line 7 and its content line on line 8."""
+
+DRIFT_TEMPLATE = "A paragraph.\n\n:unknown_template:`x`\n"
+"""Rendered as the item's ``pre_template``; its bad role is on line 3 of the template."""
+
+
+@pytest.mark.parametrize(
+    ("test_app", "prolog"),
+    [
+        (
+            params(
+                conf=NO_PROLOG_CONF,
+                index=DRIFT_INDEX,
+                **{"needs_templates/pre_content.need": DRIFT_TEMPLATE},
+            ),
+            False,
+        ),
+        (
+            params(
+                conf=CONF,
+                index=DRIFT_INDEX,
+                **{"needs_templates/pre_content.need": DRIFT_TEMPLATE},
+            ),
+            True,
+        ),
+    ],
+    ids=["no-prolog", "prolog"],
+    indirect=["test_app"],
+)
+def test_a_generated_needs_warnings_do_not_move_with_the_line_counter(
+    test_app: SphinxTestApp, prolog: bool
+):
+    """The same list2need item warns in the same places, prolog or no prolog.
+
+    A need carries two numbers that are *not* source lines: ``lineno_content``, the
+    offset its content is parsed at, and ``parser_lineno``, the offset a rendered
+    ``pre_template``/``post_template`` is parsed at. Both are offsets into the parser's
+    own counter, which ``rst_prolog`` shifts -- so giving them as resolved source lines
+    puts every warning raised inside an item's content, or inside its template, that
+    many lines from where it belongs.
+
+    Both locations are asserted for both builds, deliberately rather than by comparing
+    the two runs, because "the same lines, on a document whose counter has been
+    shifted" is the whole claim. The content role is on line 8, where it is written;
+    the template role is on line 9, its own third line counted from the item's.
+    """
+    app = test_app
+    app.build()
+
+    index = Path(str(app.srcdir)) / "index.rst"
+    reported = sorted(
+        line.split(": ERROR:")[0]
+        for line in strip_colors(app._warning.getvalue()).splitlines()
+        if "Unknown interpreted text role" in line
+    )
+    assert reported == [f"{index}:8", f"{index}:9"]
