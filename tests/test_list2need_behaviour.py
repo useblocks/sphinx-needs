@@ -811,13 +811,18 @@ def test_a_list2need_shifts_the_line_numbers_after_it(test_app: SphinxTestApp):
 
     The generated needs are pushed back into the parser with ``insert_input``, which
     advances the state machine's flat line counter by the length of the generated text.
-    Every ``lineno`` from the directive onwards is therefore offset, including that of
-    ordinary need directives written after it, and the offset compounds with each
-    list2need in a document. This is sphinx-needs issue #1349.
+    An ordinary need directive written after the list used to record that shifted
+    counter -- 27 for a need on line 13 -- which is sphinx-needs issue #1349;
+    ``NeedDirective`` now resolves the counter back to the real line, so **LN-AFTER is
+    correct**.
 
-    The values below are wrong -- they are the real line number plus the drift -- and
-    are pinned so that a change to the mechanism is visible here rather than only in
-    users' ``needs.json``.
+    What remains is the *generated* needs. They are re-parsed from a block whose
+    offsets restart at 1, so they record their position inside the generated text
+    rather than the line of the list item that produced them. That is exactly where a
+    warning raised inside one of them already points, so it is no worse than before,
+    but it is only fixed by building the needs directly instead of round-tripping them
+    through the parser -- the list2need reimplementation. The values below are pinned
+    so that landing it shows up here as a deliberate edit.
     """
     app = test_app
     app.build()
@@ -827,10 +832,10 @@ def test_a_list2need_shifts_the_line_numbers_after_it(test_app: SphinxTestApp):
     assert built["LN-BEFORE"]["lineno"] == 4
 
     # NOTE: current behaviour; see PR discussion (#1349).
-    # LN-A is written on line 10 and LN-B on line 11.
-    assert built["LN-A"]["lineno"] == 14
-    assert built["LN-B"]["lineno"] == 20
+    # LN-A is written on line 10 and LN-B on line 11; these are their offsets within
+    # the text list2need generated, which is what their own warnings report too.
+    assert built["LN-A"]["lineno"] == 1
+    assert built["LN-B"]["lineno"] == 7
 
-    # NOTE: current behaviour; see PR discussion (#1349).
     # LN-AFTER is an ordinary need directive, written on line 13.
-    assert built["LN-AFTER"]["lineno"] == 27
+    assert built["LN-AFTER"]["lineno"] == 13
