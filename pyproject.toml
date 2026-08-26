@@ -53,6 +53,7 @@ test = [
   "pydantic~=2.12",
   "pytest-xprocess~=1.0",
   "pyyaml ~= 6.0",
+  "myst-parser>=4,<6",           # host coverage for directives usable from Markdown
 ]
 test-parallel = ["pytest-xdist"]
 benchmark = [
