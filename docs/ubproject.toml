@@ -41,6 +41,9 @@ rst_epilog = """
 
    <br>
 """
+# Number the `syntax-example` rubrics per document ("Example 1", "Example 2", ...),
+# mirroring the `syntax_example_numbering` confval in docs/conf.py.
+syntax_example_numbering = true
 
 # Mirrors conf.py's `extlinks`.
 [parse.extlinks.pr]
