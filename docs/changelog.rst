@@ -298,7 +298,7 @@ Breaking changes
   ID list2need derives is the hash of the title *before* the option area is removed
   from it, which is the ID an item without the ``()`` has always been given, while the
   second generator hashed the title after it. So ``* ()A title ((status="open"))``
-  moves from ``R_6AFF7`` to ``R_D7997`` — the ID ``* A title ((status="open"))``
+  moves from ``R_328F3`` to ``R_0FF10`` — the ID ``* A title ((status="open"))``
   already had.
 
 - ‼️ :ref:`needflow` ``:show_link_names:`` takes an optional value, and now wins over
