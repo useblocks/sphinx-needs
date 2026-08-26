@@ -133,12 +133,19 @@ See :ref:`needs_id_length` for the length and :ref:`needs_types` for the prefix 
    A line whose bracketed group is empty, ``()``, gets its ID from the formula above,
    exactly as a line with no brackets at all does.
    Until 8.4.0 such a line was given its ID by the need directives' own generator
-   instead — which reads :ref:`needs_id_from_title`, and hashes the content when the
-   title is empty — so one list could produce two kinds of generated ID,
+   instead — which reads :ref:`needs_id_from_title`, hashes the content when the title
+   is empty, and hashes the title *after* any ``((option="value"))`` area has been
+   removed from it — so one list could produce two kinds of generated ID,
    chosen by two characters of punctuation.
-   Under the default configuration both produced the same ID,
-   so only a project that sets ``needs_id_from_title``,
-   or writes ``()`` on a line with no title, sees a different ID than before.
+
+   Three kinds of line get a different ID than before:
+   one written ``()`` in a project that sets ``needs_id_from_title``,
+   one written ``()`` with no title,
+   and one written ``()`` that also carries an ``((option="value"))`` area.
+   The last needs no configuration to reach:
+   ``* ()A title ((status="open"))`` now gets the ID that
+   ``* A title ((status="open"))`` has always been given.
+   Every other line keeps the ID it had.
 
 .. warning::
 

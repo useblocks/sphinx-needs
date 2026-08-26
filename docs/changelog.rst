@@ -22,7 +22,8 @@ Improvements
   and a nested item is placed inside its parent. The syntax and its parsing are
   untouched — the same list structure, the same ``(ID)`` capture, the same
   ``:delimiter:`` split, the same ``((option="value"))`` region, the same validation —
-  so a list that built before builds the same needs, with the same IDs.
+  so a list that built before builds the same needs, with the same IDs, apart from the
+  one class of item named under Breaking changes below.
 
   What the step cost, and is therefore fixed:
 
@@ -33,9 +34,26 @@ Improvements
     the file, so every need from the directive onwards — the items themselves, and any
     ordinary need directive written below them — was recorded at a line further down the
     file than it was written, by an amount that grew with each list in the document.
-    Every ``lineno`` in ``needs.json`` is now the line the need was written on.
+    Every ``lineno`` in ``needs.json`` is now the line the need was written on, inside
+    an ``eval-rst`` block in a Markdown document too.
   - An item written ``()`` with options, such as ``* ()A title ((status="open"))``, lost
     them: they became body text. They are now set.
+
+  Four inputs that used to be errors are now defined, none of which a document that
+  built cleanly can contain:
+
+  - ``((id="MY-ID"))`` names the need. The template wrote both the derived ID and this
+    one as two ``:id:`` lines of the same generated need, which docutils refused with
+    ``duplicate option "id"``, so the item was dropped. The ID is applied before
+    ``:links-down:`` is built, so the links of the other items agree with it. An empty
+    ``((id=""))`` is refused with a diagnostic instead.
+  - An inline option naming the same link field as ``:links-down:`` — ``((links="X"))``
+    under ``:links-down: links`` — used to produce one corrupt link value and an
+    ``unknown outgoing link`` warning. The two sets of links are now merged.
+  - An item carrying ``((title_from_content="true"))`` reads it as a need directive
+    does.
+  - A child of a ``((hide="true"))`` item is rendered at the level above it, rather
+    than being placed inside a need that is taken out of the document.
 
   The content of a parent need no longer holds the generated reStructuredText of its
   children — nesting is a property of the document, not of the parent's text — so
@@ -268,11 +286,20 @@ Breaking changes
   title is empty. One list could therefore carry two kinds of generated ID at once,
   chosen by two characters of punctuation. The directive now derives every ID itself.
 
-  Under the default configuration the two generators agreed, so almost every project
-  sees no change. **A project that sets** ``needs_id_from_title``, **or writes** ``()``
-  **on an item with no title, gets a different ID for those items**, and any
-  ``:need:`` reference to the old ID has to be updated. Give such an item an explicit ID
-  — ``* (MY-ID)A title`` — if its ID has to stay as it was.
+  Under the default configuration the two generators agreed for an item whose title
+  carries no options, so almost every project sees no change. **A project that sets**
+  ``needs_id_from_title``, **writes** ``()`` **on an item with no title, or writes**
+  ``()`` **on an item that also carries an** ``((option="value"))`` **area, gets a
+  different ID for those items**, and any ``:need:`` reference to the old ID has to be
+  updated. Give such an item an explicit ID — ``* (MY-ID)A title`` — if its ID has to
+  stay as it was.
+
+  The third case is the widest of the three, because it needs no configuration: the
+  ID list2need derives is the hash of the title *before* the option area is removed
+  from it, which is the ID an item without the ``()`` has always been given, while the
+  second generator hashed the title after it. So ``* ()A title ((status="open"))``
+  moves from ``R_6AFF7`` to ``R_D7997`` — the ID ``* A title ((status="open"))``
+  already had.
 
 - ‼️ :ref:`needflow` ``:show_link_names:`` takes an optional value, and now wins over
   :ref:`needs_flow_show_links` (:pr:`1782`)

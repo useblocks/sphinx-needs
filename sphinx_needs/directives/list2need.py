@@ -407,17 +407,23 @@ class List2NeedDirective(SphinxDirective):
     def _content_is_source_mapped(self) -> bool:
         """Whether the content lines carry their true position in the source.
 
-        Under the reStructuredText parser they do, and that mapping is authoritative:
-        it survives ``.. include::`` and anything else that moves the parser's flat
-        line counter away from the file being read.
+        Content read from a reStructuredText file does, and that mapping is
+        authoritative: it survives ``.. include::`` and anything else that moves the
+        parser's flat line counter away from the file being read.
 
-        Under myst-parser they do not. Its mock state machine hands the directive a
+        Under myst-parser it does not. Its mock state machine hands the directive a
         content block whose entries are numbered from zero, so line *i* reports
         offset *i* regardless of where the fence was written. There is no expression
         for "the source line of content line *i*" that is correct in both hosts, so
         the two are told apart here, once per directive, by whether the first content
-        line claims to be at offset 0 -- which real reStructuredText content never is,
+        line claims to be at offset 0 -- which content read from a file never does,
         the directive marker itself always occupying an earlier line.
+
+        The question is therefore "is this content source-mapped", not "is this
+        reStructuredText": content that was itself generated -- a list inside the
+        rendered content of a ``:jinja_content:`` need, say -- is not mapped either,
+        and takes the second branch, which puts its needs at the line of the need
+        that generated them.
         """
         try:
             _, offset = self.content.info(0)
