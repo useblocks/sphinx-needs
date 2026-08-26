@@ -346,7 +346,7 @@ class List2NeedDirective(SphinxDirective):
             else:
                 warn(f"Unknown option '{key}'")
 
-        content, lineno_content = self._content(list_need)
+        content, content_index = self._content(list_need)
 
         # the title is decided exactly as it is for a need directive: an item whose
         # own title is empty is one written without a directive argument
@@ -368,7 +368,17 @@ class List2NeedDirective(SphinxDirective):
                 need_source=NeedItemSourceDirective(
                     docname=self.env.docname,
                     lineno=lineno,
-                    lineno_content=lineno_content,
+                    # ``lineno_content`` and ``parser_lineno`` are parser coordinates
+                    # rather than source lines, exactly as a need directive gives them:
+                    # both are handed to ``nested_parse`` as the offset at which to
+                    # parse the item's content and its rendered pre/post template.
+                    # ``self.content_offset`` counts in that space, so the item's line
+                    # in it is the directive's first content line plus the item's own
+                    # index -- which is not the line it is written on as soon as
+                    # anything above has put text into the document (``rst_prolog``,
+                    # ``.. include::``).
+                    lineno_content=self.content_offset + 1 + content_index,
+                    parser_lineno=self.content_offset + 1 + list_need["line"],
                 ),
                 need_type=list_need["type"],
                 title=title,
@@ -388,7 +398,8 @@ class List2NeedDirective(SphinxDirective):
         block of any directive, so that an item whose title carries no content at all
         contributes an empty content rather than a leading empty line.
 
-        :return: The content, and the source line its first line was written on.
+        :return: The content, and the index within the directive's own content of the
+            line it starts at -- the item's own line, if the item has no content.
         """
         lines: list[str] = list(list_need["content"])
         indexes: list[int] = list(list_need["content_lines"])
@@ -401,11 +412,7 @@ class List2NeedDirective(SphinxDirective):
         content = StringList(
             lines, source=str(self.env.doc2path(self.env.docname)), items=items
         )
-        # ``items`` holds 0-based offsets, the need wants a 1-based line number
-        lineno_content = (
-            items[0][1] + 1 if items else self._source_line(list_need["line"])
-        )
-        return content, lineno_content
+        return content, indexes[0] if indexes else list_need["line"]
 
     def _content_is_source_mapped(self) -> bool:
         """Whether the content lines carry their true position in the source.
