@@ -35,6 +35,9 @@ OPTIONS_REGEX = re.compile(r"([^=,\s]*)=[\"']([^\"]*)[\"']")
 
 #: Need options an inline ``((name="value"))`` may set, on top of the extra fields
 #: and link types the project configures. Mirrors what the need directives accept.
+#: ``id`` is taken out earlier, and so are the three the need directives read as a
+#: boolean rather than as a string (``delete``, ``jinja_content``,
+#: ``title_from_content``), so only the rest are matched against this set.
 CORE_OPTIONS = frozenset(
     {
         "collapse",
