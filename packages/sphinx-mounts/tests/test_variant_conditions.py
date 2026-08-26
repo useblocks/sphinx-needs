@@ -38,7 +38,7 @@ CORPUS_PATH = Path(__file__).parent / "fixtures" / "variant_condition_conformanc
 #: merge that dropped a hunk, a "tidy-up" — fails loudly. Raising it is the
 #: normal consequence of re-vendoring a corpus that grew upstream; lowering it
 #: needs a reason in the commit message.
-EXPECTED_CASE_COUNT = 46
+EXPECTED_CASE_COUNT = 103
 
 #: Modules that must stay importable outside sphinx-mounts entirely.
 DEPENDENCY_FREE_MODULES = ("variants.py", "dialect.py")
@@ -77,7 +77,7 @@ def test_the_corpus_header_records_its_provenance() -> None:
     """
     header = CORPUS_PATH.read_text(encoding="utf-8")
     assert "rust/ubc_config/tests/fixtures/variant_condition_conformance.toml" in header
-    assert "cfabc9005" in header
+    assert "1388b3528686" in header
     assert "CANONICAL" in header
 
 

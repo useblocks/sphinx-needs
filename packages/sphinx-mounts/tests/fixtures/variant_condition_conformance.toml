@@ -2,7 +2,7 @@
 #
 # Source repository: useblocks/ubcode (private)
 # Source path:       rust/ubc_config/tests/fixtures/variant_condition_conformance.toml
-# Source commit:     cfabc9005
+# Source commit:     1388b3528686
 #
 # ubCode's copy is CANONICAL. This file is a byte-identical vendored copy of it,
 # with this block prepended and nothing else changed. The corpus travels
@@ -14,15 +14,8 @@
 # `sphinx_mounts.variants` AND asserts the case COUNT, so a truncated or
 # silently-trimmed vendor is a red test rather than reduced coverage.
 #
-# The header below is the original, unchanged. Two notes on reading it from
-# here:
-#
-# * its "PREMISE, TO BE CONFIRMED IN P3" paragraph is confirmed by this
-#   repository: `sphinx_mounts.variants` interprets a condition over the
-#   variant data with no namespace object, no builtins and no `eval` at all,
-#   so the `var`-only, builtin-less premise is implemented by construction
-#   rather than assumed;
-# * `sphinx_mounts` is the second engine the header speaks of.
+# The header below is the original, unchanged. It now names this repository
+# and this copy itself, so it needs no reading notes from here.
 
 # Conformance corpus for the `[[source.variant_sources]]` `if` grammar.
 #
@@ -30,10 +23,11 @@
 # that more than one implementation can be held to it. ubCode's Rust tests read
 # it directly (`rust/ubc_config/tests/test_variant_sources.rs`); it is plain TOML
 # so that a Python suite can read it with `tomllib` and assert the same
-# verdicts. That second reader is the point: a narrowed grammar only removes the
-# "one rule string, two document sets" hazard if BOTH engines refuse the same
-# forms, and prose cannot enforce that across two repositories on independent
-# release cadences.
+# verdicts. That second reader is sphinx-mounts, which reads
+# `[[source.variant_sources]]` on the Sphinx side. It is the point of the file: a
+# narrowed grammar only removes the "one rule string, two document sets" hazard
+# if BOTH engines refuse the same forms, and prose cannot enforce that across two
+# repositories on independent release cadences.
 #
 # Each `[[case]]` has:
 #   expr     - the condition, exactly as it would be written in `if = "…"`
@@ -56,15 +50,26 @@
 # evaluation failure — unlike an unknown `var.*` KEY, which depends on the
 # variant data and therefore stays accept-plus-evaluation-error.
 #
-# PREMISE, TO BE CONFIRMED IN P3: that the second engine evaluates a rule
-# condition over a `var`-only namespace with no builtins. Everything above, and
-# the `why` on every row that cites the second engine, rests on it. It is stated
-# from the engine's `.. if::` implementation rather than from a released
-# `variant_sources` reader, because there is no such reader yet — so no test in
-# this repository can check it, and the P3 issue must confirm it before this file
-# is treated as a two-sided contract. The direction is deliberately the safe one:
-# if the premise turns out wrong, the cost is a config error on a form that would
-# have been fine, never a rule that quietly stops gating.
+# DESIGN RULE: a rule condition is evaluated over a `var`-only namespace with no
+# builtins. Everything above, and the `why` on every row that cites the second
+# engine, rests on it — and both engines implement it. ubCode evaluates the
+# parsed condition against the variant data, resolving nothing outside `var`;
+# sphinx-mounts interprets the same condition with no namespace object, no
+# builtins and no `eval` at all, so the rule holds there by construction rather
+# than by convention. The direction is the safe one either way: a form this
+# narrowing refuses is a config error on something that might have been fine,
+# never a rule that quietly stops gating.
+#
+# VENDORED COPY: `useblocks/sphinx-mounts` carries this file at
+# `tests/fixtures/variant_condition_conformance.toml`, byte-identical to it after
+# that copy's own provenance block, which records the ubCode commit it was taken
+# from. Its suite runs every `[[case]]` below and asserts the case count, so a
+# trimmed vendor is a red test there rather than reduced coverage.
+#
+# Any change here therefore owes a re-sync pull request there. The hash fence in
+# `rust/ubc_config/tests/test_variant_sources.rs` pins this file's digest and its
+# case count, and is the reminder: an edit turns it red, and its failure message
+# says what the edit owes.
 #
 # Adding a case is cheap and is the preferred way to pin a grammar question.
 # Removing or loosening one should be a deliberate, reviewed act: the fence
@@ -105,7 +110,7 @@ why = "inequality is a boolean top level"
 [[case]]
 expr = "edition == 'pro'"
 verdict = "reject"
-why = "a prefix-less field name is not in the second engine's namespace ON THE PREMISE recorded in the header (P3 to confirm), so it would raise NameError and EXCLUDE there while evaluating here — one rule string, two document sets. The content `.. if::` directive tolerates it; this key must not, and that difference is the whole point of the narrowing"
+why = "a prefix-less field name is not in the second engine's namespace, under the DESIGN RULE recorded in the header, so it is unresolvable and EXCLUDES there while evaluating here — one rule string, two document sets. The content `.. if::` directive tolerates it; this key must not, and that difference is the whole point of the narrowing"
 
 [[case]]
 expr = "var.count > 1"
@@ -199,7 +204,13 @@ why = "the second string predicate"
 expr = "var.name.upper() == 'WIDGET'"
 verdict = "accept"
 value = true
-why = "a string method is legal INSIDE a comparison; only a bare call is not"
+why = "a transformer call is legal INSIDE a comparison; only a bare one is not"
+
+[[case]]
+expr = "var.name.upper().startswith('WID')"
+verdict = "accept"
+value = true
+why = "one transformer may carry a predicate, and the pair is a boolean top level; a SECOND transformer is not — see `var.name.upper().upper() == 'X'`"
 
 [[case]]
 expr = "var.edition == 'pro' and var.count > 1"
@@ -238,6 +249,145 @@ value = false
 why = "the other literal; a rule written this way always excludes"
 
 # --------------------------------------------------------------------------
+# Accepted: cross-type comparison, which is ubCode's semantics and not Python's
+# --------------------------------------------------------------------------
+#
+# These are the rows a reader is most likely to assume from Python and get
+# wrong. The comparison table has no (Bool, Integer) arm and no (Bool, Float)
+# one, so a bool never equals a number here, where Python's `False == 0` is
+# true. Recorded as data because the divergence is the whole reason the second
+# engine mirrors this table instead of calling Python's operators.
+
+[[case]]
+expr = "var.debug == 0"
+verdict = "accept"
+value = false
+why = "bool/int equality: no (Bool, Integer) arm, so this is FALSE where Python says true — the headline divergence"
+
+[[case]]
+expr = "var.debug != 0"
+verdict = "accept"
+value = true
+why = "the `!=` twin of the row above, and the divergence read the other way: TRUE here, false in Python"
+
+[[case]]
+expr = "var.count == True"
+verdict = "accept"
+value = false
+why = "int/bool equality, the same rule with the operands swapped; at count = 1 it would still be false where Python says true"
+
+[[case]]
+expr = "var.build == var.empty"
+verdict = "accept"
+value = false
+why = "two mappings compare by TRUTHINESS, not by contents: a non-empty mapping against an empty one is false"
+
+# --------------------------------------------------------------------------
+# Numeric literal spellings, accepted and refused
+# --------------------------------------------------------------------------
+#
+# A sign is part of the literal and must hug its digits; every other Python
+# integer spelling is outside the grammar. The accepted rows are here so this
+# reads as parity with what the grammar derives rather than as a tightening.
+
+[[case]]
+expr = "var.count == -2"
+verdict = "accept"
+value = false
+why = "a negative integer literal is one token"
+
+[[case]]
+expr = "var.ratio == -1.5"
+verdict = "accept"
+value = false
+why = "and so is a negative float literal"
+
+[[case]]
+expr = "var.ratio == 2."
+verdict = "accept"
+value = false
+why = "a trailing-dot float is a float"
+
+[[case]]
+expr = "var.count == 2e1"
+verdict = "accept"
+value = false
+why = "exponent notation is a float: 20.0, not 2"
+
+[[case]]
+expr = "var.ratio == 2.5e-1"
+verdict = "accept"
+value = false
+why = "a signed exponent too"
+
+[[case]]
+expr = "var.count == +2"
+verdict = "reject"
+why = "there is no unary plus: the sign rule admits `-` and nothing else"
+
+[[case]]
+expr = "var.count == - 2"
+verdict = "reject"
+why = "the sign must HUG its digits; Python's tokenizer would fold this into the same literal as `-2`"
+
+[[case]]
+expr = "var.count == 0x2"
+verdict = "reject"
+why = "no hexadecimal literals (nor binary or octal)"
+
+[[case]]
+expr = "var.count == 2_0"
+verdict = "reject"
+why = "no digit separators"
+
+[[case]]
+expr = "var.ratio == .5"
+verdict = "reject"
+why = "a float needs a leading digit; `0.5` is the spelling"
+
+# --------------------------------------------------------------------------
+# Accepted: whitespace and grouping the grammar tolerates
+# --------------------------------------------------------------------------
+#
+# The twins of the refused spellings further down. They are what make the
+# lexical rows parity rather than a blanket tightening: where the grammar is
+# whitespace-tolerant, so is the contract.
+
+[[case]]
+expr = "var.count>=2"
+verdict = "accept"
+value = true
+why = "an operator needs no surrounding space"
+
+[[case]]
+expr = "var.edition in [ 'pro' , 'x' ]"
+verdict = "accept"
+value = true
+why = "a list literal may be padded anywhere inside it — only a TRAILING COMMA is refused"
+
+[[case]]
+expr = "not (var.edition == 'basic')"
+verdict = "accept"
+value = true
+why = "the accepted twin of `not(...)`: `not` needs a space before its operand, not parentheses around it"
+
+[[case]]
+expr = "not (not (var.count == 2))"
+verdict = "accept"
+value = true
+why = "`not` chains when each level is parenthesised, which is what makes the bare `not not` refusal a spelling rule rather than a semantic one"
+
+# --------------------------------------------------------------------------
+# Accepted: string escapes are decoded ubCode's way
+# --------------------------------------------------------------------------
+
+[[case]]
+expr = "var.name == 'Widge\\x74'"
+verdict = "accept"
+value = false
+why = "the escape set is `\\n \\t \\r \\b \\f \\v \\a \\0 \\\\ \\' \\\"`, and every other escape keeps its backslash — so this literal is the seven characters `Widge\\x74` and does NOT equal `Widget`, where Python would decode `\\x74` to `t` and make it true. The spelling is accepted, so the VALUE is where the two differ, and a second engine has to re-decode this way to agree"
+
+# --------------------------------------------------------------------------
 # Accepted grammar, failing evaluation: the rule's files are EXCLUDED
 # --------------------------------------------------------------------------
 
@@ -253,10 +403,56 @@ verdict = "accept"
 error = true
 why = "an unknown nested key behaves the same way"
 
+# The rest of this family is a TYPE mismatch rather than a missing key: the
+# grammar cannot see the operand types, so these are statically fine and fail at
+# evaluation. Every one of them is a place Python would have returned a value.
+
+[[case]]
+expr = "var.debug > 0"
+verdict = "accept"
+error = true
+why = "a bool FIELD beside an ordering operator: statically fine (the literal is a number), and no ordering arm accepts a bool — Python would say false"
+
+[[case]]
+expr = "'debug' in var.build"
+verdict = "accept"
+error = true
+why = "a mapping as the `in` right-hand side, with the key PRESENT — so this is the row that shows the mapping is not searched at all; `'x' in var.build` would fail the same way and hide that"
+
+[[case]]
+expr = "2 in var.tags"
+verdict = "accept"
+error = true
+why = "a number against a list of strings: no arm, rather than Python's false"
+
+[[case]]
+expr = "None in var.tags"
+verdict = "accept"
+error = true
+why = "the same for `None`"
+
+[[case]]
+expr = "True in var.tags"
+verdict = "accept"
+error = true
+why = "and for a bool, which completes the wrongly-typed-literal set"
+
+[[case]]
+expr = "var.tags == var.build.features"
+verdict = "accept"
+error = true
+why = "field-vs-field equality with a LIST on the right: a list literal is refused statically, but a list-valued field is not visible until evaluation"
+
+[[case]]
+expr = "var.tags != var.build.features"
+verdict = "accept"
+error = true
+why = "its `!=` twin, which Python would have made true"
+
 [[case]]
 expr = "'html' in build_tags"
 verdict = "reject"
-why = "`build_tags` belongs to `.. only::`, not to a variant condition, and it is a bare non-`var` root — refused for the same statically-known reason as any other prefix-less name rather than left to fail at evaluation time. Note that #2722's proposal text says the rule `if` would get the `var.*` / `build_tags` context; the header premise (P3 to confirm) is what this row rests on instead"
+why = "`build_tags` belongs to `.. only::`, not to a variant condition, and it is a bare non-`var` root — refused for the same statically-known reason as any other prefix-less name rather than left to fail at evaluation time. Note that #2722's proposal text says the rule `if` would get the `var.*` / `build_tags` context; the header's design rule is what this row rests on instead"
 
 [[case]]
 expr = "var.debug == false"
@@ -314,7 +510,7 @@ why = "one non-boolean operand is enough to refuse the whole condition"
 [[case]]
 expr = "len(var.build.features) > 1"
 verdict = "reject"
-why = "`len` is a builtin, and the second engine evaluates with builtins removed (the header premise; P3 to confirm)"
+why = "`len` is a builtin, and the second engine evaluates with builtins removed (the design rule recorded in the header)"
 
 [[case]]
 expr = "search('pro', var.edition)"
@@ -364,3 +560,186 @@ why = "a syntax error"
 expr = "var.edition == 'pro' and"
 verdict = "reject"
 why = "a truncated conjunction"
+
+# --------------------------------------------------------------------------
+# Rejected: an operand kind the operator does not admit
+# --------------------------------------------------------------------------
+#
+# Decided statically, from the shape of the operands, and so a CONFIG error
+# rather than an evaluation one. The twins of these rows live in the
+# failing-evaluation family above: where the same wrong type arrives through a
+# FIELD, the grammar cannot see it and the failure moves to evaluation time.
+
+[[case]]
+expr = "var.tags == ['alpha', 'beta']"
+verdict = "reject"
+why = "a list literal is admitted only as the right-hand side of `in`, never of a comparison — even the one spelling that would have been true"
+
+[[case]]
+expr = "var.tags == []"
+verdict = "reject"
+why = "the empty-list spelling of the same, which is how a reader would test for an empty list"
+
+[[case]]
+expr = "var.edition in 'professional'"
+verdict = "reject"
+why = "a string literal as the `in` right-hand side: Python would have made this a substring test and true"
+
+[[case]]
+expr = "var.edition in var.name"
+verdict = "reject"
+why = "a field on BOTH sides of `in`, and the one row in this family the GRAMMAR does not decide: it derives the spelling (the `in` right-hand side admits a list literal or a field), and the refusal comes a layer later, from the conversion to DNF, which has no `var in var` operator yet and says so. So the axis separating this from `'debug' in var.build` is which SIDE the field is on, not what the right-hand side is — a literal on the left is a different production, converts to a supported check, and reaches evaluation. Both engines refuse this today; implementing it is a change to both"
+
+[[case]]
+expr = "var.edition not in var.name"
+verdict = "reject"
+why = "its `not in` twin, refused by its own unimplemented arm rather than by anything about the right-hand side — so the two move together the day `var in var` is implemented"
+
+[[case]]
+expr = "var.edition < 'x'"
+verdict = "reject"
+why = "a string literal beside an ordering operator: ordering admits numbers only, so a string comparison Python would have answered is a config error here"
+
+[[case]]
+expr = "'pro' < var.edition"
+verdict = "reject"
+why = "the same with the literal on the LEFT, so the rule is about the operand and not about which side it is on"
+
+[[case]]
+expr = "var.count < True"
+verdict = "reject"
+why = "a bool literal beside ordering"
+
+[[case]]
+expr = "var.count < None"
+verdict = "reject"
+why = "and `None` beside ordering, which completes the non-number literal set"
+
+# --------------------------------------------------------------------------
+# Rejected: a comparison with no field in it
+# --------------------------------------------------------------------------
+#
+# A comparison of two literals has a constant answer, so accepting one would be
+# a rule that gates on nothing. Refused for all three operand kinds.
+
+[[case]]
+expr = "True == True"
+verdict = "reject"
+why = "two bool literals; note that a BARE `True` is accepted, so this is about the comparison and not about the literal"
+
+[[case]]
+expr = "'a' == 'b'"
+verdict = "reject"
+why = "two string literals"
+
+[[case]]
+expr = "1 < 2"
+verdict = "reject"
+why = "two numbers, beside an ordering operator"
+
+# --------------------------------------------------------------------------
+# Rejected: shapes the grammar does not build
+# --------------------------------------------------------------------------
+
+[[case]]
+expr = "var.name.startswith('W') == True"
+verdict = "reject"
+why = "a predicate call is a whole condition, never an operand: it cannot appear inside a comparison, however redundant the comparison is"
+
+[[case]]
+expr = "var.name.upper().upper() == 'X'"
+verdict = "reject"
+why = "exactly one function per field; a transformer may carry a predicate but not a second transformer"
+
+[[case]]
+expr = "var.name == 'Wid' 'get'"
+verdict = "reject"
+why = "no implicit string concatenation — Python folds this at parse time into `'Widget'` and the condition becomes TRUE, so a reader that works from a folded tree cannot tell the two apart"
+
+[[case]]
+expr = "var.count == (2)"
+verdict = "reject"
+why = "parentheses group a boolean sub-expression, never an operand; Python's AST discards them and the two engines would see different trees"
+
+[[case]]
+expr = "not not var.count == 2"
+verdict = "reject"
+why = "`not` does not chain: its body is an expression and a negation is not one. Parenthesised it does — see `not (not (var.count == 2))`"
+
+# --------------------------------------------------------------------------
+# Rejected: spellings the grammar's lexer does not derive
+# --------------------------------------------------------------------------
+#
+# The kind-level families above are necessary and not sufficient: two engines
+# can agree on every operand kind and still disagree on how a condition is
+# SPELLED, because Python's tokenizer normalises away distinctions this grammar
+# does not have. Every row here is in the same direction — refused here, so the
+# rule is permanently false and its files are EXCLUDED, while a reader working
+# from a Python parse tree would have evaluated it and KEPT them. The accepted
+# twins are in the whitespace family above; together they say the contract is
+# parity with the grammar, not a blanket tightening.
+
+[[case]]
+expr = "not(var.edition == 'basic')"
+verdict = "reject"
+why = "a keyword needs whitespace after it, and `not(` is a very common way to write a negation"
+
+[[case]]
+expr = "var.count == 2 and(var.debug == False)"
+verdict = "reject"
+why = "the same for `and`"
+
+[[case]]
+expr = "var.edition=='pro'and var.count==2"
+verdict = "reject"
+why = "and a keyword glued to the operand BEFORE it, which is what a formatter-free hand edit produces"
+
+[[case]]
+expr = "var.edition in['pro']"
+verdict = "reject"
+why = "`in` needs whitespace before its right-hand side"
+
+[[case]]
+expr = "'net'in var.build.features"
+verdict = "reject"
+why = "and after a string literal on its left"
+
+[[case]]
+expr = "var.name.upper( ) == 'WIDGET'"
+verdict = "reject"
+why = "empty call parentheses admit nothing between them, not even a space"
+
+[[case]]
+expr = "var.name.startswith( 'Wid' )"
+verdict = "reject"
+why = "and a call argument may not be padded"
+
+[[case]]
+expr = "var . name == 'Widget'"
+verdict = "reject"
+why = "a field path takes no whitespace around its dots"
+
+[[case]]
+expr = "var.edition in ['pro',]"
+verdict = "reject"
+why = "no trailing comma in a list literal — which is what most formatters produce, making this the likeliest of these to be written by accident"
+
+[[case]]
+expr = "var.edition in ('pro','x')"
+verdict = "reject"
+why = "no tuples: the `in` right-hand side is a bracketed list"
+
+[[case]]
+expr = "var.name.startswith('Wid',)"
+verdict = "reject"
+why = "and no trailing comma in a call"
+
+[[case]]
+expr = "var.edition == 'pro'  # pro only"
+verdict = "reject"
+why = "there is no comment production. TOML passes a `#` through a quoted string verbatim, so this is the reachable one: annotating a rule is an ordinary thing to do, and Python's tokenizer would strip the comment before a tree exists"
+
+[[case]]
+expr = "var.café == 'x'"
+verdict = "reject"
+why = "field names are ASCII; Python folds identifiers under NFKC, so a non-ASCII spelling can resolve a real key there and nothing here"
