@@ -55,7 +55,9 @@ For details please see :ref:`list2need_meta_data`.
 .. warning::
 
    There are currently known limitations in the list parser.
-   For instance new content lines starting with ``*`` or ``:`` may get handled incorrectly.
+   A content line starting with ``*`` begins a new need instead of continuing the one
+   above it, and a content line starting with ``:`` stays content —
+   it is rendered as a field list in the need's body, and is not read as an option.
 
 List structure
 --------------
@@ -125,6 +127,18 @@ it changes whenever the title changes,
 and the same title used at two levels of one list gives two different IDs, one per prefix.
 See :ref:`needs_id_length` for the length and :ref:`needs_types` for the prefix of each type.
 
+.. versionchanged:: 8.4.0
+
+   A line whose bracketed group is empty, ``()``, gets its ID from the formula above,
+   exactly as a line with no brackets at all does.
+   Until 8.4.0 such a line was given its ID by the need directives' own generator
+   instead — which reads :ref:`needs_id_from_title`, and hashes the content when the
+   title is empty — so one list could produce two kinds of generated ID,
+   chosen by two characters of punctuation.
+   Under the default configuration both produced the same ID,
+   so only a project that sets ``needs_id_from_title``,
+   or writes ``()`` on a line with no title, sees a different ID than before.
+
 .. warning::
 
    Because the document is not part of the input,
@@ -136,11 +150,31 @@ See :ref:`needs_id_length` for the length and :ref:`needs_types` for the prefix 
 Markdown (MyST)
 ---------------
 
-``list2need`` currently works in reStructuredText documents only.
-Written as a fenced ``{list2need}`` directive in a MyST Markdown document,
-it reports an error and creates no needs.
+.. versionchanged:: 8.4.0
 
-As a workaround the directive can be written inside an ``eval-rst`` block:
+   Before 8.4.0 a ``{list2need}`` fence reported an error and created no needs,
+   and the ``eval-rst`` block below was the only way to reach the directive
+   from a Markdown document.
+
+``list2need`` can be written as a fenced directive in a MyST Markdown document:
+
+.. code-block:: markdown
+
+   ```{list2need}
+   :types: req, spec
+
+   * (MD-REQ-1) A requirement written from Markdown
+     * (MD-SPEC-1) And a specification below it
+   ```
+
+The list itself keeps the syntax described on this page:
+it is read by ``list2need`` rather than by the host parser,
+so it is the same in both kinds of document.
+The **content** of each need is parsed by the host, so it is Markdown in a
+``.md`` file and reStructuredText in an ``.rst`` file.
+
+The directive still works inside an ``eval-rst`` block, where its content is
+reStructuredText:
 
 .. code-block:: markdown
 
@@ -178,7 +212,7 @@ presentation
 ~~~~~~~~~~~~
 Defines how the single Sphinx-Needs objects shall be presented.
 
-:nested: Needs of level 2 are defined in the content of the parent need (level 1) and so on.
+:nested: Needs of level 2 are placed inside the parent need (level 1) and so on.
 :standalone: Each list element gets its own, independent need object. They are not nested.
 
 

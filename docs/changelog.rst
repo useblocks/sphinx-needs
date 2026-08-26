@@ -14,6 +14,36 @@ Unreleased
 Improvements
 ............
 
+- ✨ :ref:`list2need` works in Markdown documents, and records the line each need was
+  written on (:issue:`1349`, :pr:`1789`)
+
+  The directive used to render every item into a need directive through a template and
+  hand the result back to the parser. That step is gone: the items are built directly,
+  and a nested item is placed inside its parent. The syntax and its parsing are
+  untouched — the same list structure, the same ``(ID)`` capture, the same
+  ``:delimiter:`` split, the same ``((option="value"))`` region, the same validation —
+  so a list that built before builds the same needs, with the same IDs.
+
+  What the step cost, and is therefore fixed:
+
+  - A list written as a ``{list2need}`` fence in a MyST Markdown document produced no
+    needs at all, only an error naming a myst-parser internal. It now creates its needs,
+    like any other directive.
+  - Handing generated text back to the parser advanced its line counter for the rest of
+    the file, so every need from the directive onwards — the items themselves, and any
+    ordinary need directive written below them — was recorded at a line further down the
+    file than it was written, by an amount that grew with each list in the document.
+    Every ``lineno`` in ``needs.json`` is now the line the need was written on.
+  - An item written ``()`` with options, such as ``* ()A title ((status="open"))``, lost
+    them: they became body text. They are now set.
+  - A content line starting with ``:`` was indented by three further spaces to keep it
+    out of the generated need's option block, which could produce a stray
+    ``Definition list ends without a blank line`` warning. It is plain content now.
+
+  The content of a parent need no longer holds the generated reStructuredText of its
+  children — nesting is a property of the document, not of the parent's text — so
+  ``needs.json``, and a filter reading ``content``, see the item's own text only.
+
 - 👌 :ref:`needs_variant_data` is resolved while the configuration is being initialised
   (:issue:`1783`, :pr:`1787`)
 
@@ -231,6 +261,21 @@ Improvements
 
 Breaking changes
 ................
+
+- ‼️ A :ref:`list2need` item written ``()`` gets the same generated ID as one written
+  without brackets (:pr:`1789`)
+
+  Writing an empty bracketed group used to suppress the ID of the generated need, which
+  sent it down the need directives' own ID generator — a different one, which reads
+  :ref:`needs_id_from_title` where list2need's does not, and hashes the content when the
+  title is empty. One list could therefore carry two kinds of generated ID at once,
+  chosen by two characters of punctuation. The directive now derives every ID itself.
+
+  Under the default configuration the two generators agreed, so almost every project
+  sees no change. **A project that sets** ``needs_id_from_title``, **or writes** ``()``
+  **on an item with no title, gets a different ID for those items**, and any
+  ``:need:`` reference to the old ID has to be updated. Give such an item an explicit ID
+  — ``* (MY-ID)A title`` — if its ID has to stay as it was.
 
 - ‼️ :ref:`needflow` ``:show_link_names:`` takes an optional value, and now wins over
   :ref:`needs_flow_show_links` (:pr:`1782`)
