@@ -28,6 +28,7 @@ from typing import Any
 
 import pytest
 from sphinx.testing.util import SphinxTestApp
+from sphinx.util.console import strip_colors
 
 from sphinx_needs.api import get_needs_view
 
@@ -204,3 +205,74 @@ def test_a_markdown_need_keeps_the_lineno_it_always_had(test_app: SphinxTestApp)
     app.build()
     built = needs(app)
     assert built["LN-MD"]["lineno"] == 5
+
+
+NO_PROLOG_CONF = CONF.replace(f"rst_prolog = {PROLOG!r}\n", "")
+""":data:`CONF` without the ``rst_prolog``, to build the same document both ways."""
+
+DRIFT_INDEX = """\
+TEST DOCUMENT
+=============
+
+.. list2need::
+   :types: req, spec
+
+   * (LN-DRIFT) An item ((pre_template="pre_content"))
+     Its content carries a bad role: :unknown_content:`x`
+"""
+"""The item is written on line 7 and its content line on line 8."""
+
+DRIFT_TEMPLATE = "A paragraph.\n\n:unknown_template:`x`\n"
+"""Rendered as the item's ``pre_template``; its bad role is on line 3 of the template."""
+
+
+@pytest.mark.parametrize(
+    ("test_app", "prolog"),
+    [
+        (
+            params(
+                conf=NO_PROLOG_CONF,
+                index=DRIFT_INDEX,
+                **{"needs_templates/pre_content.need": DRIFT_TEMPLATE},
+            ),
+            False,
+        ),
+        (
+            params(
+                conf=CONF,
+                index=DRIFT_INDEX,
+                **{"needs_templates/pre_content.need": DRIFT_TEMPLATE},
+            ),
+            True,
+        ),
+    ],
+    ids=["no-prolog", "prolog"],
+    indirect=["test_app"],
+)
+def test_a_generated_needs_warnings_do_not_move_with_the_line_counter(
+    test_app: SphinxTestApp, prolog: bool
+):
+    """The same list2need item warns in the same places, prolog or no prolog.
+
+    A need carries two numbers that are *not* source lines: ``lineno_content``, the
+    offset its content is parsed at, and ``parser_lineno``, the offset a rendered
+    ``pre_template``/``post_template`` is parsed at. Both are offsets into the parser's
+    own counter, which ``rst_prolog`` shifts -- so giving them as resolved source lines
+    puts every warning raised inside an item's content, or inside its template, that
+    many lines from where it belongs.
+
+    Both locations are asserted for both builds, deliberately rather than by comparing
+    the two runs, because "the same lines, on a document whose counter has been
+    shifted" is the whole claim. The content role is on line 8, where it is written;
+    the template role is on line 9, its own third line counted from the item's.
+    """
+    app = test_app
+    app.build()
+
+    index = Path(str(app.srcdir)) / "index.rst"
+    reported = sorted(
+        line.split(": ERROR:")[0]
+        for line in strip_colors(app._warning.getvalue()).splitlines()
+        if "Unknown interpreted text role" in line
+    )
+    assert reported == [f"{index}:8", f"{index}:9"]
