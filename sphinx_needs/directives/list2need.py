@@ -207,6 +207,12 @@ class List2NeedDirective(SphinxDirective):
                 list_needs.append(need)
             else:
                 more_text = more_text.lstrip()
+                if more_text.startswith(":"):
+                    # a continuation line is stripped of the indentation it was written
+                    # with, so this restores the one indentation a line beginning with
+                    # ":" is likely to have needed: the options of a directive written
+                    # in the content of an item, which are one field list line each
+                    more_text = f"   {more_text}"
                 list_needs[-1]["content"].append(more_text)
                 list_needs[-1]["content_lines"].append(line_index)
 

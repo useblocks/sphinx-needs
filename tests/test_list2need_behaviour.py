@@ -528,10 +528,48 @@ def test_continuation_lines(test_app: SphinxTestApp):
     assert built["CON-BLANK"]["content"] == "first paragraph\n\nsecond paragraph"
 
     # NOTE: current behaviour; see PR discussion.
-    # A continuation line starting with ":" is not an option; it is content, and is
-    # rendered as a field list in the need's body.
-    assert built["CON-COLON"]["content"] == ":status: open"
+    # A continuation line starting with ":" is not an option. It is indented by a
+    # further three spaces before being appended, which is what makes the options of a
+    # directive written in an item's content line up underneath it -- see
+    # :func:`test_a_directive_in_an_items_content_keeps_its_options`. Here there is no
+    # directive above the line, so it is left over-indented in the need's body.
+    assert built["CON-COLON"]["content"] == "   :status: open"
     assert built["CON-COLON"]["status"] is None
+
+
+DIRECTIVE_IN_CONTENT = """
+.. list2need::
+   :types: req, spec
+
+   * (DIR-PARENT) Parent
+     * (DIR-CHILD) A child with a directive in its content
+
+     .. rubric:: A rubric
+        :class: highlighted
+"""
+
+
+@pytest.mark.parametrize("test_app", [params(DIRECTIVE_IN_CONTENT)], indirect=True)
+def test_a_directive_in_an_items_content_keeps_its_options(test_app: SphinxTestApp):
+    """Pin what the three-space indent of a ``:``-continuation line is *for*.
+
+    Every continuation line is stripped of the indentation it was written with, so the
+    options of a directive written in an item's content would end up in the directive's
+    own column -- which is not a directive with options any more, but a directive
+    followed by an unindented field list, and docutils says so. The three spaces put
+    them back underneath it.
+
+    This is the ``rst-directives in lists`` example from the documentation, and the
+    empty warning stream below is what pins it: without the indent the build reports
+    ``Explicit markup ends without a blank line`` and the options are lost.
+    """
+    app = test_app
+    app.build()
+    built = needs(app)
+    assert (
+        built["DIR-CHILD"]["content"] == ".. rubric:: A rubric\n   :class: highlighted"
+    )
+    assert warnings(app) == ""
 
 
 NESTED = """
