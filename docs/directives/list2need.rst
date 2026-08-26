@@ -56,8 +56,9 @@ For details please see :ref:`list2need_meta_data`.
 
    There are currently known limitations in the list parser.
    A content line starting with ``*`` begins a new need instead of continuing the one
-   above it, and a content line starting with ``:`` stays content —
-   it is rendered as a field list in the need's body, and is not read as an option.
+   above it, and a content line starting with ``:`` is content rather than an option —
+   it is indented by three spaces, which is what makes the options of a directive
+   written in an item's content line up underneath it.
 
 List structure
 --------------

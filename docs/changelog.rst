@@ -36,9 +36,6 @@ Improvements
     Every ``lineno`` in ``needs.json`` is now the line the need was written on.
   - An item written ``()`` with options, such as ``* ()A title ((status="open"))``, lost
     them: they became body text. They are now set.
-  - A content line starting with ``:`` was indented by three further spaces to keep it
-    out of the generated need's option block, which could produce a stray
-    ``Definition list ends without a blank line`` warning. It is plain content now.
 
   The content of a parent need no longer holds the generated reStructuredText of its
   children — nesting is a property of the document, not of the parent's text — so
