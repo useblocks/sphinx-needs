@@ -30,6 +30,7 @@ from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 
 from sphinx_needs.api import get_needs_view
+from sphinx_needs.data import SphinxNeedsData
 
 CONF = """\
 extensions = ["sphinx_needs"]
@@ -391,6 +392,76 @@ def test_inline_options(test_app: SphinxTestApp):
     assert built["OPT-SPLIT"]["tags"] == ["ab"]
 
 
+INLINE_IDS = """
+.. list2need::
+   :types: req, spec
+
+   * Alpha ((id="INL-1"))
+     * A child ((id="INL-CHILD"))
+   * Gamma ((id=""))
+"""
+
+
+@pytest.mark.parametrize("test_app", [params(INLINE_IDS)], indirect=True)
+def test_an_id_written_as_an_inline_option(test_app: SphinxTestApp):
+    """Pin that ``((id="..."))`` names the need, and that an empty one is reported.
+
+    The directive used to write the id it derived *and* the inline one as two
+    ``:id:`` field lines of the same generated need, which docutils refused with
+    ``duplicate option "id"`` -- so any item carrying the option was dropped. The
+    inline id is now the id, and is applied before ``links-down`` is built, so the
+    links of other items agree with it.
+
+    An empty value is not an id, and is now refused the way any other invalid id is,
+    rather than being quietly replaced by the hash of the title.
+    """
+    app = test_app
+    app.build()
+    built = needs(app)
+
+    assert built["INL-1"]["title"] == "Alpha"
+    assert built["INL-CHILD"]["parent_need"] == "INL-1"
+
+    assert "Gamma" not in {need["title"] for need in built.values()}
+    assert (
+        "Need could not be created: Given ID '' does not match configured regex"
+        in warnings(app)
+    )
+
+
+TITLE_FROM_CONTENT = """
+.. list2need::
+   :types: req, spec
+
+   * ((title_from_content="true")). the first sentence here. rest
+   * (TFC-TITLED) A real title ((title_from_content="true")). some content
+"""
+
+
+@pytest.mark.parametrize("test_app", [params(TITLE_FROM_CONTENT)], indirect=True)
+def test_title_from_content_behaves_as_it_does_on_a_need_directive(
+    test_app: SphinxTestApp,
+):
+    """Pin that the inline ``title_from_content`` option is the need directives' one.
+
+    It is the only option a need directive accepts that changes what the *title* is
+    rather than what a field holds, so it has to be read before the title is decided.
+    An item with no title of its own takes the first sentence of its content; an item
+    that has a title keeps it, and is told the option had no effect.
+    """
+    app = test_app
+    app.build()
+    built = needs(app)
+
+    # The item's own title is empty -- the option area was the whole of it.
+    assert built["R_D351E"]["title"] == "the first sentence here"
+
+    assert built["TFC-TITLED"]["title"] == "A real title"
+    assert "title_from_content set to True, but a title was provided." in warnings(app)
+    assert "Unknown option 'title_from_content'" not in warnings(app)
+    assert "No title given" not in warnings(app)
+
+
 UNQUOTED_OPTION = """
 .. list2need::
    :types: req, spec
@@ -623,6 +694,91 @@ def test_presentation_standalone_leaves_the_needs_unnested(test_app: SphinxTestA
     assert built["STA-CHILD"]["parent_need"] is None
     assert built["STA-PARENT"]["links"] == ["STA-CHILD"]
     assert built["STA-PARENT"]["content"] == ""
+
+
+HIDDEN_PARENT = """
+.. list2need::
+   :types: req, spec
+
+   * (HID-PARENT) A hidden parent ((hide="true"))
+     * (HID-CHILD) Its child
+
+See :need:`HID-CHILD`.
+"""
+
+
+@pytest.mark.parametrize("test_app", [params(HIDDEN_PARENT)], indirect=True)
+def test_a_hidden_parent_does_not_take_its_child_out_of_the_page(
+    test_app: SphinxTestApp,
+):
+    """Pin that a child of a ``hide``\\ den item is still rendered, and referenceable.
+
+    A hidden need is created and then removed from the document, so nesting a child
+    inside one would put the child's target in a node that never reaches the page --
+    the need would exist in ``needs.json`` while every ``:need:`` reference to it
+    pointed at an anchor that is not there. A hidden item is therefore not opened as a
+    parent, and its children are placed at the level above it instead.
+
+    Before the directive built its needs directly the child was not created at all:
+    it lived in generated text inside the parent's content, which a hidden need never
+    parses, and a reference to it reported ``linked need HID-CHILD not found``.
+    """
+    app = test_app
+    app.build()
+    built = needs(app)
+
+    assert built["HID-CHILD"]["title"] == "Its child"
+    # The hidden parent is not a parent in the document, so the child has none.
+    assert built["HID-CHILD"]["parent_need"] is None
+
+    index = Path(app.outdir, "index.html").read_text()
+    assert 'id="HID-CHILD"' in index
+    assert 'href="#HID-CHILD"' in index
+    assert warnings(app) == ""
+
+
+NO_NEED_CREATED_INDEX = """
+.. req:: The original
+   :id: DUP-1
+
+.. toctree::
+
+   other
+"""
+
+NO_NEED_CREATED_OTHER = """\
+OTHER
+=====
+
+.. list2need::
+   :types: req, spec
+
+   * (DUP-1) A duplicate of the need in index
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [params(NO_NEED_CREATED_INDEX, **{"other.rst": NO_NEED_CREATED_OTHER})],
+    indirect=True,
+)
+def test_a_list_that_creates_nothing_does_not_register_its_document(
+    test_app: SphinxTestApp,
+):
+    """Pin that a document is recorded as carrying needs only if it produced one.
+
+    ``other.rst`` holds one list2need whose only item duplicates an id defined in
+    ``index.rst``, so the item is refused and the document ends up with no needs at
+    all. Registering it anyway would put an empty document into everything that
+    iterates the need-carrying documents.
+    """
+    app = test_app
+    app.build()
+
+    assert "A need with ID 'DUP-1' already exists" in warnings(app)
+    docs = SphinxNeedsData(app.env).get_or_create_docs()["all"]
+    assert "index" in docs
+    assert "other" not in docs
 
 
 LEVEL_SKIP = """

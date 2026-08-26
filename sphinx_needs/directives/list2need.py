@@ -16,7 +16,8 @@ from sphinx.util.docutils import SphinxDirective
 from sphinx_needs.api import InvalidNeedException, add_need
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import SphinxNeedsData
-from sphinx_needs.logging import get_logger, log_warning
+from sphinx_needs.directives.need import _get_title
+from sphinx_needs.logging import WarningSubTypes, get_logger, log_warning
 from sphinx_needs.need_item import NeedItemSourceDirective
 from sphinx_needs.nodes import Need
 from sphinx_needs.utils import add_doc, coerce_to_boolean
@@ -247,14 +248,17 @@ class List2NeedDirective(SphinxDirective):
                     list_need["options"]["tags"] = tags
 
             # an explicitly given id wins over the one derived from the title,
-            # and has to be known before the links-down of any other item are built
-            if given_id := list_need["options"].pop("id", None):
+            # and has to be known before the links-down of any other item are built.
+            # An empty one is handed on as it stands, so that it is refused with a
+            # diagnostic instead of being silently replaced by the title hash.
+            if (given_id := list_need["options"].pop("id", None)) is not None:
                 list_need["need_id"] = given_id
 
         # Finally creating the needs
         node_list: list[nodes.Node] = []
         # the needs a nested item can be placed inside, innermost last
         open_needs: list[tuple[int, Need]] = []
+        created = False
         for index, list_need in enumerate(list_needs):
             options = dict(list_need["options"])
 
@@ -270,6 +274,7 @@ class List2NeedDirective(SphinxDirective):
                 options[links_down_type] = f"{given}, {joined}" if given else joined
 
             need_nodes = self._create_need(list_need, options, known_options)
+            created = created or bool(need_nodes)
 
             if presentation == "nested":
                 while open_needs and open_needs[-1][0] >= list_need["level"]:
@@ -281,12 +286,16 @@ class List2NeedDirective(SphinxDirective):
                     node_list += need_nodes
                 for node in need_nodes:
                     if isinstance(node, Need):
-                        open_needs.append((list_need["level"], node))
+                        # a hidden need is taken out of the document once it has been
+                        # read, so a child placed inside one would be rendered nowhere
+                        # and referenced by an anchor that never reaches the page
+                        if not node.get("hidden"):
+                            open_needs.append((list_need["level"], node))
                         break
             else:
                 node_list += need_nodes
 
-        if list_needs:
+        if created:
             add_doc(self.env, self.env.docname)
 
         return node_list
@@ -306,48 +315,48 @@ class List2NeedDirective(SphinxDirective):
         """
         lineno = self._source_line(list_need["line"])
         location = (self.env.docname, lineno)
+        needs_config = NeedsSphinxConfig(self.env.config)
 
-        kwargs: dict[str, Any] = {}
-        # the two options a need directive reads as a boolean rather than a string
-        for name in ("delete", "jinja_content"):
+        def warn(message: str, code: WarningSubTypes = "directive") -> None:
+            log_warning(LOGGER, message, code, location=location)
+
+        # the options a need directive reads as a boolean rather than as a string
+        flags: dict[str, bool] = {}
+        for name in ("delete", "jinja_content", "title_from_content"):
             if name not in options:
                 continue
             try:
-                flag = coerce_to_boolean(options.pop(name))
+                flags[name] = coerce_to_boolean(options.pop(name))
             except ValueError as err:
-                log_warning(
-                    LOGGER,
-                    f"Invalid value for {name!r} option: {err}",
-                    "directive",
-                    location=location,
-                )
+                warn(f"Invalid value for {name!r} option: {err}")
                 return []
-            if name == "delete":
-                if flag:  # the item asked for no need to be created
-                    return []
-            else:
-                kwargs[name] = flag
+        if flags.get("delete"):  # the item asked for no need to be created
+            return []
+
+        kwargs: dict[str, Any] = {}
+        if "jinja_content" in flags:
+            kwargs["jinja_content"] = flags["jinja_content"]
 
         for key, option_value in options.items():
             if key in known_options:
                 kwargs[key] = option_value
             else:
-                log_warning(
-                    LOGGER, f"Unknown option '{key}'", "directive", location=location
-                )
-
-        if (
-            not list_need["title"]
-            and not NeedsSphinxConfig(self.env.config).title_optional
-        ):
-            log_warning(
-                LOGGER,
-                "No title given, but title is required by configuration.",
-                "directive",
-                location=location,
-            )
+                warn(f"Unknown option '{key}'")
 
         content, lineno_content = self._content(list_need)
+
+        # the title is decided exactly as it is for a need directive: an item whose
+        # own title is empty is one written without a directive argument
+        title, full_title = _get_title(
+            [list_need["title"]] if list_need["title"].strip() else [],
+            content,
+            title_optional=needs_config.title_optional,
+            title_from_content=flags.get(
+                "title_from_content", needs_config.title_from_content
+            ),
+            max_title_length=needs_config.max_title_length,
+            warn=warn,
+        )
 
         try:
             return add_need(
@@ -359,18 +368,14 @@ class List2NeedDirective(SphinxDirective):
                     lineno_content=lineno_content,
                 ),
                 need_type=list_need["type"],
-                title=list_need["title"],
+                title=title,
+                full_title=full_title,
                 id=list_need["need_id"],
                 content=content,
                 **kwargs,
             )
         except InvalidNeedException as err:
-            log_warning(
-                LOGGER,
-                f"Need could not be created: {err.message}",
-                "create_need",
-                location=location,
-            )
+            warn(f"Need could not be created: {err.message}", "create_need")
             return []
 
     def _content(self, list_need: dict[str, Any]) -> tuple[StringList, int]:
