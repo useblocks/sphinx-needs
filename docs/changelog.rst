@@ -283,9 +283,11 @@ Bug fixes
   line is now resolved back to the one the directive stands on — the same line the
   directive's own warnings have always reported.
 
-  **Warning locations are unchanged**, everywhere, including inside the content a
-  :ref:`need_pre_template` or :ref:`need_post_template` renders, which is anchored at
-  the need's directive and is now anchored there explicitly.
+  **No warning location regresses.** The only warning locations that move are the
+  ones this corrects — sites that report at a need's stored line now name the true
+  one. Everything anchored through the directive's own location helper, including
+  the content a :ref:`need_pre_template` or :ref:`need_post_template` renders, is
+  byte-identical to before.
 
   Two things are deliberately unchanged: the needs :ref:`list2need` *generates* still
   record their position inside the generated block rather than the line of the list
