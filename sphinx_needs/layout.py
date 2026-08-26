@@ -25,13 +25,17 @@ from docutils.utils import new_document
 from sphinx.application import Sphinx
 from sphinx.util.logging import getLogger
 
-from sphinx_needs._jinja import compile_template
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.logging import log_warning
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.nodes import Need
+from sphinx_needs.string_links import (
+    compiled_string_links,
+    split_string_link_value,
+    string_link_field_names,
+)
 from sphinx_needs.utils import match_string_link
 
 LOGGER = getLogger(__name__)
@@ -293,24 +297,12 @@ class LayoutHandler:
             "permalink": self.permalink,
         }
 
-        # Prepare string_links dict, so that regex and templates get not recompiled too often.
+        # The compiled string_links, so that regex and templates get not recompiled too often.
         #
-        # Do not set needs_string_links here and update it.
+        # Note the compiled objects are never written back onto needs_string_links.
         # This would lead to deepcopy()-errors, as needs_string_links gets some "pickled" and complex objects are
         # too complex for this.
-        self.string_links = {}
-        for link_name, link_conf in self.needs_config.string_links.items():
-            self.string_links[link_name] = {
-                "url_template": compile_template(
-                    link_conf["link_url"], autoescape=False
-                ),
-                "name_template": compile_template(
-                    link_conf["link_name"], autoescape=False
-                ),
-                "regex_compiled": re.compile(link_conf["regex"]),
-                "options": link_conf["options"],
-                "name": link_name,
-            }
+        self.string_links = compiled_string_links(self.needs_config)
 
     def get_need_table(self) -> nodes.table:
         if self.layout["grid"] not in self.grids:
@@ -511,24 +503,23 @@ class LayoutHandler:
         elif data is None and show_empty:
             data = ""
 
+        matching_link_confs = [
+            link_conf
+            for link_conf in self.string_links.values()
+            if name in link_conf.options
+        ]
+
         if isinstance(data, str):
             if len(data) == 0 and not show_empty:
                 return []
 
-            needs_string_links_option: list[str] = []
-            for v in self.needs_config.string_links.values():
-                needs_string_links_option.extend(v["options"])
+            needs_string_links_option = string_link_field_names(self.needs_config)
 
             data_list: list[str] = (
-                [i.strip() for i in re.split(r",|;", data) if len(i) != 0]
+                split_string_link_value(data)
                 if name in needs_string_links_option
                 else [data]
             )
-
-            matching_link_confs = []
-            for link_conf in self.string_links.values():
-                if name in link_conf["options"]:
-                    matching_link_confs.append(link_conf)
 
             data_node = nodes.inline(classes=["needs_data"])
             for index, datum in enumerate(data_list):
@@ -539,15 +530,15 @@ class LayoutHandler:
                         need_key=name,
                         matching_link_confs=matching_link_confs,
                         render_context=self.needs_config.render_context,
+                        location=(self.need["docname"], self.need["lineno"]),
                     )
                 else:
                     # Normal text handling
                     ref_item = nodes.Text(datum)
                     data_node += ref_item
 
-                if (
-                    name in needs_string_links_option and index + 1 < len(data)
-                ) or index + 1 < len([data]):
+                if index + 1 < len(data_list):
+                    # separators go *between* items, as in row_col_maker
                     data_node += nodes.emphasis("; ", "; ")
 
             data_container.append(data_node)
@@ -563,7 +554,21 @@ class LayoutHandler:
                     list_container += spacer
 
                 inline = nodes.inline(classes=["needs_data"])
-                inline += nodes.Text(element)
+                element_text = str(element)
+                # apply string links per element, as needtable cells do -- including
+                # its guard against empty ones, which would otherwise render a live
+                # link to whatever the url template is with every group empty
+                if matching_link_confs and element_text:
+                    inline += match_string_link(
+                        text_item=element_text,
+                        data=element_text,
+                        need_key=name,
+                        matching_link_confs=matching_link_confs,
+                        render_context=self.needs_config.render_context,
+                        location=(self.need["docname"], self.need["lineno"]),
+                    )
+                else:
+                    inline += nodes.Text(element)
                 list_container += inline
             data_container += list_container
         else:

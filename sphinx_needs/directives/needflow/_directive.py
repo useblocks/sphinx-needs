@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from docutils import nodes
@@ -24,7 +24,21 @@ from sphinx_needs.utils import (
     split_link_types,
 )
 
+from ._options import (
+    FlowDirection,
+    direction_option,
+    graphviz_config_direction,
+    plantuml_config_direction,
+    show_legend_option,
+    show_link_names_option,
+)
+
 LOGGER = get_logger(__name__)
+
+#: The engines a diagram can be drawn with.
+#: The first is the ``needs_flow_engine`` default, and so also the fallback for a
+#: configured value that names no engine at all.
+_ENGINES = ("plantuml", "graphviz")
 
 if TYPE_CHECKING:
     from typing_extensions import Unpack
@@ -55,12 +69,18 @@ class NeedflowDirective(FilterBase):
         # debug; render the graph code in the document
         "debug": directives.flag,
         # formatting
+        "direction": direction_option,
         "highlight": directives.unchanged_required,
         "border_color": directives.unchanged_required,
-        "show_legend": directives.flag,
+        "show_legend": show_legend_option,
         "show_filters": directives.flag,
-        "show_link_names": directives.flag,
+        "show_link_names": show_link_names_option,
         "config": directives.unchanged_required,
+        "max_items": directives.nonnegative_int,
+        # ubCode compatibility: accepted and ignored by Sphinx-Needs.
+        "cypher": directives.unchanged,
+        "width": directives.unchanged,
+        "height": directives.unchanged,
     }
 
     # Update the options_spec with values defined in the FilterBase class
@@ -80,8 +100,28 @@ class NeedflowDirective(FilterBase):
             self.options.get("link_types", all_link_types), location
         )
 
-        engine = self.options.get("engine", needs_config.flow_engine)
-        assert engine in ["graphviz", "plantuml"], f"Unknown needflow engine '{engine}'"
+        # normalised the same way the option is: docutils' `choice` lowercases and strips
+        # before matching, so `:engine: PlantUML` has always been accepted while the same
+        # word in `conf.py` warned and fell back -- an asymmetry with nothing to suggest
+        # that capitalisation was the cause
+        raw_engine = self.options.get("engine", needs_config.flow_engine)
+        engine = str(raw_engine).strip().lower()
+        if engine not in _ENGINES:
+            # the `:engine:` option is validated as it is parsed, so only the
+            # configuration can name an unknown engine here.
+            # This used to be a bare `assert`, which ends the build with a traceback
+            # rather than a message -- and which `python -O` strips altogether, leaving
+            # the unknown name to fail further downstream instead.
+            # The value is quoted as it was *written*, so it can be found in `conf.py`
+            log_warning(
+                LOGGER,
+                f"unknown 'needs_flow_engine' value {raw_engine!r}, "
+                f"so the diagram is drawn with {_ENGINES[0]!r} instead",
+                "config",
+                location=self.get_location(),
+                once=True,
+            )
+            engine = _ENGINES[0]
 
         config_names: str = self.options.get("config", "")
         config = ""
@@ -95,12 +135,15 @@ class NeedflowDirective(FilterBase):
                 elif config_name:
                     log_warning(
                         LOGGER,
-                        f"config key {config_name!r} not in 'need_flows_configs'",
+                        f"config key {config_name!r} not in 'needs_flow_configs'",
                         "needflow",
                         location=self.get_location(),
                     )
             config = "\n".join(_configs)
         else:
+            # note a graphviz needflow without a `:config:` silently gets the "default"
+            # style, so it is never unstyled the way a plantuml one is, and naming any
+            # config replaces that default rather than adding to it; it is kept as is
             config_names = config_names if config_names else "default"
             for config_name in config_names.split(","):
                 config_name = config_name.strip()
@@ -109,10 +152,29 @@ class NeedflowDirective(FilterBase):
                         for key, value in needs_config.graphviz_styles[
                             config_name
                         ].items():
+                            if not isinstance(value, Mapping):
+                                # a value that is not a mapping of attributes used to
+                                # travel unchecked into the emitter, where
+                                # `'str' object has no attribute 'items'` ended the
+                                # whole build with a traceback instead of a message
+                                log_warning(
+                                    LOGGER,
+                                    f"malformed config {config_name!r} in 'needs_graphviz_styles': "
+                                    f"{key!r} must be a mapping of attributes, "
+                                    f"but is {type(value).__name__}",
+                                    "needflow",
+                                    location=self.get_location(),
+                                )
+                                continue
                             if key in graphviz_style:
                                 graphviz_style[key].update(value)  # type: ignore[literal-required]
                             else:
-                                graphviz_style[key] = value  # type: ignore[literal-required]
+                                # copied, so that merging several configs cannot edit
+                                # the configuration itself: the first config's
+                                # attributes used to be taken by reference and then
+                                # updated with the second's, which leaked one diagram's
+                                # styles into every later one naming the same config
+                                graphviz_style[key] = dict(value)  # type: ignore[literal-required]
                     elif config_name:
                         log_warning(
                             LOGGER,
@@ -129,6 +191,14 @@ class NeedflowDirective(FilterBase):
                             location=self.get_location(),
                         )
 
+        # detected while the engine is still known, so that the model can honour an
+        # engine config's own layout without knowing which engine wrote it
+        config_direction: FlowDirection | None = (
+            plantuml_config_direction(config)
+            if engine == "plantuml"
+            else graphviz_config_direction(graphviz_style)
+        )
+
         add_doc(self.env, self.env.docname)
 
         attributes: NeedsFlowType = {
@@ -136,23 +206,35 @@ class NeedflowDirective(FilterBase):
             "lineno": self.lineno,
             "target_id": targetid,
             "root_id": self.options.get("root_id"),
-            "root_direction": self.options.get("root_direction", "all"),
+            "root_direction": self.options.get("root_direction", "both"),
             "root_depth": self.options.get("root_depth", None),
             "show_legend": "show_legend" in self.options,
+            "show_legend_key": self.options.get("show_legend", ""),
             "show_filters": "show_filters" in self.options,
+            # the flag records only that the option was *given*; what it was given goes
+            # into the value beside it, because the flag is shared with the other diagram
+            # directives, which still take it as a bare flag
             "show_link_names": "show_link_names" in self.options,
+            "show_link_names_value": self.options.get("show_link_names"),
             "link_types": link_types,
             "config_names": config_names,
             "config": config,
             "graphviz_style": graphviz_style,
             "scale": get_scale(self.options, self.get_location()),
+            # None means the option was not given, so that the configured project
+            # default is consulted rather than silently overridden by it
+            "direction": self.options.get("direction"),
+            "config_direction": config_direction,
             "highlight": self.options.get("highlight", ""),
             "border_color": self.options.get("border_color", None),
             "align": self.options.get("align", "center"),
             "debug": "debug" in self.options,
             "caption": self.arguments[0] if self.arguments else None,
             "classes": self.options.get("class", []),
-            "alt": self.options.get("alt", ""),
+            # None means the option was not given, so that an engine can tell it apart
+            # from an explicitly empty value, i.e. a deliberately undescribed diagram
+            "alt": self.options.get("alt"),
+            "max_items": self.options.get("max_items"),
             **self.collect_filter_attributes(),
         }
 

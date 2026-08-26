@@ -862,7 +862,7 @@
         
         class "Test story" as test {
           implement
-          none
+          None
         }
         
         node "<size:12>System</size>\n**Test System**\n<size:10>SYS_001</size>" as SYS_001 [[../index.html#SYS_001]] #FF68D2
@@ -907,7 +907,7 @@
         
         class "Test story" as test {
            implement
-           none
+           None
         }
         
         node "<size:12>System</size>\n**Test System**\n<size:10>SYS_001</size>" as SYS_001 [[../index.html#SYS_001]] #FF68D2
@@ -984,7 +984,7 @@
         
         class "Test story" as test {
            implement
-           none
+           None
         }
         
         Alice -> Bob: Hi Bob
@@ -1053,7 +1053,7 @@
         
         class "Test story" as test {
            implement
-           none
+           None
         }
         
         node "<size:12>System</size>\n**Test System**\n<size:10>SYS_001</size>" as SYS_001 [[../index.html#SYS_001]] #FF68D2

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import os
 import re
 from collections.abc import Sequence
+from dataclasses import dataclass, field
 from typing import Any
 
 from docutils import nodes
@@ -18,9 +18,17 @@ from sphinx_needs.diagrams_common import (
     get_debug_container,
     get_filter_para,
     no_plantuml,
+    set_plantuml_paths,
 )
-from sphinx_needs.directives.utils import no_needs_found_paragraph
-from sphinx_needs.filter_common import FilterBase
+from sphinx_needs.directives.utils import (
+    no_needs_found_paragraph,
+    report_max_items,
+)
+from sphinx_needs.filter_common import (
+    FilterBase,
+    filter_single_need,
+    resolve_max_items,
+)
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem
 from sphinx_needs.utils import add_doc, remove_node_from_tree
@@ -43,6 +51,10 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
     option_spec = {
         "start": directives.unchanged,
         "link_types": directives.unchanged,
+        "max_items": directives.nonnegative_int,
+        # ubCode compatibility: accepted and ignored by Sphinx-Needs.
+        "width": directives.unchanged,
+        "height": directives.unchanged,
     }
 
     # Update the options_spec with values defined in the FilterBase class
@@ -66,6 +78,7 @@ class NeedsequenceDirective(FilterBase, DiagramBase, Exception):
             "lineno": self.lineno,
             "target_id": targetid,
             "start": self.options.get("start", ""),
+            "max_items": self.options.get("max_items"),
             **self.collect_filter_attributes(),
             **self.collect_diagram_attributes(),
         }
@@ -158,6 +171,11 @@ def process_needsequence(
         # Add  start participants
         p_string = ""
         c_string = ""
+        # the cap counts messages (arrows), and is shared by all start needs,
+        # since it applies to the diagram as a whole
+        counter = _MessageCounter(
+            resolve_max_items(current_needsequence.get("max_items"), needs_config)
+        )
         for need_id in start_needs_id:
             try:
                 need = all_needs_dict[need_id.strip()]
@@ -177,9 +195,13 @@ def process_needsequence(
                 current_needsequence["link_types"],
                 all_needs_dict,
                 filter=current_needsequence["filter"],
+                counter=counter,
+                origin_docname=current_needsequence["docname"],
             )
             p_string += p_string_new
             c_string += c_string_new
+
+        p_string += counter.declarations_to_restore()
 
         puml_node["uml"] += p_string
 
@@ -191,10 +213,7 @@ def process_needsequence(
             puml_node["uml"] += create_legend(needs_types)
 
         puml_node["uml"] += "\n@enduml"
-        puml_node["incdir"] = os.path.dirname(current_needsequence["docname"])
-        puml_node["filename"] = os.path.split(current_needsequence["docname"])[
-            1
-        ]  # Needed for plantuml >= 0.9
+        set_plantuml_paths(puml_node, env, current_needsequence["docname"])
 
         scale = int(current_needsequence["scale"])
         # if scale != 100:
@@ -239,6 +258,16 @@ def process_needsequence(
             content = [
                 (no_needs_found_paragraph(current_needsequence.get("filter_warning")))  # type: ignore[list-item]
             ]
+        if counter.shown < counter.total:
+            content.append(
+                report_max_items(  # type: ignore[arg-type]
+                    counter.shown,
+                    counter.total,
+                    origin="needsequence",
+                    location=node,
+                    unit="messages",
+                )
+            )
         if current_needsequence["show_filters"]:
             content.append(get_filter_para(current_needsequence))  # type: ignore[arg-type]
 
@@ -248,6 +277,64 @@ def process_needsequence(
         node.replace_self(content)
 
 
+@dataclass
+class _MessageCounter:
+    """Counts the messages of a sequence diagram, against the ``max_items`` cap.
+
+    The walk keeps counting messages after the cap has been reached,
+    so that the truncation notice can report an honest total.
+    """
+
+    limit: int
+    """The maximum number of messages to draw, zero or less meaning no limit."""
+    total: int = 0
+    """The number of messages the walk would draw, were there no limit."""
+    shown: int = 0
+    """The number of messages the walk actually drew."""
+    drawn_ids: set[str] = field(default_factory=set)
+    """The ids of the participants that a drawn message refers to."""
+    suppressed: list[tuple[str, str]] = field(default_factory=list)
+    """Participant declarations the cap suppressed, in walk order, as (id, line)."""
+
+    @property
+    def has_room(self) -> bool:
+        """Whether a further message may still be drawn."""
+        return self.limit <= 0 or self.shown < self.limit
+
+    def add_message(self, sender_id: str, receiver_id: str) -> bool:
+        """Count a message that the walk would draw.
+
+        :param sender_id: the id of the need the message is drawn from.
+        :param receiver_id: the id of the need the message is drawn to.
+
+        :return: True if the message is within the cap and should be drawn.
+        """
+        self.total += 1
+        if not self.has_room:
+            return False
+        self.shown += 1
+        self.drawn_ids.update((sender_id, receiver_id))
+        return True
+
+    def declarations_to_restore(self) -> str:
+        """The suppressed declarations of participants that a drawn message refers to.
+
+        The cap is exhausted *by* the last message that is drawn, so the participant on
+        the receiving end of it reaches its declaration after there is no room left.
+        Without restoring it, PlantUML auto-creates that lifeline and labels it with the
+        raw need id, whilst every other lifeline shows a title -- truncation would then
+        have altered a participant that is still drawn, rather than only removing ones
+        that are not.
+
+        Restoring is strictly additive, and only ever undoes the cap's own suppression:
+        nothing is suppressed when there is no limit, and a suppressed declaration is
+        restored only if a message that was drawn refers to it.
+
+        :return: the declarations to append, in walk order.
+        """
+        return "".join(line for id_, line in self.suppressed if id_ in self.drawn_ids)
+
+
 def get_message_needs(
     app: Sphinx,
     sender: NeedItem,
@@ -255,7 +342,15 @@ def get_message_needs(
     all_needs_dict: NeedsView,
     tracked_receivers: list[str] | None = None,
     filter: str | None = None,
+    *,
+    counter: _MessageCounter,
+    origin_docname: str | None = None,
 ) -> tuple[dict[str, dict[str, Any]], str, str]:
+    """Walk the messages sent by ``sender``, drawing each receiver that passes ``filter``.
+
+    :param origin_docname: The document the needsequence is written in, so that a
+        ``filter`` may test the receiver against it with ``c.this_doc()``.
+    """
     msg_needs: list[dict[str, Any]] = []
     if tracked_receivers is None:
         tracked_receivers = []
@@ -272,21 +367,30 @@ def get_message_needs(
             "receivers": {},
         }
         if sender["id"] not in tracked_receivers:
-            p_string += 'participant "{}" as {}\n'.format(sender["title"], sender["id"])
+            declaration = 'participant "{}" as {}\n'.format(
+                sender["title"], sender["id"]
+            )
+            if counter.has_room:
+                p_string += declaration
+            else:
+                # a participant is only declared whilst the cap has room, so that
+                # truncation can never add a participant that sends no message; it is
+                # held here in case a message that was drawn turns out to refer to it
+                counter.suppressed.append((sender["id"], declaration))
+            # the sender is tracked even when it was not declared, so that the shape
+            # of the walk, and hence the message total, does not depend on the cap
             tracked_receivers.append(sender["id"])
         for link_type in link_types:
             receiver_ids = msg_need[link_type]
             for rec_id in receiver_ids:
-                if filter:
-                    from sphinx_needs.filter_common import filter_single_need
-
-                    if not filter_single_need(
-                        all_needs_dict[rec_id],
-                        NeedsSphinxConfig(app.config),
-                        filter,
-                        needs=all_needs_dict.values(),
-                    ):
-                        continue
+                if filter and not filter_single_need(
+                    all_needs_dict[rec_id],
+                    NeedsSphinxConfig(app.config),
+                    filter,
+                    needs=all_needs_dict.values(),
+                    origin_docname=origin_docname,
+                ):
+                    continue
 
                 rec_data = {
                     "id": rec_id,
@@ -294,9 +398,10 @@ def get_message_needs(
                     "messages": [],
                 }
 
-                c_string += "{} -> {}: {}\n".format(
-                    sender["id"], rec_data["id"], msg_need["title"]
-                )
+                if counter.add_message(sender["id"], rec_id):
+                    c_string += "{} -> {}: {}\n".format(
+                        sender["id"], rec_data["id"], msg_need["title"]
+                    )
 
                 if rec_id not in tracked_receivers:
                     rec_messages, p_string_new, c_string_new = get_message_needs(
@@ -306,6 +411,8 @@ def get_message_needs(
                         all_needs_dict,
                         tracked_receivers,
                         filter=filter,
+                        counter=counter,
+                        origin_docname=origin_docname,
                     )
                     p_string += p_string_new
                     c_string += c_string_new

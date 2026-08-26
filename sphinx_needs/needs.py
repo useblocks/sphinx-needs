@@ -29,6 +29,7 @@ from sphinx_needs.builder import (
     build_needs_json,
     build_needumls_pumls,
 )
+from sphinx_needs.card_layouts import compile_card_layouts
 from sphinx_needs.config import (
     _NEEDS_CONFIG,
     LinkOptionsType,
@@ -73,6 +74,7 @@ from sphinx_needs.directives.needflow import (
     process_needflow_graphviz,
     process_needflow_plantuml,
 )
+from sphinx_needs.directives.needflow._options import validate_flow_config
 from sphinx_needs.directives.needgantt import (
     Needgantt,
     NeedganttDirective,
@@ -141,8 +143,13 @@ from sphinx_needs.schema.config_utils import (
 )
 from sphinx_needs.schema.process import process_schemas
 from sphinx_needs.services.github import GithubService
+from sphinx_needs.string_links import compile_string_links
 from sphinx_needs.utils import node_match
-from sphinx_needs.variant_data import VariantDataError, resolve_variant_data
+from sphinx_needs.variant_data import (
+    VariantDataError,
+    VariantDataProxy,
+    resolve_variant_data,
+)
 from sphinx_needs.warnings import process_warnings
 
 if sys.version_info >= (3, 11):
@@ -322,8 +329,15 @@ def setup(app: Sphinx) -> dict[str, Any]:
     ########################################################################
     # Make connections to events
     app.connect("config-inited", load_config_from_toml, priority=10)  # runs early
+    # runs directly after the toml config is loaded, which can set the variant data,
+    # and before anything that may want to read the merged map,
+    # up to and including configuration that decides which documents are read
+    app.connect("config-inited", resolve_variant_data_config, priority=11)
     app.connect("config-inited", load_config)
     app.connect("config-inited", merge_default_configs)
+    # runs after the built-in layouts are merged in, and before the config is checked
+    app.connect("config-inited", compile_card_layouts, priority=550)
+    app.connect("config-inited", compile_string_links, priority=551)
     app.connect("config-inited", check_configuration, priority=600)  # runs late
 
     app.connect("env-before-read-docs", prepare_env)
@@ -676,27 +690,52 @@ def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
     pass
 
 
-def _resolve_variant_data_config(config: NeedsSphinxConfig, confdir: str) -> None:
+def _derive_variant_data_proxy(config: NeedsSphinxConfig) -> None:
+    """Derive the ``var`` proxy from the variant data map as it currently stands.
+
+    This is a derivation, not a resolution: no file is read, nothing is merged and
+    nothing is validated. It exists so that the map and the proxy built from it can
+    never drift apart, whichever build phase last wrote the map.
+
+    :param config: The Sphinx-Needs configuration.
+    """
+    config.variant_data_proxy = (
+        VariantDataProxy(config.variant_data) if config.variant_data else None
+    )
+
+
+def resolve_variant_data_config(app: Sphinx, config: Config) -> None:
     """Resolve variant data from file + inline config, validate, and store back.
 
-    After this call, ``config.variant_data`` contains the fully merged result.
+    This runs during ``config-inited``, so that the merged map is available to
+    everything that follows, including configuration that decides which documents
+    are read at all (``exclude_patterns``), which can only be changed at that point.
+
+    After this call, ``needs_variant_data`` holds the fully merged result and
+    ``needs_variant_data_proxy`` the matching ``var`` proxy for filter expressions.
+
+    :param app: The Sphinx application.
+    :param config: The Sphinx configuration.
+    :raises NeedsConfigException: If the variant data file cannot be loaded,
+        or the variant data is invalid.
     """
-    if not config.variant_data and not config.variant_data_file:
-        return
+    needs_config = NeedsSphinxConfig(config)
 
-    # Resolve relative file paths against the Sphinx confdir
-    file_path = config.variant_data_file
-    if file_path and not Path(file_path).is_absolute():
-        file_path = str(Path(confdir) / file_path)
+    if needs_config.variant_data or needs_config.variant_data_file:
+        # Resolve relative file paths against the Sphinx confdir
+        file_path = needs_config.variant_data_file
+        if file_path and not Path(file_path).is_absolute():
+            file_path = str(Path(app.confdir) / file_path)
 
-    try:
-        resolved = resolve_variant_data(config.variant_data, file_path)
-    except VariantDataError as e:
-        from sphinx_needs.exceptions import NeedsConfigException
+        try:
+            resolved = resolve_variant_data(needs_config.variant_data, file_path)
+        except VariantDataError as e:
+            raise NeedsConfigException(str(e)) from e
+        # Store the resolved result back so downstream code sees the merged dict
+        needs_config.variant_data = resolved
 
-        raise NeedsConfigException(str(e)) from e
-    # Store the resolved result back so downstream code sees the merged dict
-    config.variant_data = resolved
+    # Cache the variant data proxy for use in filter expressions
+    _derive_variant_data_proxy(needs_config)
 
 
 def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:
@@ -706,16 +745,12 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
     needs_config = NeedsSphinxConfig(app.config)
     data = SphinxNeedsData(env)
 
-    # Resolve variant data (load file + merge + validate) once for the build
-    _resolve_variant_data_config(needs_config, str(app.confdir))
-
-    # Cache the variant data proxy for use in filter expressions
-    if needs_config.variant_data:
-        from sphinx_needs.variant_data import VariantDataProxy
-
-        needs_config.variant_data_proxy = VariantDataProxy(needs_config.variant_data)
-    else:
-        needs_config.variant_data_proxy = None
+    # The map may have been written after it was resolved, e.g. by another extension's
+    # ``config-inited`` handler. Such a value is used as-is (it is not merged with the
+    # file, nor validated), but the ``variant`` role reads the map while filter
+    # expressions read the proxy, so the proxy is derived again here to keep the two
+    # read paths from disagreeing within one build.
+    _derive_variant_data_proxy(needs_config)
 
     # Register embedded services
     services = data.get_or_create_services()
@@ -1119,6 +1154,15 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             schema.add_link_field(link_field)
         except Exception as exc:
             raise NeedsConfigException(f"Invalid link {name!r}: {exc}") from exc
+
+    # validated where the configuration is read, so that a project which misconfigures
+    # one of these and happens to have no needflow anywhere is still told, exactly once
+    validate_flow_config(
+        direction=needs_config.flow_direction,
+        show_links=needs_config.flow_show_links,
+        legends=needs_config.flow_legends,
+        show_legend=needs_config.flow_show_legend,
+    )
 
     if needs_config._global_options:
         log_warning(

@@ -252,8 +252,6 @@ def process_needbar(
             if ylabels_in_content:  # we have a ylabels in the content:
                 xlabels = xlabels[1:]  # first element (0) in the row has to be ignored
             xlabels = [x.strip() for x in xlabels]
-        if not xlabels:  # xlabels not been fetched from parameter or content
-            xlabels = [str(1 + x) for x in range(len(local_data[0]))]
 
         if ylabels_in_content:
             # get ylabels from content => first dataset in each row
@@ -264,6 +262,11 @@ def process_needbar(
                 new_local_data.append(line[1:])
             local_data = new_local_data
             ylabels = [y.strip() for y in ylabels]
+
+        # the defaults are derived once the label row and column have been taken out
+        # of the content, so that they count the data cells only
+        if not xlabels:  # xlabels not been fetched from parameter or content
+            xlabels = [str(1 + x) for x in range(len(local_data[0]))]
         if not ylabels:  # ylabels not been fetched from parameter or content
             ylabels = [str(1 + y) for y in range(len(local_data))]
 
@@ -303,7 +306,11 @@ def process_needbar(
                 else:
                     result = len(
                         filter_needs_parts(
-                            need_list, needs_config, element, location=node
+                            need_list,
+                            needs_config,
+                            element,
+                            location=node,
+                            origin_docname=current_needbar["docname"],
                         )
                     )
                     line_number.append(float(result))

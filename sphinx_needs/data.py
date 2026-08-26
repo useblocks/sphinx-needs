@@ -40,8 +40,16 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 4
+ENV_DATA_VERSION: Final = 7
 """Version of the data stored in the environment.
+
+Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
+handing a pickled doctree to code that no longer understands it.
+
+Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
+They are read while the diagram is rendered, i.e. from the doctree, so an unbumped
+rebuild over an existing ``_build`` keeps the old doctrees and ends with a ``KeyError``
+rather than re-reading the document.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -626,6 +634,13 @@ class NeedsFilteredDiagramBaseType(NeedsFilteredBaseType):
     show_legend: bool
     show_filters: bool
     show_link_names: bool
+    """Whether to label edges with the link type.
+
+    .. versionchanged:: 8.4.0
+       For :class:`NeedsFlowType` this records only that the option was *given*; what it
+       was given is in ``show_link_names_value``, since needflow's widened option cannot
+       narrow a key the other diagram directives share.
+    """
     link_types: list[str]
     config: str
     config_names: str
@@ -664,8 +679,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     classes: list[str]
     """List of CSS classes."""
 
-    alt: str
-    """Alternative text for the diagram in HTML output."""
+    alt: str | None
+    """Alternative text for the diagram in HTML output,
+    ``None`` if the option was not given."""
 
     root_id: str | None
     """need ID to use as a root node."""
@@ -681,6 +697,32 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
 
     graphviz_style: GraphvizStyleType
     """Graphviz style configuration."""
+
+    max_items: int | None
+    """Maximum number of needs to show, ``None`` if the option was not given."""
+
+    direction: Literal["down", "up", "right", "left"] | None
+    """The direction to draw the diagram in,
+    ``None`` if the option was not given, in which case the configuration is consulted."""
+
+    config_direction: Literal["down", "up", "right", "left"] | None
+    """The direction the selected engine configuration sets, if any.
+
+    Detected when the engine configuration is resolved, i.e. while the engine is still
+    known, so that the model can honour it without knowing which engine it is for."""
+
+    show_link_names_value: Literal["none", "outgoing", "incoming", "type"] | None
+    """What to label edges with, ``None`` if ``show_link_names`` was not given.
+
+    The bare ``show_link_names`` flag of :class:`NeedsFilteredDiagramBaseType` is shared
+    with the other diagram directives, which still take it as a flag, so needflow's
+    widened value lands beside it rather than changing its type."""
+
+    show_legend_key: str
+    """The legend configuration ``show_legend`` named, empty when written bare.
+
+    Whether a legend is shown at all is the ``show_legend`` flag of
+    :class:`NeedsFilteredDiagramBaseType`; this only says which one."""
 
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):
@@ -704,6 +746,9 @@ class NeedsListType(NeedsFilteredBaseType):
     show_status: bool
     show_filters: bool
 
+    max_items: int | None
+    """Maximum number of needs to show, ``None`` if the option was not given."""
+
 
 class NeedsPieType(NeedsBaseDataType):
     """Data for a single (matplotlib) pie chart."""
@@ -726,6 +771,9 @@ class NeedsSequenceType(NeedsFilteredDiagramBaseType):
 
     start: str
 
+    max_items: int | None
+    """Maximum number of messages to show, ``None`` if the option was not given."""
+
 
 class NeedsTableType(NeedsFilteredBaseType):
     """Data for a single (filtered) needs table."""
@@ -737,10 +785,12 @@ class NeedsTableType(NeedsFilteredBaseType):
     colwidths: list[int]
     style: str
     style_row: str
-    style_col: str
     sort: str
     show_filters: bool
     show_parts: bool
+
+    max_items: int | None
+    """Maximum number of needs to show, ``None`` if the option was not given."""
 
 
 class NeedsUmlType(NeedsBaseDataType):

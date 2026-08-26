@@ -269,6 +269,6 @@ warning and produces empty text.
 
     The value is resolved at parse time and baked into the document. Changing
     :ref:`needs_variant_data` triggers a full rebuild so the resolved values
-    stay current. Editing the *contents* of a :ref:`needs_variant_data_file`
-    without changing its path is not tracked as a build dependency, so run a
-    clean build (``sphinx-build -E``) in that case.
+    stay current, and so does editing the *contents* of a
+    :ref:`needs_variant_data_file` without changing its path, because the merged
+    data is part of the configuration that is compared between builds.

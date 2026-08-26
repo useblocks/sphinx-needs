@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 from sphinx.util.docutils import SphinxDirective
 
 from sphinx_needs.config import NeedsSphinxConfig, NeedType
@@ -108,6 +109,30 @@ def no_plantuml(node: nodes.Element) -> None:
     para += text
     content.append(para)
     node.replace_self(content)
+
+
+def set_plantuml_paths(
+    puml_node: nodes.Element, env: BuildEnvironment, docname: str
+) -> None:
+    """Point a generated PlantUML node at the physical location of ``docname``.
+
+    ``sphinxcontrib-plantuml`` runs the PlantUML process with
+    ``cwd = os.path.join(srcdir, node["incdir"])``, so ``incdir`` decides where
+    relative ``!include`` paths are resolved. Deriving it from the *logical*
+    docname breaks as soon as the document does not physically live under
+    ``srcdir`` -- e.g. a document contributed by ``sphinx-mounts``, whose source
+    file stays in an external tree. PlantUML then gets a non-existent ``cwd``,
+    which surfaces as the misleading "plantuml command cannot be run".
+
+    ``env.doc2path(docname, base=False)`` returns a srcdir-relative path for an
+    ordinary document and the absolute external path for a mounted one. Since
+    ``os.path.join`` discards its left operand when the right one is absolute,
+    both cases resolve correctly -- and ordinary documents keep the exact
+    ``incdir`` value they had before, so PlantUML's content-addressed cache
+    stays valid (and machine-independent) for them.
+    """
+    puml_node["incdir"] = os.path.dirname(env.doc2path(docname, base=False))
+    puml_node["filename"] = os.path.split(docname)[1]  # Needed for plantuml >= 0.9
 
 
 def add_config(config: str) -> str:
@@ -216,10 +241,18 @@ def calculate_link(
 
 
 def create_legend(need_types: list[NeedType]) -> str:
+    """Create the PlantUML legend for the given need types.
+
+    :param need_types: The need types to document, in the order they are shown.
+    :return: The PlantUML ``legend`` block.
+    """
+
     def create_row(need_type: NeedType) -> str:
-        return "\n|<back:{color}> {color} </back>| {name} |".format(
-            color=need_type["color"], name=need_type["title"]
-        )
+        # 'color' is optional, and a type without one keeps its row,
+        # with an empty swatch cell, rather than being dropped from the legend
+        color = need_type.get("color") or ""
+        swatch = f"<back:{color}> {color} </back>" if color else " "
+        return f"\n|{swatch}| {need_type['title']} |"
 
     rows = map(create_row, need_types)
     table = "|= Color |= Type |" + "".join(rows)

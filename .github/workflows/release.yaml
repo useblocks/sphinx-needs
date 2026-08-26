@@ -2,7 +2,7 @@ name: Release
 on:
   push:
     tags:
-      - '[0-9].[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   publish:
@@ -19,9 +19,13 @@ jobs:
         with:
           python-version: "3.10"
       - name: install flit
-        run: pip install flit~=3.4
+        # both distributions are pinned together: flit declares an unbounded
+        # flit_core lower bound, so pinning only flit lets the two drift apart
+        run: pip install flit==3.12.0 flit_core==3.12.0
       - name: Build and publish
-        run: flit publish
+        # --use-vcs is the flit 3 default, but flit 4 flipped it: state it
+        # explicitly so tests/ and docs/ stay in the sdist across upgrades
+        run: flit publish --use-vcs
         env:
           FLIT_USERNAME: __token__
           FLIT_PASSWORD: ${{ secrets.PYPI }}

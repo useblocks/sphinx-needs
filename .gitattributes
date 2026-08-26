@@ -1,2 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# The needflow conformance corpus is shared byte-for-byte with ubCode and checksummed in
+# its own manifest, so its working-tree bytes must stay canonical on every platform --
+# `text=auto` above would otherwise hand Windows a CRLF checkout. This later, more
+# specific pattern wins over it. The harness additionally normalises line endings before
+# hashing, so the contract holds even where this pin is absent.
+tests/conformance/needflow/** text eol=lf

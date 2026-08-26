@@ -19,6 +19,11 @@ def test_doc_build_html(test_app):
     # We set unique ID's for node.table, so the following exception shall not occur anymore.
     assert "WARNING: Any IDs not assigned for table node" not in warnings
 
+    # The dead `style_col` option is accepted for compatibility but warns:
+    # it has never had any effect (declared but never read).
+    assert warnings.count("The 'style_col' option has never had any effect") == 1
+    assert "test_styles.rst" in warnings
+
     html = Path(app.outdir, "index.html").read_text()
     assert "SP_TOO_001" in html
     assert 'id="needtable-index-0"' in html
@@ -108,6 +113,49 @@ def test_doc_needtable_options(test_app):
 """
 
     assert string_column_order in html
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needtable"}],
+    indirect=True,
+)
+def test_string_links_no_trailing_separator(test_app):
+    """Test that single-value string_links fields don't get a trailing separator."""
+    app = test_app
+    app.build()
+    html = Path(app.outdir, "test_options.html").read_text()
+
+    # Find the SINGLE_STRING_LINK need's github cell content
+    assert "SINGLE_STRING_LINK" in html
+    assert (
+        '<a class="reference external" href="https://github.com/useblocks/sphinxcontrib-needs/issues/404">'
+        "GitHub #404</a>" in html
+    )
+
+    # The single-value field should NOT have a trailing "; " separator.
+    # Before the fix, len(data) was used instead of len(data_list), causing
+    # a trailing separator for any string value longer than 1 character.
+    from lxml import html as html_parser
+
+    tree = html_parser.parse(str(Path(app.outdir, "test_options.html")))
+
+    # Find the need card/layout for SINGLE_STRING_LINK and check its github field
+    # In the need layout, string_links values are rendered inside <span class="needs_data">
+    # We look for the github content in the SINGLE_STRING_LINK need
+    single_need_elements = tree.xpath(
+        '//*[@id="SINGLE_STRING_LINK"]//span[@class="needs_data"]'
+    )
+    for elem in single_need_elements:
+        text_content = elem.text_content()
+        if "GitHub #404" in text_content:
+            # Should contain exactly "GitHub #404" with no trailing "; "
+            assert text_content.strip() == "GitHub #404", (
+                f"Expected no trailing separator, got: {text_content!r}"
+            )
+            break
+    else:
+        pytest.fail("Could not find GitHub #404 in SINGLE_STRING_LINK need layout")
 
 
 @pytest.mark.parametrize(

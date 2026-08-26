@@ -1,0 +1,51 @@
+id: node-id-injectivity
+title: Ids that sanitise alike must stay two nodes
+purpose: |
+  Plan section 3.4: ids are opaque and every emitter must map them stably and
+  injectively. PlantUML entity names cannot contain punctuation, so `R-1` and `R=1` both
+  fold to `R_1` and used to collapse into one node, silently losing a need and its edge.
+  Every implementation has to disambiguate somehow; the corpus pins that two nodes and
+  one edge survive.
+needs:
+- id: R-1
+  type: req
+  title: First
+- id: R=1
+  type: req
+  title: Second
+  links:
+    links:
+    - R-1
+expect:
+  plantuml:
+    source: |
+      @startuml
+
+      ' Nodes definition
+
+      node "<size:12>Requirement</size>\n**First**\n<size:10>R-1</size>" as R_1 [[<NODE_URL:R-1>]]
+      node "<size:12>Requirement</size>\n**Second**\n<size:10>R=1</size>" as R_1_2 [[<NODE_URL:R=1>]]
+
+      ' Connection definition
+
+      R_1_2 --> R_1
+
+      @enduml
+  graphviz:
+    source: |
+      digraph needflow {
+      compound=true;
+      node [
+        margin="0.21,0.11";
+      ]
+      edge [
+        minlen="2";
+      ]
+
+      // node definitions
+      "R-1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>First</b><br align="left"/><font point-size="10">R-1</font><br align="left"/>>, tooltip="R-1", href="<NODE_URL:R-1>", target="_top", shape="box3d"];
+      "R=1" [label=<<font point-size="12">Requirement</font><br align="left"/><b>Second</b><br align="left"/><font point-size="10">R=1</font><br align="left"/>>, tooltip="R=1", href="<NODE_URL:R=1>", target="_top", shape="box3d"];
+
+      // edge definitions
+      "R=1" -> "R-1" [arrowhead=vee];
+      }

@@ -344,6 +344,8 @@ For ``predicates``, the match expression is a string, using Python syntax, that 
 - :ref:`needs_links` (``tuple[str, ...]``)
 - :ref:`needs_variant_data` (via the ``var`` namespace)
 
+An expression that cannot be evaluated, such as one naming something not in this list, is reported as a ``needs.config`` warning and then skipped, so that the remaining predicates and the ``default`` apply just as they would for an expression that did not match.
+
 For example:
 
 .. code-block:: python
@@ -455,6 +457,8 @@ For ``predicates``, the match expression is a string, using Python syntax, that 
 - :ref:`needs_fields`
 - :ref:`needs_links` (``tuple[str, ...]``)
 - :ref:`needs_variant_data` (via the ``var`` namespace)
+
+An expression that cannot be evaluated, such as one naming something not in this list, is reported as a ``needs.config`` warning and then skipped, so that the remaining predicates and the ``default`` apply just as they would for an expression that did not match.
 
 For example:
 
@@ -634,6 +638,10 @@ needs_variant_data_file
 
 .. versionadded:: 8.2.0
 
+.. versionchanged:: 8.4.0
+   The file is loaded while the configuration is being initialised, rather than
+   once document reading starts.
+
 Path to a JSON file containing variant data. The file is loaded and its contents
 are made available under the ``var`` namespace, just like :ref:`needs_variant_data`.
 
@@ -641,6 +649,12 @@ If both ``needs_variant_data_file`` and ``needs_variant_data`` are set, the file
 and the inline dictionary is deep-merged on top (inline values win on conflict).
 
 The path is resolved relative to the Sphinx ``confdir`` (the directory containing ``conf.py``).
+
+The file is read once per build, during configuration initialisation, so a missing file
+or one whose contents are not valid variant data fails the build before any document is
+read. The merged result becomes the value of :ref:`needs_variant_data`, which means it is
+also what Sphinx compares between builds: editing the file changes the configuration and
+re-reads every document, while leaving it alone no longer does.
 
 Configuration example:
 
@@ -696,6 +710,33 @@ needs_filter_max_time
 
 If set, warn if any :ref:`filter processing <filter>` call takes longer than the given time in seconds.
 
+.. _`needs_views_max_items`:
+
+needs_views_max_items
+~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The maximum number of items a view directive shows, when it does not set its own ``max_items`` option.
+
+It applies to :ref:`needlist`, :ref:`needtable` and :ref:`needflow`, which count needs (and need parts),
+and to :ref:`needsequence`, which counts messages.
+The limit is applied after filtering and sorting, so a view keeps the first items it would otherwise have shown,
+and reports how many it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
+
+A value of ``0`` means that nothing is limited.
+A single view can opt out of a project-wide limit again with ``:max_items: 0``.
+
+.. code-block:: python
+
+   needs_views_max_items = 50
+
+Default: :need_config_default:`views_max_items`
+
 .. _`needs_uml_process_max_time`:
 
 needs_uml_process_max_time
@@ -717,6 +758,117 @@ Select between the rendering engines for :ref:`needflow` diagrams,
 * ``plantuml``: Use `PlantUML <https://plantuml.com/>`__ to render the diagrams (default).
 * ``graphviz``: Use `Graphviz <https://graphviz.org>`__ to render the diagrams.
 
+Any other value is reported as a ``needs.config`` warning, once for the project,
+and every diagram is drawn with the default engine.
+
+.. _`needs_flow_direction`:
+
+needs_flow_direction
+~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The direction :ref:`needflow` diagrams flow in by default:
+``down`` (the default), ``up``, ``right`` or ``left``.
+
+.. code-block:: python
+
+   needs_flow_direction = "right"
+
+A diagram overrides it with :ref:`needflow_direction`;
+only a diagram that does not set the option consults this value.
+
+.. _`needs_flow_legends`:
+
+needs_flow_legends
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Named legend configurations that a diagram selects by name with
+:ref:`show_legend <needflow_show_legend>`.
+
+.. code-block:: python
+
+   needs_flow_legends = {
+       "beside": {"parts": ["types", "links"], "placement": "external"},
+   }
+
+Default value: ``{}``.
+
+``parts`` is a **list** of the sections to describe -- ``types``, ``links`` or both --
+**in the order they are shown**; it defaults to ``["types"]``.
+
+Order is contract, not an artefact of how the list happens to be written:
+``["links", "types"]`` puts the link table first and keeps it there on every engine,
+so a reader scanning two diagrams finds the same section in the same place.
+
+Only a list is accepted.
+A bare string such as ``"both"`` is reported and ignored --
+a single name cannot express an order,
+and a second accepted spelling would have to keep meaning the same thing
+in every tool that reads this configuration.
+
+``placement`` is a *preference*, not a demand:
+
+``internal``
+   Draw the legend inside the picture where the engine can,
+   and beside it where the engine cannot.
+``external``
+   Draw the legend beside the picture, as a document table.
+   The table looks the same on every engine, its text is selectable and searchable,
+   and it can describe link types -- which no in-diagram legend ever could.
+
+Unset, ``placement`` takes **the engine's own default placement**.
+There is no single right answer to write down here:
+both engines in Sphinx-Needs can draw a legend of need types inside the picture and
+always have, so unset means ``internal`` for them,
+while an engine with no legend construct at all has only the external table to fall
+back on and unset means ``external`` for it.
+Naming the engine's default, rather than a fixed value, is what keeps one contract
+across the tools that read this key.
+
+An engine that cannot draw the legend asked for inside the picture substitutes the
+external one without warning.
+Both engines here draw an in-image legend of need types, and neither can describe link
+types that way, so a legend whose ``parts`` include ``links`` is always drawn beside the
+diagram however it was placed.
+
+That substitution is silent by design.
+The two legends carry identical information and differ only in where they sit,
+so it is a cosmetic one,
+and a warning about it would be unactionable on a project whose other engine can never
+satisfy the preference.
+
+An entry that cannot be used is reported as a ``needs.config`` warning, once for the
+project, and the rest of the configuration is still read.
+
+.. _`needs_flow_show_legend`:
+
+needs_flow_show_legend
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Which entry of :ref:`needs_flow_legends` a diagram gets
+when it asks for a legend without naming one.
+
+.. code-block:: python
+
+   needs_flow_show_legend = "beside"
+
+Default value: ``""``.
+
+This selects *which* legend, never *whether* one is drawn:
+a diagram still has to ask, with :ref:`show_legend <needflow_show_legend>`.
+There is deliberately no project-wide way of putting a legend on every diagram --
+a legend describes one picture, and the decision belongs with that picture.
+
+A diagram that names its own legend overrides this;
+a diagram whose name is not defined falls back to it, having said so.
+If this value names nothing either,
+that is reported once for the build and the engine's own legend is drawn.
+
 .. _`needs_flow_show_links`:
 
 needs_flow_show_links
@@ -724,15 +876,34 @@ needs_flow_show_links
 
 .. versionadded:: 0.3.11
 
-Used to de/activate the output of link type names beside the connection in the :ref:`needflow` directive:
+.. versionchanged:: 8.4.0
+   Accepts a value as well as a boolean.
+
+What :ref:`needflow` diagrams label their connections with by default:
+``none`` (the default), ``outgoing``, ``incoming`` or ``type``.
 
 .. code-block:: python
 
-   needs_flow_show_links = True
+   needs_flow_show_links = "outgoing"
 
-Default value: ``False``
+Default value: ``False``, i.e. ``none``.
 
-Can be configured also for each :ref:`needflow` directive via :ref:`needflow_show_link_names`.
+``True`` and ``False`` are also accepted, and mean ``outgoing`` and ``none``, which is
+what they have always meant.
+The same goes for any other non-string value: this option was declared a boolean for
+years, so a truthy one such as ``1`` still draws labels.
+A *string* that is not one of the four values is a mistake rather than a truth value, so
+it warns and falls back to ``none`` -- which is the one input whose behaviour changes,
+since it used to draw labels.
+
+A diagram overrides it with :ref:`show_link_names <needflow_show_link_names>`,
+including turning labels off again with ``none``.
+
+.. note::
+
+   Every enumerated ``needs_flow_*`` value -- this one, :ref:`needs_flow_direction`
+   and :ref:`needs_flow_engine` -- is matched without regard to case or surrounding
+   whitespace, exactly as the matching directive option is.
 
 .. _`needs_flow_link_types`:
 
@@ -802,6 +973,11 @@ needs_graphviz_styles
 This must be a dictionary which can store multiple `Graphviz configurations <https://graphviz.org>`__.
 These configs can then be selected when using :ref:`needflow` and the engine is set to ``graphviz``.
 
+Each configuration maps an element type -- ``root``, ``graph``, ``node`` or ``edge`` --
+to a mapping of the attributes to set on it.
+An element type holding anything else is reported as a ``needs.needflow`` warning
+and ignored, rather than failing the build.
+
 .. code-block:: python
 
    needs_graphviz_styles = {
@@ -861,105 +1037,149 @@ needs_report_template
 
 .. versionadded:: 1.0.1
 
-You can customize the layout of :ref:`needreport` using `Jinja <http://jinja.pocoo.org/>`__.
+You can customise the layout of :ref:`needreport` with a template of your own.
+Set ``needs_report_template`` to the path of the template file:
 
-Set the value of ``needs_report_template`` to the path of the template you want to use.
+.. code-block:: python
+
+   needs_report_template = "/needs_templates/report_template.need"
+
+Finding the template
+++++++++++++++++++++
+
+``needs_report_template`` is resolved relative to the **source directory** — the directory
+Sphinx reads the documents from, which is also the directory holding ``conf.py`` unless
+``sphinx-build -c`` separates the two. A leading ``/`` is stripped before that join, so
+``"/needs_templates/report_template.need"`` and ``"needs_templates/report_template.need"``
+name the same file.
+
+A POSIX-style absolute path is therefore **not** read from where it points. It is stripped
+and joined onto the source directory like any other value, which normally ends in a
+``Could not load needs report template file ...`` warning naming a path that does not
+exist.
+
+On Windows a drive-letter path such as ``D:\templates\report.need`` is an exception: it
+is not a relative path, so joining it onto the source directory replaces it, and the file
+is read from where it points. The rebase above applies to POSIX-style absolute values.
+
+The first of the following that is set provides the template:
+
+#. the ``:template:`` option of an individual :ref:`needreport` directive
+   (see :ref:`template <needreport_template_option>`), resolved relative to the document
+   the directive is written in;
+#. ``needs_report_template``, resolved relative to the source directory as described
+   above;
+#. otherwise the packaged default template shown below.
 
 .. note::
 
-   The path must be an absolute path based on the **conf.py** directory.
-   Example: ``needs_report_template = '/needs_templates/report_template.need'``
+   The file extension is not checked, so any is accepted; ``.rst``, ``.need`` and ``.txt``
+   are the conventional ones. Prefer ``.need`` or ``.txt``: a template named ``.rst`` and
+   placed inside the source directory is also read by Sphinx as a document in its own
+   right, and its unrendered Jinja source then produces a cascade of parse warnings.
+   To keep the ``.rst`` extension, exclude the template from the build:
 
-   The template file should be a plain file with any of the following file extensions: ``.rst``, ``.need``, or ``.txt``.
+   .. code-block:: python
 
-If you do not set ``needs_report_template``, the default template used is:
+      exclude_patterns = ["needs_templates/*.rst"]
 
-.. code-block:: jinja
+The packaged default template
++++++++++++++++++++++++++++++
 
-   {# Output for needs_types #}
-   {% if types|length != 0 %}
-   .. dropdown:: Need Types
-      :class: needs_report_table
+If you do not set ``needs_report_template``, this template, shipped with Sphinx-Needs,
+is used:
 
-      .. list-table::
-        :widths: 40 20 20 20
-        :header-rows: 1
+.. literalinclude:: ../sphinx_needs/directives/needreport_template.rst
+   :language: jinja
+   :caption: sphinx_needs/directives/needreport_template.rst
 
-        * - TITLE
-          - DIRECTIVE
-          - PREFIX
-          - STYLE
-        {% for type in types %}
-        * - {{ type.title }}
-          - {{ type.directive }}
-          - `{{ type.prefix }}`
-          - {{ type.style }}
-        {% endfor %}
-   {% endif %}
-   {# Output for needs_types #}
+.. note::
 
-   {# Output for needs_links #}
-   {% if links|length != 0 %}
-   .. dropdown:: Need Links
-      :class: needs_report_table
+   ``dropdown`` is provided neither by Sphinx nor by Sphinx-Needs. It comes from an
+   extension that supplies one, for example
+   `sphinx-design <https://sphinx-design.readthedocs.io>`__. If no loaded extension
+   provides it, the report is rendered with ``admonition`` instead and a
+   ``needs.needreport`` warning says so. To choose the directive yourself — and to
+   silence that warning — name one through :ref:`needs_render_context`:
 
-      .. list-table::
-        :widths: 10 30 30 5 20
-        :header-rows: 1
+   .. code-block:: python
 
-        * - OPTION
-          - INCOMING
-          - OUTGOING
-          - COPY
-          - ALLOW DEAD LINKS
-        {% for link in links %}
-        * - {{ link.option | capitalize }}
-          - {{ link.incoming | capitalize }}
-          - {{ link.outgoing | capitalize }}
-          - {{ link.get('copy', None) | capitalize }}
-          - {{ link.get('allow_dead_links', False) | capitalize }}
-        {% endfor %}
-   {% endif %}
-   {# Output for needs_links #}
+      needs_render_context = {
+          "report_directive": "admonition",
+      }
 
-   {# Output for needs_fields #}
-   {% if fields|length != 0 %}
-   .. dropdown:: Need Fields
-      :class: needs_report_table
+   A value set that way is always used exactly as given, ``"dropdown"`` included: an
+   explicit choice is never substituted, so a project that asks for ``dropdown``
+   without a provider keeps failing as it did before.
 
-      {% for field in fields %}
-      * {{ json_exclude_fields }}
-      {% endfor %}
-   {% endif %}
-   {# Output for needs_fields #}
+   The substitution is decided on the **rendered** report, and is made only when it
+   changes it. A template of your own that never renders a ``dropdown`` — because it
+   writes its own directive, or shadows ``report_directive`` with a ``{% set %}`` — is
+   left alone and warns about nothing. A template with ``.. dropdown::`` hardcoded in it
+   is also left alone: re-rendering cannot reach a name the template does not read from
+   the context, so nothing would be fixed, and that report keeps the errors it gets
+   today. Should the substituted render fail where the default one succeeded, the
+   default is kept and nothing is reported — the fallback can leave a report as it was,
+   never lose it.
 
-   {# Output for needs metrics #}
-   {% if usage|length != 0 %}
-   .. dropdown:: Need Metrics
+   The decision is a textual scan of the rendered report, so it has no notion of
+   reStructuredText block context: a report that merely *shows* ``.. dropdown::`` as
+   example markup — inside a literal block, say — while producing it through
+   ``report_directive`` is treated as though it used it, and the example shown will
+   name ``admonition`` instead.
 
-      .. list-table::
-         :widths: 40 40
-         :header-rows: 1
+.. _`needs_report_template_context`:
 
-         * - NEEDS TYPES
-           - NEEDS PER TYPE
-         {% for k, v in usage["needs_types"].items() %}
-         * - {{ k | capitalize }}
-           - {{ v }}
-         {% endfor %}
-         * - **Total Needs Amount**
-           - {{ usage.get("needs_amount") }}
-   {% endif %}
-   {# Output for needs metrics #}
+Template context
+++++++++++++++++
 
-The plugin provides the following variables which you can use in your custom Jinja template:
+Templates are rendered with `MiniJinja <https://github.com/mitsuhiko/minijinja>`__, which
+implements a large subset of `Jinja <https://jinja.palletsprojects.com/>`__ but is not
+identical to it, so a template written strictly against the Jinja documentation may still
+fail here.
 
-* types - list of :ref:`need types <needs_types>`
-* links - list of :ref:`needs_links`
-* fields - list of :ref:`needs_fields`
-* usage - a dictionary object containing information about the following:
-    + needs_amount -> total amount of need objects in the project
-    + needs_types -> number of need objects per needs type
+The following five names are passed to every template, and are all **reserved**:
+:ref:`needs_render_context` is merged over them, so an entry of the same name replaces the
+value described below. That is the intended way to set ``report_directive``; doing it to
+any of the other four is reported as a ``needs.needreport`` warning.
+
+``types``
+   The :ref:`needs_types` configuration, as a list of dictionaries, plus any types
+   registered by a loaded service or extension.
+
+``links``
+   The :ref:`needs_links` configuration, as a list of dictionaries carrying the keys
+   ``option``, ``incoming``, ``outgoing``, ``copy`` and ``allow_dead_links``.
+
+``options``
+   The names of the configured :ref:`needs_fields`, as a list of strings, plus any
+   fields registered by a loaded service or extension.
+
+``report_directive``
+   The name of the directive each section of the packaged template is wrapped in.
+   ``dropdown``, unless :ref:`needs_render_context` names another one, or nothing
+   provides ``dropdown`` and substituting ``admonition`` changes what the report
+   renders — see the note above.
+
+``usage``
+   A dictionary with the keys ``needs_amount`` and ``needs_types``, the latter holding one
+   entry per directive name in :ref:`needs_types`.
+
+   .. warning::
+
+      Only the **keys** of ``usage["needs_types"]`` carry information. Every number in
+      ``usage`` — ``needs_amount`` included — is permanently ``0``, and is kept only for
+      backwards compatibility: the directive runs while the documents are still being
+      read, so no correct count exists yet at that point. A template that prints one of
+      these values reports ``0`` however many needs the project has.
+
+      Real counts come from the :ref:`need_count` role, which is evaluated once every
+      document has been read. That is why the packaged template above reads ``usage`` for
+      its type *names* only, and emits one role per name.
+
+      Such counts cover the whole project: needs from every document, needs pulled in by
+      :ref:`needs_external_needs`, and :ref:`need parts <need_part>`, which each count as
+      a need of their parent's type.
 
 needs_diagram_template
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -1596,6 +1816,36 @@ Example:
    **Sphinx-Needs** provides some default layouts. These layouts cannot be overwritten.
    See :ref:`layout list <layouts>` for more information.
 
+.. _`needs_card_layouts`:
+
+needs_card_layouts
+~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+``needs_card_layouts`` describes layouts declaratively, as a dictionary of *card
+specifications*, and is the recommended way to adjust how needs are rendered.
+Each specification is compiled into a :ref:`needs_layouts` entry of the same name, so a
+card can be used wherever a layout name is accepted.
+
+Please read :ref:`card_layouts` for the full specification vocabulary.
+
+Example:
+
+.. code-block:: python
+
+   needs_card_layouts = {
+       'my_card': {
+           'meta': {'include': ['status', 'tags']},
+           'footer': ['id', 'type'],
+           'collapse': 'closed',
+       }
+   }
+
+A specification that cannot be compiled, or whose name is already taken by a built-in
+layout or a ``needs_layouts`` entry, is reported as a ``needs.card_layout`` warning and
+skipped; the rest of the build is unaffected.
+
 .. _`needs_default_layout`:
 
 needs_default_layout
@@ -1886,14 +2136,22 @@ Helpful e.g. to generate a link to a ticket system based on the given ticket num
        }
    }
 
+All four keys are required.
+
 :regex: Must be a valid regular expression. Named capture groups are supported.
+   An already-compiled ``re.Pattern`` is also accepted, and keeps its flags; a *bytes*
+   pattern is not, as it could never match a field value.
 :link_url: The final url as string. Supports Jinja.
 :link_name: The final link name as string. Supports Jinja.
 :options: List of option names, for which the regex shall be checked.
+   A tuple, set or frozenset is also accepted; the names are only ever
+   membership-tested, so their order does not matter. A bare string is **not** a
+   valid spelling of a single name.
 
-``link_name`` and ``link_url`` support the `Jinja2 <https://jinja.palletsprojects.com>`__ syntax.
+``link_name`` and ``link_url`` are rendered with `MiniJinja <https://github.com/mitsuhiko/minijinja>`__,
+which implements a subset of the Jinja2 syntax; most notably, not every Jinja2 filter exists.
 All named capture group values get injected, so that parts of the option-value can be reused for
-link name and url.
+link name and url. Unnamed groups are not available to the templates.
 
 **Example**:
 
@@ -1928,6 +2186,99 @@ link name and url.
       Replaces the string from ``:config:`` and ``:github:`` with a link to the related website.
 
 .. note:: You must define the options specified under :ref:`needs_string_links` inside :ref:`needs_fields` as well.
+
+Values are split into items
++++++++++++++++++++++++++++
+
+A field named in any entry's ``options`` has its value **split on ``,`` and ``;``**, and each item
+is stripped and then linked on its own. This is how a field can hold several ticket numbers, as in
+the ``:github: 404,652`` example above.
+
+The splitting applies to every field named in ``options``, whether or not the regular expression
+ends up matching anything, and there is **no way to escape a separator**: a value such as
+``https://example.com/a,b`` is split into two items, of which only the first is linked. If a field
+may hold a literal ``,`` or ``;``, do not name it in ``options``.
+
+Items that are empty once stripped are dropped, so ``AB-1, , AB-2`` is two items. Rendered items
+are joined with ``;``, which means the separators in the output do not necessarily match the ones
+in the source value.
+
+The first entry naming a field wins
++++++++++++++++++++++++++++++++++++
+
+Only the **first** entry whose ``options`` names the field is ever consulted -- entries are tried
+in the order they are declared, and there is **no fallthrough**. If that entry's regular expression
+does not match, the value renders as plain text even when a later entry would have matched it. To
+apply different patterns to one field, combine them into a single regular expression with ``|``.
+
+A value that matches no entry renders as plain text, silently. This is the intended fallback, not
+an error.
+
+The regular expression is searched, not anchored
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+The pattern is applied with Python's ``re.Pattern.search()``, so it is unanchored. On a match, the
+**whole item** is replaced by the rendered link -- any text around the match is discarded. Anchor
+the pattern with ``^`` and ``$`` unless you intend the entire value to be replaced.
+
+Interaction with needs_render_context
++++++++++++++++++++++++++++++++++++++
+
+:ref:`needs_render_context` is merged **over** the named capture groups, so a context key shadows a
+capture group of the same name. As the examples above use ``value`` as their group name, a
+``needs_render_context`` entry called ``value`` will silently rewrite every such link in the
+project. Keys that do not collide are simply available to both templates as extra variables.
+
+Where string links are applied
+++++++++++++++++++++++++++++++
+
+String links are applied in the need's meta area (and therefore in :ref:`needextract` too) and in
+:ref:`needtable` cells. For a field holding a list, each element is linked individually.
+
+They are **not** applied to the ``ID`` column of a needtable, nor to its link-type columns, which
+keep their references to the needs themselves; nor do they appear in ``needs.json``, which always
+holds the raw value.
+
+Invalid configurations
+++++++++++++++++++++++
+
+.. versionchanged:: 8.4.0
+
+   The configuration is validated once, when it is loaded.
+
+An entry that cannot be used -- a missing key, a regular expression that does not compile, a
+template that does not parse, ``options`` that is none of the accepted collection spellings
+(a bare string and a mapping are the two that get rejected) -- is reported as a
+``needs.string_link`` warning naming the entry, and skipped. The build continues and every other
+entry still applies. Previously such an entry aborted the build the moment the first need was
+rendered.
+
+The same subtype reports the cases that used to pass in silence -- an unknown key inside an
+entry, an ``options`` entry naming a field that is registered nowhere, an empty ``options`` --
+none of which skips the entry.
+
+A template can still fail while it is *rendered* -- an unknown filter, for instance, only fails
+then -- which is reported as a ``needs.layout`` warning; the value renders as plain text. Every
+render-time failure uses that subtype, on every surface.
+
+The two subtypes therefore divide as follows, and both take a Sphinx ``suppress_warnings`` entry:
+
+:``needs.string_link``: the configuration is unusable, or contains something that can never
+   apply. Emitted once per problem when the configuration is loaded.
+:``needs.layout``: a template failed while rendering a particular value. Emitted per value, and
+   shared with the other layout-rendering warnings.
+
+.. code-block:: python
+
+   suppress_warnings = ["needs.string_link", "needs.layout"]
+
+.. note::
+
+   A configuration mistake that was previously silent -- or that crashed the build -- is now a
+   warning, and a warning fails a ``-W`` build. So a project that passed with ``-W`` before
+   8.4.0 can start failing on a ``needs_string_links`` it never changed. The same applies to
+   render-time failures the list-field fix newly reaches: a template that fails on a **list**
+   field is now reported (as ``needs.layout``), where the meta area used to swallow it.
 
 .. _`needs_build_json`:
 
@@ -2307,6 +2658,14 @@ The value can be any data type (string, integer, list, dict, etc.)
 
    The value can also be a custom defined function,
    however, this will deactivate the caching and incremental build feature of Sphinx.
+
+.. note::
+
+   :ref:`needreport` reserves the five names ``types``, ``links``, ``options``, ``usage``
+   and ``report_directive`` in its own templates, and ``needs_render_context`` is merged
+   **over** them. ``report_directive`` is meant to be set this way; the other four are
+   reported as a ``needs.needreport`` warning. See
+   :ref:`needs_report_template_context`.
 
 The data passed via needs_render_context will be available as variable(s) when rendering Jinja templates or strings.
 You can use the data passed via needs_render_context as shown below:

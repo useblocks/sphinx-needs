@@ -245,6 +245,17 @@ to filter for needs only in the same document as the directive.
       :filter: c.this_doc()
       :style: datatables
 
+It is available in the filters of the need-listing and diagram directives —
+including ``needsequence`` ``:filter:``, ``needflow`` ``:highlight:``,
+``needgantt`` ``:milestone_filter:`` and the filter lines of ``needpie``
+and ``needbar``.
+It is *not* available to filters configured in **conf.py**,
+such as :ref:`needs_constraints` and :ref:`needs_warnings`,
+since those are not written in any document;
+using it there raises ``this_doc can not be used in this context``.
+It is likewise unavailable in ``needimport`` ``:filter:``, which runs against
+needs imported from another project, and in ``needuml`` content filters.
+
 .. _re_search:
 
 search
@@ -304,6 +315,28 @@ To debug which filters are being used across your project and their run times, y
    The directive option ``export_id`` was previously used to export filter information in the ``needs.json`` file.
    This is deprecated and will be removed in a future version.
    Instead use the above :ref:`needs_debug_filters` configuration option.
+
+.. _ubcode_compat_options:
+.. note::
+
+   **Options accepted for ubCode compatibility.**
+   The `ubCode <https://ubcode.useblocks.com>`__ editor extension supports a few directive options that Sphinx-Needs
+   has no equivalent for:
+
+   * ``cypher`` on :ref:`needlist`, :ref:`needtable` and :ref:`needflow`
+   * ``width`` and ``height`` on :ref:`needflow` and :ref:`needsequence`
+
+   Sphinx-Needs accepts all of these options and then ignores them, so that a document authored for ubCode also
+   builds with Sphinx-Needs instead of failing with an ``unknown option`` error.
+   They never reach the rendered output, the ``needs.json`` file, or any filter.
+
+   This includes ``width`` and ``height``: a diagram is rendered at its usual size and no warning is emitted,
+   so nothing reports that the requested size had no effect.
+
+   These options may gain native implementations in future Sphinx-Needs releases,
+   in which case they would take effect here as well rather than being ignored.
+   ``max_items`` was such a case: it is no longer ignored, but limits how many items a view shows,
+   see :ref:`needs_views_max_items`.
 
 .. _filter_code:
 

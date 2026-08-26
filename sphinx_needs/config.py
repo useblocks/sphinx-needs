@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Mapping
 from dataclasses import MISSING, dataclass, field, fields
 from pathlib import Path
@@ -360,6 +361,31 @@ class NeedField(NeedFields):
 
     name: str
     """The name of the option."""
+
+
+class StringLinkConf(TypedDict):
+    """Defines a single string-to-link transformation (used in the needs_string_links dict).
+
+    Every key is required; a configuration missing one of them is reported as a
+    ``needs.string_link`` warning and skipped
+    (see :func:`~sphinx_needs.string_links.compile_string_links`).
+    """
+
+    regex: str | re.Pattern[str]
+    """A regular expression, searched (unanchored) in each value.
+
+    Named capture groups are made available to both templates.
+    An already-compiled pattern is accepted, and keeps its flags.
+    """
+    link_url: str
+    """The link target, rendered as a template."""
+    link_name: str
+    """The link text, rendered as a template."""
+    options: list[str]
+    """The names of the need fields this transformation applies to.
+
+    A tuple, set or frozenset is also accepted, and is normalised to a list.
+    """
 
 
 class NeedStatusesOption(TypedDict):
@@ -777,6 +803,10 @@ class NeedsSphinxConfig:
         default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
     )
     """Warn if process_filter runs for longer than this time (in seconds)."""
+    views_max_items: int = field(
+        default=0, metadata={"rebuild": "html", "types": (int,)}
+    )
+    """Maximum number of items shown by a view directive (0, the default, means no limit)."""
     uml_process_max_time: int | float | None = field(
         default=None, metadata={"rebuild": "html", "types": (type(None), int, float)}
     )
@@ -785,10 +815,40 @@ class NeedsSphinxConfig:
         default="plantuml", metadata={"rebuild": "env", "types": (str,)}
     )
     """The rendering engine to use for needflow diagrams."""
-    flow_show_links: bool = field(
-        default=False, metadata={"rebuild": "html", "types": (bool,)}
+    flow_show_links: bool | str = field(
+        default=False, metadata={"rebuild": "html", "types": (bool, str)}
     )
-    """If True, show links in needflow diagrams by default."""
+    """What needflow diagrams label their edges with, by default.
+
+    One of ``none``, ``outgoing``, ``incoming`` or ``type``.
+    ``True`` and ``False`` are also accepted, and mean ``outgoing`` and ``none``.
+
+    .. versionchanged:: 8.4.0
+       Accepts a value as well as a boolean.
+    """
+    flow_direction: Literal["down", "up", "right", "left"] = field(
+        default="down", metadata={"rebuild": "html", "types": (str,)}
+    )
+    """The default direction needflow diagrams are drawn in.
+
+    .. versionadded:: 8.4.0
+    """
+    flow_legends: dict[str, dict[str, Any]] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": ()}
+    )
+    """Named legend configurations that the needflow ``:show_legend:`` option selects.
+
+    .. versionadded:: 8.4.0
+    """
+    flow_show_legend: str = field(
+        default="", metadata={"rebuild": "html", "types": (str,)}
+    )
+    """Which legend a needflow shows when it asks for one without naming it.
+
+    This selects *which* legend, never *whether*: asking for one stays per directive.
+
+    .. versionadded:: 8.4.0
+    """
     flow_link_types: list[str] = field(
         default_factory=lambda: ["links"], metadata={"rebuild": "html", "types": ()}
     )
@@ -817,6 +877,10 @@ class NeedsSphinxConfig:
         default_factory=dict, metadata={"rebuild": "html", "types": ()}
     )
     """Defines custom layouts for needs rendering."""
+    card_layouts: dict[str, dict[str, Any]] = field(
+        default_factory=dict, metadata={"rebuild": "html", "types": ()}
+    )
+    """Declarative card specifications, compiled into ``needs_layouts`` entries."""
     default_layout: str = field(
         default="clean", metadata={"rebuild": "html", "types": (str,)}
     )
@@ -867,10 +931,14 @@ class NeedsSphinxConfig:
         default_factory=list, metadata={"rebuild": "html", "types": (list,)}
     )
     """Additional classes to set for needs and needtable."""
-    string_links: dict[str, dict[str, Any]] = field(
+    string_links: dict[str, StringLinkConf] = field(
         default_factory=dict, metadata={"rebuild": "html", "types": (dict,)}
     )
-    """In the need representation, find and render links in field values."""
+    """In the need representation, find and render links in field values.
+
+    Validated, and pruned of any invalid entry, during ``config-inited``
+    by :func:`~sphinx_needs.string_links.compile_string_links`.
+    """
     build_json: bool = field(
         default=False, metadata={"rebuild": "html", "types": (bool,)}
     )

@@ -15,14 +15,18 @@ from sphinx_needs.directives.utils import (
     get_option_list,
     get_title,
     no_needs_found_paragraph,
+    report_max_items,
     used_filter_paragraph,
 )
 from sphinx_needs.exceptions import NeedsInvalidException
-from sphinx_needs.filter_common import FilterBase, process_filters
+from sphinx_needs.filter_common import FilterBase, apply_max_items, process_filters
 from sphinx_needs.functions.functions import check_and_get_content
+from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.needs_schema import LinkSchema
 from sphinx_needs.utils import add_doc, profile, remove_node_from_tree, row_col_maker
+
+LOGGER = get_logger(__name__)
 
 
 class Needtable(nodes.General, nodes.Element):
@@ -43,9 +47,14 @@ class NeedtableDirective(FilterBase):
         "colwidths": directives.unchanged_required,
         "style": directives.unchanged_required,
         "style_row": directives.unchanged_required,
+        # Deprecated and unused: it has never had any effect (declared but never
+        # read); accepted so existing documents keep building, with a warning.
         "style_col": directives.unchanged_required,
         "sort": directives.unchanged_required,
         "class": directives.unchanged_required,
+        "max_items": directives.nonnegative_int,
+        # ubCode compatibility: accepted and ignored by Sphinx-Needs.
+        "cypher": directives.unchanged,
     }
 
     # Update the options_spec with values defined in the FilterBase class
@@ -86,7 +95,14 @@ class NeedtableDirective(FilterBase):
 
         style = self.options.get("style", "").upper()
         style_row = self.options.get("style_row", "")
-        style_col = self.options.get("style_col", "")
+        if "style_col" in self.options:
+            log_warning(
+                LOGGER,
+                "The 'style_col' option has never had any effect (it was collected "
+                "but never applied) and will be removed; the line can be deleted.",
+                "deprecated",
+                location=self.get_location(),
+            )
 
         sort = self.options.get("sort", "id_complete")
 
@@ -104,12 +120,12 @@ class NeedtableDirective(FilterBase):
             "colwidths": colwidths_list,
             "style": style,
             "style_row": style_row,
-            "style_col": style_col,
             "sort": sort,
             # As the following options are flags, the content is None, if set.
             # If not set, the options.get() method returns False
             "show_filters": "show_filters" in self.options,
             "show_parts": self.options.get("show_parts", False) is None,
+            "max_items": self.options.get("max_items"),
             **self.collect_filter_attributes(),
         }
         node = Needtable("", **attributes)
@@ -245,6 +261,12 @@ def process_needtables(
 
         filtered_needs.sort(key=get_sorter(current_needtable["sort"]))
 
+        # the cap is applied after the sort, so that it keeps the first N rows
+        # of the table as it would otherwise have been rendered
+        filtered_needs, total_needs = apply_max_items(
+            filtered_needs, current_needtable.get("max_items"), needs_config
+        )
+
         for need_info in filtered_needs:
             style_row = check_and_get_content(
                 current_needtable["style_row"], need_info, env, node
@@ -378,4 +400,19 @@ def process_needtables(
             title_node = nodes.title(title_text, "", nodes.Text(title_text))
             table_node.insert(0, title_node)
 
-        node.replace_self(content)
+        if len(filtered_needs) < total_needs:
+            # the notice goes after the table, rather than inside it like the filter
+            # information, since the table node is what the table styles initialise on
+            node.replace_self(
+                [
+                    content,
+                    report_max_items(
+                        len(filtered_needs),
+                        total_needs,
+                        origin="needtable",
+                        location=node,
+                    ),
+                ]
+            )
+        else:
+            node.replace_self(content)

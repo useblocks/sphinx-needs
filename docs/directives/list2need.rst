@@ -16,9 +16,8 @@ The list-structure syntax is Sphinx-Needs specific, but borrowed from markdown.
 
 Meta-data can be set via inline text. See :ref:`list2need_meta_data` for details.
 
-Need-IDs get generated automatically (hash value), if not given.
-IDs can be set by the prefix ``(ID)`` in the line. Example: ``(REQ-1)My first requirement``.
-This mechanism is the same as the one used by :ref:`need_part`.
+Need-IDs can be set by putting them in brackets in the line. Example: ``(REQ-1)My first requirement``.
+If no ID is given, one gets generated from the title. See :ref:`list2need_ids` for both cases.
 
 Options for the need-objects can be set by adding them like ``((status="open"))``.
 For details please see :ref:`list2need_meta_data`.
@@ -56,7 +55,10 @@ For details please see :ref:`list2need_meta_data`.
 .. warning::
 
    There are currently known limitations in the list parser.
-   For instance new content lines starting with ``*`` or ``:`` may get handled incorrectly.
+   A content line starting with ``*`` begins a new need instead of continuing the one
+   above it, and a content line starting with ``:`` is content rather than an option —
+   it is indented by three spaces, which is what makes the options of a directive
+   written in an item's content line up underneath it.
 
 List structure
 --------------
@@ -67,8 +69,129 @@ Each line starting with a ``*`` will create a new need object.
 To define a child-need, add **2 additional whitespaces** infront of ``*``.
 This is called the indentation level and each level must have a need-type defined in the ``types`` option.
 
+The indentation must be a multiple of 2 spaces, and one level is always exactly 2 spaces:
+4 spaces mean level 2, not a second level 1.
+An indentation that is not a multiple of 2 ends the build with an error.
+
+Tabs cannot be used for the indentation.
+Before the directive sees the line, a tab is expanded to the next tab stop (8 columns by default),
+so the indentation it ends up producing depends on the column that tab happens to sit in.
+A tab-indented line therefore usually ends the build,
+and where the expansion does come out as a multiple of 2 it silently lands on a level that was never written.
+
 A line starting **without** a ``*`` will be added to the prior one.
 So it can be used to structure longer titles or content, and has no impact on the later representation.
+Such a line must not start in the first column of the list; a line that does loses its first word.
+
+.. _list2need_ids:
+
+Need IDs
+--------
+
+An ID is recognised only as a bracketed group inside the line.
+The group starts at the **first** ``(`` and, because it is matched greedily,
+ends at the **last** ``)``.
+It may contain any character except ``"``, ``'``, ``=`` and a line break,
+which are excluded because the option syntax uses them.
+
+Two consequences are worth knowing:
+
+* A line that carries a second bracketed group, such as ``(REQ-1) The system (as defined) shall work``,
+  produces the ID ``REQ-1) The system (as defined``.
+  An ID of that shape is normally refused by :ref:`needs_id_regex`,
+  and the need is then not created at all.
+* A line with no leading ID but with a parenthetical elsewhere, such as ``Some (draft) title``,
+  uses ``draft`` as the ID and removes it from the title.
+
+So avoid brackets in a title that is also meant to carry an ID.
+
+.. note::
+
+   Despite the similar look, this is **not** the mechanism used by :ref:`need_part`.
+   ``need_part`` anchors its match to the start of the text and accepts only word characters and ``-``,
+   whereas ``list2need`` searches the whole line with a much wider character class.
+
+Generated IDs
+~~~~~~~~~~~~~
+
+If a line contains no bracketed group, the ID gets generated from the title:
+
+.. code-block:: text
+
+   <prefix of the need type> + SHA1(<title>) as uppercase hex, cut to needs_id_length
+
+Only the title feeds the hash.
+The content, the document and the position in the list take no part in it,
+and the need type contributes its prefix but nothing to the hash.
+So the ID stays the same when the list gets reordered or the document gets renamed,
+it changes whenever the title changes,
+and the same title used at two levels of one list gives two different IDs, one per prefix.
+See :ref:`needs_id_length` for the length and :ref:`needs_types` for the prefix of each type.
+
+.. versionchanged:: 8.4.0
+
+   A line whose bracketed group is empty, ``()``, gets its ID from the formula above,
+   exactly as a line with no brackets at all does.
+   Until 8.4.0 such a line was given its ID by the need directives' own generator
+   instead — which reads :ref:`needs_id_from_title`, hashes the content when the title
+   is empty, and hashes the title *after* any ``((option="value"))`` area has been
+   removed from it — so one list could produce two kinds of generated ID,
+   chosen by two characters of punctuation.
+
+   Three kinds of line get a different ID than before:
+   one written ``()`` in a project that sets ``needs_id_from_title``,
+   one written ``()`` with no title,
+   and one written ``()`` that also carries an ``((option="value"))`` area.
+   The last needs no configuration to reach:
+   ``* ()A title ((status="open"))`` now gets the ID that
+   ``* A title ((status="open"))`` has always been given.
+   Every other line keeps the ID it had.
+
+.. warning::
+
+   Because the document is not part of the input,
+   two lines with the same title and the same need-type produce the **same ID**,
+   even in different documents.
+   The second need is then not created, and a warning reports the duplicated ID.
+   Give such needs an explicit ID.
+
+Markdown (MyST)
+---------------
+
+.. versionchanged:: 8.4.0
+
+   Before 8.4.0 a ``{list2need}`` fence reported an error and created no needs,
+   and the ``eval-rst`` block below was the only way to reach the directive
+   from a Markdown document.
+
+``list2need`` can be written as a fenced directive in a MyST Markdown document:
+
+.. code-block:: markdown
+
+   ```{list2need}
+   :types: req, spec
+
+   * (MD-REQ-1) A requirement written from Markdown
+     * (MD-SPEC-1) And a specification below it
+   ```
+
+The list itself keeps the syntax described on this page:
+it is read by ``list2need`` rather than by the host parser,
+so it is the same in both kinds of document.
+The **content** of each need is parsed by the host, so it is Markdown in a
+``.md`` file and reStructuredText in an ``.rst`` file.
+
+The directive still works inside an ``eval-rst`` block, where its content is
+reStructuredText:
+
+.. code-block:: markdown
+
+   ```{eval-rst}
+   .. list2need::
+      :types: req, spec
+
+      * (MD-REQ-1) A requirement written from Markdown
+   ```
 
 Options
 -------
@@ -97,7 +220,7 @@ presentation
 ~~~~~~~~~~~~
 Defines how the single Sphinx-Needs objects shall be presented.
 
-:nested: Needs of level 2 are defined in the content of the parent need (level 1) and so on.
+:nested: Needs of level 2 are placed inside the parent need (level 1) and so on.
 :standalone: Each list element gets its own, independent need object. They are not nested.
 
 
@@ -181,14 +304,19 @@ List with need-ids
 
       * (LIST2NEED-001) Feature 1
       * (LIST2NEED-002) Feature 2
-      * (FEATURE.3) Feature 3
+      * (LIST2NEED-003) Feature 3
 
 .. list2need::
-   :types: feature, req, spec
+   :types: feature
 
    * (LIST2NEED-001) Feature 1
    * (LIST2NEED-002) Feature 2
-   * (FEATURE.3) Feature 3
+   * (LIST2NEED-003) Feature 3
+
+Note that the ID must not contain the delimiter.
+With the default delimiter ``.``, an ID such as ``(FEATURE.3)`` gets split before it is read,
+which leaves ``(FEATURE`` as the title and generates an ID from it.
+Use an ID without the delimiter, or set a different one via the ``delimiter`` option.
 
 Nested lists
 ~~~~~~~~~~~~
@@ -311,9 +439,16 @@ Meta-data can be set directly in the related line via: ``((status="open"))``.
 Or if the amount of option/values is getting too complex, in a second step
 by using :ref:`needextend`.
 
-The position of the option-string inside the line is not important.
-Multiple options need to be separated by ``,``.
-And instead of ``"`` also ``'`` can be used.
+Only the **first** ``((...))`` region of a line is read, and the region is matched greedily:
+it starts at the first ``((`` and ends at the last ``))``.
+A line that carries two such regions therefore loses the text between them,
+so keep all options of a need in one region.
+
+Inside the region, options are written as ``name="value"`` pairs.
+Instead of ``"`` also ``'`` can be used.
+Text between two pairs is ignored, so the pairs may simply be separated by a space or by ``,``.
+
+A value must be quoted. An unquoted value, as in ``((status=open))``, is silently ignored.
 
 .. code-block:: rst
 

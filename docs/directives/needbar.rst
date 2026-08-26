@@ -16,13 +16,29 @@ needbar
       15,10,20
       20,15,10
 
-Each content value gets interpreted either as static float/int value or as a :ref:`filter_string`.
+Each content value gets interpreted either as a static value or as a :ref:`filter_string`.
 The amount of found needs by the filter string is then used as value.
+
+A static value has to be written as a non-negative integer, like ``10``.
+Anything else, ``10.5`` and ``-5`` included, is read as a filter string.
+Those two then give a ``needs.filter`` warning and count as zero,
+because a filter is expected to evaluate to a boolean and a number does not.
+
+Not every non-boolean filter is rejected that way, though:
+a simple enough expression, such as the bare field name ``tags``,
+is answered by the query fast path, which coerces the result with ``bool()``
+and counts the matching needs instead of warning.
+
+``needbar`` takes no filter options at all:
+the data comes from the content, so ``:filter:``, ``:filter-func:`` and
+``:filter_warning:`` are not available on it,
+and a bar chart with only zeros is drawn as an empty chart.
 
 .. note::
 
-    This generates multiple image files per ``needbar`` and allows
-    the document engine to pick the appropriate image type (vector or raster).
+    One image file is written per ``needbar``,
+    in the first image type the document engine accepts that Matplotlib can produce.
+    For the HTML builders that is SVG.
 
 Options
 -------
@@ -86,8 +102,11 @@ content
 In the example below, we fetch the ``:xlabels:`` and ``:ylabels:`` options from the content using ``FROM_DATA`` with the `labels`_.
 You can use white spaces to format the table to improve readability.
 
-From the content, we interpret each value either as a static float/int value or as a :ref:`filter_string`.
+From the content, we interpret each value either as a static value or as a :ref:`filter_string`.
 We get the bar chart's data (values) from the amount of **need** objects found by the filter string.
+
+Every content line must have the same amount of cells;
+a line that does not, an empty line among them included, ends the build.
 
 Below is a more realistic example with data fetched from filters, together with hardcoded data:
 
@@ -149,6 +168,14 @@ labels
 You can define the ``:xlabels:`` and/or ``:ylabels:`` by setting a comma separated string.
 The amount of labels must match the amount of values/lines from content. |br|
 Also, you can set the ``:xlabels:`` and/or ``:ylabels:`` value to ``FROM_DATA`` to fetch the labels from the content.
+
+Labels that are neither given nor taken from the content are numbered
+``1``, ``2``, ... one per column or row.
+
+.. warning::
+
+   A different amount of labels than columns, or than rows, currently ends the build,
+   rather than giving a warning.
 
 .. hint::
    In a normal bar chart, we use the ``:xlabels:`` as the labels of the x-axis on the chart and the ``:ylabels:`` as the labels of legend.
@@ -329,6 +356,11 @@ rotation
 | Use ``:ylabels_rotation:`` to set rotation of labels for y-axis on the diagram.
 | Use ``:sum_rotation:`` to set rotation of labels for bars on the diagram.
 
+Each takes the rotation in degrees, written as a non-negative integer.
+A value such as ``-45`` or ``45.5`` is currently dropped without a warning,
+so use ``315`` instead of ``-45``.
+``:sum_rotation:`` only has an effect together with ``:show_sum:`` or ``:show_top_sum:``.
+
 
 .. syntax-example::
 
@@ -350,10 +382,24 @@ rotation
 separator
 ~~~~~~~~~
 
-You can specify a custom separator between the values in the content by setting the ``:separator:`` flag.
-This ensures the use of ``,`` (the default separator) in a filter rule. Other options will be processed as defined there.
+You can specify a custom separator between the values in the content by setting the ``:separator:`` option.
 
-The ``:separator:`` is a string that supports any symbols.
+The default separator is ``,``, which is also legal inside a :ref:`filter_string` —
+in a list, a tuple or a function call.
+Such a filter is split into pieces by the default separator, and the build then ends on
+the resulting invalid syntax, so give a separator of your own whenever a cell contains a
+comma:
+
+.. code-block:: rst
+
+   .. needbar::
+      :separator: ;
+
+      status in ['open', 'closed']; status == 'done'
+
+The ``:separator:`` is a string that supports any symbols, and is used exactly as
+written: quoting it, as in ``:separator: "|"``, makes the separator the three
+characters, not the one.
 
 .. syntax-example::
 
@@ -377,8 +423,11 @@ But besides names, ``:colors:`` options also supports hex-values like ``#ffcc00`
 
 .. hint::
    In a normal bar chart, we use the ``:colors:`` for the legend and bars itself.
-   When you use `horizontal`_ or `transpose`_, the bar's length must be equal to ``:xlabels:`` or ``:ylabels:``.
-   If the length does not fit, it will fill the bar with the colors again and you will get a warning.
+   One color is used per row of the content, so `transpose`_ changes how many are needed.
+   Fewer colors than rows is not an error: the remaining rows fall back to the default
+   palette, starting again at its first color. They are therefore not colored as they
+   would have been without the option.
+   A color Matplotlib does not know ends the build.
 
 .. syntax-example::
 
