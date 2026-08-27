@@ -1,6 +1,6 @@
 """sphinx-mounts: mount external RST source trees into a Sphinx build."""
 
-__version__ = "0.1.4"
+__version__ = "0.2.0"
 
 from sphinx_mounts.extension import setup
 
