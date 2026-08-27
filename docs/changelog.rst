@@ -4,12 +4,26 @@
 Changelog
 =========
 
-.. _`release:unreleased`:
+.. _`release:8.4.0`:
 
-Unreleased
-----------
+8.4.0
+-----
 
-:Released: Unreleased
+:Released: 27.08.2026
+:Full Changelog: `v8.3.1...v8.4.0 <https://github.com/useblocks/sphinx-needs/compare/8.3.1...8.4.0>`__
+
+This release is about the **view directives**, and about a build that no longer stops at
+the first bad value. :ref:`needflow` gains a portable vocabulary — a ``:direction:`` that
+means the same thing on both engines, named legend configurations, and a
+``:show_link_names:`` that says what each connection is labelled with — alongside a long
+list of fixes to both of its emitters. :ref:`needs_card_layouts` describes a need's card
+as a small dictionary instead of a hand-written layout string, :ref:`list2need` builds its
+needs directly and so works in Markdown documents and records the line each need was
+written on, and every view can cap what it shows with ``max_items``. Running through the
+rest is one theme: configuration mistakes and render failures that used to end the build
+with a traceback are now located warnings, which leaves the rest of the build in place —
+and, for a project that builds with ``-W``, can turn a green build red until the reported
+mistake is fixed or suppressed.
 
 Improvements
 ............
@@ -138,11 +152,6 @@ Improvements
 
   A ``needs_flow_legends`` entry that cannot be used is reported as a ``needs.config``
   warning and skipped, rather than failing the build.
-
-- 🔧 The undocumented ``needtable`` ``:style_col:`` option is deprecated —
-  it was declared but never read, so it has never had any effect.
-  A document that sets it still builds and now gets a ``deprecated`` warning;
-  the line can simply be deleted.
 
 - ✨ New :ref:`needs_card_layouts` configuration, for describing layouts declaratively
   (:pr:`1765`)
@@ -273,6 +282,14 @@ Improvements
 
   This is a deliberate change to the rendered page rather than a fix:
   a project that styles or scrapes the debug block sees the new markup.
+
+Deprecations
+............
+
+- 🔧 The undocumented ``needtable`` ``:style_col:`` option is deprecated —
+  it was declared but never read, so it has never had any effect.
+  A document that sets it still builds and now gets a ``deprecated`` warning;
+  the line can simply be deleted.
 
 Breaking changes
 ................
@@ -703,6 +720,34 @@ Documentation
   now also appear on the configuration page; and an ``.rst`` template kept inside the
   source directory is noted as being built as a document of its own, with the
   ``exclude_patterns`` entry that avoids it.
+
+- 📚 The :ref:`list2need` page is corrected against what the directive actually does
+  (:pr:`1788`)
+
+  A new :ref:`Need IDs <list2need_ids>` section replaces the claim that an ID is captured
+  by "the same mechanism as :ref:`need_part`". It is not: the bracketed group is searched
+  for anywhere in the line, runs greedily from the first ``(`` to the last ``)``, and
+  accepts a far wider character class — so a title carrying a second parenthetical, as in
+  ``(REQ-1) The system (as defined) shall work``, yields an ID that
+  :ref:`needs_id_regex` then refuses, and a title with a parenthetical but no leading ID
+  has it taken as the ID and deleted from the title. The section also writes down the
+  generated-ID formula — the need type's prefix followed by the ``SHA1`` of the title,
+  cut to :ref:`needs_id_length` — and the consequence that follows from the document not
+  being part of the hash input: the same title at the same level in two documents produces
+  the same ID, and the second need is dropped with a duplicate-ID warning.
+
+  The list-structure rules are stated rather than left to be discovered: the indentation
+  must be a multiple of two spaces and one level is always exactly two, tabs are expanded
+  before the directive sees them and so cannot be used, and a continuation line that starts
+  in the first column loses its first word. The :ref:`list2need_meta_data` section replaces
+  "the position of the option-string inside the line is not important" with what the
+  regular expression does — only the **first** ``((...))`` region is read, it runs greedily
+  from the first ``((`` to the last ``))``, so text between two regions is deleted, and an
+  unquoted value such as ``((status=open))`` is dropped in silence.
+
+  The "List with need-ids" example built a need titled ``(FEATURE``, because the default
+  ``.`` delimiter splits ``(FEATURE.3)`` before the ID is read; it now uses an ID without a
+  dot, and says why.
 
 - 📚 ``docs/ubproject.toml``, the `ubCode`_ configuration of this documentation, is brought
   up to date with current ubCode releases
