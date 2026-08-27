@@ -123,6 +123,8 @@ For example to read from a ``[tool.needs]`` table:
 
 .. caution:: Any configuration specifying relative paths in the toml file will be resolved relative to the directory containing the :file:`conf.py` file.
 
+.. _`needs_include_needs`:
+
 needs_include_needs
 ~~~~~~~~~~~~~~~~~~~
 
@@ -1181,6 +1183,8 @@ any of the other four is reported as a ``needs.needreport`` warning.
       :ref:`needs_external_needs`, and :ref:`need parts <need_part>`, which each count as
       a need of their parent's type.
 
+.. _`needs_diagram_template`:
+
 needs_diagram_template
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1262,8 +1266,6 @@ exceed the setting from :ref:`needs_id_length`.
    The user needs to ensure the uniqueness of the given title, and also match the settings of
    :ref:`needs_id_length` and :ref:`needs_id_regex`.
 
-.. _`needs_title_optional`:
-
 .. _`needs_parse_dynamic_functions`:
 
 needs_parse_dynamic_functions
@@ -1291,6 +1293,8 @@ parsing enabled unless explicitly set to ``False`` per-field/link via
 
 By default this option is set to **True** for backward compatibility.
 In a future major release, the default will change to ``False``.
+
+.. _`needs_title_optional`:
 
 needs_title_optional
 ~~~~~~~~~~~~~~~~~~~~
