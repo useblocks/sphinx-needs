@@ -49,9 +49,9 @@ Bug fixes
   What a copy cannot render is now dropped from it and named, rather than reaching a
   processor or the writer that cannot cope:
 
-  - ``needbar``, ``needextract``, ``needpie``, ``needtable`` and ``needuml`` in the
-    content of an extracted need are omitted from the copy, each reported at the
-    needextract site.
+  - ``needbar``, ``needextract``, ``needpie``, ``needtable`` and ``needuml`` — and so
+    ``needarch``, which is ``needuml`` restricted to a need's content — in the content of
+    an extracted need are omitted from the copy, each reported at the needextract site.
   - A footnote reference in it is rendered as the marker its author wrote, without the
     trailing ``_``, and reported. The footnote's own text stays where it is, so nothing
     disappears from the page.
