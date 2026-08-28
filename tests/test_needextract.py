@@ -262,7 +262,10 @@ def test_needextract_early_exit_does_not_end_the_build(
 # directives whose rendering the copy cannot honour are dropped from it with a
 # warning naming each one.
 
-VIEW_IN_CONTENT_INDEX = """\
+
+def view_in_content_index(payload: str) -> str:
+    """Build a document whose need's content holds one view directive."""
+    return f"""\
 Index
 =====
 
@@ -275,9 +278,62 @@ Index
 
    Body, and then:
 
-   .. needtable::
+   {payload}
+"""
+
+
+VIEW_IN_CONTENT_INDEX = view_in_content_index(
+    """.. needtable::
       :columns: id
-      :style: table
+      :style: table"""
+)
+
+NEEDPIE_IN_CONTENT_INDEX = view_in_content_index(
+    """.. needpie::
+      :labels: reqs,rest
+
+      type == 'req'
+      type != 'req'"""
+)
+
+NEEDBAR_IN_CONTENT_INDEX = view_in_content_index(
+    """.. needbar:: A bar
+      :xlabels: FROM_DATA
+      :ylabels: FROM_DATA
+
+           , A
+      Reqs , type == 'req'"""
+)
+
+# ``needuml`` reads the id it was never given long before it reaches its
+# "is PlantUML installed" guard, so this needs no PlantUML to exercise.
+NEEDUML_IN_CONTENT_INDEX = view_in_content_index(
+    """.. needuml::
+
+      Alice -> Bob: hello"""
+)
+
+# one level deeper: the view directive is in a CHILD need's content, which the
+# copy carries along with everything else
+NEEDTABLE_IN_CHILD_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   extract
+
+.. req:: Has a child need
+   :id: R_VIEW
+
+   Outer body.
+
+   .. spec:: A child
+      :id: S_CHILD
+
+      .. needtable::
+         :columns: id
+         :style: table
 """
 
 NESTED_EXTRACT_INDEX = """\
@@ -341,6 +397,70 @@ def extract_doc(need_id: str) -> str:
             'id="R_OUTER"',
             'id="R_INNER"',
             id="needextract-in-content",
+        ),
+        pytest.param(
+            {
+                "buildername": "html",
+                "no_plantuml": True,
+                "files": [
+                    (Path("conf.py"), CONF),
+                    (Path("index.rst"), NEEDPIE_IN_CONTENT_INDEX),
+                    (Path("extract.rst"), extract_doc("R_VIEW")),
+                ],
+            },
+            "A 'needpie' directive in the content of need 'R_VIEW' cannot be "
+            "rendered by needextract, and is omitted.",
+            'id="R_VIEW"',
+            "_images/need_pie_",
+            id="needpie-in-content",
+        ),
+        pytest.param(
+            {
+                "buildername": "html",
+                "no_plantuml": True,
+                "files": [
+                    (Path("conf.py"), CONF),
+                    (Path("index.rst"), NEEDBAR_IN_CONTENT_INDEX),
+                    (Path("extract.rst"), extract_doc("R_VIEW")),
+                ],
+            },
+            "A 'needbar' directive in the content of need 'R_VIEW' cannot be "
+            "rendered by needextract, and is omitted.",
+            'id="R_VIEW"',
+            "_images/need_bar_",
+            id="needbar-in-content",
+        ),
+        pytest.param(
+            {
+                "buildername": "html",
+                "no_plantuml": True,
+                "files": [
+                    (Path("conf.py"), CONF),
+                    (Path("index.rst"), NEEDUML_IN_CONTENT_INDEX),
+                    (Path("extract.rst"), extract_doc("R_VIEW")),
+                ],
+            },
+            "A 'needuml' (or 'needarch') directive in the content of need 'R_VIEW' "
+            "cannot be rendered by needextract, and is omitted.",
+            'id="R_VIEW"',
+            "PlantUML is not available!",
+            id="needuml-in-content",
+        ),
+        pytest.param(
+            {
+                "buildername": "html",
+                "no_plantuml": True,
+                "files": [
+                    (Path("conf.py"), CONF),
+                    (Path("index.rst"), NEEDTABLE_IN_CHILD_INDEX),
+                    (Path("extract.rst"), extract_doc("R_VIEW")),
+                ],
+            },
+            "A 'needtable' directive in the content of need 'R_VIEW' cannot be "
+            "rendered by needextract, and is omitted.",
+            'id="S_CHILD"',
+            "-table_node",
+            id="needtable-in-a-child-need",
         ),
     ],
     indirect=["test_app"],

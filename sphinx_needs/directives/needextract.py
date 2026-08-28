@@ -40,7 +40,8 @@ class Needextract(nodes.General, nodes.Element):
     pass
 
 
-#: View directives that an extract cannot render, and so drops from its copy.
+#: View directives that an extract cannot render, and so drops from its copy,
+#: mapped to what they are called in a document.
 #:
 #: A need's content is snapshotted while its directive runs, which is before
 #: docutils' ``PropagateTargets`` transform has moved the id of the target
@@ -50,7 +51,22 @@ class Needextract(nodes.General, nodes.Element):
 #: the document *after* ``process_needextract`` has walked it, so no listener ever
 #: reaches a nested one and it arrives at the writer instead.  Every one of the
 #: five used to end the build.
-_UNRENDERABLE_IN_EXTRACT: Final = (Needbar, Needextract, Needpie, Needtable, Needuml)
+#:
+#: The names are held here rather than taken from the node class, because
+#: ``needarch`` -- which is ``needuml`` restricted to a need's content, and so the
+#: one of these most likely to be written there -- emits a ``Needuml`` node
+#: (``NeedarchDirective(NeedumlDirective)``).  A report naming only ``needuml``
+#: sends a reader grepping their source for a directive they never wrote.
+_UNRENDERABLE_IN_EXTRACT: Final[dict[type[nodes.Node], str]] = {
+    Needbar: "'needbar'",
+    Needextract: "'needextract'",
+    Needpie: "'needpie'",
+    Needtable: "'needtable'",
+    Needuml: "'needuml' (or 'needarch')",
+}
+
+#: The keys of :data:`_UNRENDERABLE_IN_EXTRACT`, for ``isinstance``.
+_UNRENDERABLE_NODE_TYPES: Final = tuple(_UNRENDERABLE_IN_EXTRACT)
 
 
 class NeedextractDirective(FilterBase):
@@ -258,11 +274,12 @@ def _drop_unrenderable_nodes(
     :param need_data: The need being extracted
     :param extract_node: The needextract node the copy is being built for
     """
-    for child in list(node.findall(lambda n: isinstance(n, _UNRENDERABLE_IN_EXTRACT))):
+    for child in list(node.findall(lambda n: isinstance(n, _UNRENDERABLE_NODE_TYPES))):
         log_warning(
             LOGGER,
-            f"A {type(child).__name__.lower()!r} directive in the content of need "
-            f"{need_data['id']!r} cannot be rendered by needextract, and is omitted.",
+            f"A {_UNRENDERABLE_IN_EXTRACT[type(child)]} directive in the content of "
+            f"need {need_data['id']!r} cannot be rendered by needextract, and is "
+            "omitted.",
             "needextract",
             location=extract_node,
         )
