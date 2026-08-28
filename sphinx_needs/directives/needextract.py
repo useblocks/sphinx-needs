@@ -21,7 +21,7 @@ from sphinx_needs.filter_common import FilterBase, process_filters
 from sphinx_needs.functions.functions import find_and_replace_node_content
 from sphinx_needs.layout import build_need_repr
 from sphinx_needs.logging import log_warning
-from sphinx_needs.need_item import NeedItem
+from sphinx_needs.need_item import NeedItem, NeedPartItem
 from sphinx_needs.utils import add_doc, remove_node_from_tree
 
 LOGGER = getLogger(__name__)
@@ -86,6 +86,10 @@ def process_needextract(
     """
     env = app.env
     needs_config = NeedsSphinxConfig(app.config)
+
+    # Initialised here, because every node in the loop below can take an early exit
+    # before the filter is run, and the value is read once after the loop.
+    found_needs: list[NeedItem | NeedPartItem] = []
 
     node: Needextract
     for node in found_nodes:  # type: ignore[assignment]
