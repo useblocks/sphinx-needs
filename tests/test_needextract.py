@@ -729,7 +729,7 @@ def _report(app, exception):
     state = app.env.temp_data
     Path(app.outdir, "state.log").write_text(
         f"sentinel={'PROBE_SENTINEL' in state}\\n"
-        f"highlight_language={state.get('highlight_language')!r}\\n"
+        f"highlight_language={state.get('highlight_language') or ''!r}\\n"
     )
 
 

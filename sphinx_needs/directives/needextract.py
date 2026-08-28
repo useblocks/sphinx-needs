@@ -69,6 +69,24 @@ _UNRENDERABLE_IN_EXTRACT: Final[dict[type[nodes.Node], str]] = {
 _UNRENDERABLE_NODE_TYPES: Final = tuple(_UNRENDERABLE_IN_EXTRACT)
 
 
+def _unrenderable_label(node: nodes.Node) -> str:
+    """Name the directive family a dropped node came from, as an author wrote it.
+
+    Looked up by ``isinstance`` rather than exact type, mirroring the ``findall``
+    predicate that matched the node: an exact-type lookup would raise on a future
+    subclass of one of the five (say, a ``needarch``-specific ``Needuml``
+    subclass) -- reintroducing the build-ending exception class this module's
+    fixes removed.
+
+    :param node: A node matched via :data:`_UNRENDERABLE_NODE_TYPES`
+    """
+    return next(
+        label
+        for node_type, label in _UNRENDERABLE_IN_EXTRACT.items()
+        if isinstance(node, node_type)
+    )
+
+
 class NeedextractDirective(FilterBase):
     """
     Directive to filter needs and present them as normal needs with given layout and style.
@@ -277,7 +295,7 @@ def _drop_unrenderable_nodes(
     for child in list(node.findall(lambda n: isinstance(n, _UNRENDERABLE_NODE_TYPES))):
         log_warning(
             LOGGER,
-            f"A {_UNRENDERABLE_IN_EXTRACT[type(child)]} directive in the content of "
+            f"A {_unrenderable_label(child)} directive in the content of "
             f"need {need_data['id']!r} cannot be rendered by needextract, and is "
             "omitted.",
             "needextract",
