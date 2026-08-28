@@ -15,7 +15,7 @@ Bug fixes
 .........
 
 - 🐛 Six :ref:`needextract` inputs that ended the build are now reported instead
-  **(changed output)** (:pr:`1794`)
+  **(changed output)** (:pr:`1795`)
 
   Each of these ended the whole build with a Python traceback and a "please report this
   to the developers" banner, three of them from the directive's own option surface:
