@@ -248,3 +248,265 @@ def test_needextract_early_exit_does_not_end_the_build(
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "<h1>Extract" in html
     assert html.count('id="R_ONE"') == expected_cards
+
+
+# -- Sphinx-Needs constructs in the copied content ---------------------------
+#
+# ``env.resolve_references()`` was called on the detached container holding one
+# need's copied content, and it ends by emitting ``doctree-resolved`` -- so every
+# listener of that event ran a second time with a container standing in for a
+# document, ``process_needextract`` itself included.  Content holding a
+# ``needtable`` ended the build with ``list index out of range``, and content
+# holding a nested ``needextract`` with ``'container' object has no attribute
+# 'settings'``.  The post-transforms now run without the emission, and the view
+# directives whose rendering the copy cannot honour are dropped from it with a
+# warning naming each one.
+
+VIEW_IN_CONTENT_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   extract
+
+.. req:: Has a view directive inside
+   :id: R_VIEW
+
+   Body, and then:
+
+   .. needtable::
+      :columns: id
+      :style: table
+"""
+
+NESTED_EXTRACT_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   extract
+
+.. req:: Inner
+   :id: R_INNER
+
+   Inner body.
+
+.. req:: Contains an extract
+   :id: R_OUTER
+
+   Outer body, and then:
+
+   .. needextract:: R_INNER
+"""
+
+
+def extract_doc(need_id: str) -> str:
+    """Build a second document that extracts one need."""
+    return f"Extract\n=======\n\n.. needextract:: {need_id}\n"
+
+
+@pytest.mark.parametrize(
+    ("test_app", "expected_warning", "still_rendered", "omitted"),
+    [
+        pytest.param(
+            {
+                "buildername": "html",
+                "no_plantuml": True,
+                "files": [
+                    (Path("conf.py"), CONF),
+                    (Path("index.rst"), VIEW_IN_CONTENT_INDEX),
+                    (Path("extract.rst"), extract_doc("R_VIEW")),
+                ],
+            },
+            "A 'needtable' directive in the content of need 'R_VIEW' cannot be "
+            "rendered by needextract, and is omitted.",
+            'id="R_VIEW"',
+            "-table_node",
+            id="needtable-in-content",
+        ),
+        pytest.param(
+            {
+                "buildername": "html",
+                "no_plantuml": True,
+                "files": [
+                    (Path("conf.py"), CONF),
+                    (Path("index.rst"), NESTED_EXTRACT_INDEX),
+                    (Path("extract.rst"), extract_doc("R_OUTER")),
+                ],
+            },
+            "A 'needextract' directive in the content of need 'R_OUTER' cannot be "
+            "rendered by needextract, and is omitted.",
+            'id="R_OUTER"',
+            'id="R_INNER"',
+            id="needextract-in-content",
+        ),
+    ],
+    indirect=["test_app"],
+)
+def test_unrenderable_view_in_extracted_content_warns(
+    test_app, expected_warning, still_rendered, omitted
+):
+    """A view directive the copy cannot render is reported, not fatal.
+
+    The extracted need is still rendered; only the directive inside its content
+    is left out, and the author is told which one and where.
+    """
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == [
+        f"<srcdir>/extract.rst:4: WARNING: {expected_warning} [needs.needextract]"
+    ]
+
+    # the source page renders the directive as it always did
+    assert omitted in Path(app.outdir, "index.html").read_text(encoding="utf8")
+
+    extract_html = Path(app.outdir, "extract.html").read_text(encoding="utf8")
+    assert still_rendered in extract_html
+    assert omitted not in extract_html
+
+
+# -- the reference contract of an extract ------------------------------------
+
+REFERENCE_CONTRACT_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   extract
+
+.. req:: Target of the need reference
+   :id: R_TARGET
+
+   Plain body.
+
+.. req:: Content with references
+   :id: R_REFS
+
+   .. _inner-target:
+
+   A paragraph to point at.
+
+   A ref to it: :ref:`the paragraph <inner-target>`.
+   A need ref: :need:`R_TARGET`.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("index.rst"), REFERENCE_CONTRACT_INDEX),
+                (Path("extract.rst"), extract_doc("R_REFS")),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_extract_references_resolve_to_the_source_page(test_app):
+    """An extract is a view: every reference in it leads back to the original.
+
+    A ``:ref:`` to a target defined inside the copied content, a ``:need:`` role
+    in it, and the card's own ID chip all resolve to the page the need is written
+    on -- not to the copy.  The copy's references are resolved by Sphinx's
+    post-transforms; this pins that they still are, now that they are applied
+    without re-emitting ``doctree-resolved``.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+
+    extract_html = Path(app.outdir, "extract.html").read_text(encoding="utf8")
+
+    # the ref and the need role in the copied content point at the source page
+    assert 'href="index.html#inner-target"' in extract_html
+    assert 'href="index.html#R_TARGET"' in extract_html
+    # ... and not at the copy, whose own anchor for them is dead
+    assert 'href="#inner-target"' not in extract_html
+
+    # the card's ID chip navigates back to the canonical need
+    assert (
+        '<span class="needs-id"><a class="reference internal" '
+        'href="index.html#R_REFS" title="R_REFS">R_REFS</a>' in extract_html
+    )
+
+
+# -- the event is emitted once per document ----------------------------------
+
+RECORDING_CONF = """\
+from pathlib import Path
+
+extensions = ["sphinx_needs"]
+
+
+def _record(app, doctree, docname):
+    with open(Path(app.outdir, "resolved.log"), "a") as f:
+        f.write(f"{docname} {type(doctree).__name__}\\n")
+
+
+def setup(app):
+    app.connect("doctree-resolved", _record)
+"""
+
+RECORDING_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   extract
+
+.. req:: A need with a reference in it
+   :id: R_ONE
+
+   A need ref: :need:`R_TWO`.
+
+.. req:: Two
+   :id: R_TWO
+
+   Plain body.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (Path("conf.py"), RECORDING_CONF),
+                (Path("index.rst"), RECORDING_INDEX),
+                (Path("extract.rst"), extract_doc("R_ONE")),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_needextract_does_not_re_emit_doctree_resolved(test_app):
+    """Building an extract does not run the ``doctree-resolved`` listeners again.
+
+    The copy's references used to be resolved with ``env.resolve_references()``,
+    which ends by emitting ``doctree-resolved`` -- so every listener of the event,
+    this extension's and any other's, was called a second time with the detached
+    ``nodes.container`` holding the copied content in place of a document.  A
+    listener may reasonably assume it is given a document, and the ones here
+    crashed on the container; the post-transforms are now applied without the
+    emission.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+
+    recorded = Path(app.outdir, "resolved.log").read_text(encoding="utf8").split()
+    # one emission per document, each with a document -- never a container
+    assert sorted(recorded) == sorted(["extract", "document", "index", "document"]), (
+        recorded
+    )
