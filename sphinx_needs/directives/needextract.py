@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
+from copy import copy, deepcopy
 from typing import Final
 
 from docutils import nodes
 from docutils.parsers.rst import directives
 from docutils.transforms.references import Substitutions
 from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
 from sphinx.environment.collectors.asset import DownloadFileCollector, ImageCollector
 from sphinx.transforms import SphinxTransformer
 from sphinx.util.logging import getLogger
@@ -304,40 +307,72 @@ def _degrade_footnote_references(
         )
 
 
+@contextmanager
+def _scratch_document_state(env: BuildEnvironment, docname: str) -> Iterator[None]:
+    """Give the post-transforms a throwaway per-document state, named *docname*.
+
+    This is what ``BuildEnvironment.apply_post_transforms`` does around its own
+    call to the transformer, and it is a *replacement*, not a mutation: the state
+    the post-transforms are handed is a copy pointed at the document being
+    resolved, and the original is put back afterwards, so whatever they write
+    into it is discarded rather than carried into the rest of the build.
+
+    Sphinx moved that state from ``env.temp_data``, a plain dict, to
+    ``env.current_document``, an object reached through a read-only ``temp_data``
+    alias, so the save and restore is written twice -- once for each shape the
+    supported range of Sphinx has, chosen at runtime.
+
+    :param env: The build environment
+    :param docname: The document the post-transforms are to run for
+    """
+    if hasattr(env, "current_document"):
+        # Sphinx >= 8.2
+        backup = env.current_document
+        scratch = deepcopy(backup)
+        scratch.docname = docname
+        env.current_document = scratch
+        try:
+            yield
+        finally:
+            env.current_document = backup
+    else:
+        backup_temp_data = copy(env.temp_data)
+        env.temp_data["docname"] = docname
+        try:
+            yield
+        finally:
+            env.temp_data = backup_temp_data
+
+
 def _apply_post_transforms(app: Sphinx, node: nodes.Element, docname: str) -> None:
     """Run Sphinx's post-transforms over a detached node, resolving its references.
 
     This is ``BuildEnvironment.apply_post_transforms`` without its closing
-    ``doctree-resolved`` emission.  ``env.resolve_references()`` was called here
-    instead, and it goes through that emission -- with the detached
-    ``nodes.container`` this function is given standing in for a document.  Every
-    listener of the event was therefore run a second time, on a node that is not
-    a document and holds one need's copied content: Sphinx-Needs' own listeners
-    included, and so this function's own caller.  Content holding any node one of
-    them handles ended the build rather than rendering: a ``needtable`` in an
-    extracted need with ``list index out of range``, a nested ``needextract``
-    with ``'container' object has no attribute 'settings'``.
+    ``doctree-resolved`` emission, and with nothing else left out: the
+    per-document state the post-transforms run against is replaced for the
+    duration, exactly as that method replaces it (see
+    :func:`_scratch_document_state`).
+
+    ``env.resolve_references()`` was called here instead, and it goes through that
+    emission -- with the detached ``nodes.container`` this function is given
+    standing in for a document.  Every listener of the event was therefore run a
+    second time, on a node that is not a document and holds one need's copied
+    content: Sphinx-Needs' own listeners included, and so this function's own
+    caller.  Content holding any node one of them handles ended the build rather
+    than rendering: a ``needtable`` in an extracted need with ``list index out of
+    range``, a nested ``needextract`` with ``'container' object has no attribute
+    'settings'``.
 
     :param app: Sphinx application
     :param node: The detached node whose references are to be resolved
     :param docname: The document the node is about to be inserted into
     """
     env = app.env
-    # what a post-transform reads as "the document being processed"; ``temp_data``
-    # is Sphinx's own compatibility alias for it, and is what the collectors above
-    # are given too
-    previous_docname = env.temp_data.get("docname")
-    env.temp_data["docname"] = docname
-    try:
+    with _scratch_document_state(env, docname):
         transformer = SphinxTransformer(node)  # type: ignore[arg-type]
         transformer.set_environment(env)
         transformer.add_transforms(app.registry.get_post_transforms())
         transformer.apply_transforms()
-    finally:
-        if previous_docname is None:
-            del env.temp_data["docname"]
-        else:
-            env.temp_data["docname"] = previous_docname
 
 
 def _replace_pending_xref_refdoc(node: nodes.Element, new_refdoc: str) -> None:

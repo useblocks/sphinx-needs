@@ -583,3 +583,73 @@ def test_footnote_in_extracted_content_degrades_to_text(test_app):
     # the source page is untouched: its references still resolve
     index_html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert 'class="footnote-reference brackets" href="#fn1"' in index_html
+
+
+# -- the per-document state the post-transforms run against ------------------
+
+LEAK_PROBE_CONF = """\
+from pathlib import Path
+
+from sphinx.transforms.post_transforms import SphinxPostTransform
+
+extensions = ["sphinx_needs"]
+
+
+class LeakProbe(SphinxPostTransform):
+    \"\"\"Write into the per-document state, as a third-party post-transform may.\"\"\"
+
+    default_priority = 999
+
+    def run(self, **kwargs):
+        self.env.temp_data["PROBE_SENTINEL"] = "written by a post-transform"
+        self.env.temp_data["highlight_language"] = "probe-language"
+
+
+def _report(app, exception):
+    state = app.env.temp_data
+    Path(app.outdir, "state.log").write_text(
+        f"sentinel={'PROBE_SENTINEL' in state}\\n"
+        f"highlight_language={state.get('highlight_language')!r}\\n"
+    )
+
+
+def setup(app):
+    app.add_post_transform(LeakProbe)
+    app.connect("build-finished", _report)
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (Path("conf.py"), LEAK_PROBE_CONF),
+                # a need with a reference in it, so the post-transforms have
+                # something to resolve while the scratch state is in place
+                (Path("index.rst"), RECORDING_INDEX),
+                (Path("extract.rst"), extract_doc("R_ONE")),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_needextract_discards_post_transform_state(test_app):
+    """Running the post-transforms for an extract leaves no state behind.
+
+    ``BuildEnvironment.apply_post_transforms`` hands the post-transforms a *copy*
+    of the per-document state and puts the original back afterwards, so what they
+    write into it is discarded.  Applying them for an extract does the same: a
+    third-party post-transform writing into ``env.temp_data`` -- and the sentinel
+    below stands in for one -- must not have its writes outlive the extract, and
+    must not be able to change a real field, such as the default highlighting
+    language, for the rest of the build.
+    """
+    app = test_app
+    app.build()
+    assert build_warnings(app) == []
+
+    state = Path(app.outdir, "state.log").read_text(encoding="utf8").split()
+    assert state == ["sentinel=False", "highlight_language=''"], state
