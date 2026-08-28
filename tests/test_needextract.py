@@ -496,10 +496,10 @@ def test_needextract_does_not_re_emit_doctree_resolved(test_app):
     The copy's references used to be resolved with ``env.resolve_references()``,
     which ends by emitting ``doctree-resolved`` -- so every listener of the event,
     this extension's and any other's, was called a second time with the detached
-    ``nodes.container`` holding the copied content in place of a document.  A
-    listener may reasonably assume it is given a document, and the ones here
-    crashed on the container; the post-transforms are now applied without the
-    emission.
+    ``nodes.container`` holding the copied content in place of a document.  The
+    post-transforms are now applied without that emission.  The listener this
+    project's ``conf.py`` registers stands in for any third-party one: it records
+    what it is handed, and a listener is entitled to be handed a document.
     """
     app = test_app
     app.build()
