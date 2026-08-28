@@ -211,7 +211,6 @@ def find_and_replace_node_content(
     :param node: Node to analyse
     :param env: Sphinx environment
     :param need: Need data
-    :param extract: If True, the function has been called from a needextract node
     """
     new_children = []
     if isinstance(node, NeedFunc):
