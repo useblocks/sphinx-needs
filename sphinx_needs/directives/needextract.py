@@ -221,6 +221,7 @@ def _build_needextract(
     dummy_need.extend(need_node.children)
 
     _drop_unrenderable_nodes(dummy_need, need_data, extract_node)
+    _degrade_footnote_references(dummy_need, need_data, extract_node)
 
     find_and_replace_node_content(dummy_need, env, need_data)
 
@@ -263,6 +264,44 @@ def _drop_unrenderable_nodes(
             location=extract_node,
         )
         child.parent.remove(child)
+
+
+def _degrade_footnote_references(
+    node: nodes.Element, need_data: NeedItem, extract_node: Needextract
+) -> None:
+    """Render the copied footnote references as text, and report that.
+
+    A need's content is snapshotted while its directive runs, which is before
+    docutils' ``references.Footnotes`` transform has given each
+    ``footnote_reference`` in it the ``refid`` of the footnote it points at.  The
+    reference reached the HTML writer without one and ended the build with
+    ``KeyError: 'refid'``.
+
+    There is no faithful way to supply the id here: the footnote may be defined
+    outside the need's content altogether, and a copy that numbered its own
+    footnotes would disagree with the numbers on the page the need is written on.
+    So the reference is rendered as the marker the author wrote, without its
+    trailing ``_``, and the footnote's own text is left in the copy where it is.
+
+    :param node: The copy of the need's content
+    :param need_data: The need being extracted
+    :param extract_node: The needextract node the copy is being built for
+    """
+    references = list(node.findall(nodes.footnote_reference))
+    if not references:
+        return
+
+    log_warning(
+        LOGGER,
+        f"A footnote reference in the content of need {need_data['id']!r} cannot be "
+        "resolved by needextract, and is rendered as plain text.",
+        "needextract",
+        location=extract_node,
+    )
+    for reference in references:
+        reference.parent.replace(
+            reference, nodes.Text(reference.rawsource.removesuffix("_"))
+        )
 
 
 def _apply_post_transforms(app: Sphinx, node: nodes.Element, docname: str) -> None:

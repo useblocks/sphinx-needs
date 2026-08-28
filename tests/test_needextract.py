@@ -510,3 +510,76 @@ def test_needextract_does_not_re_emit_doctree_resolved(test_app):
     assert sorted(recorded) == sorted(["extract", "document", "index", "document"]), (
         recorded
     )
+
+
+# -- footnotes in the copied content -----------------------------------------
+
+FOOTNOTE_INDEX = """\
+Index
+=====
+
+.. toctree::
+
+   extract
+
+.. req:: A need with footnotes
+   :id: R_FOOT
+
+   Auto-numbered. [#fn1]_
+   Manual. [1]_
+   Symbol. [*]_
+
+   .. [#fn1] The auto footnote text.
+
+   .. [1] The manual footnote text.
+
+   .. [*] The symbol footnote text.
+"""
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "no_plantuml": True,
+            "files": [
+                (Path("conf.py"), CONF),
+                (Path("index.rst"), FOOTNOTE_INDEX),
+                (Path("extract.rst"), extract_doc("R_FOOT")),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_footnote_in_extracted_content_degrades_to_text(test_app):
+    """A footnote reference in extracted content is reported, not fatal.
+
+    The content is snapshotted before docutils' ``Footnotes`` transform has given
+    each reference the ``refid`` of its footnote, and the reference used to reach
+    the HTML writer without one and end the build with ``KeyError: 'refid'``.  All
+    three kinds of reference -- auto-numbered, manual and auto-symbol -- are
+    covered, since each is numbered by that transform differently.
+    """
+    app = test_app
+    app.build()
+
+    assert build_warnings(app) == [
+        "<srcdir>/extract.rst:4: WARNING: A footnote reference in the content of "
+        "need 'R_FOOT' cannot be resolved by needextract, and is rendered as "
+        "plain text. [needs.needextract]"
+    ]
+
+    extract_html = Path(app.outdir, "extract.html").read_text(encoding="utf8")
+    # each reference is now the marker its author wrote, and links nowhere
+    assert "Auto-numbered. [#fn1]" in extract_html
+    assert "Manual. [1]" in extract_html
+    assert "Symbol. [*]" in extract_html
+    # the footnote text itself is still on the page
+    assert "The auto footnote text." in extract_html
+    assert "The manual footnote text." in extract_html
+    assert "The symbol footnote text." in extract_html
+
+    # the source page is untouched: its references still resolve
+    index_html = Path(app.outdir, "index.html").read_text(encoding="utf8")
+    assert 'class="footnote-reference brackets" href="#fn1"' in index_html
