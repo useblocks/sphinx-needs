@@ -4,6 +4,64 @@
 Changelog
 =========
 
+.. _`release:unreleased`:
+
+Unreleased
+----------
+
+:Released: Unreleased
+
+Bug fixes
+.........
+
+- 🐛 Six :ref:`needextract` inputs that ended the build are now reported instead
+  **(changed output)** (:pr:`1794`)
+
+  Each of these ended the whole build with a Python traceback and a "please report this
+  to the developers" banner, three of them from the directive's own option surface:
+
+  - an argument that looks like a need ID but names no need,
+  - an argument and ``:filter:`` together — the combination the documentation warns
+    about,
+  - ``needs_include_needs = False`` with any needextract in the project, which gave no
+    diagnostic at all,
+  - a ``needtable`` in the content of an extracted need,
+  - a ``needextract`` in the content of an extracted need,
+  - a footnote reference in the content of an extracted need.
+
+  The first three were one defect: the name holding a needextract's filter result was
+  assigned inside the loop over a document's nodes and read once after it, so any node
+  taking an early exit left it unbound. All three are now reported (or, under
+  ``needs_include_needs = False``, silently dropped, exactly as every other view
+  directive drops itself) and the rest of the build stands.
+
+  The other three come from *when* a need's content is copied. It is snapshotted while
+  the need's directive runs, before any of its document's transforms, and spliced into
+  the extract's document after all of *that* document's transforms — so it sees neither
+  document's pipeline, and a handful of transforms are replayed over it by hand. One of
+  those replays, ``env.resolve_references()``, ends by emitting ``doctree-resolved``,
+  with the detached container holding the copy standing in for a document: every
+  listener of the event ran a second time on a node that is not a document, this
+  extension's own listeners included. Sphinx's post-transforms are now applied directly
+  instead, so the event is emitted once per document and always with a document — a
+  guarantee a third-party listener gets too.
+
+  What a copy cannot render is now dropped from it and named, rather than reaching a
+  processor or the writer that cannot cope:
+
+  - ``needbar``, ``needextract``, ``needpie``, ``needtable`` and ``needuml`` in the
+    content of an extracted need are omitted from the copy, each reported at the
+    needextract site.
+  - A footnote reference in it is rendered as the marker its author wrote, without the
+    trailing ``_``, and reported. The footnote's own text stays where it is, so nothing
+    disappears from the page.
+
+  Everything else a copy carries is unchanged, byte for byte: rich markup, code blocks,
+  images, substitutions, nested needs, figures under ``numfig``, and needs extracted in
+  their own document or defined later in the build. In particular the reference contract
+  is untouched — a ``:ref:`` or ``:need:`` inside extracted content still resolves to
+  the page the need is written on, and so does the extract card's own ID chip.
+
 .. _`release:8.4.0`:
 
 8.4.0
