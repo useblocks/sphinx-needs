@@ -111,3 +111,19 @@ def test_wordwrap_preserves_existing_newlines():
         "{{ v|wordwrap(width=5) }}", {"v": "aaa bbb\n\nccc ddd"}, autoescape=False
     )
     assert result == "aaa\nbbb\n\nccc\nddd"
+
+
+def test_wordwrap_breaks_after_a_hyphen_unlike_python_textwrap():
+    """The changelog's ``(changed output)`` behaviour, pinned.
+
+    The native filter starts the fragment after a hyphen on a fresh line,
+    where Python's ``textwrap`` back-filled the current line with its head
+    (giving ``abc-de\\nfghij`` here).  This is the one assertion that
+    separates the native filter from any ``textwrap``-based replacement,
+    so it turns red if a future wheel silently reverts to textwrap-style
+    hyphen filling.
+    """
+    result = render_template_string(
+        "{{ v|wordwrap(width=6) }}", {"v": "abc-defghij"}, autoescape=False
+    )
+    assert result == "abc-\ndefghi\nj"
