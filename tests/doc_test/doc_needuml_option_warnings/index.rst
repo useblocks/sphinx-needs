@@ -8,3 +8,8 @@ TEST DOCUMENT NEEDUML OPTION WARNINGS
    card "{{url}}" as a
    card "{{plain}}" as b
    a -> b
+
+.. needuml::
+   :scale: not-a-number
+
+   card "fallback scale" as c

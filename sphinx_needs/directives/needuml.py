@@ -226,7 +226,8 @@ def transform_uml_to_plantuml_node(
 def get_debug_node_from_puml_node(puml_node: plantuml) -> nodes.container:
     if isinstance(puml_node, nodes.figure):
         data = puml_node.children[0]["uml"]  # type: ignore[index]
-    data = puml_node.get("uml", "")
+    else:
+        data = puml_node.get("uml", "")
     data = "\n".join([html.escape(line) for line in data.split("\n")])
     debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
     debug_container = nodes.container()
@@ -675,7 +676,18 @@ def process_needuml(
             location=node,
         )
         if "uml" not in puml_node:
-            # An error node was returned
+            # An error node was returned, because sphinxcontrib.plantuml is missing.
+            # The node says so on the rendered page, but a build that nobody reads the
+            # output of gave no sign at all, and a `:save:` needuml went on to write an
+            # empty file over whatever was there before.
+            log_warning(
+                logger,
+                "PlantUML is not available, so the diagram was not rendered. "
+                "Install 'sphinxcontrib-plantuml' and add it to the 'extensions' "
+                "list to render it.",
+                "needuml",
+                location=node,
+            )
             node.replace_self(puml_node)
             continue
 
@@ -703,6 +715,14 @@ def process_needuml(
         try:
             scale = int(current_needuml["scale"])
         except ValueError:
+            if current_needuml["scale"]:
+                # an unset :scale: is the empty string and simply takes the default
+                log_warning(
+                    logger,
+                    f'scale value must be a number. "{current_needuml["scale"]}" found',
+                    "diagram_scale",
+                    location=node,
+                )
             scale = 100
         # if scale != 100:
         puml_node["scale"] = scale
