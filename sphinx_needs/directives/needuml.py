@@ -89,16 +89,34 @@ class NeedumlDirective(SphinxDirective):
         if config_names:
             for config_name in config_names.split(","):
                 config_name = config_name.strip()
-                if config_name and config_name in flow_configs:
+                if not config_name:
+                    continue
+                if config_name in flow_configs:
                     configs.append(flow_configs[config_name])
+                else:
+                    log_warning(
+                        logger,
+                        f"config name {config_name!r} is not defined in needs_flow_configs.",
+                        "needuml",
+                        location=self.get_location(),
+                    )
 
         extra_dict = {}
         extras = self.options.get("extra")
         if extras:
-            extras = extras.split(",")
-            for extra in extras:
-                key, value = extra.split(":")
-                extra_dict[key] = value
+            for extra in extras.split(","):
+                # only split on the first colon, so that a value may contain colons
+                # (URLs, times, namespaced identifiers, ...)
+                key, sep, value = extra.partition(":")
+                if not sep:
+                    log_warning(
+                        logger,
+                        f"extra option {extra.strip()!r} is not a 'key:value' pair.",
+                        "needuml",
+                        location=self.get_location(),
+                    )
+                    continue
+                extra_dict[key.strip()] = value.strip()
 
         key_name = self.options.get("key")
         if key_name == "diagram":

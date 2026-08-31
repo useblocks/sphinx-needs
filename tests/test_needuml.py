@@ -1,10 +1,19 @@
+import os
 import subprocess
 from pathlib import Path
 
 import pytest
+from sphinx.util.console import strip_colors
 from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
+
+
+def _warnings(app) -> list[str]:
+    """Return the build's warnings, with the source directory path normalised away."""
+    return strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
 
 
 @pytest.mark.parametrize(
@@ -293,3 +302,34 @@ def test_needuml_jinja_func_ref(test_app, snapshot):
         ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
     )
     assert out.returncode == 0
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_option_warnings"}],
+    indirect=True,
+)
+def test_needuml_option_warnings(test_app):
+    """An unknown ``:config:`` name and a malformed ``:extra:`` segment are reported.
+
+    Both were silent before: an unknown config name was dropped without a word, and an
+    ``:extra:`` segment carrying no colon ended the whole build with an unhandled
+    ``ValueError``.  A value that itself contains a colon must survive, the pair being
+    split on the first colon only.
+    """
+    app = test_app
+    app.build()
+
+    assert _warnings(app) == [
+        "srcdir/index.rst:4: WARNING: config name 'no_such_config' is not defined in "
+        "needs_flow_configs. [needs.needuml]",
+        "srcdir/index.rst:4: WARNING: extra option 'broken' is not a 'key:value' pair. "
+        "[needs.needuml]",
+    ]
+
+    (needuml,) = app.env._needs_all_needumls.values()
+    assert needuml["extra"] == {"url": "https://example.com/a:b", "plain": "value"}
+    assert 'card "https://example.com/a:b" as a' in needuml["content_calculated"]
+    assert 'card "value" as b' in needuml["content_calculated"]
+    # the known config name is still applied, the unknown one simply skipped
+    assert "allowmixing" in needuml["content_calculated"]
