@@ -52,6 +52,9 @@ extra
 ~~~~~
 Allows to inject additional key-value pairs into the ``needuml`` rendering.
 ``:extra:`` must be a comma-separated list, containing *key:value* pairs.
+Each pair is split on its first colon only, so a value may itself contain colons;
+surrounding whitespace is stripped from both the key and the value.
+Commas separate the pairs, so a value cannot contain one.
 
 .. syntax-example::
 

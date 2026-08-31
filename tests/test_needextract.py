@@ -364,7 +364,7 @@ def extract_doc(need_id: str) -> str:
 
 
 @pytest.mark.parametrize(
-    ("test_app", "expected_warning", "still_rendered", "omitted"),
+    ("test_app", "expected_warning", "still_rendered", "omitted", "extra_warnings"),
     [
         pytest.param(
             {
@@ -380,6 +380,7 @@ def extract_doc(need_id: str) -> str:
             "rendered by needextract, and is omitted.",
             'id="R_VIEW"',
             "-table_node",
+            [],
             id="needtable-in-content",
         ),
         pytest.param(
@@ -396,6 +397,7 @@ def extract_doc(need_id: str) -> str:
             "rendered by needextract, and is omitted.",
             'id="R_OUTER"',
             'id="R_INNER"',
+            [],
             id="needextract-in-content",
         ),
         pytest.param(
@@ -412,6 +414,7 @@ def extract_doc(need_id: str) -> str:
             "rendered by needextract, and is omitted.",
             'id="R_VIEW"',
             "_images/need_pie_",
+            [],
             id="needpie-in-content",
         ),
         pytest.param(
@@ -428,6 +431,7 @@ def extract_doc(need_id: str) -> str:
             "rendered by needextract, and is omitted.",
             'id="R_VIEW"',
             "_images/need_bar_",
+            [],
             id="needbar-in-content",
         ),
         pytest.param(
@@ -444,6 +448,15 @@ def extract_doc(need_id: str) -> str:
             "cannot be rendered by needextract, and is omitted.",
             'id="R_VIEW"',
             "PlantUML is not available!",
+            # the *source* document's own needuml genuinely cannot render
+            # without sphinxcontrib.plantuml, and says so on its own account --
+            # nothing to do with the copy needextract makes of it
+            [
+                "<srcdir>/index.rst:13: WARNING: PlantUML is not available, so "
+                "the diagram was not rendered. Install 'sphinxcontrib-plantuml' "
+                "and add it to the 'extensions' list to render it. "
+                "[needs.needuml]"
+            ],
             id="needuml-in-content",
         ),
         pytest.param(
@@ -460,24 +473,31 @@ def extract_doc(need_id: str) -> str:
             "rendered by needextract, and is omitted.",
             'id="S_CHILD"',
             "-table_node",
+            [],
             id="needtable-in-a-child-need",
         ),
     ],
     indirect=["test_app"],
 )
 def test_unrenderable_view_in_extracted_content_warns(
-    test_app, expected_warning, still_rendered, omitted
+    test_app, expected_warning, still_rendered, omitted, extra_warnings
 ):
     """A view directive the copy cannot render is reported, not fatal.
 
     The extracted need is still rendered; only the directive inside its content
     is left out, and the author is told which one and where.
+
+    ``extra_warnings`` carries anything the *source* document reports on its own
+    account. Sphinx emits warnings in document write order (sorted docnames), so
+    here ``extract`` sorts before ``index`` and the source document's own warning
+    comes second.
     """
     app = test_app
     app.build()
 
     assert build_warnings(app) == [
-        f"<srcdir>/extract.rst:4: WARNING: {expected_warning} [needs.needextract]"
+        f"<srcdir>/extract.rst:4: WARNING: {expected_warning} [needs.needextract]",
+        *extra_warnings,
     ]
 
     # the source page renders the directive as it always did
