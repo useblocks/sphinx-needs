@@ -9,7 +9,34 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Any
 
-from minijinja import Environment
+from minijinja import Environment, TemplateError
+
+_WORDWRAP_WIDTH_HINT = (
+    "hint: if this is the wordwrap filter rejecting a positional width — "
+    "MiniJinja's built-in wordwrap takes its width only by name: "
+    "write wordwrap(width=15), not wordwrap(15). "
+    "(sphinx-needs' former Python-side wordwrap accepted the jinja2 positional form.)"
+)
+
+
+def _hinted(err: TemplateError, template_string: str) -> TemplateError | None:
+    """Build a hinted copy of ``err`` for a positional-``wordwrap`` failure.
+
+    The switch from sphinx-needs' Python-side ``wordwrap`` to MiniJinja's
+    built-in made the jinja2 spelling ``wordwrap(15)`` a ``too many
+    arguments`` error, which surfaces as an unlocated build abort.  Appending
+    the migration hint here — the one choke point every template render goes
+    through — makes that failure actionable on every surface at once.
+
+    :param err: The error a render raised.
+    :param template_string: The template source that was being rendered.
+    :return: A ``TemplateError`` with the hint appended, or ``None`` when the
+        error is not the positional-``wordwrap`` shape (the caller should
+        re-raise the original unchanged).
+    """
+    if "too many arguments" in str(err) and "wordwrap(" in template_string:
+        return TemplateError(f"{err}\n{_WORDWRAP_WIDTH_HINT}")
+    return None
 
 
 def _new_env(
@@ -99,7 +126,12 @@ def render_template_string(
         if new_env
         else _get_cached_env(autoescape, variable_start_string, variable_end_string)
     )
-    return env.render_str(template_string, **context)
+    try:
+        return env.render_str(template_string, **context)
+    except TemplateError as err:
+        if (hinted := _hinted(err, template_string)) is not None:
+            raise hinted from err
+        raise
 
 
 class CompiledTemplate:
@@ -116,12 +148,15 @@ class CompiledTemplate:
     error messages, or per-node in PlantUML diagram generation).
     """
 
-    __slots__ = ("_env",)
+    __slots__ = ("_env", "_source")
 
     _TEMPLATE_NAME = "__compiled__"
 
-    def __init__(self, env: Environment) -> None:
+    def __init__(self, env: Environment, source: str) -> None:
         self._env = env
+        # kept only so a render failure can be matched against the source
+        # (see _hinted); rendering itself uses the template compiled into env
+        self._source = source
 
     def render(self, context: dict[str, Any]) -> str:
         """Render the compiled template with the given context.
@@ -129,7 +164,12 @@ class CompiledTemplate:
         :param context: Dictionary containing template variables.
         :return: The rendered template as a string.
         """
-        return self._env.render_template(self._TEMPLATE_NAME, **context)
+        try:
+            return self._env.render_template(self._TEMPLATE_NAME, **context)
+        except TemplateError as err:
+            if (hinted := _hinted(err, self._source)) is not None:
+                raise hinted from err
+            raise
 
 
 @lru_cache(maxsize=32)
@@ -166,4 +206,4 @@ def compile_template(
     """
     env = _new_env(autoescape, variable_start_string, variable_end_string)
     env.add_template(CompiledTemplate._TEMPLATE_NAME, template_string)
-    return CompiledTemplate(env)
+    return CompiledTemplate(env, template_string)

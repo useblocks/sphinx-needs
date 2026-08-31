@@ -91,18 +91,47 @@ def test_wordwrap_is_minijinjas_native_filter():
     assert result == "**A very long**\n**need title that**\n**must be wrapped**"
 
 
-def test_wordwrap_rejects_a_positional_width():
+def test_wordwrap_rejects_a_positional_width_with_a_hint():
     """The native filter is keyword-only, unlike jinja2's ``wordwrap``.
 
     This is the upgrade's one user-visible break, so it is pinned rather than
     left to be rediscovered: a custom ``needs_diagram_template`` written for
     jinja2 (or for the Python filter this replaced) fails the build until its
-    ``wordwrap(15)`` becomes ``wordwrap(width=15)``.
+    ``wordwrap(15)`` becomes ``wordwrap(width=15)``.  The error carries the
+    migration hint appended in ``_jinja``, so the failure names its own fix.
     """
-    with pytest.raises(TemplateError, match="too many arguments"):
+    with pytest.raises(TemplateError, match="too many arguments") as exc_info:
         render_template_string(
             "{{ title|wordwrap(15) }}", {"title": "a b c"}, autoescape=False
         )
+    assert "write wordwrap(width=15), not wordwrap(15)" in str(exc_info.value)
+
+
+def test_compiled_template_positional_wordwrap_carries_the_hint():
+    """The hint also reaches the compiled-template path.
+
+    ``needs_diagram_template`` — the template most likely to carry the old
+    positional spelling, since the shipped default used it — renders through
+    ``compile_template``, not ``render_template_string``, so the hint must be
+    attached on that path too.
+    """
+    compiled = compile_template(
+        "{{ content|wordwrap(15, wrapstring='**') }}", autoescape=False
+    )
+    with pytest.raises(TemplateError, match="too many arguments") as exc_info:
+        compiled.render({"content": "a b c"})
+    assert "write wordwrap(width=15), not wordwrap(15)" in str(exc_info.value)
+
+
+def test_too_many_arguments_without_wordwrap_gets_no_hint():
+    """The hint is scoped to templates that call ``wordwrap``.
+
+    An unrelated arity error must not be decorated with advice about a filter
+    the template never mentions.
+    """
+    with pytest.raises(TemplateError, match="too many arguments") as exc_info:
+        render_template_string("{{ v|upper(1) }}", {"v": "x"}, autoescape=False)
+    assert "wordwrap" not in str(exc_info.value)
 
 
 def test_wordwrap_preserves_existing_newlines():
