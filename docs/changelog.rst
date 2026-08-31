@@ -14,6 +14,47 @@ Unreleased
 Bug fixes
 .........
 
+- 🐛 Eight :ref:`needuml` and :ref:`needarch` inputs that were ignored, or that ended the
+  build, are now reported (:pr:`1796`)
+
+  Three of them ended the whole build with a Python traceback and a "report this to the
+  developers" banner, none of them naming the document it came from:
+
+  - An ``:extra:`` value containing a second colon — a URL, a time, a namespaced
+    identifier — raised ``ValueError: too many values to unpack``. A pair is now split on
+    its first colon only, with both halves stripped, so such values are usable; a segment
+    carrying no colon at all is reported and skipped.
+  - ``uml(id, key=...)`` naming an arch key the need does not carry raised a bare
+    ``KeyError``, because the guard subscripted ``arch`` before testing for the key. The
+    message the code already held, naming both the key and the need, is now the one
+    raised.
+  - ``import()`` given an option holding a plain string consumed it one character at a
+    time, looking each character up as a need id and reporting the first character as an
+    unknown id. Such a value is now refused by name; a genuine list of ids is imported
+    exactly as before.
+
+  The rest were silent, and stay silent in what they render:
+
+  - Without ``sphinxcontrib.plantuml`` installed, every diagram in the project was
+    replaced by an error node on the page and nothing at all was logged.
+  - A ``:config:`` name that ``needs_flow_configs`` does not define was dropped. The
+    names it does define are still applied.
+  - A non-numeric ``:scale:`` fell back to 100, which it still does.
+  - ``ref()`` given both ``option`` and ``text``, or neither, was accepted without a
+    word: its own validation read ``(option and text) and (not option and not text)`` and
+    so could never hold. What is rendered is unchanged — ``option`` still wins over
+    ``text``, and a call with neither still renders a link with no label.
+  - ``import()`` ignored an option name the need does not carry.
+
+  Finally, the :ref:`needumls_builder` builder no longer truncates the ``.puml`` files an
+  earlier run saved. The generated content is filled in while a document is written,
+  after the environment has been pickled, so a build that re-read nothing held an empty
+  value for every needuml and wrote it over the good file — reproducible with two
+  consecutive ``sphinx-build -b needumls`` runs, the second leaving zero bytes behind. A
+  needuml with no generated content is now skipped instead. A needuml is still not
+  re-rendered when a need it references changes in another document; that needs
+  dependency tracking and is not addressed here.
+
 - 🐛 Six :ref:`needextract` inputs that ended the build are now reported instead
   **(changed output)** (:pr:`1795`)
 
