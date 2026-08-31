@@ -197,7 +197,7 @@ def get_debug_container(puml_node: nodes.Element) -> nodes.container:
 def calculate_link(
     app: Sphinx,
     need_info: NeedItem | NeedPartItem,
-    _fromdocname: None | str,
+    _fromdocname: str | None,
     relative: str = "..",
 ) -> str:
     """

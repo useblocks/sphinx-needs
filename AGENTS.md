@@ -163,6 +163,7 @@ def process_need(
 ```python
 import pytest
 
+
 @pytest.mark.parametrize(
     "test_app",
     [{"buildername": "html", "srcdir": "doc_test/doc_basic"}],
@@ -329,9 +330,9 @@ flowchart TB
 
 ```python
 app.connect("config-inited", load_config_from_toml, priority=10)  # Load TOML config
-app.connect("config-inited", load_config)                         # Register extra fields/directives
-app.connect("config-inited", merge_default_configs)               # Merge defaults
-app.connect("config-inited", check_configuration, priority=600)   # Validate config
+app.connect("config-inited", load_config)  # Register extra fields/directives
+app.connect("config-inited", merge_default_configs)  # Merge defaults
+app.connect("config-inited", check_configuration, priority=600)  # Validate config
 ```
 
 #### Environment Setup (`env-before-read-docs`)
@@ -348,9 +349,9 @@ The `prepare_env` function initializes `BuildEnvironment` variables, registers s
 #### Document Processing
 
 ```python
-app.connect("env-purge-doc", purge_needs)          # Clean need data for changed docs
-app.connect("doctree-read", analyse_need_locations) # Analyze need positions in doctree
-app.connect("env-merge-info", merge_data)          # Merge data from parallel processes
+app.connect("env-purge-doc", purge_needs)  # Clean need data for changed docs
+app.connect("doctree-read", analyse_need_locations)  # Analyze need positions in doctree
+app.connect("env-merge-info", merge_data)  # Merge data from parallel processes
 ```
 
 - `purge_needs`: Removes all cached need items originating from removed/changed documents
@@ -370,7 +371,7 @@ Note: These callbacks are skipped for the `needs` builder (which only outputs JS
 
 ```python
 app.connect("doctree-resolved", process_creator(NODE_TYPES_PRIO), priority=100)
-app.connect("doctree-resolved", process_need_nodes)   # Process Need nodes
+app.connect("doctree-resolved", process_need_nodes)  # Process Need nodes
 app.connect("doctree-resolved", process_creator(NODE_TYPES))  # Process all other nodes
 ```
 
@@ -379,7 +380,7 @@ The `doctree-resolved` event is where node processing happens. `process_need_nod
 #### Write Phase (`write-started`)
 
 ```python
-app.connect("write-started", process_schemas)              # Process schema validations
+app.connect("write-started", process_schemas)  # Process schema validations
 app.connect("write-started", ensure_post_process_needs_data)  # Finalize needs data
 ```
 
@@ -395,10 +396,10 @@ After this, needs are "sealed" (made immutable) via the `needs-before-sealing` e
 #### Finalization (`build-finished`)
 
 ```python
-app.connect("build-finished", process_warnings)     # Emit warnings
-app.connect("build-finished", build_needs_json)     # Generate needs.json
+app.connect("build-finished", process_warnings)  # Emit warnings
+app.connect("build-finished", build_needs_json)  # Generate needs.json
 app.connect("build-finished", build_needs_id_json)  # Generate needs ID file
-app.connect("build-finished", build_needumls_pumls) # Generate PlantUML files
+app.connect("build-finished", build_needumls_pumls)  # Generate PlantUML files
 ```
 
 - `process_warnings`: Runs user-defined need data checks from `needs_warnings` config
@@ -412,7 +413,7 @@ Sphinx-Needs also defines its own events that extensions can hook into:
 
 ```python
 app.add_event("needs-before-post-processing")  # Before needs post-processing
-app.add_event("needs-before-sealing")          # Before needs are sealed (made immutable)
+app.add_event("needs-before-sealing")  # Before needs are sealed (made immutable)
 ```
 
 ### Key Data Flow

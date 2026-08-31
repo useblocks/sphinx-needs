@@ -333,23 +333,23 @@ needs_render_context = {
 # needs_report_template = "/needs_templates/report_template.need"   # Use custom report template
 
 # -- custom extensions ---------------------------------------
-from typing import get_args  # noqa: E402
+from typing import get_args
 
-from docutils import nodes  # noqa: E402
-from docutils.statemachine import StringList  # noqa: E402
-from sphinx.application import Sphinx  # noqa: E402
-from sphinx.directives import SphinxDirective  # noqa: E402
-from sphinx.roles import SphinxRole  # noqa: E402
+from docutils import nodes
+from docutils.statemachine import StringList
+from sphinx.application import Sphinx
+from sphinx.directives import SphinxDirective
+from sphinx.roles import SphinxRole
 
-from sphinx_needs.api import generate_need  # noqa: E402
-from sphinx_needs.config import NeedsSphinxConfig  # noqa: E402
-from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData  # noqa: E402
-from sphinx_needs.logging import (  # noqa: E402
+from sphinx_needs.api import generate_need
+from sphinx_needs.config import NeedsSphinxConfig
+from sphinx_needs.data import NeedsCoreFields, SphinxNeedsData
+from sphinx_needs.logging import (
     WarningSubTypeDescription,
     WarningSubTypes,
 )
-from sphinx_needs.needs import _get_core_schema  # noqa: E402
-from sphinx_needs.needsfile import NeedsList  # noqa: E402
+from sphinx_needs.needs import _get_core_schema
+from sphinx_needs.needsfile import NeedsList
 
 
 class NeedsWarningsDirective(SphinxDirective):

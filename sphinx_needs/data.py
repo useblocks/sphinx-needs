@@ -429,7 +429,7 @@ class NeedsSourceInfoType(TypedDict):
     """Line number where the need is defined (None if external)."""
     lineno_content: int | None
     """Line number on which the need content starts (None if external)."""
-    external_url: None | str
+    external_url: str | None
     """URL of the need, if it is an external need."""
     is_import: bool
     """If true, the need was derived from an import."""
@@ -442,19 +442,19 @@ class NeedsContentInfoType(TypedDict):
 
     jinja_content: bool
     """Whether the content was pre-processed by jinja."""
-    template: None | str
+    template: str | None
     """The template key, if the content was created from a jinja template."""
-    pre_template: None | str
+    pre_template: str | None
     """The template key, if the pre_content was created from a jinja template."""
-    post_template: None | str
+    post_template: str | None
     """The template key, if the post_content was created from a jinja template."""
     doctype: str
     """The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'."""
     content: str
     """The main content of the need."""
-    pre_content: None | str
+    pre_content: str | None
     """Additional content before the need."""
-    post_content: None | str
+    post_content: str | None
     """Additional content after the need."""
 
 
@@ -470,7 +470,7 @@ class NeedsInfoType(TypedDict):
     # meta information
     title: str
     """Title of the need."""
-    status: None | str
+    status: str | None
     tags: list[str]
 
     # rendering information
@@ -478,9 +478,9 @@ class NeedsInfoType(TypedDict):
     """Hide the meta-data information of the need."""
     hide: bool
     """If true, the need is not rendered."""
-    layout: None | str
+    layout: str | None
     """Key of the layout, which is used to render the need."""
-    style: None | str
+    style: str | None
     """Comma-separated list of CSS classes (all appended by `needs_style_`)."""
 
     external_css: str
@@ -503,7 +503,7 @@ class NeedsInfoType(TypedDict):
     # additional source information
     # set in analyse_need_locations transform
     sections: tuple[str, ...]
-    signature: None | str
+    signature: str | None
     """Derived from a docutils desc_name node."""
 
     # these default to False and are updated in resolve_links post-process
@@ -534,17 +534,17 @@ class NeedsInfoComputedType(TypedDict):
     """<parent ID>, or <self ID> if not a part."""
     id_complete: str
     """<parent ID>.<self ID>, or <self ID> if not a part."""
-    section_name: None | str
+    section_name: str | None
     """Simply the first section."""
-    parent_need: None | str
+    parent_need: str | None
     """Simply the first parent id."""
     # constraints information
     # set in process_need_nodes (-> process_constraints) transform
-    constraints_results: None | Mapping[str, Mapping[str, bool]]
+    constraints_results: Mapping[str, Mapping[str, bool]] | None
     """Mapping of constraint name, to check name, to result, None if not yet checked."""
-    constraints_error: None | str
+    constraints_error: str | None
     """An error message set if any constraint failed, and `error_message` field is set in config."""
-    constraints_passed: None | bool
+    constraints_passed: bool | None
     """True if all constraints passed, False if any failed, None if not yet checked."""
 
 
@@ -563,7 +563,7 @@ class NeedsBarType(NeedsBaseDataType):
     """Data for a single (matplotlib) bar diagram."""
 
     error_id: str
-    title: None | str
+    title: str | None
     content: str
     legend: bool
     x_axis_title: str
@@ -574,9 +574,9 @@ class NeedsBarType(NeedsBaseDataType):
     ylabels_rotation: str
     separator: str
     stacked: bool
-    show_sum: None | bool
-    show_top_sum: None | bool
-    sum_rotation: None | str
+    show_sum: bool | None
+    show_top_sum: bool | None
+    sum_rotation: str | None
     transpose: bool
     horizontal: bool
     style: str
@@ -620,10 +620,10 @@ class NeedsFilteredBaseType(NeedsBaseDataType):
     status: list[str]
     tags: list[str]
     types: list[str]
-    filter: None | str
-    sort_by: None | str
+    filter: str | None
+    sort_by: str | None
     filter_code: list[str]
-    filter_func: None | str
+    filter_func: str | None
     filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
 
@@ -646,9 +646,9 @@ class NeedsFilteredDiagramBaseType(NeedsFilteredBaseType):
     config_names: str
     scale: str
     highlight: str
-    align: None | str
+    align: str | None
     debug: bool
-    caption: None | str
+    caption: str | None
 
 
 class NeedsExtractType(NeedsFilteredBaseType):
@@ -657,7 +657,7 @@ class NeedsExtractType(NeedsFilteredBaseType):
     layout: str
     style: str
     show_filters: bool
-    filter_arg: None | str
+    filter_arg: str | None
 
 
 class GraphvizStyleType(TypedDict, total=False):
@@ -732,7 +732,7 @@ class NeedsGanttType(NeedsFilteredDiagramBaseType):
     starts_after_links: list[str]
     ends_with_links: list[str]
     milestone_filter: str
-    start_date: None | str
+    start_date: str | None
     timeline: Literal[None, "daily", "weekly", "monthly"]
     no_color: bool
     duration_option: str
@@ -756,13 +756,13 @@ class NeedsPieType(NeedsBaseDataType):
     title: str
     content: str
     legend: bool
-    explode: None | list[float]
-    style: None | str
-    labels: None | list[str]
-    colors: None | list[str]
-    text_color: None | str
+    explode: list[float] | None
+    style: str | None
+    labels: list[str] | None
+    colors: list[str] | None
+    text_color: str | None
     shadow: bool
-    filter_func: None | str
+    filter_func: str | None
     filter_warning: str | None
 
 
@@ -778,7 +778,7 @@ class NeedsSequenceType(NeedsFilteredDiagramBaseType):
 class NeedsTableType(NeedsFilteredBaseType):
     """Data for a single (filtered) needs table."""
 
-    caption: None | str
+    caption: str | None
     classes: list[str]
     columns: list[tuple[str, str]]
     """List of (name, title)"""
@@ -796,16 +796,16 @@ class NeedsTableType(NeedsFilteredBaseType):
 class NeedsUmlType(NeedsBaseDataType):
     """Data for a single (filtered) uml diagram."""
 
-    caption: None | str
+    caption: str | None
     content: str
     scale: str
     align: str
-    config_names: None | str
+    config_names: str | None
     config: str
     debug: bool
     extra: dict[str, str]
-    key: None | str
-    save: None | str
+    key: str | None
+    save: str | None
     is_arch: bool
     # set in process_needuml
     content_calculated: str

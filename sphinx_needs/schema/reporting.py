@@ -438,7 +438,7 @@ def generate_json_schema_validation_report(
     need_2_warnings: dict[str, list[OntologyWarning]],
     report_file_path: Path,
     validated_needs_count: int,
-    validated_rate: int | float,
+    validated_rate: float,
 ) -> None:
     """
     Generate a JSON schema validation report.

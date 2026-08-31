@@ -28,7 +28,7 @@ def highlighted_block(html: str) -> str:
     Its content is one ``<span>`` per token, so asserting on the page text does
     not work: the tags collapse to spaces and split the directive marker up.
     """
-    match = re.search(r'<div class="highlight[^"]*">.*?</div>', html, re.S)
+    match = re.search(r'<div class="highlight[^"]*">.*?</div>', html, re.DOTALL)
     assert match is not None, "no highlighted block on the page"
     return match.group(0)
 

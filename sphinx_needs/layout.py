@@ -284,7 +284,7 @@ class LayoutHandler:
         )
 
         self.functions: dict[
-            str, Callable[..., None | nodes.Node | list[nodes.Node]]
+            str, Callable[..., nodes.Node | list[nodes.Node] | None]
         ] = {
             "meta": self.meta,  # type: ignore[dict-item]
             "meta_all": self.meta_all,
@@ -369,7 +369,7 @@ class LayoutHandler:
         :return: docutils nodes
         """
         return_nodes = []
-        result: None | nodes.Node | list[nodes.Node]
+        result: nodes.Node | list[nodes.Node] | None
         for node in section_nodes:
             if not isinstance(node, nodes.Text):
                 for child in node.children:
@@ -1042,7 +1042,7 @@ class LayoutHandler:
         id = self.need["id"]
         permalink_url = ""
         if docname := self.need["docname"]:
-            for _ in range(0, len(docname.split("/")) - 1):
+            for _ in range(len(docname.split("/")) - 1):
                 permalink_url += "../"
         permalink_url += permalink + "?id=" + id
 

@@ -89,7 +89,7 @@ def match_variants(
     variants: dict[str, str],
     *,
     location: str | tuple[str | None, int | None] | nodes.Node | None = None,
-) -> None | str | int | float | bool:
+) -> str | int | float | bool | None:
     """Evaluate an options list and return the first matching variant.
 
     Each item should have the format ``<expression>:<value>``,

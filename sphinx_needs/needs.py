@@ -17,8 +17,10 @@ from sphinx.config import Config
 from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
 
-import sphinx_needs.debug as debug  # Need to set global var in it for timeing measurements
-from sphinx_needs import __version__
+from sphinx_needs import (
+    __version__,
+    debug,  # Need to set global var in it for timeing measurements
+)
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.builder import (
     NeedsBuilder,
@@ -687,7 +689,6 @@ def visitor_dummy(*_args: Any, **_kwargs: Any) -> None:
     """
     Dummy class for visitor methods, which does nothing.
     """
-    pass
 
 
 def _derive_variant_data_proxy(config: NeedsSphinxConfig) -> None:
