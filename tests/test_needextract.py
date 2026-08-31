@@ -488,7 +488,9 @@ def test_unrenderable_view_in_extracted_content_warns(
     is left out, and the author is told which one and where.
 
     ``extra_warnings`` carries anything the *source* document reports on its own
-    account, which Sphinx emits after the needextract one.
+    account. Sphinx emits warnings in document write order (sorted docnames), so
+    here ``extract`` sorts before ``index`` and the source document's own warning
+    comes second.
     """
     app = test_app
     app.build()

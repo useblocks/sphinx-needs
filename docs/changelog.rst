@@ -56,6 +56,10 @@ Bug fixes
     ``text``, and a call with neither still renders a link with no label.
   - ``import()`` ignored an option name the need does not carry.
 
+  The two template-function warnings above are emitted once per distinct message for the
+  whole build, so the same call on the same need in a second document is not reported
+  again.
+
   **If you build with** ``-W``, the general rule applies here as it does elsewhere in this
   release series: a mistake that used to be silent — or to crash — is now a warning, and a
   warning fails a ``-W`` build. A project can start failing where it passed even though
