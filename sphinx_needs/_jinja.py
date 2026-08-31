@@ -6,59 +6,10 @@ centralizing all template rendering logic in one place.
 
 from __future__ import annotations
 
-import textwrap
 from functools import lru_cache
 from typing import Any
 
 from minijinja import Environment
-
-
-def _wordwrap_filter(value: str, width: int = 79, wrapstring: str = "\n") -> str:
-    """Jinja2-compatible wordwrap filter.
-
-    Wraps text to specified width, inserting wrapstring between wrapped lines.
-    This uses Python's textwrap module to match Jinja2's wordwrap behavior.
-
-    Like Jinja2, this preserves existing newlines and wraps each line independently.
-
-    Note: minijinja-contrib has a Rust-native wordwrap filter (since 2.12),
-    but it is gated behind the optional ``wordwrap`` Cargo feature flag.
-    The minijinja-py 2.15.1 wheel does not enable that feature
-    (see minijinja-py/Cargo.toml — only ``pycompat`` and ``html_entities``
-    are enabled from minijinja-contrib).  Once a future minijinja-py release
-    enables the ``wordwrap`` feature, this custom filter can be removed.
-    Upstream tracking: https://github.com/mitsuhiko/minijinja — no issue
-    filed yet; consider opening one.
-    """
-    if not value:
-        return value
-
-    # Preserve newlines by wrapping each line independently (matches Jinja2)
-    wrapped_lines = []
-    for line in value.splitlines():
-        # Use textwrap.wrap which matches jinja2's behavior
-        # break_on_hyphens=True is the Python/Jinja2 default
-        wrapped = textwrap.wrap(
-            line,
-            width=width,
-            break_long_words=True,
-            break_on_hyphens=True,
-        )
-        # textwrap.wrap returns empty list for empty strings, preserve empty lines
-        wrapped_lines.extend(wrapped or [""])
-
-    return wrapstring.join(wrapped_lines)
-
-
-def _setup_builtin_filters(env: Environment) -> None:
-    """Register filters missing from minijinja-py's compiled feature set.
-
-    The minijinja-py wheel currently ships without the ``wordwrap`` Cargo
-    feature of minijinja-contrib, so ``|wordwrap`` is unavailable by default.
-    This registers a Python-side replacement.  This function can be removed
-    once minijinja-py enables the ``wordwrap`` feature upstream.
-    """
-    env.add_filter("wordwrap", _wordwrap_filter)
 
 
 def _new_env(
@@ -66,7 +17,11 @@ def _new_env(
     variable_start_string: str = "{{",
     variable_end_string: str = "}}",
 ) -> Environment:
-    """Create a new Environment with standard setup (filters, autoescape).
+    """Create a new Environment with standard setup (delimiters, autoescape).
+
+    No filters are registered here: MiniJinja's own built-ins (including
+    ``wordwrap``, native since the minijinja 2.24 wheel) are all this
+    package uses.
 
     :param autoescape: Whether to enable autoescaping.
     :param variable_start_string: Delimiter that opens a variable expression
@@ -82,7 +37,6 @@ def _new_env(
     )
     if autoescape:
         env.auto_escape_callback = lambda _name: True
-    _setup_builtin_filters(env)
     return env
 
 

@@ -71,3 +71,43 @@ def test_compile_template_cache_is_keyed_on_delimiters():
 def test_compile_template_invalid_syntax_raises():
     with pytest.raises(TemplateError):
         compile_template("{{ unclosed ", autoescape=False)
+
+
+def test_wordwrap_is_minijinjas_native_filter():
+    """``wordwrap`` comes from the minijinja wheel, not from a Python filter.
+
+    sphinx-needs used to register its own ``textwrap``-based ``wordwrap``
+    because the wheel shipped without minijinja-contrib's ``wordwrap`` Cargo
+    feature.  The 2.24 wheel compiles it, the Python filter is gone, and this
+    test pins the native one in the exact shape
+    :data:`~sphinx_needs.defaults.DEFAULT_DIAGRAM_TEMPLATE` calls it —
+    ``width`` as a KEYWORD, since the native filter takes no positional width.
+    """
+    result = render_template_string(
+        "**{{ title|wordwrap(width=15, wrapstring='**\\n**') }}**",
+        {"title": "A very long need title that must be wrapped"},
+        autoescape=False,
+    )
+    assert result == "**A very long**\n**need title that**\n**must be wrapped**"
+
+
+def test_wordwrap_rejects_a_positional_width():
+    """The native filter is keyword-only, unlike jinja2's ``wordwrap``.
+
+    This is the upgrade's one user-visible break, so it is pinned rather than
+    left to be rediscovered: a custom ``needs_diagram_template`` written for
+    jinja2 (or for the Python filter this replaced) fails the build until its
+    ``wordwrap(15)`` becomes ``wordwrap(width=15)``.
+    """
+    with pytest.raises(TemplateError, match="too many arguments"):
+        render_template_string(
+            "{{ title|wordwrap(15) }}", {"title": "a b c"}, autoescape=False
+        )
+
+
+def test_wordwrap_preserves_existing_newlines():
+    """Each line wraps independently, as the Python filter did before it."""
+    result = render_template_string(
+        "{{ v|wordwrap(width=5) }}", {"v": "aaa bbb\n\nccc ddd"}, autoescape=False
+    )
+    assert result == "aaa\nbbb\n\nccc\nddd"
