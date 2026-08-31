@@ -15,7 +15,7 @@ Improvements
 ............
 
 - 👌 ``|wordwrap`` is now MiniJinja's own filter, and the minijinja floor is raised to
-  2.24 **(changed output)** (:pr:`1801`)
+  2.24 **(changed output)** (:pr:`1802`)
 
   Sphinx-Needs shipped its own ``wordwrap``, written on Python's ``textwrap``, because the
   minijinja wheel was built without minijinja-contrib's ``wordwrap`` Cargo feature and the
