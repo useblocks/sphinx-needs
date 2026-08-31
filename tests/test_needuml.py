@@ -333,3 +333,98 @@ def test_needuml_option_warnings(test_app):
     assert 'card "value" as b' in needuml["content_calculated"]
     # the known config name is still applied, the unknown one simply skipped
     assert "allowmixing" in needuml["content_calculated"]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_key_missing"}],
+    indirect=True,
+)
+def test_needuml_jinja_func_uml_missing_key(test_app):
+    """``uml()`` with an arch key the need does not have names the key and the need.
+
+    The guard subscripted ``arch`` before testing for the key, so the intended message
+    was unreachable and the build ended on a bare ``KeyError`` instead.
+    """
+    app = test_app
+
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
+
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
+    assert out.returncode == 1
+
+    stderr = out.stderr.decode("utf-8")
+    assert (
+        "sphinx_needs.directives.needuml.NeedumlException: "
+        "Option key name: nosuchkey does not exist in need SP_001." in stderr
+    )
+    assert "KeyError: 'nosuchkey'" not in stderr
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_import_string_option"}],
+    indirect=True,
+)
+def test_needuml_jinja_func_import_string_option(test_app):
+    """``import()`` of an option holding a plain string names the option.
+
+    A string is iterable, so it used to be consumed one character at a time and each
+    character looked up as a need id, reporting the first character as an unknown id.
+    """
+    app = test_app
+
+    srcdir = Path(app.srcdir)
+    out_dir = srcdir / "_build"
+
+    out = subprocess.run(
+        ["sphinx-build", "-M", "html", srcdir, out_dir], capture_output=True
+    )
+    assert out.returncode == 1
+
+    stderr = out.stderr.decode("utf-8")
+    assert (
+        "sphinx_needs.directives.needuml.NeedumlException: "
+        "Option value for 'status' is not a list of need ids: 'open'." in stderr
+    )
+    assert "undefined need_id: 'o'" not in stderr
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_warnings"}],
+    indirect=True,
+)
+def test_needuml_jinja_func_warnings(test_app):
+    """``ref()`` and ``import()`` report what they silently accepted before.
+
+    ``ref()``'s own validation was unreachable (``(a and b) and (not a and not b)``),
+    so passing both ``option`` and ``text``, or neither, went unreported; ``import()``
+    ignored an option name the need does not carry.  None of them changes what is
+    rendered, so all three are warnings rather than errors.
+    """
+    app = test_app
+    app.build()
+
+    assert _warnings(app) == [
+        "srcdir/index.rst:13: WARNING: Jinja function ref() was given both 'option' "
+        "and 'text' for need_id 'SP_001'; the value of 'option' is used. "
+        "[needs.needuml]",
+        "srcdir/index.rst:13: WARNING: Jinja function ref() was given neither "
+        "'option' nor 'text' for need_id 'SP_001'; the link is rendered without a "
+        "label. [needs.needuml]",
+        "srcdir/index.rst:13: WARNING: Jinja function import() is called with option "
+        "name 'no_such_option', which does not exist in need SP_002. [needs.needuml]",
+    ]
+
+    (needuml,) = app.env._needs_all_needumls.values()
+    content = needuml["content_calculated"]
+    # option wins when both are given, and the label-less link keeps its old shape
+    assert "Alice -> Bob: [[../index.html#SP_001 Test spec]]" in content
+    assert "Bob --> Alice: [[../index.html#SP_001]]" in content
+    assert "Alice -> Bob: [[../index.html#SP_001 only text]]" in content
+    # a genuine list of ids is still imported
+    assert "as SP_001 [[../index.html#SP_001]]" in content

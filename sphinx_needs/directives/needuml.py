@@ -40,6 +40,10 @@ class Needuml(nodes.General, nodes.Element):
     pass
 
 
+#: Where to point a warning raised while a diagram's content is being rendered.
+LocationType = str | tuple[str, int | None] | nodes.Element | None
+
+
 class NeedumlDirective(SphinxDirective):
     """
     Directive to get flow charts.
@@ -175,6 +179,7 @@ def transform_uml_to_plantuml_node(
     key: None | str,
     kwargs: dict[str, Any],
     config: str,
+    location: LocationType = None,
 ) -> plantuml:
     try:
         if "sphinxcontrib.plantuml" not in app.extensions:
@@ -210,6 +215,7 @@ def transform_uml_to_plantuml_node(
         key=key,
         processed_need_ids={},
         kwargs=kwargs,
+        location=location,
     )
 
     puml_node["uml"] += f"\n{uml_content_return}"
@@ -237,6 +243,7 @@ def jinja2uml(
     processed_need_ids: ProcessedNeedsType,
     kwargs: dict[str, Any],
     jinja_utils: JinjaFunctions | None = None,
+    location: LocationType = None,
 ) -> tuple[str, ProcessedNeedsType]:
     """Render Jinja template content into PlantUML syntax.
 
@@ -262,6 +269,9 @@ def jinja2uml(
     :param jinja_utils: An existing :class:`JinjaFunctions` instance to reuse
         across recursion.  ``None`` on the initial call (a new instance is
         created); passed automatically on recursive calls.
+    :param location: Where to point warnings raised while rendering, normally
+        the ``Needuml`` node the content belongs to.  Only read on the initial
+        call, since recursive calls reuse the existing ``jinja_utils``.
     :return: A tuple of the rendered PlantUML string and the updated
         processed-needs mapping.
     """
@@ -271,7 +281,7 @@ def jinja2uml(
     # 2. Get or reuse a JinjaFunctions instance (reused across recursion)
     if jinja_utils is None:
         jinja_utils = JinjaFunctions(
-            app, fromdocname, parent_need_id, processed_need_ids
+            app, fromdocname, parent_need_id, processed_need_ids, location
         )
     else:
         # Update parent_need_id for this recursion level
@@ -325,10 +335,12 @@ class JinjaFunctions:
         fromdocname: None | str,
         parent_need_id: None | str,
         processed_need_ids: ProcessedNeedsType,
+        location: LocationType = None,
     ) -> None:
         self.needs = SphinxNeedsData(app.env).get_needs_view()
         self.app = app
         self.fromdocname = fromdocname
+        self.location = location
         self.parent_need_id = parent_need_id
         if parent_need_id and parent_need_id not in self.needs:
             raise NeedumlException(
@@ -399,7 +411,9 @@ class JinjaFunctions:
         need_info = self.needs[need_id]
 
         if key != "diagram":
-            if need_info["arch"][key]:
+            # note the membership test must come first: subscripting an absent key
+            # raised a bare KeyError instead of the intended message below
+            if key in need_info["arch"] and need_info["arch"][key]:
                 uml_content = need_info["arch"][key]
             else:
                 raise NeedumlException(
@@ -488,9 +502,25 @@ class JinjaFunctions:
             raise NeedumlException(
                 f"Jinja function ref is called with undefined need_id: '{need_id_main}'."
             )
-        if (option and text) and (not option and not text):
-            raise NeedumlException(
-                "Jinja function ref requires exactly one entry 'option' or 'text'"
+        # ``ref()`` is documented as taking exactly one of ``option`` and ``text``.
+        # Neither case is an error, because both have produced a link for years:
+        # with both given ``option`` wins, with neither the link carries no label
+        # and PlantUML shows the bare URL instead.  Both are reported.
+        if option and text:
+            log_warning(
+                logger,
+                f"Jinja function ref() was given both 'option' and 'text' for "
+                f"need_id {need_id!r}; the value of 'option' is used.",
+                "needuml",
+                location=self.location,
+            )
+        elif not option and not text:
+            log_warning(
+                logger,
+                f"Jinja function ref() was given neither 'option' nor 'text' for "
+                f"need_id {need_id!r}; the link is rendered without a label.",
+                "needuml",
+                location=self.location,
             )
 
         need = self.needs[need_id_main]
@@ -531,15 +561,33 @@ class JinjaFunctions:
         uml_ids = []
         for option_name in args:
             # check if link option_name exists in current need object
-            if option_value := need_info.get(option_name):
-                try:
-                    iterable_value = list(option_value)
-                except TypeError:
-                    raise NeedumlException(
-                        f"Option value for {option_name!r} is not iterable."
-                    )
-                for id in iterable_value:
-                    uml_ids.append(id)
+            if option_name not in need_info:
+                log_warning(
+                    logger,
+                    f"Jinja function import() is called with option name "
+                    f"{option_name!r}, which does not exist in need "
+                    f"{self.parent_need_id}.",
+                    "needuml",
+                    location=self.location,
+                )
+                continue
+            option_value = need_info[option_name]
+            if not option_value:
+                continue
+            if isinstance(option_value, str | bytes):
+                # a string is iterable, so it would otherwise be consumed one
+                # character at a time, each character looked up as a need id
+                raise NeedumlException(
+                    f"Option value for {option_name!r} is not a list of need ids: "
+                    f"{option_value!r}."
+                )
+            try:
+                iterable_value = list(option_value)
+            except TypeError:
+                raise NeedumlException(
+                    f"Option value for {option_name!r} is not iterable."
+                )
+            uml_ids.extend(iterable_value)
         umls = ""
         if uml_ids:
             for uml_id in uml_ids:
@@ -624,6 +672,7 @@ def process_needuml(
             key=current_needuml["key"],
             kwargs=current_needuml["extra"],
             config=config,
+            location=node,
         )
         if "uml" not in puml_node:
             # An error node was returned
