@@ -15,7 +15,7 @@ Bug fixes
 .........
 
 - 🐛 Eight :ref:`needuml` and :ref:`needarch` inputs that were ignored, or that ended the
-  build, are now reported **(changed output)** (:pr:`1796`)
+  build, are now reported **(changed output)** (:pr:`1800`)
 
   Three of them ended the whole build with a Python traceback and a "report this to the
   developers" banner, none of them naming the document it came from:
