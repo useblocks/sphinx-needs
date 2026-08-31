@@ -250,7 +250,7 @@ For example:
        },
    }
 
-These fields would then be availble to set in need directives, such as:
+These fields would then be available to set in need directives, such as:
 
 .. code-block:: rst
 
@@ -567,7 +567,7 @@ Use ``style_start`` and ``style_end`` like this:
 .. note::
 
    Some plantuml diagrams have restrictions in the order of color (``style``)
-   and orientation (``left``, ``rigth``, ``up`` and ``down``). We suggest to set the orientation
+   and orientation (``left``, ``right``, ``up`` and ``down``). We suggest to set the orientation
    in ``style_end`` like in the example above, as this is more often supported.
 
 .. _`needs_variant_data`:
@@ -1801,7 +1801,7 @@ keys:
 
 :base_url: Base url which is used to calculate the final, specific need url. Normally the path under which the ``index.html`` is provided.
   Base url supports also relative path, which starts from project build html folder (normally where ``index.html`` is located).
-:target_url: Allows to config the final caculated need url. (*optional*)
+:target_url: Allows to config the final calculated need url. (*optional*)
   |br| If provided, ``target_url`` will be appended to ``base_url`` as the final calculate need url, e.g. ``base_url/target_url``.
   If not, the external need url uses the default calculated ``base_url``.
   |br| The ``target_url`` supports Jinja context ``{{need[]}}``, ``need option`` used as key, e.g ``{{need['id']}}`` or ``{{need['type']}}``.
@@ -2665,7 +2665,7 @@ And use it like:
               "description": "Efforts in days",
               "schema": {
                   "type": "integer",
-                  "mininum": 0,
+                  "minimum": 0,
               },
           }
       ]
