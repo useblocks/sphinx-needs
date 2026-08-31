@@ -319,6 +319,9 @@ def test_needuml_option_warnings(test_app):
     carrying no colon ended the whole build with an unhandled ``ValueError``.  A value
     that itself contains a colon must survive, the pair being split on the first colon
     only.
+
+    Both options carry a trailing comma, so both produce one empty segment: it is
+    skipped without a word, and ``:extra:`` must not report it as a malformed pair.
     """
     app = test_app
     app.build()
@@ -331,6 +334,9 @@ def test_needuml_option_warnings(test_app):
         'srcdir/index.rst:12: WARNING: scale value must be a number. "not-a-number" '
         "found [needs.diagram_scale]",
     ]
+    # the trailing commas of both options are skipped in silence, as an empty
+    # `:config:` segment always has -- no "extra option '' is not a pair" line
+    assert not [line for line in _warnings(app) if "''" in line]
 
     needuml, scaled = app.env._needs_all_needumls.values()
     assert needuml["extra"] == {"url": "https://example.com/a:b", "plain": "value"}
@@ -415,6 +421,10 @@ def test_needuml_jinja_func_warnings(test_app):
     so passing both ``option`` and ``text``, or neither, went unreported; ``import()``
     ignored an option name the need does not carry.  None of them changes what is
     rendered, so all three are warnings rather than errors.
+
+    An option that *is* defined but holds nothing (``myopt`` here, the commonest shape
+    of all) must stay a silent no-op: it imports nothing, says nothing, and above all
+    must not reach the new "not a list of need ids" check, which would end the build.
     """
     app = test_app
     app.build()
@@ -429,6 +439,8 @@ def test_needuml_jinja_func_warnings(test_app):
         "srcdir/index.rst:13: WARNING: Jinja function import() is called with option "
         "name 'no_such_option', which does not exist in need SP_002. [needs.needuml]",
     ]
+    # in particular: the defined-but-empty 'myopt' contributes no warning of its own
+    assert not [line for line in _warnings(app) if "'myopt'" in line]
 
     (needuml,) = app.env._needs_all_needumls.values()
     content = needuml["content_calculated"]
@@ -436,7 +448,7 @@ def test_needuml_jinja_func_warnings(test_app):
     assert "Alice -> Bob: [[../index.html#SP_001 Test spec]]" in content
     assert "Bob --> Alice: [[../index.html#SP_001]]" in content
     assert "Alice -> Bob: [[../index.html#SP_001 only text]]" in content
-    # a genuine list of ids is still imported
+    # a list of ids is still imported
     assert "as SP_001 [[../index.html#SP_001]]" in content
 
 

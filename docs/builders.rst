@@ -166,6 +166,14 @@ Note that ``make needumls`` and ``sphinx-build -M needumls`` place that output f
 of the build folder you name, e.g. ``_build/needumls``, as they do for every builder;
 ``sphinx-build -b needumls`` writes straight into the output folder you name.
 
+.. note::
+
+   The builder writes only the diagrams the current build re-rendered.
+   A document Sphinx did not have to re-read is not re-rendered, so its ``:save:`` file is left exactly as it was —
+   which means that pointing the builder at an output folder whose ``.doctrees`` is already up to date writes nothing at all
+   (the log says ``Skipping needuml file ...`` for each one).
+   Use a fresh output folder, or pass ``-E`` to re-read everything, to regenerate every file.
+
 Usage
 +++++
 

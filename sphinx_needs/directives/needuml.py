@@ -109,6 +109,10 @@ class NeedumlDirective(SphinxDirective):
         extras = self.options.get("extra")
         if extras:
             for extra in extras.split(","):
+                if not extra.strip():
+                    # an empty segment, e.g. from a trailing comma; skipped without a
+                    # word, exactly as an empty `:config:` segment is above
+                    continue
                 # only split on the first colon, so that a value may contain colons
                 # (URLs, times, namespaced identifiers, ...)
                 key, sep, value = extra.partition(":")
@@ -223,7 +227,7 @@ def transform_uml_to_plantuml_node(
     return puml_node
 
 
-def get_debug_node_from_puml_node(puml_node: plantuml) -> nodes.container:
+def get_debug_node_from_puml_node(puml_node: nodes.Element) -> nodes.container:
     if isinstance(puml_node, nodes.figure):
         data = puml_node.children[0]["uml"]  # type: ignore[index]
     else:
@@ -514,6 +518,9 @@ class JinjaFunctions:
                 f"need_id {need_id!r}; the value of 'option' is used.",
                 "needuml",
                 location=self.location,
+                # a diagram may hold dozens of ref() calls; one line per distinct
+                # message (the need id is in it) is enough to act on
+                once=True,
             )
         elif not option and not text:
             log_warning(
@@ -522,6 +529,7 @@ class JinjaFunctions:
                 f"need_id {need_id!r}; the link is rendered without a label.",
                 "needuml",
                 location=self.location,
+                once=True,
             )
 
         need = self.needs[need_id_main]
@@ -570,10 +578,13 @@ class JinjaFunctions:
                     f"{self.parent_need_id}.",
                     "needuml",
                     location=self.location,
+                    once=True,
                 )
                 continue
             option_value = need_info[option_name]
             if not option_value:
+                # a defined but unset option (the commonest shape there is) imports
+                # nothing and says nothing -- it must not reach the string check below
                 continue
             if isinstance(option_value, str | bytes):
                 # a string is iterable, so it would otherwise be consumed one

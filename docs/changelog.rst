@@ -15,7 +15,7 @@ Bug fixes
 .........
 
 - 🐛 Eight :ref:`needuml` and :ref:`needarch` inputs that were ignored, or that ended the
-  build, are now reported (:pr:`1796`)
+  build, are now reported **(changed output)** (:pr:`1796`)
 
   Three of them ended the whole build with a Python traceback and a "report this to the
   developers" banner, none of them naming the document it came from:
@@ -23,17 +23,27 @@ Bug fixes
   - An ``:extra:`` value containing a second colon — a URL, a time, a namespaced
     identifier — raised ``ValueError: too many values to unpack``. A pair is now split on
     its first colon only, with both halves stripped, so such values are usable; a segment
-    carrying no colon at all is reported and skipped.
+    carrying no colon at all is reported and skipped, and an empty one (from a trailing
+    comma) is skipped in silence, as an empty ``:config:`` segment always has been.
   - ``uml(id, key=...)`` naming an arch key the need does not carry raised a bare
     ``KeyError``, because the guard subscripted ``arch`` before testing for the key. The
     message the code already held, naming both the key and the need, is now the one
     raised.
   - ``import()`` given an option holding a plain string consumed it one character at a
     time, looking each character up as a need id and reporting the first character as an
-    unknown id. Such a value is now refused by name; a genuine list of ids is imported
-    exactly as before.
+    unknown id. Such a value is now refused by name, and a list of ids is imported as it
+    always was. Note the one shape this ends: under a ``needs_id_regex`` permitting
+    single-character ids, a *string* of concatenated ids used to import them one by one,
+    and now errors. An option that is defined but unset still imports nothing, silently.
 
-  The rest were silent, and stay silent in what they render:
+  **The whitespace strip is the one change to what a working document renders.** It only
+  affects an ``:extra:`` written with spaces around a pair, which the documented example
+  never had: ``:extra: a:1, b:2`` stored the key ``" b"``, unreachable from a template, so
+  ``{{ b }}`` rendered empty and now renders ``2``; and ``:extra: name: X`` stored ``" X"``
+  and rendered a leading space, which it no longer does. Both are what the author wrote the
+  pair to mean.
+
+  The rest were silent, and are unchanged in what they render:
 
   - Without ``sphinxcontrib.plantuml`` installed, every diagram in the project was
     replaced by an error node on the page and nothing at all was logged.
@@ -46,14 +56,27 @@ Bug fixes
     ``text``, and a call with neither still renders a link with no label.
   - ``import()`` ignored an option name the need does not carry.
 
+  **If you build with** ``-W``, the general rule applies here as it does elsewhere in this
+  release series: a mistake that used to be silent — or to crash — is now a warning, and a
+  warning fails a ``-W`` build. A project can start failing where it passed even though
+  nothing about it changed, most easily by not having ``sphinxcontrib.plantuml`` installed,
+  which now reports one warning per needuml. Silence them with
+  ``suppress_warnings = ["needs.needuml"]``; the ``:scale:`` one keeps the existing
+  ``needs.diagram_scale`` subtype shared with the other diagrams, so covering both takes
+  ``suppress_warnings = ["needs.needuml", "needs.diagram_scale"]``. A third subtype,
+  ``needs.uml``, already existed and is unchanged: it covers only the
+  :ref:`needs_uml_process_max_time` warning.
+
   Finally, the :ref:`needumls_builder` builder no longer truncates the ``.puml`` files an
   earlier run saved. The generated content is filled in while a document is written,
   after the environment has been pickled, so a build that re-read nothing held an empty
   value for every needuml and wrote it over the good file — reproducible with two
   consecutive ``sphinx-build -b needumls`` runs, the second leaving zero bytes behind. A
-  needuml with no generated content is now skipped instead. A needuml is still not
-  re-rendered when a need it references changes in another document; that needs
-  dependency tracking and is not addressed here.
+  needuml with no generated content is now skipped instead, which also means a build over
+  an already up-to-date ``.doctrees`` writes nothing rather than emptying everything; use a
+  fresh output folder or ``-E`` to regenerate. A needuml is still not re-rendered when a
+  need it references changes in another document; that needs dependency tracking and is not
+  addressed here.
 
 - 🐛 Six :ref:`needextract` inputs that ended the build are now reported instead
   **(changed output)** (:pr:`1795`)

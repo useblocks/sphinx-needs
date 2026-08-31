@@ -17,4 +17,5 @@ TEST DOCUMENT NEEDUML JINJA FUNCTION WARNINGS
       Alice -> Bob: {{ref("SP_001", text="only text")}}
 
       {{import("links")}}
+      {{import("myopt")}}
       {{import("no_such_option")}}
