@@ -34,7 +34,7 @@ jobs:
 
       - name: Install dev tools
         run: |
-          pip install tox tox-uv pre-commit
+          pip install tox tox-uv prek
 
       - name: Install pre-commit hooks
-        run: pre-commit install
+        run: prek install
