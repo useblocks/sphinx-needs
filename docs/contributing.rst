@@ -43,12 +43,15 @@ or using `uv <https://docs.astral.sh/uv/>`__ to install the dependencies into an
 
    uv sync
 
-To run the formatting and linting suite, `pre-commit <https://pre-commit.com/>`__ is used:
+To run the formatting and linting suite, `prek <https://prek.j178.dev/>`__ is used:
 
 .. code-block:: bash
 
-   pre-commit install  # to auto-run on every commit
-   pre-commit run --all-files  # to run manually
+   uv run prek install  # to auto-run on every commit
+   uv run prek run --all-files  # to run manually
+
+The hooks are declared in ``.pre-commit-config.yaml``, which prek reads unchanged,
+so `pre-commit <https://pre-commit.com/>`__ itself still works if you prefer it.
 
 To run testing and documentation building, `tox <https://tox.readthedocs.io/>`__ is used:
 
