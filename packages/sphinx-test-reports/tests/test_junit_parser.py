@@ -181,3 +181,66 @@ def test_parse_error_xml():
 
     assert test_suite["testcases"][3]["name"] == "ASkippedTest"
     assert test_suite["testcases"][3]["result"] == "skipped"
+
+
+xml_runner_error_path = os.path.join(
+    os.path.dirname(__file__), "doc_test/utils", "runner_error_data.xml"
+)
+
+
+def _runner_error_case(name):
+    from sphinxcontrib.test_reports.junitparser import JUnitParser
+
+    suite = JUnitParser(xml_runner_error_path).parse()[0]
+    return next(case for case in suite["testcases"] if case["name"] == name)
+
+
+def test_signal_killed_testcase_is_reported_as_error():
+    """A crashed or signal-killed test must not read as passed.
+
+    ``<error>`` is not a googletest construct -- the *runner* synthesizes a
+    report of this shape when the test binary dies without writing one (Bazel
+    does this from the test log on a crash or timeout).
+    """
+    case = _runner_error_case("KilledBySigterm")
+
+    assert case["result"] == "error"
+    assert case["message"] == "exited with error code 143"
+    assert "Received SIGTERM" in case["text"]
+
+
+def test_error_testcase_keeps_its_source_location_and_captured_output():
+    case = _runner_error_case("KilledBySigterm")
+
+    assert case["file"] == "src/crash_test.cc"
+    assert case["line"] == 7
+    assert case["system-err"] == "shutting down worker pool"
+
+
+def test_all_error_parts_are_kept():
+    """Only the first ``<error>`` used to be read, like failures and skips."""
+    case = _runner_error_case("ReportsTwoErrors")
+
+    assert case["result"] == "error"
+    assert [part["message"] for part in case["parts"]] == [
+        "first error",
+        "second error",
+    ]
+    assert [part["kind"] for part in case["parts"]] == ["error", "error"]
+
+
+def test_a_passing_testcase_next_to_errors_is_still_passed():
+    case = _runner_error_case("Survivor")
+
+    assert case["result"] == "passed"
+    assert case["parts"] == []
+
+
+def test_error_counts_are_taken_from_the_testsuite():
+    from sphinxcontrib.test_reports.junitparser import JUnitParser
+
+    suite = JUnitParser(xml_runner_error_path).parse()[0]
+
+    assert suite["errors"] == 2
+    assert suite["failures"] == 0
+    assert suite["passed"] == 1

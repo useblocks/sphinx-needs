@@ -13,5 +13,10 @@ DEFAULT_OPTIONS = [
     "text",
     "message",
     "system-out",
+    "system-err",
+    "parts",
     "properties",
+    "timestamp",
+    "value_param",
+    "type_param",
 ]

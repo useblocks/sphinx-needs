@@ -7,6 +7,13 @@ Unreleased
 ----------
 :Released: under development
 
+* Feature: Support the googletest XML dialect: ``status="notrun"`` is reported
+  as ``disabled`` instead of ``passed``, all ``<failure>``/``<skipped>`` parts
+  of a test case are kept instead of only the first, ``RecordProperty`` values
+  in attribute form are read (on ``<testcase>`` for googletest < 1.8.1 and on
+  ``<testsuite>`` for suite-level properties up to 1.15.x), and ``timestamp``,
+  ``value_param`` and ``type_param`` are parsed. ``<system-err>`` is captured.
+
 .. _`release:1.4.0`:
 
 1.4.0

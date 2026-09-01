@@ -6,6 +6,116 @@ import os
 
 from lxml import etree, objectify
 
+#: Attributes the JUnit/googletest dialects define themselves. Every *other*
+#: attribute is a ``RecordProperty`` value in attribute form: googletest wrote
+#: test-case properties as attributes before 1.8.1 (the form its official docs
+#: still show), and suite-level properties stayed attribute-only up to 1.15.x.
+TESTCASE_KNOWN_ATTRIBUTES = frozenset(
+    {
+        "assertions",
+        "classname",
+        "file",
+        "line",
+        "name",
+        "result",
+        "status",
+        "time",
+        "timestamp",
+        "type_param",
+        "value_param",
+    }
+)
+
+TESTSUITE_KNOWN_ATTRIBUTES = frozenset(
+    {
+        "disabled",
+        "errors",
+        "failures",
+        "hostname",
+        "id",
+        "name",
+        "package",
+        "random_seed",
+        "skip",
+        "skipped",
+        "skips",
+        "tests",
+        "time",
+        "timestamp",
+    }
+)
+
+#: ``<testcase>`` children carrying a result, in the precedence order used to
+#: classify a case that has more than one kind of them.
+RESULT_PART_KINDS = ("skipped", "failure", "error")
+
+
+def _child_tag(child: objectify.ObjectifiedElement) -> str | None:
+    """Tag name of an lxml child, or ``None`` for comments and instructions."""
+    tag = child.tag
+    return tag if isinstance(tag, str) else None
+
+
+def _collect_properties(
+    xml_object: objectify.ObjectifiedElement, known_attributes: frozenset[str]
+) -> dict[str, str]:
+    """Read ``RecordProperty`` values from both dialect forms.
+
+    Unknown attributes are the legacy/attribute form; ``<properties>`` children
+    are the modern form and therefore win on conflict.
+    """
+    properties = {
+        name: value
+        for name, value in xml_object.attrib.items()
+        if name not in known_attributes
+    }
+
+    if hasattr(xml_object, "properties") and hasattr(xml_object.properties, "property"):
+        for prop in xml_object.properties.property:
+            name = prop.attrib.get("name", "")
+            if name:
+                properties[name] = prop.attrib.get("value", "")
+
+    return properties
+
+
+def _collect_result_parts(
+    testcase: objectify.ObjectifiedElement,
+) -> list[dict[str, str]]:
+    """Every ``<failure>``/``<error>``/``<skipped>`` child, in document order.
+
+    googletest emits one element per failed assertion and ``GTEST_SKIP`` can
+    fire repeatedly, so reading only the first part silently drops evidence.
+    The per-part ``type``/``message`` defaults match what the flat, historical
+    ``type``/``message`` keys have always reported for that kind.
+    """
+    parts: list[dict[str, str]] = []
+    for child in testcase.iterchildren():
+        kind = _child_tag(child)
+        if kind not in RESULT_PART_KINDS:
+            continue
+        parts.append(
+            {
+                "kind": kind,
+                "type": child.attrib.get("type", "unknown"),
+                "message": child.attrib.get(
+                    "message", "" if kind == "failure" else "unknown"
+                ),
+                "text": child.text or "",
+            }
+        )
+    return parts
+
+
+def _collect_captured_output(xml_object: objectify.ObjectifiedElement, tag: str) -> str:
+    """Join every ``<system-out>``/``<system-err>`` block of an element."""
+    blocks = [
+        child.text or ""
+        for child in xml_object.iterchildren()
+        if _child_tag(child) == tag
+    ]
+    return "\n".join(block for block in blocks if block)
+
 
 class JUnitParser:
     def __init__(self, junit_xml, junit_xsd=None):
@@ -53,53 +163,55 @@ class JUnitParser:
                 "line": int(testcase.attrib.get("line", -1)),
                 "name": testcase.attrib.get("name", "unknown"),
                 "time": float(testcase.attrib.get("time", -1)),
+                # googletest attributes; empty (never absent) so that consumers
+                # can emit every field unconditionally.
+                "timestamp": testcase.attrib.get("timestamp", ""),
+                "value_param": testcase.attrib.get("value_param", ""),
+                "type_param": testcase.attrib.get("type_param", ""),
             }
 
-            # The following data is normally a subnode (e.g. skipped/failure).
-            # We integrate it right into the testcase for better handling
-            if hasattr(testcase, "skipped"):
-                result = testcase.skipped
-                tc_dict["result"] = "skipped"
-                tc_dict["type"] = result.attrib.get("type", "unknown")
-                # tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines  and tabs
-                # result.text can be None for pytest xfail test cases
-                tc_dict["text"] = result.text or ""
-                tc_dict["message"] = result.attrib.get("message", "unknown")
-            elif hasattr(testcase, "failure"):
-                result = testcase.failure
-                tc_dict["result"] = "failure"
-                tc_dict["type"] = result.attrib.get("type", "unknown")
-                # tc_dict["text"] = re.sub(r"[\n\t]*", "", result.text)  # Removes newlines and tabs
-                tc_dict["text"] = result.text or ""
-                tc_dict["message"] = result.attrib.get("message", "")
-            elif hasattr(testcase, "error"):
-                result = testcase.error
-                tc_dict["result"] = "error"
-                tc_dict["type"] = result.attrib.get("type", "unknown")
-                tc_dict["text"] = result.text or ""
-                tc_dict["message"] = result.attrib.get("message", "unknown")
+            # The result data is normally a subnode (e.g. skipped/failure).
+            # We integrate it right into the testcase for better handling, and
+            # keep *every* part -- the flat type/text/message keys below stay on
+            # the first one for backwards compatibility.
+            parts = _collect_result_parts(testcase)
+            tc_dict["parts"] = parts
+
+            first_part = next(
+                (
+                    part
+                    for kind in RESULT_PART_KINDS
+                    for part in parts
+                    if part["kind"] == kind
+                ),
+                None,
+            )
+            if first_part is not None:
+                tc_dict["result"] = first_part["kind"]
+                tc_dict["type"] = first_part["type"]
+                # part text can be None for pytest xfail test cases
+                tc_dict["text"] = first_part["text"]
+                tc_dict["message"] = first_part["message"]
             else:
-                tc_dict["result"] = "passed"
+                # No result child at all, so the case either passed or never
+                # ran; failures, errors and skips are all handled above.
+                # googletest reports a disabled test as status="notrun"
+                # (result="suppressed"), which otherwise reads as a pass.
+                disabled = (
+                    testcase.attrib.get("status") == "notrun"
+                    or testcase.attrib.get("result") == "suppressed"
+                )
+                tc_dict["result"] = "disabled" if disabled else "passed"
                 tc_dict["type"] = ""
                 tc_dict["text"] = ""
                 tc_dict["message"] = ""
 
-            if hasattr(testcase, "system-out"):
-                tc_dict["system-out"] = testcase["system-out"].text
-            else:
-                tc_dict["system-out"] = ""
+            tc_dict["system-out"] = _collect_captured_output(testcase, "system-out")
+            tc_dict["system-err"] = _collect_captured_output(testcase, "system-err")
 
-            # Extract <properties> child elements as a dict
-            props = {}
-            if hasattr(testcase, "properties") and hasattr(
-                testcase.properties, "property"
-            ):
-                for prop in testcase.properties.property:
-                    name = prop.attrib.get("name", "")
-                    value = prop.attrib.get("value", "")
-                    if name:
-                        props[name] = value
-            tc_dict["properties"] = props
+            tc_dict["properties"] = _collect_properties(
+                testcase, TESTCASE_KNOWN_ATTRIBUTES
+            )
 
             return tc_dict
 
@@ -130,17 +242,9 @@ class JUnitParser:
                 "testsuite_nested": [],
             }
 
-            # Extract <properties> child elements as a dict
-            props = {}
-            if hasattr(testsuite, "properties") and hasattr(
-                testsuite.properties, "property"
-            ):
-                for prop in testsuite.properties.property:
-                    name = prop.attrib.get("name", "")
-                    value = prop.attrib.get("value", "")
-                    if name:
-                        props[name] = value
-            ts_dict["properties"] = props
+            ts_dict["properties"] = _collect_properties(
+                testsuite, TESTSUITE_KNOWN_ATTRIBUTES
+            )
 
             # add nested testsuite objects to
             if hasattr(testsuite, "testsuite"):
