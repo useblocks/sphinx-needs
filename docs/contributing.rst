@@ -53,6 +53,9 @@ To run the formatting and linting suite, `prek <https://prek.j178.dev/>`__ is us
 The hooks are declared in ``.pre-commit-config.yaml``, which prek reads unchanged,
 so `pre-commit <https://pre-commit.com/>`__ itself still works if you prefer it.
 
+Hook versions are bumped by the scheduled ``Prek update`` workflow, which opens a
+pull request with the new revisions.
+
 To run testing and documentation building, `tox <https://tox.readthedocs.io/>`__ is used:
 
 .. code-block:: bash
