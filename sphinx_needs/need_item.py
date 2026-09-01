@@ -438,7 +438,7 @@ class NeedItem:
         backlinks: dict[str, list[str]] | dict[str, list[NeedLink]] | None = None,
         parts: Sequence[NeedPartData] = (),
         modifications: Sequence[NeedModification] = (),
-        constraint_results: None | NeedConstraintResults = None,
+        constraint_results: NeedConstraintResults | None = None,
         dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray]
         | None = None,
         _validate: bool = True,
@@ -637,7 +637,7 @@ class NeedItem:
         return self._modifications
 
     @property
-    def constraint_results(self) -> None | NeedConstraintResults:
+    def constraint_results(self) -> NeedConstraintResults | None:
         """Return the constraint results of the need item."""
         return self._constraint_results
 
@@ -1130,7 +1130,7 @@ class NeedItem:
 
     def set_constraint_results(
         self,
-        constraint_results: None | NeedConstraintResults,
+        constraint_results: NeedConstraintResults | None,
         *,
         _recompute: bool = True,
     ) -> None:

@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 class ProcessedDataType(TypedDict):
     art: str
-    key: None | str
+    key: str | None
     arguments: dict[str, Any]
 
 
@@ -179,8 +179,8 @@ class NeedarchDirective(NeedumlDirective):
 def transform_uml_to_plantuml_node(
     app: Sphinx,
     uml_content: str,
-    parent_need_id: None | str,
-    key: None | str,
+    parent_need_id: str | None,
+    key: str | None,
     kwargs: dict[str, Any],
     config: str,
     location: LocationType = None,
@@ -241,10 +241,10 @@ def get_debug_node_from_puml_node(puml_node: nodes.Element) -> nodes.container:
 
 def jinja2uml(
     app: Sphinx,
-    fromdocname: None | str,
+    fromdocname: str | None,
     uml_content: str,
-    parent_need_id: None | str,
-    key: None | str,
+    parent_need_id: str | None,
+    key: str | None,
     processed_need_ids: ProcessedNeedsType,
     kwargs: dict[str, Any],
     jinja_utils: JinjaFunctions | None = None,
@@ -337,8 +337,8 @@ class JinjaFunctions:
     def __init__(
         self,
         app: Sphinx,
-        fromdocname: None | str,
-        parent_need_id: None | str,
+        fromdocname: str | None,
+        parent_need_id: str | None,
         processed_need_ids: ProcessedNeedsType,
         location: LocationType = None,
     ) -> None:
@@ -354,7 +354,7 @@ class JinjaFunctions:
         self.processed_need_ids = processed_need_ids
         self.needs_config = NeedsSphinxConfig(app.config)
 
-    def set_parent_need_id(self, parent_need_id: None | str) -> None:
+    def set_parent_need_id(self, parent_need_id: str | None) -> None:
         """Update the parent need ID for a new recursion level."""
         if parent_need_id and parent_need_id not in self.needs:
             raise NeedumlException(
@@ -363,7 +363,7 @@ class JinjaFunctions:
         self.parent_need_id = parent_need_id
 
     def need_to_processed_data(
-        self, art: str, key: None | str, kwargs: dict[str, Any]
+        self, art: str, key: str | None, kwargs: dict[str, Any]
     ) -> ProcessedDataType:
         d: ProcessedDataType = {
             "art": art,
@@ -373,7 +373,7 @@ class JinjaFunctions:
         return d
 
     def append_need_to_processed_needs(
-        self, need_id: str, art: str, key: None | str, kwargs: dict[str, Any]
+        self, need_id: str, art: str, key: str | None, kwargs: dict[str, Any]
     ) -> None:
         data = self.need_to_processed_data(art=art, key=key, kwargs=kwargs)
         if need_id not in self.processed_need_ids:
@@ -499,7 +499,7 @@ class JinjaFunctions:
         return need_uml
 
     def ref(
-        self, need_id: str, option: None | str = None, text: None | str = None
+        self, need_id: str, option: str | None = None, text: str | None = None
     ) -> str:
         need_id_main, need_id_part = split_need_id(need_id)
 

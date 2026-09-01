@@ -86,7 +86,7 @@ mypy = [
   "types-docutils==0.20.0.20240201",
   "types-requests",
 ]
-ruff = ["ruff==0.14.11"]
+ruff = ["ruff==0.16.5"]
 
 [tool.pytest.ini_options]
 markers = [

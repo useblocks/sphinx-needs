@@ -199,7 +199,7 @@ def process_need_ref(
                 title = f"{title[: max_length - 3]}..."
                 dict_need["title"] = title
 
-            ref_name: None | str | nodes.Text = node_need_ref.children[0].children[0]  # type: ignore[assignment]
+            ref_name: str | nodes.Text | None = node_need_ref.children[0].children[0]  # type: ignore[assignment]
             # Only use ref_name, if it differs from ref_id
             if str(need_id_full) == str(ref_name):
                 ref_name = None
