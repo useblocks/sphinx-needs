@@ -645,7 +645,7 @@ def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:
         "$schema": _SCHEMA_VERSION,
         "type": "object",
         **{  # type: ignore[typeddict-item]
-            k: schema[k]  # type: ignore[literal-required]
+            k: schema[k]
             for k in ("properties", "allOf", "required", "unevaluatedProperties")
             if k in schema
         },

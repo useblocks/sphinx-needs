@@ -79,7 +79,7 @@ theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
 [dependency-groups]
 dev = ["prek>=0.5.1", "tox~=4.23", "tox-uv~=1.15"]
 mypy = [
-  "mypy==1.19.1",
+  "mypy==2.3.1",
   "sphinx==7.4.7",
   "docutils==0.20",
   "jsonschema-rs==0.37.1",
