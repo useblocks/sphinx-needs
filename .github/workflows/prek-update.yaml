@@ -1,0 +1,104 @@
+name: Prek update
+
+on:
+  # monthly, matching the cadence dependabot uses in this repository
+  schedule:
+    - cron: "0 6 1 * *"
+  # so the first run after merge can be triggered by hand as a smoke test
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: Update hook versions
+    runs-on: ubuntu-latest
+    steps:
+      # the default GITHUB_TOKEN cannot be used for the writes below: a pull request it
+      # pushes does not trigger `pull_request` workflows, and master requires `Lint`,
+      # so such a pull request could never be merged
+      - name: Mint a token for the bot app
+        id: token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+
+      # `prek update` is workspace-aware: one invocation updates every
+      # .pre-commit-config.yaml in the tree, so the whole tree is checked for changes.
+      # The cooldown keeps day-zero hook releases out of the pull request.
+      - name: Update hook revisions
+        id: update
+        run: |
+          uv run prek update --cooldown-days 7
+          if git diff --quiet; then
+            echo "no hook updates eligible"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # run the hooks at the new revisions so that formatter and `--fix` churn arrives
+      # already applied. Findings that remain are reported, not fatal: a red but open
+      # pull request is the signal we want.
+      - name: Run the hooks
+        id: hooks
+        if: steps.update.outputs.changed == 'true'
+        env:
+          PREK_COLOR: always
+        run: |
+          if uv run prek run --all-files; then
+            echo "clean=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "clean=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compose the pull request body
+        id: body
+        if: steps.update.outputs.changed == 'true'
+        env:
+          HOOKS_CLEAN: ${{ steps.hooks.outputs.clean }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # pair every `rev:` with the `- repo:` it belongs to, so the old and new
+          # revisions of each repository can be reported on one line
+          # shellcheck disable=SC2016  # $2/$3 are awk fields, not shell expansions
+          map='
+            /^[[:space:]]*-[[:space:]]+repo:[[:space:]]/ { repo = $3 }
+            /^[[:space:]]*rev:[[:space:]]/ { print repo, $2 }
+          '
+          {
+            echo "body<<PR_BODY_EOF"
+            echo "Hook revisions updated by \`prek update --cooldown-days 7\`:"
+            echo
+            while IFS= read -r config; do
+              awk 'NR==FNR { was[$1] = $2; next }
+                   ($1 in was) && was[$1] != $2 { printf "- %s: `%s` -> `%s`\n", $1, was[$1], $2 }' \
+                <(git show "HEAD:$config" | awk "$map") <(awk "$map" "$config")
+            done < <(git diff --name-only -- '*.pre-commit-config.yaml')
+            echo
+            echo "hooks clean after autofix: ${HOOKS_CLEAN} — see [the workflow run](${RUN_URL})"
+            echo
+            echo "Opened by the scheduled \`Prek update\` workflow."
+            echo "PR_BODY_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # a fixed branch means a re-run updates the existing pull request instead of
+      # opening a second one
+      - name: Open the pull request
+        if: steps.update.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.token.outputs.token }}
+          branch: prek-update
+          delete-branch: true
+          commit-message: "🔧 Update pre-commit hook versions"
+          title: "🔧 Update pre-commit hook versions"
+          body: ${{ steps.body.outputs.body }}
