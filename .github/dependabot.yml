@@ -11,9 +11,16 @@ updates:
       prefix: 🔧
     schedule:
       interval: monthly
-  - package-ecosystem: pip
+  # uv, not pip: this repository locks its development environment in uv.lock, and the
+  # uv ecosystem updates that lock. A single group keeps the monthly refresh to one
+  # pull request instead of one per dependency.
+  - package-ecosystem: uv
     directory: /
     commit-message:
       prefix: ⬆️
     schedule:
       interval: monthly
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
