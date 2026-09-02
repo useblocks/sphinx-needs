@@ -57,6 +57,8 @@ class NeedbarDirective(FilterBase):
         "sum_rotation": directives.unchanged_required,
         "transpose": directives.flag,
         "horizontal": directives.flag,
+        # ubCode compatibility: accepted and ignored by Sphinx-Needs.
+        "cypher": directives.unchanged,
     }
 
     # Algorithm:

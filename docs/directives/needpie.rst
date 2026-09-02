@@ -36,6 +36,10 @@ or neither, the chart has no data and an error is logged.
 
 ``needpie`` takes no other filter options,
 so ``:filter:``, ``:status:``, ``:tags:`` and ``:types:`` are not available on it.
+The ubCode-only ``cypher`` option is accepted and then ignored,
+which for ``needpie`` means the content lines are counted over the whole project
+rather than over the needs the query selects;
+see :ref:`ubCode compatibility <ubcode_compat_options>`.
 
 .. note::
 
