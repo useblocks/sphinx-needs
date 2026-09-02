@@ -608,32 +608,487 @@
 # ---
 # name: test_build_needs[test_app0][schema]
   dict({
-    'avatar': FieldSchema(name='avatar', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'closed_at': FieldSchema(name='closed_at', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'collapse': FieldSchema(name='collapse', description='Hide the meta-data information of the need.', schema={'type': 'boolean'}, nullable=False, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value=False)),
-    'completion': FieldSchema(name='completion', description='Added for needgantt functionality', schema={'type': 'integer'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'constraints': FieldSchema(name='constraints', description='List of constraint names, which are defined for this need.', schema={'type': 'array', 'items': {'type': 'string'}}, nullable=False, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value=[])),
-    'created_at': FieldSchema(name='created_at', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'duration': FieldSchema(name='duration', description='Added for needgantt functionality', schema={'type': 'integer'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'hide': FieldSchema(name='hide', description='If true, the need is not rendered.', schema={'type': 'boolean'}, nullable=False, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value=False)),
-    'id_prefix': FieldSchema(name='id_prefix', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'layout': FieldSchema(name='layout', description='Key of the layout, which is used to render the need.', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'links': LinkSchema(name='links', description='Link field', schema={'type': 'array', 'items': {'type': 'string'}}, directive_option=True, allow_extend=True, parse_dynamic_functions=True, parse_variants=False, parse_conditions=True, allow_defaults=True, predicate_defaults=(), default=LinksLiteralValue(value=[]), display=LinkDisplayConfig(incoming='links incoming', outgoing='links outgoing', color='#000000', style='', style_part='dotted', style_start='-', style_end='->'), copy=False, allow_dead_links=False),
-    'max_amount': FieldSchema(name='max_amount', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'max_content_lines': FieldSchema(name='max_content_lines', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'parent_needs': LinkSchema(name='parent_needs', description='Link field', schema={'type': 'array', 'items': {'type': 'string'}}, directive_option=True, allow_extend=True, parse_dynamic_functions=True, parse_variants=False, parse_conditions=True, allow_defaults=True, predicate_defaults=(), default=LinksLiteralValue(value=[]), display=LinkDisplayConfig(incoming='child needs', outgoing='parent needs', color='#333333', style='', style_part='dotted', style_start='-', style_end='->'), copy=False, allow_dead_links=False),
-    'post_template': FieldSchema(name='post_template', description='The template key, if the post_content was created from a jinja template.', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=False, parse_variants=False, allow_defaults=True, allow_extend=False, predicate_defaults=(), default=None),
-    'pre_template': FieldSchema(name='pre_template', description='The template key, if the pre_content was created from a jinja template.', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=False, parse_variants=False, allow_defaults=True, allow_extend=False, predicate_defaults=(), default=None),
-    'query': FieldSchema(name='query', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'service': FieldSchema(name='service', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'specific': FieldSchema(name='specific', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'status': FieldSchema(name='status', description='Status of the need.', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'style': FieldSchema(name='style', description='Comma-separated list of CSS classes (all appended by `needs_style_`).', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'tags': FieldSchema(name='tags', description='List of tags.', schema={'type': 'array', 'items': {'type': 'string'}}, nullable=False, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=FieldLiteralValue(value=[])),
-    'template': FieldSchema(name='template', description='The template key, if the content was created from a jinja template.', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=False, parse_variants=False, allow_defaults=True, allow_extend=False, predicate_defaults=(), default=None),
-    'title': FieldSchema(name='title', description='Title of the need.', schema={'type': 'string'}, nullable=False, directive_option=False, parse_dynamic_functions=True, parse_variants=False, allow_defaults=False, allow_extend=False, predicate_defaults=(), default=None),
-    'updated_at': FieldSchema(name='updated_at', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'url': FieldSchema(name='url', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
-    'user': FieldSchema(name='user', description='Added by service github-issues', schema={'type': 'string'}, nullable=True, directive_option=True, parse_dynamic_functions=True, parse_variants=False, allow_defaults=True, allow_extend=True, predicate_defaults=(), default=None),
+    'avatar': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='avatar',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'closed_at': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='closed_at',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'collapse': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=FieldLiteralValue(
+        value=False,
+      ),
+      description='Hide the meta-data information of the need.',
+      directive_option=True,
+      name='collapse',
+      nullable=False,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'boolean',
+      }),
+    ),
+    'completion': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added for needgantt functionality',
+      directive_option=True,
+      name='completion',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'integer',
+      }),
+    ),
+    'constraints': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=FieldLiteralValue(
+        value=list([
+        ]),
+      ),
+      description='List of constraint names, which are defined for this need.',
+      directive_option=True,
+      name='constraints',
+      nullable=False,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'items': dict({
+          'type': 'string',
+        }),
+        'type': 'array',
+      }),
+    ),
+    'created_at': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='created_at',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'duration': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added for needgantt functionality',
+      directive_option=True,
+      name='duration',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'integer',
+      }),
+    ),
+    'hide': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=FieldLiteralValue(
+        value=False,
+      ),
+      description='If true, the need is not rendered.',
+      directive_option=True,
+      name='hide',
+      nullable=False,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'boolean',
+      }),
+    ),
+    'id_prefix': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='id_prefix',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'layout': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Key of the layout, which is used to render the need.',
+      directive_option=True,
+      name='layout',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'links': LinkSchema(
+      allow_dead_links=False,
+      allow_defaults=True,
+      allow_extend=True,
+      copy=False,
+      default=LinksLiteralValue(
+        value=list([
+        ]),
+      ),
+      description='Link field',
+      directive_option=True,
+      display=LinkDisplayConfig(
+        color='#000000',
+        incoming='links incoming',
+        outgoing='links outgoing',
+        style='',
+        style_end='->',
+        style_part='dotted',
+        style_start='-',
+      ),
+      name='links',
+      parse_conditions=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'items': dict({
+          'type': 'string',
+        }),
+        'type': 'array',
+      }),
+    ),
+    'max_amount': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='max_amount',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'max_content_lines': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='max_content_lines',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'parent_needs': LinkSchema(
+      allow_dead_links=False,
+      allow_defaults=True,
+      allow_extend=True,
+      copy=False,
+      default=LinksLiteralValue(
+        value=list([
+        ]),
+      ),
+      description='Link field',
+      directive_option=True,
+      display=LinkDisplayConfig(
+        color='#333333',
+        incoming='child needs',
+        outgoing='parent needs',
+        style='',
+        style_end='->',
+        style_part='dotted',
+        style_start='-',
+      ),
+      name='parent_needs',
+      parse_conditions=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'items': dict({
+          'type': 'string',
+        }),
+        'type': 'array',
+      }),
+    ),
+    'post_template': FieldSchema(
+      allow_defaults=True,
+      allow_extend=False,
+      default=None,
+      description='The template key, if the post_content was created from a jinja template.',
+      directive_option=True,
+      name='post_template',
+      nullable=True,
+      parse_dynamic_functions=False,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'pre_template': FieldSchema(
+      allow_defaults=True,
+      allow_extend=False,
+      default=None,
+      description='The template key, if the pre_content was created from a jinja template.',
+      directive_option=True,
+      name='pre_template',
+      nullable=True,
+      parse_dynamic_functions=False,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'query': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='query',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'service': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='service',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'specific': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='specific',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'status': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Status of the need.',
+      directive_option=True,
+      name='status',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'style': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Comma-separated list of CSS classes (all appended by `needs_style_`).',
+      directive_option=True,
+      name='style',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'tags': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=FieldLiteralValue(
+        value=list([
+        ]),
+      ),
+      description='List of tags.',
+      directive_option=True,
+      name='tags',
+      nullable=False,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'items': dict({
+          'type': 'string',
+        }),
+        'type': 'array',
+      }),
+    ),
+    'template': FieldSchema(
+      allow_defaults=True,
+      allow_extend=False,
+      default=None,
+      description='The template key, if the content was created from a jinja template.',
+      directive_option=True,
+      name='template',
+      nullable=True,
+      parse_dynamic_functions=False,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'title': FieldSchema(
+      allow_defaults=False,
+      allow_extend=False,
+      default=None,
+      description='Title of the need.',
+      directive_option=False,
+      name='title',
+      nullable=False,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'updated_at': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='updated_at',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'url': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='url',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
+    'user': FieldSchema(
+      allow_defaults=True,
+      allow_extend=True,
+      default=None,
+      description='Added by service github-issues',
+      directive_option=True,
+      name='user',
+      nullable=True,
+      parse_dynamic_functions=True,
+      parse_variants=False,
+      predicate_defaults=tuple(
+      ),
+      schema=dict({
+        'type': 'string',
+      }),
+    ),
   })
 # ---
