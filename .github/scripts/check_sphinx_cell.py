@@ -28,6 +28,10 @@ def check(group):
         print(f"::error::pyproject.toml has no dependency group '{group}'")
         return 2
     for requirement in requirements:
+        if not isinstance(
+            requirement, str
+        ):  # a PEP 735 `{ include-group = ... }` entry
+            continue
         parsed = Requirement(requirement)
         if parsed.name == "sphinx":
             break
@@ -44,4 +48,7 @@ def check(group):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("usage: check_sphinx_cell.py <dependency-group>")
+        sys.exit(2)
     sys.exit(check(sys.argv[1]))
