@@ -2063,24 +2063,50 @@ wheels = [
 
 [[package]]
 name = "pydata-sphinx-theme"
-version = "0.15.4"
+version = "0.17.1"
 source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.12'",
+    "python_full_version == '3.11.*'",
+    "python_full_version < '3.11'",
+]
 dependencies = [
-    { name = "accessible-pygments" },
-    { name = "babel" },
-    { name = "beautifulsoup4" },
-    { name = "docutils" },
-    { name = "packaging" },
-    { name = "pygments" },
+    { name = "accessible-pygments", marker = "extra == 'group-12-sphinx-needs-sphinx-7' or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
+    { name = "babel", marker = "extra == 'group-12-sphinx-needs-sphinx-7' or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
+    { name = "beautifulsoup4", marker = "extra == 'group-12-sphinx-needs-sphinx-7' or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
+    { name = "docutils", marker = "extra == 'group-12-sphinx-needs-sphinx-7' or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
+    { name = "pygments", marker = "extra == 'group-12-sphinx-needs-sphinx-7' or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
     { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-12-sphinx-needs-sphinx-7' or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
+    { name = "typing-extensions", marker = "extra == 'group-12-sphinx-needs-sphinx-7' or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ce/f7/c74c7100a7f4c0f77b5dcacb7dfdb8fee774fb70e487dd97acba2b930774/pydata_sphinx_theme-0.17.1.tar.gz", hash = "sha256:2cfc1d926c753c77039b7ee53f0ccebcbee5e81f0db61432b01cbb10ad7fd0af", size = 4991415, upload-time = "2026-04-21T13:00:34.263Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e2/bc/2cb8c78300ce1ace4eeac3b3522218cea2c2053bfa6b4e32cc972a477f9a/pydata_sphinx_theme-0.17.1-py3-none-any.whl", hash = "sha256:320b022d7808bdf5920d9a28e573f27aace9b23e1af6ca103eecc752411df492", size = 6823346, upload-time = "2026-04-21T13:00:31.978Z" },
+]
+
+[[package]]
+name = "pydata-sphinx-theme"
+version = "0.19.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.12'",
+    "python_full_version == '3.11.*'",
+    "python_full_version < '3.11'",
+]
+dependencies = [
+    { name = "accessible-pygments", marker = "extra == 'group-12-sphinx-needs-sphinx-8' or extra == 'group-12-sphinx-needs-sphinx-9' or extra != 'group-12-sphinx-needs-sphinx-7'" },
+    { name = "babel", marker = "extra == 'group-12-sphinx-needs-sphinx-8' or extra == 'group-12-sphinx-needs-sphinx-9' or extra != 'group-12-sphinx-needs-sphinx-7'" },
+    { name = "beautifulsoup4", marker = "extra == 'group-12-sphinx-needs-sphinx-8' or extra == 'group-12-sphinx-needs-sphinx-9' or extra != 'group-12-sphinx-needs-sphinx-7'" },
+    { name = "docutils", marker = "extra == 'group-12-sphinx-needs-sphinx-8' or extra == 'group-12-sphinx-needs-sphinx-9' or extra != 'group-12-sphinx-needs-sphinx-7'" },
+    { name = "pygments", marker = "extra == 'group-12-sphinx-needs-sphinx-8' or extra == 'group-12-sphinx-needs-sphinx-9' or extra != 'group-12-sphinx-needs-sphinx-7'" },
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and extra != 'group-12-sphinx-needs-sphinx-7') or (extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-8') or (extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-9') or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
     { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version == '3.11.*' and extra == 'group-12-sphinx-needs-sphinx-8') or (python_full_version == '3.11.*' and extra == 'group-12-sphinx-needs-sphinx-9') or (python_full_version == '3.11.*' and extra != 'group-12-sphinx-needs-sphinx-7') or (python_full_version >= '3.12' and extra == 'group-12-sphinx-needs-sphinx-8') or (python_full_version < '3.11' and extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-8') or (python_full_version < '3.11' and extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-9') or (python_full_version < '3.11' and extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9') or (python_full_version >= '3.12' and extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-9')" },
     { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra != 'group-12-sphinx-needs-sphinx-7' and extra != 'group-12-sphinx-needs-sphinx-8') or (extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-8') or (extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-9') or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
-    { name = "typing-extensions" },
+    { name = "typing-extensions", marker = "extra == 'group-12-sphinx-needs-sphinx-8' or extra == 'group-12-sphinx-needs-sphinx-9' or extra != 'group-12-sphinx-needs-sphinx-7'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/67/ea/3ab478cccacc2e8ef69892c42c44ae547bae089f356c4b47caf61730958d/pydata_sphinx_theme-0.15.4.tar.gz", hash = "sha256:7762ec0ac59df3acecf49fd2f889e1b4565dbce8b88b2e29ee06fdd90645a06d", size = 2400673, upload-time = "2024-06-25T19:28:45.041Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/39/7e/e3defb93f30557ae825a3b3fbc2c6728301e5e9505a85e00d8503345c42c/pydata_sphinx_theme-0.19.0.tar.gz", hash = "sha256:148ba092bd6937b3321385dc482cc69a29ad2ede36547b4f010ade782bc6a062", size = 5004933, upload-time = "2026-06-15T09:31:02.268Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e7/d3/c622950d87a2ffd1654208733b5bd1c5645930014abed8f4c0d74863988b/pydata_sphinx_theme-0.15.4-py3-none-any.whl", hash = "sha256:2136ad0e9500d0949f96167e63f3e298620040aea8f9c74621959eda5d4cf8e6", size = 4640157, upload-time = "2024-06-25T19:28:42.383Z" },
+    { url = "https://files.pythonhosted.org/packages/54/77/bdb5a4c0e8e33c08f31fd175a5af0bc5e29f1b43ffa9e963f4c4f9bfbc97/pydata_sphinx_theme-0.19.0-py3-none-any.whl", hash = "sha256:5d7dfe3beb0facc88b5d78ff4a4c948f214cc0e03aae27e7fc58286e963b588b", size = 6201132, upload-time = "2026-06-15T09:30:59.966Z" },
 ]
 
 [[package]]
@@ -2103,7 +2129,7 @@ wheels = [
 
 [[package]]
 name = "pytest"
-version = "9.0.3"
+version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "sys_platform == 'win32' or (extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-8') or (extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-9') or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
@@ -2114,9 +2140,9 @@ dependencies = [
     { name = "pygments" },
     { name = "tomli", marker = "python_full_version < '3.11' or (extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-8') or (extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-9') or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7d/0d/549bd94f1a0a402dc8cf64563a117c0f3765662e2e668477624baeec44d5/pytest-9.0.3.tar.gz", hash = "sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c", size = 1572165, upload-time = "2026-04-07T17:16:18.027Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d4/24/a372aaf5c9b7208e7112038812994107bc65a84cd00e0354a88c2c77a617/pytest-9.0.3-py3-none-any.whl", hash = "sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9", size = 375249, upload-time = "2026-04-07T17:16:16.13Z" },
+    { url = "https://files.pythonhosted.org/packages/24/25/1de2678b631f5a49215c6c96fff41ba892b0a34df68d6d80292b1b48aa7f/pytest-9.1.1-py3-none-any.whl", hash = "sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c", size = 386536, upload-time = "2026-06-19T10:58:31.347Z" },
 ]
 
 [[package]]
@@ -2633,7 +2659,8 @@ theme-im = [
     { name = "sphinx-immaterial" },
 ]
 theme-pds = [
-    { name = "pydata-sphinx-theme" },
+    { name = "pydata-sphinx-theme", version = "0.17.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-12-sphinx-needs-sphinx-7' or (extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9')" },
+    { name = "pydata-sphinx-theme", version = "0.19.0", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-12-sphinx-needs-sphinx-8' or extra == 'group-12-sphinx-needs-sphinx-9' or extra != 'group-12-sphinx-needs-sphinx-7'" },
 ]
 theme-rtd = [
     { name = "sphinx-rtd-theme" },
