@@ -38,14 +38,35 @@ Example
 
 With the following configuration for a demo source code project `dcdc <https://github.com/useblocks/sphinx-codelinks/tree/main/tests/data/dcdc>`_,
 
-.. code-block:: python
-   :caption: conf.py
+.. code-block:: toml
+   :caption: ubproject.toml
 
-   src_trace_config_from_toml = "src_trace.toml"
+   # Configuration for source tracing project "dcdc"
+   [codelinks.projects.dcdc]
+   remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}" # URL pattern for remote source code
 
-.. literalinclude:: ./../../src_trace.toml
-   :caption: src_trace.toml
-   :language: toml
+   [codelinks.projects.dcdc.source_discover]
+   src_dir = "../tests/data/dcdc" # Relative path from this TOML file to the source directory
+
+   [codelinks.projects.dcdc.analyse]
+   get_need_id_refs = false
+   get_oneline_needs = true
+
+   [codelinks.projects.dcdc.analyse.oneline_comment_style]
+   # Configuration for oneline comment style
+   start_sequence = "[["  # Start sequence for oneline comments
+   end_sequence = "]]"    # End sequence for the online comments; default is newline character
+   field_split_char = "," # Character to split fields in the comment
+   # Fields that are defined in the oneline comment style
+   needs_fields = [
+     { "name" = "id", "type" = "str" },
+     { "name" = "title", "type" = "str" },
+     { "name" = "type", "type" = "str", "default" = "impl" },
+     { "name" = "links", "type" = "list[str]", "default" = [
+     ] },
+   ]
+
+The file is read by default, without any entry in :file:`conf.py` (see :ref:`src_trace_config_from_toml`).
 
 The ``src-trace`` directive can be used with the **file** option:
 

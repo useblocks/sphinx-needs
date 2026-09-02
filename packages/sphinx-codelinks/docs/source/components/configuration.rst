@@ -8,14 +8,16 @@ The configuration for ``CodeLinks`` takes place in the project's :external+sphin
 Each source code project may have different configurations because of its programming language or its locations.
 Therefore, based on such considerations, there are **global options** and **project-specific options** for ``CodeLinks``.
 
-.. attention:: It is highly recommended to set the configuration options in a TOML file, which can be used for both the Sphinx extension and the CLI application.
+.. attention:: It is highly recommended to set the configuration options in a TOML file, which can be used for both the Sphinx extension and the CLI application. The default file name is ``ubproject.toml``, the shared ubCode project file.
 
 If the configurations are set in ``conf.py``,  the options start with the prefix ``src_trace_``.
 
 Sphinx Configuration
 --------------------
 
-In ``conf.py``, a TOML file can be specified as the source of the configuration for Sphinx Directive ``src-trace``.
+By default, **Sphinx-CodeLinks** loads its configuration from the shared ``ubproject.toml`` file, which is looked up next to :file:`conf.py`.
+
+.. _`src_trace_config_from_toml`:
 
 src_trace_config_from_toml
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -23,18 +25,20 @@ src_trace_config_from_toml
 Specifies the path to a `TOML file <https://toml.io>`__ containing **Sphinx-CodeLinks** configuration options. This allows you to maintain configuration in a separate file for better organization.
 
 **Type:** ``str`` (relative path to the directory where conf.py is located)
-**Default:** Not set
+**Default:** ``"ubproject.toml"``
 
 .. code-block:: python
 
    # In conf.py
-   src_trace_config_from_toml = "codelinks.toml"
+   src_trace_config_from_toml = "ubproject.toml"
 
 When using a TOML configuration file:
 
 - Configuration options are placed under a ``[codelinks]`` section
 - The ``src_trace_`` prefix is omitted in the TOML file
 - TOML configuration overrides settings in :file:`conf.py`
+
+.. note:: ``ubproject.toml`` is the shared ubCode project file, which other useblocks tools (e.g. Sphinx-Needs via ``needs_from_toml`` or the ubCode checker in VS Code) read as well. Keeping the ``[codelinks]`` configuration in this file makes all tools aware of the configured projects. If the default file does not exist or contains no ``[codelinks]`` section, it is silently ignored and the configuration from :file:`conf.py` is used. Only a TOML file that was explicitly configured but cannot be loaded triggers a Sphinx warning.
 
 .. caution:: Relative paths specified in the TOML file are resolved relative to the directory containing the TOML file, not the Sphinx project root.
 

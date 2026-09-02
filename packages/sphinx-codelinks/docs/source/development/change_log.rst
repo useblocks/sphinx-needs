@@ -3,6 +3,29 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+New and Improved
+................
+
+- ✨ The default configuration file is now ``ubproject.toml``.
+
+  :ref:`src_trace_config_from_toml` now defaults to ``"ubproject.toml"`` and the
+  documentation recommends this file name throughout. ``ubproject.toml`` is the shared
+  ubCode project file, which other useblocks tools — e.g. Sphinx-Needs via
+  ``needs_from_toml`` or the ubCode checker in VS Code — read as well. Keeping the
+  ``[codelinks]`` configuration in this single file makes all tools aware of the
+  configured codelinks projects, which previously required a separate file per tool
+  (e.g. ``src_trace.toml``) and left tools like the ubCode checker reporting
+  ``Unknown codelinks project`` (ubcode-pub#75).
+
+  A default file that does not exist or contains no ``[codelinks]`` table is silently
+  ignored, so existing projects without ``ubproject.toml`` keep building without new
+  warnings. Only a TOML file that was explicitly configured but cannot be loaded
+  triggers a Sphinx warning, as before. The documentation project itself now stores
+  its codelinks configuration in ``ubproject.toml``.
+
 .. _`release:1.4.0`:
 
 1.4.0

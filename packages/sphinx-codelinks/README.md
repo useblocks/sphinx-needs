@@ -19,8 +19,10 @@ Add to your `conf.py`:
 
 ```python
 extensions = ['sphinx_needs', 'sphinx_codelinks']
-src_trace_config_from_toml = "codelinks.toml"
 ```
+
+Sphinx-CodeLinks reads its configuration from an `ubproject.toml` file next to
+`conf.py` by default (configurable via `src_trace_config_from_toml`).
 
 ## Documentation
 

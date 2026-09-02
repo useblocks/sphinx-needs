@@ -21,11 +21,18 @@ Sphinx Config
        'sphinx_needs',
        'sphinx_codelinks'
    ]
-   src_trace_config_from_toml = "src_trace.toml"
 
-.. literalinclude:: ./../../src_trace.toml
-   :caption: src_trace.toml
-   :language: toml
+**Sphinx-CodeLinks** reads its configuration from an ``ubproject.toml`` file next to :file:`conf.py` by default (see :ref:`src_trace_config_from_toml`), so no further entry in :file:`conf.py` is needed:
+
+.. code-block:: toml
+   :caption: ubproject.toml
+
+   # Configuration for source tracing project "src"
+   [codelinks.projects.src]
+   remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+
+   [codelinks.projects.src.source_discover]
+   src_dir = "../tests/doc_test/minimum_config" # Relative path from this TOML file to the source directory
 
 One-line comment
 ----------------

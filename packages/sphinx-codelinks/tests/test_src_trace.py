@@ -1,5 +1,6 @@
 # @Test suite for Sphinx extension source tracing functionality, TEST_EXT_1, test, [IMPL_LNK_1, IMPL_ONE_1, IMPL_MRST_1]
 from collections.abc import Callable
+from dataclasses import fields
 from pathlib import Path
 import shutil
 
@@ -284,3 +285,85 @@ def test_incremental_build_keeps_src_trace_projects_unchanged(
         f"incremental build wrongly invalidated the environment: "
         f"config changed{captured.get('extra')}"
     )
+
+
+@pytest.fixture
+def minimal_sphinx_project(tmp_path: Path) -> Path:
+    """Minimal Sphinx project with no TOML config file next to conf.py."""
+    (tmp_path / "conf.py").write_text(
+        "extensions = ['sphinx_needs', 'sphinx_codelinks']\n"
+        "exclude_patterns = ['_build']\n"
+    )
+    (tmp_path / "index.rst").write_text("Minimal project\n===============\n")
+    return tmp_path
+
+
+def test_config_from_toml_defaults_to_ubproject_toml() -> None:
+    """The default config file is the shared ubproject.toml (ubcode-pub#75)."""
+    config_field = next(
+        field for field in fields(CodeLinksConfig) if field.name == "config_from_toml"
+    )
+    assert config_field.default == "ubproject.toml"
+
+
+def test_default_ubproject_toml_is_loaded(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """An ubproject.toml next to conf.py is loaded without any conf.py entry."""
+    (minimal_sphinx_project / "ubproject.toml").write_text(
+        "[codelinks.projects.demo]\n"
+        'remote_url_pattern = "https://example.com/{commit}/{path}#L{line}"\n'
+        "\n"
+        "[codelinks.projects.demo.source_discover]\n"
+        'src_dir = "./"\n'
+    )
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    assert "demo" in app.config.src_trace_projects
+    assert app.warning.getvalue() == ""
+
+
+def test_default_ubproject_toml_without_codelinks_section_is_silent(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """A default ubproject.toml used by other tools but without [codelinks] is
+    silently ignored instead of warning."""
+    (minimal_sphinx_project / "ubproject.toml").write_text(
+        "[needs]\nid_required = true\n"
+    )
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    assert app.config.src_trace_projects == {}
+    assert app.warning.getvalue() == ""
+
+
+def test_missing_default_ubproject_toml_is_silent(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """Without an ubproject.toml next to conf.py, the conf.py configuration is
+    used and no warning is emitted."""
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    assert app.config.src_trace_projects == {}
+    assert app.warning.getvalue() == ""
+
+
+def test_explicit_toml_config_missing_warns(
+    minimal_sphinx_project: Path,
+    make_app: Callable[..., SphinxTestApp],
+) -> None:
+    """An explicitly configured TOML file that does not exist still warns."""
+    conf_py = minimal_sphinx_project / "conf.py"
+    conf_py.write_text(
+        conf_py.read_text() + '\nsrc_trace_config_from_toml = "nonexistent.toml"\n'
+    )
+    app = make_app(srcdir=minimal_sphinx_project, freshenv=True)
+    app.build()
+
+    assert "does not exist" in app.warning.getvalue()

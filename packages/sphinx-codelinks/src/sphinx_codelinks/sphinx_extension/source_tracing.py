@@ -18,6 +18,7 @@ from sphinx_needs.api import (  # type: ignore[import-untyped]
 
 from sphinx_codelinks.analyse.projects import AnalyseProjects
 from sphinx_codelinks.config import (
+    DEFAULT_CONFIG_TOML,
     SRC_TRACE_CACHE,
     CodeLinksConfig,
     CodeLinksConfigType,
@@ -165,19 +166,28 @@ def generate_code_page(
 
 
 def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
-    """Load the configuration from a TOML file, if defined in conf.py."""
+    """Load the configuration from a TOML file, if defined in conf.py.
+
+    The default ``ubproject.toml`` is shared with other useblocks tools, which
+    may use the file without any ``[codelinks]`` configuration. It is therefore
+    silently ignored when it does not exist or has no ``[codelinks]`` table,
+    whereas a missing explicitly configured file emits a warning.
+    """
     src_trc_sphinx_config = CodeLinksConfig.from_sphinx(config)
     if src_trc_sphinx_config.config_from_toml is None:
         return
+
+    default_file = src_trc_sphinx_config.config_from_toml == DEFAULT_CONFIG_TOML
 
     # resolve relative to confdir
     toml_file = Path(app.confdir, src_trc_sphinx_config.config_from_toml).resolve()
     # toml_path = src_trc_sphinx_config.from_toml_table
 
     if not toml_file.exists():
-        logger.warning(
-            f"Source tracing configuration file {toml_file} does not exist. Using configuration from conf.py."
-        )
+        if not default_file:
+            logger.warning(
+                f"Source tracing configuration file {toml_file} does not exist. Using configuration from conf.py."
+            )
         return
     try:
         with toml_file.open("rb") as f:
@@ -187,9 +197,10 @@ def load_config_from_toml(app: Sphinx, config: _SphinxConfig) -> None:
             raise Exception(f"data must be a dict in {toml_file}")
 
     except Exception as e:
-        logger.warning(
-            f"Failed to load source tracing configuration from {toml_file}: {e}"
-        )
+        if not default_file:
+            logger.warning(
+                f"Failed to load source tracing configuration from {toml_file}: {e}"
+            )
         return
 
     set_config_to_sphinx(

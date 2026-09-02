@@ -543,6 +543,10 @@ class SourceAnalyseConfig:
         return list(errors)
 
 
+# Shared ubCode project file, which other useblocks tools (sphinx-needs,
+# ubCode checker, ...) read as well, so all tools see the same projects.
+DEFAULT_CONFIG_TOML: str = "ubproject.toml"
+
 SRC_TRACE_CACHE: str = "src_trace_cache"
 
 
@@ -668,17 +672,22 @@ class CodeLinksConfig:
         return None
 
     config_from_toml: str | None = field(
-        default=None,
+        default=DEFAULT_CONFIG_TOML,
         metadata={
             "rebuild": "env",
             "types": (str, type(None)),
             "schema": {
                 "type": ["string", "null"],
-                "examples": ["config.toml", None],
+                "examples": [DEFAULT_CONFIG_TOML, None],
             },
         },
     )
-    """Path to a TOML file to load configuration from."""
+    """Path to a TOML file to load configuration from.
+
+    Defaults to ``ubproject.toml`` next to :file:`conf.py`. A default file that
+    is missing or has no ``[codelinks]`` table is silently ignored; a missing
+    explicitly configured file triggers a warning.
+    """
 
     set_local_url: bool = field(
         default=False,

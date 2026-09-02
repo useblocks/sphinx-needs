@@ -82,5 +82,5 @@ html_css_files = ["furo.css"]
 # Sphinx-Needs configuration
 needs_from_toml = "ubproject.toml"
 
-# Src-trace configuration
-src_trace_config_from_toml = "./src_trace.toml"
+# Sphinx-CodeLinks: the [codelinks] table of the same ubproject.toml is loaded
+# by default (src_trace_config_from_toml defaults to "ubproject.toml")
