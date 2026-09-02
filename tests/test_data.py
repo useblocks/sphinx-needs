@@ -71,12 +71,15 @@ def test_consistent():
         elif type_str == "dict[str, str]":
             assert schema["type"] == "object", field
             assert schema["additionalProperties"]["type"] == "string", field
-        elif type_str.startswith("dict[") or type_str.startswith("Mapping["):
-            assert schema["type"] == "object", field
-        elif type_str.startswith("None | dict[") or type_str.startswith(
-            "None | Mapping["
+        # `None | X` and `X | None` are the same annotation, so both orders are accepted;
+        # the optional form must be tested first, or `Mapping[...] | None` would be
+        # swallowed by the non-optional branch below
+        elif type_str.startswith(("None | dict[", "None | Mapping[")) or (
+            type_str.startswith(("dict[", "Mapping[")) and type_str.endswith(" | None")
         ):
             assert schema["type"] == ["object", "null"], field
+        elif type_str.startswith(("dict[", "Mapping[")):
+            assert schema["type"] == "object", field
         else:
             raise ValueError(f"Unknown type: {type_str!r} for {field!r}")
 

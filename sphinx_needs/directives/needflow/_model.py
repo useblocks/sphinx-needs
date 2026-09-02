@@ -110,7 +110,7 @@ def filter_by_tree(
     return needs_view.filter_ids(need_ids)
 
 
-def resolve_color(value: None | str | int | float | bool) -> str | None:
+def resolve_color(value: str | int | float | bool | None) -> str | None:
     """Normalise a resolved color option value to an engine neutral form.
 
     A color may be written with or without a leading ``#``, and each engine adds the

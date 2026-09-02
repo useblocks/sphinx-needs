@@ -321,7 +321,7 @@ def _resolve_extends(
 def _parse_meta(
     value: Any,
     warn: Callable[[str], None],
-) -> MetaSpec | None | Literal[False]:
+) -> MetaSpec | Literal[False] | None:
     """Validate the ``meta`` key of a specification.
 
     :param value: The raw value of the ``meta`` key.
@@ -379,7 +379,7 @@ def _parse_meta(
 
 def _parse_side(
     value: Any, warn: Callable[[str], None]
-) -> SideSpec | None | Literal[False]:
+) -> SideSpec | Literal[False] | None:
     """Validate the ``side`` key of a specification.
 
     :param value: The raw value of the ``side`` key.

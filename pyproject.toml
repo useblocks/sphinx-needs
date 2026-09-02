@@ -79,14 +79,14 @@ theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
 [dependency-groups]
 dev = ["prek>=0.5.1", "tox~=4.23", "tox-uv~=1.15"]
 mypy = [
-  "mypy==1.19.1",
+  "mypy==2.3.1",
   "sphinx==7.4.7",
   "docutils==0.20",
   "jsonschema-rs==0.37.1",
   "types-docutils==0.20.0.20240201",
   "types-requests",
 ]
-ruff = ["ruff==0.14.11"]
+ruff = ["ruff==0.16.5"]
 
 [tool.pytest.ini_options]
 markers = [
@@ -101,6 +101,11 @@ filterwarnings = [
 
 
 [tool.ruff.lint]
+# ruff's pre-0.16 default rule set, pinned explicitly.
+# ruff 0.16 replaced its default `select` wholesale, and this project only ever set
+# `extend-select`, so without this line the enabled set would change with every ruff
+# release. Adopting 0.16's much larger default set is a deliberate, separate decision.
+select = ["E4", "E7", "E9", "F"]
 extend-select = [
   "B",   # flake8-bugbear  
   "C4",  # flake8-comprehensions
@@ -112,7 +117,16 @@ extend-select = [
   "SIM", # flake8-simplify
   "UP",  # pyupgrade
 ]
-extend-ignore = ["B904", "ISC001", "ICN001", "N818", "RUF012"]
+# ISC004 is ignored for now: every occurrence here is a deliberately wrapped string
+# literal and its only fix is unsafe, so adopting it belongs with the wider ruleset review
+extend-ignore = ["B904", "ISC001", "ISC004", "ICN001", "N818", "RUF012"]
+
+[tool.ruff.format]
+# ruff 0.16 formats python code blocks embedded in markdown; the conformance corpus is
+# shared byte-for-byte with ubCode and checksummed in its own manifest (see the yamlfmt
+# exclude in .pre-commit-config.yaml), so a formatter local to this repository must not
+# rewrite markdown here
+exclude = ["*.md"]
 
 [tool.mypy]
 files = "sphinx_needs"
