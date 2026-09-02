@@ -28,9 +28,8 @@ def check(group):
         print(f"::error::pyproject.toml has no dependency group '{group}'")
         return 2
     for requirement in requirements:
-        if not isinstance(
-            requirement, str
-        ):  # a PEP 735 `{ include-group = ... }` entry
+        # a PEP 735 `{ include-group = ... }` entry has no requirement string
+        if not isinstance(requirement, str):
             continue
         parsed = Requirement(requirement)
         if parsed.name == "sphinx":
