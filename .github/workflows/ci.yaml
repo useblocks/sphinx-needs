@@ -13,7 +13,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
-      - run: uv run prek run --all-files --show-diff-on-failure
+      - run: uv run --frozen prek run --all-files --show-diff-on-failure
         env:
           PREK_COLOR: always
 
