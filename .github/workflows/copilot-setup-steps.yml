@@ -27,14 +27,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
+          enable-cache: true
+          # the docs extra requires python>=3.11 (sphinx-syntax-example)
           python-version: "3.12"
 
       - name: Install dev tools
-        run: |
-          pip install tox tox-uv prek
+        run: uv sync --frozen
 
       - name: Install pre-commit hooks
-        run: prek install
+        run: uv run --frozen prek install
