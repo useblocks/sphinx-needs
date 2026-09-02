@@ -18,27 +18,7 @@
       'constraints_passed': True,
       'constraints_results': dict({
       }),
-      'content': '''
-        .. spec::  Sub-Need on level 2
-           :id: NEED-003
-           
-        
-           
-        
-        .. spec:: Another Sub-Need on level 2
-           :id: SP_69FFD
-           
-        
-           Where this sentence will be used
-           as content, the first one as title.
-        
-           .. test:: Sub-Need on level 3
-              :id: TC_EA5AF
-              
-           
-              With some rst-syntax supported for
-              the **content** by :ref:`test`
-      ''',
+      'content': '',
       'created_at': None,
       'docname': 'index',
       'doctype': '.rst',
@@ -59,8 +39,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 26,
-      'lineno_content': 32,
+      'lineno': 11,
+      'lineno_content': 11,
       'links': list([
       ]),
       'links_back': list([
@@ -146,8 +126,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 32,
-      'lineno_content': 35,
+      'lineno': 12,
+      'lineno_content': 12,
       'links': list([
       ]),
       'links_back': list([
@@ -232,8 +212,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 20,
-      'lineno_content': 24,
+      'lineno': 10,
+      'lineno_content': 10,
       'links': list([
       ]),
       'links_back': list([
@@ -318,8 +298,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 27,
-      'lineno_content': 32,
+      'lineno': 11,
+      'lineno_content': 11,
       'links': list([
       ]),
       'links_back': list([
@@ -407,8 +387,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 35,
-      'lineno_content': 39,
+      'lineno': 12,
+      'lineno_content': 12,
       'links': list([
         'NEED-1',
         'NEED-2',
@@ -496,8 +476,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 42,
-      'lineno_content': 49,
+      'lineno': 13,
+      'lineno_content': 14,
       'links': list([
         'NEED-3',
       ]),
@@ -583,8 +563,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 19,
-      'lineno_content': 23,
+      'lineno': 11,
+      'lineno_content': 11,
       'links': list([
       ]),
       'links_back': list([
@@ -669,8 +649,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 25,
-      'lineno_content': 29,
+      'lineno': 12,
+      'lineno_content': 12,
       'links': list([
       ]),
       'links_back': list([
@@ -755,8 +735,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 31,
-      'lineno_content': 34,
+      'lineno': 13,
+      'lineno_content': 13,
       'links': list([
       ]),
       'links_back': list([
@@ -841,8 +821,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 21,
-      'lineno_content': 26,
+      'lineno': 11,
+      'lineno_content': 11,
       'links': list([
       ]),
       'links_back': list([
@@ -930,8 +910,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 29,
-      'lineno_content': 34,
+      'lineno': 12,
+      'lineno_content': 12,
       'links': list([
       ]),
       'links_back': list([
@@ -1021,8 +1001,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 37,
-      'lineno_content': 42,
+      'lineno': 13,
+      'lineno_content': 13,
       'links': list([
         'NEED-W',
         'NEED-Y',
@@ -1112,8 +1092,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 45,
-      'lineno_content': 53,
+      'lineno': 14,
+      'lineno_content': 15,
       'links': list([
         'NEED-3',
       ]),
@@ -1183,13 +1163,6 @@
       'content': '''
         Where this sentence will be used
         as content, the first one as title.
-        
-        .. test:: Sub-Need on level 3
-           :id: TC_EA5AF
-           
-        
-           With some rst-syntax supported for
-           the **content** by :ref:`test`
       ''',
       'created_at': None,
       'docname': 'index',
@@ -1211,8 +1184,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 38,
-      'lineno_content': 42,
+      'lineno': 13,
+      'lineno_content': 13,
       'links': list([
       ]),
       'links_back': list([
@@ -1301,8 +1274,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 45,
-      'lineno_content': 49,
+      'lineno': 15,
+      'lineno_content': 15,
       'links': list([
       ]),
       'links_back': list([
@@ -1387,8 +1360,8 @@
       'is_part': False,
       'jinja_content': False,
       'layout': None,
-      'lineno': 20,
-      'lineno_content': 23,
+      'lineno': 10,
+      'lineno_content': 10,
       'links': list([
       ]),
       'links_back': list([

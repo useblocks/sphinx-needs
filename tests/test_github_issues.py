@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
+from lxml import html as html_parser
 from sphinx.util.console import strip_colors
 
 
@@ -122,3 +123,69 @@ def test_doc_github_1664(test_app):
     assert "#000000" not in html
     for graphviz_file in Path(app.outdir, "_images").glob("graphviz-*.svg"):
         assert "#000000" not in graphviz_file.read_text()
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_github_issue_1664",
+            "confoverrides": {"needs_flow_engine": "plantuml"},
+        },
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_github_issue_1664",
+            "confoverrides": {
+                "needs_flow_engine": "graphviz",
+                "graphviz_output_format": "svg",
+            },
+        },
+    ],
+    ids=["plantuml", "graphviz"],
+    indirect=True,
+)
+def test_doc_github_1664_legend(test_app):
+    """
+    https://github.com/useblocks/sphinx-needs/issues/1664
+
+    The other half of the issue: ``color`` is optional in ``needs_types``, but both
+    legend builders subscripted it unguarded, so ``:show_legend:`` turned a
+    colorless need type into a hard build failure (``KeyError: 'color'``).
+
+    The type must keep its legend row -- only the color swatch is left blank --
+    so the legend still documents every type it is asked about.
+    """
+    app = test_app
+    app.build()  # must not raise
+
+    # a legend the engine cannot parse would be reported as a render warning
+    warnings = strip_colors(app._warning.getvalue()).strip()
+    assert warnings == ""
+
+    debug = _debug_source(Path(app.outdir, "legend.html"))
+
+    if app.config.needs_flow_engine == "plantuml":
+        # the debug block is line numbered on both engines, so the legend block is
+        # matched without depending on where its lines start
+        assert re.search(r"\d+legend\n", debug)
+        assert re.search(r"\d+endlegend\n", debug)
+        # the row is kept, with an empty color swatch cell
+        assert "| | Specification |" in debug
+    else:
+        assert "<B>Legend</B>" in debug
+        # the row is kept, without a bgcolor attribute
+        assert '<TR><TD align="left">Specification</TD></TR>' in debug
+
+
+def _debug_source(html_file: Path) -> str:
+    """Return the diagram source emitted by the needflow ``:debug:`` option.
+
+    Both engines render it inside a ``<pre>``, but only graphviz syntax highlights
+    it, so the text content is taken rather than the markup.
+
+    :param html_file: The built HTML page holding the needflow.
+    :return: The concatenated text of every ``<pre>`` block on the page.
+    """
+    tree = html_parser.fromstring(html_file.read_text(encoding="utf8"))
+    return "\n".join(pre.text_content() for pre in tree.xpath("//pre"))

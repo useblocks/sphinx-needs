@@ -40,8 +40,16 @@ if TYPE_CHECKING:
 
 LOGGER = getLogger(__name__)
 
-ENV_DATA_VERSION: Final = 4
+ENV_DATA_VERSION: Final = 7
 """Version of the data stored in the environment.
+
+Bumped whenever the shape of that data changes, so that Sphinx re-reads instead of
+handing a pickled doctree to code that no longer understands it.
+
+Version 7 adds the resolved needflow presentation options to :class:`NeedsFlowType`.
+They are read while the diagram is rendered, i.e. from the doctree, so an unbumped
+rebuild over an existing ``_build`` keeps the old doctrees and ends with a ``KeyError``
+rather than re-reading the document.
 
 See https://www.sphinx-doc.org/en/master/extdev/index.html#extension-metadata
 """
@@ -421,7 +429,7 @@ class NeedsSourceInfoType(TypedDict):
     """Line number where the need is defined (None if external)."""
     lineno_content: int | None
     """Line number on which the need content starts (None if external)."""
-    external_url: None | str
+    external_url: str | None
     """URL of the need, if it is an external need."""
     is_import: bool
     """If true, the need was derived from an import."""
@@ -434,19 +442,19 @@ class NeedsContentInfoType(TypedDict):
 
     jinja_content: bool
     """Whether the content was pre-processed by jinja."""
-    template: None | str
+    template: str | None
     """The template key, if the content was created from a jinja template."""
-    pre_template: None | str
+    pre_template: str | None
     """The template key, if the pre_content was created from a jinja template."""
-    post_template: None | str
+    post_template: str | None
     """The template key, if the post_content was created from a jinja template."""
     doctype: str
     """The markup type of the content, denoted by the suffix of the source file, e.g. '.rst'."""
     content: str
     """The main content of the need."""
-    pre_content: None | str
+    pre_content: str | None
     """Additional content before the need."""
-    post_content: None | str
+    post_content: str | None
     """Additional content after the need."""
 
 
@@ -462,7 +470,7 @@ class NeedsInfoType(TypedDict):
     # meta information
     title: str
     """Title of the need."""
-    status: None | str
+    status: str | None
     tags: list[str]
 
     # rendering information
@@ -470,9 +478,9 @@ class NeedsInfoType(TypedDict):
     """Hide the meta-data information of the need."""
     hide: bool
     """If true, the need is not rendered."""
-    layout: None | str
+    layout: str | None
     """Key of the layout, which is used to render the need."""
-    style: None | str
+    style: str | None
     """Comma-separated list of CSS classes (all appended by `needs_style_`)."""
 
     external_css: str
@@ -495,7 +503,7 @@ class NeedsInfoType(TypedDict):
     # additional source information
     # set in analyse_need_locations transform
     sections: tuple[str, ...]
-    signature: None | str
+    signature: str | None
     """Derived from a docutils desc_name node."""
 
     # these default to False and are updated in resolve_links post-process
@@ -526,17 +534,17 @@ class NeedsInfoComputedType(TypedDict):
     """<parent ID>, or <self ID> if not a part."""
     id_complete: str
     """<parent ID>.<self ID>, or <self ID> if not a part."""
-    section_name: None | str
+    section_name: str | None
     """Simply the first section."""
-    parent_need: None | str
+    parent_need: str | None
     """Simply the first parent id."""
     # constraints information
     # set in process_need_nodes (-> process_constraints) transform
-    constraints_results: None | Mapping[str, Mapping[str, bool]]
+    constraints_results: Mapping[str, Mapping[str, bool]] | None
     """Mapping of constraint name, to check name, to result, None if not yet checked."""
-    constraints_error: None | str
+    constraints_error: str | None
     """An error message set if any constraint failed, and `error_message` field is set in config."""
-    constraints_passed: None | bool
+    constraints_passed: bool | None
     """True if all constraints passed, False if any failed, None if not yet checked."""
 
 
@@ -555,7 +563,7 @@ class NeedsBarType(NeedsBaseDataType):
     """Data for a single (matplotlib) bar diagram."""
 
     error_id: str
-    title: None | str
+    title: str | None
     content: str
     legend: bool
     x_axis_title: str
@@ -566,9 +574,9 @@ class NeedsBarType(NeedsBaseDataType):
     ylabels_rotation: str
     separator: str
     stacked: bool
-    show_sum: None | bool
-    show_top_sum: None | bool
-    sum_rotation: None | str
+    show_sum: bool | None
+    show_top_sum: bool | None
+    sum_rotation: str | None
     transpose: bool
     horizontal: bool
     style: str
@@ -612,10 +620,10 @@ class NeedsFilteredBaseType(NeedsBaseDataType):
     status: list[str]
     tags: list[str]
     types: list[str]
-    filter: None | str
-    sort_by: None | str
+    filter: str | None
+    sort_by: str | None
     filter_code: list[str]
-    filter_func: None | str
+    filter_func: str | None
     filter_warning: str | None
     """If set, the filter is exported with this ID in the needs.json file."""
 
@@ -626,14 +634,21 @@ class NeedsFilteredDiagramBaseType(NeedsFilteredBaseType):
     show_legend: bool
     show_filters: bool
     show_link_names: bool
+    """Whether to label edges with the link type.
+
+    .. versionchanged:: 8.4.0
+       For :class:`NeedsFlowType` this records only that the option was *given*; what it
+       was given is in ``show_link_names_value``, since needflow's widened option cannot
+       narrow a key the other diagram directives share.
+    """
     link_types: list[str]
     config: str
     config_names: str
     scale: str
     highlight: str
-    align: None | str
+    align: str | None
     debug: bool
-    caption: None | str
+    caption: str | None
 
 
 class NeedsExtractType(NeedsFilteredBaseType):
@@ -642,7 +657,7 @@ class NeedsExtractType(NeedsFilteredBaseType):
     layout: str
     style: str
     show_filters: bool
-    filter_arg: None | str
+    filter_arg: str | None
 
 
 class GraphvizStyleType(TypedDict, total=False):
@@ -664,8 +679,9 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     classes: list[str]
     """List of CSS classes."""
 
-    alt: str
-    """Alternative text for the diagram in HTML output."""
+    alt: str | None
+    """Alternative text for the diagram in HTML output,
+    ``None`` if the option was not given."""
 
     root_id: str | None
     """need ID to use as a root node."""
@@ -682,6 +698,32 @@ class NeedsFlowType(NeedsFilteredDiagramBaseType):
     graphviz_style: GraphvizStyleType
     """Graphviz style configuration."""
 
+    max_items: int | None
+    """Maximum number of needs to show, ``None`` if the option was not given."""
+
+    direction: Literal["down", "up", "right", "left"] | None
+    """The direction to draw the diagram in,
+    ``None`` if the option was not given, in which case the configuration is consulted."""
+
+    config_direction: Literal["down", "up", "right", "left"] | None
+    """The direction the selected engine configuration sets, if any.
+
+    Detected when the engine configuration is resolved, i.e. while the engine is still
+    known, so that the model can honour it without knowing which engine it is for."""
+
+    show_link_names_value: Literal["none", "outgoing", "incoming", "type"] | None
+    """What to label edges with, ``None`` if ``show_link_names`` was not given.
+
+    The bare ``show_link_names`` flag of :class:`NeedsFilteredDiagramBaseType` is shared
+    with the other diagram directives, which still take it as a flag, so needflow's
+    widened value lands beside it rather than changing its type."""
+
+    show_legend_key: str
+    """The legend configuration ``show_legend`` named, empty when written bare.
+
+    Whether a legend is shown at all is the ``show_legend`` flag of
+    :class:`NeedsFilteredDiagramBaseType`; this only says which one."""
+
 
 class NeedsGanttType(NeedsFilteredDiagramBaseType):
     """Data for a single (filtered) gantt chart."""
@@ -690,7 +732,7 @@ class NeedsGanttType(NeedsFilteredDiagramBaseType):
     starts_after_links: list[str]
     ends_with_links: list[str]
     milestone_filter: str
-    start_date: None | str
+    start_date: str | None
     timeline: Literal[None, "daily", "weekly", "monthly"]
     no_color: bool
     duration_option: str
@@ -704,6 +746,9 @@ class NeedsListType(NeedsFilteredBaseType):
     show_status: bool
     show_filters: bool
 
+    max_items: int | None
+    """Maximum number of needs to show, ``None`` if the option was not given."""
+
 
 class NeedsPieType(NeedsBaseDataType):
     """Data for a single (matplotlib) pie chart."""
@@ -711,13 +756,13 @@ class NeedsPieType(NeedsBaseDataType):
     title: str
     content: str
     legend: bool
-    explode: None | list[float]
-    style: None | str
-    labels: None | list[str]
-    colors: None | list[str]
-    text_color: None | str
+    explode: list[float] | None
+    style: str | None
+    labels: list[str] | None
+    colors: list[str] | None
+    text_color: str | None
     shadow: bool
-    filter_func: None | str
+    filter_func: str | None
     filter_warning: str | None
 
 
@@ -726,36 +771,41 @@ class NeedsSequenceType(NeedsFilteredDiagramBaseType):
 
     start: str
 
+    max_items: int | None
+    """Maximum number of messages to show, ``None`` if the option was not given."""
+
 
 class NeedsTableType(NeedsFilteredBaseType):
     """Data for a single (filtered) needs table."""
 
-    caption: None | str
+    caption: str | None
     classes: list[str]
     columns: list[tuple[str, str]]
     """List of (name, title)"""
     colwidths: list[int]
     style: str
     style_row: str
-    style_col: str
     sort: str
     show_filters: bool
     show_parts: bool
+
+    max_items: int | None
+    """Maximum number of needs to show, ``None`` if the option was not given."""
 
 
 class NeedsUmlType(NeedsBaseDataType):
     """Data for a single (filtered) uml diagram."""
 
-    caption: None | str
+    caption: str | None
     content: str
     scale: str
     align: str
-    config_names: None | str
+    config_names: str | None
     config: str
     debug: bool
     extra: dict[str, str]
-    key: None | str
-    save: None | str
+    key: str | None
+    save: str | None
     is_arch: bool
     # set in process_needuml
     content_calculated: str

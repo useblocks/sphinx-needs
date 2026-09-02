@@ -746,7 +746,9 @@
       ),
     }),
     'collapse': dict({
-      'default': FieldLiteralValue(value=True),
+      'default': FieldLiteralValue(
+        value=True,
+      ),
       'predicate_defaults': tuple(
       ),
     }),
@@ -756,7 +758,10 @@
       ),
     }),
     'constraints': dict({
-      'default': FieldLiteralValue(value=[]),
+      'default': FieldLiteralValue(
+        value=list([
+        ]),
+      ),
       'predicate_defaults': tuple(
       ),
     }),
@@ -771,7 +776,9 @@
       ),
     }),
     'hide': dict({
-      'default': FieldLiteralValue(value=False),
+      'default': FieldLiteralValue(
+        value=False,
+      ),
       'predicate_defaults': tuple(
       ),
     }),
@@ -781,35 +788,87 @@
       ),
     }),
     'layout': dict({
-      'default': FieldLiteralValue(value='clean_l'),
+      'default': FieldLiteralValue(
+        value='clean_l',
+      ),
       'predicate_defaults': tuple(
       ),
     }),
     'link1': dict({
-      'default': LinksLiteralValue(value=[NeedLink(id='SPEC_1', part=None, condition=None)]),
+      'default': LinksLiteralValue(
+        value=list([
+          NeedLink(
+            _filter_string='SPEC_1',
+            condition=None,
+            id='SPEC_1',
+            part=None,
+          ),
+        ]),
+      ),
       'predicate_defaults': tuple(
       ),
     }),
     'link2': dict({
-      'default': LinksLiteralValue(value=[NeedLink(id='SPEC_1', part=None, condition=None)]),
+      'default': LinksLiteralValue(
+        value=list([
+          NeedLink(
+            _filter_string='SPEC_1',
+            condition=None,
+            id='SPEC_1',
+            part=None,
+          ),
+        ]),
+      ),
       'predicate_defaults': tuple(
         tuple(
           'status == "implemented"',
-          LinksFunctionArray(value=(NeedLink(id='SPEC_2', part=None, condition=None), DynamicFunctionParsed(name='copy', args=('link1',), kwargs=()))),
+          LinksFunctionArray(
+            value=tuple(
+              NeedLink(
+                _filter_string='SPEC_2',
+                condition=None,
+                id='SPEC_2',
+                part=None,
+              ),
+              DynamicFunctionParsed(
+                args=tuple(
+                  'link1',
+                ),
+                kwargs=tuple(
+                ),
+                name='copy',
+              ),
+            ),
+          ),
         ),
         tuple(
           'status == "closed"',
-          LinksLiteralValue(value=[NeedLink(id='SPEC_3', part=None, condition=None)]),
+          LinksLiteralValue(
+            value=list([
+              NeedLink(
+                _filter_string='SPEC_3',
+                condition=None,
+                id='SPEC_3',
+                part=None,
+              ),
+            ]),
+          ),
         ),
       ),
     }),
     'link3': dict({
-      'default': LinksLiteralValue(value=[]),
+      'default': LinksLiteralValue(
+        value=list([
+        ]),
+      ),
       'predicate_defaults': tuple(
       ),
     }),
     'links': dict({
-      'default': LinksLiteralValue(value=[]),
+      'default': LinksLiteralValue(
+        value=list([
+        ]),
+      ),
       'predicate_defaults': tuple(
       ),
     }),
@@ -824,12 +883,25 @@
       ),
     }),
     'option_1': dict({
-      'default': FieldLiteralValue(value='test_global'),
+      'default': FieldLiteralValue(
+        value='test_global',
+      ),
       'predicate_defaults': tuple(
       ),
     }),
     'option_2': dict({
-      'default': FieldFunctionArray(value=(DynamicFunctionParsed(name='copy', args=('id',), kwargs=()),)),
+      'default': FieldFunctionArray(
+        value=tuple(
+          DynamicFunctionParsed(
+            args=tuple(
+              'id',
+            ),
+            kwargs=tuple(
+            ),
+            name='copy',
+          ),
+        ),
+      ),
       'predicate_defaults': tuple(
       ),
     }),
@@ -838,34 +910,49 @@
       'predicate_defaults': tuple(
         tuple(
           'status == "implemented"',
-          FieldLiteralValue(value='STATUS_IMPL'),
+          FieldLiteralValue(
+            value='STATUS_IMPL',
+          ),
         ),
       ),
     }),
     'option_4': dict({
-      'default': FieldLiteralValue(value='STATUS_UNKNOWN'),
+      'default': FieldLiteralValue(
+        value='STATUS_UNKNOWN',
+      ),
       'predicate_defaults': tuple(
         tuple(
           'status == "closed"',
-          FieldLiteralValue(value='STATUS_CLOSED'),
+          FieldLiteralValue(
+            value='STATUS_CLOSED',
+          ),
         ),
       ),
     }),
     'option_5': dict({
-      'default': FieldLiteralValue(value='final'),
+      'default': FieldLiteralValue(
+        value='final',
+      ),
       'predicate_defaults': tuple(
         tuple(
           'status == "implemented"',
-          FieldLiteralValue(value='STATUS_IMPL'),
+          FieldLiteralValue(
+            value='STATUS_IMPL',
+          ),
         ),
         tuple(
           'status == "closed"',
-          FieldLiteralValue(value='STATUS_CLOSED'),
+          FieldLiteralValue(
+            value='STATUS_CLOSED',
+          ),
         ),
       ),
     }),
     'parent_needs': dict({
-      'default': LinksLiteralValue(value=[]),
+      'default': LinksLiteralValue(
+        value=list([
+        ]),
+      ),
       'predicate_defaults': tuple(
       ),
     }),
@@ -905,15 +992,36 @@
       ),
     }),
     'tags': dict({
-      'default': FieldLiteralValue(value=['d']),
+      'default': FieldLiteralValue(
+        value=list([
+          'd',
+        ]),
+      ),
       'predicate_defaults': tuple(
         tuple(
           'status == "implemented"',
-          FieldLiteralValue(value=['a', 'b']),
+          FieldLiteralValue(
+            value=list([
+              'a',
+              'b',
+            ]),
+          ),
         ),
         tuple(
           'status == "closed"',
-          FieldFunctionArray(value=('c', DynamicFunctionParsed(name='copy', args=('status',), kwargs=()))),
+          FieldFunctionArray(
+            value=tuple(
+              'c',
+              DynamicFunctionParsed(
+                args=tuple(
+                  'status',
+                ),
+                kwargs=tuple(
+                ),
+                name='copy',
+              ),
+            ),
+          ),
         ),
       ),
     }),

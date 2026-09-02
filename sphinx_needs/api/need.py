@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from copy import copy, deepcopy
 from dataclasses import replace
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, TypedDict, TypeVar, cast
 
 from docutils import nodes
 from docutils.parsers.rst.states import RSTState
@@ -25,7 +25,7 @@ from sphinx_needs.data import (
     SphinxNeedsData,
 )
 from sphinx_needs.directives.needuml import Needuml, NeedumlException
-from sphinx_needs.exceptions import InvalidNeedException
+from sphinx_needs.exceptions import InvalidNeedException, NeedsInvalidFilter
 from sphinx_needs.filter_common import (
     PredicateContextData,
     apply_default_predicate,
@@ -34,6 +34,7 @@ from sphinx_needs.functions.functions import DynamicFunctionParsed
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.need_item import (
     NeedItem,
+    NeedItemSourceDirective,
     NeedItemSourceProtocol,
     NeedItemSourceUnknown,
     NeedLink,
@@ -75,26 +76,26 @@ def generate_need(
     title: str,
     *,
     need_source: NeedItemSourceProtocol | None = None,
-    docname: None | str = None,
-    lineno: None | int = None,
+    docname: str | None = None,
+    lineno: int | None = None,
     id: str | None = None,
     doctype: str = ".rst",
     content: str = "",
-    lineno_content: None | int = None,
+    lineno_content: int | None = None,
     status: str | None = None,
-    tags: None | str | list[str] = None,
-    constraints: None | str | list[str] = None,
+    tags: str | list[str] | None = None,
+    constraints: str | list[str] | None = None,
     parts: dict[str, NeedsPartType] | None = None,
     arch: dict[str, str] | None = None,
-    signature: None | str = None,
+    signature: str | None = None,
     sections: Sequence[str] | None = None,
     jinja_content: bool | None = None,
-    hide: None | bool | str = None,
-    collapse: None | bool | str = None,
-    style: None | str = None,
-    layout: None | str = None,
+    hide: bool | str | None = None,
+    collapse: bool | str | None = None,
+    style: str | None = None,
+    layout: str | None = None,
     template_root: Path | None = None,
-    template: None | str = None,
+    template: str | None = None,
     pre_template: str | None = None,
     post_template: str | None = None,
     is_import: bool = False,
@@ -263,7 +264,7 @@ def generate_need(
             f"Constraints {unknown_constraints!r} not in 'needs_constraints'.",
         )
 
-    extras_no_defaults: dict[str, None | FieldLiteralValue | FieldFunctionArray] = {}
+    extras_no_defaults: dict[str, FieldLiteralValue | FieldFunctionArray | None] = {}
     for extra_field in needs_schema.iter_extra_fields():
         if extra_field.name not in kwargs:
             extras_no_defaults[extra_field.name] = None
@@ -282,7 +283,7 @@ def generate_need(
                     f"Field {extra_field.name!r} is invalid: {err}",
                 ) from err
 
-    links_no_defaults: dict[str, None | LinksLiteralValue | LinksFunctionArray] = {}
+    links_no_defaults: dict[str, LinksLiteralValue | LinksFunctionArray | None] = {}
     for link_field in needs_schema.iter_link_fields():
         if link_field.name not in kwargs:
             links_no_defaults[link_field.name] = None
@@ -333,6 +334,7 @@ def generate_need(
         "core": defaults_ctx,
         "extras": defaults_extras_ctx,
         "links": defaults_links_ctx,
+        "location": location,
     }
 
     # Apply defaults to core fields (title excluded - always required)
@@ -564,30 +566,30 @@ def _unwrap_field_value(
 
 def add_need(
     app: Sphinx,
-    state: None | RSTState = None,
-    docname: None | str = None,
-    lineno: None | int = None,
+    state: RSTState | None = None,
+    docname: str | None = None,
+    lineno: int | None = None,
     need_type: str = "",
     title: str = "",
     *,
     need_source: NeedItemSourceProtocol | None = None,
     id: str | None = None,
     content: str | StringList = "",
-    lineno_content: None | int = None,
-    doctype: None | str = None,
+    lineno_content: int | None = None,
+    doctype: str | None = None,
     status: str | None = None,
-    tags: None | str | list[str] = None,
-    constraints: None | str | list[str] = None,
+    tags: str | list[str] | None = None,
+    constraints: str | list[str] | None = None,
     parts: dict[str, NeedsPartType] | None = None,
     arch: dict[str, str] | None = None,
-    signature: None | str = None,
+    signature: str | None = None,
     sections: list[str] | None = None,
     jinja_content: bool | None = None,
-    hide: None | bool | str = None,
-    collapse: None | bool | str = None,
-    style: None | str = None,
-    layout: None | str = None,
-    template: None | str = None,
+    hide: bool | str | None = None,
+    collapse: bool | str | None = None,
+    style: str | None = None,
+    layout: str | None = None,
+    template: str | None = None,
     pre_template: str | None = None,
     post_template: str | None = None,
     is_import: bool = False,
@@ -729,6 +731,27 @@ def add_need(
     return _create_need_node(needs_info, app.env, state, content)
 
 
+def _template_parse_offset(data: NeedItem) -> int:
+    """The offset at which to parse a need's rendered ``pre``/``post`` template content.
+
+    That content exists in no file, so the only sensible place to anchor a warning
+    raised inside it is the need's own directive. ``nested_parse`` resolves a nested
+    parse's locations through the *enclosing* state machine
+    (``abs_line_number()`` = ``line_offset + input_offset + 1``), so the anchor has to be
+    given in that machine's line space -- the same space ``lineno_content`` is kept in,
+    and **not** the resolved source line a need records since #1349. A need directive
+    keeps the unresolved number as ``parser_lineno`` for exactly this; every other kind
+    of source still stores it in ``lineno`` itself.
+    """
+    source = data.source
+    parser_lineno = (
+        source.parser_lineno if isinstance(source, NeedItemSourceDirective) else None
+    )
+    if parser_lineno is None:
+        parser_lineno = data["lineno"]
+    return (parser_lineno - 1) if parser_lineno else 0
+
+
 @contextmanager
 def _reset_rst_titles(state: RSTState) -> Iterator[None]:
     """Temporarily reset the title styles and section level in the parser state,
@@ -786,7 +809,7 @@ def _create_need_node(
         with _reset_rst_titles(state):
             state.nested_parse(
                 StringList(pre_content.splitlines(), source=source),
-                (data["lineno"] - 1) if data["lineno"] else 0,
+                _template_parse_offset(data),
                 node,
                 match_titles=True,
             )
@@ -854,7 +877,7 @@ def _create_need_node(
         with _reset_rst_titles(state):
             state.nested_parse(
                 StringList(post_content.splitlines(), source=source),
-                (data["lineno"] - 1) if data["lineno"] else 0,
+                _template_parse_offset(data),
                 node,
                 match_titles=True,
             )
@@ -945,7 +968,7 @@ def _prepare_template(
     needs_config: NeedsSphinxConfig,
     needs_info: NeedItem,
     template_name: str,
-    template_root: None | Path,
+    template_root: Path | None,
 ) -> str:
     template_folder = Path(needs_config.template_folder)
     if not template_folder.is_absolute():
@@ -1040,6 +1063,54 @@ class DefaultContextData(TypedDict):
     core: PredicateContextData
     extras: dict[str, AllowedTypes | None]
     links: dict[str, list[str]]
+    location: tuple[str | None, int | None] | None
+
+
+_PredicateValue = TypeVar("_PredicateValue")
+
+
+def _match_predicate_default(
+    predicate_defaults: Sequence[tuple[str, _PredicateValue]],
+    config_name: str,
+    field_name: str,
+    config: NeedsSphinxConfig,
+    core: PredicateContextData,
+    extras: dict[str, AllowedTypes | None],
+    links: dict[str, list[str]],
+    location: tuple[str | None, int | None] | None,
+) -> _PredicateValue | None:
+    """Return the value of the first predicate that matches this need, if any.
+
+    A predicate that cannot be evaluated is reported and skipped:
+    it used to raise out of the need's creation and end the whole build with a
+    traceback, so a single mistake in the configuration cost the project every need.
+    The remaining predicates are still evaluated, and if none of them matches then
+    the caller falls back to the plain ``default``, exactly as an unmatched
+    predicate has always done.
+    """
+    for predicate, value in predicate_defaults:
+        try:
+            matched = apply_default_predicate(predicate, config, core, extras, links)
+        except NeedsInvalidFilter as err:
+            # once=True: a configuration mistake that breaks the expression outright
+            # would otherwise be repeated for every need in the project. The dedup
+            # key is the whole message, so a predicate that fails only for SOME
+            # needs, or for different reasons on different needs, is still reported
+            # once per distinct error -- evaluability is data-dependent, which is
+            # why the predicate must keep being evaluated per need rather than
+            # being marked broken and skipped wholesale.
+            log_warning(
+                logger,
+                f"{config_name}[{field_name!r}]['predicates']: {err} "
+                "The predicate is skipped.",
+                "config",
+                location,
+                once=True,
+            )
+            continue
+        if matched:
+            return value
+    return None
 
 
 def _get_field_default(
@@ -1048,13 +1119,24 @@ def _get_field_default(
     core: PredicateContextData,
     extras: dict[str, AllowedTypes | None],
     links: dict[str, list[str]],
-) -> None | FieldLiteralValue | FieldFunctionArray:
+    location: tuple[str | None, int | None] | None,
+) -> FieldLiteralValue | FieldFunctionArray | None:
     if scheme is None:
         return None  # TODO except (and catch upstream)
     # TODO if we stored default lists as tuples we could avoid the deepcopy here
-    for predicate, v in scheme.predicate_defaults:
-        if apply_default_predicate(predicate, config, core, extras, links):
-            return deepcopy(v)
+    if (
+        value := _match_predicate_default(
+            scheme.predicate_defaults,
+            "needs_fields",
+            scheme.name,
+            config,
+            core,
+            extras,
+            links,
+            location,
+        )
+    ) is not None:
+        return deepcopy(value)
     if scheme.default is not None:
         return deepcopy(scheme.default)
     return None
@@ -1066,13 +1148,24 @@ def _get_links_default(
     core: PredicateContextData,
     extras: dict[str, AllowedTypes | None],
     links: dict[str, list[str]],
-) -> None | LinksLiteralValue | LinksFunctionArray:
+    location: tuple[str | None, int | None] | None,
+) -> LinksLiteralValue | LinksFunctionArray | None:
     if scheme is None:
         return None  # TODO except (and catch upstream)
     # TODO if we stored default lists as tuples we could avoid the deepcopy here
-    for predicate, v in scheme.predicate_defaults:
-        if apply_default_predicate(predicate, config, core, extras, links):
-            return deepcopy(v)
+    if (
+        value := _match_predicate_default(
+            scheme.predicate_defaults,
+            "needs_links",
+            scheme.name,
+            config,
+            core,
+            extras,
+            links,
+            location,
+        )
+    ) is not None:
+        return deepcopy(value)
     if scheme.default is not None:
         return deepcopy(scheme.default)
     return None

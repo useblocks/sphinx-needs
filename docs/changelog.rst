@@ -14,7 +14,380 @@ Unreleased
 Improvements
 ............
 
-- ✨ The ``cypher``, ``max_items``, ``width`` and ``height`` directive options are now
+- 👌 :ref:`Schema validation <schema_validation>` errors now name the failing keyword, and
+  report ``$ref`` targets at their definition **(changed output)** (:pr:`1819`)
+
+  The ``jsonschema-rs`` requirement moves from ``~=0.37.1`` to ``>=0.37.1,<0.53.0``,
+  which brings a rewritten error renderer with it. Which schemas validate, which needs
+  are reported, and the warning subtypes (``sn_schema_violation.*``) are all unchanged —
+  only the message text is different.
+
+  The failing keyword is now named, and the instance path is given relative to the
+  sub-schema that failed rather than from the root:
+
+  .. code-block:: text
+
+     - Failed validating in schema
+     + Failed validating "pattern" in schema["properties"]["efforts"]
+     - On instance["properties"]["efforts"]:
+     + On instance:
+
+  A ``$ref`` is reported where it is defined, instead of through the reference:
+
+  .. code-block:: text
+
+     - Failed validating "const" in schema["properties"]["contains"]["$ref"]["properties"]["type"]
+     + Failed validating "const" in schema["$defs"]["LinkItemSchemaType"]["properties"]["type"]
+
+  And the names listed by ``Unevaluated properties are not allowed (...)`` are no longer
+  sorted alphabetically. The set of names reported is unchanged, and the order is stable.
+
+  If you match on this text — in a test, a log filter, or a ``suppress_warnings`` entry
+  keyed to a message body rather than to a subtype — it will need updating.
+
+- ✨ The ``cypher`` directive option is now accepted on :ref:`needpie` and :ref:`needbar`
+  for `ubCode`_ compatibility (:pr:`1818`)
+
+  The two chart directives join :ref:`needlist`, :ref:`needtable` and :ref:`needflow` in
+  accepting this option and then ignoring it, so that a document authored for ubCode also builds
+  with Sphinx-Needs, instead of failing with an ``unknown option`` error.
+  The option never reaches a node, the rendered output, or the ``needs.json`` file.
+
+  On :ref:`needpie` the no-op is visible in the chart, though, which it is not on the three view directives:
+  ubCode reads the query as the scope each content line is counted over, whereas Sphinx-Needs
+  counts every line over the whole project, so the same chart can show different numbers in the
+  two tools.
+
+  On :ref:`needbar` the option is accepted ahead of any ubCode support for it — ubCode does not
+  read it there either, so today neither tool acts on it, and it is accepted only so that a
+  document already carrying it builds in both.
+  See :ref:`ubCode compatibility <ubcode_compat_options>` for the exact per-directive list.
+
+Bug fixes
+.........
+
+- 🐛 Eight :ref:`needuml` and :ref:`needarch` inputs that were ignored, or that ended the
+  build, are now reported **(changed output)** (:pr:`1800`)
+
+  Three of them ended the whole build with a Python traceback and a "report this to the
+  developers" banner, none of them naming the document it came from:
+
+  - An ``:extra:`` value containing a second colon — a URL, a time, a namespaced
+    identifier — raised ``ValueError: too many values to unpack``. A pair is now split on
+    its first colon only, with both halves stripped, so such values are usable; a segment
+    carrying no colon at all is reported and skipped, and an empty one (from a trailing
+    comma) is skipped in silence, as an empty ``:config:`` segment always has been.
+  - ``uml(id, key=...)`` naming an arch key the need does not carry raised a bare
+    ``KeyError``, because the guard subscripted ``arch`` before testing for the key. The
+    message the code already held, naming both the key and the need, is now the one
+    raised.
+  - ``import()`` given an option holding a plain string consumed it one character at a
+    time, looking each character up as a need id and reporting the first character as an
+    unknown id. Such a value is now refused by name, and a list of ids is imported as it
+    always was. Note the one shape this ends: under a ``needs_id_regex`` permitting
+    single-character ids, a *string* of concatenated ids used to import them one by one,
+    and now errors. An option that is defined but unset still imports nothing, silently.
+
+  **The whitespace strip is the one change to what a working document renders.** It only
+  affects an ``:extra:`` written with spaces around a pair, which the documented example
+  never had: ``:extra: a:1, b:2`` stored the key ``" b"``, unreachable from a template, so
+  ``{{ b }}`` rendered empty and now renders ``2``; and ``:extra: name: X`` stored ``" X"``
+  and rendered a leading space, which it no longer does. Both are what the author wrote the
+  pair to mean.
+
+  The rest were silent, and are unchanged in what they render:
+
+  - Without ``sphinxcontrib.plantuml`` installed, every diagram in the project was
+    replaced by an error node on the page and nothing at all was logged.
+  - A ``:config:`` name that ``needs_flow_configs`` does not define was dropped. The
+    names it does define are still applied.
+  - A non-numeric ``:scale:`` fell back to 100, which it still does.
+  - ``ref()`` given both ``option`` and ``text``, or neither, was accepted without a
+    word: its own validation read ``(option and text) and (not option and not text)`` and
+    so could never hold. What is rendered is unchanged — ``option`` still wins over
+    ``text``, and a call with neither still renders a link with no label.
+  - ``import()`` ignored an option name the need does not carry.
+
+  The two template-function warnings above are emitted once per distinct message for the
+  whole build, so the same call on the same need in a second document is not reported
+  again.
+
+  **If you build with** ``-W``, the general rule applies here as it does elsewhere in this
+  release series: a mistake that used to be silent — or to crash — is now a warning, and a
+  warning fails a ``-W`` build. A project can start failing where it passed even though
+  nothing about it changed, most easily by not having ``sphinxcontrib.plantuml`` installed,
+  which now reports one warning per needuml. Silence them with
+  ``suppress_warnings = ["needs.needuml"]``; the ``:scale:`` one keeps the existing
+  ``needs.diagram_scale`` subtype shared with the other diagrams, so covering both takes
+  ``suppress_warnings = ["needs.needuml", "needs.diagram_scale"]``. A third subtype,
+  ``needs.uml``, already existed and is unchanged: it covers only the
+  :ref:`needs_uml_process_max_time` warning.
+
+  Finally, the :ref:`needumls_builder` builder no longer truncates the ``.puml`` files an
+  earlier run saved. The generated content is filled in while a document is written,
+  after the environment has been pickled, so a build that re-read nothing held an empty
+  value for every needuml and wrote it over the good file — reproducible with two
+  consecutive ``sphinx-build -b needumls`` runs, the second leaving zero bytes behind. A
+  needuml with no generated content is now skipped instead, which also means a build over
+  an already up-to-date ``.doctrees`` writes nothing rather than emptying everything; use a
+  fresh output folder or ``-E`` to regenerate. A needuml is still not re-rendered when a
+  need it references changes in another document; that needs dependency tracking and is not
+  addressed here.
+
+- 🐛 Six :ref:`needextract` inputs that ended the build are now reported instead
+  **(changed output)** (:pr:`1795`)
+
+  Each of these ended the whole build with a Python traceback and a "please report this
+  to the developers" banner, three of them from the directive's own option surface:
+
+  - an argument that looks like a need ID but names no need,
+  - an argument and ``:filter:`` together — the combination the documentation warns
+    about,
+  - ``needs_include_needs = False`` with any needextract in the project, which gave no
+    diagnostic at all,
+  - a ``needtable`` in the content of an extracted need,
+  - a ``needextract`` in the content of an extracted need,
+  - a footnote reference in the content of an extracted need.
+
+  The first three were one defect: the name holding a needextract's filter result was
+  assigned inside the loop over a document's nodes and read once after it, so any node
+  taking an early exit left it unbound. All three are now reported (or, under
+  ``needs_include_needs = False``, silently dropped, exactly as every other view
+  directive drops itself) and the rest of the build stands.
+
+  The other three come from *when* a need's content is copied. It is snapshotted while
+  the need's directive runs, before any of its document's transforms, and spliced into
+  the extract's document after all of *that* document's transforms — so it sees neither
+  document's pipeline, and a handful of transforms are replayed over it by hand. One of
+  those replays, ``env.resolve_references()``, ends by emitting ``doctree-resolved``,
+  with the detached container holding the copy standing in for a document: every
+  listener of the event ran a second time on a node that is not a document, this
+  extension's own listeners included. Sphinx's post-transforms are now applied directly
+  instead, so the event is emitted once per document and always with a document — a
+  guarantee a third-party listener gets too.
+
+  What a copy cannot render is now dropped from it and named, rather than reaching a
+  processor or the writer that cannot cope:
+
+  - ``needbar``, ``needextract``, ``needpie``, ``needtable`` and ``needuml`` — and so
+    ``needarch``, which is ``needuml`` restricted to a need's content — in the content of
+    an extracted need are omitted from the copy, each reported at the needextract site.
+  - A footnote reference in it is rendered as the marker its author wrote, without the
+    trailing ``_``, and reported. The footnote's own text stays where it is, so nothing
+    disappears from the page.
+
+  Everything else a copy carries is unchanged, byte for byte: rich markup, code blocks,
+  images, substitutions, nested needs, figures under ``numfig``, and needs extracted in
+  their own document or defined later in the build. In particular the reference contract
+  is untouched — a ``:ref:`` or ``:need:`` inside extracted content still resolves to
+  the page the need is written on, and so does the extract card's own ID chip.
+
+.. _`release:8.4.0`:
+
+8.4.0
+-----
+
+:Released: 27.08.2026
+:Full Changelog: `v8.3.1...v8.4.0 <https://github.com/useblocks/sphinx-needs/compare/8.3.1...8.4.0>`__
+
+This release is about the **view directives**, and about a build that no longer stops at
+the first bad value. :ref:`needflow` gains a portable vocabulary — a ``:direction:`` that
+means the same thing on both engines, named legend configurations, and a
+``:show_link_names:`` that says what each connection is labelled with — alongside a long
+list of fixes to both of its emitters. :ref:`needs_card_layouts` describes a need's card
+as a small dictionary instead of a hand-written layout string, :ref:`list2need` builds its
+needs directly and so works in Markdown documents and records the line each need was
+written on, and every view can cap what it shows with ``max_items``. Running through the
+rest is one theme: configuration mistakes and render failures that used to end the build
+with a traceback are now located warnings, which leaves the rest of the build in place —
+and, for a project that builds with ``-W``, can turn a green build red until the reported
+mistake is fixed or suppressed.
+
+Improvements
+............
+
+- ✨ :ref:`list2need` works in Markdown documents, and records the line each need was
+  written on (:issue:`1349`, :pr:`1790`)
+
+  The directive used to render every item into a need directive through a template and
+  hand the result back to the parser. That step is gone: the items are built directly,
+  and a nested item is placed inside its parent. The syntax and its parsing are
+  untouched — the same list structure, the same ``(ID)`` capture, the same
+  ``:delimiter:`` split, the same ``((option="value"))`` region, the same validation —
+  so a list that built before builds the same needs, with the same IDs, apart from the
+  one class of item named under Breaking changes below.
+
+  What the step cost, and is therefore fixed:
+
+  - A list written as a ``{list2need}`` fence in a MyST Markdown document produced no
+    needs at all, only an error naming a myst-parser internal. It now creates its needs,
+    like any other directive.
+  - Handing generated text back to the parser advanced its line counter for the rest of
+    the file, so every need from the directive onwards — the items themselves, and any
+    ordinary need directive written below them — was recorded at a line further down the
+    file than it was written, by an amount that grew with each list in the document.
+    Every ``lineno`` in ``needs.json`` is now the line the need was written on, inside
+    an ``eval-rst`` block in a Markdown document too.
+  - An item written ``()`` with options, such as ``* ()A title ((status="open"))``, lost
+    them: they became body text. They are now set.
+
+  Four inputs that used to be errors are now defined, none of which a document that
+  built cleanly can contain:
+
+  - ``((id="MY-ID"))`` names the need. The template wrote both the derived ID and this
+    one as two ``:id:`` lines of the same generated need, which docutils refused with
+    ``duplicate option "id"``, so the item was dropped. The ID is applied before
+    ``:links-down:`` is built, so the links of the other items agree with it. An empty
+    ``((id=""))`` is refused with a diagnostic instead.
+  - An inline option naming the same link field as ``:links-down:`` — ``((links="X"))``
+    under ``:links-down: links`` — used to produce one corrupt link value and an
+    ``unknown outgoing link`` warning. The two sets of links are now merged.
+  - An item carrying ``((title_from_content="true"))`` reads it as a need directive
+    does.
+  - A child of a ``((hide="true"))`` item is rendered at the level above it, rather
+    than being placed inside a need that is taken out of the document.
+
+  The content of a parent need no longer holds the generated reStructuredText of its
+  children — nesting is a property of the document, not of the parent's text — so
+  ``needs.json``, and a filter reading ``content``, see the item's own text only.
+
+- 👌 :ref:`needs_variant_data` is resolved while the configuration is being initialised
+  (:issue:`1783`, :pr:`1787`)
+
+  The :ref:`needs_variant_data_file` is loaded, and the inline
+  :ref:`needs_variant_data` merged on top of it, during ``config-inited`` instead of
+  when document reading starts. What is merged, and which value wins — inline over
+  file, ``sphinx-build -D`` over :ref:`needs_from_toml` — is unchanged, as are the
+  errors reported for a file that is missing or does not contain valid variant data.
+  Only the point in the build at which the work happens has moved. The full-rebuild
+  fix this also brings is described under Bug fixes below.
+
+  A file that cannot be used now fails the build during configuration, before any
+  document is read, rather than once reading has begun.
+
+  An extension that handles ``config-inited`` after Sphinx-Needs can now read the merged
+  map, which matters because configuration deciding which documents exist at all — such
+  as ``exclude_patterns`` — can only be changed while that event is running.
+
+  In return, an extension that *writes* :ref:`needs_variant_data` from its own
+  ``config-inited`` handler no longer has the file merged into what it wrote, and no
+  longer has it validated: resolution has already happened by then, so the value is
+  taken as it stands. It is used consistently — the :ref:`variant role <role_variant>`
+  and ``var.*`` filter expressions always read the same map — but if you write the
+  configuration this way and rely on the merge or the validation, set
+  :ref:`needs_variant_data` in ``conf.py``, in :ref:`needs_from_toml`, or with
+  ``sphinx-build -D`` instead.
+
+- ✨ New :ref:`needflow` ``:direction:`` option and :ref:`needs_flow_direction`
+  configuration (:pr:`1782`)
+
+  A diagram says which way it flows as an intent — ``down`` (the default), ``up``,
+  ``right`` or ``left`` — and each engine spells that in its own language, so the same
+  document renders the same way on either engine.
+  The tokens ``TB``, ``TD``, ``BT``, ``LR`` and ``RL`` are accepted as aliases, so a
+  habit picked up from Graphviz or Mermaid does not have to be unlearned.
+
+  .. code-block:: rst
+
+     .. needflow::
+        :direction: right
+
+  PlantUML has no bottom-up or right-to-left layout, so ``up`` is drawn ``down`` and
+  ``left`` is drawn ``right``, with one ``needs.needflow`` warning per project;
+  Graphviz draws all four.
+  A diagram is never refused for asking: a plainer diagram is better than a failed build.
+
+  An explicit ``:direction:`` also wins over a layout that the ``:config:`` it is written
+  beside happens to set, on both engines, and the disagreement is reported.
+  A diagram that does not use the option keeps byte-identical diagram source.
+
+- ✨ :ref:`needflow` ``:show_legend:`` takes the name of a legend configuration
+  (:pr:`1782`)
+
+  Written bare it draws exactly the legend it always drew, so no existing diagram
+  changes — including the long-standing difference that ``plantuml`` lists every
+  configured need type while ``graphviz`` lists only the ones it drew.
+  Written with a value it names an entry of the new :ref:`needs_flow_legends`:
+
+  .. code-block:: python
+
+     needs_flow_legends = {
+         "beside": {"parts": ["types", "links"], "placement": "external"},
+     }
+
+  A legend with ``placement = "external"`` is rendered as a document table beside the
+  diagram, so it looks the same on both engines, its text is selectable and searchable,
+  and it can describe **link types** — which no in-diagram legend ever could.
+  It lists only what the diagram actually drew.
+  ``parts`` is an ordered list, and the order is contract: ``["links", "types"]`` puts
+  the link table first and keeps it there.
+
+  The new :ref:`needs_flow_show_legend` says *which* legend a diagram gets when it asks
+  for one without naming it — never *whether*: asking stays with the directive.
+  Resolution is a chain — the option's name, then the project default, then the engine's
+  own legend — and a name that is not defined warns and hands on to the next step, so a
+  typo in one diagram does not cost the project the legend it configured.
+
+  A ``needs_flow_legends`` entry that cannot be used is reported as a ``needs.config``
+  warning and skipped, rather than failing the build.
+
+- ✨ New :ref:`needs_card_layouts` configuration, for describing layouts declaratively
+  (:pr:`1765`)
+
+  A *card specification* states what a need should show — ``header``, ``meta``, ``footer``,
+  ``side`` and ``collapse`` — as a small dictionary, instead of as hand-written layout
+  strings. Specifications are compiled into :ref:`needs_layouts` entries during
+  configuration, so a card works wherever a layout name is accepted, and can inherit from
+  another card or from a built-in layout via ``extends``:
+
+  .. code-block:: python
+
+     needs_card_layouts = {
+         "product": {
+             "extends": "clean",
+             "meta": {"include": ["status", "tags"]},
+             "footer": ["id", "type"],
+             "collapse": "closed",
+         }
+     }
+
+  ``needs_layouts`` is unchanged and remains supported for layouts the card vocabulary
+  cannot express. A specification that cannot be compiled, or whose name is already taken
+  by an existing layout, is reported as a new ``needs.card_layout`` warning and skipped,
+  leaving the rest of the build untouched. See :ref:`card_layouts` for the full vocabulary
+  and its documented limits.
+
+- ✨ :ref:`needs_card_layouts` elements gain an object form
+  (:pr:`1766`)
+
+  Every element string is now shorthand for an object with a ``type`` key —
+  ``"image:diagram"`` is spelled ``{"type": "image", "field": "diagram"}`` — and the two
+  spellings mix freely in one list. An object without options compiles to exactly the same
+  layout as its string shorthand; the strings stay valid and remain the documented default.
+  The object form exists to carry options: ``height`` and ``width`` on ``image`` elements,
+  and ``label`` on ``field`` elements, replacing the field name in the rendered
+  ``name: value`` pair:
+
+  .. code-block:: python
+
+     needs_card_layouts = {
+         "illustrated": {
+             "footer": [
+                 "id",
+                 {"type": "field", "field": "owner", "label": "Owned by"},
+             ],
+             "side": {
+                 "elements": [{"type": "image", "field": "picture", "height": "40px"}]
+             },
+         }
+     }
+
+  Option values are grammar-bound; an option on the wrong type, an unknown key, or a value
+  outside its grammar is reported as a ``needs.card_layout`` warning and the card is
+  skipped, like any other invalid specification. See
+  :ref:`the object form <card_layouts_object_form>` for the option table and grammars.
+
+- ✨ The ``cypher``, ``width`` and ``height`` directive options are now
   accepted for `ubCode`_ compatibility (:pr:`1760`)
 
   :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and :ref:`needsequence` accept these
@@ -24,8 +397,535 @@ Improvements
   the ``needs.json`` file. See :ref:`ubCode compatibility <ubcode_compat_options>` for the
   exact per-directive list.
 
+- ✨ The ``max_items`` option on :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and
+  :ref:`needsequence` now limits how many items a view shows (:pr:`1761`)
+
+  The limit is applied after filtering and sorting, so a view keeps the first items it would
+  otherwise have rendered; on :ref:`needsequence` it counts messages rather than needs.
+  ``:max_items: 0`` means no limit, and a view without the option falls back to the new
+  :ref:`needs_views_max_items` configuration, which defaults to ``0`` — so nothing is limited
+  until you ask for it, and existing projects render exactly as before. A view that was
+  truncated says so, instead of silently dropping needs: it adds a notice to the page and
+  emits a ``needs.max_items`` warning, which a project that caps deliberately can silence
+  with ``suppress_warnings = ["needs.max_items"]``.
+
+  Previously the option was accepted and ignored for `ubCode`_ compatibility, which was only
+  ever in an unreleased state, so no released behaviour changes.
+  The stored environment version is bumped for the new directive option, so the first build
+  after upgrading re-reads every document.
+
+- 👌 :ref:`needs_string_links` is validated when it is loaded, and no longer fails the build
+  (:pr:`1767`)
+
+  A configuration entry used to be looked at only while a need was being rendered, and then
+  indexed into blindly. A missing key, a regular expression that does not compile, a template
+  that does not parse, or an entry that is not a dictionary each aborted the whole build with
+  an uncaught exception naming neither the entry nor a file — and did so even when no need
+  used the field the entry names.
+
+  Every entry is now validated once, during configuration. A problem is reported as a new
+  ``needs.string_link`` warning naming the entry, and only that entry is skipped, so a
+  configuration that used to fail the build now builds and renders everything else. The same
+  warning also covers the cases that previously passed in silence — an unknown key inside an
+  entry, an ``options`` entry naming a field that is registered nowhere, an empty ``options``
+  — none of which skips the entry.
+
+  **If you build with** ``-W``, take this as the general rule: a configuration mistake that
+  used to be silent — or to crash — is now a warning, and a warning fails a ``-W`` build. So
+  a project whose ``needs_string_links`` contains anything questionable can start failing
+  where it passed, even though nothing about it changed. The same goes for the list-field fix
+  below, which reaches render-time failures that the meta area used to swallow. Silence the
+  configuration warnings with ``suppress_warnings = ["needs.string_link"]``; render-time
+  failures keep the existing ``needs.layout`` subtype, so covering both takes
+  ``suppress_warnings = ["needs.string_link", "needs.layout"]``.
+
+  Two spellings of ``options`` are now skipped with a warning, and both used to render
+  links, so **if your links have disappeared this is the paragraph to read**. A **bare
+  string** was accepted before, but with two contradictory meanings: the ``,``/``;``
+  splitting silently did not happen, while the per-field test degraded into a substring
+  match, so ``options = "myfield"`` also applied to a field named ``my``. A **mapping**
+  (``{"myfield": True}``) worked by accident, through iteration over its keys. Write either
+  as a list. A list, tuple, set or frozenset of names is accepted, as is an already-compiled
+  ``re.Pattern`` for ``regex`` (a *bytes* pattern is not, as it could never match a field value).
+
+- 👌 :ref:`needflow` ``:debug:`` shows the generated diagram source as a code block under the
+  plantuml engine too **(changed output)**
+
+  The plantuml engine emitted raw HTML, an unnumbered and unstyled ``<pre>`` block,
+  where the graphviz engine emitted a literal block,
+  so the same option gave the source line numbers and the theme's code styling
+  on one engine only.
+  Both now emit a literal block.
+  The plantuml source is shown unhighlighted, because Pygments has no PlantUML lexer.
+
+  This is a deliberate change to the rendered page rather than a fix:
+  a project that styles or scrapes the debug block sees the new markup.
+
+Deprecations
+............
+
+- 🔧 The undocumented ``needtable`` ``:style_col:`` option is deprecated —
+  it was declared but never read, so it has never had any effect.
+  A document that sets it still builds and now gets a ``deprecated`` warning;
+  the line can simply be deleted.
+
+Breaking changes
+................
+
+- ‼️ A :ref:`list2need` item written ``()`` gets the same generated ID as one written
+  without brackets (:pr:`1790`)
+
+  Writing an empty bracketed group used to suppress the ID of the generated need, which
+  sent it down the need directives' own ID generator — a different one, which reads
+  :ref:`needs_id_from_title` where list2need's does not, and hashes the content when the
+  title is empty. One list could therefore carry two kinds of generated ID at once,
+  chosen by two characters of punctuation. The directive now derives every ID itself.
+
+  Under the default configuration the two generators agreed for an item whose title
+  carries no options, so almost every project sees no change. **A project that sets**
+  ``needs_id_from_title``, **writes** ``()`` **on an item with no title, or writes**
+  ``()`` **on an item that also carries an** ``((option="value"))`` **area, gets a
+  different ID for those items**, and any ``:need:`` reference to the old ID has to be
+  updated. Give such an item an explicit ID — ``* (MY-ID)A title`` — if its ID has to
+  stay as it was.
+
+  The third case is the widest of the three, because it needs no configuration: the
+  ID list2need derives is the hash of the title *before* the option area is removed
+  from it, which is the ID an item without the ``()`` has always been given, while the
+  second generator hashed the title after it. So ``* ()A title ((status="open"))``
+  moves from ``R_328F3`` to ``R_0FF10`` — the ID ``* A title ((status="open"))``
+  already had.
+
+- ‼️ :ref:`needflow` ``:show_link_names:`` takes an optional value, and now wins over
+  :ref:`needs_flow_show_links` (:pr:`1782`)
+
+  The option chooses what each connection is labelled with: ``none``, ``outgoing``,
+  ``incoming`` or ``type``.
+  Written bare it still means ``outgoing``, which is what the flag has always drawn, so
+  no existing document changes; the other three values are new.
+
+  ``needs_flow_show_links`` takes the same four values, and ``True``/``False`` keep
+  meaning ``outgoing``/``none``.
+  Any other non-string value is read for its truth, because that is what a value declared
+  a boolean for years actually did — ``1`` still draws labels.
+
+  **A string that is not one of the four values now warns and falls back to** ``none``,
+  where it used to be truthy and draw labels.
+  That is the one input whose behaviour changes.
+  If you build with ``-W``, note that the warning fails the build; silence it with
+  ``suppress_warnings = ["needs.config"]`` or, better, write one of the four values.
+
+  The option now overrides the configuration instead of being combined with it.
+  A project that turned labels on previously left no way of drawing a single unlabelled
+  diagram; ``:show_link_names: none`` is that way.
+
+  Enumerated ``needs_flow_*`` configuration values — ``needs_flow_show_links``,
+  :ref:`needs_flow_direction` and :ref:`needs_flow_engine` — are now matched without
+  regard to case or surrounding whitespace, exactly as the matching directive options
+  always have been.
+  A project whose value only differed in capitalisation stops warning and starts being
+  honoured.
+
+
+Internal changes
+................
+
+These changes do not affect user-facing behaviour:
+
+- ♻️ :ref:`needflow`'s two engines now share one graph-model pass, with no change to the
+  generated diagram source
+
+Bug fixes
+.........
+
+- 🐛 An invalid ``predicates`` expression warns instead of ending the build (:pr:`1791`)
+
+  A ``predicates`` match expression on a :ref:`needs_fields` or :ref:`needs_links`
+  default that cannot be evaluated — one naming ``section_name`` or ``content``, say,
+  neither of which a predicate has access to — used to raise out of the need's creation
+  and end the whole build with a traceback and a "please report this to the developers"
+  banner. No need was created, no other warning in the project was ever reported, and
+  nothing said which document the expression had failed on.
+
+  Such an expression is now reported as a ``needs.config`` warning, located at a need it
+  was evaluated against and naming the field, the expression and the underlying error,
+  and is then skipped: the remaining predicates are still evaluated, and if none of them
+  matches then the plain ``default`` applies, exactly as it does for a predicate that
+  simply did not match. A statically malformed ``predicates`` value — the wrong number
+  of items in a pair, say — has always been reported this way; only the expression
+  itself was left to end the build.
+
+  The warning is deduplicated on its full message, so a single configuration mistake --
+  such as the name typo above, which fails identically for every need -- is reported once
+  rather than once per need. An expression that fails only for some needs, or for
+  different reasons on different needs, is reported once per distinct error.
+
+- 🐛 A need records the line it is actually written on **(changed output)** (:issue:`1349`, :pr:`1789`)
+
+  ``rst_prolog``, ``.. include::`` and :ref:`list2need` each put text into the document
+  being parsed, and each one used to shift the ``lineno`` recorded for every need after
+  it by the length of that text. The shifts compound, so in a document with a prolog and
+  a couple of includes the recorded line was routinely past the end of the file. The
+  line is now resolved back to the one the directive stands on — the same line the
+  directive's own warnings have always reported.
+
+  **No warning location regresses.** The only warning locations that move are the
+  ones this corrects — sites that report at a need's stored line now name the true
+  one. Everything anchored through the directive's own location helper, including
+  the content a :ref:`need_pre_template` or :ref:`need_post_template` renders, is
+  byte-identical to before.
+
+  One thing is deliberately unchanged: ``lineno_content`` is still the parser's own
+  counter, because that is what it is used as. (The needs :ref:`list2need` *generates*
+  recorded their position inside the generated block when this entry was written;
+  :pr:`1790` builds them directly, so they now record the line of their own list item.)
+
+- 🐛 Fix :ref:`needs_variant_data_file` triggering full rebuilds (:issue:`1783`, :pr:`1787`)
+
+  The merged variant data was written back onto the configuration after Sphinx's
+  ``config-inited`` checkpoint, so the pickled configuration held the merged map while
+  the next build compared it against the unmerged one — a difference Sphinx read as a
+  changed ``env`` value, re-reading every document on every incremental build. The
+  merge now happens before that checkpoint, so an unchanged file is recognised as
+  unchanged and nothing is re-read.
+
+  Editing the file's *contents* is now what triggers the rebuild, because the merged
+  map is part of the configuration being compared. The :ref:`variant role
+  <role_variant>` previously advised a clean build (``sphinx-build -E``) to pick such an
+  edit up; that advice is gone, along with the need for it.
+
+  Projects that set :ref:`needs_variant_data` inline only were never affected and are
+  unchanged.
+
+- 🐛 :ref:`needs_string_links` no longer makes a field value disappear when its template fails
+
+  A template that fails at render time — an unknown filter, say — logged a warning and then
+  returned nothing at all, and the value vanished from the page rather than merely losing its
+  link. It now falls back to the plain text, which is what a non-matching regular expression
+  has always done, and the warning says which need it came from.
+
+- 🐛 :ref:`needs_string_links` renders separators between items only **(changed output)**
+  (:pr:`1718`)
+
+  In a need's meta area, the separator condition counted the *characters* of the value instead
+  of its items, so every item got a trailing ``;`` — and a single-character value got no
+  separator at all. N items now produce N-1 separators, exactly as :ref:`needtable` cells have
+  always done. Fields not named in any ``options`` are unaffected.
+  The one-line fix landed in :pr:`1718`; this release also pins the rule with regression
+  tests on both surfaces.
+
+- 🐛 :ref:`needs_string_links` applies to list fields in the meta area **(changed output)**
+
+  A field holding a list (``tags``, or any array field) was linked element by element in a
+  :ref:`needtable` but rendered as plain text in the need itself. Both surfaces now link the
+  elements, so the same field no longer renders differently depending on where you look at it.
+  Empty elements are left alone on both surfaces, rather than linked to the bare url.
+
+  One consequence is worth calling out for ``-W`` builds: a template that fails at render
+  time on a **list** field is now reported (as a ``needs.layout`` warning, the subtype every
+  render-time failure uses), where the meta area previously failed silently. A project whose
+  list-field template is broken and which has no :ref:`needtable` rendering that field emitted
+  no warning at all before.
+
+- 🐛 :ref:`needs_string_links` drops items that are empty once stripped, so ``AB-1, , AB-2``
+  is two items rather than three with an empty one in the middle.
+
+- 🐛 :ref:`needflow` no longer fails the build when a need type has no ``color`` (or an
+  empty one) and the diagram shows a legend (:issue:`1664`).
+
+  ``color`` is optional in :ref:`needs_types`, but both engines read it unguarded while
+  building the legend, so ``:show_legend:`` ended the build with ``KeyError: 'color'``.
+  Such a type keeps its legend row, with an empty color swatch; a type whose ``color`` is
+  set to an empty string no longer emits an empty swatch value either.
+
+- 🐛 :ref:`needflow` needs whose ids differ only in punctuation are no longer drawn as a
+  single node by the plantuml engine.
+
+  PlantUML entity names cannot contain punctuation, so ids such as ``R-1`` and ``R=1`` both
+  became ``R_1`` and silently collapsed into one node, taking their edges with them.
+  Entity names are now assigned per diagram, so that they stay unique; the names shown by
+  ``:debug:`` therefore change for such ids. :ref:`needuml` entity names are unchanged.
+
+- 🐛 :ref:`needflow` ``:border_color:`` accepts a value written with a leading ``#``.
+
+  ``#00FF00`` previously reached graphviz as ``##00FF00`` and PlantUML as ``line:#00FF00``,
+  which PlantUML rejects outright. Both engines now normalise the value and add the prefix
+  their own syntax needs. Relatedly, a variant expression that matches nothing now means
+  "no border color" under graphviz, instead of the literal color ``#None``.
+
+- 🐛 :ref:`needflow` ``:highlight:`` filters that consult ``needs`` now also work for a
+  need with parts or child needs.
+
+  The graphviz engine draws such a need as a subgraph, and that path evaluated the filter
+  without the needs list, so the same expression could behave differently -- or fail the
+  build -- depending on whether a need happened to have children.
+
+- 🐛 A graphviz :ref:`needflow` image without an ``:alt:`` option now gets
+  ``alt="needflow graphviz diagram"``.
+
+  The intended default was unreachable, so every such image was published with an empty
+  ``alt`` attribute. Writing ``:alt:`` with no value still gives an empty ``alt``, for a
+  diagram that is purely decorative.
+  The stored environment version is bumped, because the option is recorded differently
+  when it is not given, so the first build after upgrading re-reads every document.
+
+- 🐛 The :ref:`needflow` warning for an unknown ``:config:`` name now names
+  :ref:`needs_flow_configs`, which was misspelled as ``need_flows_configs``.
+
+- 🐛 The :ref:`needflow` warning for an unknown ``:link_types:`` value now carries the
+  source location of the directive under the graphviz engine, as it already did under
+  plantuml.
+
+- 🐛 A wrapped :ref:`needflow` graphviz label no longer breaks an HTML entity in two.
+
+  A need title is wrapped to the label width and escaped for graphviz's HTML-like labels,
+  but the escaping ran first,
+  so the wrapper counted the characters of an entity and could break inside one:
+  a title holding a quote wrapped to ``&quo<br/>t;``,
+  which graphviz refuses to render, ending the build with ``not well-formed (invalid token)``.
+  Wrapping now happens first,
+  which also makes the wrap width count what the reader sees rather than what the escaper wrote.
+
+- 🐛 A :ref:`needs_graphviz_styles` element type holding something other than a mapping of
+  attributes is now reported and ignored.
+
+  Such a value travelled unchecked into the emitter,
+  where ``'str' object has no attribute 'items'`` ended the whole build with a traceback
+  instead of a message.
+  It is now reported as a ``needs.needflow`` warning naming the config,
+  and the diagram is drawn without the offending style.
+
+- 🐛 An unknown :ref:`needs_flow_engine` value is now reported,
+  and the default engine draws the diagram.
+
+  The value was checked with a bare ``assert``,
+  which ends the build with a traceback rather than a message —
+  and which ``python -O`` strips altogether,
+  leaving the unknown name to fail somewhere further downstream.
+  It is now a ``needs.config`` warning, said once for the project.
+
+- 🐛 :ref:`needflow` naming several graphviz ``:config:`` styles no longer leaks the merged
+  style into the diagrams after it.
+
+  The merge took the first style's attributes by reference
+  and then updated that same dictionary with the second style's,
+  rewriting the configured (and built-in) styles in place:
+  every later diagram naming the first style inherited the second one's attributes,
+  for the rest of the build.
+  A page therefore rendered differently depending on which diagrams came before it.
+
+- 🐛 ``c.this_doc()`` now works in :ref:`needpie`, :ref:`needbar` and the
+  :ref:`need_count` role (:issue:`1449`)
+
+  These evaluate their filters themselves, and did not pass on the document the
+  directive or role was written in, so ``c.this_doc()`` ended in a
+  ``this_doc can not be used in this context`` warning and counted nothing. They now
+  resolve it against their own document, as :ref:`needtable`, :ref:`needlist` and the
+  other directives whose ``:filter:`` runs through ``process_filters`` already did.
+
+- 🐛 ``c.this_doc()`` now also works in :ref:`needsequence` ``:filter:``,
+  :ref:`needflow` ``:highlight:`` and :ref:`needgantt` ``:milestone_filter:``
+
+  These three options are evaluated with ``filter_single_need``, which *raises* on an
+  invalid filter, and none of the four call sites caught it — so ``c.this_doc()`` here
+  ended the build with ``this_doc can not be used in this context`` rather than merely
+  warning. Each now resolves the filter against the document its own directive is
+  written in, continuing the coverage that the entry above began.
+
+  Filters configured in **conf.py**, such as :ref:`needs_constraints` and
+  :ref:`needs_warnings`, remain uncovered: they belong to the project rather than to any
+  document, so there is no origin document to resolve ``c.this_doc()`` against.
+
+- 🐛 :ref:`needpie` and :ref:`needbar` images are now byte-identical between builds of
+  unchanged sources.
+
+  Matplotlib writes the wall clock time into every SVG and PDF it produces, and — with
+  no hash salt configured — derives an SVG's internal element ids from a random
+  ``uuid4``, so two builds of the same chart never agreed byte for byte. The date is now
+  left out of both formats, and the ids are salted with the chart's own file name, which
+  is already derived from the directive's target id. This covers every image the
+  directives write: SVG for the HTML builders, PDF for the LaTeX builder, and PNG, which
+  already carried no timestamp. Nothing about the rendered chart changes.
+
+- 🐛 :ref:`needbar` no longer fails the build when ``:ylabels: FROM_DATA`` is given on
+  its own.
+
+  The default xlabels — ``1``, ``2``, … one per column — were derived before the ylabels
+  column had been taken out of the content, so there was always one too many of them and
+  the build ended with ``length of xlabels: N+1 is not equal with sum of columns: N``.
+  Grids that give both label options, or only ``:xlabels: FROM_DATA``, are unaffected.
+
+- 🐛 A :ref:`needpie` with a title now uses it as the image's ``alt`` text, as
+  :ref:`needbar` already did.
+
+  Until now every pie was published with the ``alt`` docutils falls back to — the
+  image's own file URI — which tells a screen reader nothing. A pie without a title
+  keeps that fallback.
+
+- 🐛 A :ref:`needpie` whose values are all zero no longer writes an unreferenced image
+  file.
+
+  Such a pie is replaced by the "No needs passed the filters" paragraph, but the chart
+  had already been rendered into ``_images/``, where it then stayed, referenced by
+  nothing.
+
+- 🐛 :ref:`needreport` reports a template it cannot render, instead of ending the build
+
+  A template with a Jinja syntax error — or one that merely applies a filter to a variable
+  that does not exist, which is what the stale example in these docs did — raised out of
+  the directive and took the whole build down with it. That is the failure mode
+  :pr:`1105` set out to remove, and the missing-file case has warned rather than aborted
+  ever since; the render case now does too, as a ``needs.needreport`` warning naming the
+  template and repeating the engine's own explanation. The directive then contributes
+  nothing to the page, exactly as it already did for a template that is missing.
+
+  Two smaller diagnostics come with it. A :ref:`needs_render_context` entry that takes
+  over one of the reserved context names — ``types``, ``links``, ``options`` or ``usage``
+  — is now reported; which value wins is deliberately unchanged, since these have been
+  silently overridable for years, and only ``report_directive`` is meant to be set this
+  way. The collision is a property of the configuration rather than of any one directive,
+  so it is reported once per build. And when :ref:`needs_report_template` holds a path
+  that is absolute in the POSIX sense, the "could not load" warning explains why it names
+  a path nobody wrote down: the value is always resolved relative to the source
+  directory, so such a path is appended to it rather than read from where it points.
+  A Windows drive-letter path is not relative, so it is used as it stands.
+
+  One consequence is worth calling out for ``-W`` builds: a project that overrides one of
+  those four reserved names renders exactly as it did before, but now emits a warning
+  where it emitted none, so a green build turns red until the entry is removed or the
+  warning is suppressed.
+
+- 🐛 :ref:`needreport` renders without an extension providing ``dropdown``
+  (:issue:`899`)
+
+  Each section of the default template is wrapped in a ``dropdown`` directive, which
+  neither Sphinx nor Sphinx-Needs provides. A project without an extension supplying one
+  got a docutils error per section — at line numbers belonging to the template rather
+  than to the document, so pointing at innocent lines — and, because Sphinx strips
+  ``system_message`` nodes, the report then vanished from the page altogether: an empty
+  section, four errors on the console, and a build that still exited ``0`` unless ``-W``
+  was in use.
+
+  When nothing provides ``dropdown``, the report is now rendered with ``admonition``
+  instead, and one ``needs.needreport`` warning names both remedies. Projects that do
+  load such an extension are unaffected: the directive is looked up in the registry, so
+  a provider is used exactly as before and nothing is warned about. Nor is an explicit
+  choice ever second-guessed — ``needs_render_context = {"report_directive": "dropdown"}``
+  is honoured as written, provider or not.
+
+  The substitution is decided on the rendered report and adopted only when it changes it,
+  so a project with a template of its own gains neither the substitution nor the warning
+  unless it was actually rendering a ``dropdown``. A template that never produces one —
+  because it writes its own directive, or shadows ``report_directive`` with a
+  ``{% set %}`` — is left exactly as it is, and so is one with ``.. dropdown::``
+  hardcoded in it, which re-rendering cannot reach. If the substituted render fails where
+  the default one succeeded, the default is kept and nothing is reported.
+
+  The decision is a textual scan of the rendered report, so a template that merely shows
+  ``.. dropdown::`` as example markup while producing it through ``report_directive`` is
+  treated as though it used it.
+
+- 🐛 :ref:`needgantt` draws each task once, in its type color **(changed output)**
+  (:pr:`1778`)
+
+  Tasks are declared as ``[<title>] as [<id>]``, which binds every later ``[...]``
+  reference to the *id*, but the completion and color lines addressed tasks by their
+  *title*. PlantUML does not reject an unbound reference — it silently declares a second,
+  zero length task of that name — so every need carrying a type color or a completion
+  value was drawn twice, which, since :ref:`needs_types` entries carry a color by default,
+  is every need in almost every chart. The color and the completion landed on the phantom
+  bar, too, leaving the real one in PlantUML's default grey: a three need chart rendered
+  as six bars, three of them grey and full length, three of them zero length and correctly
+  colored. Both lines now address the task by its id, so a chart of N needs draws N bars,
+  colored and shaded as configured.
+
+- 🐛 :ref:`needgantt_start_date` names the month it was given, and a December date no
+  longer ends the build **(changed output)** (:pr:`1778`)
+
+  The date was reformatted through a month name table indexed with the 1-based month
+  number, so the chart started one month later than asked for — ``2020-03-25`` became
+  ``the 25th of April 2020`` — and any December date raised
+  ``IndexError: list index out of range``, aborting the build. The generated statement is
+  now the ISO date, which PlantUML also accepts (``Project starts 2020-03-25``) and which
+  renders the identical chart, and which cannot mis-suffix a date either: ``2020-01-01``
+  used to be written ``the 01th of February 2020``.
+
 Documentation
 .............
+
+- 📚 :ref:`needgantt` no longer claims that task elements are linked to their related
+  need when PlantUML's output format is ``svg`` (:pr:`1778`)
+
+  No such link has ever been generated; the only link a chart produces is its caption,
+  which points at the generated image file.
+
+- 📚 The :ref:`needpie` and :ref:`needbar` pages are corrected against what the two
+  directives actually do.
+
+  Both claimed that several image files are written per chart, where exactly one is,
+  and both called a literal content value a "float/int", where only a non-negative
+  integer is read as one. The pages now also say what an invalid value really does —
+  a label, ``:explode:`` or grid-shape mismatch, an unknown color and an unknown style
+  all end the build — and that the rotation options take non-negative integers, that a
+  filter containing a comma needs a custom ``:separator:``, and that ``:colors:``
+  shorter than the data is extended with the default colors rather than repeated.
+  ``needpie`` gains the missing ``:filter_warning:`` section and states that content
+  and ``:filter-func:`` are alternatives; ``needbar`` states that it takes no filter
+  options at all.
+
+- 📚 :ref:`needs_string_links` documents the behaviour it always had: the ``,``/``;`` splitting
+  and its lack of an escape, that the first entry naming a field wins with no fallthrough, that
+  the pattern is searched rather than anchored, that :ref:`needs_render_context` shadows
+  same-named capture groups, and that the templates are rendered with MiniJinja rather than
+  Jinja2.
+
+- 📚 The :ref:`needreport` and :ref:`needs_report_template` pages are corrected against
+  what the directive actually does.
+
+  The "default template" the configuration page printed had drifted so far from the
+  packaged one that copying it — the customisation route both pages recommend — ends the
+  build, because it reads two context variables, ``fields`` and ``json_exclude_fields``,
+  that have never existed. The page now includes the packaged template from the source
+  tree, so the two cannot diverge again, and the context is described as it is: the key is
+  ``options``, ``report_directive`` is listed, and every number in ``usage`` is called out
+  as permanently ``0`` — real counts come from the :ref:`need_count` role that the
+  template emits, and those count need parts and :ref:`needs_external_needs` alike.
+
+  The ``:template:`` option, until now documented nowhere, gains a section of its own and
+  the three-level precedence it takes part in is written down. ``needs_report_template``
+  is described as resolved relative to the source directory rather than "must be an
+  absolute path"; the ``dropdown`` prerequisite and the ``report_directive`` escape hatch
+  now also appear on the configuration page; and an ``.rst`` template kept inside the
+  source directory is noted as being built as a document of its own, with the
+  ``exclude_patterns`` entry that avoids it.
+
+- 📚 The :ref:`list2need` page is corrected against what the directive actually does
+  (:pr:`1788`)
+
+  A new :ref:`Need IDs <list2need_ids>` section replaces the claim that an ID is captured
+  by "the same mechanism as :ref:`need_part`". It is not: the bracketed group is searched
+  for anywhere in the line, runs greedily from the first ``(`` to the last ``)``, and
+  accepts a far wider character class — so a title carrying a second parenthetical, as in
+  ``(REQ-1) The system (as defined) shall work``, yields an ID that
+  :ref:`needs_id_regex` then refuses, and a title with a parenthetical but no leading ID
+  has it taken as the ID and deleted from the title. The section also writes down the
+  generated-ID formula — the need type's prefix followed by the ``SHA1`` of the title,
+  cut to :ref:`needs_id_length` — and the consequence that follows from the document not
+  being part of the hash input: the same title at the same level in two documents produces
+  the same ID, and the second need is dropped with a duplicate-ID warning.
+
+  The list-structure rules are stated rather than left to be discovered: the indentation
+  must be a multiple of two spaces and one level is always exactly two, tabs are expanded
+  before the directive sees them and so cannot be used, and a continuation line that starts
+  in the first column loses its first word. The :ref:`list2need_meta_data` section replaces
+  "the position of the option-string inside the line is not important" with what the
+  regular expression does — only the **first** ``((...))`` region is read, it runs greedily
+  from the first ``((`` to the last ``))``, so text between two regions is deleted, and an
+  unquoted value such as ``((status=open))`` is dropped in silence.
+
+  The "List with need-ids" example built a need titled ``(FEATURE``, because the default
+  ``.`` delimiter splits ``(FEATURE.3)`` before the ID is read; it now uses an ID without a
+  dot, and says why.
 
 - 📚 ``docs/ubproject.toml``, the `ubCode`_ configuration of this documentation, is brought
   up to date with current ubCode releases

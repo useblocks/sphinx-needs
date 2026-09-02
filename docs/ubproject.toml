@@ -20,6 +20,12 @@ hide_title = true
 favicon = "_static/sphinx-needs-logo-square-dark.svg"
 # conf.py computes `2017-{now.year}`; TOML is static, so the year is written out.
 copyright = "2017-2026, team useblocks"
+# The furo triple from conf.py's `html_theme_options` (source_repository /
+# source_branch / source_directory), so the built site's view/edit buttons
+# point at the same files the Sphinx build's do.
+source_repository = "https://github.com/useblocks/sphinx-needs"
+source_branch = "master"
+source_directory = "docs/"
 
 [parse]
 # Enable the built-in extension ports used by these docs:
@@ -35,6 +41,9 @@ rst_epilog = """
 
    <br>
 """
+# Number the `syntax-example` rubrics per document ("Example 1", "Example 2", ...),
+# mirroring the `syntax_example_numbering` confval in docs/conf.py.
+syntax_example_numbering = true
 
 # Mirrors conf.py's `extlinks`.
 [parse.extlinks.pr]
@@ -342,6 +351,10 @@ on_fail = []
 style = ["yellow_bar"]
 force_style = false
 
+[needs.flow_legends.beside]
+parts = ["types", "links"]
+placement = "external"
+
 [needs.flow_configs]
 my_config = """
 skinparam monochrome true
@@ -406,6 +419,38 @@ head = [
   "<<meta(\"type_name\")>>: **<<meta(\"title\")>>** <<meta_id()>> <<permalink()>> <<collapse_button(\"meta\", collapsed=\"icon:arrow-down-circle\", visible=\"icon:arrow-right-circle\", initial=False)>> <<sidebar(\"\")>>",
 ]
 meta = ["<<meta_all(no_links=True)>>", "<<meta_links_all()>>"]
+
+# Card specifications, rendered live on the `card_layouts` page.
+#
+# The three `[needs.layouts]` entries above stay hand-written on purpose: each
+# uses something the card vocabulary deliberately does not cover -- prose in the
+# head, `permalink()`, `sidebar()` -- which is exactly what makes them the
+# escape-hatch examples on the layout page. The two below are the cases the card
+# vocabulary is for, and they are declared here rather than in `conf.py` so that
+# the `needs_from_toml` path is exercised by this project's own build.
+
+# `clean` plus the need's image beside the header and meta, with the body running
+# full width underneath it (`span = "partial"`).
+[needs.card_layouts.card_profile]
+extends = "clean"
+
+[needs.card_layouts.card_profile.meta]
+exclude = ["layout", "style"]
+
+[needs.card_layouts.card_profile.side]
+elements = ["image:image", "id"]
+position = "left"
+span = "partial"
+
+# A compact card: two named fields, no links, a footer, and the meta region
+# collapsed until the reader opens it.
+[needs.card_layouts.card_summary]
+collapse = "closed"
+footer = ["id", "type", "layout_echo"]
+
+[needs.card_layouts.card_summary.meta]
+include = ["status", "author"]
+links = false
 
 [needs.string_links.config_link]
 regex = "^(?P<value>\\w+)$"

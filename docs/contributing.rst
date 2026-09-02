@@ -43,12 +43,25 @@ or using `uv <https://docs.astral.sh/uv/>`__ to install the dependencies into an
 
    uv sync
 
-To run the formatting and linting suite, `pre-commit <https://pre-commit.com/>`__ is used:
+``uv.lock`` is committed, so ``uv sync`` installs exactly the versions recorded in it,
+and every contributor and CI job gets the same environment.
+If you change the dependencies in ``pyproject.toml``, the ``uv-lock`` hook below updates
+the lock for you (``uv lock`` does the same by hand); commit the result with your change.
+Dependabot refreshes the locked versions once a month: minor and patch updates arrive
+batched in one pull request, major updates one pull request each.
+
+To run the formatting and linting suite, `prek <https://prek.j178.dev/>`__ is used:
 
 .. code-block:: bash
 
-   pre-commit install  # to auto-run on every commit
-   pre-commit run --all-files  # to run manually
+   uv run prek install  # to auto-run on every commit
+   uv run prek run --all-files  # to run manually
+
+The hooks are declared in ``.pre-commit-config.yaml``, which prek reads unchanged,
+so `pre-commit <https://pre-commit.com/>`__ itself still works if you prefer it.
+
+Hook versions are bumped by the scheduled ``Prek update`` workflow, which opens a
+pull request with the new revisions.
 
 To run testing and documentation building, `tox <https://tox.readthedocs.io/>`__ is used:
 

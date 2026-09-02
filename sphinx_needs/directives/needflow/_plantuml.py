@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import html
+from collections.abc import Iterable, Mapping
 
 from docutils import nodes
 from sphinx.application import Sphinx
@@ -15,16 +15,18 @@ from sphinx_needs.diagrams_common import (
     set_plantuml_paths,
 )
 from sphinx_needs.directives.needflow._directive import NeedflowPlantuml
-from sphinx_needs.directives.utils import no_needs_found_paragraph
-from sphinx_needs.filter_common import filter_single_need, process_filters
+from sphinx_needs.directives.utils import no_needs_found_paragraph, report_max_items
 from sphinx_needs.logging import get_logger, log_warning
-from sphinx_needs.need_item import NeedItem, NeedPartItem
-from sphinx_needs.needs_schema import LinkSchema
 from sphinx_needs.utils import remove_node_from_tree
-from sphinx_needs.variants import match_variants
-from sphinx_needs.views import NeedsView
 
-from ._shared import create_filter_paragraph, filter_by_tree, get_root_needs
+from ._model import (
+    GraphNode,
+    NeedflowGraph,
+    build_graph,
+    resolve_link_types,
+)
+from ._options import plantuml_direction
+from ._shared import create_filter_paragraph, create_legend_nodes
 
 logger = get_logger(__name__)
 
@@ -37,15 +39,72 @@ def make_entity_name(name: str) -> str:
     return name
 
 
+def make_entity_names(ids: Iterable[str]) -> dict[str, str]:
+    """Create a stable, injective mapping of need ids to PlantUML entity names.
+
+    :func:`make_entity_name` folds every character PlantUML forbids in an entity name
+    to ``_``, so distinct need ids can sanitise to the same name -- ``R-1`` and ``R=1``
+    both become ``R_1`` -- and would then be drawn as a single node.
+    Any id that would reuse an already taken name is therefore given a numeric suffix.
+
+    The ids are processed in sorted order, so the mapping depends only on the set of
+    ids and not on the order in which they happen to be filtered.
+
+    :param ids: The complete ids of all needs to be rendered.
+    :return: A mapping of each id to a unique PlantUML entity name.
+    """
+    entity_names: dict[str, str] = {}
+    taken: set[str] = set()
+    for id in sorted(set(ids)):
+        name = base = make_entity_name(id)
+        suffix = 1
+        while name in taken:
+            suffix += 1
+            name = f"{base}_{suffix}"
+        taken.add(name)
+        entity_names[id] = name
+    return entity_names
+
+
+def get_entity_name(entity_names: Mapping[str, str], id: str) -> str:
+    """Look up the PlantUML entity name of a need id.
+
+    Every id that is rendered is mapped up front, so an unmapped id means an emission
+    site was not given the mapping of the diagram it is drawing. That would silently
+    reintroduce the collisions :func:`make_entity_names` exists to prevent, so it is
+    reported; a diagram with plainer names is still better than a failed build, hence
+    the direct conversion is returned rather than raising.
+
+    :param entity_names: The mapping created by :func:`make_entity_names`.
+    :param id: The complete id of the need.
+    :return: The mapped entity name, or a direct conversion for an unmapped id.
+    """
+    if (name := entity_names.get(id)) is not None:
+        return name
+    log_warning(
+        logger,
+        f"Need id {id!r} was not mapped to a plantuml entity name, "
+        "so it may collide with another need in the diagram",
+        "needflow",
+        location=None,
+    )
+    return make_entity_name(id)
+
+
 def get_need_node_rep_for_plantuml(
     app: Sphinx,
     fromdocname: str,
-    current_needflow: NeedsFlowType,
-    needs_view: NeedsView,
-    need_info: NeedItem | NeedPartItem,
+    graph_node: GraphNode,
+    entity_names: Mapping[str, str],
 ) -> str:
-    """Calculate need node representation for plantuml."""
+    """Emit the plantuml representation of a single need or need part.
+
+    :param graph_node: The node to emit, carrying its resolved presentation.
+    :param entity_names: The id to entity name mapping of :func:`make_entity_names`.
+    """
     needs_config = NeedsSphinxConfig(app.config)
+    need_info = graph_node.need
+    presentation = graph_node.presentation
 
     node_text = render_template_string(
         needs_config.diagram_template,
@@ -56,36 +115,24 @@ def get_need_node_rep_for_plantuml(
     node_link = calculate_link(app, need_info, fromdocname)
 
     node_colors = []
-    if need_info["type_color"]:
+    if presentation.type_color:
         # We set # later, as the user may not have given a color and the node must get highlighted
-        node_colors.append(need_info["type_color"].replace("#", ""))
+        node_colors.append(presentation.type_color.replace("#", ""))
 
-    if current_needflow["highlight"] and filter_single_need(
-        need_info, needs_config, current_needflow["highlight"], needs_view.values()
-    ):
+    if presentation.highlight:
         node_colors.append("line:FF0000")
-
-    elif current_needflow["border_color"]:
-        color = match_variants(
-            current_needflow["border_color"],
-            need_info.filter_context(),
-            needs_config.variants,
-            location=(current_needflow["docname"], current_needflow["lineno"]),
-        )
-        if color:
-            node_colors.append(f"line:{color}")
-
-    # need parts style use default "rectangle"
-    node_style = need_info["type_style"] if need_info["is_need"] else "rectangle"
+    elif presentation.border_color:
+        # the whole color list is prefixed with a single "#" below
+        node_colors.append(f"line:{presentation.border_color}")
 
     # node representation for plantuml
     color_suffix = f" #{';'.join(node_colors)}" if node_colors else ""
     need_node_code = '{style} "{node_text}" as {id} [[{link}]]{color_suffix}'.format(
-        id=make_entity_name(need_info["id_complete"]),
+        id=get_entity_name(entity_names, need_info["id_complete"]),
         node_text=node_text,
         link=node_link,
         color_suffix=color_suffix,
-        style=node_style,
+        style=presentation.type_style,
     )
     return need_node_code
 
@@ -93,15 +140,20 @@ def get_need_node_rep_for_plantuml(
 def walk_curr_need_tree(
     app: Sphinx,
     fromdocname: str,
-    current_needflow: NeedsFlowType,
-    needs_view: NeedsView,
-    found_needs: list[NeedItem | NeedPartItem],
-    need: NeedItem | NeedPartItem,
+    graph_node: GraphNode,
+    entity_names: Mapping[str, str],
 ) -> str:
-    """
-    Walk through each need to find all its child needs and need parts recursively and wrap them together in nested structure.
-    """
+    """Emit the need parts and child needs of a need, as a nested plantuml block.
 
+    .. note:: Whether a block is opened, and whether each comment is written, is decided
+       from the need itself rather than from what is drawn.  A need whose parts and
+       children were all filtered out therefore still gets an (empty) block; it is kept
+       as is.
+
+    :param graph_node: The node whose nested nodes are to be emitted.
+    :param entity_names: The id to entity name mapping of :func:`make_entity_names`.
+    """
+    need = graph_node.need
     curr_need_tree = ""
 
     if not need["parts"] and not need["parent_needs_back"]:
@@ -113,44 +165,28 @@ def walk_curr_need_tree(
     if need["is_need"] and need["parts"]:
         # add comment for easy debugging
         curr_need_tree += "'parts:\n"
-        for need_part_id in need["parts"]:
-            # cal need part node
-            need_part_id = need["id"] + "." + need_part_id
-            # get need part from need part id
-            for found_need in found_needs:
-                if need_part_id == found_need["id_complete"]:
-                    curr_need_tree += (
-                        get_need_node_rep_for_plantuml(
-                            app, fromdocname, current_needflow, needs_view, found_need
-                        )
-                        + "\n"
-                    )
-                    break
+        for part_node in graph_node.parts:
+            curr_need_tree += (
+                get_need_node_rep_for_plantuml(
+                    app, fromdocname, part_node, entity_names
+                )
+                + "\n"
+            )
 
     # check if curr need has children
     if need["parent_needs_back"]:
         # add comment for easy debugging
         curr_need_tree += "'child needs:\n"
         # walk through all child needs one by one
-        for curr_child_need_id in need["parent_needs_back"]:
-            for curr_child_need in found_needs:
-                if curr_child_need["id_complete"] == curr_child_need_id:
-                    curr_need_tree += get_need_node_rep_for_plantuml(
-                        app, fromdocname, current_needflow, needs_view, curr_child_need
-                    )
-                    # check curr need child has children or has parts
-                    if curr_child_need["parent_needs_back"] or curr_child_need["parts"]:
-                        curr_need_tree += walk_curr_need_tree(
-                            app,
-                            fromdocname,
-                            current_needflow,
-                            needs_view,
-                            found_needs,
-                            curr_child_need,
-                        )
-                    # add newline for next element
-                    curr_need_tree += "\n"
-                    break
+        for child_node in graph_node.children:
+            curr_need_tree += get_need_node_rep_for_plantuml(
+                app, fromdocname, child_node, entity_names
+            )
+            curr_need_tree += walk_curr_need_tree(
+                app, fromdocname, child_node, entity_names
+            )
+            # add newline for next element
+            curr_need_tree += "\n"
 
     # We processed embedded needs or need parts, so we will close with "}"
     curr_need_tree += "}"
@@ -161,27 +197,19 @@ def walk_curr_need_tree(
 def cal_needs_node(
     app: Sphinx,
     fromdocname: str,
-    current_needflow: NeedsFlowType,
-    needs_view: NeedsView,
-    found_needs: list[NeedItem | NeedPartItem],
+    graph: NeedflowGraph,
+    entity_names: Mapping[str, str],
 ) -> str:
-    """Calculate and get needs node representaion for plantuml including all child needs and need parts."""
-    top_needs = get_root_needs(found_needs)
+    """Emit the plantuml node definitions of a whole diagram.
+
+    :param graph: The graph to emit.
+    :param entity_names: The id to entity name mapping of :func:`make_entity_names`.
+    """
     curr_need_tree = ""
-    for top_need in top_needs:
-        top_need_node = get_need_node_rep_for_plantuml(
-            app, fromdocname, current_needflow, needs_view, top_need
-        )
+    for root in graph.roots:
         curr_need_tree += (
-            top_need_node
-            + walk_curr_need_tree(
-                app,
-                fromdocname,
-                current_needflow,
-                needs_view,
-                found_needs,
-                top_need,
-            )
+            get_need_node_rep_for_plantuml(app, fromdocname, root, entity_names)
+            + walk_curr_need_tree(app, fromdocname, root, entity_names)
             + "\n"
         )
     return curr_need_tree
@@ -199,11 +227,7 @@ def process_needflow_plantuml(
     env = app.env
     needs_config = NeedsSphinxConfig(app.config)
     env_data = SphinxNeedsData(env)
-    needs_view = env_data.get_needs_view()
     needs_schema = env_data.get_schema()
-
-    link_type_names = [link.name.upper() for link in needs_schema.iter_link_fields()]
-    allowed_link_types_options = [link.upper() for link in needs_config.flow_link_types]
 
     node: NeedflowPlantuml
     for node in found_nodes:  # type: ignore[assignment]
@@ -213,37 +237,12 @@ def process_needflow_plantuml(
 
         current_needflow: NeedsFlowType = node.attributes
 
-        option_link_types = [link.upper() for link in current_needflow["link_types"]]
-        for lt in option_link_types:
-            if lt not in link_type_names:
-                log_warning(
-                    logger,
-                    "Unknown link type {link_type} in needflow {flow}. Allowed values: {link_types}".format(
-                        link_type=lt,
-                        flow=current_needflow["target_id"],
-                        link_types=",".join(link_type_names),
-                    ),
-                    "needflow",
-                    location=node,
-                )
-
-        # compute the allowed link types
-        allowed_link_types: list[LinkSchema] = []
-        for link_field in needs_schema.iter_link_fields():
-            # Skip link-type handling, if it is not part of a specified list of allowed link_types or
-            # if not part of the overall configuration of needs_flow_link_types
-            if (
-                current_needflow["link_types"]
-                and link_field.name.upper() not in option_link_types
-            ) or (
-                not current_needflow["link_types"]
-                and link_field.name.upper() not in allowed_link_types_options
-            ):
-                continue
-            # skip creating links from child needs to their own parent need
-            if link_field.name == "parent_needs":
-                continue
-            allowed_link_types.append(link_field)
+        allowed_link_types = resolve_link_types(
+            current_needflow,
+            schema=needs_schema,
+            config=needs_config,
+            location=node,
+        )
 
         try:
             if "sphinxcontrib.plantuml" not in app.extensions:
@@ -260,25 +259,14 @@ def process_needflow_plantuml(
 
         content: list[nodes.Element] = []
 
-        need_values = (
-            filter_by_tree(
-                needs_view,
-                root_id,
-                [lt.name for lt in allowed_link_types],
-                current_needflow["root_direction"],
-                current_needflow["root_depth"],
-            )
-            if (root_id := current_needflow.get("root_id"))
-            else needs_view
-        )
-
-        found_needs = process_filters(
+        graph = build_graph(
             app,
-            need_values,
             current_needflow,
-            origin="needflow",
+            allowed_link_types,
             location=node,
+            variant_location=(current_needflow["docname"], current_needflow["lineno"]),
         )
+        found_needs = graph.needs
 
         if found_needs:
             plantuml_block_text = ".. plantuml::\n\n   @startuml   @enduml"
@@ -305,20 +293,32 @@ def process_needflow_plantuml(
                 puml_node["uml"] += config
                 puml_node["uml"] += "\n\n"
 
-            puml_node["uml"] += "\n' Nodes definition \n\n"
-            puml_node["uml"] += cal_needs_node(
-                app, fromdocname, current_needflow, needs_view, found_needs
+            # the config blob is a preamble of defaults, so the direction is written
+            # after it and wins; nothing is written for a diagram already drawn that way
+            if (
+                direction := plantuml_direction(
+                    graph.direction, graph.config_direction, location=node
+                )
+            ) is not None:
+                puml_node["uml"] += f"\n' Direction\n\n{direction}\n"
+
+            # the entity names must be assigned for the whole diagram at once,
+            # so that ids sanitising to the same name stay distinct nodes
+            entity_names = make_entity_names(
+                need["id_complete"] for need in found_needs
             )
+
+            puml_node["uml"] += "\n' Nodes definition \n\n"
+            puml_node["uml"] += cal_needs_node(app, fromdocname, graph, entity_names)
 
             puml_node["uml"] += "\n' Connection definition \n\n"
-            puml_node["uml"] += render_connections(
-                found_needs,
-                allowed_link_types,
-                current_needflow["show_link_names"] or needs_config.flow_show_links,
-            )
+            puml_node["uml"] += render_connections(graph, entity_names)
 
-            # Create a legend
-            if current_needflow["show_legend"]:
+            # Create a legend, inside the diagram where that is what was asked for
+            # note this lists every configured need type, whereas the graphviz engine
+            # lists only the types it actually drew, so the same bare `:show_legend:`
+            # gives the two engines different legends; it is kept as is
+            if graph.legend is not None and graph.legend.internal:
                 puml_node["uml"] += create_legend(needs_config.types)
 
             puml_node["uml"] += "\n@enduml"
@@ -329,6 +329,12 @@ def process_needflow_plantuml(
             puml_node["scale"] = scale
 
             puml_node = nodes.figure("", puml_node)
+            # `:class:` is assigned explicitly. docutils already copies the classes of
+            # the node being replaced onto its replacement, so this changes nothing today
+            # and is not a fix; it states the intent locally, so that returning a legend
+            # node alongside the figure cannot come to depend on that copy
+            # -- verified: the rendered class attribute is identical with and without it
+            puml_node["classes"] += current_needflow["classes"]
 
             if current_needflow["align"]:
                 puml_node["align"] = current_needflow["align"]
@@ -362,9 +368,26 @@ def process_needflow_plantuml(
             puml_node.line = current_needflow["lineno"]
 
             content.append(puml_node)
+            # ...and beside it otherwise, as a document table identical on every engine
+            if graph.legend is not None and not graph.legend.internal:
+                content.extend(
+                    create_legend_nodes(
+                        graph.legend.parts, graph.drawn_types, graph.drawn_link_types
+                    )
+                )
         else:  # no needs found
             content.append(
                 no_needs_found_paragraph(current_needflow.get("filter_warning"))
+            )
+
+        if len(found_needs) < graph.total_needs:
+            content.append(
+                report_max_items(
+                    len(found_needs),
+                    graph.total_needs,
+                    origin="needflow",
+                    location=node,
+                )
             )
 
         if current_needflow["show_filters"]:
@@ -376,62 +399,50 @@ def process_needflow_plantuml(
         if current_needflow["debug"] and found_needs:
             # We can only access puml_node if found_needs is set.
             # Otherwise it was not been set, or we get outdated data
-            debug_container = nodes.container()
             if isinstance(puml_node, nodes.figure):
                 data = puml_node.children[0]["uml"]  # type: ignore[index]
             else:
                 data = puml_node["uml"]
-            data = "\n".join([html.escape(line) for line in data.split("\n")])
-            debug_para = nodes.raw("", f"<pre>{data}</pre>", format="html")
-            debug_container += debug_para
-            content.append(debug_container)
+            # the same shape the graphviz engine uses, so that `:debug:` produces the
+            # same kind of block whichever engine drew the diagram; Pygments has no
+            # PlantUML lexer, so the source is shown unhighlighted rather than wrongly
+            code = nodes.literal_block(
+                data, data, language="text", linenos=True, force=True
+            )
+            code.source = env.doc2path(current_needflow["docname"])
+            code.line = current_needflow["lineno"]
+            content.append(code)
 
         node.replace_self(content)
 
 
-def render_connections(
-    found_needs: list[NeedItem | NeedPartItem],
-    allowed_link_types: list[LinkSchema],
-    show_links: bool,
-) -> str:
-    """
-    Render the connections between the needs.
+def render_connections(graph: NeedflowGraph, entity_names: Mapping[str, str]) -> str:
+    """Emit the plantuml connections between the needs.
+
+    .. note:: An edge is emitted even when one of its ends is not drawn as a node -- a
+       need part whose need was filtered out, say -- in which case plantuml creates a
+       bare node for it; it is kept as is.
+
+    :param graph: The graph to emit the connections of.
+    :param entity_names: The id to entity name mapping of :func:`make_entity_names`.
     """
     puml_connections = ""
-    for need_info in found_needs:
-        for link_type in allowed_link_types:
-            for link in need_info[link_type.name]:
-                # Do not create an links, if the link target is not part of the search result.
-                if link not in [
-                    x["id"] for x in found_needs if x["is_need"]
-                ] and link not in [
-                    x["id_complete"] for x in found_needs if x["is_part"]
-                ]:
-                    continue
+    for edge in graph.edges:
+        if (label := edge.label(graph.link_labels)) is not None:
+            comment = f": {label}\\n"
+        else:
+            comment = ""
 
-                if show_links:
-                    desc = link_type.display.outgoing + "\\n"
-                    comment = f": {desc}"
-                else:
-                    comment = ""
+        # If source or target of link is a need_part, a specific style is needed
+        link_style = f"[{edge.style}]" if (edge.is_part or edge.style) else ""
 
-                # If source or target of link is a need_part, a specific style is needed
-                if "." in link or "." in need_info["id_complete"]:
-                    link_style = f"[{link_type.display.style_part}]"
-                else:
-                    link_style = (
-                        f"[{link_type.display.style}]"
-                        if link_type.display.style
-                        else ""
-                    )
-
-                # TODO also use link_type.display.color?
-                puml_connections += "{id} {style_start}{link_style}{style_end} {link}{comment}\n".format(
-                    id=make_entity_name(need_info["id_complete"]),
-                    link=make_entity_name(link),
-                    comment=comment,
-                    link_style=link_style,
-                    style_start=link_type.display.style_start,
-                    style_end=link_type.display.style_end,
-                )
+        source = get_entity_name(entity_names, edge.source_id)
+        target = get_entity_name(entity_names, edge.target_id)
+        arrow = (
+            edge.link_type.display.style_start
+            + link_style
+            + edge.link_type.display.style_end
+        )
+        # TODO also use link_type.display.color?
+        puml_connections += f"{source} {arrow} {target}{comment}\n"
     return puml_connections

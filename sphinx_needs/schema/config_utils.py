@@ -517,7 +517,7 @@ def _get_core_field_type(
 ) -> (
     tuple[
         Literal["string", "boolean", "integer", "number", "array"],
-        None | Literal["string", "boolean", "integer", "number"],
+        Literal["string", "boolean", "integer", "number"] | None,
     ]
     | None
 ):

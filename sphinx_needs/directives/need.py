@@ -160,10 +160,24 @@ class NeedDirective(SphinxDirective):
                 self._log_warning(f"Invalid value for '{key}' option: {err}")
                 return []
 
+        # ``self.lineno`` counts the lines of what the parser was handed, which anything
+        # putting text into the document shifts for everything after it -- Sphinx's
+        # ``rst_prolog``, and the ``insert_input`` of ``.. include::`` and
+        # ``.. list2need::``. Resolve it back to the line the directive is actually
+        # written on (see #1349).
+        # ``get_source_info`` is what ``get_location`` -- and so every warning this
+        # directive itself emits -- is already built on, so the two now agree.
+        # It returns ``(None, None)`` if the state machine cannot map the line.
+        # The unresolved number is kept as ``parser_lineno``, and ``lineno_content``
+        # stays on the parser's counter as well: both are handed to ``nested_parse`` in
+        # ``_create_need_node`` as offsets into that counter's space, not read as source
+        # lines.
+        _, resolved_lineno = self.get_source_info()
         source = NeedItemSourceDirective(
             docname=self.env.docname,
-            lineno=self.lineno,
+            lineno=resolved_lineno or self.lineno,
             lineno_content=self.content_offset + 1,
+            parser_lineno=self.lineno,
         )
 
         try:

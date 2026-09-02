@@ -87,8 +87,8 @@ tox -e ruff-check
 # Formatting with ruff
 tox -e ruff-fmt
 
-# Run pre-commit hooks on all files
-pre-commit run --all-files
+# Run the pre-commit hooks on all files (via prek)
+uv run prek run --all-files
 ```
 
 ## Code Style Guidelines

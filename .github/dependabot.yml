@@ -11,9 +11,20 @@ updates:
       prefix: 🔧
     schedule:
       interval: monthly
-  - package-ecosystem: pip
+  # uv, not pip: this repository locks its development environment in uv.lock, and the
+  # uv ecosystem updates that lock. Minor and patch updates are batched into one monthly
+  # pull request; major updates fall outside the group and arrive one per dependency,
+  # so the bumps most likely to break something are the ones that come isolated.
+  - package-ecosystem: uv
     directory: /
     commit-message:
       prefix: ⬆️
     schedule:
       interval: monthly
+    groups:
+      python-minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch

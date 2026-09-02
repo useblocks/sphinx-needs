@@ -3,6 +3,13 @@
 ubCode understands a handful of directive options that Sphinx-Needs has no
 equivalent for. Sphinx-Needs accepts them, so that documents authored for ubCode
 still build, but they must never influence the Sphinx build in any way.
+
+``max_items`` used to be one of them and is now implemented natively, see
+``test_views_max_items.py``. The fixture still sets it, since a cap that is
+larger than the number of needs must leave the output untouched. The
+``needpie`` and ``needbar`` blocks are the exception: neither directive has
+``max_items``, so a stray one there would be exactly the ``unknown option``
+error these tests guard against.
 """
 
 from pathlib import Path
@@ -10,18 +17,28 @@ from pathlib import Path
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
+from sphinx_needs.directives.needbar import Needbar
 from sphinx_needs.directives.needflow._directive import (
     NeedflowGraphiz,
     NeedflowPlantuml,
 )
 from sphinx_needs.directives.needlist import Needlist
+from sphinx_needs.directives.needpie import Needpie
 from sphinx_needs.directives.needsequence import Needsequence
 from sphinx_needs.directives.needtable import Needtable
 
-COMPAT_OPTIONS = ("cypher", "max_items", "width", "height")
+COMPAT_OPTIONS = ("cypher", "width", "height")
 """All options that are accepted for ubCode compatibility and then ignored."""
 
-VIEW_NODES = (Needlist, Needtable, NeedflowPlantuml, NeedflowGraphiz, Needsequence)
+VIEW_NODES = (
+    Needlist,
+    Needtable,
+    NeedflowPlantuml,
+    NeedflowGraphiz,
+    Needsequence,
+    Needpie,
+    Needbar,
+)
 """The node classes created by the directives that accept the compat options."""
 
 
@@ -47,6 +64,8 @@ def test_ubcode_compat_options_are_accepted(test_app: SphinxTestApp):
         "needtable-index-0",
         "needflow-index-0",
         "needsequence-index-0",
+        "needpie-index-0",
+        "needbar-index-0",
     ):
         assert f'id="{target_id}"' in html
 
@@ -73,6 +92,8 @@ def test_ubcode_compat_options_are_ignored(test_app: SphinxTestApp):
         "Needtable",
         "NeedflowPlantuml",
         "Needsequence",
+        "Needpie",
+        "Needbar",
     }
 
     leaked = {

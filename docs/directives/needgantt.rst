@@ -74,8 +74,6 @@ needgantt
    So if you get any syntax errors during the build, please download the
    `latest PlantUML <http://sourceforge.net/projects/plantuml/files/plantuml.jar/download>`__ version.
 
-If ``svg`` is set as output format for PlantUML, we link the tasks elements to their related need.
-
 We take the colors for the chart from the :ref:`needs_types` configuration.
 You can deactivate this behavior by setting :ref:`needgantt_no_color`.
 

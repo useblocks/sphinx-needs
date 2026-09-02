@@ -72,6 +72,20 @@ class NeedItemSourceDirective:
     docname: str
     lineno: int
     lineno_content: int
+    parser_lineno: int | None = None
+    """The directive's line in the *parser's* own line space, where that differs from
+    ``lineno``.
+
+    ``lineno`` is the line the directive is written on, resolved back through the state
+    machine. The parser counts the lines it was handed instead, and anything that puts
+    text into the document -- ``rst_prolog``, ``.. include::``, ``.. list2need::`` --
+    shifts that count. Content that exists in no file (a rendered
+    ``pre_template``/``post_template``) is parsed at an offset into *that* space, so the
+    unresolved number has to survive alongside the resolved one.
+
+    Deliberately not part of ``dict_repr``: it is a parser coordinate rather than need
+    data, and never reaches ``needs.json``. ``None`` means the two are the same.
+    """
     dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)  # type: ignore[assignment]
 
     def __post_init__(self) -> None:
@@ -424,7 +438,7 @@ class NeedItem:
         backlinks: dict[str, list[str]] | dict[str, list[NeedLink]] | None = None,
         parts: Sequence[NeedPartData] = (),
         modifications: Sequence[NeedModification] = (),
-        constraint_results: None | NeedConstraintResults = None,
+        constraint_results: NeedConstraintResults | None = None,
         dynamic_fields: dict[str, FieldFunctionArray | LinksFunctionArray]
         | None = None,
         _validate: bool = True,
@@ -623,7 +637,7 @@ class NeedItem:
         return self._modifications
 
     @property
-    def constraint_results(self) -> None | NeedConstraintResults:
+    def constraint_results(self) -> NeedConstraintResults | None:
         """Return the constraint results of the need item."""
         return self._constraint_results
 
@@ -1116,7 +1130,7 @@ class NeedItem:
 
     def set_constraint_results(
         self,
-        constraint_results: None | NeedConstraintResults,
+        constraint_results: NeedConstraintResults | None,
         *,
         _recompute: bool = True,
     ) -> None:

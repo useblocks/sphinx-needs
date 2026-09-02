@@ -1,5 +1,5 @@
 [build-system]
-requires = ["flit_core >=3.4,<4"]
+requires = ["flit_core >=3.4,<5"]
 build-backend = "flit_core.buildapi"
 
 [project]
@@ -29,9 +29,9 @@ classifiers = [
 requires-python = ">=3.10,<4"
 dependencies = [
   "sphinx>=7.4,<10",
-  "requests-file~=2.1",             # external links
+  "requests-file>=2.1,<4.0",        # external links
   "requests~=2.32",                 # external links
-  "jsonschema-rs~=0.37.1",          # schema validation
+  "jsonschema-rs>=0.37.1,<0.53.0",  # schema validation
   "sphinx-data-viewer~=0.1.5",      # needservice debug output
   "sphinxcontrib-jquery~=4.0",      # needed for datatables in sphinx>=6
   "tomli; python_version < '3.11'", # for needs_from_toml configuration
@@ -46,13 +46,14 @@ test = [
   "matplotlib>=3.3.0",
   "pytest~=8.0",
   "pytest-cov~=6.0",
-  "syrupy~=4.0",
+  "syrupy>=4,<7",
   "sphinxcontrib-plantuml~=0.0",
   "lxml~=6.0",
-  "responses~=0.22.0",
+  "responses>=0.22,<0.27",
   "pydantic~=2.12",
   "pytest-xprocess~=1.0",
   "pyyaml ~= 6.0",
+  "myst-parser>=4,<6",           # host coverage for directives usable from Markdown
 ]
 test-parallel = ["pytest-xdist"]
 benchmark = [
@@ -70,22 +71,14 @@ docs = [
   # python 3.10 (the directive, and so a docs build, needs python>=3.11)
   "sphinx-syntax-example~=0.2.0; python_version >= '3.11'",
 ]
-theme-im = ["sphinx-immaterial~=0.11.11"]
+theme-im = ["sphinx-immaterial>=0.11.11,<0.14.0"]
 theme-furo = ["furo~=2024.8.6"]
 theme-pds = ["pydata-sphinx-theme~=0.15.2"]
 theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
 
 [dependency-groups]
-dev = ["pre-commit~=3.0", "tox~=4.23", "tox-uv~=1.15"]
-mypy = [
-  "mypy==1.19.1",
-  "sphinx==7.4.7",
-  "docutils==0.20",
-  "jsonschema-rs==0.37.1",
-  "types-docutils==0.20.0.20240201",
-  "types-requests",
-]
-ruff = ["ruff==0.14.11"]
+dev = ["prek>=0.5.1", "tox~=4.23", "tox-uv~=1.15"]
+ruff = ["ruff==0.16.5"]
 
 [tool.pytest.ini_options]
 markers = [
@@ -100,6 +93,11 @@ filterwarnings = [
 
 
 [tool.ruff.lint]
+# ruff's pre-0.16 default rule set, pinned explicitly.
+# ruff 0.16 replaced its default `select` wholesale, and this project only ever set
+# `extend-select`, so without this line the enabled set would change with every ruff
+# release. Adopting 0.16's much larger default set is a deliberate, separate decision.
+select = ["E4", "E7", "E9", "F"]
 extend-select = [
   "B",   # flake8-bugbear  
   "C4",  # flake8-comprehensions
@@ -111,7 +109,16 @@ extend-select = [
   "SIM", # flake8-simplify
   "UP",  # pyupgrade
 ]
-extend-ignore = ["B904", "ISC001", "ICN001", "N818", "RUF012"]
+# ISC004 is ignored for now: every occurrence here is a deliberately wrapped string
+# literal and its only fix is unsafe, so adopting it belongs with the wider ruleset review
+extend-ignore = ["B904", "ISC001", "ISC004", "ICN001", "N818", "RUF012"]
+
+[tool.ruff.format]
+# ruff 0.16 formats python code blocks embedded in markdown; the conformance corpus is
+# shared byte-for-byte with ubCode and checksummed in its own manifest (see the yamlfmt
+# exclude in .pre-commit-config.yaml), so a formatter local to this repository must not
+# rewrite markdown here
+exclude = ["*.md"]
 
 [tool.mypy]
 files = "sphinx_needs"
@@ -200,8 +207,10 @@ extras = docs
 commands = sphinx-build -E -W -b linkcheck docs/ docs/_build/linkcheck
 
 [testenv:mypy]
-dependency_groups = mypy
-commands = mypy {posargs:sphinx_needs}
+# the prek hook carries the pinned floor environment; running it here means
+# `tox -e mypy` and CI type-check against exactly the same versions
+dependency_groups = dev
+commands = prek run mypy --all-files {posargs}
 
 [testenv:ruff-check]
 dependency_groups = ruff

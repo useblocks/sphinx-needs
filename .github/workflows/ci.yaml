@@ -10,11 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
-          python-version: '3.10'
-      - uses: pre-commit/action@v3.0.1
+          enable-cache: true
+      - run: uv run --frozen prek run --all-files --show-diff-on-failure
+        env:
+          PREK_COLOR: always
 
   # ubc:
   #   name: ubc
@@ -81,13 +82,14 @@ jobs:
       - name: Create coverage
         run: coverage xml
       - name: Upload to Codecov
-        if: github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14'
-        uses: codecov/codecov-action@v3
+        # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it
+        if: github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14' && github.actor != 'dependabot[bot]'
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           name: sphinx-need-pytests
           flags: pytests
-          file: ./coverage.xml
+          files: ./coverage.xml # `file` was renamed to `files` in codecov-action v5
           fail_ci_if_error: true
 
   tests-js:

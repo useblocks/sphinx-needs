@@ -90,6 +90,11 @@ alt
 
 Set the ``alt`` option to a string to add an alternative text to the generated image.
 
+If the option is not set, the graphviz engine describes the image as
+``needflow graphviz diagram``.
+Set the option to an empty value to publish an empty alternative text instead,
+for a diagram that is purely decorative.
+
 root_id
 ~~~~~~~
 
@@ -177,8 +182,25 @@ Adds information of used filters below generated flowchart.
 show_legend
 ~~~~~~~~~~~
 
-Adds a legend below generated flowchart. The legends contains all defined need-types and their configured color
-for flowcharts.
+.. versionchanged:: 8.4.0
+   Takes the *name* of a legend configuration.
+   Written bare it still draws the legend it always drew, so no existing diagram changes.
+
+Describes the diagram: its need types, its link types, or both.
+
+Written without a value, the engine chooses:
+
+.. code-block:: rst
+
+   .. needflow::
+      :show_legend:
+
+Both engines draw their own in-image legend for that, exactly as they always have --
+including the long-standing difference that ``plantuml`` lists every configured need type
+while ``graphviz`` lists only the ones it drew.
+That difference is deliberately left alone, so no existing diagram changes;
+a named legend is how a project gets the same legend on both.
+A project can also change what "bare" means, with :ref:`needs_flow_show_legend`.
 
 .. syntax-example::
 
@@ -192,6 +214,48 @@ for flowcharts.
       :engine: graphviz
       :tags: flow_example
       :show_legend:
+
+Written with a value, it names an entry of :ref:`needs_flow_legends`:
+
+.. code-block:: python
+
+   needs_flow_legends = {
+       "beside": {"parts": ["types", "links"], "placement": "external"},
+   }
+
+A legend placed beside the diagram lists only what the diagram actually drew,
+whichever engine drew it,
+and shows its sections in the order ``parts`` gives them.
+
+.. syntax-example::
+
+   .. needflow::
+      :tags: flow_example
+      :show_legend: beside
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
+      :show_legend: beside
+
+The option takes a name and never the sections inline.
+A project names its legends whatever it likes,
+so a legend called ``types`` would collide with the section called ``types``
+and need a precedence rule nobody should have to learn.
+One namespace, no reserved words.
+
+Which legend a diagram gets is resolved in order:
+the name this option gives,
+then :ref:`needs_flow_show_legend`,
+then the engine's own legend.
+
+Naming a legend that :ref:`needs_flow_legends` does not define is a warning on that
+diagram, listing the names that are available.
+The name is then treated as though it had not been written,
+so the project default still applies --
+a typo in one diagram does not cost the project the legend it configured.
 
 .. _needflow_show_link_names:
 
@@ -200,23 +264,47 @@ show_link_names
 
 .. versionadded:: 0.3.11
 
-Adds the link type name beside connections.
+.. versionchanged:: 8.4.0
+   Takes an optional value.
+   Written bare it still means ``outgoing``, which is what the flag has always drawn,
+   so no existing document changes.
 
-You can configure it globally by setting :ref:`needs_flow_show_links` in **conf.py**.
-Setup data can be found in test case document ``tests/doc_test/doc_links``.
+Chooses what each connection is labelled with:
+
+``none``
+   Nothing (the default).
+``outgoing``
+   The outgoing title of the link type, e.g. ``links outgoing``.
+``incoming``
+   The incoming title of the link type, e.g. ``links incoming``.
+``type``
+   The bare link field name, e.g. ``links``,
+   for a diagram that wants the data model rather than prose.
+
+Written without a value, ``:show_link_names:`` means ``outgoing``:
+
+.. code-block:: rst
+
+   .. needflow::
+      :show_link_names:
+
+You can set the project default with :ref:`needs_flow_show_links` in **conf.py**.
+Because the option now takes a value rather than only being present or absent,
+a single diagram can turn labels off again with ``none``,
+which the bare flag could not express.
 
 .. syntax-example::
 
    .. needflow::
       :tags: flow_example
-      :show_link_names:
+      :show_link_names: incoming
 
 .. dropdown:: Using Graphviz engine
 
    .. needflow::
       :engine: graphviz
       :tags: flow_example
-      :show_link_names:
+      :show_link_names: incoming
 
 .. _needflow_link_types:
 
@@ -290,6 +378,49 @@ See also :ref:`needs_links` for more details about specific link types.
       :tags: flow_example
       :link_types: tests, blocks
       :show_link_names:
+
+.. _needflow_direction:
+
+direction
+~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+Sets the direction the diagram flows in:
+``down`` (the default), ``up``, ``right`` or ``left``.
+The tokens ``TB``, ``TD``, ``BT``, ``LR`` and ``RL`` are accepted as aliases,
+so a habit picked up from Graphviz or Mermaid does not have to be unlearned.
+
+You can set the project default with :ref:`needs_flow_direction` in **conf.py**.
+
+Not every engine can draw every direction.
+PlantUML has no bottom-up or right-left layout at all,
+so ``up`` is drawn ``down`` and ``left`` is drawn ``right``,
+with one warning per project;
+Graphviz draws all four.
+A diagram is never refused for asking:
+a plainer diagram is better than a failed build.
+
+An explicit ``:direction:`` also wins over a layout that the ``:config:`` it is written
+beside happens to set.
+The config is a preamble of defaults and the option a per-element value,
+which is the precedence both engines already give them;
+where the two disagree the option is used and the disagreement is reported.
+
+.. syntax-example::
+
+   .. needflow::
+      :tags: flow_example
+      :link_types: tests, blocks
+      :direction: right
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
+      :link_types: tests, blocks
+      :direction: right
 
 .. _needflow_config:
 
@@ -488,9 +619,12 @@ debug
 
 .. versionadded:: 0.5.2
 
-If you set the ``:debug:``, we add a debug-output of the generated PlantUML code after the generated image.
+If you set the ``:debug:``, we add the generated diagram source after the generated image,
+as a line-numbered code block.
+Both engines do this, so the option shows PlantUML or Graphviz source
+according to which engine drew the diagram.
 
-Helpful to identify reasons why a PlantUML build may have thrown errors.
+Helpful to identify reasons why a diagram build may have thrown errors.
 
 .. syntax-example::
 
@@ -510,6 +644,42 @@ Helpful to identify reasons why a PlantUML build may have thrown errors.
       :link_types: tests, blocks
       :config: default,lefttoright
       :debug:
+
+.. _needflow_max_items:
+
+max_items
+~~~~~~~~~
+
+.. versionadded:: 8.4.0
+
+The maximum number of needs to show, applied identically by both engines.
+
+We apply the limit after filtering and sorting, so the diagram keeps the first needs it would otherwise have shown,
+and tells the reader how many needs it is hiding.
+A truncated view says so in the page and emits a ``needs.max_items`` warning,
+so that a build does not have to be read page by page to find it;
+a project that caps deliberately can silence the warning with
+``suppress_warnings = ["needs.max_items"]``.
+The limit counts the entries the filter returned, which are needs and need parts alike.
+Since the limit is applied before the diagram is built,
+a link to a dropped need is not drawn at all,
+and a need whose parent was dropped is drawn as a root instead of nested.
+
+``:max_items: 0`` means no limit, also for a project that sets :ref:`needs_views_max_items`.
+Without the option, the diagram shows as many needs as that configuration allows.
+
+.. syntax-example::
+
+   .. needflow::
+      :tags: flow_example
+      :max_items: 2
+
+.. dropdown:: Using Graphviz engine
+
+   .. needflow::
+      :engine: graphviz
+      :tags: flow_example
+      :max_items: 2
 
 common filters
 ~~~~~~~~~~~~~~

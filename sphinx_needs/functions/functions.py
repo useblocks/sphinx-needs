@@ -211,7 +211,6 @@ def find_and_replace_node_content(
     :param node: Node to analyse
     :param env: Sphinx environment
     :param need: Need data
-    :param extract: If True, the function has been called from a needextract node
     """
     new_children = []
     if isinstance(node, NeedFunc):
@@ -403,7 +402,7 @@ def resolve_functions(
 
 def _get_variant(
     variant: VariantFunctionParsed, variants: dict[str, str], context: dict[str, Any]
-) -> None | str | int | float | bool:
+) -> str | int | float | bool | None:
     for expr, _, value in variant.expressions:
         expr = variants.get(expr, expr)
         if bool(eval(expr, context.copy())):

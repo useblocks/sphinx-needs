@@ -32,3 +32,7 @@ def test_doc_complex_singlehtml(test_app):
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
 
     assert "Test story" in html  # PlantUML got generated
+    # a needpie only takes its alt text from a title; the pies of this project have
+    # none, so they must keep the file URI docutils falls back to. Asserted here
+    # because this is the project that has untitled pies.
+    assert '<img alt="_images/need_pie_dba00.svg" id="needpie-index-0"' in html

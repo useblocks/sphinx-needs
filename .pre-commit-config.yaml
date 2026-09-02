@@ -6,7 +6,7 @@ repos:
       - id: taplo-format
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.8
+    rev: v0.16.5
     hooks:
       - id: ruff-check
         args: [--fix]
@@ -16,13 +16,18 @@ repos:
     rev: v0.21.0
     hooks:
       - id: yamlfmt
+        # the conformance corpus is shared byte-for-byte with ubCode and checksummed in
+        # its own manifest, so a formatter local to this repository must not rewrite it
+        exclude: ^tests/conformance/
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.19.1
+    rev: v2.3.1
     hooks:
       - id: mypy
         files: sphinx_needs/.*
         args: []
+        # this list IS the type-checking environment: the oldest supported toolchain,
+        # pinned here and nowhere else, so `tox -e mypy` and CI check the same versions
         additional_dependencies:
           - sphinx==7.4.7
           - docutils==0.20
@@ -31,11 +36,12 @@ repos:
           - types-requests
           - minijinja~=2.15
 
-  # TODO this does not work on pre-commit.ci
-  # - repo: https://github.com/astral-sh/uv-pre-commit
-  #   rev: 0.5.5
-  #   hooks:
-  #     - id: uv-lock  # Update the uv lockfile
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.12.9
+    hooks:
+      # keeps the committed uv.lock in step with pyproject.toml;
+      # it only runs when pyproject.toml, uv.lock or uv.toml changes
+      - id: uv-lock
 
   - repo: local
     hooks:

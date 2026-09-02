@@ -17,15 +17,35 @@ needpie
 
 If you provide an argument for the ``needpie``, we use it as the title.
 
-Each content line gets interpreted either as static float/int value or as a :ref:`filter_string`.
+Each content line gets interpreted either as a static value or as a :ref:`filter_string`.
 The amount of found needs by the filter string is then used as value.
 
+A static value has to be written as a non-negative integer, like ``10``.
+Anything else, ``10.5`` and ``-5`` included, is read as a filter string.
+Those two then give a ``needs.filter`` warning and count as zero,
+because a filter is expected to evaluate to a boolean and a number does not.
+
+Not every non-boolean filter is rejected that way, though:
+a simple enough expression, such as the bare field name ``tags``,
+is answered by the query fast path, which coerces the result with ``bool()``
+and counts the matching needs instead of warning.
+
 You can use :ref:`filter_func` with Python codes to define custom filters for ``needpie``.
+Give either content lines or ``:filter-func:``: if both are given,
+or neither, the chart has no data and an error is logged.
+
+``needpie`` takes no other filter options,
+so ``:filter:``, ``:status:``, ``:tags:`` and ``:types:`` are not available on it.
+The ubCode-only ``cypher`` option is accepted and then ignored,
+which for ``needpie`` means the content lines are counted over the whole project
+rather than over the needs the query selects;
+see :ref:`ubCode compatibility <ubcode_compat_options>`.
 
 .. note::
 
-    This generates multiple image files per ``needpie`` and allows
-    the document engine to pick the appropriate image type (vector or raster).
+    One image file is written per ``needpie``,
+    in the first image type the document engine accepts that Matplotlib can produce.
+    For the HTML builders that is SVG.
 
 Options
 -------
@@ -55,6 +75,11 @@ Use ``:labels:`` to set labels for each value.
 
 ``:labels:`` must get a comma separated string and the amount of labels must match the amount of
 values/lines from content.
+
+.. warning::
+
+   A different amount of labels than values currently ends the build
+   with a Matplotlib error, rather than a warning.
 
 .. syntax-example::
 
@@ -93,6 +118,11 @@ moves of from center.
 The amount of values for ``:explode:`` must match the amount of values / content lines.
 
 Useful values for ``:explode:`` are between ``0`` and ``0.3``
+
+.. warning::
+
+   As with ``:labels:``, a differing amount of values ends the build with a Matplotlib
+   error. A value that is not a number ends it while the document is being read.
 
 .. syntax-example::
 
@@ -177,6 +207,24 @@ Useful styles are for example:
       type == 'req' and status == 'open'
       type == 'req' and status == 'in progress'
       type == 'req' and status == 'closed'
+
+filter_warning
+~~~~~~~~~~~~~~
+
+A pie whose values are all zero is not drawn.
+``:filter_warning:`` sets the text that is shown in its place.
+
+Without the option, the text is "No needs passed the filters".
+Give the option without a value to show nothing at all.
+
+.. syntax-example::
+
+   .. needpie:: Requirement status
+      :labels: Open, Closed
+      :filter_warning: No requirement has one of these statuses
+
+      type == 'req' and status == 'no_such_status_a'
+      type == 'req' and status == 'no_such_status_b'
 
 
 overlapping labels

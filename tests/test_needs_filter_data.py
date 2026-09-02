@@ -65,14 +65,17 @@ def test_doc_needs_filter_data_html(test_app):
     assert "needs_style_green_border" in index_html
 
     # check needpie works
-    assert '<img alt="_images/need_pie_dba00.svg" id="needpie-index-0"' in index_html
     assert (
-        '<img alt="_images/need_pie_446e9.svg" id="needpie-filter_code-0"'
-        in filter_code
+        '<img alt="My Pie" id="needpie-index-0" src="_images/need_pie_dba00.svg"'
+        in index_html
     )
     assert (
-        '<img alt="_images/need_pie_fac86.svg" id="needpie-filter_code-1"'
-        in filter_code
+        '<img alt="Filter code func pie" id="needpie-filter_code-0"'
+        ' src="_images/need_pie_446e9.svg"' in filter_code
+    )
+    assert (
+        '<img alt="Filter code func pie with multiple dots filter function path"'
+        ' id="needpie-filter_code-1" src="_images/need_pie_fac86.svg"' in filter_code
     )
     # check needextend works
     assert (
@@ -104,7 +107,10 @@ def test_doc_needs_filter_code(test_app):
     assert "extern_filter_test_003" in code_html
 
     # check needpie filter func code data
-    assert '<img alt="_images/need_pie_' in code_html
+    assert (
+        '<img alt="Filter code func pie" id="needpie-filter_code-0" '
+        'src="_images/need_pie_446e9.svg"' in code_html
+    )
 
     code_args_html = Path(app.outdir, "filter_code_args.html").read_text()
     assert '<a class="reference internal" href="#impl1">impl1</a>' in code_args_html
