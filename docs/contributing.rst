@@ -74,8 +74,10 @@ Type checking is the exception: ``uv run poe mypy`` runs the prek ``mypy`` hook,
 pinned dependencies are the type-checking environment and are what CI checks against.
 
 Set ``UV_PYTHON`` to choose the interpreter a task runs on, for example
-``UV_PYTHON=3.12 uv run poe test-sphinx8``.
+``UV_PYTHON=3.12 uv run --no-sync poe test-sphinx8``.
 uv downloads an interpreter it does not have, so no separate version manager is needed.
+Give the outer ``uv run`` the ``--no-sync`` flag in that form: without it, uv also rebuilds
+the default ``.venv`` on that interpreter (``uv sync --python 3.13`` puts it back).
 
 Build docs
 ----------
@@ -93,7 +95,7 @@ To build the **Sphinx-Needs** documentation stored under ``/docs``, run:
 .. note::
 
    Building the documentation requires Python >= 3.11;
-   set ``UV_PYTHON`` if your default interpreter is older.
+   set ``UV_PYTHON`` (with ``uv run --no-sync``) if your default interpreter is older.
 
 The other themes have a task each — ``docs-alabaster``, ``docs-im``, ``docs-pds`` and
 ``docs-rtd`` — and the link checker is its own task:
@@ -119,7 +121,7 @@ Every one of them is exactly what CI runs, so a failing cell can be reproduced l
 
 .. code-block:: bash
 
-   UV_PYTHON=3.12 uv run poe test-sphinx8 tests/test_basic_doc.py
+   UV_PYTHON=3.12 uv run --no-sync poe test-sphinx8 tests/test_basic_doc.py
 
 Note some tests use `syrupy <https://github.com/tophat/syrupy>`__ to perform snapshot testing.
 These snapshots can be updated by running:

@@ -2709,7 +2709,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "furo", marker = "extra == 'theme-furo'", specifier = "~=2025.12.19" },
+    { name = "furo", marker = "extra == 'theme-furo'", specifier = ">=2025.12.19" },
     { name = "jsonschema-rs", specifier = ">=0.37.1,<0.53.0" },
     { name = "matplotlib", marker = "extra == 'docs'", specifier = ">=3.3.0" },
     { name = "matplotlib", marker = "extra == 'plotting'", specifier = ">=3.3.0" },

@@ -53,8 +53,9 @@ docs = [
   "sphinx-syntax-example~=0.2.0; python_version >= '3.11'",
 ]
 theme-im = ["sphinx-immaterial>=0.11.11,<0.14.0"]
-# furo before 2025.12.19 caps sphinx at <9.0, which the `sphinx-9` group cannot resolve
-theme-furo = ["furo~=2025.12.19"]
+# furo before 2025.12.19 caps sphinx at <9.0, which the `sphinx-9` group cannot resolve.
+# A floor rather than `~=`: furo versions are dates, so `~=` would admit one month only
+theme-furo = ["furo>=2025.12.19"]
 theme-pds = ["pydata-sphinx-theme~=0.15.2"]
 theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
 
@@ -188,8 +189,9 @@ disable_error_code = ["attr-defined", "no-any-return"]
 # `UV_PROJECT_ENVIRONMENT`, so `.venv` is never clobbered by a matrix cell or a docs build.
 # Type checking is not one of them: `mypy` runs the prek hook, whose `additional_dependencies`
 # are the pinned floor environment. The interpreter is the other axis, from `UV_PYTHON`, e.g.
-#   UV_PYTHON=3.12 uv run poe test-sphinx8
-# uv downloads the interpreter it does not have, so no pyenv is needed.
+#   UV_PYTHON=3.12 uv run --no-sync poe test-sphinx8
+# (`--no-sync` on the outer `uv run`, or uv also rebuilds the default `.venv` on that
+# interpreter). uv downloads the interpreter it does not have, so no pyenv is needed.
 
 [tool.poe.executor]
 type = "uv"
@@ -207,7 +209,7 @@ cmd = "pytest --ignore=tests/benchmarks -m 'not jstest'"
 
 [tool.poe.tasks.test-js]
 help = "Run only the JavaScript (Cypress) tests; needs `npm install cypress` first"
-cmd = "pytest -m jstest"
+cmd = "pytest --ignore=tests/benchmarks -m jstest"
 
 [tool.poe.tasks.test-sphinx7]
 help = "Run the suite against sphinx 7.4 (set UV_PYTHON to pick the interpreter)"
@@ -270,13 +272,13 @@ sequence = [
 help = "Check every external link in the documentation"
 cmd = "sphinx-build -E -W -b linkcheck docs docs/_build/linkcheck"
 executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs" }
-env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-plain" }
 
 [tool.poe.tasks.docs-alabaster]
 help = "Build the HTML docs with the alabaster (sphinx built-in) theme"
 cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/alabaster -T"
 executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs" }
-env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs", DOCS_THEME = "alabaster" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-plain", DOCS_THEME = "alabaster" }
 
 [tool.poe.tasks.docs-im]
 help = "Build the HTML docs with the sphinx-immaterial theme"

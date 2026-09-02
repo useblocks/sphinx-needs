@@ -63,8 +63,10 @@ uv run poe test-sphinx7
 uv run poe test-sphinx8
 uv run poe test-sphinx9
 
-# Pick the interpreter with UV_PYTHON — no pyenv needed, uv downloads interpreters
-UV_PYTHON=3.12 uv run poe test-sphinx8
+# Pick the interpreter with UV_PYTHON — no pyenv needed, uv downloads interpreters.
+# Give the outer `uv run` --no-sync in this form, or it also rebuilds the default .venv
+# on that interpreter
+UV_PYTHON=3.12 uv run --no-sync poe test-sphinx8
 
 # Run the JavaScript (Cypress) tests; needs `npm install cypress` first
 uv run poe test-js
@@ -74,7 +76,9 @@ uv run poe benchmark
 ```
 
 Each `test-sphinx*` task installs into its own `.venvs/<name>` environment, so switching
-between them never reinstalls the default one.
+between cells never rebuilds another cell's environment. The one thing that does touch the
+default `.venv` is `UV_PYTHON`: the outer `uv run` re-syncs `.venv` on that interpreter
+unless it is given `--no-sync`; if that happens, `uv sync --python 3.13` puts it back.
 
 ### Documentation
 
