@@ -70,8 +70,11 @@ Words written after a task name are appended to the command it runs, so ``pytest
 A task that needs something other than the default environment — one sphinx version, a
 documentation theme — installs into its own ``.venvs/`` directory, so tasks do not
 overwrite each other's environment.
-Type checking is the exception: ``uv run poe mypy`` runs the prek ``mypy`` hook, whose
-pinned dependencies are the type-checking environment and are what CI checks against.
+``uv run poe typecheck`` is one of those tasks: it installs the ``typing`` dependency
+group — the oldest supported Sphinx and Docutils, plus ty itself — into ``.venvs/typing``
+and checks against it, which is what CI and the prek ``ty`` hook do too.
+Running ``ty`` by hand, or through an editor extension, uses ``.venvs/typing`` as well,
+because ``[tool.ty.environment] python`` names it; run the task once to create it.
 
 Set ``UV_PYTHON`` to choose the interpreter a task runs on, for example
 ``UV_PYTHON=3.12 uv run --no-sync poe test-sphinx8``.

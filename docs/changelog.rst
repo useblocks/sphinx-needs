@@ -91,6 +91,14 @@ Improvements
 Internal changes
 ................
 
+- 🔧 mypy is replaced by `ty <https://docs.astral.sh/ty/>`__ for type checking (:pr:`1830`)
+
+  The ``typing`` dependency group is the pinned floor environment — the oldest supported
+  Sphinx and Docutils series, the stubs, and ty itself — installed into ``.venvs/typing``,
+  and ``uv run poe typecheck`` checks against it, as do the prek hook and CI. Nothing about
+  the published package changes: the group is development-only metadata, like the rest of
+  ``[dependency-groups]``.
+
 - 🔧 The development extras ``test``, ``test-parallel`` and ``benchmark`` become dependency
   groups, tox is replaced by `poe <https://poethepoet.natn.io/>`__, and CI installs every
   job from ``uv.lock`` (:pr:`1823`)
@@ -111,7 +119,7 @@ Bug fixes
 .........
 
 - 🐛 A :ref:`needs_warnings` filter that is neither a string nor a callable is now
-  reported, instead of ending the build (:pr:`XXXX`)
+  reported, instead of ending the build **(changed output)** (:pr:`1830`)
 
   The guard for such a value called the warning logger without its ``subtype`` and
   ``location`` arguments, so it raised ``TypeError`` at the end of the build rather than

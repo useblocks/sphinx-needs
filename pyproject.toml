@@ -64,6 +64,8 @@ theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
 # (which includes `test`) by default. The three `sphinx-*` groups are the CI test matrix
 # and are declared conflicting below, so one cell is exactly
 #   uv sync --frozen --no-default-groups --group test --group sphinx-9
+# `typing` is in the same conflict set, and for the same reason: it caps sphinx at the 7.4
+# series, and no single resolution satisfies every group — without it, `uv lock` fails.
 [dependency-groups]
 dev = [
   "prek>=0.5.1",
@@ -96,9 +98,18 @@ benchmark = [
 sphinx-7 = ["sphinx~=7.4"]
 sphinx-8 = ["sphinx~=8.2; python_version >= '3.11'"]
 sphinx-9 = ["sphinx~=9.1; python_version >= '3.12'"]
+typing = [
+  # the type-checking floor: the oldest supported sphinx and docutils series, resolved from
+  # the lock like every other environment, plus the stubs ty needs for docutils and requests
+  "sphinx~=7.4",
+  "docutils~=0.20.0",
+  "types-docutils~=0.20.0",
+  "types-requests",
+  "ty~=0.0.77",
+]
 
 [tool.uv]
-# Each matrix group pins one sphinx series, so a single universal resolution would have to
+# Each group in the set pins one sphinx series, so a single universal resolution would have to
 # satisfy all three at once and every environment would be capped at the lowest of them.
 # Declaring them conflicting gives each its own resolution in `uv.lock`, so the lock holds
 # all three sphinx versions and a plain `uv sync` resolves to the newest.
@@ -107,6 +118,7 @@ conflicts = [
     { group = "sphinx-7" },
     { group = "sphinx-8" },
     { group = "sphinx-9" },
+    { group = "typing" },
   ],
 ]
 
@@ -152,32 +164,39 @@ extend-ignore = ["B904", "ISC001", "ISC004", "ICN001", "N818", "RUF012"]
 # rewrite markdown here
 exclude = ["*.md"]
 
-[tool.mypy]
-files = "sphinx_needs"
-strict = true
-show_error_codes = true
-implicit_reexport = false
-namespace_packages = true
-disallow_any_generics = true
-disallow_subclassing_any = true
-# disallow_any_unimported = true
-# disallow_any_explicit = true
-# disallow_any_expr = true
-# disallow_any_decorated = true
+[tool.ty.src]
+include = ["sphinx_needs"]
 
-[[tool.mypy.overrides]]
-module = [
-  "matplotlib.*",
+[tool.ty.environment]
+python-version = "3.10"
+# so a bare `ty check` and the editor extension see the same environment as the gate;
+# `uv run poe typecheck` creates it, and ty errors naming this path if it is missing
+python = ".venvs/typing"
+
+[tool.ty.analysis]
+# modules without type information that the floor environment does not install
+allowed-unresolved-imports = [
+  "matplotlib",
+  "matplotlib.**",
   "requests_file",
-  "sphinx_data_viewer.*",
-  "sphinxcontrib.plantuml.*",
-  "tomli.*",
+  "sphinx_data_viewer.**",
+  "sphinxcontrib.plantuml",
+  "sphinxcontrib.plantuml.**",
+  "tomli",
+  "tomli.**",
 ]
-ignore_missing_imports = true
 
-[[tool.mypy.overrides]]
-module = ["sphinx_needs.data"]
-disable_error_code = ["attr-defined", "no-any-return"]
+[tool.ty.terminal]
+# the unused-ignore ratchet: `unused-ignore-comment` is a warning by default, so without
+# this a suppression that stopped suppressing anything would pass. There are no other
+# warning-level diagnostics in this tree
+error-on-warning = true
+
+[[tool.ty.overrides]]
+# SphinxNeedsData stores its state as dynamic attributes on BuildEnvironment (#1725, Tier 2)
+include = ["sphinx_needs/data.py"]
+[tool.ty.overrides.rules]
+unresolved-attribute = "ignore"
 
 # --- Task runner --------------------------------------------------------------------
 # poethepoet lives in the `dev` group, so it is in the lock and needs no separate install:
@@ -187,8 +206,10 @@ disable_error_code = ["attr-defined", "no-any-return"]
 # dependency set other than the default one says so with `executor` options (never with a
 # nested `uv run` in the cmd — that syncs twice and pollutes the environment) and redirects
 # `UV_PROJECT_ENVIRONMENT`, so `.venv` is never clobbered by a matrix cell or a docs build.
-# Type checking is not one of them: `mypy` runs the prek hook, whose `additional_dependencies`
-# are the pinned floor environment. The interpreter is the other axis, from `UV_PYTHON`, e.g.
+# Type checking is one of them: `typecheck` installs the `typing` group into `.venvs/typing`
+# — the oldest supported sphinx and docutils, plus ty itself, all from the lock — and checks
+# against it, so the task, the prek `ty` hook (which runs the task) and CI all see the same
+# environment. The interpreter is the other axis, from `UV_PYTHON`, e.g.
 #   UV_PYTHON=3.12 uv run --no-sync poe test-sphinx8
 # (`--no-sync` on the outer `uv run`, or uv also rebuilds the default `.venv` on that
 # interpreter). uv downloads the interpreter it does not have, so no pyenv is needed.
@@ -200,7 +221,7 @@ type = "uv"
 frozen = true
 
 [tool.poe.tasks.lint]
-help = "Run every prek hook over the whole tree (ruff check + format, taplo, yamlfmt, mypy, uv-lock)"
+help = "Run every prek hook over the whole tree (ruff check + format, taplo, yamlfmt, ty, uv-lock)"
 cmd = "prek run --all-files"
 
 [tool.poe.tasks.test]
@@ -238,9 +259,11 @@ executor = { type = "uv", frozen = true, no-group = "dev", group = [
 ] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
-[tool.poe.tasks.mypy]
-help = "Type-check sphinx_needs via the prek mypy hook, the pinned floor environment"
-cmd = "prek run mypy --all-files"
+[tool.poe.tasks.typecheck]
+help = "Type-check sphinx_needs with ty against the oldest supported sphinx (the `typing` group)"
+cmd = "ty check --python .venvs/typing"
+executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 
 [tool.poe.tasks.benchmark]
 help = "Run the benchmark suite (time + memory); needs the docs extra for the corpus"
