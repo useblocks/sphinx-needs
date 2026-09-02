@@ -2230,17 +2230,16 @@ wheels = [
 
 [[package]]
 name = "responses"
-version = "0.22.0"
+version = "0.26.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "pyyaml" },
     { name = "requests" },
-    { name = "toml" },
-    { name = "types-toml" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/03/cc/c15e28fdbc81909ac18a4c22bebe8517bbafef43947a072da6f042fbd4d5/responses-0.22.0.tar.gz", hash = "sha256:396acb2a13d25297789a5866b4881cf4e46ffd49cc26c43ab1117f40b973102e", size = 71785, upload-time = "2022-10-11T16:34:46.926Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9f/47/f216a33221db8eff328987661cf18371afee89c62a62b434b963d6b509c9/responses-0.26.3.tar.gz", hash = "sha256:b0c11ca8131b8b227b8d5108e6ed39772222bd5aab030ed430e8f99057c4c409", size = 86335, upload-time = "2026-08-26T19:17:24.373Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a4/d0/2b9030eedf7061ac60828fcd92a4b04dc9a7dd07f316300f2841c41421a0/responses-0.22.0-py3-none-any.whl", hash = "sha256:dcf294d204d14c436fddcc74caefdbc5764795a40ff4e6a7740ed8ddbf3294be", size = 51148, upload-time = "2022-10-11T16:34:46.926Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/86/ca7958de70cb0752350575e98229368a3a2f746a2942034b3364e17312bb/responses-0.26.3-py3-none-any.whl", hash = "sha256:74474f799334ac4f37d93b6437ecc3bb1bb5c77a8d31780a338643be2dce0af8", size = 36289, upload-time = "2026-08-26T19:17:23.176Z" },
 ]
 
 [[package]]
@@ -2479,7 +2478,7 @@ wheels = [
 
 [[package]]
 name = "sphinx-immaterial"
-version = "0.11.14"
+version = "0.13.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "appdirs" },
@@ -2491,9 +2490,8 @@ dependencies = [
     { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/41/1f/5403cb6bd08f2f13c86d9b5367e56078dbe17d11c0bd91becdf34d454976/sphinx_immaterial-0.11.14.tar.gz", hash = "sha256:e1e8ba93c78a3e007743fede01a3be43f5ae97c5cc19b8e2a4d2aa058abead61", size = 8330984, upload-time = "2024-07-03T20:09:35.091Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/04/fa/db6916f719970ebdd433c5606bea98bbf899d71f255efced93992f944f1a/sphinx_immaterial-0.11.14-py3-none-any.whl", hash = "sha256:dd1a30614c8ecaa931155189e7d54f211232e31cf3e5c6d28ba9f04a4817f0a3", size = 10872122, upload-time = "2024-07-03T20:09:31.945Z" },
+    { url = "https://files.pythonhosted.org/packages/3d/42/6e958fc5d80ccd18c87d1b7d7c0e17fed04c0ed8a72933dd41c8643622d4/sphinx_immaterial-0.13.9-py3-none-any.whl", hash = "sha256:5ea92d2ddc6befcd0fedbd3e6766ea4746e94d9a8a5cc0ab092a946e1fde4254", size = 13742592, upload-time = "2026-02-06T16:53:11.262Z" },
 ]
 
 [[package]]
@@ -2595,13 +2593,13 @@ requires-dist = [
     { name = "pyyaml", marker = "extra == 'test'", specifier = "~=6.0" },
     { name = "requests", specifier = "~=2.32" },
     { name = "requests-file", specifier = ">=2.1,<4.0" },
-    { name = "responses", marker = "extra == 'test'", specifier = "~=0.22.0" },
+    { name = "responses", marker = "extra == 'test'", specifier = ">=0.22,<0.27" },
     { name = "sphinx", specifier = ">=7.4,<10" },
     { name = "sphinx-ai-index", marker = "extra == 'docs'", specifier = "~=0.1.0" },
     { name = "sphinx-copybutton", marker = "extra == 'docs'", specifier = "~=0.5" },
     { name = "sphinx-data-viewer", specifier = "~=0.1.5" },
     { name = "sphinx-design", marker = "extra == 'docs'", specifier = "~=0.6" },
-    { name = "sphinx-immaterial", marker = "extra == 'theme-im'", specifier = "~=0.11.11" },
+    { name = "sphinx-immaterial", marker = "extra == 'theme-im'", specifier = ">=0.11.11,<0.14.0" },
     { name = "sphinx-rtd-theme", marker = "extra == 'theme-rtd'", specifier = ">=3.0.2,<4" },
     { name = "sphinx-syntax-example", marker = "python_full_version >= '3.11' and extra == 'docs'", specifier = "~=0.2.0" },
     { name = "sphinxcontrib-jquery", specifier = "~=4.0" },
@@ -2770,15 +2768,6 @@ wheels = [
 ]
 
 [[package]]
-name = "toml"
-version = "0.10.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f", size = 22253, upload-time = "2020-11-01T01:40:22.204Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/44/6f/7120676b6d73228c96e17f1f794d8ab046fc910d781c8d151120c3f1569e/toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b", size = 16588, upload-time = "2020-11-01T01:40:20.672Z" },
-]
-
-[[package]]
 name = "tomli"
 version = "2.4.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2888,15 +2877,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/56/df/9f90a59de8c87cece6e691eee53dc1cb0a824d73aea8f380ae2f6ecb71de/tox_uv_bare-1.36.0.tar.gz", hash = "sha256:d9b0a2fd0f74fa65d9597108f8a0ef7abb08651c9196a998a6073b781b45cfd0", size = 32548, upload-time = "2026-07-21T13:09:56.435Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f7/0a/6dc462e4fb543305283a6157c80f43e3d12ca4702da6ae6521d541c6b55c/tox_uv_bare-1.36.0-py3-none-any.whl", hash = "sha256:ba397dd0396df95a75744d4e42a50ee27207c0ffcf277b62ffba9c3de455a939", size = 22489, upload-time = "2026-07-21T13:09:55.389Z" },
-]
-
-[[package]]
-name = "types-toml"
-version = "0.10.8.20260518"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4b/11/6ece999e91f2ccb848ab4420f3f4816e78ac0541f739e6864affdaaa5737/types_toml-0.10.8.20260518.tar.gz", hash = "sha256:80e10facd24fdeda9d5c672187d72be3ac284843788d67f5aae59e3e016db6fe", size = 9419, upload-time = "2026-05-18T06:02:16.719Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/25/489751806bf5c95e4007f8e17409199c54d31e49ffbea07c5729b1286c8e/types_toml-0.10.8.20260518-py3-none-any.whl", hash = "sha256:0e564ab05f6fde62a315b3b5a9b6624fda569399795d30a37e64705a70459303", size = 9669, upload-time = "2026-05-18T06:02:15.86Z" },
 ]
 
 [[package]]

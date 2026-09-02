@@ -49,7 +49,7 @@ test = [
   "syrupy>=4,<7",
   "sphinxcontrib-plantuml~=0.0",
   "lxml~=6.0",
-  "responses~=0.22.0",
+  "responses>=0.22,<0.27",
   "pydantic~=2.12",
   "pytest-xprocess~=1.0",
   "pyyaml ~= 6.0",
@@ -71,7 +71,7 @@ docs = [
   # python 3.10 (the directive, and so a docs build, needs python>=3.11)
   "sphinx-syntax-example~=0.2.0; python_version >= '3.11'",
 ]
-theme-im = ["sphinx-immaterial~=0.11.11"]
+theme-im = ["sphinx-immaterial>=0.11.11,<0.14.0"]
 theme-furo = ["furo~=2024.8.6"]
 theme-pds = ["pydata-sphinx-theme~=0.15.2"]
 theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
