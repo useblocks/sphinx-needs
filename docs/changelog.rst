@@ -68,7 +68,7 @@ Internal changes
 
 - 🔧 The development extras ``test``, ``test-parallel`` and ``benchmark`` become dependency
   groups, tox is replaced by `poe <https://poethepoet.natn.io/>`__, and CI installs every
-  job from ``uv.lock`` (:pr:`1822`)
+  job from ``uv.lock`` (:pr:`1823`)
 
   The three extras installed only the tools this project is developed with, so this does
   not affect users of the package; ``pip install sphinx-needs[test]`` (or
