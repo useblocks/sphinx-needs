@@ -12,8 +12,9 @@ updates:
     schedule:
       interval: monthly
   # uv, not pip: this repository locks its development environment in uv.lock, and the
-  # uv ecosystem updates that lock. A single group keeps the monthly refresh to one
-  # pull request instead of one per dependency.
+  # uv ecosystem updates that lock. Minor and patch updates are batched into one monthly
+  # pull request; major updates fall outside the group and arrive one per dependency,
+  # so the bumps most likely to break something are the ones that come isolated.
   - package-ecosystem: uv
     directory: /
     commit-message:
@@ -21,6 +22,9 @@ updates:
     schedule:
       interval: monthly
     groups:
-      python-dependencies:
+      python-minor-and-patch:
         patterns:
           - "*"
+        update-types:
+          - minor
+          - patch
