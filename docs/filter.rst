@@ -323,7 +323,8 @@ To debug which filters are being used across your project and their run times, y
    The `ubCode <https://ubcode.useblocks.com>`__ editor extension supports a few directive options that Sphinx-Needs
    has no equivalent for:
 
-   * ``cypher`` on :ref:`needlist`, :ref:`needtable`, :ref:`needflow` and :ref:`needpie`
+   * ``cypher`` on :ref:`needlist`, :ref:`needtable`, :ref:`needflow`, :ref:`needpie`
+     and :ref:`needbar`
    * ``width`` and ``height`` on :ref:`needflow` and :ref:`needsequence`
 
    Sphinx-Needs accepts all of these options and then ignores them, so that a document authored for ubCode also
@@ -337,6 +338,10 @@ To debug which filters are being used across your project and their run times, y
    ubCode reads the query as the scope each content-line filter is counted over,
    whereas a Sphinx build ignores it and counts every line over the whole project,
    so the same chart can show different numbers here than in the ubCode preview.
+
+   ``cypher`` on :ref:`needbar` is accepted ahead of any ubCode support for it:
+   ubCode does not read the option on ``needbar`` either, so today neither tool acts on it,
+   and it is listed here only so that a document already carrying it builds in both.
 
    These options may gain native implementations in future Sphinx-Needs releases,
    in which case they would take effect here as well rather than being ignored.

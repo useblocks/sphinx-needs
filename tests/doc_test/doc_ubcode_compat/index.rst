@@ -36,3 +36,8 @@ TEST DOCUMENT UBCODE COMPAT
 
    type == 'req'
    type == 'spec'
+
+.. needbar::
+   :cypher: MATCH (n:Need) RETURN n
+
+   type == 'req', type == 'spec'

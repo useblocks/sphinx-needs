@@ -34,6 +34,12 @@ the data comes from the content, so ``:filter:``, ``:filter-func:`` and
 ``:filter_warning:`` are not available on it,
 and a bar chart with only zeros is drawn as an empty chart.
 
+The ``cypher`` option is accepted and then ignored,
+ahead of any ubCode support for it:
+ubCode does not read it on ``needbar`` either,
+so today neither tool acts on it and no chart changes;
+see :ref:`ubCode compatibility <ubcode_compat_options>`.
+
 .. note::
 
     One image file is written per ``needbar``,
