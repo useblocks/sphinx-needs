@@ -44,7 +44,7 @@ plotting = ["matplotlib>=3.3.0"] # for needpie / needbar
 test = [
   "defusedxml~=0.7.1",
   "matplotlib>=3.3.0",
-  "pytest~=8.0",
+  "pytest>=8,<10",
   "pytest-cov~=6.0",
   "syrupy>=4,<7",
   "sphinxcontrib-plantuml~=0.0",
