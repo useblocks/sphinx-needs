@@ -3,7 +3,6 @@
 .DS_Store
 .venv*
 .pvenv
-.nox
 node_modules
 
 .envrc
@@ -15,7 +14,6 @@ build
 _build
 .cache/
 *pycache*
-.tox/
 .cache/
 .pytest_cache
 .coverage

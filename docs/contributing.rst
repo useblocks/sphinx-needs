@@ -26,22 +26,17 @@ Your PR should conform with the following rules:
 Installing Dependencies
 -----------------------
 
-To develop **Sphinx-Needs**  it can be installed, with development extras, into an existing Python environment using ``pip``:
+To develop **Sphinx-Needs**, use `uv <https://docs.astral.sh/uv/>`__ to install the
+project and its development dependencies into an isolated environment:
 
 .. code-block:: bash
 
-   pip install sphinx-needs[test,benchmark,docs]
+   uv sync
 
 .. note::
 
    The ``docs`` extra requires Python >= 3.11.
    On Python 3.10 the extra still installs, but the documentation cannot be built.
-
-or using `uv <https://docs.astral.sh/uv/>`__ to install the dependencies into an isolated environment:
-
-.. code-block:: bash
-
-   uv sync
 
 ``uv.lock`` is committed, so ``uv sync`` installs exactly the versions recorded in it,
 and every contributor and CI job gets the same environment.
@@ -63,13 +58,24 @@ so `pre-commit <https://pre-commit.com/>`__ itself still works if you prefer it.
 Hook versions are bumped by the scheduled ``Prek update`` workflow, which opens a
 pull request with the new revisions.
 
-To run testing and documentation building, `tox <https://tox.readthedocs.io/>`__ is used:
+Testing and documentation building are run as `poe <https://poethepoet.natn.io>`__
+tasks, declared in ``pyproject.toml``:
 
 .. code-block:: bash
 
-   tox -av  # to see all environments
+   uv run poe  # to see all tasks
 
-Note, it is recommended to also install the `tox-uv <https://github.com/tox-dev/tox-uv>`__ plugin, which will use ``uv`` to create isolated environments faster, and to use `pyenv <https://github.com/pyenv/pyenv>`__ to manage multiple Python versions.
+Words written after a task name are appended to the command it runs, so ``pytest`` and
+``sphinx-build`` options can be passed straight through.
+A task that needs something other than the default environment — one sphinx version, a
+documentation theme — installs into its own ``.venvs/`` directory, so tasks do not
+overwrite each other's environment.
+Type checking is the exception: ``uv run poe mypy`` runs the prek ``mypy`` hook, whose
+pinned dependencies are the type-checking environment and are what CI checks against.
+
+Set ``UV_PYTHON`` to choose the interpreter a task runs on, for example
+``UV_PYTHON=3.12 uv run poe test-sphinx8``.
+uv downloads an interpreter it does not have, so no separate version manager is needed.
 
 Build docs
 ----------
@@ -78,52 +84,49 @@ To build the **Sphinx-Needs** documentation stored under ``/docs``, run:
 
 .. code-block:: bash
 
-   # Build HTML pages with the furo theme,
-   # and first remove all old build files
-   CLEAN=true tox -e docs-furo
+   # Build HTML pages with the furo theme
+   uv run poe docs
+
+   # ... and first remove all old build files
+   uv run poe docs-clean
 
 .. note::
 
-   The ``docs-*`` environments pin ``basepython = python3.12``,
-   since building the documentation requires Python >= 3.11.
+   Building the documentation requires Python >= 3.11;
+   set ``UV_PYTHON`` if your default interpreter is older.
 
-or to build with a different builder:
+The other themes have a task each — ``docs-alabaster``, ``docs-im``, ``docs-pds`` and
+``docs-rtd`` — and the link checker is its own task:
 
 .. code-block:: bash
 
    # Check links in the documentation
-   CLEAN=true BUILDER=linkcheck tox -e docs-furo
+   uv run poe docs-linkcheck
 
 
 Running Tests
 -------------
 
-You can either run the tests directly using ``pytest``, in an existing environment:
+Run the tests against the newest supported sphinx with:
 
 .. code-block:: bash
 
-   pytest tests/
+   uv run poe test
 
-Or use tox (recommended):
+The CI matrix tests three sphinx versions, and each is a task of its own —
+``test-sphinx7``, ``test-sphinx8``, ``test-sphinx9``.
+Every one of them is exactly what CI runs, so a failing cell can be reproduced locally:
 
 .. code-block:: bash
 
-   tox -e py310
+   UV_PYTHON=3.12 uv run poe test-sphinx8 tests/test_basic_doc.py
 
 Note some tests use `syrupy <https://github.com/tophat/syrupy>`__ to perform snapshot testing.
 These snapshots can be updated by running:
 
 .. code-block:: bash
 
-   pytest tests/ --snapshot-update
-
-.. hint::
-
-   Please be sure to have the dependencies of the official documentation also installed:
-
-   .. code-block:: bash
-
-      pip install -r docs/requirements.txt
+   uv run poe test --snapshot-update
 
 Running JS Testcases with PyTest
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
