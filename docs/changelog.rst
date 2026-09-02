@@ -14,6 +14,37 @@ Unreleased
 Improvements
 ............
 
+- 👌 :ref:`Schema validation <schema_validation>` errors now name the failing keyword, and
+  report ``$ref`` targets at their definition **(changed output)** (:pr:`1819`)
+
+  The ``jsonschema-rs`` requirement moves from ``~=0.37.1`` to ``>=0.37.1,<0.53.0``,
+  which brings a rewritten error renderer with it. Which schemas validate, which needs
+  are reported, and the warning subtypes (``sn_schema_violation.*``) are all unchanged —
+  only the message text is different.
+
+  The failing keyword is now named, and the instance path is given relative to the
+  sub-schema that failed rather than from the root:
+
+  .. code-block:: text
+
+     - Failed validating in schema
+     + Failed validating "pattern" in schema["properties"]["efforts"]
+     - On instance["properties"]["efforts"]:
+     + On instance:
+
+  A ``$ref`` is reported where it is defined, instead of through the reference:
+
+  .. code-block:: text
+
+     - Failed validating "const" in schema["properties"]["contains"]["$ref"]["properties"]["type"]
+     + Failed validating "const" in schema["$defs"]["LinkItemSchemaType"]["properties"]["type"]
+
+  And the names listed by ``Unevaluated properties are not allowed (...)`` are no longer
+  sorted alphabetically. The set of names reported is unchanged, and the order is stable.
+
+  If you match on this text — in a test, a log filter, or a ``suppress_warnings`` entry
+  keyed to a message body rather than to a subtype — it will need updating.
+
 - ✨ The ``cypher`` directive option is now accepted on :ref:`needpie` and :ref:`needbar`
   for `ubCode`_ compatibility (:pr:`1818`)
 

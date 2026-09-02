@@ -1,5 +1,5 @@
 [build-system]
-requires = ["flit_core >=3.4,<4"]
+requires = ["flit_core >=3.4,<5"]
 build-backend = "flit_core.buildapi"
 
 [project]
@@ -29,9 +29,9 @@ classifiers = [
 requires-python = ">=3.10,<4"
 dependencies = [
   "sphinx>=7.4,<10",
-  "requests-file~=2.1",             # external links
+  "requests-file>=2.1,<4.0",        # external links
   "requests~=2.32",                 # external links
-  "jsonschema-rs~=0.37.1",          # schema validation
+  "jsonschema-rs>=0.37.1,<0.53.0",  # schema validation
   "sphinx-data-viewer~=0.1.5",      # needservice debug output
   "sphinxcontrib-jquery~=4.0",      # needed for datatables in sphinx>=6
   "tomli; python_version < '3.11'", # for needs_from_toml configuration
@@ -46,10 +46,10 @@ test = [
   "matplotlib>=3.3.0",
   "pytest~=8.0",
   "pytest-cov~=6.0",
-  "syrupy~=4.0",
+  "syrupy>=4,<7",
   "sphinxcontrib-plantuml~=0.0",
   "lxml~=6.0",
-  "responses~=0.22.0",
+  "responses>=0.22,<0.27",
   "pydantic~=2.12",
   "pytest-xprocess~=1.0",
   "pyyaml ~= 6.0",
@@ -71,21 +71,13 @@ docs = [
   # python 3.10 (the directive, and so a docs build, needs python>=3.11)
   "sphinx-syntax-example~=0.2.0; python_version >= '3.11'",
 ]
-theme-im = ["sphinx-immaterial~=0.11.11"]
+theme-im = ["sphinx-immaterial>=0.11.11,<0.14.0"]
 theme-furo = ["furo~=2024.8.6"]
 theme-pds = ["pydata-sphinx-theme~=0.15.2"]
 theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
 
 [dependency-groups]
 dev = ["prek>=0.5.1", "tox~=4.23", "tox-uv~=1.15"]
-mypy = [
-  "mypy==2.3.1",
-  "sphinx==7.4.7",
-  "docutils==0.20",
-  "jsonschema-rs==0.37.1",
-  "types-docutils==0.20.0.20240201",
-  "types-requests",
-]
 ruff = ["ruff==0.16.5"]
 
 [tool.pytest.ini_options]
@@ -215,8 +207,10 @@ extras = docs
 commands = sphinx-build -E -W -b linkcheck docs/ docs/_build/linkcheck
 
 [testenv:mypy]
-dependency_groups = mypy
-commands = mypy {posargs:sphinx_needs}
+# the prek hook carries the pinned floor environment; running it here means
+# `tox -e mypy` and CI type-check against exactly the same versions
+dependency_groups = dev
+commands = prek run mypy --all-files {posargs}
 
 [testenv:ruff-check]
 dependency_groups = ruff
