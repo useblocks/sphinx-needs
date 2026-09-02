@@ -26,6 +26,8 @@ repos:
       - id: mypy
         files: sphinx_needs/.*
         args: []
+        # this list IS the type-checking environment: the oldest supported toolchain,
+        # pinned here and nowhere else, so `tox -e mypy` and CI check the same versions
         additional_dependencies:
           - sphinx==7.4.7
           - docutils==0.20
