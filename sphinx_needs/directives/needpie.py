@@ -52,6 +52,8 @@ class NeedpieDirective(FilterBase):
         "shadow": directives.flag,
         "filter-func": FilterBase.base_option_spec["filter-func"],
         "filter_warning": FilterBase.base_option_spec["filter_warning"],
+        # ubCode compatibility: accepted and ignored by Sphinx-Needs.
+        "cypher": directives.unchanged,
     }
 
     # Update the options_spec only with value filter-func defined in the FilterBase class

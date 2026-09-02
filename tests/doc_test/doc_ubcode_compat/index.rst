@@ -30,3 +30,9 @@ TEST DOCUMENT UBCODE COMPAT
    :max_items: 10
    :width: 400
    :height: 300
+
+.. needpie::
+   :cypher: MATCH (n:Need) RETURN n
+
+   type == 'req'
+   type == 'spec'

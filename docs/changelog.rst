@@ -11,6 +11,23 @@ Unreleased
 
 :Released: Unreleased
 
+Improvements
+............
+
+- ✨ The ``cypher`` directive option is now accepted on :ref:`needpie` for `ubCode`_
+  compatibility
+
+  :ref:`needpie` joins :ref:`needlist`, :ref:`needtable` and :ref:`needflow` in accepting this
+  ubCode-only option and then ignoring it, so that a document authored for ubCode also builds
+  with Sphinx-Needs, instead of failing with an ``unknown option`` error.
+  The option never reaches a node, the rendered output, or the ``needs.json`` file.
+
+  On :ref:`needpie` the no-op is visible in the chart, though, which it is not on the other three:
+  ubCode reads the query as the scope each content line is counted over, whereas Sphinx-Needs
+  counts every line over the whole project, so the same chart can show different numbers in the
+  two tools.
+  See :ref:`ubCode compatibility <ubcode_compat_options>` for the exact per-directive list.
+
 Bug fixes
 .........
 
