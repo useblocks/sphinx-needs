@@ -34,11 +34,12 @@ repos:
           - types-requests
           - minijinja~=2.15
 
-  # TODO this does not work on pre-commit.ci
-  # - repo: https://github.com/astral-sh/uv-pre-commit
-  #   rev: 0.5.5
-  #   hooks:
-  #     - id: uv-lock  # Update the uv lockfile
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.12.9
+    hooks:
+      # keeps the committed uv.lock in step with pyproject.toml;
+      # it only runs when pyproject.toml, uv.lock or uv.toml changes
+      - id: uv-lock
 
   - repo: local
     hooks:

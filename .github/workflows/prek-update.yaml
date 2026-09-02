@@ -37,7 +37,7 @@ jobs:
       - name: Update hook revisions
         id: update
         run: |
-          uv run prek update --cooldown-days 7
+          uv run --frozen prek update --cooldown-days 7
           if git diff --quiet; then
             echo "no hook updates eligible"
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -54,7 +54,7 @@ jobs:
         env:
           PREK_COLOR: always
         run: |
-          if uv run prek run --all-files; then
+          if uv run --frozen prek run --all-files; then
             echo "clean=yes" >> "$GITHUB_OUTPUT"
           else
             echo "clean=no" >> "$GITHUB_OUTPUT"

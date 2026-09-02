@@ -43,6 +43,13 @@ or using `uv <https://docs.astral.sh/uv/>`__ to install the dependencies into an
 
    uv sync
 
+``uv.lock`` is committed, so ``uv sync`` installs exactly the versions recorded in it,
+and every contributor and CI job gets the same environment.
+If you change the dependencies in ``pyproject.toml``, the ``uv-lock`` hook below updates
+the lock for you (``uv lock`` does the same by hand); commit the result with your change.
+Dependabot refreshes the locked versions once a month: minor and patch updates arrive
+batched in one pull request, major updates one pull request each.
+
 To run the formatting and linting suite, `prek <https://prek.j178.dev/>`__ is used:
 
 .. code-block:: bash

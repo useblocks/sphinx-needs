@@ -40,6 +40,4 @@ mem_out.*
 pyinstrument*
 *.prof
 
-uv.lock
-
 schema_debug/
