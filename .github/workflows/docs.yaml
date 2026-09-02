@@ -8,15 +8,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set Up Python
-        uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
+          enable-cache: true
+          # the docs extra requires python>=3.11 (sphinx-syntax-example)
           python-version: "3.12"
-      - name: Update pip
-        run: python -m pip install --upgrade pip
       - name: Install Dependencies
-        run: |
-          python -m pip install -e .[docs]
+        run: uv sync --frozen --no-default-groups --extra docs
       - name: Run linkcheck
-        run: sphinx-build -W -b linkcheck . _build
+        run: uv run --no-sync sphinx-build -W -b linkcheck . _build
         working-directory: docs

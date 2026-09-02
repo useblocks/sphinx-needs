@@ -41,6 +41,36 @@ dependencies = [
 
 [project.optional-dependencies]
 plotting = ["matplotlib>=3.3.0"] # for needpie / needbar
+docs = [
+  "matplotlib>=3.3.0",
+  "sphinxcontrib-plantuml~=0.0",
+  "sphinx-copybutton~=0.5",
+  "sphinxcontrib-programoutput~=0.17",
+  "sphinx-design~=0.6",
+  "sphinx-ai-index~=0.1.0",
+  # the `syntax-example` directive; the marker keeps the extra resolvable on
+  # python 3.10 (the directive, and so a docs build, needs python>=3.11)
+  "sphinx-syntax-example~=0.2.0; python_version >= '3.11'",
+]
+theme-im = ["sphinx-immaterial>=0.11.11,<0.14.0"]
+# furo before 2025.12.19 caps sphinx at <9.0, which the `sphinx-9` group cannot resolve.
+# A floor rather than `~=`: furo versions are dates, so `~=` would admit one month only
+theme-furo = ["furo>=2025.12.19"]
+theme-pds = ["pydata-sphinx-theme>=0.15.2,<0.20.0"]
+theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
+
+# Development dependency sets. These are groups rather than extras: they exist only to
+# develop this package, so they are not published metadata, and `uv sync` installs `dev`
+# (which includes `test`) by default. The three `sphinx-*` groups are the CI test matrix
+# and are declared conflicting below, so one cell is exactly
+#   uv sync --frozen --no-default-groups --group test --group sphinx-9
+[dependency-groups]
+dev = [
+  "prek>=0.5.1",
+  "poethepoet~=0.48",
+  "uv>=0.12.9",
+  { include-group = "test" },
+]
 test = [
   "defusedxml~=0.7.1",
   "matplotlib>=3.3.0",
@@ -54,33 +84,35 @@ test = [
   "pytest-xprocess~=1.0",
   "pyyaml ~= 6.0",
   "myst-parser>=4,<6",           # host coverage for directives usable from Markdown
+  "pytest-xdist~=3.0",           # for `pytest -n auto`
 ]
-test-parallel = ["pytest-xdist"]
 benchmark = [
+  { include-group = "test" },
   "pytest-benchmark~=5.0; sys_platform != 'win32'",
   "memray>=1.3.1,<2.0.0; sys_platform != 'win32'",
 ]
-docs = [
-  "matplotlib>=3.3.0",
-  "sphinxcontrib-plantuml~=0.0",
-  "sphinx-copybutton~=0.5",
-  "sphinxcontrib-programoutput~=0.17",
-  "sphinx-design~=0.6",
-  "sphinx-ai-index~=0.1.0",
-  # the `syntax-example` directive; the marker keeps the extra resolvable on
-  # python 3.10 (the directive, and so a docs build, needs python>=3.11)
-  "sphinx-syntax-example~=0.2.0; python_version >= '3.11'",
-]
-theme-im = ["sphinx-immaterial>=0.11.11,<0.14.0"]
-theme-furo = ["furo~=2024.8.6"]
-theme-pds = ["pydata-sphinx-theme>=0.15.2,<0.20.0"]
-theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
+# The sphinx test matrix, one group per series. The markers are required for the lock to
+# resolve on python 3.10: sphinx 8.2 needs python>=3.11 and sphinx 9.1 needs python>=3.12.
+sphinx-7 = ["sphinx~=7.4"]
+sphinx-8 = ["sphinx~=8.2; python_version >= '3.11'"]
+sphinx-9 = ["sphinx~=9.1; python_version >= '3.12'"]
 
-[dependency-groups]
-dev = ["prek>=0.5.1", "tox~=4.23", "tox-uv~=1.15"]
-ruff = ["ruff==0.16.5"]
+[tool.uv]
+# Each matrix group pins one sphinx series, so a single universal resolution would have to
+# satisfy all three at once and every environment would be capped at the lowest of them.
+# Declaring them conflicting gives each its own resolution in `uv.lock`, so the lock holds
+# all three sphinx versions and a plain `uv sync` resolves to the newest.
+conflicts = [
+  [
+    { group = "sphinx-7" },
+    { group = "sphinx-8" },
+    { group = "sphinx-9" },
+  ],
+]
+
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 markers = [
   "fixture_file: marks tests that use a fixture file (deselect with '-m \"not fixture_file\"')",
   "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
@@ -147,76 +179,130 @@ ignore_missing_imports = true
 module = ["sphinx_needs.data"]
 disable_error_code = ["attr-defined", "no-any-return"]
 
-[tool.tox]
-# To use tox, see https://tox.readthedocs.io
-# $ pipx install tox
-# it is suggested to use with https://github.com/tox-dev/tox-uv or https://github.com/tox-dev/tox-conda
-# $ pipx inject tox tox-uv
+# --- Task runner --------------------------------------------------------------------
+# poethepoet lives in the `dev` group, so it is in the lock and needs no separate install:
+#   uv run poe            # list every task with its help
+#   uv run poe test -k …  # trailing words are appended to the task's command verbatim
+# poe detects the uv project and runs every task through `uv run`; a task that needs a
+# dependency set other than the default one says so with `executor` options (never with a
+# nested `uv run` in the cmd — that syncs twice and pollutes the environment) and redirects
+# `UV_PROJECT_ENVIRONMENT`, so `.venv` is never clobbered by a matrix cell or a docs build.
+# Type checking is not one of them: `mypy` runs the prek hook, whose `additional_dependencies`
+# are the pinned floor environment. The interpreter is the other axis, from `UV_PYTHON`, e.g.
+#   UV_PYTHON=3.12 uv run --no-sync poe test-sphinx8
+# (`--no-sync` on the outer `uv run`, or uv also rebuilds the default `.venv` on that
+# interpreter). uv downloads the interpreter it does not have, so no pyenv is needed.
 
-legacy_tox_ini = """
-[tox]
-envlist = py310
+[tool.poe.executor]
+type = "uv"
+# `frozen` is uv's "do not update the lock", NOT "assert the lock is current" — the
+# currency gate is the `uv-lock` prek hook that the Lint job runs.
+frozen = true
 
-[testenv]
-usedevelop = true
+[tool.poe.tasks.lint]
+help = "Run every prek hook over the whole tree (ruff check + format, taplo, yamlfmt, mypy, uv-lock)"
+cmd = "prek run --all-files"
 
-[testenv:py{310,311,312,313,314}]
-extras =
-  test
-  test-parallel
-commands =
-  pytest --ignore tests/benchmarks {posargs:tests}
+[tool.poe.tasks.test]
+help = "Run the test suite against the default (newest) sphinx; trailing args go to pytest"
+cmd = "pytest --ignore=tests/benchmarks -m 'not jstest'"
 
-# no py310: the docs extra requires python>=3.11 (sphinx-syntax-example)
-[testenv:py{311,312,313,314}-benchmark]
-extras =
-  test
-  benchmark
-  docs
-commands =
-  pytest {posargs:tests/benchmarks}
+[tool.poe.tasks.test-js]
+help = "Run only the JavaScript (Cypress) tests; needs `npm install cypress` first"
+cmd = "pytest --ignore=tests/benchmarks -m jstest"
 
-[testenv:docs-{alabaster,furo,im,pds,rtd}]
-# the docs extra requires python>=3.11 (sphinx-syntax-example)
-basepython = python3.12
-extras =
-  docs
-  furo: theme-furo
-  im: theme-im
-  pds: theme-pds
-  rtd: theme-rtd
-passenv =
-    BUILDER
-    CLEAN
-    READTHEDOCS
-    TERM
-setenv =
-    alabaster: DOCS_THEME=alabaster
-    furo: DOCS_THEME=furo
-    im: DOCS_THEME=sphinx_immaterial
-    pds: DOCS_THEME=pydata_sphinx_theme
-    rtd: DOCS_THEME=sphinx_rtd_theme
-commands_pre =
-  python -c "import shutil; shutil.rmtree('docs/_build/{env:BUILDER:html}/{env:DOCS_THEME:}', ignore_errors=True) if '{env:CLEAN:}' else None"
-commands = 
-  sphinx-build -nW --keep-going -b {env:BUILDER:html} docs/ docs/_build/{env:BUILDER:html}/{env:DOCS_THEME:} {posargs:-T}
+[tool.poe.tasks.test-sphinx7]
+help = "Run the suite against sphinx 7.4 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest --ignore=tests/benchmarks -m 'not jstest'"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-7",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-7" }
 
-[testenv:docs-linkcheck]
-basepython = python3.12
-extras = docs
-commands = sphinx-build -E -W -b linkcheck docs/ docs/_build/linkcheck
+[tool.poe.tasks.test-sphinx8]
+help = "Run the suite against sphinx 8.2 (python >= 3.11; set UV_PYTHON to pick the interpreter)"
+cmd = "pytest --ignore=tests/benchmarks -m 'not jstest'"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-8",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-8" }
 
-[testenv:mypy]
-# the prek hook carries the pinned floor environment; running it here means
-# `tox -e mypy` and CI type-check against exactly the same versions
-dependency_groups = dev
-commands = prek run mypy --all-files {posargs}
+[tool.poe.tasks.test-sphinx9]
+help = "Run the suite against sphinx 9.1 (python >= 3.12; set UV_PYTHON to pick the interpreter)"
+cmd = "pytest --ignore=tests/benchmarks -m 'not jstest'"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-9",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
-[testenv:ruff-check]
-dependency_groups = ruff
-commands = ruff check {posargs:--fix}
+[tool.poe.tasks.mypy]
+help = "Type-check sphinx_needs via the prek mypy hook, the pinned floor environment"
+cmd = "prek run mypy --all-files"
 
-[testenv:ruff-fmt]
-dependency_groups = ruff
-commands = ruff format {posargs}
-"""
+[tool.poe.tasks.benchmark]
+help = "Run the benchmark suite (time + memory); needs the docs extra for the corpus"
+cmd = "pytest tests/benchmarks"
+executor = { type = "uv", frozen = true, no-group = "dev", group = "benchmark", extra = "docs" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/benchmark" }
+
+# --- Documentation ---
+# One task per theme, because the theme selects a different *extra* and executor options
+# are not interpolated from task arguments. `docs` (furo) is the one Read the Docs builds.
+
+[tool.poe.tasks.docs]
+help = "Build the HTML docs with the furo theme"
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/furo -T"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = [
+  "docs",
+  "theme-furo",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs", DOCS_THEME = "furo" }
+
+[tool.poe.tasks.docs-clean]
+help = "Delete the built HTML docs, then build them again from scratch"
+sequence = [
+  { script = "shutil:rmtree('docs/_build/html', ignore_errors=True)" },
+  { ref = "docs" },
+]
+
+[tool.poe.tasks.docs-linkcheck]
+help = "Check every external link in the documentation"
+cmd = "sphinx-build -E -W -b linkcheck docs docs/_build/linkcheck"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-plain" }
+
+[tool.poe.tasks.docs-alabaster]
+help = "Build the HTML docs with the alabaster (sphinx built-in) theme"
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/alabaster -T"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-plain", DOCS_THEME = "alabaster" }
+
+[tool.poe.tasks.docs-im]
+help = "Build the HTML docs with the sphinx-immaterial theme"
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/sphinx_immaterial -T"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = [
+  "docs",
+  "theme-im",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-im", DOCS_THEME = "sphinx_immaterial" }
+
+[tool.poe.tasks.docs-pds]
+help = "Build the HTML docs with the pydata-sphinx-theme"
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/pydata_sphinx_theme -T"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = [
+  "docs",
+  "theme-pds",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-pds", DOCS_THEME = "pydata_sphinx_theme" }
+
+[tool.poe.tasks.docs-rtd]
+help = "Build the HTML docs with the sphinx-rtd-theme"
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/sphinx_rtd_theme -T"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = [
+  "docs",
+  "theme-rtd",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-rtd", DOCS_THEME = "sphinx_rtd_theme" }

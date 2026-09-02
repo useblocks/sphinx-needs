@@ -63,6 +63,25 @@ Improvements
   document already carrying it builds in both.
   See :ref:`ubCode compatibility <ubcode_compat_options>` for the exact per-directive list.
 
+Internal changes
+................
+
+- 🔧 The development extras ``test``, ``test-parallel`` and ``benchmark`` become dependency
+  groups, tox is replaced by `poe <https://poethepoet.natn.io/>`__, and CI installs every
+  job from ``uv.lock`` (:pr:`1823`)
+
+  The three extras installed only the tools this project is developed with, so this does
+  not affect users of the package; ``pip install sphinx-needs[test]`` (or
+  ``[test-parallel]``, or ``[benchmark]``) no longer resolves, because dependency groups
+  are not published metadata. A contributor gets them with ``uv sync``, and every task —
+  the test suite against each supported Sphinx series, the type checker, the documentation
+  builds — is listed by ``uv run poe``, as :doc:`contributing` describes.
+
+  The ``plotting``, ``docs`` and the other ``theme-*`` extras are unchanged. ``theme-furo``
+  now requires furo 2025.12.19 or newer, the first release of that theme that supports
+  Sphinx 9. Every earlier release caps Sphinx below 9.0, so a documentation build with the
+  furo theme could not use the Sphinx this package already supports.
+
 Bug fixes
 .........
 

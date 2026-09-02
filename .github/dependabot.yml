@@ -21,6 +21,15 @@ updates:
       prefix: ⬆️
     schedule:
       interval: monthly
+    ignore:
+      # the `sphinx-7`, `sphinx-8` and `sphinx-9` dependency groups pin one series each,
+      # on purpose: they are the test matrix, and which three series are tested is a
+      # decision taken by hand, alongside the CI cells and the `requires-python` markers
+      # that go with them. Patch updates inside a series still flow.
+      - dependency-name: sphinx
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
     groups:
       python-minor-and-patch:
         patterns:

@@ -16,6 +16,20 @@ jobs:
       - run: uv run --frozen prek run --all-files --show-diff-on-failure
         env:
           PREK_COLOR: always
+      - name: Check the sphinx groups are declared conflicting
+        # if this sync ever succeeds, `[tool.uv] conflicts` has been dropped and the lock
+        # holds one sphinx again, so every matrix cell below would test the same version
+        env:
+          UV_PROJECT_ENVIRONMENT: .venvs/conflict-check
+        run: |
+          if uv sync --frozen --no-default-groups --group sphinx-7 --group sphinx-9; then
+            echo "::error::syncing sphinx-7 and sphinx-9 together should be an error"
+            exit 1
+          fi
+      - name: Check the default environment resolves to the newest sphinx
+        # the `mypy` group pins sphinx 7.4.7; it is in the conflict set so that a plain
+        # `uv sync` is not capped by it
+        run: uv run --frozen python -c "import sphinx; assert sphinx.version_info[0] >= 9, sphinx.__version__"
 
   # ubc:
   #   name: ubc
@@ -31,33 +45,33 @@ jobs:
   #       run: ubc build index docs --show-warnings
 
   tests-core:
-    name: "Core py${{ matrix.python-version }} sphinx~=${{ matrix.sphinx-version }} ${{ matrix.os }}"
+    name: "Core py${{ matrix.python-version }} ${{ matrix.sphinx-group }} ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false # Set on "false" to get the results of ALL builds
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.10", "3.12", "3.13", "3.14"]
-        sphinx-version: ["7.4", "8.2", "9.1"]
+        sphinx-group: ["sphinx-7", "sphinx-8", "sphinx-9"]
         include:
           # corner cases for Windows
           - os: "windows-latest"
             python-version: "3.10"
-            sphinx-version: "7.4"
+            sphinx-group: "sphinx-7"
           - os: "windows-latest"
             python-version: "3.12"
-            sphinx-version: "8.2"
+            sphinx-group: "sphinx-8"
           - os: "windows-latest"
             python-version: "3.14"
-            sphinx-version: "9.1"
+            sphinx-group: "sphinx-9"
         exclude:
           # Sphinx 8.2 only supports py3.11+
           - os: "ubuntu-latest"
             python-version: "3.10"
-            sphinx-version: "8.2"
+            sphinx-group: "sphinx-8"
           - os: "ubuntu-latest"
             python-version: "3.10"
-            sphinx-version: "9.1"
+            sphinx-group: "sphinx-9"
 
     steps:
       - uses: actions/checkout@v4
@@ -67,20 +81,24 @@ jobs:
       - name: Install graphviz (windows)
         if: matrix.os == 'windows-latest'
         run: choco install -y --no-progress graphviz
-      - name: Set Up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
+          enable-cache: true
+          # the lock is the same file for every cell while the installed set is not,
+          # so each cell needs its own cache entry
+          cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
           python-version: ${{ matrix.python-version }}
-      - name: Update pip
-        run: python -m pip install --upgrade pip
-      - name: Install dependencies
-        run: |
-          python -m pip install sphinx~=${{ matrix.sphinx-version }} -e .[test]
-          python -m pip freeze
+      - name: Install the cell
+        run: uv sync --frozen --no-default-groups --group test --group ${{ matrix.sphinx-group }}
+      - name: Report the resolved versions
+        run: uv run --no-sync python -c "import sys, sphinx, docutils; print(sys.version, sphinx.__version__, docutils.__version__)"
+      - name: Check the cell installed the sphinx it names
+        # against the group's own specifier: a group whose marker excludes this python
+        # contributes nothing, the environment falls back to the project's sphinx range and
+        # the sync still exits 0, so without this the cell would silently test another series
+        run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ matrix.sphinx-group }}
       - name: Run pytest
-        run: python -m pytest -v --ignore=tests/benchmarks -m "not jstest" --cov=sphinx_needs --cov-report=xml --cov-report=term-missing tests
-      - name: Create coverage
-        run: coverage xml
+        run: uv run --no-sync pytest -v --ignore=tests/benchmarks -m "not jstest" --cov=sphinx_needs --cov-report=xml --cov-report=term-missing
       - name: Upload to Codecov
         # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it
         if: github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14' && github.actor != 'dependabot[bot]'
@@ -93,17 +111,17 @@ jobs:
           fail_ci_if_error: true
 
   tests-js:
-    name: "JS py${{ matrix.python-version }} sphinx~=${{ matrix.sphinx-version }} ${{ matrix.os }}"
+    name: "JS py${{ matrix.python-version }} ${{ matrix.sphinx-group }} ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
           - os: "ubuntu-latest"
             python-version: "3.10"
-            sphinx-version: "7.4"
+            sphinx-group: "sphinx-7"
           - os: "ubuntu-latest"
             python-version: "3.13"
-            sphinx-version: "9.1"
+            sphinx-group: "sphinx-9"
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
@@ -112,43 +130,46 @@ jobs:
           node-version: 18
       - name: Install Cypress Test Framework
         run: npm install cypress
-      - name: Set Up Python
-        uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
+          enable-cache: true
+          cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
           python-version: ${{ matrix.python-version }}
-      - name: Update pip
-        run: python -m pip install --upgrade pip
-      - name: Install dependencies
-        run: |
-          python -m pip install sphinx~=${{ matrix.sphinx-version }} -e .[test]
-          python -m pip freeze
+      - name: Install the cell
+        run: uv sync --frozen --no-default-groups --group test --group ${{ matrix.sphinx-group }}
+      - name: Check the cell installed the sphinx it names
+        # against the group's own specifier — see the comment in tests-core
+        run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ matrix.sphinx-group }}
       - name: Run pytest
-        run: |
-          python -m pytest -v --ignore=tests/benchmarks -m "jstest" tests
+        run: uv run --no-sync pytest -v --ignore=tests/benchmarks -m "jstest"
 
   tests-no-mpl:
     name: Test matplotlib uninstalled
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set Up Python
-        uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v10.0.1
         with:
+          enable-cache: true
           # the docs extra requires python>=3.11 (sphinx-syntax-example)
           python-version: "3.12"
-      - name: Update pip
-        run: python -m pip install --upgrade pip
       - name: Install Dependencies
         run: |
-          python -m pip install -e .[test,docs]
-          python -m pip uninstall -y matplotlib numpy
-          python -m pip freeze
-      - name: Run pytest
+          uv sync --frozen --no-default-groups --group test --extra docs
+          uv pip uninstall matplotlib numpy
+      - name: Check matplotlib really is gone
+        # every command below has to be `uv run --no-sync`: a bare `uv run` would re-sync
+        # the group that matplotlib is in and put it straight back
         run: |
-          python -m pytest -v tests/no_mpl_tests.py
+          if uv run --no-sync python -c "import matplotlib"; then
+            echo "::error::matplotlib is still installed, the job would test nothing"
+            exit 1
+          fi
+      - name: Run pytest
+        run: uv run --no-sync pytest -v tests/no_mpl_tests.py
       - name: Run HTML build
         # the docs should build without matplotlib (just issuing warnings)
-        run: sphinx-build -b html . _build
+        run: uv run --no-sync sphinx-build -b html . _build
         working-directory: docs
 
   check:

@@ -32,63 +32,86 @@ docs/                  # Documentation source (RST files)
 
 ## Development Commands
 
-All commands should be run via [`tox`](https://tox.wiki) for consistency. The project uses `tox-uv` for faster environment creation.
+All commands are run via [`poe`](https://poethepoet.natn.io) tasks, declared in
+`pyproject.toml`. `uv run` installs the locked development environment first, so nothing
+has to be set up by hand; `uv run poe` on its own lists every task with its help.
+
+Words written after a task name are appended to its command, so pytest and sphinx-build
+flags can be passed straight through.
+
+```bash
+uv run poe            # list every task
+```
 
 ### Testing
 
 ```bash
-# Run all tests (excluding benchmarks)
-tox -- tests/
+# Run all tests (excluding benchmarks) against the newest sphinx
+uv run poe test
 
 # Run a specific test file
-tox -- tests/test_basic_doc.py
+uv run poe test tests/test_basic_doc.py
 
 # Run a specific test function
-tox -- tests/test_basic_doc.py::test_function_name
-
-# Run tests with a specific Python version
-tox -e py312 -- tests/
+uv run poe test tests/test_basic_doc.py::test_function_name
 
 # Update snapshot tests (syrupy)
-tox -- tests/ --snapshot-update
+uv run poe test --snapshot-update
+
+# Run against one sphinx version of the CI matrix
+uv run poe test-sphinx7
+uv run poe test-sphinx8
+uv run poe test-sphinx9
+
+# Pick the interpreter with UV_PYTHON — no pyenv needed, uv downloads interpreters.
+# Give the outer `uv run` --no-sync in this form, or it also rebuilds the default .venv
+# on that interpreter
+UV_PYTHON=3.12 uv run --no-sync poe test-sphinx8
+
+# Run the JavaScript (Cypress) tests; needs `npm install cypress` first
+uv run poe test-js
 
 # Run benchmark tests
-tox -e py312-benchmark -- tests/benchmarks/
+uv run poe benchmark
 ```
+
+Each `test-sphinx*` task installs into its own `.venvs/<name>` environment, so switching
+between cells never rebuilds another cell's environment. The one thing that does touch the
+default `.venv` is `UV_PYTHON`: the outer `uv run` re-syncs `.venv` on that interpreter
+unless it is given `--no-sync`; if that happens, `uv sync --python 3.13` puts it back.
 
 ### Documentation
 
 ```bash
-# Build docs with furo theme (clean build)
-CLEAN=true tox -e docs-furo
+# Build docs with furo theme
+uv run poe docs
 
-# Rebuild docs (incremental)
-tox -e docs-furo
+# Rebuild from scratch (deletes the built HTML first)
+uv run poe docs-clean
 
 # Build with different themes
-tox -e docs-alabaster
-tox -e docs-rtd
-tox -e docs-pds
-tox -e docs-im
+uv run poe docs-alabaster
+uv run poe docs-rtd
+uv run poe docs-pds
+uv run poe docs-im
 
 # Check documentation links
-BUILDER=linkcheck tox -e docs-furo
+uv run poe docs-linkcheck
 ```
 
 ### Code Quality
 
 ```bash
-# Type checking with mypy
-tox -e mypy
+# Type checking with mypy — runs the prek hook, whose pinned dependencies are the
+# oldest supported toolchain, so this and CI check the same versions
+uv run poe mypy
 
-# Linting with ruff (auto-fix enabled)
-tox -e ruff-check
+# Run every pre-commit hook on all files (ruff check + format, taplo, yamlfmt, mypy, uv-lock)
+uv run poe lint
 
-# Formatting with ruff
-tox -e ruff-fmt
-
-# Run the pre-commit hooks on all files (via prek)
-uv run prek run --all-files
+# Run a single hook
+uv run prek run ruff-check --all-files
+uv run prek run ruff-format --all-files
 ```
 
 ## Code Style Guidelines
@@ -182,11 +205,11 @@ When submitting changes:
 2. **Tests**: Include test cases for new functionality or bug fixes
 3. **Documentation**: Update docs if behavior changes or new features are added
 4. **Changelog**: Update `docs/changelog.rst`
-5. **Code Quality**: Ensure `tox -e ruff-check` and `tox -e mypy` pass
+5. **Code Quality**: Ensure `uv run poe lint` and `uv run poe mypy` pass
 
 ## Key Files
 
-- `pyproject.toml` - Project configuration, dependencies, and tox config
+- `pyproject.toml` - Project configuration, dependencies, dependency groups and poe tasks
 - `sphinx_needs/needs.py` - Main extension setup and event registration
 - `sphinx_needs/config.py` - Configuration options via `NeedsSphinxConfig` class (centralizes all `needs_*` config values)
 - `sphinx_needs/data.py` - Data structures (`SphinxNeedsData`, `NeedsInfoType`, etc.) for storing and accessing needs
@@ -446,7 +469,7 @@ app.add_event("needs-before-sealing")          # Before needs are sealed (made i
 
 ## Debugging
 
-- Build docs with `-T` flag for full tracebacks (default in tox)
+- Build docs with `-T` flag for full tracebacks (the `docs` tasks pass it)
 - Use `sphinx_needs.debug` module for debugging utilities
 - Check `docs/_build/` for build outputs
 - Enable `needs_debug_measurement = True` to profile build performance
