@@ -15,14 +15,14 @@ Improvements
 ............
 
 - ✨ The ``cypher`` directive option is now accepted on :ref:`needpie` and :ref:`needbar`
-  for `ubCode`_ compatibility
+  for `ubCode`_ compatibility (:pr:`1818`)
 
   The two chart directives join :ref:`needlist`, :ref:`needtable` and :ref:`needflow` in
   accepting this option and then ignoring it, so that a document authored for ubCode also builds
   with Sphinx-Needs, instead of failing with an ``unknown option`` error.
   The option never reaches a node, the rendered output, or the ``needs.json`` file.
 
-  On :ref:`needpie` the no-op is visible in the chart, though, which it is not on the views:
+  On :ref:`needpie` the no-op is visible in the chart, though, which it is not on the three view directives:
   ubCode reads the query as the scope each content line is counted over, whereas Sphinx-Needs
   counts every line over the whole project, so the same chart can show different numbers in the
   two tools.
