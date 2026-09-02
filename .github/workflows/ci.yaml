@@ -93,9 +93,10 @@ jobs:
       - name: Report the resolved versions
         run: uv run --no-sync python -c "import sys, sphinx, docutils; print(sys.version, sphinx.__version__, docutils.__version__)"
       - name: Check the cell installed the sphinx it names
-        # a group whose marker excludes this python resolves to the project's own sphinx
-        # range and exits 0, so without this the cell would silently test the wrong version
-        run: uv run --no-sync python -c "import sphinx; group = '${{ matrix.sphinx-group }}'; assert sphinx.__version__.startswith(group.split('-')[1] + '.'), (group, sphinx.__version__)"
+        # against the group's own specifier: a group whose marker excludes this python
+        # contributes nothing, the environment falls back to the project's sphinx range and
+        # the sync still exits 0, so without this the cell would silently test another series
+        run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ matrix.sphinx-group }}
       - name: Run pytest
         run: uv run --no-sync pytest -v --ignore=tests/benchmarks -m "not jstest" --cov=sphinx_needs --cov-report=xml --cov-report=term-missing
       - name: Upload to Codecov
@@ -137,7 +138,8 @@ jobs:
       - name: Install the cell
         run: uv sync --frozen --no-default-groups --group test --group ${{ matrix.sphinx-group }}
       - name: Check the cell installed the sphinx it names
-        run: uv run --no-sync python -c "import sphinx; group = '${{ matrix.sphinx-group }}'; assert sphinx.__version__.startswith(group.split('-')[1] + '.'), (group, sphinx.__version__)"
+        # against the group's own specifier — see the comment in tests-core
+        run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ matrix.sphinx-group }}
       - name: Run pytest
         run: uv run --no-sync pytest -v --ignore=tests/benchmarks -m "jstest"
 
