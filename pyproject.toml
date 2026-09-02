@@ -31,7 +31,7 @@ dependencies = [
   "sphinx>=7.4,<10",
   "requests-file>=2.1,<4.0",        # external links
   "requests~=2.32",                 # external links
-  "jsonschema-rs~=0.37.1",          # schema validation
+  "jsonschema-rs>=0.37.1,<0.53.0",  # schema validation
   "sphinx-data-viewer~=0.1.5",      # needservice debug output
   "sphinxcontrib-jquery~=4.0",      # needed for datatables in sphinx>=6
   "tomli; python_version < '3.11'", # for needs_from_toml configuration

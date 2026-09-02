@@ -494,9 +494,9 @@
   '''
   Invalid field 'efforts': Invalid schema: "^IMPL_(?!SAFE)" is not a "regex"
   
-  Failed validating in schema
+  Failed validating "pattern" in schema["properties"]["efforts"]
   
-  On instance["properties"]["efforts"]:
+  On instance:
       "^IMPL_(?!SAFE)"
   '''
 # ---
@@ -514,7 +514,7 @@
   '''
   Invalid link 'links': Invalid schema: "string" was expected
   
-  Failed validating "const" in schema["properties"]["contains"]["$ref"]["properties"]["type"]
+  Failed validating "const" in schema["$defs"]["LinkItemSchemaType"]["properties"]["type"]
   
   On instance["items"]["type"]:
       "other"
@@ -534,9 +534,9 @@
   '''
   Invalid link 'links': Invalid schema: "^IMPL_(?!SAFE)" is not a "regex"
   
-  Failed validating in schema
+  Failed validating "pattern" in schema["properties"]["links"]["items"]
   
-  On instance["properties"]["links"]["items"]:
+  On instance:
       "^IMPL_(?!SAFE)"
   '''
 # ---
@@ -569,7 +569,7 @@
   Schemas entry '[0]' is not valid:
   {"properties":{"efforts":{"minimum":15,"type":"string"}},"type":"object"} is not valid under any of the schemas listed in the 'anyOf' keyword
   
-  Failed validating "anyOf" in schema["properties"]["validate"]["$ref"]["properties"]["local"]
+  Failed validating "anyOf" in schema["$defs"]["ValidateSchemaType"]["properties"]["local"]
   
   On instance["validate"]["local"]:
       {"properties":{"efforts":{"minimum":15,"type":"string"}},"type":"object"}
@@ -598,9 +598,9 @@
   schema for 'needs_schema_definitions.0.select' is not valid:
   "^IMPL_(?!SAFE)" is not a "regex"
   
-  Failed validating in schema
+  Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance["properties"]["id"]:
+  On instance:
       "^IMPL_(?!SAFE)"
   '''
 # ---
@@ -609,9 +609,9 @@
   schema for 'needs_schema_definitions.0.validate.local' is not valid:
   "^(?>test)$" is not a "regex"
   
-  Failed validating in schema
+  Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance["properties"]["id"]:
+  On instance:
       "^(?>test)$"
   '''
 # ---
@@ -620,9 +620,9 @@
   schema for 'needs_schema_definitions.0.validate.local' is not valid:
   "^IMPL_(SAFE)_\\1" is not a "regex"
   
-  Failed validating in schema
+  Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance["properties"]["id"]:
+  On instance:
       "^IMPL_(SAFE)_\\1"
   '''
 # ---
@@ -631,9 +631,9 @@
   schema for 'needs_schema_definitions.0.validate.local' is not valid:
   "^test(?#comment)$" is not a "regex"
   
-  Failed validating in schema
+  Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance["properties"]["id"]:
+  On instance:
       "^test(?#comment)$"
   '''
 # ---
@@ -642,9 +642,9 @@
   schema for 'needs_schema_definitions.0.validate.local' is not valid:
   "^(?(1)yes|no)$" is not a "regex"
   
-  Failed validating in schema
+  Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance["properties"]["id"]:
+  On instance:
       "^(?(1)yes|no)$"
   '''
 # ---
@@ -653,9 +653,9 @@
   schema for 'needs_schema_definitions.0.validate.local' is not valid:
   "^test(?+1)$" is not a "regex"
   
-  Failed validating in schema
+  Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance["properties"]["id"]:
+  On instance:
       "^test(?+1)$"
   '''
 # ---
@@ -664,9 +664,9 @@
   schema for 'needs_schema_definitions.0.validate.local' is not valid:
   "^test(?&name)$" is not a "regex"
   
-  Failed validating in schema
+  Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance["properties"]["id"]:
+  On instance:
       "^test(?&name)$"
   '''
 # ---
@@ -675,9 +675,9 @@
   schema for 'needs_schema_definitions.0.validate.local' is not valid:
   "^(test)?(?(1)yes|no)$" is not a "regex"
   
-  Failed validating in schema
+  Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance["properties"]["id"]:
+  On instance:
       "^(test)?(?(1)yes|no)$"
   '''
 # ---
@@ -686,9 +686,9 @@
   schema for 'needs_schema_definitions.0.validate.local' is not valid:
   "^IMPL_(?!SAFE)" is not a "regex"
   
-  Failed validating in schema
+  Failed validating "pattern" in schema["properties"]["id"]
   
-  On instance["properties"]["id"]:
+  On instance:
       "^IMPL_(?!SAFE)"
   '''
 # ---
@@ -715,7 +715,7 @@
   Schemas entry '[0]' is not valid:
   {"items":{},"type":"object"} is not valid under any of the schemas listed in the 'anyOf' keyword
   
-  Failed validating "anyOf" in schema["properties"]["validate"]["$ref"]["properties"]["local"]
+  Failed validating "anyOf" in schema["$defs"]["ValidateSchemaType"]["properties"]["local"]
   
   On instance["validate"]["local"]:
       {"items":{},"type":"object"}
@@ -740,7 +740,7 @@
     Severity:       violation
     Need path:      SPEC_MISSING_APPROVAL
     Schema path:    spec[1] > local > unevaluatedProperties
-    Schema message: Unevaluated properties are not allowed ('asil', 'priority' were unexpected) [sn_schema_violation.local_fail]
+    Schema message: Unevaluated properties are not allowed ('priority', 'asil' were unexpected) [sn_schema_violation.local_fail]
   ERROR: Need 'SPEC_MISSING_APPROVAL' has schema violations:
     Severity:       violation
     Need path:      SPEC_MISSING_APPROVAL
@@ -763,12 +763,12 @@
     Severity:       violation
     Need path:      SPEC
     Schema path:    spec[1] > local > unevaluatedProperties
-    Schema message: Unevaluated properties are not allowed ('asil', 'priority' were unexpected) [sn_schema_violation.local_fail]
+    Schema message: Unevaluated properties are not allowed ('priority', 'asil' were unexpected) [sn_schema_violation.local_fail]
   ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT' has schema violations:
     Severity:       violation
     Need path:      SPEC_SAFE_UNSAFE_FEAT
     Schema path:    spec[1] > local > unevaluatedProperties
-    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema_violation.local_fail]
+    Schema message: Unevaluated properties are not allowed ('priority', 'asil', 'approved', 'links' were unexpected) [sn_schema_violation.local_fail]
   ERROR: Need 'SPEC_SAFE_UNSAFE_FEAT' has schema violations:
     Severity:       violation
     Need path:      SPEC_SAFE_UNSAFE_FEAT > links
@@ -784,12 +784,12 @@
     Severity:       violation
     Need path:      SPEC_SAFE_ADD_UNSAFE_FEAT
     Schema path:    spec[1] > local > unevaluatedProperties
-    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema_violation.local_fail]
+    Schema message: Unevaluated properties are not allowed ('priority', 'asil', 'approved', 'links' were unexpected) [sn_schema_violation.local_fail]
   ERROR: Need 'SPEC_SAFE' has schema violations:
     Severity:       violation
     Need path:      SPEC_SAFE
     Schema path:    spec[1] > local > unevaluatedProperties
-    Schema message: Unevaluated properties are not allowed ('approved', 'asil', 'links', 'priority' were unexpected) [sn_schema_violation.local_fail]
+    Schema message: Unevaluated properties are not allowed ('priority', 'asil', 'approved', 'links' were unexpected) [sn_schema_violation.local_fail]
   
   '''
 # ---
