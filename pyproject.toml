@@ -56,7 +56,7 @@ theme-im = ["sphinx-immaterial>=0.11.11,<0.14.0"]
 # furo before 2025.12.19 caps sphinx at <9.0, which the `sphinx-9` group cannot resolve.
 # A floor rather than `~=`: furo versions are dates, so `~=` would admit one month only
 theme-furo = ["furo>=2025.12.19"]
-theme-pds = ["pydata-sphinx-theme~=0.15.2"]
+theme-pds = ["pydata-sphinx-theme>=0.15.2,<0.20.0"]
 theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
 
 # Development dependency sets. These are groups rather than extras: they exist only to
