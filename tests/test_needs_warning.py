@@ -125,3 +125,47 @@ def test_needs_warnings_return_status_code(test_app):
     assert "WARNING: type_match: failed" in warnings
     assert "failed needs: 1 (TC_001)" in warnings
     assert "used filter: my_custom_warning_check" in warnings
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (
+                    "index.rst",
+                    "Test\n====\n\n.. story:: A story\n   :id: US_001\n",
+                ),
+                (
+                    "conf.py",
+                    """
+extensions = ["sphinx_needs"]
+needs_types = [
+    {
+        "directive": "story",
+        "title": "User Story",
+        "prefix": "US_",
+        "color": "#BFD8D2",
+        "style": "node",
+    },
+]
+needs_warnings = {"unknown_filter": 42}
+""",
+                ),
+            ],
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_needs_warnings_unknown_filter_type(test_app):
+    """A filter that is neither a string nor a callable is reported, not raised."""
+    app = test_app
+    app.build()
+
+    warnings = strip_colors(
+        app._warning.getvalue().replace(str(app.srcdir) + os.sep, "srcdir/")
+    ).splitlines()
+
+    assert warnings == ["WARNING: Unknown needs warnings filter 42! [needs.config]"]

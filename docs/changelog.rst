@@ -110,6 +110,14 @@ Internal changes
 Bug fixes
 .........
 
+- 🐛 A :ref:`needs_warnings` filter that is neither a string nor a callable is now
+  reported, instead of ending the build (:pr:`XXXX`)
+
+  The guard for such a value called the warning logger without its ``subtype`` and
+  ``location`` arguments, so it raised ``TypeError`` at the end of the build rather than
+  logging anything. The entry is now reported as a ``needs.config`` warning and skipped,
+  and the remaining warning checks still run.
+
 - 🐛 Eight :ref:`needuml` and :ref:`needarch` inputs that were ignored, or that ended the
   build, are now reported **(changed output)** (:pr:`1800`)
 
