@@ -28,6 +28,7 @@ from sphinxcontrib.test_reports.directives.test_suite import (
     TestSuiteDirective,
 )
 from sphinxcontrib.test_reports.environment import install_styles_static_files
+from sphinxcontrib.test_reports.exceptions import InvalidConfigurationError
 from sphinxcontrib.test_reports.functions import tr_link
 
 sphinx_version = sphinx.__version__
@@ -99,7 +100,14 @@ def setup(app: Sphinx):
     * test_report
     """
 
+    # Name of the need field carrying the path of the XML *report*.
     app.add_config_value("tr_file_option", "file", "html")
+    # Names of the need fields carrying the *test source* location taken from
+    # the <testcase> file/line attributes. Defaults avoid the collision with
+    # tr_file_option above; set both to "file"/"line" (and tr_file_option to
+    # something else) to match a metamodel that spells them verbatim.
+    app.add_config_value("tr_source_file_option", "case_file", "html")
+    app.add_config_value("tr_source_line_option", "case_line", "html")
 
     log = logging.getLogger(__name__)
     log.info("Setting up sphinx-test-reports extension")
@@ -224,10 +232,38 @@ def tr_preparation(app, *args):
     app.add_directive(app.config.tr_case[0], TestCaseDirective)
 
 
+def check_field_name_collisions(config) -> None:
+    """Reject configurations where two field options name the same need field.
+
+    The report path and the test-source location are separate fields; if two
+    options resolve to one name, ``add_need`` receives the same keyword twice
+    and fails with a bare ``TypeError`` from inside a directive.
+    """
+    options = {
+        "tr_file_option": getattr(config, "tr_file_option", "file"),
+        "tr_source_file_option": getattr(config, "tr_source_file_option", "case_file"),
+        "tr_source_line_option": getattr(config, "tr_source_line_option", "case_line"),
+    }
+
+    for name, value in options.items():
+        clashing = [
+            other
+            for other, other_value in options.items()
+            if other != name and other_value == value
+        ]
+        if clashing:
+            raise InvalidConfigurationError(
+                f"{name} and {', '.join(sorted(clashing))} are all set to "
+                f"'{value}'; each must name a different need field."
+            )
+
+
 def sphinx_needs_update(app: Sphinx, config: Config) -> None:
     """
     sphinx-needs configuration
     """
+
+    check_field_name_collisions(config)
 
     needs_version = Version(sphinx_needs.__version__)
     use_schema = needs_version >= Version("6.0.0")
@@ -235,6 +271,16 @@ def sphinx_needs_update(app: Sphinx, config: Config) -> None:
     if use_schema:
         _register_field(
             app, getattr(config, "tr_file_option", "file"), schema={"type": "string"}
+        )
+        _register_field(
+            app,
+            getattr(config, "tr_source_file_option", "case_file"),
+            schema={"type": "string"},
+        )
+        _register_field(
+            app,
+            getattr(config, "tr_source_line_option", "case_line"),
+            schema={"type": "string"},
         )
         _register_field(app, "suite", schema={"type": "string"})
         _register_field(app, "case", schema={"type": "string"})
@@ -251,6 +297,8 @@ def sphinx_needs_update(app: Sphinx, config: Config) -> None:
         _register_field(app, "result", schema={"type": "string"})
     else:
         _register_field(app, getattr(config, "tr_file_option", "file"))
+        _register_field(app, getattr(config, "tr_source_file_option", "case_file"))
+        _register_field(app, getattr(config, "tr_source_line_option", "case_line"))
         _register_field(app, "suite")
         _register_field(app, "case")
         _register_field(app, "case_name")

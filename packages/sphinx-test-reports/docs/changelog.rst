@@ -13,6 +13,12 @@ Unreleased
   in attribute form are read (on ``<testcase>`` for googletest < 1.8.1 and on
   ``<testsuite>`` for suite-level properties up to 1.15.x), and ``timestamp``,
   ``value_param`` and ``type_param`` are parsed. ``<system-err>`` is captured.
+* Feature: The source location of a test case is available as Sphinx-Needs
+  fields, configurable via the new ``tr_source_file_option`` and
+  ``tr_source_line_option``.
+* Bugfix: ``tr_file_option`` is now honoured by the directives, not only by the
+  field registration. Renaming the field previously produced needs carrying an
+  unregistered field.
 
 .. _`release:1.4.0`:
 

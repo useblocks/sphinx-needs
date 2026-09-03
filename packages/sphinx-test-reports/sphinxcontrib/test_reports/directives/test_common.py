@@ -57,6 +57,34 @@ class TestCommonDirective(Directive):
 
         self.log = logging.getLogger(__name__)
 
+    def report_file_field(self):
+        """Need field carrying the XML report path (renameable via config).
+
+        Renaming it is what frees ``file``/``line`` for the *test source*
+        location, so every directive must honour the option -- not only the
+        field registration.
+        """
+        return getattr(self.app.config, "tr_file_option", "file")
+
+    def source_location_fields(self, case):
+        """Need fields for the ``<testcase>`` file/line attributes.
+
+        The parser reports ``"unknown"``/``-1`` when the attributes are absent,
+        which is the norm for pytest: its default ``junit_family = xunit2``
+        filters them out. Those sentinels become empty strings, so the fields
+        are always present and never carry a fake location.
+        """
+        file_field = getattr(self.app.config, "tr_source_file_option", "case_file")
+        line_field = getattr(self.app.config, "tr_source_line_option", "case_line")
+
+        source_file = case.get("file", "unknown")
+        source_line = case.get("line", -1)
+
+        return {
+            file_field: "" if source_file in ("unknown", None) else str(source_file),
+            line_field: "" if source_line in (-1, None) else str(source_line),
+        }
+
     def collect_extra_options(self):
         """Collect any extra options and their values that were specified in the directive"""
         tr_extra_options = getattr(self.app.config, "tr_extra_options", [])

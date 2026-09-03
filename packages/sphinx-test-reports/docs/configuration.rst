@@ -107,6 +107,60 @@ This may be needed, if a junit-xml files contains many test cases.
 Default: **5**
 
 
+.. _tr_file_option:
+
+tr_file_option
+--------------
+
+Name of the Sphinx-Needs field that carries the path of the test-result *report*
+(the file given to the directive).
+
+Renaming it frees the field names ``file`` and ``line`` for the *test source*
+location, see :ref:`tr_source_file_option`.
+
+Default: **file**
+
+.. _tr_source_file_option:
+
+tr_source_file_option
+---------------------
+.. versionadded:: 1.5.0
+
+Name of the Sphinx-Needs field that carries the source file of a test case,
+taken from the ``file`` attribute of the JUnit/googletest ``<testcase>``
+element.
+
+The default avoids a collision with :ref:`tr_file_option`. To spell the source
+location verbatim as ``file`` and ``line`` -- as some metamodels require --
+rename the report field instead:
+
+.. code-block:: python
+
+   tr_file_option = "report_file"
+   tr_source_file_option = "file"
+   tr_source_line_option = "line"
+
+Each of the three options must name a different field; otherwise the build stops
+with a configuration error.
+
+The field is empty when the XML carries no ``file`` attribute. With pytest this
+is the norm: it emits ``file``/``line`` only with ``junit_family = xunit1`` (or
+``legacy``), while its default ``xunit2`` filters those attributes out.
+
+Default: **case_file**
+
+.. _tr_source_line_option:
+
+tr_source_line_option
+---------------------
+.. versionadded:: 1.5.0
+
+Name of the Sphinx-Needs field that carries the source line of a test case,
+taken from the ``line`` attribute of the ``<testcase>`` element.
+See :ref:`tr_source_file_option`.
+
+Default: **case_line**
+
 .. _tr_extra_options:
 
 tr_extra_options

@@ -202,7 +202,6 @@ class TestCaseDirective(TestCommonDirective):
             tags=self.test_tags,
             status=self.test_status,
             collapse=self.collapse,
-            file=self.test_file_given,
             suite=suite["name"],
             case=case_full_name,
             case_name=case_name,
@@ -211,6 +210,8 @@ class TestCaseDirective(TestCommonDirective):
             result=result,
             time=time_str,
             style=style,
+            **{self.report_file_field(): self.test_file_given},
+            **self.source_location_fields(case),
             **self.extra_options,
         )
 

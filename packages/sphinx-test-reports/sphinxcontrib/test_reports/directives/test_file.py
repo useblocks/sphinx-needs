@@ -78,13 +78,13 @@ class TestFileDirective(TestCommonDirective):
             tags=self.test_tags,
             status=self.test_status,
             collapse=self.collapse,
-            file=self.test_file_given,
             suites=suites,
             cases=cases,
             passed=passed,
             skipped=skipped,
             failed=failed,
             errors=errors,
+            **{self.report_file_field(): self.test_file_given},
             **self.extra_options,
         )
 
