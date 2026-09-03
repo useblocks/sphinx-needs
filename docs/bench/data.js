@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1782910184516,
+  "lastUpdate": 1788432692583,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19152,6 +19152,42 @@ window.BENCHMARK_DATA = {
             "value": 60.656267906000004,
             "unit": "s",
             "extra": "Commit: 954021ef78692d556f989093e816b6c10d3bbea2\nBranch: master\nTime: 2026-07-01T14:47:41+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "adc2a0e2a537d31cb693ec4dfb77db62938b4c64",
+          "message": "🔧 Exempt third-party node classes from the test-suite parent check, so the benchmark runs again (#1832)\n\nCloses #1757.\n\nThe `doctree-resolved` check that #1564 added to `tests/conftest.py`\nasserts that every node in a resolved doctree has a parent.\nsphinx-design installs its tab nodes by assigning `children` directly,\nso `sd_tab_input` and `sd_tab_label` never get one, and the one\n`tab-set` in the documentation (`directives/needuml`) has failed\n`test_official_time` on every master push since 2026-07-01. That is why\nthe benchmark workflow has been red for two months while the main CI\nstayed green: the official docs are only built by the benchmark.\n\nThis takes option 2 from the issue: node classes from `sphinx_design`\nare exempt, the invariant is unchanged for every other node, and the\nassertion now names the document and node class when it fires. One file,\neleven lines.\n\nVerified locally with the workflow's own commands (it only runs on\npushes to master, so the first real run is the merge):\n\n- before: `test_official_time` fails with `assert None is not None` on\n`<sd_tab_input>`, as in the issue;\n- after: `pytest -k _time tests/benchmarks` → 2 passed; `pytest -k\n_memory tests/benchmarks` → 1 passed; a smoke subset of the normal suite\n(29 tests, which the check also guards) passes; all hooks green.\n\nNot done here: the upstream fix in sphinx-design (option 1), which would\nalso help sphinxcontrib-spelling users; the issue notes no report exists\nthere yet.",
+          "timestamp": "2026-09-03T12:50:10+02:00",
+          "tree_id": "0358c7a4f1a067b738aa8a932a0b90c29a5f0876",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/adc2a0e2a537d31cb693ec4dfb77db62938b4c64"
+        },
+        "date": 1788432684187,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15597303699999543,
+            "unit": "s",
+            "extra": "Commit: adc2a0e2a537d31cb693ec4dfb77db62938b4c64\nBranch: master\nTime: 2026-09-03T12:50:10+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.989000608999994,
+            "unit": "s",
+            "extra": "Commit: adc2a0e2a537d31cb693ec4dfb77db62938b4c64\nBranch: master\nTime: 2026-09-03T12:50:10+02:00"
           }
         ]
       }
