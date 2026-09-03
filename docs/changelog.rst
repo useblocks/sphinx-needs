@@ -14,6 +14,30 @@ Unreleased
 Improvements
 ............
 
+- ✨ :ref:`needpie` and :ref:`needbar` now accept the ``:filter:``, ``:status:``,
+  ``:tags:`` and ``:types:`` options, as the scope a chart is counted over (:pr:`TBD`)
+
+  The four options were rejected on both chart directives with an ``unknown option``
+  error. They now select the needs and parts a chart counts over, once for the whole
+  chart: every content line or grid cell is counted as its own result restricted to
+  that scope, a static value such as ``10`` is left alone, and a chart that carries
+  none of the four counts over the whole project exactly as it did before.
+
+  A scope holds what the same four options select on a view directive such as
+  :ref:`needlist`, so a chart and a list written with the same options cover the same
+  needs. On :ref:`needpie` a ``:filter-func:`` is handed the needs of the scope, so a
+  scope restricts what such a function counts from, not what it returns.
+
+  Neither directive gains an empty state it did not have: a pie of only filter lines
+  whose scope selects nothing shows its ``:filter_warning:`` text, exactly as it does
+  for filters that match nothing, while a bar chart, which has no such text, draws all
+  zeros.
+
+  This is also the Sphinx-Needs half of a chart authored for `ubCode`_: the ``cypher``
+  query ubCode reads as a chart's scope is ignored by a Sphinx build, so writing the
+  same scope with these options beside the query makes both tools count over the same
+  needs. See :ref:`needpie_scope` and :ref:`needbar_scope`.
+
 - 👌 :ref:`Schema validation <schema_validation>` errors now name the failing keyword, and
   report ``$ref`` targets at their definition **(changed output)** (:pr:`1819`)
 
@@ -55,11 +79,9 @@ Improvements
 
   On :ref:`needpie` the no-op is visible in the chart, though, which it is not on the three view directives:
   ubCode reads the query as the scope each content line is counted over, whereas Sphinx-Needs
-  counts every line over the whole project, so the same chart can show different numbers in the
-  two tools.
+  ignores it, so the same chart can show different numbers in the two tools.
 
-  On :ref:`needbar` the option is accepted ahead of any ubCode support for it — ubCode does not
-  read it there either, so today neither tool acts on it, and it is accepted only so that a
+  On :ref:`needbar` the option is accepted ahead of any ubCode support for it, so that a
   document already carrying it builds in both.
   See :ref:`ubCode compatibility <ubcode_compat_options>` for the exact per-directive list.
 
