@@ -24,9 +24,12 @@ Improvements
   none of the four counts over the whole project exactly as it did before.
 
   A scope holds what the same four options select on a view directive such as
-  :ref:`needlist`, so a chart and a list written with the same options cover the same
-  needs. On :ref:`needpie` a ``:filter-func:`` is handed the needs of the scope, so a
-  scope restricts what such a function counts from, not what it returns.
+  :ref:`needlist`, so a chart and a list written with the same options select the same
+  needs. On :ref:`needpie` a ``:filter-func:`` is handed the needs of the scope, as the
+  same view an unscoped chart hands it, so a scope restricts what such a function counts
+  from, not what it returns. The view gains one public method for that,
+  ``NeedsAndPartsListView.filter_id_complete``, which selects exactly the given needs and
+  parts by ``id_complete``.
 
   Neither directive gains an empty state it did not have: a pie of only filter lines
   whose scope selects nothing shows its ``:filter_warning:`` text, exactly as it does

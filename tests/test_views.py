@@ -140,3 +140,23 @@ def test_filter_ids_is_not_id_complete():
         "TEST_1.P1",
         "TEST_1.P2",
     ]
+
+
+def test_filter_id_complete_keeps_the_order_of_the_view():
+    """The result iterates in the view's own order, not in the order of ``values``.
+
+    A ``:filter-func:`` used to be handed a plain list built by iterating the
+    unscoped view, so its needs arrived in document order; the view it is handed
+    now must iterate the same way, or a function that relies on that order (the
+    first need, a running total) changes its answer when a scope is added.
+    """
+    view = _parts_view()
+    selected = view.filter_id_complete(["TEST_1.P2", "REQ_1", "TEST_1"])
+    assert [item["id_complete"] for item in selected] == [
+        "REQ_1",
+        "TEST_1",
+        "TEST_1.P2",
+    ]
+    assert [item["id_complete"] for item in selected] == [
+        item["id_complete"] for item in view if item["id_complete"] != "TEST_1.P1"
+    ]
