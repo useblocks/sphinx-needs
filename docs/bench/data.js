@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788434711549,
+  "lastUpdate": 1788435754798,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19224,6 +19224,42 @@ window.BENCHMARK_DATA = {
             "value": 49.57806363899999,
             "unit": "s",
             "extra": "Commit: 356d5dbb904c134e3303ced69c7a125fe0e4f2e6\nBranch: master\nTime: 2026-09-03T13:23:54+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6686298ed3de020da4a0c8833aeeea356018704b",
+          "message": "🚀 Release v8.5.0 (#1833)\n\nMinor release: two chart features (#1831, #1818), a changed-output\nimprovement to schema validation messages (#1819), three bug-fix sets\nthat turn build-ending tracebacks into warnings (#1800, #1795, #1830),\nand the toolchain moves (#1823, #1830). Nothing breaking, so 8.5.0.\n\nSame three files as v8.4.0: `__version__`, the docker workflow's\n`NEEDS_VERSION`, and the changelog header (label, heading, release date,\ncompare link, and a summary paragraph in the style of the previous\nreleases).",
+          "timestamp": "2026-09-03T13:41:24+02:00",
+          "tree_id": "6c730375103a8ebbd3eecf2085e14069d7ce3f8e",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/6686298ed3de020da4a0c8833aeeea356018704b"
+        },
+        "date": 1788435745812,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1070994970000001,
+            "unit": "s",
+            "extra": "Commit: 6686298ed3de020da4a0c8833aeeea356018704b\nBranch: master\nTime: 2026-09-03T13:41:24+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 43.330083323000004,
+            "unit": "s",
+            "extra": "Commit: 6686298ed3de020da4a0c8833aeeea356018704b\nBranch: master\nTime: 2026-09-03T13:41:24+02:00"
           }
         ]
       }
