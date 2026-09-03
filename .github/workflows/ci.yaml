@@ -16,6 +16,32 @@ jobs:
       - run: uv run --frozen prek run --all-files --show-diff-on-failure
         env:
           PREK_COLOR: always
+      - name: Check the type gate still sees the package
+        # the gate must see the package: a stale `[tool.ty.src] include` makes ty check zero
+        # files and exit 0, because ty intersects the CLI path with the include rather than
+        # overriding it -- so the type check stays green with the whole package unchecked.
+        # A non-zero exit is not enough on its own: `typecheck-needs` also exits non-zero for
+        # reasons that have nothing to do with the probe (an unreadable `[tool.ty]` value, a
+        # `--python` that names no environment), and reading those as success would revive
+        # exactly the silent green this step exists to kill -- hence the `case`, which demands
+        # that the failure NAME the probe. Running after the prek step (whose `ty` hook is the
+        # same command) is belt and braces on top of that, not the guarantee: a healthy gate
+        # has already had to pass on this command before the probe is planted.
+        run: |
+          probe=packages/sphinx-needs/src/sphinx_needs/_ty_gate_probe.py
+          trap 'rm -f "$probe"' EXIT
+          echo 'x: int = "not an int"' > "$probe"
+          if out=$(uv run --frozen --no-sync poe typecheck-needs 2>&1); then
+            printf '%s\n' "$out"
+            echo "::error::the type check passed with a deliberate type error in the package"
+            exit 1
+          fi
+          printf '%s\n' "$out"
+          case "$out" in
+            *_ty_gate_probe*) echo "the type gate is looking at the package" ;;
+            *) echo "::error::the type check failed, but not on the probe -- the gate is broken"
+               exit 1 ;;
+          esac
       - name: Check the sphinx groups are declared conflicting
         # if this sync ever succeeds, `[tool.uv] conflicts` has been dropped and the lock
         # holds one sphinx again, so every matrix cell below would test the same version
@@ -27,7 +53,8 @@ jobs:
             exit 1
           fi
       - name: Check the default environment resolves to the newest sphinx
-        # the `sphinx-7` and `typing` groups both cap sphinx at the 7.4 series; both are in
+        # the `sphinx-7` and `typing` groups both cap sphinx at the 7.4 series;
+        # both are in
         # the conflict set so that a plain `uv sync` is not capped by either
         run: uv run --frozen python -c "import sphinx; assert sphinx.version_info[0] >= 9, sphinx.__version__"
       - name: Check the typing floor is the floor it claims to be
@@ -105,7 +132,7 @@ jobs:
         # the sync still exits 0, so without this the cell would silently test another series
         run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ matrix.sphinx-group }}
       - name: Run pytest
-        run: uv run --no-sync pytest -v --ignore=tests/benchmarks -m "not jstest" --cov=sphinx_needs --cov-report=xml --cov-report=term-missing
+        run: uv run --no-sync pytest -v packages/sphinx-needs/tests --ignore=packages/sphinx-needs/tests/benchmarks -m "not jstest" --cov=sphinx_needs --cov-report=xml --cov-report=term-missing
       - name: Upload to Codecov
         # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it
         if: github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14' && github.actor != 'dependabot[bot]'
@@ -148,7 +175,7 @@ jobs:
         # against the group's own specifier — see the comment in tests-core
         run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ matrix.sphinx-group }}
       - name: Run pytest
-        run: uv run --no-sync pytest -v --ignore=tests/benchmarks -m "jstest"
+        run: uv run --no-sync pytest -v packages/sphinx-needs/tests --ignore=packages/sphinx-needs/tests/benchmarks -m "jstest"
 
   tests-no-mpl:
     name: Test matplotlib uninstalled
@@ -163,7 +190,10 @@ jobs:
       - name: Install Dependencies
         run: |
           uv sync --frozen --no-default-groups --group test --extra docs
-          uv pip uninstall matplotlib numpy
+          # `uv pip` is not a project interface: it ignores UV_PROJECT_ENVIRONMENT and
+          # targets whatever virtualenv is active, so the environment is named here.
+          # There is none active on a runner, but there usually is one locally.
+          uv pip uninstall --python .venv/bin/python matplotlib numpy
       - name: Check matplotlib really is gone
         # every command below has to be `uv run --no-sync`: a bare `uv run` would re-sync
         # the group that matplotlib is in and put it straight back
@@ -173,11 +203,11 @@ jobs:
             exit 1
           fi
       - name: Run pytest
-        run: uv run --no-sync pytest -v tests/no_mpl_tests.py
+        run: uv run --no-sync pytest -v packages/sphinx-needs/tests/no_mpl_tests.py
       - name: Run HTML build
         # the docs should build without matplotlib (just issuing warnings)
         run: uv run --no-sync sphinx-build -b html . _build
-        working-directory: docs
+        working-directory: packages/sphinx-needs/docs
 
   smoke-needs:
     name: Smoke test the built package

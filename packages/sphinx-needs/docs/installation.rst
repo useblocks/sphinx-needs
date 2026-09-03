@@ -78,7 +78,7 @@ The default values are as follows (see also :ref:`needs_css`):
 .. dropdown:: Default CSS Variables
     :icon: paintbrush
 
-    .. literalinclude:: ../sphinx_needs/css/themes/modern.css
+    .. literalinclude:: ../src/sphinx_needs/css/themes/modern.css
         :language: css
 
 These variables can be overridden by adding your own CSS file to the Sphinx project

@@ -6,4 +6,4 @@
 # `text=auto` above would otherwise hand Windows a CRLF checkout. This later, more
 # specific pattern wins over it. The harness additionally normalises line endings before
 # hashing, so the contract holds even where this pin is absent.
-tests/conformance/needflow/** text eol=lf
+packages/sphinx-needs/tests/conformance/needflow/** text eol=lf

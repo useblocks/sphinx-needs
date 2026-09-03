@@ -126,7 +126,7 @@ elif DOCS_THEME == "furo":
         "top_of_page_buttons": ["view", "edit"],
         "source_repository": "https://github.com/useblocks/sphinx-needs",
         "source_branch": "master",
-        "source_directory": "docs/",
+        "source_directory": "packages/sphinx-needs/docs/",
         "light_logo": "sphinx-needs-logo-long-light.svg",
         "dark_logo": "sphinx-needs-logo-long-dark.svg",
     }
@@ -159,7 +159,7 @@ elif DOCS_THEME == "pydata_sphinx_theme":
         "github_user": "useblocks",
         "github_repo": "sphinx-needs",
         "github_version": "master",
-        "doc_path": "docs",
+        "doc_path": "packages/sphinx-needs/docs",
     }
 elif DOCS_THEME == "sphinx_rtd_theme":
     # https://sphinx-rtd-theme.readthedocs.io

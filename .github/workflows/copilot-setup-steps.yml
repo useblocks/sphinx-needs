@@ -34,6 +34,9 @@ jobs:
           python-version: "3.12"
 
       - name: Install dev tools
+        # no group is named on purpose: the root's default `dev` group includes the root's
+        # `test` group, and the root depends on every member, so a bare sync is already an
+        # environment the agent can run the suite in
         run: uv sync --frozen
 
       - name: Install pre-commit hooks

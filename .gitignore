@@ -19,8 +19,8 @@ _build
 .coverage
 coverage.xml
 .doctrees
-docs/github_images/
-docs/_static/tutorial_needs.json
+packages/sphinx-needs/docs/github_images/
+packages/sphinx-needs/docs/_static/tutorial_needs.json
 .eggs/
 
 
@@ -29,7 +29,7 @@ docs/_static/tutorial_needs.json
 .dockerignore
 
 .benchmarks/
-tests/cypress/
+packages/sphinx-needs/tests/cypress/
 cypress/
 
 output.json

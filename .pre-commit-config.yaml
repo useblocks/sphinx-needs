@@ -18,19 +18,20 @@ repos:
       - id: yamlfmt
         # the conformance corpus is shared byte-for-byte with ubCode and checksummed in
         # its own manifest, so a formatter local to this repository must not rewrite it
-        exclude: ^tests/conformance/
+        exclude: ^packages/sphinx-needs/tests/conformance/
 
   - repo: local
     hooks:
       - id: ty
         name: ty
         language: system
-        # runs the poe task, so this, `uv run poe typecheck` and CI check the same locked
+        # runs the poe task, so this, `uv run poe typecheck-needs` and CI check the same locked
         # environment (.venvs/typing): the `typing` dependency group, which pins the oldest
         # supported sphinx and docutils and ty itself
-        entry: uv run --frozen --no-sync poe typecheck
+        entry: uv run --frozen --no-sync poe typecheck-needs
         pass_filenames: false
-        files: ^(sphinx_needs/|pyproject\.toml$|uv\.lock$)
+        # the ROOT pyproject.toml carries [tool.ty], so it triggers the hook too
+        files: ^(packages/sphinx-needs/(src/sphinx_needs/|pyproject\.toml$)|pyproject\.toml$|uv\.lock$)
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.12.9
@@ -38,14 +39,18 @@ repos:
       # keeps the committed uv.lock in step with pyproject.toml;
       # it only runs when pyproject.toml, uv.lock or uv.toml changes
       - id: uv-lock
+        # upstream's pattern is anchored at the repository root, which in a workspace
+        # means a dependency change in a member's pyproject.toml never triggers the
+        # hook and the lock silently goes stale. Match the file name at any depth.
+        files: (^|/)(uv\.lock|pyproject\.toml|uv\.toml)$
 
   - repo: local
     hooks:
       - id: check-readme
         name: check-readme
-        files: README.rst
+        files: ^packages/sphinx-needs/README\.rst$
         language: python
-        entry: rst2html.py README.rst --halt=warning
+        entry: rst2html.py packages/sphinx-needs/README.rst --halt=warning
         pass_filenames: false
         additional_dependencies:
           - docutils==0.20.1

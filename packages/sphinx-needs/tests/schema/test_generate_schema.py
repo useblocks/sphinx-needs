@@ -17,6 +17,7 @@ from typing import (
 import pytest
 from syrupy.extensions.json import JSONSnapshotExtension
 
+import sphinx_needs
 from sphinx_needs.schema.config import (
     FieldBooleanSchemaType,
     FieldIntegerSchemaType,
@@ -90,11 +91,10 @@ def typed_dict_to_json_schema(td: type[TypedDict]) -> dict[str, Any]:
 class SchemaJSONExtension(JSONSnapshotExtension):
     @classmethod
     def dirname(cls, *, test_location) -> str:
-        return str(
-            Path(__file__).parent.parent.parent.joinpath(
-                "sphinx_needs", "schema", "jsons"
-            )
-        )
+        # the shipped JSON schemas are the snapshots. Resolve them through the package so
+        # the repository layout does not matter; under the editable install this is the
+        # source tree, so `--snapshot-update` rewrites the tracked files.
+        return str(Path(sphinx_needs.__file__).parent.joinpath("schema", "jsons"))
 
     @classmethod
     def get_snapshot_name(cls, *, test_location, index: str) -> str:

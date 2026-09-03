@@ -20,12 +20,12 @@ This list can be easily customized via configuration (for instance to support bu
 
 A default requirement need looks like:
 
-.. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/need_1.png
+.. image:: https://raw.githubusercontent.com/useblocks/sphinx-needs/master/packages/sphinx-needs/docs/_images/need_1.png
    :align: center
 
 Layout and style of needs can be highly customized, so that a need can also look like:
 
-.. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/need_2.png
+.. image:: https://raw.githubusercontent.com/useblocks/sphinx-needs/master/packages/sphinx-needs/docs/_images/need_2.png
    :align: center
 
 Take a look into our tutorial for more
@@ -40,9 +40,9 @@ For filtering and analyzing needs, ``Sphinx-Needs`` provides different, powerful
    - * `needtable <https://sphinxcontrib-needs.readthedocs.io/en/latest/directives/needtable.html>`_
      * `needflow <https://sphinxcontrib-needs.readthedocs.io/en/latest/directives/needflow.html>`_
      * `needpie <https://sphinxcontrib-needs.readthedocs.io/en/latest/directives/needpie.html>`_
-   - * .. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/needtable_1.png
-     * .. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/needflow_1.png
-     * .. image:: https://raw.githubusercontent.com/useblocks/sphinxcontrib-needs/master/docs/_images/needpie_1.png
+   - * .. image:: https://raw.githubusercontent.com/useblocks/sphinx-needs/master/packages/sphinx-needs/docs/_images/needtable_1.png
+     * .. image:: https://raw.githubusercontent.com/useblocks/sphinx-needs/master/packages/sphinx-needs/docs/_images/needflow_1.png
+     * .. image:: https://raw.githubusercontent.com/useblocks/sphinx-needs/master/packages/sphinx-needs/docs/_images/needpie_1.png
 
 Installation
 ============

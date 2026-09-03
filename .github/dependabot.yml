@@ -40,6 +40,18 @@ updates:
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
+      # dependabot-core#14004: with a uv workspace, dependabot treats the members
+      # themselves as PyPI dependencies. This member's name IS a real PyPI project,
+      # so without this it would propose "updating" the local package to its own
+      # last release. It now covers two sites: the member itself, and the root's
+      # `dependencies = ["sphinx-needs"]`, which is how a bare `uv sync` installs it.
+      # Note this is a blanket ignore: it silences EVERY update of anything
+      # named `sphinx-needs` in the uv ecosystem, so a future member that legitimately
+      # depends on the published distribution would stop being bumped. Revisit then.
+      - dependency-name: sphinx-needs
+      # the workspace root itself. Its name is not on PyPI at all, so there is nothing to
+      # bump to -- this pre-empts the same #14004 noise rather than fixing a live proposal
+      - dependency-name: sphinx-needs-workspace
     groups:
       # a dependency joins the first group whose pattern matches, so `ty` is listed first:
       # its 0.0.x releases are patch bumps that can change diagnostics, and each one should

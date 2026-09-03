@@ -6,6 +6,10 @@ exits 0 — the cell would then test a sphinx it never asked for, silently and g
 Comparing the installed version against the group's own specifier catches that.
 
 Usage: python .github/scripts/check_sphinx_cell.py sphinx-9
+
+The matrix groups belong to the workspace root, so this reads the root `pyproject.toml`,
+which is the working directory of every job that runs it. A group the root does not declare
+exits 2 rather than passing quietly.
 """
 
 import sys

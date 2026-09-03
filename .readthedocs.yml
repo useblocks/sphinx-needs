@@ -1,14 +1,14 @@
 version: 2
 
 sphinx:
-  configuration: docs/conf.py
+  configuration: packages/sphinx-needs/docs/conf.py
   builder: html
   fail_on_warning: true
 
 python:
   install:
     - method: pip
-      path: .
+      path: packages/sphinx-needs
       extra_requirements:
         - docs
         - theme-furo
@@ -27,4 +27,4 @@ build:
     pre_build:
       # ideally we would just set the DOCS_THEME environment variable
       # but I couldn't see an easy way to do that for the build job
-      - 'echo "furo" > docs/DOCS_THEME'
+      - 'echo "furo" > packages/sphinx-needs/docs/DOCS_THEME'
