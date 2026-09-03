@@ -103,7 +103,7 @@ typing = [
   # the lock like every other environment, plus the stubs ty needs for docutils and requests
   "sphinx~=7.4",
   "docutils~=0.20.0",
-  "types-docutils~=0.20.0",
+  "types-docutils>=0.20,<0.24",
   "types-requests",
   "ty~=0.0.77",
 ]

@@ -2469,8 +2469,8 @@ name = "sphinx"
 version = "8.2.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version == '3.11.*'",
     "python_full_version >= '3.12'",
+    "python_full_version == '3.11.*'",
 ]
 dependencies = [
     { name = "alabaster", marker = "(python_full_version == '3.11.*' and extra == 'group-12-sphinx-needs-sphinx-8') or (python_full_version == '3.11.*' and extra == 'group-12-sphinx-needs-sphinx-9') or (python_full_version >= '3.12' and extra == 'group-12-sphinx-needs-sphinx-8') or (python_full_version < '3.11' and extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-8') or (python_full_version < '3.11' and extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-9') or (python_full_version < '3.11' and extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-typing') or (python_full_version < '3.11' and extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-sphinx-9') or (python_full_version < '3.11' and extra == 'group-12-sphinx-needs-sphinx-8' and extra == 'group-12-sphinx-needs-typing') or (python_full_version < '3.11' and extra == 'group-12-sphinx-needs-sphinx-9' and extra == 'group-12-sphinx-needs-typing') or (python_full_version == '3.11.*' and extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-typing') or (python_full_version == '3.11.*' and extra != 'group-12-sphinx-needs-sphinx-7' and extra != 'group-12-sphinx-needs-typing') or (python_full_version >= '3.12' and extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-sphinx-9') or (python_full_version >= '3.12' and extra == 'group-12-sphinx-needs-sphinx-7' and extra == 'group-12-sphinx-needs-typing') or (python_full_version >= '3.12' and extra == 'group-12-sphinx-needs-sphinx-9' and extra == 'group-12-sphinx-needs-typing')" },
@@ -2847,7 +2847,7 @@ typing = [
     { name = "docutils", specifier = "~=0.20.0" },
     { name = "sphinx", specifier = "~=7.4" },
     { name = "ty", specifier = "~=0.0.77" },
-    { name = "types-docutils", specifier = "~=0.20.0" },
+    { name = "types-docutils", specifier = ">=0.20,<0.24" },
     { name = "types-requests" },
 ]
 
@@ -3092,11 +3092,11 @@ wheels = [
 
 [[package]]
 name = "types-docutils"
-version = "0.20.0.20240406"
+version = "0.23.0.20260827"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/03/2d/1eaa21bdb976db924ce458323bf2d21d82b4c95599080f61c181961764d1/types-docutils-0.20.0.20240406.tar.gz", hash = "sha256:e8ec4a5a125d06d8632bbaac8a11fbea18a1edfa94df9c5129dc45980915b84b", size = 19423, upload-time = "2024-04-06T02:13:17.51Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3c/f8/55b739a017fe34c1790a1e8cf1a63c8cf50d7e64777e9b2f12032a73515d/types_docutils-0.23.0.20260827.tar.gz", hash = "sha256:757ca7313a337f83b761d917fe71e60d723376898338105aa78505b5214f4c5c", size = 58209, upload-time = "2026-08-27T12:06:52.325Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/53/fe423688467176bd4a08b24df8f5c4ae24b2f8e8f81867a34ee80c40e3fc/types_docutils-0.20.0.20240406-py3-none-any.whl", hash = "sha256:f1966b05087c0e1227c399281ecc796cb67d0afc23398d7c5c95b3355de14113", size = 26976, upload-time = "2024-04-06T02:13:15.173Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/ab/6939f1ce2b1e02e2f19e7ce85728570a27740224031fb13a9dd044731943/types_docutils-0.23.0.20260827-py3-none-any.whl", hash = "sha256:4db1342b6defed4de29cb2d65ab295e3ecc13808f2718ee2980ed18cfafef730", size = 92112, upload-time = "2026-08-27T12:06:51.31Z" },
 ]
 
 [[package]]
