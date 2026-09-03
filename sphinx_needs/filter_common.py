@@ -335,15 +335,18 @@ def filter_scope_ids(
     if types:
         filtered_needs = filtered_needs.filter_types(types, or_type_names=True)
 
-    members: Iterable[NeedItem | NeedPartItem] = filtered_needs.to_list_with_parts()
-    if filter:
-        members = filter_needs_parts(
-            filtered_needs.to_list_with_parts(),
+    parts = filtered_needs.to_list_with_parts()
+    members: Iterable[NeedItem | NeedPartItem] = (
+        filter_needs_parts(
+            parts,
             config,
             filter,
             location=location,
             origin_docname=origin_docname,
         )
+        if filter
+        else parts
+    )
 
     return frozenset(need["id_complete"] for need in members)
 

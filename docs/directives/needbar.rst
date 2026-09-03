@@ -518,7 +518,8 @@ if the scope holds that need as well.
 A static value such as ``10`` counts no needs at all and is never affected.
 
 A scope restricts what a cell counts, not what its filter can see:
-the ``needs`` variable of a content cell still holds every need of the project.
+the ``needs`` variable inside a content cell is exactly what it would be on the
+same chart without a scope.
 
 If the scope selects nothing, every filter cell counts zero, and a bar chart of
 only zeros is drawn as an empty chart -- ``needbar`` has no ``:filter_warning:``
@@ -540,6 +541,6 @@ text in a cell would need a separator of its own.
       :xlabels: requirement, specification
       :ylabels: open
       :status: open
-      :cypher: MATCH (n:Need) WHERE n.status = 'open' RETURN n
+      :cypher: n.status = 'open'
 
       type == 'req', type == 'spec'

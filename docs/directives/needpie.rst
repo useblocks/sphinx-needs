@@ -250,7 +250,8 @@ if the scope holds that need as well.
 A static value such as ``10`` counts no needs at all and is never affected.
 
 A scope restricts what a line counts, not what its filter can see:
-the ``needs`` variable of a content line still holds every need of the project.
+the ``needs`` variable inside a content line is exactly what it would be on the
+same chart without a scope.
 
 A ``:filter-func:`` receives only the needs in the scope.
 Its own numbers are whatever it returns, so the scope restricts what such a
@@ -275,7 +276,7 @@ This is what the same four options do on :ref:`needlist`, so a scope and a
    .. needpie:: Open requirements
       :labels: requirement, other
       :status: open
-      :cypher: MATCH (n:Need) WHERE n.status = 'open' RETURN n
+      :cypher: n.status = 'open'
 
       type == 'req'
       type != 'req'
