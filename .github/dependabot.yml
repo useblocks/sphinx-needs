@@ -30,6 +30,17 @@ updates:
         update-types:
           - version-update:semver-major
           - version-update:semver-minor
+      # the `typing` dependency group pins the oldest supported docutils series and the stubs
+      # that describe it, so the type checker runs against the floor; a newer series would
+      # type-check against an API the floor does not have. Both move by hand, with the floor.
+      - dependency-name: docutils
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+      - dependency-name: types-docutils
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
     groups:
       # a dependency joins the first group whose pattern matches, so `ty` is listed first:
       # its 0.0.x releases are patch bumps that can change diagnostics, and each one should
