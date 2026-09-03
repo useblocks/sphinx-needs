@@ -29,16 +29,19 @@ a simple enough expression, such as the bare field name ``tags``,
 is answered by the query fast path, which coerces the result with ``bool()``
 and counts the matching needs instead of warning.
 
-``needbar`` takes no filter options at all:
-the data comes from the content, so ``:filter:``, ``:filter-func:`` and
-``:filter_warning:`` are not available on it,
-and a bar chart with only zeros is drawn as an empty chart.
+``needbar`` used to take no filter options at all, and this page said so.
+The four :ref:`filter options <filter_options>` ``:filter:``, ``:status:``,
+``:tags:`` and ``:types:`` are now accepted, as the chart's scope -- the needs
+its content cells are counted over -- see :ref:`needbar_scope`.
+``:filter-func:`` and ``:filter_warning:`` are still not available on it:
+the data comes from the content, and a bar chart with only zeros is drawn as an
+empty chart rather than replaced by a text.
 
-The ``cypher`` option is accepted and then ignored,
-ahead of any ubCode support for it:
-ubCode does not read it on ``needbar`` either,
-so today neither tool acts on it and no chart changes;
-see :ref:`ubCode compatibility <ubcode_compat_options>`.
+The ``cypher`` option is accepted and then ignored.
+A chart that is to count the same needs in ubCode and in a Sphinx build
+therefore states its scope twice: once as the query ubCode reads, and once as
+the four options Sphinx-Needs reads.
+See :ref:`ubCode compatibility <ubcode_compat_options>`.
 
 .. note::
 
@@ -496,3 +499,53 @@ Useful styles are for example:
       Y,10,15,10
       X,15,10,20
       W,20,15,10
+
+.. _needbar_scope:
+
+common filters
+~~~~~~~~~~~~~~
+
+* :ref:`option_status`
+* :ref:`option_tags`
+* :ref:`option_types`
+* :ref:`option_filter`
+
+On a chart these four options do not select what is shown -- the content decides
+that -- they select the needs the chart counts over: its scope.
+The scope is resolved once for the whole chart, and every content cell is then
+counted as its own result restricted to the scope, so a cell counts a need only
+if the scope holds that need as well.
+A static value such as ``10`` counts no needs at all and is never affected.
+
+A scope restricts what a cell counts, not what its filter can see:
+the ``needs`` variable inside a content cell is exactly what it would be on the
+same chart without a scope.
+
+If the scope selects nothing, every filter cell counts zero, and a bar chart of
+only zeros is drawn as an empty chart -- ``needbar`` has no ``:filter_warning:``
+and no text to put in place of the chart, unlike :ref:`needpie <needpie_scope>`.
+
+Parts follow their need: ``:status:``, ``:tags:`` and ``:types:`` select needs,
+and the parts of a selected need are in the scope with it, while ``:filter:``
+is evaluated over needs and parts alike.
+This is what the same four options do on :ref:`needlist`, so a scope and a
+``needlist`` written with the same options select the same needs.
+
+Writing the scope twice, as the four options and as a ``:cypher:`` query, is the
+portable form: ubCode gives the query precedence over the options, Sphinx-Needs
+ignores the query and applies the options, so the two engines agree for as long
+as the two spellings do.
+
+An option value is never split by the ``:separator:``, which a content cell is,
+so ``:filter: status in ['open', 'closed']`` works as written while the same
+text in a cell would need a separator of its own.
+
+.. syntax-example::
+
+   .. needbar:: Open requirements and specifications
+      :xlabels: requirement, specification
+      :ylabels: open
+      :status: open
+      :cypher: n.status = 'open'
+
+      type == 'req', type == 'spec'

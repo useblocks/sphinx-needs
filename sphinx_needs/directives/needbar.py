@@ -10,7 +10,11 @@ from sphinx.application import Sphinx
 
 from sphinx_needs.config import NeedsSphinxConfig
 from sphinx_needs.data import NeedsBarType, SphinxNeedsData
-from sphinx_needs.filter_common import FilterBase, filter_needs_parts
+from sphinx_needs.filter_common import (
+    FilterBase,
+    filter_needs_parts,
+    filter_scope_ids,
+)
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
     add_doc,
@@ -57,9 +61,17 @@ class NeedbarDirective(FilterBase):
         "sum_rotation": directives.unchanged_required,
         "transpose": directives.flag,
         "horizontal": directives.flag,
+        "status": FilterBase.base_option_spec["status"],
+        "tags": FilterBase.base_option_spec["tags"],
+        "types": FilterBase.base_option_spec["types"],
+        "filter": FilterBase.base_option_spec["filter"],
         # ubCode compatibility: accepted and ignored by Sphinx-Needs.
         "cypher": directives.unchanged,
     }
+
+    # This replaces FilterBase's option_spec rather than extending it, since a chart
+    # takes only some of the filter options: the four selection options are its scope,
+    # and `filter-func` / `filter_warning` / `sort_by` have nothing to act on here.
 
     # Algorithm:
     # 1. define constants
@@ -129,10 +141,16 @@ class NeedbarDirective(FilterBase):
         transpose = "transpose" in self.options
         horizontal = "horizontal" in self.options
 
+        filter_attributes = self.collect_filter_attributes()
+
         data_attributes: NeedsBarType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
+            "status": filter_attributes["status"],
+            "tags": filter_attributes["tags"],
+            "types": filter_attributes["types"],
+            "filter": filter_attributes["filter"],
             "error_id": error_id,
             "title": title,
             "content": content,
@@ -299,6 +317,19 @@ def process_needbar(
         # adds parts to need_list
         need_list = needs_data.get_needs_view().to_list_with_parts()
 
+        # the selection options are the scope: the needs each content cell is
+        # counted over, resolved once for the whole chart (None if unscoped)
+        scope_ids = filter_scope_ids(
+            needs_data.get_needs_view(),
+            needs_config,
+            status=current_needbar["status"],
+            tags=current_needbar["tags"],
+            types=current_needbar["types"],
+            filter=current_needbar["filter"],
+            location=node,
+            origin_docname=current_needbar["docname"],
+        )
+
         for line in local_data:
             line_number = []
             for element in line:
@@ -306,16 +337,18 @@ def process_needbar(
                 if element.isdigit():
                     line_number.append(float(element))
                 else:
-                    result = len(
-                        filter_needs_parts(
-                            need_list,
-                            needs_config,
-                            element,
-                            location=node,
-                            origin_docname=current_needbar["docname"],
-                        )
+                    found = filter_needs_parts(
+                        need_list,
+                        needs_config,
+                        element,
+                        location=node,
+                        origin_docname=current_needbar["docname"],
                     )
-                    line_number.append(float(result))
+                    if scope_ids is not None:
+                        found = [
+                            need for need in found if need["id_complete"] in scope_ids
+                        ]
+                    line_number.append(float(len(found)))
             local_data_number.append(line_number)
 
         # 6. calculate index according to configuration and content size

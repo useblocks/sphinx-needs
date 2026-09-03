@@ -10,17 +10,17 @@ TEST DOCUMENT UBCODE COMPAT
 
 .. needlist::
    :types: req
-   :cypher: MATCH (n:Need) RETURN n
+   :cypher: MATCH (n:req) RETURN n
    :max_items: 10
 
 .. needtable::
    :types: req
-   :cypher: MATCH (n:Need) RETURN n
+   :cypher: MATCH (n:req) RETURN n
    :max_items: 10
 
 .. needflow::
    :types: req
-   :cypher: MATCH (n:Need) RETURN n
+   :cypher: MATCH (n:req) RETURN n
    :max_items: 10
    :width: 400
    :height: 300
@@ -32,12 +32,14 @@ TEST DOCUMENT UBCODE COMPAT
    :height: 300
 
 .. needpie::
-   :cypher: MATCH (n:Need) RETURN n
+   :cypher: n.type = 'req'
+   :types: req
 
    type == 'req'
    type == 'spec'
 
 .. needbar::
-   :cypher: MATCH (n:Need) RETURN n
+   :cypher: n.type = 'req'
+   :types: req
 
    type == 'req', type == 'spec'

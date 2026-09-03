@@ -1,3 +1,4 @@
+import re
 from io import StringIO
 from xml.etree import ElementTree
 
@@ -56,3 +57,62 @@ def extract_needs_from_html(html):
         tables = document.findall(".//html:table", {"html": ""})
 
     return [HtmlNeed(table) for table in tables if "need" in table.get("class", "")]
+
+
+def chart_images(html: str) -> dict[str, str]:
+    """Map the alt text of every chart image of a page to its image file name.
+
+    A chart's alt text is its title, so this is how a test picks one ``needpie``
+    or ``needbar`` of a page out of the ``_images`` directory. A chart without a
+    title has no alt text and keys on its image path instead, so a fixture whose
+    charts must be addressed individually has to give each of them a title.
+    """
+    return dict(re.findall(r'<img alt="([^"]*)"[^>]*src="_images/([^"]*)"', html))
+
+
+def pie_slice_counts(svg: str) -> list[int]:
+    """The absolute value every slice of a pie chart reports, in content order.
+
+    Matplotlib draws text as glyph paths, but writes the string itself as an XML
+    comment beside them, which is the only readable trace a label leaves. A pie
+    writes each slice's value as its own ``(N)`` comment, from the second line of
+    the ``percent\n(absolute)`` label that ``label_calc`` builds.
+
+    A slice below 5% -- a zero one included -- has that label hidden, and the
+    directive then switches the legend on and appends ``percent (absolute)`` to
+    every legend entry. Only that enriched legend is read instead, and only when
+    it is there: a legend the author asked for with ``:legend:`` carries bare
+    labels and no counts, so the slice labels are still the complete list.
+    """
+    legend_at = svg.find('<g id="legend_1">')
+    if legend_at != -1:
+        enriched = [
+            int(match.group(1))
+            for comment in re.findall(r"<!-- (.*?) -->", svg[legend_at:])
+            if (match := re.search(r" \d+\.\d% \((\d+)\)$", comment))
+        ]
+        if enriched:
+            return enriched
+
+    return [
+        int(match.group(1))
+        for comment in re.findall(r"<!-- (.*?) -->", svg)
+        if (match := re.fullmatch(r"\((\d+)\)", comment))
+    ]
+
+
+def bar_sum_labels(svg: str, title: str) -> list[str]:
+    """Every value a ``:show_sum:`` bar chart writes into its bars, row by row.
+
+    The labels leave the same XML comments as any other matplotlib text. They are
+    drawn after both axes -- so after the tick labels, which are the only other
+    numbers on the chart -- and before the title, which is the anchor this reads
+    up to. The whole list is returned, so a caller that asserts it sees every row
+    the chart drew rather than a chosen tail of them.
+    """
+    axis_at = svg.index('<g id="matplotlib.axis_2"')
+    # the axis groups hold only line and text groups, so the next patch group is
+    # past the tick labels: the axes spines, drawn just before the bar labels
+    bars_at = svg.index('<g id="patch_', axis_at)
+    title_at = svg.index(f"<!-- {title} -->", bars_at)
+    return re.findall(r"<!-- (.*?) -->", svg[bars_at:title_at])

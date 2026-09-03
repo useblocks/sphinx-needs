@@ -17,7 +17,14 @@ The following filter options are supported by directives:
 * :ref:`needtable`
 * :ref:`needflow`
 * :ref:`needpie`
+* :ref:`needbar`
 * :ref:`needextend`
+
+On the two chart directives the options behave a little differently, because a
+chart evaluates one filter per content line rather than one filter per
+directive: there they select the needs each line is counted over, rather than
+the needs that are shown.
+See :ref:`needpie_scope` and :ref:`needbar_scope`.
 
 Related to the used directive and its representation, the filter options create a list of needs, which match the
 filters for status, tags, types and filter.
@@ -247,8 +254,8 @@ to filter for needs only in the same document as the directive.
 
 It is available in the filters of the need-listing and diagram directives —
 including ``needsequence`` ``:filter:``, ``needflow`` ``:highlight:``,
-``needgantt`` ``:milestone_filter:`` and the filter lines of ``needpie``
-and ``needbar``.
+``needgantt`` ``:milestone_filter:`` and, on ``needpie`` and ``needbar``,
+both the filter lines and the scope ``:filter:``.
 It is *not* available to filters configured in **conf.py**,
 such as :ref:`needs_constraints` and :ref:`needs_warnings`,
 since those are not written in any document;
@@ -334,14 +341,13 @@ To debug which filters are being used across your project and their run times, y
    This includes ``width`` and ``height``: a diagram is rendered at its usual size and no warning is emitted,
    so nothing reports that the requested size had no effect.
 
-   ``cypher`` on :ref:`needpie` is the one option whose no-op changes a rendered number:
-   ubCode reads the query as the scope each content-line filter is counted over,
-   whereas a Sphinx build ignores it and counts every line over the whole project,
+   ``cypher`` on a chart is the one option whose no-op changes a rendered number:
+   ubCode reads the query as the scope the content lines are counted over,
+   whereas a Sphinx build ignores it,
    so the same chart can show different numbers here than in the ubCode preview.
-
-   ``cypher`` on :ref:`needbar` is accepted ahead of any ubCode support for it:
-   ubCode does not read the option on ``needbar`` either, so today neither tool acts on it,
-   and it is listed here only so that a document already carrying it builds in both.
+   Write the same scope with ``:filter:``, ``:status:``, ``:tags:`` or ``:types:``
+   beside the query and both tools select the same needs;
+   see :ref:`needpie_scope` and :ref:`needbar_scope`.
 
    These options may gain native implementations in future Sphinx-Needs releases,
    in which case they would take effect here as well rather than being ignored.

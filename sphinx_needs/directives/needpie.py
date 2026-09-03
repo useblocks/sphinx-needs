@@ -12,7 +12,11 @@ from sphinx_needs.data import NeedsPieType, SphinxNeedsData
 from sphinx_needs.debug import measure_time
 from sphinx_needs.directives.utils import no_needs_found_paragraph
 from sphinx_needs.exceptions import NeedsInvalidFilter
-from sphinx_needs.filter_common import FilterBase, filter_needs_parts
+from sphinx_needs.filter_common import (
+    FilterBase,
+    filter_needs_parts,
+    filter_scope_ids,
+)
 from sphinx_needs.logging import get_logger, log_warning
 from sphinx_needs.utils import (
     add_doc,
@@ -50,13 +54,19 @@ class NeedpieDirective(FilterBase):
         "colors": directives.unchanged_required,
         "text_color": directives.unchanged_required,
         "shadow": directives.flag,
+        "status": FilterBase.base_option_spec["status"],
+        "tags": FilterBase.base_option_spec["tags"],
+        "types": FilterBase.base_option_spec["types"],
+        "filter": FilterBase.base_option_spec["filter"],
         "filter-func": FilterBase.base_option_spec["filter-func"],
         "filter_warning": FilterBase.base_option_spec["filter_warning"],
         # ubCode compatibility: accepted and ignored by Sphinx-Needs.
         "cypher": directives.unchanged,
     }
 
-    # Update the options_spec only with value filter-func defined in the FilterBase class
+    # This replaces FilterBase's option_spec rather than extending it, since a chart
+    # takes only some of the filter options: the four selection options are its scope,
+    # and `sort_by` / `export_id` / `show_filters` have nothing to act on in a chart.
 
     def run(self) -> Sequence[nodes.Node]:
         env = self.env
@@ -86,10 +96,16 @@ class NeedpieDirective(FilterBase):
 
         shadow = "shadow" in self.options
 
+        filter_attributes = self.collect_filter_attributes()
+
         attributes: NeedsPieType = {
             "docname": env.docname,
             "lineno": self.lineno,
             "target_id": targetid,
+            "status": filter_attributes["status"],
+            "tags": filter_attributes["tags"],
+            "types": filter_attributes["types"],
+            "filter": filter_attributes["filter"],
             "title": title,
             "content": content,
             "legend": legend,
@@ -99,8 +115,8 @@ class NeedpieDirective(FilterBase):
             "colors": colors,
             "shadow": shadow,
             "text_color": text_color,
-            "filter_func": self.collect_filter_attributes()["filter_func"],
-            "filter_warning": self.collect_filter_attributes()["filter_warning"],
+            "filter_func": filter_attributes["filter_func"],
+            "filter_warning": filter_attributes["filter_warning"],
         }
         pie_node = Needpie("", **attributes)
         self.set_source_info(pie_node)
@@ -158,6 +174,19 @@ def process_needpie(
 
         content = current_needpie["content"]
 
+        # the selection options are the scope: the needs each content line is
+        # counted over, resolved once for the whole chart (None if unscoped)
+        scope_ids = filter_scope_ids(
+            needs_data.get_needs_view(),
+            needs_config,
+            status=current_needpie["status"],
+            tags=current_needpie["tags"],
+            types=current_needpie["types"],
+            filter=current_needpie["filter"],
+            location=node,
+            origin_docname=current_needpie["docname"],
+        )
+
         sizes = []
         # adds parts to need_list
         need_list = needs_data.get_needs_view().to_list_with_parts()
@@ -166,16 +195,18 @@ def process_needpie(
                 if line.isdigit():
                     sizes.append(abs(float(line)))
                 else:
-                    result = len(
-                        filter_needs_parts(
-                            need_list,
-                            needs_config,
-                            line,
-                            location=node,
-                            origin_docname=current_needpie["docname"],
-                        )
+                    found = filter_needs_parts(
+                        need_list,
+                        needs_config,
+                        line,
+                        location=node,
+                        origin_docname=current_needpie["docname"],
                     )
-                    sizes.append(result)
+                    if scope_ids is not None:
+                        found = [
+                            need for need in found if need["id_complete"] in scope_ids
+                        ]
+                    sizes.append(len(found))
         elif current_needpie["filter_func"] and not content:
             # check and get filter_func
             try:
@@ -199,8 +230,17 @@ def process_needpie(
                     f"arg{index + 1}": arg for index, arg in enumerate(args)
                 }
 
+                # a filter-func receives only the needs in the scope, and receives
+                # them as the same view an unscoped chart hands it; its own numbers
+                # are whatever it returns
+                ff_needs = (
+                    need_list
+                    if scope_ids is None
+                    else need_list.filter_id_complete(scope_ids)
+                )
+
                 sizes = []
-                ff_result.func(needs=need_list, results=sizes, **args_context)
+                ff_result.func(needs=ff_needs, results=sizes, **args_context)
 
                 # check items in sizes
                 if not isinstance(sizes, list):

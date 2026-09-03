@@ -362,6 +362,21 @@ class NeedsAndPartsListView:
             )
         return self._copy_filtered(selected_ids)
 
+    def filter_id_complete(self, values: Iterable[str]) -> NeedsAndPartsListView:
+        """Create new view with only the needs/parts whose ``id_complete`` is in ``values``.
+
+        This selection is exact, which ``filter_ids`` is not:
+        a part is selected on its own, without its need and without its sibling parts,
+        and a need is selected without its parts.
+        Values that are not in the view are ignored.
+        """
+        value_set = set(values)
+        return self._copy_filtered(
+            (item["id_parent"], item["id"]) if item["is_part"] else (item["id"], None)
+            for item in self
+            if item["id_complete"] in value_set
+        )
+
     def filter_is_external(self, value: bool) -> NeedsAndPartsListView:
         """Create new view with only needs/parts where ``is_external`` field is true/false."""
         return self._copy_filtered(self._indexes.indexes.is_external.get(value, []))

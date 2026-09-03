@@ -34,12 +34,17 @@ You can use :ref:`filter_func` with Python codes to define custom filters for ``
 Give either content lines or ``:filter-func:``: if both are given,
 or neither, the chart has no data and an error is logged.
 
-``needpie`` takes no other filter options,
-so ``:filter:``, ``:status:``, ``:tags:`` and ``:types:`` are not available on it.
-The ubCode-only ``cypher`` option is accepted and then ignored,
-which for ``needpie`` means the content lines are counted over the whole project
-rather than over the needs the query selects;
-see :ref:`ubCode compatibility <ubcode_compat_options>`.
+The four :ref:`filter options <filter_options>` ``:filter:``, ``:status:``,
+``:tags:`` and ``:types:`` used to be unavailable on ``needpie``, and this page
+said so: they were rejected with an ``unknown option`` error.
+They are now accepted, as the chart's scope -- the needs its content lines are
+counted over -- see :ref:`needpie_scope`.
+
+The ubCode-only ``cypher`` option is still accepted and then ignored.
+A chart that is to count the same needs in ubCode and in a Sphinx build
+therefore states its scope twice: once as the query ubCode reads, and once as
+the four options Sphinx-Needs reads.
+See :ref:`ubCode compatibility <ubcode_compat_options>`.
 
 .. note::
 
@@ -226,6 +231,62 @@ Give the option without a value to show nothing at all.
       type == 'req' and status == 'no_such_status_a'
       type == 'req' and status == 'no_such_status_b'
 
+
+.. _needpie_scope:
+
+common filters
+~~~~~~~~~~~~~~
+
+* :ref:`option_status`
+* :ref:`option_tags`
+* :ref:`option_types`
+* :ref:`option_filter`
+
+On a chart these four options do not select what is shown -- the content decides
+that -- they select the needs the chart counts over: its scope.
+The scope is resolved once for the whole chart, and every content line is then
+counted as its own result restricted to the scope, so a line counts a need only
+if the scope holds that need as well.
+A static value such as ``10`` counts no needs at all and is never affected.
+
+A scope restricts what a line counts, not what its filter can see:
+the ``needs`` variable inside a content line is exactly what it would be on the
+same chart without a scope.
+
+A ``:filter-func:`` receives only the needs in the scope, as the same view an
+unscoped chart receives, so a function may narrow it further.
+Its own numbers are whatever it returns, so the scope restricts what such a
+function counts from, not what it counts.
+
+If the scope selects nothing, every filter line counts zero.
+A pie is replaced by the ``filter_warning`` text described above whenever every
+one of its values is zero -- a static ``0`` included -- exactly as it is for
+filters that match nothing, so a pie of only filter lines then shows that text
+while a pie with a non-zero static value still has something to draw and is
+drawn.
+``needbar`` has no such empty state and draws all zeros instead,
+see :ref:`needbar_scope`.
+
+Parts follow their need: ``:status:``, ``:tags:`` and ``:types:`` select needs,
+and the parts of a selected need are in the scope with it, while ``:filter:``
+is evaluated over needs and parts alike.
+This is what the same four options do on :ref:`needlist`, so a scope and a
+``needlist`` written with the same options select the same needs.
+
+Writing the scope twice, as the four options and as a ``:cypher:`` query, is the
+portable form: ubCode gives the query precedence over the options, Sphinx-Needs
+ignores the query and applies the options, so the two engines agree for as long
+as the two spellings do.
+
+.. syntax-example::
+
+   .. needpie:: Open requirements
+      :labels: requirement, other
+      :status: open
+      :cypher: n.status = 'open'
+
+      type == 'req'
+      type != 'req'
 
 overlapping labels
 ~~~~~~~~~~~~~~~~~~

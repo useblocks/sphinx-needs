@@ -560,7 +560,22 @@ class NeedsBaseDataType(TypedDict):
 
 
 class NeedsBarType(NeedsBaseDataType):
-    """Data for a single (matplotlib) bar diagram."""
+    """Data for a single (matplotlib) bar diagram.
+
+    The four selection fields are the chart's *scope*: the needs its content
+    cells are counted over, see ``filter_common.filter_scope_ids``.
+    A chart takes only these four of the filter options, so they are declared
+    here rather than inherited from ``NeedsFilteredBaseType``.
+    """
+
+    status: list[str]
+    """``:status:`` option values, empty if the option was not given."""
+    tags: list[str]
+    """``:tags:`` option values, empty if the option was not given."""
+    types: list[str]
+    """``:types:`` option values, empty if the option was not given."""
+    filter: str | None
+    """``:filter:`` option value, None if the option was not given."""
 
     error_id: str
     title: str | None
@@ -751,7 +766,22 @@ class NeedsListType(NeedsFilteredBaseType):
 
 
 class NeedsPieType(NeedsBaseDataType):
-    """Data for a single (matplotlib) pie chart."""
+    """Data for a single (matplotlib) pie chart.
+
+    The four selection fields are the chart's *scope*: the needs its content
+    lines are counted over, see ``filter_common.filter_scope_ids``.
+    A chart takes only these four of the filter options, so they are declared
+    here rather than inherited from ``NeedsFilteredBaseType``.
+    """
+
+    status: list[str]
+    """``:status:`` option values, empty if the option was not given."""
+    tags: list[str]
+    """``:tags:`` option values, empty if the option was not given."""
+    types: list[str]
+    """``:types:`` option values, empty if the option was not given."""
+    filter: str | None
+    """``:filter:`` option value, None if the option was not given."""
 
     title: str
     content: str
