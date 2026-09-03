@@ -14,6 +14,7 @@ from sphinx_needs.need_item import (
     NeedsContent,
 )
 from sphinx_needs.views import NeedsView
+from tests.util import chart_images, pie_slice_counts
 
 
 @pytest.mark.parametrize(
@@ -138,6 +139,9 @@ def test_this_doc_in_charts_and_need_count(test_app):
 
     These call the filter engine directly and used to omit the origin document,
     so the filter aborted with a ``needs.filter`` warning and counted nothing.
+
+    A chart's ``:filter:`` scope calls the engine once more, from a third place,
+    and so has to name the origin document as well.
     """
     app = test_app
     app.build()
@@ -158,10 +162,20 @@ def test_this_doc_in_charts_and_need_count(test_app):
     assert "No needs passed the filters" not in html
     assert '<img alt="Index bar"' in html
 
+    # a scope ``:filter:`` of c.this_doc() restricts the chart to its own page,
+    # so the first slice counts the page's two story needs, not the project's three
+    images = chart_images(html)
+    scoped_pie = Path(app.outdir, "_images", images["Index scoped pie"]).read_text()
+    assert pie_slice_counts(scoped_pie) == [2, 1]
+
     html_page = Path(app.outdir, "page.html").read_text()
     assert "page_count-1" in html_page
     assert '<img alt="Page pie"' in html_page
     assert "No needs passed the filters" not in html_page
+
+    page_images = chart_images(html_page)
+    scoped_pie = Path(app.outdir, "_images", page_images["Page scoped pie"]).read_text()
+    assert pie_slice_counts(scoped_pie) == [1, 2]
 
 
 def _capture_diagrams(app) -> dict[str, list[str]]:

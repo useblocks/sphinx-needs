@@ -32,12 +32,14 @@ TEST DOCUMENT UBCODE COMPAT
    :height: 300
 
 .. needpie::
-   :cypher: MATCH (n:Need) RETURN n
+   :cypher: MATCH (n:Need) WHERE n.type = 'req' RETURN n
+   :types: req
 
    type == 'req'
    type == 'spec'
 
 .. needbar::
-   :cypher: MATCH (n:Need) RETURN n
+   :cypher: MATCH (n:Need) WHERE n.type = 'req' RETURN n
+   :types: req
 
    type == 'req', type == 'spec'

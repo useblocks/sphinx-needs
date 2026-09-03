@@ -21,6 +21,12 @@ index_ratio_b-:need_count:`True ? c.this_doc()`
 
    c.this_doc()
 
+.. needpie:: Index scoped pie
+   :filter: c.this_doc()
+
+   type == 'story'
+   1
+
 .. toctree::
 
    page

@@ -1,3 +1,4 @@
+import re
 from io import StringIO
 from xml.etree import ElementTree
 
@@ -56,3 +57,43 @@ def extract_needs_from_html(html):
         tables = document.findall(".//html:table", {"html": ""})
 
     return [HtmlNeed(table) for table in tables if "need" in table.get("class", "")]
+
+
+def chart_images(html: str) -> dict[str, str]:
+    """Map the alt text of every chart image of a page to its image file name.
+
+    A chart's alt text is its title, so this is how a test picks one ``needpie``
+    or ``needbar`` of a page out of the ``_images`` directory.
+    """
+    return dict(re.findall(r'<img alt="([^"]*)"[^>]*src="_images/([^"]*)"', html))
+
+
+def pie_slice_counts(svg: str) -> list[int]:
+    """The absolute value every slice of a pie chart reports, in content order.
+
+    Matplotlib draws text as glyph paths, but writes the string itself as an XML
+    comment beside them, which is the only readable trace a label leaves.
+
+    A slice below 5% -- a zero one included -- has its own label hidden and is
+    listed in the legend instead, which ``needpie`` then switches on. The legend
+    holds every slice, so it is read whenever there is one.
+    """
+    legend = svg.find('<g id="legend_1">')
+    region = svg if legend == -1 else svg[legend:]
+    return [
+        int(match.group(1))
+        for comment in re.findall(r"<!-- (.*?) -->", region)
+        if (match := re.search(r"\((\d+)\)$", comment))
+    ]
+
+
+def bar_sum_labels(svg: str, title: str, count: int) -> list[str]:
+    """The values a ``:show_sum:`` bar chart writes into its bars, in cell order.
+
+    The labels leave the same XML comments as any other matplotlib text. The bars
+    are drawn after both axes and the title after the bars, so the sum labels are
+    the ``count`` comments in front of the title, which is asserted as the anchor.
+    """
+    comments = re.findall(r"<!-- (.*?) -->", svg)
+    assert comments[-1] == title, comments
+    return comments[-(count + 1) : -1]
