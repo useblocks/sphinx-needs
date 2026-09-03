@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788432692583,
+  "lastUpdate": 1788434711549,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19188,6 +19188,42 @@ window.BENCHMARK_DATA = {
             "value": 55.989000608999994,
             "unit": "s",
             "extra": "Commit: adc2a0e2a537d31cb693ec4dfb77db62938b4c64\nBranch: master\nTime: 2026-09-03T12:50:10+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "356d5dbb904c134e3303ced69c7a125fe0e4f2e6",
+          "message": "🔧 Replace mypy with ty for type checking (#1830)\n\nThe type checker becomes [ty](https://docs.astral.sh/ty/), and the\nenvironment it checks against becomes a dependency group. Four commits:\na bug fix, the config and task swap, the mechanical suppression rewrite,\nand the removal of the now-dead mypy comments. Nothing about the\npublished package changes.\n\n### How type checking works now\n\n- A new `typing` dependency group holds the oldest supported Sphinx and\nDocutils series (`sphinx~=7.4`, `docutils~=0.20.0`), the stubs, and `ty`\nitself, so every version the gate depends on is in `uv.lock` and bumped\nby dependabot. It sits in the `[tool.uv] conflicts` set with the\n`sphinx-7/8/9` groups, so a plain `uv sync` still resolves to Sphinx 9.\n- `uv run poe typecheck` installs that group into `.venvs/typing` and\nruns `ty check` there, exactly as the `test-sphinx7` task does for\ntests. The prek `ty` hook runs the task, and CI runs the hook, so all\nthree see the same locked environment. `poe mypy` is gone.\n- `[tool.ty.environment] python = \".venvs/typing\"`, so a hand-run `ty\ncheck` and the editor extension see the gate's environment too (run the\ntask once to create it; ty errors naming the path if it is missing).\n- `error-on-warning = true` keeps the unused-suppression ratchet that\nmypy's `warn_unused_ignores` provided.\n- ty gets its own dependabot group, listed first so each 0.0.x release\nis a separate PR rather than a rider in the monthly batch.\n\nThe pinned-floor idea from #1819 survives: the old mypy hook pinned\nexact versions in `additional_dependencies`; the group pins series, and\nthe lock pins the exact resolution. Stub bumps within the series now\narrive as normal dependabot PRs where CI shows their effect, which is\nwhere that churn belongs. The old `jsonschema-rs==0.37.1` floor pin is\ndropped on purpose: the project is installed into the environment, so it\nis checked at the lock's version.\n\n### Why ty, and why now\n\nMeasured on this tree before deciding: ty 0.0.70 → 0.0.77 changed no\ndiagnostic here, and the three-month trend is false positives being\nremoved; the suppression rewrite is a single `ty check --add-ignore`;\ncold, mypy took 16.6 s and ty 0.19 s, and `poe typecheck` is 1.1 s cold\n/ 0.3 s warm; and ty found a real bug mypy structurally cannot see\n(below).\n\nThe other half of the reason is the monorepo (#1803). In a uv workspace\neach package wants its own type-checking environment and its own\nstrictness, and the shape this PR lands is the one that transfers: a\nper-package dependency group resolved from the shared lock, checked with\n`uv check --package <name>` or a per-package task. mypy's hook-venv\narrangement could not do that: its floor lived outside the lock, and\nevery package would have needed its own hand-kept pin list. The sibling\npackages are also most of the way there: sphinx-mounts is already\nty-only, sphinx-test-reports passes ty after porting its exclude list,\nand sphinx-codelinks is 20 diagnostics away (its `pydantic.mypy` plugin,\nthe one thing that looked like a blocker, guards a codebase with no\npydantic model in it). One checker, one mechanism, for all four.\n\nWhat is lost: `implicit_reexport = false` (tracked as astral-sh/ty#200,\nunscheduled), `disallow_any_generics` and `disallow_subclassing_any`\nhave no ty equivalent today. `no-any-return` does: ty's opt-in\n`unsound-return-statement` (and `unsound-assignment`) are stricter\nversions of the same idea; they stay off in this PR because they would\nadd 53 and 23 diagnostics here, and are listed in the follow-up issue as\nthe next ratchet step. The `disallow_any_*` ladder is what #1725's Tiers\n3–4 are made of, so this retires most of that issue; its Tier 2\n(`data.py` dynamic attributes) survives as the one\n`[[tool.ty.overrides]]` entry.\n\n### The suppression rewrite\n\n`ty check --add-ignore` against `.venvs/typing` added 145 `# ty: ignore`\ncomments over 36 files, covering 174 diagnostics. 80 sit on a line that\nalready carried a mypy ignore; 94, in 19 files, are new, mostly loosely\ntyped dictionaries in `list2need.py`, `needsfile.py` and\n`needextend.py`. Those are itemised in a follow-up issue rather than\nfixed here.\n\nAll 120 `# type: ignore[...]` comments then come out in their own\ncommit. They are dead, not tidied: ty honours only a bare `# type:\nignore`, and never parses a bracketed one, so they suppressed nothing\nand no unused-ignore rule would ever have reported them.\n\nReviewing tip: the 40 files under `sphinx_needs/` differ from master\nonly in comments, apart from the six lines of the bug fix.\n\n### The bug fix\n\nA `needs_warnings` entry that is neither a filter string nor a callable\nhit an `else` branch that called `log_warning` without its required\n`subtype` and `location`, raising `TypeError` at the end of the build.\nIt now logs a `needs.config` warning and skips the entry. mypy treats\nthe branch as unreachable given the declared config type and skips it;\nty checks it regardless. Own commit, with a regression test.\n\n### Follow-ups, not in this PR\n\n- An issue listing the 94 new suppressions by file and rule.\n- #1725 retitled to the `data.py` work; Tiers 3–4 close as moot.\n- `sphinx-codelinks` configures the pydantic mypy plugin for a codebase\nwith no pydantic model; dead config, worth deleting there.\n\n### How to bump ty\n\nDependabot opens the PR; CI runs the gate on it. By hand: bump `ty` in\nthe `typing` group, `uv lock`, `uv run poe typecheck`.",
+          "timestamp": "2026-09-03T13:23:54+02:00",
+          "tree_id": "dec14ec57db7298e545b7682b98d8b55b422a246",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/356d5dbb904c134e3303ced69c7a125fe0e4f2e6"
+        },
+        "date": 1788434702529,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.12047756399999798,
+            "unit": "s",
+            "extra": "Commit: 356d5dbb904c134e3303ced69c7a125fe0e4f2e6\nBranch: master\nTime: 2026-09-03T13:23:54+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 49.57806363899999,
+            "unit": "s",
+            "extra": "Commit: 356d5dbb904c134e3303ced69c7a125fe0e4f2e6\nBranch: master\nTime: 2026-09-03T13:23:54+02:00"
           }
         ]
       }
