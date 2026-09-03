@@ -554,9 +554,9 @@ class DynamicFunctionParsed:
         """
         try:
             func = ast.parse(func_string.strip())
-            func_call = func.body[0].value  # type: ignore[attr-defined]
+            func_call = func.body[0].value  # ty: ignore[unresolved-attribute]
             assert isinstance(func_call, ast.Call)
-            func_name = func_call.func.id  # type: ignore[attr-defined]
+            func_name = func_call.func.id
             assert isinstance(func_name, str)
         except Exception as e:
             raise FunctionParsingException("Not a function call", None) from e

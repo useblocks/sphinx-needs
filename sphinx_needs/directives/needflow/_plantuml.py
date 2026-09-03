@@ -230,7 +230,7 @@ def process_needflow_plantuml(
     needs_schema = env_data.get_schema()
 
     node: NeedflowPlantuml
-    for node in found_nodes:  # type: ignore[assignment]
+    for node in found_nodes:  # ty: ignore[invalid-assignment]
         if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
@@ -400,7 +400,7 @@ def process_needflow_plantuml(
             # We can only access puml_node if found_needs is set.
             # Otherwise it was not been set, or we get outdated data
             if isinstance(puml_node, nodes.figure):
-                data = puml_node.children[0]["uml"]  # type: ignore[index]
+                data = puml_node.children[0]["uml"]  # ty: ignore[not-subscriptable]
             else:
                 data = puml_node["uml"]
             # the same shape the graphviz engine uses, so that `:debug:` produces the

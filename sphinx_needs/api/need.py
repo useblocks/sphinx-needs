@@ -305,15 +305,15 @@ def generate_need(
     defaults_ctx: PredicateContextData = {
         "id": need_id,
         "type": need_type,
-        "title": core_converted["title"].value  # type: ignore[typeddict-item]
+        "title": core_converted["title"].value
         if isinstance(core_converted["title"], FieldLiteralValue)
-        else "",
-        "tags": copy(core_converted["tags"].value)  # type: ignore[arg-type]
+        else "",  # ty: ignore[invalid-argument-type]
+        "tags": copy(core_converted["tags"].value)
         if isinstance(core_converted["tags"], FieldLiteralValue)
-        else [],  # TODO allow for non-df/vf values?
-        "status": core_converted["status"].value  # type: ignore[typeddict-item]
+        else [],  # TODO allow for non-df/vf values?  # ty: ignore[invalid-argument-type]
+        "status": core_converted["status"].value
         if isinstance(core_converted["status"], FieldLiteralValue)
-        else None,
+        else None,  # ty: ignore[invalid-argument-type]
         "docname": source.dict_repr["docname"],
         "is_import": source.dict_repr["is_import"],
         "is_external": source.dict_repr["is_external"],
@@ -953,7 +953,7 @@ def add_external_need(
         content=content,
         # TODO a title being None is not "type compatible" with other parts of the code base,
         # however, at present changing it to an empty string breaks some existing tests.
-        title=title,  # type: ignore[arg-type]
+        title=title,  # ty: ignore[invalid-argument-type]
         status=status,
         tags=tags,
         constraints=constraints,

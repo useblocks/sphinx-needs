@@ -92,11 +92,11 @@ class NeedsBuilder(Builder):
         else:
             LOGGER.info("Needs successfully exported")
 
-    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:
+    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:  # ty: ignore[invalid-method-override]
         # only needed if the write phase is run
         return ""
 
-    def prepare_writing(self, _docnames: set[str]) -> None:
+    def prepare_writing(self, _docnames: set[str]) -> None:  # ty: ignore[invalid-method-override]
         # only needed if the write phase is run
         pass
 
@@ -104,7 +104,7 @@ class NeedsBuilder(Builder):
         # only needed if the write phase is run
         pass
 
-    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:  # ty: ignore[invalid-method-override]
         # only needed if the write phase is run
         pass
 
@@ -247,16 +247,16 @@ class NeedumlsBuilder(Builder):
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
-    def prepare_writing(self, _docnames: set[str]) -> None:
+    def prepare_writing(self, _docnames: set[str]) -> None:  # ty: ignore[invalid-method-override]
         pass
 
-    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:  # ty: ignore[invalid-method-override]
         pass
 
     def cleanup(self) -> None:
         pass
 
-    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:
+    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:  # ty: ignore[invalid-method-override]
         return ""
 
 
@@ -273,7 +273,7 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
 
     # if other builder like html used together with config: needs_build_needumls
     needs_builder = NeedumlsBuilder(app, env)
-    needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)  # type: ignore[assignment]
+    needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)  # ty: ignore[invalid-assignment]
 
     needs_builder.finish()
 
@@ -301,14 +301,14 @@ class SchemaBuilder(Builder):
     def get_outdated_docs(self) -> Iterable[str]:
         return []
 
-    def prepare_writing(self, _docnames: set[str]) -> None:
+    def prepare_writing(self, _docnames: set[str]) -> None:  # ty: ignore[invalid-method-override]
         pass
 
-    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:
+    def write_doc_serialized(self, _docname: str, _doctree: nodes.document) -> None:  # ty: ignore[invalid-method-override]
         pass
 
     def cleanup(self) -> None:
         pass
 
-    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:
+    def get_target_uri(self, _docname: str, _typ: str | None = None) -> str:  # ty: ignore[invalid-method-override]
         return ""

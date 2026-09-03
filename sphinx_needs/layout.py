@@ -87,7 +87,7 @@ def build_need_repr(
 def _generate_inline_parser() -> tuple[Values, Inliner]:
     doc_settings = OptionParser(components=(Parser,)).get_default_values()
     inline_parser = Inliner()
-    inline_parser.init_customizations(doc_settings)  # type: ignore[attr-defined]
+    inline_parser.init_customizations(doc_settings)
     return doc_settings, inline_parser
 
 
@@ -286,16 +286,16 @@ class LayoutHandler:
         self.functions: dict[
             str, Callable[..., nodes.Node | list[nodes.Node] | None]
         ] = {
-            "meta": self.meta,  # type: ignore[dict-item]
+            "meta": self.meta,
             "meta_all": self.meta_all,
             "meta_links": self.meta_links,
-            "meta_links_all": self.meta_links_all,  # type: ignore[dict-item]
+            "meta_links_all": self.meta_links_all,
             "meta_id": self.meta_id,
-            "image": self.image,  # type: ignore[dict-item]
+            "image": self.image,
             "link": self.link,
             "collapse_button": self.collapse_button,
             "permalink": self.permalink,
-        }
+        }  # ty: ignore[invalid-assignment]
 
         # The compiled string_links, so that regex and templates get not recompiled too often.
         #
@@ -314,9 +314,9 @@ class LayoutHandler:
 
         func = self.grids[self.layout["grid"]]
         if callable(func):
-            func()
+            func()  # ty: ignore[call-top-callable]
         else:
-            func["func"](**func["configs"])  # type: ignore[index]
+            func["func"](**func["configs"])  # ty: ignore[call-non-callable, invalid-argument-type]
 
         return self.node_table
 
@@ -351,12 +351,12 @@ class LayoutHandler:
         :param line: string to parse
         :return: nodes
         """
-        result, message = self.inline_parser.parse(  # type: ignore[attr-defined]
+        result, message = self.inline_parser.parse(
             line, 0, self.doc_memo, self.dummy_doc
         )
         if message:
             raise SphinxNeedLayoutException(message)
-        return result  # type: ignore[no-any-return]
+        return result
 
     def _func_replace(self, section_nodes: list[nodes.Node]) -> list[nodes.Node]:
         """
@@ -374,7 +374,7 @@ class LayoutHandler:
             if not isinstance(node, nodes.Text):
                 for child in node.children:
                     new_child = self._func_replace([child])
-                    node.replace(child, new_child)  # type: ignore[attr-defined]
+                    node.replace(child, new_child)  # ty: ignore[unresolved-attribute]
                 return_nodes.append(node)
             else:
                 node_str = node.astext()
@@ -927,7 +927,7 @@ class LayoutHandler:
 
         if image_url:
             image_node = self.image(image_url, image_height, image_width, no_link=True)
-            link_node.append(image_node)
+            link_node.append(image_node)  # ty: ignore[invalid-argument-type]
 
         data_container.append(link_node)
 
@@ -999,7 +999,7 @@ class LayoutHandler:
                 node.append(
                     self.image(
                         src[6:], width="17px", no_link=True, img_class="sn_collapse_img"
-                    )
+                    )  # ty: ignore[invalid-argument-type]
                 )
             elif src.startswith("Debug view"):
                 node.append(nodes.container(classes=[dbg_class]))

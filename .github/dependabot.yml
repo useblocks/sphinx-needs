@@ -31,6 +31,12 @@ updates:
           - version-update:semver-major
           - version-update:semver-minor
     groups:
+      # a dependency joins the first group whose pattern matches, so `ty` is listed first:
+      # its 0.0.x releases are patch bumps that can change diagnostics, and each one should
+      # be its own reviewable pull request rather than a rider in the monthly batch
+      ty:
+        patterns:
+          - ty
       python-minor-and-patch:
         patterns:
           - "*"

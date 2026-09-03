@@ -264,7 +264,7 @@ def extend_needs_data(
                     case (ExtendType.APPEND, LinksLiteralValue()):
                         if (df := need._dynamic_fields.get(option_name)) is not None:
                             need._dynamic_fields[option_name] = LinksFunctionArray(
-                                (*df.value, *link_value.value)
+                                (*df.value, *link_value.value)  # ty: ignore[invalid-argument-type]
                             )
                             need[option_name] = []
                         else:
@@ -281,7 +281,7 @@ def extend_needs_data(
                                 (  # keep unique
                                     *df.value,
                                     *(v for v in link_value.value if v not in df.value),
-                                )
+                                )  # ty: ignore[invalid-argument-type]
                             )
                             need[option_name] = []
                         else:
@@ -311,9 +311,9 @@ def extend_needs_data(
                     case (ExtendType.APPEND, FieldLiteralValue()):
                         if (df := need._dynamic_fields.get(option_name)) is not None:
                             need._dynamic_fields[option_name] = (
-                                FieldFunctionArray((*df.value, *field_value.value))
+                                FieldFunctionArray((*df.value, *field_value.value))  # ty: ignore[invalid-argument-type]
                                 if isinstance(field_value.value, list)
-                                else FieldFunctionArray((*df.value, field_value.value))
+                                else FieldFunctionArray((*df.value, field_value.value))  # ty: ignore[invalid-argument-type]
                             )
                         else:
                             if isinstance(field_value.value, list):
@@ -334,19 +334,19 @@ def extend_needs_data(
                     case (ExtendType.APPEND, FieldFunctionArray()):
                         if (df := need._dynamic_fields.get(option_name)) is not None:
                             need._dynamic_fields[option_name] = FieldFunctionArray(
-                                (*df.value, *field_value.value)
+                                (*df.value, *field_value.value)  # ty: ignore[invalid-argument-type]
                             )
                         else:
                             if isinstance(need[option_name], list):
                                 need._dynamic_fields[option_name] = FieldFunctionArray(
-                                    (*need[option_name], *field_value.value)
+                                    (*need[option_name], *field_value.value)  # ty: ignore[invalid-argument-type]
                                 )
                             elif isinstance(need[option_name], str):
                                 need._dynamic_fields[option_name] = FieldFunctionArray(
                                     (
                                         need[option_name],
                                         *field_value.value,
-                                    )
+                                    )  # ty: ignore[invalid-argument-type]
                                 )
                             else:
                                 raise RuntimeError(

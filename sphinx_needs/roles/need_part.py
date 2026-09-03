@@ -27,17 +27,17 @@ class NeedPart(nodes.Inline, nodes.Element):
     @property
     def title(self) -> str:
         """Return the title of the part."""
-        return self.attributes["title"]  # type: ignore[no-any-return]
+        return self.attributes["title"]
 
     @property
     def part_id(self) -> str:
         """Return the ID of the part."""
-        return self.attributes["part_id"]  # type: ignore[no-any-return]
+        return self.attributes["part_id"]
 
     @property
     def need_id(self) -> str | None:
         """Return the ID of the need this part belongs to."""
-        return self.attributes["need_id"]  # type: ignore[no-any-return]
+        return self.attributes["need_id"]
 
     @need_id.setter
     def need_id(self, value: str) -> None:

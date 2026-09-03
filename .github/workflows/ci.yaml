@@ -27,8 +27,8 @@ jobs:
             exit 1
           fi
       - name: Check the default environment resolves to the newest sphinx
-        # the `mypy` group pins sphinx 7.4.7; it is in the conflict set so that a plain
-        # `uv sync` is not capped by it
+        # the `sphinx-7` and `typing` groups both cap sphinx at the 7.4 series; both are in
+        # the conflict set so that a plain `uv sync` is not capped by either
         run: uv run --frozen python -c "import sphinx; assert sphinx.version_info[0] >= 9, sphinx.__version__"
 
   # ubc:

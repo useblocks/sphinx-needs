@@ -300,7 +300,7 @@ def recurse_validate_schemas(
         network_entries: list[tuple[str, str, ResolvedLinkSchemaType]] = [
             (network_key, link_type, link_schema)
             for network_key in ("network", "network_back")
-            for link_type, link_schema in schema.get(network_key, {}).items()  # type: ignore[attr-defined]
+            for link_type, link_schema in schema.get(network_key, {}).items()
         ]
         for network_key, link_type, link_schema in network_entries:
             # For incoming links, traverse the computed ``<link_type>_back`` field;
@@ -644,7 +644,7 @@ def compile_validator(schema: NeedFieldsSchemaType) -> SchemaValidator:
     final_schema: NeedFieldsSchemaWithVersionType = {
         "$schema": _SCHEMA_VERSION,
         "type": "object",
-        **{  # type: ignore[typeddict-item]
+        **{
             k: schema[k]
             for k in ("properties", "allOf", "required", "unevaluatedProperties")
             if k in schema

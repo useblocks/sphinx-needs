@@ -91,7 +91,7 @@ class FieldSchema:
             isinstance(pair, tuple)
             and len(pair) == 2
             and isinstance(pair[0], str)
-            and (isinstance(pair[1], FieldLiteralValue) | FieldFunctionArray)
+            and (isinstance(pair[1], FieldLiteralValue) | FieldFunctionArray)  # ty: ignore[unsupported-operator]
             for pair in self.predicate_defaults
         ):
             raise ValueError(
@@ -374,9 +374,9 @@ class FieldSchema:
                             array.append(VariantDataParsed.from_string(item))
 
                 if has_df_or_vf:
-                    return FieldFunctionArray(tuple(array))  # type: ignore[arg-type]
+                    return FieldFunctionArray(tuple(array))  # ty: ignore[invalid-argument-type]
                 else:
-                    return FieldLiteralValue(array)  # type: ignore[arg-type]
+                    return FieldLiteralValue(array)  # ty: ignore[invalid-argument-type]
             case other:
                 raise RuntimeError(f"Unknown field type '{other}'.")
 
@@ -807,7 +807,7 @@ class LinkSchema:
         if has_df_or_vf:
             return LinksFunctionArray(tuple(array))
         else:
-            return LinksLiteralValue(array)  # type: ignore[arg-type]
+            return LinksLiteralValue(array)  # ty: ignore[invalid-argument-type]
 
     def convert_or_type_check(
         self, value: Any, *, allow_coercion: bool

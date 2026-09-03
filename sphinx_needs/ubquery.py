@@ -151,10 +151,10 @@ def _expr_to_predicate(
                     return None
                 op_fn = _COMPARE_OPS[op_type]
                 if swapped:
-                    return lambda need, ctx=None, _f=field, _v=value, _op=op_fn: _op(  # type: ignore[misc]
+                    return lambda need, ctx=None, _f=field, _v=value, _op=op_fn: _op(
                         _v, _get_field(need, _f, ctx)
                     )
-                return lambda need, ctx=None, _f=field, _v=value, _op=op_fn: _op(  # type: ignore[misc]
+                return lambda need, ctx=None, _f=field, _v=value, _op=op_fn: _op(
                     _get_field(need, _f, ctx), _v
                 )
 
@@ -181,10 +181,10 @@ def _expr_to_predicate(
             if chain is not None and chain[0] in _FALLBACK_ROOTS:
                 op_fn = _COMPARE_OPS[op_type]
                 if chain_swapped:
-                    return lambda need, ctx=None, _c=chain, _v=chain_value, _op=op_fn: (  # type: ignore[misc]
+                    return lambda need, ctx=None, _c=chain, _v=chain_value, _op=op_fn: (
                         _op(_v, _resolve_chain(ctx, _c))
                     )
-                return lambda need, ctx=None, _c=chain, _v=chain_value, _op=op_fn: _op(  # type: ignore[misc]
+                return lambda need, ctx=None, _c=chain, _v=chain_value, _op=op_fn: _op(
                     _resolve_chain(ctx, _c), _v
                 )
 
@@ -206,10 +206,10 @@ def _expr_to_predicate(
                     if isinstance(e, ast.Constant)
                 )
                 if negate:
-                    return lambda need, ctx=None, _f=field_name, _v=values: (  # type: ignore[misc]
+                    return lambda need, ctx=None, _f=field_name, _v=values: (
                         _get_field(need, _f, ctx) not in _v
                     )
-                return lambda need, ctx=None, _f=field_name, _v=values: (  # type: ignore[misc]
+                return lambda need, ctx=None, _f=field_name, _v=values: (
                     _get_field(need, _f, ctx) in _v
                 )
 
@@ -225,10 +225,10 @@ def _expr_to_predicate(
                 if in_field in _CONTEXT_ONLY_NAMES:
                     return None
                 if negate:
-                    return lambda need, ctx=None, _f=in_field, _v=in_value: (  # type: ignore[misc]
+                    return lambda need, ctx=None, _f=in_field, _v=in_value: (
                         _v not in _get_field(need, _f, ctx)
                     )
-                return lambda need, ctx=None, _f=in_field, _v=in_value: (  # type: ignore[misc]
+                return lambda need, ctx=None, _f=in_field, _v=in_value: (
                     _v in _get_field(need, _f, ctx)
                 )
 
@@ -243,10 +243,10 @@ def _expr_to_predicate(
                 if in_chain is not None and in_chain[0] in _FALLBACK_ROOTS:
                     in_val = expr.left.value
                     if negate:
-                        return lambda need, ctx=None, _c=in_chain, _v=in_val: (  # type: ignore[misc]
+                        return lambda need, ctx=None, _c=in_chain, _v=in_val: (
                             _v not in _resolve_chain(ctx, _c)
                         )
-                    return lambda need, ctx=None, _c=in_chain, _v=in_val: (  # type: ignore[misc]
+                    return lambda need, ctx=None, _c=in_chain, _v=in_val: (
                         _v in _resolve_chain(ctx, _c)
                     )
 
@@ -268,7 +268,7 @@ def _expr_to_predicate(
             compiled = re.compile(pattern)
         except re.error:
             return None
-        return lambda need, ctx=None, _rx=compiled, _f=search_field: (  # type: ignore[misc]
+        return lambda need, ctx=None, _rx=compiled, _f=search_field: (
             _rx.search(_get_field(need, _f, ctx)) is not None
         )
 
@@ -276,24 +276,24 @@ def _expr_to_predicate(
     if isinstance(expr, ast.Name):
         if expr.id in _CONTEXT_ONLY_NAMES:
             return None
-        return lambda need, ctx=None, _f=expr.id: bool(_get_field(need, _f, ctx))  # type: ignore[misc]
+        return lambda need, ctx=None, _f=expr.id: bool(_get_field(need, _f, ctx))
 
     # --- not <expr> ---
     if isinstance(expr, ast.UnaryOp) and isinstance(expr.op, ast.Not):
         inner = _expr_to_predicate(expr.operand)
         if inner is not None:
-            return lambda need, ctx=None, _fn=inner: not _fn(need, ctx)  # type: ignore[misc]
+            return lambda need, ctx=None, _fn=inner: not _fn(need, ctx)
 
     # --- <expr> and <expr> and ... ---
     if isinstance(expr, ast.BoolOp) and isinstance(expr.op, ast.And):
         preds = [_expr_to_predicate(v) for v in expr.values]
         if all(p is not None for p in preds):
-            return lambda need, ctx=None, _fns=preds: all(fn(need, ctx) for fn in _fns)  # type: ignore[misc]
+            return lambda need, ctx=None, _fns=preds: all(fn(need, ctx) for fn in _fns)  # ty: ignore[call-non-callable]
 
     # --- <expr> or <expr> or ... ---
     if isinstance(expr, ast.BoolOp) and isinstance(expr.op, ast.Or):
         preds = [_expr_to_predicate(v) for v in expr.values]
         if all(p is not None for p in preds):
-            return lambda need, ctx=None, _fns=preds: any(fn(need, ctx) for fn in _fns)  # type: ignore[misc]
+            return lambda need, ctx=None, _fns=preds: any(fn(need, ctx) for fn in _fns)  # ty: ignore[call-non-callable]
 
     return None

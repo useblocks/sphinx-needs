@@ -199,7 +199,7 @@ def process_need_ref(
                 title = f"{title[: max_length - 3]}..."
                 dict_need["title"] = title
 
-            ref_name: str | nodes.Text | None = node_need_ref.children[0].children[0]  # type: ignore[assignment]
+            ref_name: str | nodes.Text | None = node_need_ref.children[0].children[0]  # ty: ignore[invalid-assignment]
             # Only use ref_name, if it differs from ref_id
             if str(need_id_full) == str(ref_name):
                 ref_name = None
@@ -266,7 +266,7 @@ def process_need_ref(
                         )
                         link_text = f"{dict_need['title']} ({dict_need['id']})"
 
-            node_need_ref[0].children[0] = nodes.Text(link_text)  # type: ignore[index]
+            node_need_ref[0].children[0] = nodes.Text(link_text)  # ty: ignore[invalid-assignment]
 
             with contextlib.suppress(NoUri):
                 if not target_need["is_external"] and (

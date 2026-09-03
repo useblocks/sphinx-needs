@@ -153,14 +153,14 @@ class NeedbarDirective(FilterBase):
             "filter": filter_attributes["filter"],
             "error_id": error_id,
             "title": title,
-            "content": content,
+            "content": content,  # ty: ignore[invalid-argument-type]
             "legend": legend,
-            "x_axis_title": x_axis_title,
-            "xlabels": xlabels,
-            "xlabels_rotation": xlabels_rotation,
-            "y_axis_title": y_axis_title,
-            "ylabels": ylabels,
-            "ylabels_rotation": ylabels_rotation,
+            "x_axis_title": x_axis_title,  # ty: ignore[invalid-argument-type]
+            "xlabels": xlabels,  # ty: ignore[invalid-argument-type]
+            "xlabels_rotation": xlabels_rotation,  # ty: ignore[invalid-argument-type]
+            "y_axis_title": y_axis_title,  # ty: ignore[invalid-argument-type]
+            "ylabels": ylabels,  # ty: ignore[invalid-argument-type]
+            "ylabels_rotation": ylabels_rotation,  # ty: ignore[invalid-argument-type]
             "separator": separator,
             "stacked": stacked,
             "show_sum": show_sum,
@@ -169,8 +169,8 @@ class NeedbarDirective(FilterBase):
             "transpose": transpose,
             "horizontal": horizontal,
             "style": style,
-            "colors": colors,
-            "text_color": text_color,
+            "colors": colors,  # ty: ignore[invalid-argument-type]
+            "text_color": text_color,  # ty: ignore[invalid-argument-type]
         }
 
         bar_node = Needbar("", **data_attributes)
@@ -221,7 +221,7 @@ def process_needbar(
             remove_node_from_tree(node)
             continue
 
-        current_needbar: NeedsBarType = node.attributes
+        current_needbar: NeedsBarType = node.attributes  # ty: ignore[invalid-assignment]
 
         if matplotlib is None:
             message = "Matplotlib missing for needbar plot"

@@ -96,7 +96,7 @@ class NeedDirective(SphinxDirective):
 
         title, full_title = _get_title(
             self.arguments,
-            self.content,
+            self.content,  # ty: ignore[invalid-argument-type]
             title_optional=needs_config.title_optional,
             title_from_content=title_from_content,
             max_title_length=needs_config.max_title_length,
@@ -201,8 +201,8 @@ class NeedDirective(SphinxDirective):
                 layout=layout,
                 jinja_content=jinja_content,
                 constraints=constraints,
-                **extras,  # type: ignore[arg-type]
-                **links,  # type: ignore[arg-type]
+                **extras,  # ty: ignore[invalid-argument-type]
+                **links,
             )
         except InvalidNeedException as err:
             self._log_warning(

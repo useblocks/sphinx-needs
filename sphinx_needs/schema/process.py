@@ -84,7 +84,7 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
             log_warning(
                 logger,
                 warning["message"],
-                warning["subtype"],  # type: ignore[arg-type]
+                warning["subtype"],  # ty: ignore[invalid-argument-type]
                 None,
                 type=warning["type"],
             )
@@ -92,7 +92,7 @@ def process_schemas(app: Sphinx, builder: Builder) -> None:
             log_error(
                 logger,
                 warning["message"],
-                warning["subtype"],  # type: ignore[arg-type]
+                warning["subtype"],  # ty: ignore[invalid-argument-type]
                 None,
                 type=warning["type"],
             )

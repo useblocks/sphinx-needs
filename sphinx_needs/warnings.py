@@ -50,7 +50,7 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
     if hasattr(env, "_needs_warnings_executed") and env._needs_warnings_executed:
         return
 
-    env._needs_warnings_executed = True  # type: ignore[attr-defined]
+    env._needs_warnings_executed = True  # ty: ignore[unresolved-attribute]
 
     # Exclude external needs for warnings check
     needs_view = needs_view.filter_is_external(False)
@@ -77,7 +77,13 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
                     if warning_filter(need, logger):
                         result.append(need)
             else:
-                log_warning(logger, f"Unknown needs warnings filter {warning_filter}!")
+                log_warning(
+                    logger,
+                    f"Unknown needs warnings filter {warning_filter}!",
+                    "config",
+                    None,
+                )
+                continue
 
             if len(result) == 0:
                 logger.info(f"{warning_name}: passed")
@@ -86,7 +92,7 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
 
                 # get the text for used filter, either from filter string or function name
                 if callable(warning_filter):
-                    warning_text = warning_filter.__name__
+                    warning_text = warning_filter.__name__  # ty: ignore[unresolved-attribute]
                 elif isinstance(warning_filter, str):
                     warning_text = warning_filter
 

@@ -5,6 +5,6 @@ try:
     from sphinx.errors import NoUri
 except ImportError:
     # Sphinx < 3.0
-    from sphinx.environment import NoUri  # type: ignore[no-redef, attr-defined]
+    from sphinx.environment import NoUri  # ty: ignore[unresolved-import]
 
 __all__ = ["NoUri"]

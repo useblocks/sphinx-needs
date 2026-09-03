@@ -38,7 +38,7 @@ from ._shared import create_filter_paragraph, create_legend_nodes
 try:
     from sphinx.writers.html5 import HTML5Translator
 except ImportError:
-    from sphinx.writers.html import HTML5Translator  # type: ignore[attr-defined]
+    from sphinx.writers.html import HTML5Translator
 
 LOGGER = getLogger(__name__)
 
@@ -54,7 +54,7 @@ def process_needflow_graphviz(
     needs_schema = SphinxNeedsData(app.env).get_schema()
 
     node: NeedflowGraphiz
-    for node in found_nodes:  # type: ignore[assignment]
+    for node in found_nodes:  # ty: ignore[invalid-assignment]
         attributes = node.attributes
 
         if not needs_config.include_needs:

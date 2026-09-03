@@ -102,11 +102,12 @@ uv run poe docs-linkcheck
 ### Code Quality
 
 ```bash
-# Type checking with mypy — runs the prek hook, whose pinned dependencies are the
-# oldest supported toolchain, so this and CI check the same versions
-uv run poe mypy
+# Type checking with ty — installs the `typing` dependency group (the oldest supported
+# sphinx and docutils, plus ty) into `.venvs/typing` and checks against it, so this, the
+# prek hook and CI all check the same locked versions
+uv run poe typecheck
 
-# Run every pre-commit hook on all files (ruff check + format, taplo, yamlfmt, mypy, uv-lock)
+# Run every pre-commit hook on all files (ruff check + format, taplo, yamlfmt, ty, uv-lock)
 uv run poe lint
 
 # Run a single hook
@@ -114,10 +115,14 @@ uv run prek run ruff-check --all-files
 uv run prek run ruff-format --all-files
 ```
 
+Running `ty` by hand, or through an editor extension, uses `.venvs/typing` too — it is named
+in `[tool.ty.environment] python`, and ty errors naming that path if it is missing. Run
+`uv run poe typecheck` once to create it.
+
 ## Code Style Guidelines
 
 - **Formatter/Linter**: Ruff (configured in `pyproject.toml`)
-- **Type Checking**: Mypy with strict mode (configured in `pyproject.toml`)
+- **Type Checking**: ty (configured in `pyproject.toml`; the `typing` dependency group is the environment)
 - **Docstrings**: Use Sphinx-style docstrings (not Google or NumPy style)
 - **Function Signatures**: Use `/` and `*` to enforce positional-only and keyword-only arguments where appropriate
 
@@ -205,7 +210,7 @@ When submitting changes:
 2. **Tests**: Include test cases for new functionality or bug fixes
 3. **Documentation**: Update docs if behavior changes or new features are added
 4. **Changelog**: Update `docs/changelog.rst`
-5. **Code Quality**: Ensure `uv run poe lint` and `uv run poe mypy` pass
+5. **Code Quality**: Ensure `uv run poe lint` and `uv run poe typecheck` pass
 
 ## Key Files
 

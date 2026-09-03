@@ -20,22 +20,17 @@ repos:
         # its own manifest, so a formatter local to this repository must not rewrite it
         exclude: ^tests/conformance/
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.3.1
+  - repo: local
     hooks:
-      - id: mypy
-        files: sphinx_needs/.*
-        args: []
-        # this list IS the type-checking environment: the oldest supported toolchain,
-        # pinned here and nowhere else, so `uv run poe mypy` (which runs this hook) and CI
-        # check the same versions
-        additional_dependencies:
-          - sphinx==7.4.7
-          - docutils==0.20
-          - jsonschema-rs==0.37.1
-          - types-docutils==0.20.0.20240201
-          - types-requests
-          - minijinja~=2.15
+      - id: ty
+        name: ty
+        language: system
+        # runs the poe task, so this, `uv run poe typecheck` and CI check the same locked
+        # environment (.venvs/typing): the `typing` dependency group, which pins the oldest
+        # supported sphinx and docutils and ty itself
+        entry: uv run --frozen --no-sync poe typecheck
+        pass_filenames: false
+        files: ^(sphinx_needs/|pyproject\.toml$|uv\.lock$)
 
   - repo: https://github.com/astral-sh/uv-pre-commit
     rev: 0.12.9
