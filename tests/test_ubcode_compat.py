@@ -10,6 +10,10 @@ larger than the number of needs must leave the output untouched. The
 ``needpie`` and ``needbar`` blocks are the exception: neither directive has
 ``max_items``, so a stray one there would be exactly the ``unknown option``
 error these tests guard against.
+
+Those two blocks are also this repository's worked example of the portable
+pairing: each carries a ``:cypher:`` query beside the same scope written as
+``:types:``, which is the form that counts the same needs in both tools.
 """
 
 from pathlib import Path

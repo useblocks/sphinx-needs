@@ -112,15 +112,20 @@ def test_scope_intersects_every_content_line(test_app: SphinxTestApp):
 
     images = chart_images(Path(app.outdir, "index.html").read_text())
     # the two empty-state pies write no image, so they are not in here, and the
-    # filter-func pie has its own test
-    assert set(images) == set(PIE_ORACLE) | set(BAR_ORACLE) | {"pie filter func"}
+    # two filter-func pies have their own tests
+    assert set(images) == set(PIE_ORACLE) | set(BAR_ORACLE) | {
+        "pie filter func",
+        "pie filter func narrowing",
+    }
 
     def svg(title: str) -> str:
         return Path(app.outdir, "_images", images[title]).read_text()
 
     assert {title: pie_slice_counts(svg(title)) for title in PIE_ORACLE} == PIE_ORACLE
+    # the whole list of sum labels, so a chart drawing a row the oracle does not
+    # know about is a failure rather than a truncation
     assert {
-        title: bar_sum_labels(svg(title), title, 3) for title in BAR_ORACLE
+        title: bar_sum_labels(svg(title), title) for title in BAR_ORACLE
     } == BAR_ORACLE
 
 
@@ -182,6 +187,25 @@ def test_scope_restricts_the_input_of_a_filter_func(test_app: SphinxTestApp):
     images = chart_images(Path(app.outdir, "index.html").read_text())
     svg = Path(app.outdir, "_images", images["pie filter func"]).read_text()
     assert pie_slice_counts(svg) == [5, 1]
+
+
+@CHART_SCOPE
+def test_a_scoped_filter_func_receives_a_view(test_app: SphinxTestApp):
+    """The scoped needs are the same kind of object as the unscoped ones.
+
+    ``docs/api.rst`` publishes the need views as "injected into filters", so a
+    filter function may narrow what it is handed instead of iterating it. Handing
+    a scoped chart's function a plain list would end the whole build with
+    ``'list' object has no attribute 'filter_types'`` -- no document, no line, no
+    directive named -- so the fixture's second function calls a view method, and
+    reports the two open requirements of the corpus.
+    """
+    app = test_app
+    app.build()
+
+    images = chart_images(Path(app.outdir, "index.html").read_text())
+    svg = Path(app.outdir, "_images", images["pie filter func narrowing"]).read_text()
+    assert pie_slice_counts(svg) == [2, 1]
 
 
 @CHART_SCOPE

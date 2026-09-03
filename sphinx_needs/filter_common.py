@@ -298,11 +298,14 @@ def filter_scope_ids(
     and a literal numeric line is not affected at all.
 
     The scope is the same set of needs that the same four options select on a
-    need-listing directive such as ``needlist``: the options are ANDed with each
-    other, each one matches any-of its own values, ``:types:`` matches the
-    directive name or the human-readable type title, and ``:filter:`` is
-    evaluated last, over needs *and* parts. Parts follow their need for
-    ``:status:``, ``:tags:`` and ``:types:``, exactly as they do there.
+    need-listing directive such as ``needlist``: each option narrows the view in
+    turn, exactly as ``process_filters`` narrows it there, each one matching
+    any-of its own values; ``:types:`` matches the directive name or the
+    human-readable type title; and ``:filter:`` is evaluated last, over needs
+    *and* parts. Parts follow their need for ``:status:``, ``:tags:`` and
+    ``:types:``, exactly as they do there -- including that the ``id`` fast path
+    admits sibling parts once the view has been narrowed, which is inherited
+    behaviour rather than a property of the scope.
 
     :param needs_view: all needs of the project, unfiltered.
     :param config: used to evaluate the ``filter`` expression.

@@ -230,14 +230,13 @@ def process_needpie(
                     f"arg{index + 1}": arg for index, arg in enumerate(args)
                 }
 
-                # a filter-func receives only the needs in the scope;
-                # its own numbers are whatever it returns
+                # a filter-func receives only the needs in the scope, and receives
+                # them as the same view an unscoped chart hands it; its own numbers
+                # are whatever it returns
                 ff_needs = (
                     need_list
                     if scope_ids is None
-                    else [
-                        need for need in need_list if need["id_complete"] in scope_ids
-                    ]
+                    else need_list.filter_id_complete(scope_ids)
                 )
 
                 sizes = []

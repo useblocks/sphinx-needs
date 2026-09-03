@@ -145,6 +145,11 @@ A scope on a filter function
    :status: open
    :filter-func: chart_scope_func.sizes
 
+.. needpie:: pie filter func narrowing
+   :labels: open reqs, one
+   :status: open
+   :filter-func: chart_scope_func.open_reqs
+
 Scoped bars
 -----------
 

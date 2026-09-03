@@ -317,9 +317,7 @@ class FilterFunc(Protocol):
     def __call__(
         self,
         *,
-        # a needpie that carries selection options passes the needs of its scope
-        # as a plain list, so this is only ever iterated, never narrowed further
-        needs: NeedsAndPartsListView | list[NeedItem | NeedPartItem],
+        needs: NeedsAndPartsListView,
         results: list[Any],
         **kwargs: str,
     ) -> None: ...
