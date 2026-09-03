@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788436868435,
+  "lastUpdate": 1788439205416,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19296,6 +19296,42 @@ window.BENCHMARK_DATA = {
             "value": 58.67715685500002,
             "unit": "s",
             "extra": "Commit: 2b7898a24e9fb6da004735e465b52f4bc6fd96e9\nBranch: master\nTime: 2026-09-03T13:59:32+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "85c377dd46d72b4ccc526e9e1f8843f10f3dfc8b",
+          "message": "🔧 Keep dependabot off the typing floor's stubs, and fence the floor against drift (#1837)\n\nThe `typing` dependency group pins the oldest supported docutils series\nand the stubs that describe it, on purpose, the way the `sphinx-7/8/9`\ngroups pin one sphinx series each. Dependabot cannot know that: #1836\nwidened `types-docutils~=0.20.0` to `>=0.20,<0.24` and installed the\n0.23 stubs against docutils 0.20.1, and Lint went red on the diagnostics\nthe mismatched stubs produce.\n\nTwo changes:\n\n- **Only `types-docutils` joins the ignore list** (major and minor). The\nstubs have no job but to match the floor's docutils, so their series\nmoves by hand, with the floor. docutils itself is deliberately not\nignored: an ignore is per dependency across the whole lock, and it would\nalso have hidden the lock-only bumps the main environment should keep\ntaking as sphinx allows them (it can take 0.22.4 today). The price is a\nrare proposal to widen the floor line, roughly once a year given\ndocutils' release cadence, which fails Lint and is closed by hand; it\ndoubles as the reminder that docutils moved.\n- **A fence, so the bottom pin never needs a manual review.**\n`check_typing_floor.py` runs in Lint inside `.venvs/typing`: the\ninstalled `types-docutils` must be the same series as the installed\n`docutils`, and that docutils must be the lowest series the installed\nsphinx accepts. Dropping the oldest sphinx from the matrix without\nmoving the `typing` group, or the stubs drifting from the library, goes\nred naming both. Proven locally: the #1836 shape (stubs 0.23 against\ndocutils 0.20) and docutils 0.21 in the floor environment each fail with\nthe expected message; the locked environment passes.\n\n#1836 is closed in favour of this.",
+          "timestamp": "2026-09-03T14:38:41+02:00",
+          "tree_id": "2caf4b51669ff18a4c442297416e84226c6d6ecb",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/85c377dd46d72b4ccc526e9e1f8843f10f3dfc8b"
+        },
+        "date": 1788439197416,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14772091500000784,
+            "unit": "s",
+            "extra": "Commit: 85c377dd46d72b4ccc526e9e1f8843f10f3dfc8b\nBranch: master\nTime: 2026-09-03T14:38:41+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.925660549000014,
+            "unit": "s",
+            "extra": "Commit: 85c377dd46d72b4ccc526e9e1f8843f10f3dfc8b\nBranch: master\nTime: 2026-09-03T14:38:41+02:00"
           }
         ]
       }
