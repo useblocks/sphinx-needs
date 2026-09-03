@@ -271,6 +271,22 @@ cmd = "pytest tests/benchmarks"
 executor = { type = "uv", frozen = true, no-group = "dev", group = "benchmark", extra = "docs" }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/benchmark" }
 
+# --- The built package ---
+# These two are named for the distribution they act on rather than for the repository, so
+# the names stay correct if a second distribution is ever built here. Every other task in
+# this file exercises a checkout; these exercise the artefact that is actually published,
+# which nothing else does (#1829).
+
+[tool.poe.tasks.build-needs]
+help = "Build the sphinx-needs sdist + wheel into dist/sphinx-needs"
+cmd = "uv build . -o dist/sphinx-needs"
+
+[tool.poe.tasks.smoke-needs]
+help = "Install the built sphinx-needs wheel out of this project and build a doc with it"
+# builds the wheel itself -- a stale one left in dist/ would be a silent pass -- so this
+# does not depend on `build-needs` having been run first
+cmd = "python scripts/smoke_needs.py ."
+
 # --- Documentation ---
 # One task per theme, because the theme selects a different *extra* and executor options
 # are not interpolated from task arguments. `docs` (furo) is the one Read the Docs builds.
