@@ -256,11 +256,11 @@ def process_needsequence(
             len(c_string) == 0 and p_string.count("participant") == 1
         ):  # no connections and just one (start) participant
             content = [
-                (no_needs_found_paragraph(current_needsequence.get("filter_warning")))  # type: ignore[list-item]
+                (no_needs_found_paragraph(current_needsequence.get("filter_warning")))
             ]
         if counter.shown < counter.total:
             content.append(
-                report_max_items(  # type: ignore[arg-type]
+                report_max_items(
                     counter.shown,
                     counter.total,
                     origin="needsequence",
@@ -269,10 +269,10 @@ def process_needsequence(
                 )  # ty: ignore[invalid-argument-type]
             )
         if current_needsequence["show_filters"]:
-            content.append(get_filter_para(current_needsequence))  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+            content.append(get_filter_para(current_needsequence))  # ty: ignore[invalid-argument-type]
 
         if current_needsequence["debug"]:
-            content += get_debug_container(puml_node)  # type: ignore[arg-type]  # ty: ignore[unsupported-operator]
+            content += get_debug_container(puml_node)  # ty: ignore[unsupported-operator]
 
         node.replace_self(content)
 
@@ -355,7 +355,7 @@ def get_message_needs(
     if tracked_receivers is None:
         tracked_receivers = []
     for link_type in link_types:
-        msg_needs += [all_needs_dict[x] for x in sender[link_type]]  # type: ignore[misc]  # ty: ignore[unsupported-operator]
+        msg_needs += [all_needs_dict[x] for x in sender[link_type]]  # ty: ignore[unsupported-operator]
 
     messages: dict[str, dict[str, Any]] = {}
     p_string = ""

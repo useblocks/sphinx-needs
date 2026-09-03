@@ -91,22 +91,22 @@ class _LazyIndexes:
                 # In principle, parts should not have the fields below (and thus should be copied from the need),
                 # but there is currently no validation for this, so we also record them.
                 _idx_is_external.setdefault(
-                    part.get("is_external", need["is_external"]),  # type: ignore[arg-type]
+                    part.get("is_external", need["is_external"]),
                     [],
                 ).append((id, part_id))
                 _idx_types.setdefault(
-                    part.get("type", need["type"]),  # type: ignore[arg-type]
+                    part.get("type", need["type"]),
                     [],
                 ).append((id, part_id))
                 _idx_type_names.setdefault(
-                    part.get("type_name", need["type_name"]),  # type: ignore[arg-type]
+                    part.get("type_name", need["type_name"]),
                     [],
                 ).append((id, part_id))
                 _idx_status.setdefault(
-                    part.get("status", need["status"]),  # type: ignore[arg-type]
+                    part.get("status", need["status"]),
                     [],
                 ).append((id, part_id))
-                for tag in part.get("tags", need["tags"]):  # type: ignore[attr-defined]
+                for tag in part.get("tags", need["tags"]):
                     _idx_tags.setdefault(tag, []).append((id, part_id))
 
         return _Indexes(

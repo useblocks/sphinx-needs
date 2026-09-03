@@ -967,7 +967,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             name=name,
             description=description,
             nullable=nullable,
-            schema=_schema,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+            schema=_schema,  # ty: ignore[invalid-argument-type]
             default=None if default is None else FieldLiteralValue(default),
             allow_defaults=data.get("allow_default", False),
             allow_extend=data.get("allow_extend", False),
@@ -1032,7 +1032,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
                 )
 
             _schema = (
-                deepcopy(field_data.schema)  # type: ignore[arg-type]
+                deepcopy(field_data.schema)
                 if field_data.schema is not None
                 else {"type": "string"}
             )
@@ -1059,7 +1059,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             field = FieldSchema(
                 name=name,
                 description=field_data.description,
-                schema=_schema,  # type: ignore[arg-type]
+                schema=_schema,
                 nullable=nullable,
                 # note, default follows that of legacy (pre-schema) extra option,
                 # i.e. default to "" only if no schema is defined
@@ -1096,7 +1096,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
         try:
             # create link schema, with defaults if not defined
             _schema = (
-                deepcopy(link["schema"])  # type: ignore[arg-type]
+                deepcopy(link["schema"])
                 if "schema" in link
                 else {"type": "array", "items": {"type": "string"}}
             )
@@ -1123,7 +1123,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             link_field = LinkSchema(
                 name=name,
                 description=link.get("description", "Link field"),
-                schema=_schema,  # type: ignore[arg-type]
+                schema=_schema,
                 default=LinksLiteralValue([]),
                 allow_defaults=True,
                 allow_extend=True,
@@ -1277,4 +1277,4 @@ def release_data_locks(app: Sphinx, _exception: Exception) -> None:
     such that this would be re-set.
     """
     SphinxNeedsData(app.env).needs_is_post_processed = False
-    app.env._needs_warnings_executed = False  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+    app.env._needs_warnings_executed = False  # ty: ignore[unresolved-attribute]

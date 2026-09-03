@@ -268,9 +268,9 @@ def profile(keyword: str) -> Callable[[FuncT], FuncT]:
     Activation only happens, if given keyword is part of ``needs_profiling``.
     """
 
-    def inner(func):  # type: ignore[no-untyped-def]
+    def inner(func):
         @wraps(func)
-        def wrapper(*args, **kwargs):  # type: ignore[no-untyped-def]
+        def wrapper(*args, **kwargs):
             with cProfile.Profile() as pr:
                 result = func(*args, **kwargs)
 

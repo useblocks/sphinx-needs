@@ -148,7 +148,7 @@ def process_needextract(
     found_needs: list[NeedItem | NeedPartItem] = []
 
     node: Needextract
-    for node in found_nodes:  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+    for node in found_nodes:  # ty: ignore[invalid-assignment]
         if not needs_config.include_needs:
             remove_node_from_tree(node)
             continue
@@ -222,7 +222,7 @@ def process_needextract(
         # Run docutils/sphinx transformers for the by needextract added nodes.
         # Transformers use the complete document (doctree), so we perform this action once per
         # needextract. No matter if one or multiple needs got copied
-        Substitutions(doctree).apply()  # type: ignore[no-untyped-call]
+        Substitutions(doctree).apply()
 
 
 @measure_time("build_needextract")
@@ -251,8 +251,8 @@ def _build_needextract(
     env.temp_data["docname"] = need_data[
         "docname"
     ]  # this is normally set in the read phase
-    ImageCollector().process_doc(app, need_node)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
-    DownloadFileCollector().process_doc(app, need_node)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+    ImageCollector().process_doc(app, need_node)  # ty: ignore[invalid-argument-type]
+    DownloadFileCollector().process_doc(app, need_node)  # ty: ignore[invalid-argument-type]
     del env.temp_data["docname"]  # Be sure our env is as it was before
 
     dummy_need.extend(need_node.children)
@@ -270,7 +270,7 @@ def _build_needextract(
 
     dummy_need.attributes["ids"].append(need_data["id"])
     rendered_node = build_need_repr(
-        dummy_need,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+        dummy_need,  # ty: ignore[invalid-argument-type]
         need_data,
         app,
         layout=extract_data["layout"],
@@ -404,7 +404,7 @@ def _apply_post_transforms(app: Sphinx, node: nodes.Element, docname: str) -> No
     """
     env = app.env
     with _scratch_document_state(env, docname):
-        transformer = SphinxTransformer(node)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+        transformer = SphinxTransformer(node)  # ty: ignore[invalid-argument-type]
         transformer.set_environment(env)
         transformer.add_transforms(app.registry.get_post_transforms())
         transformer.apply_transforms()
@@ -425,4 +425,4 @@ def _replace_pending_xref_refdoc(node: nodes.Element, new_refdoc: str) -> None:
         node.attributes["refdoc"] = new_refdoc
     else:
         for child in node.children:
-            _replace_pending_xref_refdoc(child, new_refdoc)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+            _replace_pending_xref_refdoc(child, new_refdoc)  # ty: ignore[invalid-argument-type]

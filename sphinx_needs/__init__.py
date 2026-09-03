@@ -3,7 +3,7 @@
 __version__ = "8.4.0"
 
 
-def setup(app):  # type: ignore[no-untyped-def]
+def setup(app):
     from sphinx_needs.needs import setup as needs_setup
 
     return needs_setup(app)

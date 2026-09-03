@@ -54,7 +54,7 @@ class NeedFunc(nodes.Inline, nodes.Element):
     @property
     def with_brackets(self) -> bool:
         """Return the function with brackets."""
-        return self.get("with_brackets", False)  # type: ignore[no-any-return]
+        return self.get("with_brackets", False)
 
     def get_text(self, env: BuildEnvironment, need: NeedItem | None) -> nodes.Text:
         """Execute function and return result."""
@@ -85,6 +85,6 @@ def process_need_func(
     found_nodes: list[nodes.Element],
 ) -> None:
     node_need_func: NeedFunc
-    for node_need_func in found_nodes:  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+    for node_need_func in found_nodes:  # ty: ignore[invalid-assignment]
         new_node_func = node_need_func.get_text(app.env, None)
         node_need_func.replace_self(new_node_func)

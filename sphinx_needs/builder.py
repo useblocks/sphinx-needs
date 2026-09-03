@@ -273,7 +273,7 @@ def build_needumls_pumls(app: Sphinx, _exception: Exception) -> None:
 
     # if other builder like html used together with config: needs_build_needumls
     needs_builder = NeedumlsBuilder(app, env)
-    needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+    needs_builder.outdir = os.path.join(needs_builder.outdir, config.build_needumls)  # ty: ignore[invalid-assignment]
 
     needs_builder.finish()
 

@@ -268,7 +268,7 @@ def check_needs_file(path: str) -> Errors:
 def _load_schema() -> dict[str, Any]:
     schema_path = os.path.join(os.path.dirname(__file__), "needsfile.json")
     with open(schema_path) as schema_file:
-        return json.load(schema_file)  # type: ignore[no-any-return]
+        return json.load(schema_file)
 
 
 def check_needs_data(data: Any) -> Errors:

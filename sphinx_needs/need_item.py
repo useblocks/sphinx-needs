@@ -51,7 +51,7 @@ class NeedItemSourceUnknown:
     external_url: str | None = None
     is_import: bool = False
     is_external: bool = False
-    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)  # type: ignore[assignment]
+    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         d: NeedsSourceInfoType = {
@@ -86,7 +86,7 @@ class NeedItemSourceDirective:
     Deliberately not part of ``dict_repr``: it is a parser coordinate rather than need
     data, and never reaches ``needs.json``. ``None`` means the two are the same.
     """
-    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)  # type: ignore[assignment]
+    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         d: NeedsSourceInfoType = {
@@ -106,7 +106,7 @@ class NeedItemSourceService:
 
     docname: str
     lineno: int
-    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)  # type: ignore[assignment]
+    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         d: NeedsSourceInfoType = {
@@ -125,7 +125,7 @@ class NeedItemSourceExternal:
     """A class representing the source of a need item, from an external source."""
 
     url: str
-    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)  # type: ignore[assignment]
+    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         d: NeedsSourceInfoType = {
@@ -146,7 +146,7 @@ class NeedItemSourceImport:
     docname: str
     lineno: int
     path: str
-    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)  # type: ignore[assignment]
+    dict_repr: NeedsSourceInfoType = field(init=False, default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         d: NeedsSourceInfoType = {
@@ -176,7 +176,7 @@ class NeedsContent:
 
     dict_repr: NeedsContentInfoType = field(
         init=False, default_factory=dict, repr=False
-    )  # type: ignore[assignment]
+    )
 
     def __post_init__(self) -> None:
         d: NeedsContentInfoType = {
@@ -574,7 +574,7 @@ class NeedItem:
                         f"{k}_back": [li.to_filter_string() for li in v]
                         for k, v in p.backlinks.items()
                         if v
-                    }  # type: ignore[typeddict-item]
+                    }
                     if p.backlinks is not None
                     else {}
                 ),
@@ -793,9 +793,9 @@ class NeedItem:
     def __getitem__(self, key: str) -> Any:
         """Get an item by key."""
         if key in self._computed:
-            return self._computed[key]  # type: ignore[literal-required]  # ty: ignore[invalid-key]
+            return self._computed[key]  # ty: ignore[invalid-key]
         if key in self._core:
-            return self._core[key]  # type: ignore[literal-required]  # ty: ignore[invalid-key]
+            return self._core[key]  # ty: ignore[invalid-key]
         elif key in self._extras:
             return self._extras[key]
         elif key in self._links:
@@ -806,9 +806,9 @@ class NeedItem:
                 for li in self._backlinks[self._backlinks_keymap[key]]
             ]
         elif key in self._source.dict_repr:
-            return self._source.dict_repr[key]  # type: ignore[literal-required]  # ty: ignore[invalid-key]
+            return self._source.dict_repr[key]  # ty: ignore[invalid-key]
         elif key in self._content.dict_repr:
-            return self._content.dict_repr[key]  # type: ignore[literal-required]  # ty: ignore[invalid-key]
+            return self._content.dict_repr[key]  # ty: ignore[invalid-key]
         raise KeyError(key)
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -884,7 +884,7 @@ class NeedItem:
         elif key in self._content.dict_repr:
             raise KeyError(f"Cannot modify content key {key!r} in NeedItem.")
         elif key in self._core:
-            self._core[key] = value  # type: ignore[literal-required]  # ty: ignore[invalid-key]
+            self._core[key] = value  # ty: ignore[invalid-key]
         elif key in self._extras:
             self._extras[key] = value
         elif key in self._links:
@@ -1393,7 +1393,7 @@ class NeedPartItem:
         """
         if key not in self._need._extras:
             raise KeyError(key)
-        return self[key]  # type: ignore[no-any-return]
+        return self[key]
 
     def iter_extra_keys(self) -> Iterable[str]:
         """Yield all extra keys."""
@@ -1471,7 +1471,7 @@ class NeedPartItem:
         if link_type not in self._need._backlinks:
             raise KeyError(link_type)
         if as_str:
-            return self[f"{link_type}_back"]  # type: ignore[no-any-return]
+            return self[f"{link_type}_back"]
         part = self._need.get_part(self.part_id)
         assert part is not None
         return part.backlinks.get(link_type, [])

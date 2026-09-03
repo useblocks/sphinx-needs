@@ -176,7 +176,7 @@ def show_link_names_option(argument: str | None) -> LinkLabels:
     """
     if not (value := (argument or "").strip().lower()):
         return "outgoing"
-    return directives.choice(value, get_args(LinkLabels))  # type: ignore[no-any-return]  # ty: ignore[invalid-return-type]
+    return directives.choice(value, get_args(LinkLabels))  # ty: ignore[invalid-return-type]
 
 
 def show_legend_option(argument: str | None) -> str:
@@ -329,7 +329,7 @@ def resolve_direction(
         return option
     if config_direction is not None:
         return config_direction
-    return validated_config_enum(  # type: ignore[return-value]
+    return validated_config_enum(
         project_default,
         get_args(FlowDirection),
         "down",
@@ -468,7 +468,7 @@ def compile_legends(
                 )
                 continue
             if part not in parts:
-                parts.append(part)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+                parts.append(part)  # ty: ignore[invalid-argument-type]
         placement: LegendPlacement | None = None
         if (raw_placement := spec.get("placement")) is not None:
             candidate = str(raw_placement).strip().lower()
@@ -482,7 +482,7 @@ def compile_legends(
                     once=True,
                 )
             else:
-                placement = candidate  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+                placement = candidate  # ty: ignore[invalid-assignment]
         compiled[str(name)] = LegendSpec(
             parts=tuple(parts) or ("types",), placement=placement
         )
@@ -609,7 +609,7 @@ def validated_config_show_links(
     """
     if not isinstance(value, str):
         return "outgoing" if value else "none"
-    return validated_config_enum(  # type: ignore[return-value]
+    return validated_config_enum(
         str(value),
         get_args(LinkLabels),
         "none",

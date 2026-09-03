@@ -167,14 +167,14 @@ class NeedflowDirective(FilterBase):
                                 )
                                 continue
                             if key in graphviz_style:
-                                graphviz_style[key].update(value)  # type: ignore[literal-required]  # ty: ignore[invalid-key]
+                                graphviz_style[key].update(value)  # ty: ignore[invalid-key]
                             else:
                                 # copied, so that merging several configs cannot edit
                                 # the configuration itself: the first config's
                                 # attributes used to be taken by reference and then
                                 # updated with the second's, which leaked one diagram's
                                 # styles into every later one naming the same config
-                                graphviz_style[key] = dict(value)  # type: ignore[literal-required]  # ty: ignore[invalid-key]
+                                graphviz_style[key] = dict(value)  # ty: ignore[invalid-key]
                     elif config_name:
                         log_warning(
                             LOGGER,
@@ -254,12 +254,12 @@ class NeedflowDirective(FilterBase):
             if not self.arguments:
                 figure = nodes.figure("", gnode)
                 if "align" in gnode:
-                    figure["align"] = gnode.attributes.pop("align")  # type: ignore[misc]  # ty: ignore[invalid-argument-type]
+                    figure["align"] = gnode.attributes.pop("align")  # ty: ignore[invalid-argument-type]
                 figure["ids"] = [targetid]
                 self.add_name(gnode)
                 return [figure]
             else:
-                figure = figure_wrapper(self, gnode, self.arguments[0])  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+                figure = figure_wrapper(self, gnode, self.arguments[0])  # ty: ignore[invalid-argument-type]
                 figure["ids"] = [targetid]
                 self.add_name(figure)
                 return [figure]

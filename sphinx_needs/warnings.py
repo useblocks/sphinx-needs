@@ -50,7 +50,7 @@ def process_warnings(app: Sphinx, exception: Exception | None) -> None:
     if hasattr(env, "_needs_warnings_executed") and env._needs_warnings_executed:
         return
 
-    env._needs_warnings_executed = True  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+    env._needs_warnings_executed = True  # ty: ignore[unresolved-attribute]
 
     # Exclude external needs for warnings check
     needs_view = needs_view.filter_is_external(False)

@@ -87,7 +87,7 @@ def build_need_repr(
 def _generate_inline_parser() -> tuple[Values, Inliner]:
     doc_settings = OptionParser(components=(Parser,)).get_default_values()
     inline_parser = Inliner()
-    inline_parser.init_customizations(doc_settings)  # type: ignore[attr-defined]
+    inline_parser.init_customizations(doc_settings)
     return doc_settings, inline_parser
 
 
@@ -286,12 +286,12 @@ class LayoutHandler:
         self.functions: dict[
             str, Callable[..., nodes.Node | list[nodes.Node] | None]
         ] = {
-            "meta": self.meta,  # type: ignore[dict-item]
+            "meta": self.meta,
             "meta_all": self.meta_all,
             "meta_links": self.meta_links,
-            "meta_links_all": self.meta_links_all,  # type: ignore[dict-item]
+            "meta_links_all": self.meta_links_all,
             "meta_id": self.meta_id,
-            "image": self.image,  # type: ignore[dict-item]
+            "image": self.image,
             "link": self.link,
             "collapse_button": self.collapse_button,
             "permalink": self.permalink,
@@ -316,7 +316,7 @@ class LayoutHandler:
         if callable(func):
             func()  # ty: ignore[call-top-callable]
         else:
-            func["func"](**func["configs"])  # type: ignore[index]  # ty: ignore[call-non-callable, invalid-argument-type]
+            func["func"](**func["configs"])  # ty: ignore[call-non-callable, invalid-argument-type]
 
         return self.node_table
 
@@ -351,12 +351,12 @@ class LayoutHandler:
         :param line: string to parse
         :return: nodes
         """
-        result, message = self.inline_parser.parse(  # type: ignore[attr-defined]
+        result, message = self.inline_parser.parse(
             line, 0, self.doc_memo, self.dummy_doc
         )
         if message:
             raise SphinxNeedLayoutException(message)
-        return result  # type: ignore[no-any-return]
+        return result
 
     def _func_replace(self, section_nodes: list[nodes.Node]) -> list[nodes.Node]:
         """
@@ -374,7 +374,7 @@ class LayoutHandler:
             if not isinstance(node, nodes.Text):
                 for child in node.children:
                     new_child = self._func_replace([child])
-                    node.replace(child, new_child)  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
+                    node.replace(child, new_child)  # ty: ignore[unresolved-attribute]
                 return_nodes.append(node)
             else:
                 node_str = node.astext()

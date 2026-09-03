@@ -201,8 +201,8 @@ class NeedDirective(SphinxDirective):
                 layout=layout,
                 jinja_content=jinja_content,
                 constraints=constraints,
-                **extras,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
-                **links,  # type: ignore[arg-type]
+                **extras,  # ty: ignore[invalid-argument-type]
+                **links,
             )
         except InvalidNeedException as err:
             self._log_warning(

@@ -190,10 +190,10 @@ def process_filters(
             # TODO better context type
             context: dict[str, NeedsAndPartsListView] = {
                 "needs": needs_view.to_list_with_parts(),
-                "results": [],  # type: ignore[dict-item]
+                "results": [],
             }  # ty: ignore[invalid-assignment]
             exec(filter_code, context)
-            found_dirty_needs = context["results"]  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
+            found_dirty_needs = context["results"]  # ty: ignore[invalid-assignment]
         elif ff_result:  # code from external file
             full_filter.append(ff_result.sig)
             args = []
@@ -465,16 +465,16 @@ def _analyze_and_apply_expr(
 
             if field == "id":
                 # id == value
-                return needs.filter_ids([value]), False  # type: ignore[list-item]  # ty: ignore[invalid-argument-type]
+                return needs.filter_ids([value]), False  # ty: ignore[invalid-argument-type]
             elif field == "type":
                 # type == value
-                return needs.filter_types([value]), False  # type: ignore[list-item]  # ty: ignore[invalid-argument-type]
+                return needs.filter_types([value]), False  # ty: ignore[invalid-argument-type]
             elif field == "status":
                 # status == value
-                return needs.filter_statuses([value]), False  # type: ignore[list-item]  # ty: ignore[invalid-argument-type]
+                return needs.filter_statuses([value]), False  # ty: ignore[invalid-argument-type]
             elif field == "is_external":
                 # is_external == value
-                return needs.filter_is_external(value), False  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+                return needs.filter_is_external(value), False  # ty: ignore[invalid-argument-type]
 
         elif len(expr.ops) == 1 and isinstance(expr.ops[0], ast.In):
             # <expr1> in <expr2>
@@ -614,7 +614,7 @@ def filter_needs(
     append_warning: str = "",
     origin_docname: str | None = None,
 ) -> list[NeedItem]:
-    return filter_needs_and_parts(  # type: ignore[return-value]
+    return filter_needs_and_parts(
         needs,
         config,
         filter_string=filter_string,
