@@ -15,7 +15,7 @@ Improvements
 ............
 
 - ✨ :ref:`needpie` and :ref:`needbar` now accept the ``:filter:``, ``:status:``,
-  ``:tags:`` and ``:types:`` options, as the scope a chart is counted over (:pr:`TBD`)
+  ``:tags:`` and ``:types:`` options, as the scope a chart is counted over (:pr:`1831`)
 
   The four options were rejected on both chart directives with an ``unknown option``
   error. They now select the needs and parts a chart counts over, once for the whole
