@@ -254,8 +254,8 @@ to filter for needs only in the same document as the directive.
 
 It is available in the filters of the need-listing and diagram directives —
 including ``needsequence`` ``:filter:``, ``needflow`` ``:highlight:``,
-``needgantt`` ``:milestone_filter:`` and the filter lines of ``needpie``
-and ``needbar``.
+``needgantt`` ``:milestone_filter:`` and, on ``needpie`` and ``needbar``,
+both the filter lines and the scope ``:filter:``.
 It is *not* available to filters configured in **conf.py**,
 such as :ref:`needs_constraints` and :ref:`needs_warnings`,
 since those are not written in any document;
@@ -343,10 +343,10 @@ To debug which filters are being used across your project and their run times, y
 
    ``cypher`` on a chart is the one option whose no-op changes a rendered number:
    ubCode reads the query as the scope the content lines are counted over,
-   whereas a Sphinx build ignores it and counts every line over the whole project,
+   whereas a Sphinx build ignores it,
    so the same chart can show different numbers here than in the ubCode preview.
    Write the same scope with ``:filter:``, ``:status:``, ``:tags:`` or ``:types:``
-   beside the query and both tools count over the same needs;
+   beside the query and both tools select the same needs;
    see :ref:`needpie_scope` and :ref:`needbar_scope`.
 
    These options may gain native implementations in future Sphinx-Needs releases,

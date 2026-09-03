@@ -81,8 +81,8 @@ Improvements
   ubCode reads the query as the scope each content line is counted over, whereas Sphinx-Needs
   ignores it, so the same chart can show different numbers in the two tools.
 
-  On :ref:`needbar` the option is accepted ahead of any ubCode support for it, so that a
-  document already carrying it builds in both.
+  On :ref:`needbar` the option is accepted so that a document already carrying it builds
+  in both.
   See :ref:`ubCode compatibility <ubcode_compat_options>` for the exact per-directive list.
 
 Internal changes

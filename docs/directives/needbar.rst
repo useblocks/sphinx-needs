@@ -529,7 +529,12 @@ Parts follow their need: ``:status:``, ``:tags:`` and ``:types:`` select needs,
 and the parts of a selected need are in the scope with it, while ``:filter:``
 is evaluated over needs and parts alike.
 This is what the same four options do on :ref:`needlist`, so a scope and a
-``needlist`` written with the same options cover the same needs.
+``needlist`` written with the same options select the same needs.
+
+Writing the scope twice, as the four options and as a ``:cypher:`` query, is the
+portable form: ubCode gives the query precedence over the options, Sphinx-Needs
+ignores the query and applies the options, so the two engines agree for as long
+as the two spellings do.
 
 An option value is never split by the ``:separator:``, which a content cell is,
 so ``:filter: status in ['open', 'closed']`` works as written while the same
