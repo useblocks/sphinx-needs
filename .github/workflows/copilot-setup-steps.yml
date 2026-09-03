@@ -25,7 +25,7 @@ jobs:
     # You can define any steps you want, and they will run before the agent starts.
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - uses: astral-sh/setup-uv@v10.0.1
         with:
