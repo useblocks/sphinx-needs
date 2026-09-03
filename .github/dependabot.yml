@@ -31,12 +31,11 @@ updates:
           - version-update:semver-major
           - version-update:semver-minor
       # the `typing` dependency group pins the oldest supported docutils series and the stubs
-      # that describe it, so the type checker runs against the floor; a newer series would
-      # type-check against an API the floor does not have. Both move by hand, with the floor.
-      - dependency-name: docutils
-        update-types:
-          - version-update:semver-major
-          - version-update:semver-minor
+      # that describe it, so the type checker runs against the floor. The stubs have no other
+      # job, so their series moves by hand, with the floor (`check_typing_floor.py` fails
+      # Lint when the two drift apart). docutils itself is deliberately NOT listed: the main
+      # environment should keep taking new docutils series as sphinx allows them, and the
+      # occasional proposal to widen the floor line is closed by hand.
       - dependency-name: types-docutils
         update-types:
           - version-update:semver-major

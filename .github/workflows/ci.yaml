@@ -30,6 +30,13 @@ jobs:
         # the `sphinx-7` and `typing` groups both cap sphinx at the 7.4 series; both are in
         # the conflict set so that a plain `uv sync` is not capped by either
         run: uv run --frozen python -c "import sphinx; assert sphinx.version_info[0] >= 9, sphinx.__version__"
+      - name: Check the typing floor is the floor it claims to be
+        # .venvs/typing exists because the `ty` hook ran the typecheck task above; the
+        # stubs must match the installed docutils, and that docutils must be the lowest
+        # series the floor sphinx accepts
+        env:
+          UV_PROJECT_ENVIRONMENT: .venvs/typing
+        run: uv run --frozen --no-sync --no-group dev --group typing python .github/scripts/check_typing_floor.py
 
   # ubc:
   #   name: ubc
