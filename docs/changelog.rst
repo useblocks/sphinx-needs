@@ -4,12 +4,25 @@
 Changelog
 =========
 
-.. _`release:unreleased`:
+.. _`release:8.5.0`:
 
-Unreleased
-----------
+8.5.0
+-----
 
-:Released: Unreleased
+:Released: 03.09.2026
+:Full Changelog: `v8.4.0...v8.5.0 <https://github.com/useblocks/sphinx-needs/compare/8.4.0...8.5.0>`__
+
+This release is about **charts**, and about the tooling behind the project. :ref:`needpie`
+and :ref:`needbar` gain a scope — the same ``:filter:``, ``:status:``, ``:tags:`` and
+``:types:`` options a view directive takes — and accept the ``cypher`` option a chart
+authored for `ubCode`_ carries, so one document builds in both tools. Schema validation
+errors now name the keyword that failed and report a ``$ref`` at its definition, which
+changes their text. The bug fixes continue the previous release's theme: a :ref:`needuml`,
+:ref:`needarch` or :ref:`needextract` input that used to end the build with a traceback,
+and a malformed :ref:`needs_warnings` filter, are now located warnings — and, for a project
+that builds with ``-W``, can turn a green build red until the reported mistake is fixed or
+suppressed. Under the hood the development toolchain moves to a committed ``uv.lock``,
+``poe`` tasks and ``ty``; none of that touches the published package.
 
 Improvements
 ............
