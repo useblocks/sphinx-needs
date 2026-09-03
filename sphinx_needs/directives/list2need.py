@@ -217,13 +217,13 @@ class List2NeedDirective(SphinxDirective):
                     # ":" is likely to have needed: the options of a directive written
                     # in the content of an item, which are one field list line each
                     more_text = f"   {more_text}"
-                list_needs[-1]["content"].append(more_text)
-                list_needs[-1]["content_lines"].append(line_index)
+                list_needs[-1]["content"].append(more_text)  # ty: ignore[invalid-argument-type, unresolved-attribute]
+                list_needs[-1]["content_lines"].append(line_index)  # ty: ignore[unresolved-attribute]
 
         # Extract the inline options of every item
         for list_need in list_needs:
             # Search for meta data in the complete title/content
-            content_text = "\n".join(list_need["content"])
+            content_text = "\n".join(list_need["content"])  # ty: ignore[no-matching-overload]
             search_string = list_need["title"] + content_text
             result = OPTION_AREA_REGEX.search(search_string)
             if result is not None:  # An option was found
@@ -235,7 +235,7 @@ class List2NeedDirective(SphinxDirective):
                 # The option area cannot span a line break, so substituting on the
                 # joined content and splitting it up again preserves the line count,
                 # and with it every line's mapping back to its source position.
-                list_need["title"] = OPTION_AREA_REGEX.sub("", list_need["title"])
+                list_need["title"] = OPTION_AREA_REGEX.sub("", list_need["title"])  # ty: ignore[no-matching-overload]
                 list_need["content"] = OPTION_AREA_REGEX.sub("", content_text).split(
                     "\n"
                 )
@@ -244,17 +244,17 @@ class List2NeedDirective(SphinxDirective):
             if tags:
                 if "options" not in list_need:
                     list_need["options"] = {}
-                current_tags = list_need["options"].get("tags", "")
+                current_tags = list_need["options"].get("tags", "")  # ty: ignore[unresolved-attribute]
                 if current_tags:
-                    list_need["options"]["tags"] = current_tags + "," + tags
+                    list_need["options"]["tags"] = current_tags + "," + tags  # ty: ignore[invalid-assignment]
                 else:
-                    list_need["options"]["tags"] = tags
+                    list_need["options"]["tags"] = tags  # ty: ignore[invalid-assignment]
 
             # an explicitly given id wins over the one derived from the title,
             # and has to be known before the links-down of any other item are built.
             # An empty one is handed on as it stands, so that it is refused with a
             # diagnostic instead of being silently replaced by the title hash.
-            if (given_id := list_need["options"].pop("id", None)) is not None:
+            if (given_id := list_need["options"].pop("id", None)) is not None:  # ty: ignore[invalid-argument-type, too-many-positional-arguments, unresolved-attribute]
                 list_need["need_id"] = given_id
 
         # Finally creating the needs
@@ -263,7 +263,7 @@ class List2NeedDirective(SphinxDirective):
         open_needs: list[tuple[int, Need]] = []
         created = False
         for index, list_need in enumerate(list_needs):
-            options = dict(list_need["options"])
+            options = dict(list_need["options"])  # ty: ignore[no-matching-overload]
 
             need_links_down = self.get_down_needs(list_needs, index)
             if (
@@ -271,7 +271,7 @@ class List2NeedDirective(SphinxDirective):
                 and list_need["level"] in down_links_types
                 and need_links_down
             ):
-                links_down_type = down_links_types[list_need["level"]]
+                links_down_type = down_links_types[list_need["level"]]  # ty: ignore[invalid-argument-type]
                 given = options.get(links_down_type)
                 joined = ", ".join(need_links_down)
                 options[links_down_type] = f"{given}, {joined}" if given else joined
@@ -280,7 +280,7 @@ class List2NeedDirective(SphinxDirective):
             created = created or bool(need_nodes)
 
             if presentation == "nested":
-                while open_needs and open_needs[-1][0] >= list_need["level"]:
+                while open_needs and open_needs[-1][0] >= list_need["level"]:  # ty: ignore[unsupported-operator]
                     open_needs.pop()
                 if open_needs:
                     parent_node = open_needs[-1][1]
@@ -293,7 +293,7 @@ class List2NeedDirective(SphinxDirective):
                         # read, so a child placed inside one would be rendered nowhere
                         # and referenced by an anchor that never reaches the page
                         if not node.get("hidden"):
-                            open_needs.append((list_need["level"], node))
+                            open_needs.append((list_need["level"], node))  # ty: ignore[invalid-argument-type]
                         break
             else:
                 node_list += need_nodes
@@ -352,7 +352,7 @@ class List2NeedDirective(SphinxDirective):
         # own title is empty is one written without a directive argument
         title, full_title = _get_title(
             [list_need["title"]] if list_need["title"].strip() else [],
-            content,
+            content,  # ty: ignore[invalid-argument-type]
             title_optional=needs_config.title_optional,
             title_from_content=flags.get(
                 "title_from_content", needs_config.title_from_content
@@ -445,7 +445,7 @@ class List2NeedDirective(SphinxDirective):
         """Return the source and 0-based source offset of content line ``index``."""
         if self._content_is_source_mapped():
             source, offset = self.content.info(index)
-            return str(source), int(offset)
+            return str(source), int(offset)  # ty: ignore[invalid-argument-type]
         # myst-parser: rebuild the offset from the position of the directive itself
         _, lineno = self.get_source_info()
         if lineno is None:

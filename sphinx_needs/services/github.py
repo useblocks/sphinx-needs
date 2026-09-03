@@ -132,7 +132,7 @@ class GithubService(BaseService):
 
         auth: tuple[str, str] | None
         # TODO token can be None
-        auth = (self.username, self.token) if self.username else None  # type: ignore[assignment]
+        auth = (self.username, self.token) if self.username else None  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
 
         resp = requests.get(url, params=params, auth=auth, headers=headers)
 

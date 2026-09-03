@@ -133,7 +133,7 @@ class NeedsList:
         from sphinx_needs import __version__
 
         if version not in self.needs_list["versions"]:
-            self.needs_list["versions"][version] = {
+            self.needs_list["versions"][version] = {  # ty: ignore[invalid-assignment]
                 "needs_amount": 0,
                 "needs": {},
                 "creator": {
@@ -142,17 +142,17 @@ class NeedsList:
                 },
             }
             if self._schema:
-                self.needs_list["versions"][version]["needs_schema"] = self._schema
+                self.needs_list["versions"][version]["needs_schema"] = self._schema  # ty: ignore[invalid-argument-type]
             if self.needs_config.json_remove_defaults:
-                self.needs_list["versions"][version]["needs_defaults_removed"] = True
+                self.needs_list["versions"][version]["needs_defaults_removed"] = True  # ty: ignore[invalid-argument-type]
             if not self.needs_config.reproducible_json:
-                self.needs_list["versions"][version]["created"] = ""
+                self.needs_list["versions"][version]["created"] = ""  # ty: ignore[invalid-argument-type]
 
-        if "needs" not in self.needs_list["versions"][version]:
-            self.needs_list["versions"][version]["needs"] = {}
+        if "needs" not in self.needs_list["versions"][version]:  # ty: ignore[invalid-argument-type]
+            self.needs_list["versions"][version]["needs"] = {}  # ty: ignore[invalid-argument-type]
 
         if not self.needs_config.reproducible_json:
-            self.needs_list["versions"][version]["created"] = datetime.now().isoformat()
+            self.needs_list["versions"][version]["created"] = datetime.now().isoformat()  # ty: ignore[invalid-argument-type]
 
     def add_need(self, version: str, need_info: NeedItem) -> None:
         self.update_or_add_version(version)
@@ -174,14 +174,14 @@ class NeedsList:
                     key in self._need_defaults and value == self._need_defaults[key]
                 )
             }
-        self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs
-        self.needs_list["versions"][version]["needs_amount"] = len(
-            self.needs_list["versions"][version]["needs"]
+        self.needs_list["versions"][version]["needs"][need_info["id"]] = writable_needs  # ty: ignore[invalid-argument-type]
+        self.needs_list["versions"][version]["needs_amount"] = len(  # ty: ignore[invalid-argument-type]
+            self.needs_list["versions"][version]["needs"]  # ty: ignore[invalid-argument-type]
         )
 
     def wipe_version(self, version: str) -> None:
         if version in self.needs_list["versions"]:
-            del self.needs_list["versions"][version]
+            del self.needs_list["versions"][version]  # ty: ignore[not-subscriptable]
 
     def _finalise(self) -> None:
         self.update_or_add_version(self.current_version)

@@ -954,7 +954,7 @@ class SphinxNeedsData:
         """
         if self.needs_is_post_processed:
             raise RuntimeError("Needs have already been post-processed and frozen.")
-        return self._env_needs  # type: ignore[return-value]
+        return self._env_needs  # type: ignore[return-value]  # ty: ignore[invalid-return-type]
 
     def get_needs_view(self) -> NeedsView:
         """Return a read-only view of all resolved needs.

@@ -295,7 +295,7 @@ class LayoutHandler:
             "link": self.link,
             "collapse_button": self.collapse_button,
             "permalink": self.permalink,
-        }
+        }  # ty: ignore[invalid-assignment]
 
         # The compiled string_links, so that regex and templates get not recompiled too often.
         #
@@ -314,9 +314,9 @@ class LayoutHandler:
 
         func = self.grids[self.layout["grid"]]
         if callable(func):
-            func()
+            func()  # ty: ignore[call-top-callable]
         else:
-            func["func"](**func["configs"])  # type: ignore[index]
+            func["func"](**func["configs"])  # type: ignore[index]  # ty: ignore[call-non-callable, invalid-argument-type]
 
         return self.node_table
 
@@ -374,7 +374,7 @@ class LayoutHandler:
             if not isinstance(node, nodes.Text):
                 for child in node.children:
                     new_child = self._func_replace([child])
-                    node.replace(child, new_child)  # type: ignore[attr-defined]
+                    node.replace(child, new_child)  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]
                 return_nodes.append(node)
             else:
                 node_str = node.astext()
@@ -927,7 +927,7 @@ class LayoutHandler:
 
         if image_url:
             image_node = self.image(image_url, image_height, image_width, no_link=True)
-            link_node.append(image_node)
+            link_node.append(image_node)  # ty: ignore[invalid-argument-type]
 
         data_container.append(link_node)
 
@@ -999,7 +999,7 @@ class LayoutHandler:
                 node.append(
                     self.image(
                         src[6:], width="17px", no_link=True, img_class="sn_collapse_img"
-                    )
+                    )  # ty: ignore[invalid-argument-type]
                 )
             elif src.startswith("Debug view"):
                 node.append(nodes.container(classes=[dbg_class]))

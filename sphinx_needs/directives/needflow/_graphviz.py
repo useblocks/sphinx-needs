@@ -54,7 +54,7 @@ def process_needflow_graphviz(
     needs_schema = SphinxNeedsData(app.env).get_schema()
 
     node: NeedflowGraphiz
-    for node in found_nodes:  # type: ignore[assignment]
+    for node in found_nodes:  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
         attributes = node.attributes
 
         if not needs_config.include_needs:

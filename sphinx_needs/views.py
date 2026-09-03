@@ -353,7 +353,7 @@ class NeedsAndPartsListView:
             for part_id in values:
                 selected_ids.extend(
                     (need_id, part_id)
-                    for need_id in self._indexes.indexes.parts_to_needs.get(part_id, [])
+                    for need_id in self._indexes.indexes.parts_to_needs.get(part_id, [])  # ty: ignore[invalid-argument-type]
                 )
         else:
             val_set = set(values)

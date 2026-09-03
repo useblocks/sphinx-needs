@@ -288,12 +288,12 @@ def _expr_to_predicate(
     if isinstance(expr, ast.BoolOp) and isinstance(expr.op, ast.And):
         preds = [_expr_to_predicate(v) for v in expr.values]
         if all(p is not None for p in preds):
-            return lambda need, ctx=None, _fns=preds: all(fn(need, ctx) for fn in _fns)  # type: ignore[misc]
+            return lambda need, ctx=None, _fns=preds: all(fn(need, ctx) for fn in _fns)  # type: ignore[misc]  # ty: ignore[call-non-callable]
 
     # --- <expr> or <expr> or ... ---
     if isinstance(expr, ast.BoolOp) and isinstance(expr.op, ast.Or):
         preds = [_expr_to_predicate(v) for v in expr.values]
         if all(p is not None for p in preds):
-            return lambda need, ctx=None, _fns=preds: any(fn(need, ctx) for fn in _fns)  # type: ignore[misc]
+            return lambda need, ctx=None, _fns=preds: any(fn(need, ctx) for fn in _fns)  # type: ignore[misc]  # ty: ignore[call-non-callable]
 
     return None

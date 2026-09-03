@@ -307,13 +307,13 @@ def generate_need(
         "type": need_type,
         "title": core_converted["title"].value  # type: ignore[typeddict-item]
         if isinstance(core_converted["title"], FieldLiteralValue)
-        else "",
+        else "",  # ty: ignore[invalid-argument-type]
         "tags": copy(core_converted["tags"].value)  # type: ignore[arg-type]
         if isinstance(core_converted["tags"], FieldLiteralValue)
-        else [],  # TODO allow for non-df/vf values?
+        else [],  # TODO allow for non-df/vf values?  # ty: ignore[invalid-argument-type]
         "status": core_converted["status"].value  # type: ignore[typeddict-item]
         if isinstance(core_converted["status"], FieldLiteralValue)
-        else None,
+        else None,  # ty: ignore[invalid-argument-type]
         "docname": source.dict_repr["docname"],
         "is_import": source.dict_repr["is_import"],
         "is_external": source.dict_repr["is_external"],
@@ -953,7 +953,7 @@ def add_external_need(
         content=content,
         # TODO a title being None is not "type compatible" with other parts of the code base,
         # however, at present changing it to an empty string breaks some existing tests.
-        title=title,  # type: ignore[arg-type]
+        title=title,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         status=status,
         tags=tags,
         constraints=constraints,

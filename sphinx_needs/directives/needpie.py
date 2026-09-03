@@ -107,7 +107,7 @@ class NeedpieDirective(FilterBase):
             "types": filter_attributes["types"],
             "filter": filter_attributes["filter"],
             "title": title,
-            "content": content,
+            "content": content,  # ty: ignore[invalid-argument-type]
             "legend": legend,
             "explode": explode,
             "style": style,
@@ -156,7 +156,7 @@ def process_needpie(
             remove_node_from_tree(node)
             continue
 
-        current_needpie: NeedsPieType = node.attributes
+        current_needpie: NeedsPieType = node.attributes  # ty: ignore[invalid-assignment]
 
         if matplotlib is None:
             message = "Matplotlib missing for needpie plot"

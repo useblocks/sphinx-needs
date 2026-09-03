@@ -114,7 +114,7 @@ def process_needsequence(
             remove_node_from_tree(node)
             continue
 
-        current_needsequence: NeedsSequenceType = node.attributes
+        current_needsequence: NeedsSequenceType = node.attributes  # ty: ignore[invalid-assignment]
 
         option_link_types = [
             link.upper() for link in current_needsequence["link_types"]
@@ -266,13 +266,13 @@ def process_needsequence(
                     origin="needsequence",
                     location=node,
                     unit="messages",
-                )
+                )  # ty: ignore[invalid-argument-type]
             )
         if current_needsequence["show_filters"]:
-            content.append(get_filter_para(current_needsequence))  # type: ignore[arg-type]
+            content.append(get_filter_para(current_needsequence))  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         if current_needsequence["debug"]:
-            content += get_debug_container(puml_node)  # type: ignore[arg-type]
+            content += get_debug_container(puml_node)  # type: ignore[arg-type]  # ty: ignore[unsupported-operator]
 
         node.replace_self(content)
 
@@ -355,7 +355,7 @@ def get_message_needs(
     if tracked_receivers is None:
         tracked_receivers = []
     for link_type in link_types:
-        msg_needs += [all_needs_dict[x] for x in sender[link_type]]  # type: ignore[misc]
+        msg_needs += [all_needs_dict[x] for x in sender[link_type]]  # type: ignore[misc]  # ty: ignore[unsupported-operator]
 
     messages: dict[str, dict[str, Any]] = {}
     p_string = ""

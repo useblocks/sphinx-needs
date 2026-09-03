@@ -91,12 +91,12 @@ class FilterBase(SphinxDirective):
 
         # Add the need and all needed information
         collected_filter_options: FilterAttributesType = {
-            "status": status,
+            "status": status,  # ty: ignore[invalid-argument-type]
             "tags": tags,
             "types": types,
-            "filter": self.options.get("filter"),
-            "sort_by": self.options.get("sort_by"),
-            "filter_code": self.content,
+            "filter": self.options.get("filter"),  # ty: ignore[invalid-argument-type]
+            "sort_by": self.options.get("sort_by"),  # ty: ignore[invalid-argument-type]
+            "filter_code": self.content,  # ty: ignore[invalid-argument-type]
             "filter_func": self.options.get("filter-func"),
             "filter_warning": self.options.get("filter_warning"),
         }
@@ -191,9 +191,9 @@ def process_filters(
             context: dict[str, NeedsAndPartsListView] = {
                 "needs": needs_view.to_list_with_parts(),
                 "results": [],  # type: ignore[dict-item]
-            }
+            }  # ty: ignore[invalid-assignment]
             exec(filter_code, context)
-            found_dirty_needs = context["results"]  # type: ignore[assignment]
+            found_dirty_needs = context["results"]  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
         elif ff_result:  # code from external file
             full_filter.append(ff_result.sig)
             args = []
@@ -465,16 +465,16 @@ def _analyze_and_apply_expr(
 
             if field == "id":
                 # id == value
-                return needs.filter_ids([value]), False  # type: ignore[list-item]
+                return needs.filter_ids([value]), False  # type: ignore[list-item]  # ty: ignore[invalid-argument-type]
             elif field == "type":
                 # type == value
-                return needs.filter_types([value]), False  # type: ignore[list-item]
+                return needs.filter_types([value]), False  # type: ignore[list-item]  # ty: ignore[invalid-argument-type]
             elif field == "status":
                 # status == value
-                return needs.filter_statuses([value]), False  # type: ignore[list-item]
+                return needs.filter_statuses([value]), False  # type: ignore[list-item]  # ty: ignore[invalid-argument-type]
             elif field == "is_external":
                 # is_external == value
-                return needs.filter_is_external(value), False  # type: ignore[arg-type]
+                return needs.filter_is_external(value), False  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         elif len(expr.ops) == 1 and isinstance(expr.ops[0], ast.In):
             # <expr1> in <expr2>
@@ -622,7 +622,7 @@ def filter_needs(
         location=location,
         append_warning=append_warning,
         origin_docname=origin_docname,
-    )
+    )  # ty: ignore[invalid-return-type]
 
 
 @measure_time("filtering")

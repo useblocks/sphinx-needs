@@ -89,7 +89,7 @@ def process_needlist(
             remove_node_from_tree(node)
             continue
 
-        current_needfilter: NeedsListType = node.attributes
+        current_needfilter: NeedsListType = node.attributes  # ty: ignore[invalid-assignment]
         content: list[nodes.Node] = []
         found_needs = process_filters(
             app,

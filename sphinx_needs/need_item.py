@@ -793,9 +793,9 @@ class NeedItem:
     def __getitem__(self, key: str) -> Any:
         """Get an item by key."""
         if key in self._computed:
-            return self._computed[key]  # type: ignore[literal-required]
+            return self._computed[key]  # type: ignore[literal-required]  # ty: ignore[invalid-key]
         if key in self._core:
-            return self._core[key]  # type: ignore[literal-required]
+            return self._core[key]  # type: ignore[literal-required]  # ty: ignore[invalid-key]
         elif key in self._extras:
             return self._extras[key]
         elif key in self._links:
@@ -806,9 +806,9 @@ class NeedItem:
                 for li in self._backlinks[self._backlinks_keymap[key]]
             ]
         elif key in self._source.dict_repr:
-            return self._source.dict_repr[key]  # type: ignore[literal-required]
+            return self._source.dict_repr[key]  # type: ignore[literal-required]  # ty: ignore[invalid-key]
         elif key in self._content.dict_repr:
-            return self._content.dict_repr[key]  # type: ignore[literal-required]
+            return self._content.dict_repr[key]  # type: ignore[literal-required]  # ty: ignore[invalid-key]
         raise KeyError(key)
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -884,7 +884,7 @@ class NeedItem:
         elif key in self._content.dict_repr:
             raise KeyError(f"Cannot modify content key {key!r} in NeedItem.")
         elif key in self._core:
-            self._core[key] = value  # type: ignore[literal-required]
+            self._core[key] = value  # type: ignore[literal-required]  # ty: ignore[invalid-key]
         elif key in self._extras:
             self._extras[key] = value
         elif key in self._links:

@@ -772,8 +772,8 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
 
     # Set time measurement flag
     if needs_config.debug_measurement:
-        debug.START_TIME = timer()  # Store the rough start time of Sphinx build
-        debug.EXECUTE_TIME_MEASUREMENTS = True
+        debug.START_TIME = timer()  # Store the rough start time of Sphinx build  # ty: ignore[invalid-assignment]
+        debug.EXECUTE_TIME_MEASUREMENTS = True  # ty: ignore[invalid-assignment]
 
     if needs_config.debug_filters:
         with contextlib.suppress(FileNotFoundError):
@@ -967,7 +967,7 @@ def create_schema(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> N
             name=name,
             description=description,
             nullable=nullable,
-            schema=_schema,  # type: ignore[arg-type]
+            schema=_schema,  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
             default=None if default is None else FieldLiteralValue(default),
             allow_defaults=data.get("allow_default", False),
             allow_extend=data.get("allow_extend", False),
@@ -1277,4 +1277,4 @@ def release_data_locks(app: Sphinx, _exception: Exception) -> None:
     such that this would be re-set.
     """
     SphinxNeedsData(app.env).needs_is_post_processed = False
-    app.env._needs_warnings_executed = False  # type: ignore[attr-defined]
+    app.env._needs_warnings_executed = False  # type: ignore[attr-defined]  # ty: ignore[unresolved-attribute]

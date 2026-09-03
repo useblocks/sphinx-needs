@@ -128,7 +128,7 @@ class NeedganttDirective(FilterBase, DiagramBase):
             "starts_with_links": starts_with_links,
             "starts_after_links": starts_after_links,
             "ends_with_links": ends_with_links,
-            "milestone_filter": milestone_filter,
+            "milestone_filter": milestone_filter,  # ty: ignore[invalid-argument-type]
             "start_date": start_date,
             "timeline": timeline,
             "no_color": no_color,
@@ -182,7 +182,7 @@ def process_needgantt(
             remove_node_from_tree(node)
             continue
 
-        current_needgantt: NeedsGanttType = node.attributes
+        current_needgantt: NeedsGanttType = node.attributes  # ty: ignore[invalid-assignment]
         all_needs_dict = SphinxNeedsData(env).get_needs_view()
 
         content = []
@@ -397,10 +397,10 @@ def process_needgantt(
                 no_needs_found_paragraph(current_needgantt.get("filter_warning"))  # type: ignore[list-item]
             ]
         if current_needgantt["show_filters"]:
-            content.append(get_filter_para(current_needgantt))  # type: ignore[arg-type]
+            content.append(get_filter_para(current_needgantt))  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
         if current_needgantt["debug"]:
-            content += get_debug_container(puml_node)  # type: ignore[arg-type]
+            content += get_debug_container(puml_node)  # type: ignore[arg-type]  # ty: ignore[unsupported-operator]
 
         puml_node["class"] = ["needgantt"]
         node.replace_self(content)

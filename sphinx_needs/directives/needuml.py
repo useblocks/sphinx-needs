@@ -229,7 +229,7 @@ def transform_uml_to_plantuml_node(
 
 def get_debug_node_from_puml_node(puml_node: nodes.Element) -> nodes.container:
     if isinstance(puml_node, nodes.figure):
-        data = puml_node.children[0]["uml"]  # type: ignore[index]
+        data = puml_node.children[0]["uml"]  # type: ignore[index]  # ty: ignore[not-subscriptable]
     else:
         data = puml_node.get("uml", "")
     data = "\n".join([html.escape(line) for line in data.split("\n")])
