@@ -1,0 +1,413 @@
+# The workspace root. It builds and publishes nothing of its own: every distribution lives
+# under `packages/<dist-name>/`, and the directory name is the distribution name. Today there
+# is exactly one, `packages/sphinx-needs`. What the root owns is repository-level policy --
+# the lock, the dependency groups shared by every member, and the lint, type-check, pytest
+# and task configuration.
+
+[project]
+# The root is a NAMED project rather than a virtual one, and the name is load-bearing in a
+# way that is easy to undo by accident. Two measurements on uv 0.12.9 are why:
+# in a workspace `[tool.uv] conflicts` requires a `package =` on every entry, so a virtual
+# root -- having no name -- cannot declare its own groups conflicting at all; and the shared
+# `test` group and the sphinx matrix have to resolve in the SAME conflict space, because
+# split across root and member `myst-parser` locks to two versions that only the member's
+# conflict extras tell apart and a bare sync dies on `Found multiple packages matching`.
+name = "sphinx-needs-workspace"
+version = "0"
+# must equal the lowest `requires-python` of any member, and moves when theirs does
+requires-python = ">=3.10,<4"
+# EVERY workspace member is listed here. A `[project]` at the root makes `uv sync` sync this
+# project rather than every member, so this list is what keeps a bare `uv sync` installing
+# them -- without it the suite has no `sphinx_needs` to import.
+dependencies = ["sphinx-needs"]
+
+# Pass-throughs to the members' published extras, and the reason they have to exist: uv
+# resolves `--extra` (and poe's `extra =`) against the PROJECT, which is now this root, so
+# an extra that lives only in a member is not reachable by name -- `uv sync --extra docs`
+# fails with `Extra 'docs' is not defined in the optional-dependencies table for
+# sphinx-needs-workspace`. The definitions stay in the package that publishes them; these
+# only forward. A new extra on a member needs a line here before any task can ask for it.
+[project.optional-dependencies]
+plotting = ["sphinx-needs[plotting]"]
+docs = ["sphinx-needs[docs]"]
+theme-im = ["sphinx-needs[theme-im]"]
+theme-furo = ["sphinx-needs[theme-furo]"]
+theme-pds = ["sphinx-needs[theme-pds]"]
+theme-rtd = ["sphinx-needs[theme-rtd]"]
+
+[tool.uv.sources]
+sphinx-needs = { workspace = true }
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+# EVERY dependency group in this workspace is declared here, at the root, under its
+# pre-move name. Groups cannot be composed across the root/member boundary in either
+# direction -- the root's `dev` cannot `include-group` a member's group, and a root
+# `default-groups` entry refuses to name one -- so a group can only ever live in one place,
+# and the root is the place a plain `uv sync` reaches. `dev` is uv's default group and it
+# includes `test`, so `uv sync` with no arguments is already a working test environment.
+# There is no `needs-` prefix on any of them: a prefix would only be needed to stop two
+# members' groups colliding under a bare `--group` name, and declared once here there is
+# nothing to collide with. A package gets a prefixed group of its own only once it genuinely
+# needs a different pin from the workspace's.
+[dependency-groups]
+dev = [
+  "prek>=0.5.1",
+  "poethepoet~=0.48",
+  "uv>=0.12.9",
+  { include-group = "test" },
+]
+test = [
+  "defusedxml~=0.7.1",
+  "matplotlib>=3.3.0",
+  "pytest>=8,<10",
+  "pytest-cov>=6,<8",
+  "syrupy>=4,<7",
+  "sphinxcontrib-plantuml~=0.0",
+  "lxml~=6.0",
+  "responses>=0.22,<0.27",
+  "pydantic~=2.12",
+  "pytest-xprocess~=1.0",
+  "pyyaml ~= 6.0",
+  "myst-parser>=4,<6",           # host coverage for directives usable from Markdown
+  "pytest-xdist~=3.0",           # for `pytest -n auto`
+]
+benchmark = [
+  { include-group = "test" },
+  "pytest-benchmark~=5.0; sys_platform != 'win32'",
+  "memray>=1.3.1,<2.0.0; sys_platform != 'win32'",
+]
+# The sphinx test matrix, one group per series. The markers are required for the lock to
+# resolve on python 3.10: sphinx 8.2 needs python>=3.11 and sphinx 9.1 needs python>=3.12.
+sphinx-7 = ["sphinx~=7.4"]
+sphinx-8 = ["sphinx~=8.2; python_version >= '3.11'"]
+sphinx-9 = ["sphinx~=9.1; python_version >= '3.12'"]
+typing = [
+  # the type-checking floor: the oldest supported sphinx and docutils series, resolved from
+  # the lock like every other environment, plus the stubs ty needs for docutils and requests
+  "sphinx~=7.4",
+  "docutils~=0.20.0",
+  "types-docutils~=0.20.0",
+  "types-requests",
+  "ty~=0.0.77",
+]
+
+[tool.uv]
+# never built, never published -- there is no `[build-system]`, and this says so explicitly.
+# The root's name exists only so the shared groups below can be declared conflicting.
+package = false
+# Each group in the set pins one sphinx series, so a single universal resolution would have
+# to satisfy all three at once and every environment would be capped at the lowest of them.
+# Declaring them conflicting gives each its own resolution in `uv.lock`, so the lock holds
+# all three sphinx versions and a plain `uv sync` resolves to the newest.
+# The qualifier is the ROOT's name because these are the root's groups -- one matrix and one
+# floor for the whole workspace. That is also the alignment fence: a member whose own sphinx
+# range excludes one of these pins makes `uv lock` FAIL rather than quietly skip that cell.
+# Qualify an entry with a member's name only once that package needs a pin of its own.
+conflicts = [
+  [
+    { package = "sphinx-needs-workspace", group = "sphinx-7" },
+    { package = "sphinx-needs-workspace", group = "sphinx-8" },
+    { package = "sphinx-needs-workspace", group = "sphinx-9" },
+    { package = "sphinx-needs-workspace", group = "typing" },
+  ],
+]
+
+
+# One pytest configuration for the whole workspace. A second one in a member would move
+# pytest's rootdir with the directory pytest happens to be invoked from, silently changing
+# which config file is in force. `--import-mode=importlib` is what lets two packages each
+# carry a `tests/test_utils.py`.
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+testpaths = ["packages/sphinx-needs/tests"]
+# The package tasks run from the package with `--ignore=performance` rather than a path, so
+# the walk covers the whole package -- including whatever a docs build left in `docs/_build`,
+# which pytest's default list does NOT skip (it skips `build`, not `_build`). Setting this key
+# REPLACES that default rather than extending it, so pytest 9's nine defaults are repeated
+# here verbatim; drop `node_modules` from them and `npm install cypress` inside the package
+# starts feeding the collector.
+norecursedirs = [
+  "*.egg",
+  ".*",
+  "_darcs",
+  "build",
+  "CVS",
+  "dist",
+  "node_modules",
+  "venv",
+  "{arch}",
+  "*/_build",
+]
+markers = [
+  "fixture_file: marks tests that use a fixture file (deselect with '-m \"not fixture_file\"')",
+  "jstest: marks tests as JavaScript test (deselect with '-m \"not jstest\"')",
+  "benchmark: marks tests as expensive benchmark test (deselect with '-m \"not benchmark\"')",
+]
+filterwarnings = [
+  "ignore:.*removed in Python 3.14.*:DeprecationWarning",
+  "ignore::PendingDeprecationWarning:sphinx_data_viewer.*",
+]
+
+
+[tool.ruff]
+# THESE TWO ENTRIES ARE LOAD-BEARING. isort decides an import is first-party by finding the
+# module under one of these roots; with the package two levels down, the default (this
+# file's own directory) no longer finds `sphinx_needs` and every docs/tests import block
+# re-sorts -- 37 files, silently, on the next `--fix`. Both entries are needed: the package
+# directory for `tests`/`docs`/`performance`, and its `src` for `sphinx_needs` itself.
+src = ["packages/sphinx-needs", "packages/sphinx-needs/src"]
+
+[tool.ruff.lint]
+# ruff's pre-0.16 default rule set, pinned explicitly.
+# ruff 0.16 replaced its default `select` wholesale, and this project only ever set
+# `extend-select`, so without this line the enabled set would change with every ruff
+# release. Adopting 0.16's much larger default set is a deliberate, separate decision.
+select = ["E4", "E7", "E9", "F"]
+extend-select = [
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "I",   # isort
+  "ICN", # flake8-import-conventions
+  "ISC", # flake8-implicit-str-concat
+  "N",   # pep8-naming
+  "RUF", # Ruff-specific rules
+  "SIM", # flake8-simplify
+  "UP",  # pyupgrade
+]
+# ISC004 is ignored for now: every occurrence here is a deliberately wrapped string
+# literal and its only fix is unsafe, so adopting it belongs with the wider ruleset review
+extend-ignore = ["B904", "ISC001", "ISC004", "ICN001", "N818", "RUF012"]
+
+[tool.ruff.format]
+# ruff 0.16 formats python code blocks embedded in markdown; the conformance corpus is
+# shared byte-for-byte with ubCode and checksummed in its own manifest (see the yamlfmt
+# exclude in .pre-commit-config.yaml), so a formatter local to this repository must not
+# rewrite markdown here
+exclude = ["*.md"]
+
+
+# ty is configured HERE, at the root, and not in the member -- deliberately, and it is the
+# one table that does not live with its package. ty is not workspace-aware: it takes the
+# `pyproject.toml` of its project directory, and a path argument does not select a project.
+# An editor's language server opened at the repository root therefore reads this file, so
+# the editor and the gate see one configuration by construction; with the table in the
+# member instead, the editor finds no `[tool.ty]` at all and reports ~475 diagnostics of
+# noise. The `typecheck-needs` task passes the source path explicitly for the same reason:
+# a stale `include` only warns and still exits 0, so the path has to be named where a
+# mistake in it is loud. Note the reverse case is not gated at all: deleting `include`, or
+# excluding the package under it, leaves the CI canary green because a CLI path still selects
+# the files -- what breaks then is only the editor's view.
+[tool.ty.src]
+include = ["packages/sphinx-needs/src/sphinx_needs"]
+
+[tool.ty.environment]
+python-version = "3.10"
+# so a bare `ty check` and the editor extension see the same environment as the gate;
+# `uv run poe typecheck-needs` creates it, and ty errors naming this path if it is missing
+python = ".venvs/typing"
+
+[tool.ty.analysis]
+# modules without type information that the floor environment does not install
+allowed-unresolved-imports = [
+  "matplotlib",
+  "matplotlib.**",
+  "requests_file",
+  "sphinx_data_viewer.**",
+  "sphinxcontrib.plantuml",
+  "sphinxcontrib.plantuml.**",
+  "tomli",
+  "tomli.**",
+]
+
+[tool.ty.terminal]
+# the unused-ignore ratchet: `unused-ignore-comment` is a warning by default, so without
+# this a suppression that stopped suppressing anything would pass. There are no other
+# warning-level diagnostics in this tree
+error-on-warning = true
+
+[[tool.ty.overrides]]
+# SphinxNeedsData stores its state as dynamic attributes on BuildEnvironment (#1725, Tier 2)
+include = ["packages/sphinx-needs/src/sphinx_needs/data.py"]
+[tool.ty.overrides.rules]
+unresolved-attribute = "ignore"
+
+# --- Task runner --------------------------------------------------------------------
+# poethepoet lives in the root `dev` group, which `uv sync` installs by default, so it is
+# in the lock and needs no separate install:
+#   uv run poe                  # list every task with its help
+#   uv run poe test-needs -k …  # trailing words are appended to the task's command verbatim
+# NAMING RULE: a task that acts on the whole repository is bare (`lint`); a task that acts
+# on one package ends in that package's short name (`test-needs`, `docs-needs`), the
+# distribution name minus its `sphinx-` prefix.
+# poe detects the uv project and runs every task through `uv run`; a task that needs a
+# dependency set other than the default one says so with `executor` options (never with a
+# nested `uv run` in the cmd — that syncs twice and pollutes the environment) and redirects
+# `UV_PROJECT_ENVIRONMENT`, so `.venv` is never clobbered by a matrix cell or a docs build.
+# Type checking is one of them: `typecheck-needs` installs the `typing` group into
+# `.venvs/typing` — the oldest supported sphinx and docutils, plus ty itself, all from the
+# lock — and checks against it, so the task, the prek `ty` hook (which runs the task) and CI
+# all see the same environment. The interpreter is the other axis, from `UV_PYTHON`, e.g.
+#   UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8
+# (`--no-sync` on the outer `uv run`, or uv also rebuilds the default `.venv` on that
+# interpreter). uv downloads the interpreter it does not have, so no pyenv is needed.
+# A package task sets `cwd`, which poe turns into `uv run --directory=<pkg> --project=<root>`:
+# the workspace root stays the project, so group names and a relative
+# `UV_PROJECT_ENVIRONMENT` still resolve against the root and need no `../..`. What `cwd`
+# DOES change is pytest: `testpaths` is honoured only when the invocation directory is the
+# rootdir, so under `cwd` pytest collects the working directory instead -- hence
+# `--ignore=performance`, which is not collectable. The tasks deliberately do NOT name
+# `tests` as a path: a positional argument in the cmd would be *added* to whatever the
+# caller appends, so `poe test-needs tests/test_basic_doc.py` would run the whole suite
+# instead of that file. Paths passed to these tasks are relative to the package.
+
+[tool.poe.executor]
+type = "uv"
+# `frozen` is uv's "do not update the lock", NOT "assert the lock is current" — the
+# currency gate is the `uv-lock` prek hook that the Lint job runs.
+frozen = true
+
+[tool.poe.tasks.lint]
+help = "Run every prek hook over the whole tree (ruff check + format, taplo, yamlfmt, ty, uv-lock)"
+cmd = "prek run --all-files"
+
+[tool.poe.tasks.test-needs]
+help = "Run the test suite against the default (newest) sphinx; trailing args go to pytest"
+cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m 'not jstest'"
+cwd = "packages/sphinx-needs"
+
+[tool.poe.tasks.test-needs-js]
+help = "Run only the JavaScript (Cypress) tests; needs `npm install cypress` first"
+cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m jstest"
+cwd = "packages/sphinx-needs"
+
+[tool.poe.tasks.test-needs-sphinx7]
+help = "Run the suite against sphinx 7.4 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m 'not jstest'"
+cwd = "packages/sphinx-needs"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-7",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-7" }
+
+[tool.poe.tasks.test-needs-sphinx8]
+help = "Run the suite against sphinx 8.2 (python >= 3.11; set UV_PYTHON to pick the interpreter)"
+cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m 'not jstest'"
+cwd = "packages/sphinx-needs"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-8",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-8" }
+
+[tool.poe.tasks.test-needs-sphinx9]
+help = "Run the suite against sphinx 9.1 (python >= 3.12; set UV_PYTHON to pick the interpreter)"
+cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m 'not jstest'"
+cwd = "packages/sphinx-needs"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-9",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
+
+[tool.poe.tasks.typecheck-needs]
+help = "Type-check sphinx_needs with ty against the oldest supported sphinx (the `typing` group)"
+# runs at the ROOT (no `cwd`), because the `[tool.ty]` configuration above is the root's.
+# The explicit path documents what is checked and fails loudly if it is absent from disk --
+# but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
+# makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
+# guards that.
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs --python .venvs/typing"
+executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
+
+[tool.poe.tasks.benchmark-needs]
+help = "Run the benchmark suite (time + memory); needs the docs extra for the corpus"
+cmd = "pytest tests/benchmarks"
+cwd = "packages/sphinx-needs"
+executor = { type = "uv", frozen = true, no-group = "dev", group = "benchmark", extra = "docs" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/benchmark" }
+
+# --- The built package ---
+# These two are named for the distribution they act on rather than for the repository, so
+# the names stay correct if a second distribution is ever built here. Every other task in
+# this file exercises a checkout; these exercise the artefact that is actually published,
+# which nothing else does (#1829).
+
+[tool.poe.tasks.build-needs]
+help = "Build the sphinx-needs sdist + wheel into dist/sphinx-needs"
+cmd = "uv build packages/sphinx-needs -o dist/sphinx-needs"
+
+[tool.poe.tasks.smoke-needs]
+help = "Install the built sphinx-needs wheel out of this project and build a doc with it"
+# builds the wheel itself -- a stale one left in dist/ would be a silent pass -- so this
+# does not depend on `build-needs` having been run first
+cmd = "python scripts/smoke_needs.py packages/sphinx-needs"
+
+# --- Documentation ---
+# One task per theme, because the theme selects a different *extra* and executor options
+# are not interpolated from task arguments. `docs-needs` (furo) is the one Read the Docs
+# builds. Every command below is relative to `cwd`, the package directory.
+
+[tool.poe.tasks.docs-needs]
+help = "Build the HTML docs with the furo theme"
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/furo -T"
+cwd = "packages/sphinx-needs"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = [
+  "docs",
+  "theme-furo",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs", DOCS_THEME = "furo" }
+
+[tool.poe.tasks.docs-needs-clean]
+help = "Delete the built HTML docs, then build them again from scratch"
+sequence = [
+  { script = "shutil:rmtree('packages/sphinx-needs/docs/_build/html', ignore_errors=True)" },
+  { ref = "docs-needs" },
+]
+
+[tool.poe.tasks.docs-needs-linkcheck]
+help = "Check every external link in the documentation"
+cmd = "sphinx-build -E -W -b linkcheck docs docs/_build/linkcheck"
+cwd = "packages/sphinx-needs"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-plain" }
+
+[tool.poe.tasks.docs-needs-alabaster]
+help = "Build the HTML docs with the alabaster (sphinx built-in) theme"
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/alabaster -T"
+cwd = "packages/sphinx-needs"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-plain", DOCS_THEME = "alabaster" }
+
+[tool.poe.tasks.docs-needs-im]
+help = "Build the HTML docs with the sphinx-immaterial theme"
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/sphinx_immaterial -T"
+cwd = "packages/sphinx-needs"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = [
+  "docs",
+  "theme-im",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-im", DOCS_THEME = "sphinx_immaterial" }
+
+[tool.poe.tasks.docs-needs-pds]
+help = "Build the HTML docs with the pydata-sphinx-theme"
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/pydata_sphinx_theme -T"
+cwd = "packages/sphinx-needs"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = [
+  "docs",
+  "theme-pds",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-pds", DOCS_THEME = "pydata_sphinx_theme" }
+
+[tool.poe.tasks.docs-needs-rtd]
+help = "Build the HTML docs with the sphinx-rtd-theme"
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/sphinx_rtd_theme -T"
+cwd = "packages/sphinx-needs"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = [
+  "docs",
+  "theme-rtd",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-rtd", DOCS_THEME = "sphinx_rtd_theme" }
