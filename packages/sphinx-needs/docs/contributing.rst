@@ -40,6 +40,9 @@ project and its development dependencies into an isolated environment:
    group, so no group has to be named. Syncing from inside ``packages/sphinx-needs`` instead
    installs the package alone, without ``pytest``.
 
+   The interpreter comes from the ``.python-version`` file at the repository root, so every
+   contributor gets the same one; uv downloads it if the machine does not have it.
+
 ``uv.lock`` is committed, so ``uv sync`` installs exactly the versions recorded in it,
 and every contributor and CI job gets the same environment.
 If you change the dependencies in ``pyproject.toml``, the ``uv-lock`` hook below updates

@@ -52,11 +52,46 @@ jobs:
             echo "::error::syncing sphinx-7 and sphinx-9 together should be an error"
             exit 1
           fi
-      - name: Check the default environment resolves to the newest sphinx
-        # the `sphinx-7` and `typing` groups both cap sphinx at the 7.4 series;
-        # both are in
-        # the conflict set so that a plain `uv sync` is not capped by either
-        run: uv run --frozen python -c "import sphinx; assert sphinx.version_info[0] >= 9, sphinx.__version__"
+      - name: Check the default environment is the one the repository pins
+        # Two assertions about a bare `uv sync`, because it has two axes and each drifts on
+        # its own.
+        # Sphinx: the `sphinx-7` and `typing` groups both cap sphinx at the 7.4 series, and
+        # both are in the conflict set so that a plain `uv sync` is not capped by either.
+        # Interpreter: the root `.python-version` is what makes a bare `uv sync` the same
+        # environment everywhere. `setup-uv` is given no `python-version` input in THIS job
+        # precisely so uv reads that file -- every other job passes one, which `setup-uv`
+        # turns into `UV_PYTHON`, and the environment variable beats the file. So this is the
+        # only job that tests the pin. The expected series is read back out of the file
+        # rather than written down a second time here.
+        run: |
+          v=$(cut -d. -f1,2 .python-version)
+          uv run --frozen python -c "
+          import sys, sphinx
+          assert sphinx.version_info[0] >= 9, 'sphinx ' + sphinx.__version__ + ' is not the newest series'
+          series = '%d.%d' % sys.version_info[:2]
+          assert series == '$v', 'the default environment is on python ' + series + ', but .python-version says $v'
+          "
+      - name: Check every member declares the root's requires-python
+        # The root's `requires-python` must equal every member's, and the root's own comment
+        # on it promises exactly that. Nothing enforced it: uv resolves one lock against the
+        # ROOT, so a member that floored itself higher (or failed to move when the root did)
+        # would still lock, build and publish, and the mismatch would only surface as an
+        # install failure for a user on the interpreter in the gap.
+        run: |
+          python3 -c "
+          import sys, tomllib
+          from pathlib import Path
+          root = tomllib.loads(Path('pyproject.toml').read_text())['project']['requires-python']
+          bad = 0
+          for member in sorted(Path('packages').glob('*/pyproject.toml')):
+              got = tomllib.loads(member.read_text())['project']['requires-python']
+              if got == root:
+                  print(str(member) + ': ' + got)
+              else:
+                  print('::error file=' + str(member) + '::requires-python is ' + got + ', but the root declares ' + root)
+                  bad = 1
+          sys.exit(bad)
+          "
       - name: Check the typing floor is the floor it claims to be
         # .venvs/typing exists because the `ty` hook ran the typecheck task above; the
         # stubs must match the installed docutils, and that docutils must be the lowest
@@ -221,7 +256,8 @@ jobs:
           enable-cache: true
           # the declared `requires-python` floor: the throwaway environment the wheel is
           # installed into inherits it through UV_PYTHON, so this cell is what keeps that
-          # floor honest
+          # floor honest. `setup-uv` sets UV_PYTHON from this input, which beats the root
+          # `.python-version` -- drop the input and this job would silently test 3.13.
           python-version: "3.11"
       - name: Build the wheel, install it out of the project and build a doc with it
         run: uv run --frozen poe smoke-needs

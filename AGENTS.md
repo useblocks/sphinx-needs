@@ -44,11 +44,17 @@ uv run poe smoke-needs                # build the wheel and test the built packa
 UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8   # one CI matrix cell
 ```
 
-**The default environment's sphinx follows whichever interpreter uv picks.** Below Python
-3.12 the lock resolves sphinx 8.2, so a bare `uv sync` on such a machine makes `test-needs`
-a second sphinx-8 run, skips the 3.12-gated tests, and fails CI's "newest sphinx" canary
-locally. Export `UV_PYTHON=3.12` (or newer) before `uv sync` to get the cell CI expects;
-the per-cell `UV_PYTHON=…` in the commands above still overrides it.
+**The root `.python-version` decides which interpreter a bare `uv sync` uses**, and it says
+`3.13`. It has to say something, because the default environment's sphinx follows the
+interpreter: below Python 3.12 the lock resolves sphinx 8.2, so on such a machine `test-needs`
+would quietly be a second sphinx-8 run and CI's "newest sphinx" canary would fail locally.
+With the file there, none of that depends on the machine — uv downloads 3.13 if it does not
+have it, and pyenv, asdf and mise read the same file, so a pyenv user needs
+`pyenv install 3.13` once. `UV_PYTHON=…` **overrides** the file (measured: the environment
+variable wins for both `uv sync` and `uv run`), which is how the per-cell commands above pick
+their interpreter, and how CI's matrix cells do — `setup-uv`'s `python-version` input is
+documented as setting `UV_PYTHON`. CI's Lint job deliberately passes no such input, so it is
+the one job running on the pin, and it asserts the series it got equals the file.
 
 The machine needs `java` (the plantuml jar is vendored under `tests/doc_test/utils/`) and
 graphviz's `dot` on `PATH` — the needflow tests do not skip without them, so install
