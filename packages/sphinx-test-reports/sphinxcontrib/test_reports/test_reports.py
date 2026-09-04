@@ -92,7 +92,7 @@ except ImportError:
             log.debug(f"Field '{name}' already registered, skipping")
 
 
-def setup(app: Sphinx):
+def setup(app: Sphinx) -> dict[str, str | bool]:
     """
     Setup following directives:
     * test_results

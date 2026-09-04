@@ -49,6 +49,9 @@ docs = [
 [dependency-groups]
 dev = ["pre-commit~=3.0", "nox>=2025.2.9", "mypy>=1.16.0"]
 
+[project.scripts]
+test-reports = "sphinxcontrib.test_reports.cli:main"
+
 [tool.flit.module]
 name = "sphinxcontrib.test_reports"
 
@@ -88,6 +91,9 @@ show_error_codes = true
 exclude = [
   "^sphinxcontrib/test_reports/__init__\\.py$",
   "^sphinxcontrib/test_reports/config\\.py$",
+  # argparse.Namespace attributes are Any by construction, which
+  # disallow_any_expr rejects; needs a typed settings object first.
+  "^sphinxcontrib/test_reports/cli\\.py$",
   "^sphinxcontrib/test_reports/directives/__init__\\.py$",
   "^sphinxcontrib/test_reports/directives/test_case\\.py$",
   "^sphinxcontrib/test_reports/directives/test_common\\.py$",
