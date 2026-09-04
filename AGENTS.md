@@ -41,6 +41,7 @@ uv run poe lint                       # every prek hook over the whole tree
 uv run poe typecheck-needs            # ty, against the oldest supported sphinx
 uv run poe docs-needs                 # the furo docs build
 uv run poe smoke-needs                # build the wheel and test the built package
+uv run poe check-workspace            # the manifests agree with each other (Lint runs it)
 UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8   # one CI matrix cell
 ```
 
@@ -150,9 +151,66 @@ uv pip install|uninstall …       # NOT project-scoped: it targets the activate
                                  #   whatever UV_PROJECT_ENVIRONMENT says. Pass --python
 ```
 
-**Never build a release or an sdist from a git worktree.** In a worktree `.git` is a file,
-flit's VCS detection tests for a directory, and `flit build --use-vcs` then silently falls
-back to a module-only sdist — no warning, a tenth of the size. Use a real clone.
+**The sdist's contents come from `[tool.flit.sdist]`, not from git.** `uv build` runs
+`flit_core.buildapi`, which never consults git: measured, the sdist built in a worktree and
+the one built in a `git clone --depth 1` of it have identical entry lists *and* identical
+entry sizes (1384 each). So what decides whether `tests/`, `docs/` and `performance/` ship
+is the `include`/`exclude` table in `packages/sphinx-needs/pyproject.toml`, and
+`uv run poe smoke-needs` asserts on every run that those trees are in the tarball and that
+nothing a docs or test run left behind is. (Until flit 4 this was a worktree hazard rather
+than a manifest one: `flit build --use-vcs` tested `.git` for a *directory*, and in a
+worktree it is a file, so the sdist silently fell back to the module alone — no warning, a
+tenth of the size. Nothing runs `flit` directly any more.)
+
+## Releasing a package
+
+Every distribution under `packages/` releases independently. One workflow,
+`.github/workflows/release.yaml`, serves all of them, and the tag says which:
+`<dist>-v<version>`. It publishes with PyPI trusted publishing (OIDC), so the
+workflow holds no API token, and every one of its checks fails closed.
+
+1. **Release pull request**, from `master` with a clean tree:
+   ```bash
+   uv version --package <dist> --bump {patch|minor|major} --no-sync
+   python .github/scripts/propagate_floors.py <dist>   # only if a member depends on <dist>
+   uv lock
+   ```
+   `--no-sync` is not optional. `--frozen` leaves `uv.lock` claiming the old version, and
+   the `uv-lock` hook then fails a release pull request for a reason that has nothing to do
+   with the release; a bare `uv version --bump` creates and syncs `.venv` and re-resolves
+   from cold, which reorders `resolution-markers` and stops the diff being readable.
+2. **The two numbers `uv version` does not write.** `__version__` in
+   `packages/<dist>/src/<module>/__init__.py` (it is stamped into every generated
+   `needs.json`, so it is a literal rather than an `importlib.metadata` lookup), and — for
+   sphinx-needs — the `NEEDS_VERSION` fallback in `.github/workflows/docker.yaml`, which
+   becomes `sphinx-needs-v<version>`: it is used as a git ref, and only the runs with no tag
+   of their own read it. `uv run poe check-workspace` fails on the first of them.
+3. **Changelog.** Stamp `packages/<dist>/docs/changelog.rst`: the `_release:<version>`
+   label, the version heading, `:Released: DD.MM.YYYY`, the `:Full Changelog:` compare link
+   (`…/compare/<previous tag>...<dist>-v<version>`) and the summary paragraph. The compare
+   link 404s in Docs-Linkcheck until the tag exists; that is expected and not a required
+   check.
+4. **Check it locally**: `uv run poe lint` (which now runs `check-workspace`) and
+   `uv run poe smoke-needs`.
+5. **Merge**, then push the tag from `master`:
+   ```bash
+   git tag <dist>-v<version> && git push origin <dist>-v<version>
+   ```
+6. The workflow does the rest: validate the tag, build, resolve the built wheel against
+   PyPI alone, run the member's suite against its dependencies *as published*, publish, and
+   create the GitHub Release titled `<dist> v<version>`. For sphinx-needs it then pushes a
+   second, bare `<version>` tag, which is what keeps Read the Docs' `stable`, every
+   `git+…@<version>` pin and every existing inbound link working — prefixed tags are not
+   PEP 440 and RTD drops what it cannot parse.
+
+**Rehearsing**: `gh workflow run release.yaml -f tag=<dist>-v<version>` runs `plan` and
+`build` against `master` and stops there — the publish job is `if: github.event_name ==
+'push'`, so a dispatch never publishes. In a rehearsal the "already on PyPI" check becomes
+a notice, so the current version is a valid thing to rehearse with.
+
+Never run `uv publish` with its default `dist/*` glob: in a workspace it uploads every
+artefact in the directory. Build with `uv build --package <dist> --no-sources -o dist/<dist>`
+and publish `dist/<dist>/*`, which is what `release.yaml` and `poe build-needs` both do.
 
 ## History after the directory move
 
