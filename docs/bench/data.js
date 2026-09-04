@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788524965344,
+  "lastUpdate": 1788545523098,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19404,6 +19404,42 @@ window.BENCHMARK_DATA = {
             "value": 61.175085050999996,
             "unit": "s",
             "extra": "Commit: a35c5dc86954cd4f8a966de6b6e14ac5204c0e28\nBranch: master\nTime: 2026-09-04T14:27:56+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2664a10e4d2abae2ebd2f99cbf2c8a69f0fd94ca",
+          "message": "🔧 Label issues and pull requests by package: path-based for PRs, a form dropdown for issues (#1841)",
+          "timestamp": "2026-09-04T20:10:28+02:00",
+          "tree_id": "200bf0491f9314b88f05b0ce78707cfe77559159",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2664a10e4d2abae2ebd2f99cbf2c8a69f0fd94ca"
+        },
+        "date": 1788545515465,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.16123667700003352,
+            "unit": "s",
+            "extra": "Commit: 2664a10e4d2abae2ebd2f99cbf2c8a69f0fd94ca\nBranch: master\nTime: 2026-09-04T20:10:28+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 64.86263292799998,
+            "unit": "s",
+            "extra": "Commit: 2664a10e4d2abae2ebd2f99cbf2c8a69f0fd94ca\nBranch: master\nTime: 2026-09-04T20:10:28+02:00"
           }
         ]
       }
