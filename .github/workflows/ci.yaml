@@ -210,10 +210,19 @@ jobs:
           cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
           python-version: ${{ matrix.python-version }}
       - name: Install the cell
-        run: uv sync --frozen --no-default-groups --group test --group ${{ matrix.sphinx-group }}
+        # `js` is the browser driver (pytest-playwright); it is not in `test`, because only
+        # these two cells want it
+        run: uv sync --frozen --no-default-groups --group test --group js --group ${{ matrix.sphinx-group }}
       - name: Check the cell installed the sphinx it names
         # against the group's own specifier — see the comment in tests-core
         run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ matrix.sphinx-group }}
+      - name: Install the browser
+        # the binary is not a package: playwright fetches it from cdn.playwright.dev into
+        # ~/.cache/ms-playwright. `--with-deps` adds the apt libraries a runner lacks.
+        # Deliberately uncached for now — measure this step, and if it is slow enough to
+        # matter, add actions/cache on ~/.cache/ms-playwright keyed on the playwright
+        # version in uv.lock (the browser revision follows it)
+        run: uv run --frozen --no-sync playwright install --with-deps chromium
       - name: Run pytest
         run: uv run --no-sync pytest -v packages/sphinx-needs/tests --ignore=packages/sphinx-needs/tests/benchmarks -m "jstest"
 

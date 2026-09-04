@@ -1,4 +1,100 @@
+"""Browser tests for the need table's collapse button.
+
+The page under test is built by the ordinary ``test_app`` fixture and then opened straight
+off disk over ``file://`` -- nothing in it fetches, so no server is involved. What is
+asserted is ``src/sphinx_needs/libs/html/sphinx_needs_collapse.js``: on load it hides one of
+the two icons (and, in ``hide`` mode, the metadata rows) by adding ``collapse_is_hidden``,
+and a click on the control toggles all of them.
+"""
+
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
 import pytest
+from playwright.sync_api import Locator, Page, expect
+from sphinx.testing.util import SphinxTestApp
+
+#: the class ``sphinx_needs_collapse.js`` adds and removes
+HIDE_CLASS = "collapse_is_hidden"
+
+
+def _has_class(name: str) -> re.Pattern[str]:
+    """A word-boundary match for ONE class name.
+
+    ``class`` holds several names, so equality on the whole attribute would assert the
+    other classes too and break whenever the markup around it changes.
+    """
+    return re.compile(rf"(^|\s){re.escape(name)}($|\s)")
+
+
+def _expect_hide_class(locator: Locator, *, present: bool) -> None:
+    """Assert every element ``locator`` matches carries (or lacks) :data:`HIDE_CLASS`."""
+    count = locator.count()
+    assert count, f"selector matched no element: {locator}"
+    for index in range(count):
+        element = locator.nth(index)
+        if present:
+            expect(element).to_have_class(_has_class(HIDE_CLASS))
+        else:
+            expect(element).not_to_have_class(_has_class(HIDE_CLASS))
+
+
+def _check_collapse_buttons(app: SphinxTestApp, page: Page) -> None:
+    """Build the project, open its index page and exercise every collapse control."""
+    app.build()
+
+    page_errors: list[str] = []
+    page.on("pageerror", lambda error: page_errors.append(error.message))
+
+    page.goto(Path(app.outdir, "index.html").as_uri())
+
+    controls = page.locator("table.need span.needs.needs_collapse")
+    control_count = controls.count()
+    assert control_count, "the built page has no collapse control to test"
+
+    for index in range(control_count):
+        control = controls.nth(index)
+
+        # the control's id is `<need id>__<show|hide>__<row class>__<row class>...`:
+        # the mode it starts in, then the metadata rows it governs
+        control_id = control.get_attribute("id")
+        assert control_id, "a collapse control has no id"
+        _, mode, *rows = control_id.split("__")
+        assert mode in {"show", "hide"}, f"unexpected collapse mode in {control_id!r}"
+        assert rows, f"no rows named in {control_id!r}"
+
+        # the enclosing need container -- `ancestor::…[1]` on a reverse axis is the
+        # NEAREST one, i.e. the `closest()` the script itself uses to scope its lookups
+        container = control.locator("xpath=ancestor::div[starts-with(@id, 'SNCB-')][1]")
+        container_id = container.get_attribute("id")
+        assert container_id, "the collapse control has no SNCB- container"
+
+        icon_visible = control.locator("span.needs.visible")
+        icon_collapsed = control.locator("span.needs.collapsed")
+        row_locators = [page.locator(f"#{container_id} table tr.{row}") for row in rows]
+
+        # (a) the state the script leaves on load
+        if mode == "show":
+            _expect_hide_class(icon_visible, present=True)
+        else:
+            _expect_hide_class(icon_collapsed, present=True)
+            for row_locator in row_locators:
+                _expect_hide_class(row_locator, present=True)
+
+        # (b) a click flips every one of them
+        control.click()
+        # `show` starts expanded, so its click hides the rows; `hide` starts collapsed
+        hidden_after_click = mode == "show"
+        for row_locator in row_locators:
+            _expect_hide_class(row_locator, present=hidden_after_click)
+        _expect_hide_class(icon_collapsed, present=hidden_after_click)
+        _expect_hide_class(icon_visible, present=not hidden_after_click)
+
+    # nothing on these pages throws today, so this is an unconditional assertion: there is
+    # no allowance for "<x> is not defined" like the retired Cypress support file carried
+    assert not page_errors, f"the page raised: {page_errors}"
 
 
 @pytest.mark.jstest
@@ -9,22 +105,13 @@ import pytest
             "buildername": "html",
             "srcdir": "doc_test/variant_doc",
             "tags": ["tag_a"],
-            "spec_pattern": "js_test/sn-collapse-button.cy.js",
         }
     ],
     indirect=True,
 )
-def test_collapse_button_in_variant_doc(test_app, test_server):
-    """Check if the Sphinx-Needs collapse button works in the provided documentation source."""
-    app = test_app
-    app.build()
-
-    # Call `app.test_js()` to run the JS test for a particular specPattern
-    js_test_result = app.test_js()
-
-    # Check the return code and stdout
-    assert js_test_result["returncode"] == 0
-    assert "All specs passed!" in js_test_result["stdout"]
+def test_collapse_button_in_variant_doc(test_app: SphinxTestApp, page: Page) -> None:
+    """Check the Sphinx-Needs collapse button works in the variant documentation source."""
+    _check_collapse_buttons(test_app, page)
 
 
 @pytest.mark.jstest
@@ -34,19 +121,10 @@ def test_collapse_button_in_variant_doc(test_app, test_server):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_basic",
-            "spec_pattern": "js_test/sn-collapse-button.cy.js",
         }
     ],
     indirect=True,
 )
-def test_collapse_button_in_doc_basic(test_app, test_server):
-    """Check if the Sphinx-Needs collapse button works in the provided documentation source."""
-    app = test_app
-    app.build()
-
-    # Call `app.test_js()` to run the JS test for a particular specPattern
-    js_test_result = app.test_js()
-
-    # Check the return code and stdout
-    assert js_test_result["returncode"] == 0
-    assert "All specs passed!" in js_test_result["stdout"]
+def test_collapse_button_in_doc_basic(test_app: SphinxTestApp, page: Page) -> None:
+    """Check the Sphinx-Needs collapse button works in the basic documentation source."""
+    _check_collapse_buttons(test_app, page)

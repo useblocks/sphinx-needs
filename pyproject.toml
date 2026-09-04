@@ -57,6 +57,7 @@ dev = [
   "poethepoet~=0.48",
   "uv>=0.12.9",
   { include-group = "test" },
+  { include-group = "js" },
 ]
 test = [
   "defusedxml~=0.7.1",
@@ -73,6 +74,11 @@ test = [
   "myst-parser>=4,<6",           # host coverage for directives usable from Markdown
   "pytest-xdist~=3.0",           # for `pytest -n auto`
 ]
+# The browser tests (`-m jstest`). Kept out of `test` on purpose: `test` is what the CI
+# matrix cells install, and only the two JS cells want a browser driver -- they add
+# `--group js` themselves. `dev` includes it, so a bare `uv sync` can run them. The
+# browser BINARY is not a package: `poe install-browser` fetches it once per machine.
+js = ["pytest-playwright~=0.9"]
 benchmark = [
   { include-group = "test" },
   "pytest-benchmark~=5.0; sys_platform != 'win32'",
@@ -278,9 +284,17 @@ cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m 'not jstest'"
 cwd = "packages/sphinx-needs"
 
 [tool.poe.tasks.test-needs-js]
-help = "Run only the JavaScript (Cypress) tests; needs `npm install cypress` first"
+help = "Run only the browser tests; run `poe install-browser` once first"
 cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m jstest"
 cwd = "packages/sphinx-needs"
+
+[tool.poe.tasks.install-browser]
+help = "Download Playwright's Chromium into ~/.cache/ms-playwright (once per machine)"
+# BARE name, not `install-browser-needs`: the naming rule is about tasks that act on a
+# package, and this acts on the machine -- it puts a browser in a per-user cache that any
+# package's tests would share. `--browser-channel chrome` passed to `test-needs-js` drives
+# an already-installed Chrome instead and needs no download at all.
+cmd = "playwright install chromium"
 
 [tool.poe.tasks.test-needs-sphinx7]
 help = "Run the suite against sphinx 7.4 (set UV_PYTHON to pick the interpreter)"
