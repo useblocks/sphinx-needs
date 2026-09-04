@@ -821,7 +821,7 @@ testing = [
     { name = "myst-parser", specifier = ">=4.0.0" },
     { name = "pytest", specifier = ">=8.2.2" },
     { name = "pytest-cov", specifier = ">=5.0.0" },
-    { name = "sphinx-needs", git = "https://github.com/useblocks/sphinx-needs.git?rev=master" },
+    { name = "sphinx-needs", specifier = ">8.3.0" },
     { name = "sphinxcontrib-mermaid", specifier = ">=1.0.0" },
     { name = "sphinxcontrib-plantuml", specifier = ">=0.30" },
 ]
@@ -829,8 +829,8 @@ ty = [{ name = "ty", specifier = ">=0.0.37" }]
 
 [[package]]
 name = "sphinx-needs"
-version = "8.3.0"
-source = { git = "https://github.com/useblocks/sphinx-needs.git?rev=master#e8c7a5aa33f7c3b825ca4d3e4c4adcfd0b0238e3" }
+version = "8.5.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jsonschema-rs" },
     { name = "minijinja" },
@@ -840,6 +840,10 @@ dependencies = [
     { name = "sphinx-data-viewer" },
     { name = "sphinxcontrib-jquery" },
     { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a8/c2/9db8259372467a85da7d07aa9f642d292f56feadebb37caab73683bbcfed/sphinx_needs-8.5.0.tar.gz", hash = "sha256:42d327baaf39f5041f692cb85609ef7023c0a73b688cde5803db444e577bb63d", size = 28245371, upload-time = "2026-09-03T11:42:25.929Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/02/96/e0a0b6fdf37460b7aaf8fb887922138aa23bbef7635ddaf09fb64823927a/sphinx_needs-8.5.0-py3-none-any.whl", hash = "sha256:aa7548d1ec33cd66cd0223cf8d5c0a934dc4c67d67ad471b5351b817d5f02750", size = 2767023, upload-time = "2026-09-03T11:42:23.717Z" },
 ]
 
 [[package]]
