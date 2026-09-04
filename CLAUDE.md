@@ -90,7 +90,10 @@ For this repository it lands on `docs-needs`: the GitHub-service example raises 
 at read time and takes the build down with exit 2, rather than degrading to the warning
 `conf.py` suppresses. `UV_PYTHON=3.12 uv run poe docs-needs` builds clean (`build succeeded`
 under `-nW --keep-going`) and is the workaround — one command, not the global `UV_PYTHON`
-the section above warns against. The tests, browser tests included, are unaffected: nothing
+the section above warns against. It is not free, though: `UV_PYTHON` overrides the pin for
+`uv run` too, so that command rebuilds the default `.venv` on 3.12 and the next bare `uv
+run` rebuilds it again on 3.13 (measured — `poe lint` right after it reinstalled 71
+packages). Run it when you need the docs, not idly. The tests, browser tests included, are unaffected: nothing
 in them reaches the network. The real fix belongs to the proxy, whose CA should carry
 `keyUsage`/`keyCertSign`; the `(staging)` in its CN suggests this may not outlive that build.
 
