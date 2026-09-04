@@ -83,7 +83,15 @@ def members(root: Path) -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
     for pattern in globs:
         for path in sorted(root.glob(f"{pattern}/pyproject.toml")):
-            data = tomllib.loads(path.read_text(encoding="utf-8"))["project"]
+            raw = tomllib.loads(path.read_text(encoding="utf-8"))
+            # This job runs FIRST, so a broken manifest reaches it before it reaches
+            # `check_workspace.py` in `build` -- which means it, not the fence, is the one
+            # that has to name the file and the fix rather than print a traceback
+            if "project" not in raw:
+                raise PlanError(f"{path}: no [project] table -- is this a package?")
+            data = raw["project"]
+            if "name" not in data:
+                raise PlanError(f"{path}: [project] declares no `name`")
             if "version" in data.get("dynamic", []):
                 raise PlanError(
                     f"{path}: {data['name']} has a dynamic version; the release pipeline "

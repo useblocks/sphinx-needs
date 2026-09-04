@@ -306,6 +306,35 @@ def test_a_non_bare_root_dependency_does_not_also_print_ok(workspace, capsys) ->
     assert "the root lists every member, bare" not in out
 
 
+def test_a_nameless_member_is_one_error_not_two(workspace, capsys) -> None:
+    """The member's own error is the actionable one; a "matches no package" ERROR on top of
+    it would show two problems where there is one."""
+    root = workspace({"acme-core": {"version": "1.0.0"}}, root_dependencies=[])
+    (root / "packages/acme-core/pyproject.toml").write_text(
+        '[project]\nversion = "1.0.0"\n', encoding="utf-8"
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert out.count("::error") == 1, out
+    assert "[project] declares no `name`" in out
+    # the glob is still reported, as context rather than as a second finding
+    assert "matches no usable package in this tree -- see the errors above" in out
+
+
+def test_a_members_glob_matching_nothing_at_all_is_still_reported(
+    tmp_path: Path, capsys
+) -> None:
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "root"\nversion = "0"\nrequires-python = ">=3.11,<4"\n'
+        'dependencies = []\n\n[tool.uv.workspace]\nmembers = ["packages/*"]\n',
+        encoding="utf-8",
+    )
+    assert check_workspace.main(["--root", str(tmp_path)]) == 1
+    out = capsys.readouterr().out
+    assert "matches no package in this tree" in out
+    assert "no usable package" not in out
+
+
 def test_no_workspace_members_key(tmp_path: Path, capsys) -> None:
     (tmp_path / "pyproject.toml").write_text(
         '[project]\nname = "x"\nversion = "0"\n', encoding="utf-8"

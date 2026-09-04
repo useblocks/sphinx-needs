@@ -79,8 +79,10 @@ jobs:
           # GitHub-hosted runners EXCEPT for release, tag push and a few other events --
           # and a tag push is this workflow's real trigger, so `true` would write a cache
           # keyed on `refs/tags/<dist>-v<x.y.z>` that no later run can ever restore. The
-          # default still restores the default branch's caches on a tag run, and still
-          # caches normally on the dispatch rehearsal.
+          # default disables caching entirely on a tag run -- no save and no restore, which
+          # is the point (`getEnableCache()` returns false there, so `restoreCache` is never
+          # called, which also makes `cache-python` inert on that path) -- and still caches
+          # normally on the dispatch rehearsal.
           #
           # Deliberately NO `python-version` input either: it would set UV_PYTHON, which
           # beats the root `.python-version`, and the compat cell below is meant to run on

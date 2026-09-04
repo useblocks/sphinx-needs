@@ -140,11 +140,16 @@ def find_members(root: Path, manifest: dict[str, Any], report: Report) -> list[M
     # (`packages/*` and `packages/sphinx-needs`, say). uv resolves that to one member, so
     # this has to as well, or every per-member check is reported twice
     seen: set[Path] = set()
+    # counted separately from `found`: a manifest that was seen and rejected has already
+    # produced its own error, and reporting "matches no package" on top of it would show
+    # two problems where there is one
+    manifests = 0
     for pattern in globs:
         for path in sorted(root.glob(f"{pattern}/pyproject.toml")):
             if path in seen:
                 continue
             seen.add(path)
+            manifests += 1
             relative = path.relative_to(root).as_posix()
             try:
                 data = load(path)
@@ -162,10 +167,18 @@ def find_members(root: Path, manifest: dict[str, Any], report: Report) -> list[M
                 )
                 continue
             found.append(Member(root, path, data))
-    if not found:
+    if not manifests:
         report.error(
             ROOT_MANIFEST,
             f"[tool.uv.workspace] members {globs} matches no package in this tree",
+        )
+    elif not found:
+        # every manifest that was seen has already produced its own `::error` naming the
+        # file and the fix; a second ERROR here would show two problems where there is one,
+        # so this is context rather than a finding
+        print(
+            f"      [tool.uv.workspace] members {globs} matches no usable package in this "
+            "tree -- see the errors above"
         )
     return found
 

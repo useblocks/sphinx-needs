@@ -385,6 +385,27 @@ def test_a_dynamic_member_version_stops_the_plan(workspace, capsys, offline) -> 
     assert "has a dynamic version" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize(
+    ("manifest", "expected"),
+    [
+        ("[tool.poe]\nx = 1\n", "no [project] table -- is this a package?"),
+        ('[project]\nversion = "1.0.0"\n', "[project] declares no `name`"),
+    ],
+)
+def test_a_manifest_the_plan_cannot_read_is_annotated_not_a_traceback(
+    workspace, capsys, offline, manifest: str, expected: str
+) -> None:
+    """`plan` is job one, so a broken manifest reaches it before it reaches the fence in
+    `build` -- it has to name the file, not print a traceback."""
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    (root / "packages/acme-core/pyproject.toml").write_text(manifest, encoding="utf-8")
+    assert run(root, "--tag", "acme-core-v1.0.0") == 1
+    out = capsys.readouterr().out
+    assert "::error::" in out
+    assert expected in out
+    assert "Traceback" not in out
+
+
 def test_a_member_with_no_version_is_annotated_not_a_traceback(
     workspace, capsys, offline
 ) -> None:

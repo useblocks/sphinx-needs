@@ -17,10 +17,12 @@ import pytest
 
 # The scripts under test are loose files, not a package, and nothing installs them. Putting
 # `.github/scripts` on `sys.path` HERE rather than in the root `[tool.pytest.ini_options]
-# pythonpath` confines the change to this subtree's session: a repository-wide entry would
-# also expose this directory's own siblings by name, and a directory called `tests` next to
-# the scripts would then shadow -- or be shadowed by -- a package's `tests` for every pytest
-# run rooted at the repository. Hence `selftests`, and hence this line.
+# pythonpath` confines the change to the sessions that collect these tests -- a bare root
+# `pytest` collects both trees and so shares one `sys.path` throughout, which is harmless
+# because the name that could collide (`tests`) no longer exists outside a package. That
+# rename is the half of this that does the work; a repository-wide `pythonpath` entry would
+# have exposed this directory's siblings by name to every pytest run rooted here, including
+# the ones that never look at these tests. Hence `selftests`, and hence this line.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 ROOT_TEMPLATE = """\
