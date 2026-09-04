@@ -3,5 +3,8 @@
     "commit": "",
     "pr": "",
     "sessionUrl": false
+  },
+  "env": {
+    "UV_HTTP_TIMEOUT": "180"
   }
 }

@@ -63,11 +63,24 @@ graphviz's `dot` on `PATH` — the needflow tests do not skip without them, so i
 graphviz as CI does (`apt-get install graphviz`). The browser tests (`-m jstest`, which
 `test-needs` excludes) additionally need a browser, and it is not a package: `uv run poe
 install-browser` (`playwright install chromium`) fetches one per machine into
-`~/.cache/ms-playwright` — `~/Library/Caches/ms-playwright` on macOS — measured at ~274 MiB
-downloaded, 554 MB on disk, 27 s. It comes from `cdn.playwright.dev`, with
-`playwright.download.prss.microsoft.com` as playwright's fallback mirror, so a sandbox must
-allow those; once that cache is warm nothing is fetched, and `uv run poe test-needs-js
---browser-channel chrome` drives a Chrome already on the machine and downloads nothing.
+`~/.cache/ms-playwright` — `~/Library/Caches/ms-playwright` on macOS, or wherever
+`PLAYWRIGHT_BROWSERS_PATH` points, which some prepared images set — measured at ~274 MiB
+downloaded, 554 MB on disk, 27 s. It comes from `cdn.playwright.dev` and nothing else on
+linux-x64, macOS and Windows: chromium and chrome-headless-shell are Chrome-for-Testing
+builds there, and the driver pins that one host for them (`cftUrl` in its `coreBundle.js`),
+so the three-mirror `PLAYWRIGHT_CDN_MIRRORS` list — where
+`playwright.download.prss.microsoft.com` lives — is only consulted for the linux-arm64
+build. A sandbox must allow `cdn.playwright.dev`; once the cache is warm nothing is
+fetched, and `uv run poe test-needs-js --browser-channel chrome` drives a Chrome already on
+the machine and downloads nothing.
+
+**A browser already on the machine is not necessarily the browser playwright will look
+for.** It resolves one exact path, `<cache>/chromium-<revision>/…`, with the revision that
+the *pinned* playwright names in its `driver/package/browsers.json`; an image that baked in
+a different revision leaves `test-needs-js` erroring `Executable doesn't exist at …`, which
+reads like a missing install rather than a mismatch. `uv run poe install-browser` is the
+answer; it fetches only what the pin names.
+
 `docs-needs` needs `docs.python.org` and `www.sphinx-doc.org` for intersphinx (and
 `api.github.com` for the GitHub-service example, whose warning is suppressed): behind a
 proxy that blocks the first two, `-nW` turns the unresolved references into dozens of errors

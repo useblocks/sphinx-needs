@@ -147,7 +147,9 @@ excludes them. The browser binary is not a Python package, so download it once p
    uv run poe install-browser
 
 That is ``playwright install chromium``, which lands in ``~/.cache/ms-playwright``
-(``~/Library/Caches/ms-playwright`` on macOS). Then:
+(``~/Library/Caches/ms-playwright`` on macOS), or in ``PLAYWRIGHT_BROWSERS_PATH`` if your
+environment sets one -- some prepared container images do, and then a browser they baked in
+is only found if its revision is the one this playwright pins. Then:
 
 .. code-block:: bash
 
