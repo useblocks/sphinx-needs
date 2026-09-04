@@ -16,6 +16,16 @@ jobs:
           # the pinned interpreter (root `.python-version`) is not on the runner image, so
           # without this uv downloads it on every run
           cache-python: true
+      - name: Check the workspace manifests agree with each other
+        # FIRST, and with `--no-project`: this fence reads the manifests, so it must not
+        # need an environment built from them -- a mistake in a manifest is exactly when
+        # `uv sync` fails, and a fence that syncs first reports "sync failed" instead of
+        # naming the mistake. It also replaces the inline requires-python check that used
+        # to sit further down this job, and adds four more assertions of the same kind
+        # (see the script's docstring). The local prek hook runs the same script against
+        # the synced environment, so `uv run poe lint` covers it too
+        run: >
+          uv run --no-project --with packaging python .github/scripts/check_workspace.py
       - run: uv run --frozen prek run --all-files --show-diff-on-failure
         env:
           PREK_COLOR: always
@@ -75,27 +85,6 @@ jobs:
           series = '%d.%d' % sys.version_info[:2]
           assert series == '$v', 'the default environment is on python ' + series + ', but .python-version says $v'
           "
-      - name: Check every member declares the root's requires-python
-        # The root's `requires-python` must equal every member's, and the root's own comment
-        # on it promises exactly that. Nothing enforced it: uv resolves one lock against the
-        # ROOT, so a member that floored itself higher (or failed to move when the root did)
-        # would still lock, build and publish, and the mismatch would only surface as an
-        # install failure for a user on the interpreter in the gap.
-        run: |
-          python3 -c "
-          import sys, tomllib
-          from pathlib import Path
-          root = tomllib.loads(Path('pyproject.toml').read_text())['project']['requires-python']
-          bad = 0
-          for member in sorted(Path('packages').glob('*/pyproject.toml')):
-              got = tomllib.loads(member.read_text())['project']['requires-python']
-              if got == root:
-                  print(str(member) + ': ' + got)
-              else:
-                  print('::error file=' + str(member) + '::requires-python is ' + got + ', but the root declares ' + root)
-                  bad = 1
-          sys.exit(bad)
-          "
       - name: Check the typing floor is the floor it claims to be
         # .venvs/typing exists because the `ty` hook ran the typecheck task above; the
         # stubs must match the installed docutils, and that docutils must be the lowest
@@ -103,6 +92,13 @@ jobs:
         env:
           UV_PROJECT_ENVIRONMENT: .venvs/typing
         run: uv run --frozen --no-sync --no-group dev --group typing python .github/scripts/check_typing_floor.py
+      - name: Test the repository's own scripts
+        # `.github/scripts/` holds the release fences: the one that decides whether a tag
+        # may publish, and the one that rewrites floors. They are not in any package, so
+        # this is the only job that runs their tests. They are in the root `testpaths`, so
+        # a bare `pytest` at the root runs them too -- but every matrix cell names the
+        # package's `tests` path explicitly and so never collects them
+        run: uv run --frozen --no-sync pytest .github/scripts/tests -q
 
   # ubc:
   #   name: ubc

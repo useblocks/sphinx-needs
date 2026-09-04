@@ -22,6 +22,17 @@ repos:
 
   - repo: local
     hooks:
+      - id: check-workspace
+        name: check-workspace
+        language: system
+        # the manifests have to agree with each other in five ways that no other gate can
+        # see -- see the script's docstring. CI runs the same script with
+        # `--no-project --with packaging`, so that a mistake in the manifests is named
+        # rather than reported as a failed sync; here the synced environment already
+        # exists, so the hook uses it and stays fast
+        entry: uv run --frozen --no-sync python .github/scripts/check_workspace.py
+        pass_filenames: false
+        files: ^(pyproject\.toml|packages/[^/]+/pyproject\.toml|packages/[^/]+/src/[^/]+/__init__\.py)$
       - id: ty
         name: ty
         language: system

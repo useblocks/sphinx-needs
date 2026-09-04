@@ -43,6 +43,7 @@ import tempfile
 import time
 import zipfile
 from pathlib import Path
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -88,7 +89,7 @@ class SmokeError(RuntimeError):
     """A step that cannot be recovered from (the build, the install, the doc build)."""
 
 
-def run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+def run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
     """Run a command, echoing it first, and raise SmokeError if it fails."""
     print("$", " ".join(str(part) for part in cmd), flush=True)
     proc = subprocess.run(

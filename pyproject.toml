@@ -56,6 +56,11 @@ dev = [
   "prek>=0.5.1",
   "poethepoet~=0.48",
   "uv>=0.12.9",
+  # the only dependency any repository script has beyond `packaging` (which sphinx already
+  # pulls in everywhere): `.github/scripts/propagate_floors.py` round-trips a member's
+  # manifest through it so a floor bump is a one-line diff with the comments intact.
+  # A 49 KB wheel with no dependencies of its own
+  "tomlkit>=0.13",
   { include-group = "test" },
   { include-group = "js" },
 ]
@@ -98,6 +103,11 @@ typing = [
   "types-docutils~=0.20.0",
   "types-requests",
   "ty~=0.0.77",
+  # not a floor of anything: `[tool.ty.src] include` now covers `.github/scripts`, and ty
+  # resolves the imports of what it checks against THIS environment, so `propagate_floors.py`
+  # needs tomlkit here as well as in `dev`. It has no dependencies, so the floor this
+  # environment exists to pin is unaffected (`check_typing_floor.py` still passes)
+  "tomlkit>=0.13",
 ]
 
 [tool.uv]
@@ -128,7 +138,11 @@ conflicts = [
 # carry a `tests/test_utils.py`.
 [tool.pytest.ini_options]
 addopts = "--import-mode=importlib"
-testpaths = ["packages/sphinx-needs/tests"]
+testpaths = ["packages/sphinx-needs/tests", ".github/scripts/tests"]
+# the repository's scripts are not a package and are not installed anywhere, so their unit
+# tests import them by module name off this path. `scripts` is here for the same reason,
+# against the day `smoke_needs.py` grows a test of its own
+pythonpath = [".github/scripts", "scripts"]
 # The package tasks run from the package with `--ignore=performance` rather than a path, so
 # the walk covers the whole package -- including whatever a docs build left in `docs/_build`,
 # which pytest's default list does NOT skip (it skips `build`, not `_build`). Setting this key
@@ -207,7 +221,19 @@ exclude = ["*.md"]
 # excluding the package under it, leaves the CI canary green because a CLI path still selects
 # the files -- what breaks then is only the editor's view.
 [tool.ty.src]
-include = ["packages/sphinx-needs/src/sphinx_needs"]
+# The repository's own tooling is checked too. It is not in any package and is run by CI
+# with `uv run --no-project --with packaging`, so nothing else would ever look at it -- and
+# `.github/scripts/release_plan.py` is the script whose failure mode is a bad release
+include = [
+  "packages/sphinx-needs/src/sphinx_needs",
+  ".github/scripts",
+  "scripts",
+]
+# the scripts' own tests are not checked, for the same reason the package's are not: pytest
+# is deliberately absent from the `typing` environment, which pins the oldest supported
+# sphinx and docutils and nothing else it does not need. What the tests assert is asserted
+# by running them
+exclude = [".github/scripts/tests"]
 
 [tool.ty.environment]
 python-version = "3.11"
@@ -332,7 +358,7 @@ help = "Type-check sphinx_needs with ty against the oldest supported sphinx (the
 # but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
 # makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
 # guards that.
-cmd = "ty check packages/sphinx-needs/src/sphinx_needs --python .venvs/typing"
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs .github/scripts scripts --python .venvs/typing"
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 
@@ -342,6 +368,14 @@ cmd = "pytest tests/benchmarks"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", group = "benchmark", extra = "docs" }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/benchmark" }
+
+[tool.poe.tasks.check-workspace]
+help = "Check the workspace manifests agree with each other (the fence CI's Lint job runs)"
+# a bare name: it acts on the whole repository, not on one package. In CI this runs as
+# `uv run --no-project --with packaging`, deliberately -- a check on the manifests must not
+# need an environment built from those manifests -- but locally the prek hook and this task
+# use the synced one, because it is already there
+cmd = "python .github/scripts/check_workspace.py"
 
 # --- The built package ---
 # These two are named for the distribution they act on rather than for the repository, so
