@@ -51,6 +51,14 @@ def member_paths(root: Path) -> list[Path]:
     ]
 
 
+def declares(project: Any, target: str) -> bool:
+    """Does this member name `target` in any runtime requirement?"""
+    specs = list(project.get("dependencies", []))
+    for extra_specs in project.get("optional-dependencies", {}).values():
+        specs.extend(extra_specs)
+    return any(canonicalize_name(Requirement(spec).name) == target for spec in specs)
+
+
 def rewrite(specs: Any, target: str, wanted: str) -> int:
     """Rewrite in place every requirement naming `target`; return how many changed."""
     changed = 0
@@ -105,6 +113,7 @@ def main(argv: list[str] | None = None) -> int:
     wanted = f">={version},<{Version(version).major + 1}"
 
     touched = 0
+    declaring = 0
     for path in paths:
         document = tomlkit.parse(path.read_text(encoding="utf-8"))
         # tomlkit's items are dynamically typed containers that behave like dicts and
@@ -113,6 +122,8 @@ def main(argv: list[str] | None = None) -> int:
         project: Any = document["project"]
         if canonicalize_name(project["name"]) == target:
             continue
+        if declares(project, target):
+            declaring += 1
         changed = rewrite(project.get("dependencies", []), target, wanted)
         for specs in project.get("optional-dependencies", {}).values():
             changed += rewrite(specs, target, wanted)
@@ -126,8 +137,13 @@ def main(argv: list[str] | None = None) -> int:
         if not args.check:
             path.write_text(tomlkit.dumps(document), encoding="utf-8")
 
-    if not touched:
+    if not declaring:
         print(f"no member declares {args.dist}; nothing to propagate")
+    elif not touched:
+        print(
+            f"every one of the {declaring} member(s) that declare {args.dist} already "
+            f"floors on {args.dist}{wanted}"
+        )
     elif not args.check:
         print("now run `uv lock` and commit both")
     return 1 if (args.check and touched) else 0

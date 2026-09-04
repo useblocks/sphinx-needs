@@ -115,8 +115,15 @@ class Member:
         return out
 
 
+class ManifestError(RuntimeError):
+    """A manifest that cannot even be parsed. Reported, never raised at the reader."""
+
+
 def load(path: Path) -> dict[str, Any]:
-    return tomllib.loads(path.read_text(encoding="utf-8"))
+    try:
+        return tomllib.loads(path.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError as exc:
+        raise ManifestError(f"{path}: not valid TOML -- {exc}") from exc
 
 
 def find_members(root: Path, manifest: dict[str, Any], report: Report) -> list[Member]:
@@ -131,7 +138,16 @@ def find_members(root: Path, manifest: dict[str, Any], report: Report) -> list[M
     found: list[Member] = []
     for pattern in globs:
         for path in sorted(root.glob(f"{pattern}/pyproject.toml")):
-            found.append(Member(root, path, load(path)))
+            relative = path.relative_to(root).as_posix()
+            try:
+                data = load(path)
+            except ManifestError as exc:
+                report.error(relative, str(exc))
+                continue
+            if "project" not in data:
+                report.error(relative, "no [project] table -- is this a package?")
+                continue
+            found.append(Member(root, path, data))
     if not found:
         report.error(
             ROOT_MANIFEST,
@@ -201,6 +217,7 @@ def check_workspace_sources(
                 'an entry in `tool.uv.sources`" -- so this line only says it earlier, and '
                 f"names the file. Add `{member.name} = {{ workspace = true }}`",
             )
+            continue
         else:
             report.error(
                 ROOT_MANIFEST,
@@ -209,7 +226,6 @@ def check_workspace_sources(
                 "silently tests something other than the code in this repository",
             )
             continue
-        good += 1
     if members and good == len(members):
         report.ok("every member is sourced from the workspace")
 
@@ -378,7 +394,11 @@ def main(argv: list[str] | None = None) -> int:
     if not manifest_path.is_file():
         print(f"::error::no {ROOT_MANIFEST} in {root}; run this at the workspace root")
         return 2
-    manifest = load(manifest_path)
+    try:
+        manifest = load(manifest_path)
+    except ManifestError as exc:
+        print(f"::error file={ROOT_MANIFEST}::{exc}")
+        return 2
 
     members = find_members(root, manifest, report)
     check_root_lists_members(manifest, members, report)

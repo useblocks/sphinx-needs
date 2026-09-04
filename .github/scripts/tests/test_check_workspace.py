@@ -81,6 +81,19 @@ def test_member_without_a_source_entry(workspace, capsys) -> None:
     assert "`acme-core` is a workspace member with no [tool.uv.sources] entry" in out
     # the message quotes what uv itself says, measured on uv 0.12.9
     assert "is included as a workspace member, but is missing" in out
+    # ... and the check does not also claim success
+    assert "every member is sourced from the workspace" not in out
+
+
+def test_one_bad_source_among_several(workspace, capsys) -> None:
+    root = workspace(
+        {"acme-core": {}, "acme-ext": {}},
+        sources={"acme-core": "{ workspace = true }"},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "`acme-ext` is a workspace member with no [tool.uv.sources] entry" in out
+    assert "every member is sourced from the workspace" not in out
 
 
 def test_member_sourced_from_somewhere_else(workspace, capsys) -> None:
@@ -88,7 +101,9 @@ def test_member_sourced_from_somewhere_else(workspace, capsys) -> None:
         {"acme-core": {}}, sources={"acme-core": '{ git = "https://example.invalid" }'}
     )
     assert run(root) == 1
-    assert "does not resolve the member in this tree" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "does not resolve the member in this tree" in out
+    assert "every member is sourced from the workspace" not in out
 
 
 # --- (3) requires-python equality (the retired inline ci.yaml step) --------------------
@@ -237,3 +252,20 @@ def test_no_workspace_members_key(tmp_path: Path, capsys) -> None:
 def test_no_manifest_at_all(tmp_path: Path, capsys) -> None:
     assert check_workspace.main(["--root", str(tmp_path / "nope")]) == 2
     assert "run this at the workspace root" in capsys.readouterr().out
+
+
+def test_an_unparseable_member_manifest_is_named(workspace, capsys) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    (root / "packages/acme-core/pyproject.toml").write_text(
+        '[project]\nname = "acme-core"\ndependencies = [\n', encoding="utf-8"
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=packages/acme-core/pyproject.toml::" in out
+    assert "not valid TOML" in out
+
+
+def test_an_unparseable_root_manifest_is_named(tmp_path: Path, capsys) -> None:
+    (tmp_path / "pyproject.toml").write_text("[project\n", encoding="utf-8")
+    assert check_workspace.main(["--root", str(tmp_path)]) == 2
+    assert "::error file=pyproject.toml::" in capsys.readouterr().out

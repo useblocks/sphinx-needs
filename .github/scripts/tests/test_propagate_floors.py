@@ -57,7 +57,12 @@ def test_check_reports_without_writing(workspace, capsys) -> None:
     assert manifest.read_text() == before
     # ... and exits 0 once there is nothing to do
     assert run(root, "acme-core") == 0
+    capsys.readouterr()
     assert run(root, "acme-core", "--check") == 0
+    assert (
+        "every one of the 1 member(s) that declare acme-core already floors on "
+        "acme-core>=2.0.0,<3" in capsys.readouterr().out
+    )
 
 
 def test_nothing_depends_on_it(workspace, capsys) -> None:
