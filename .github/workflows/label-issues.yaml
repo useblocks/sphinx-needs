@@ -3,7 +3,10 @@ name: Label issues
 # Reads the "Package" dropdown that the issue forms render into the body and applies
 # the matching `pkg:` labels (.github/issue-labeler.yml). Runs on edits too, so a
 # changed answer moves the label; `sync-labels` only touches the labels named in that
-# file, so anything else on the issue is left alone.
+# file, so anything else on the issue is left alone. The job is gated on the body
+# actually containing the form's heading: an issue created without a form (the API,
+# `gh issue create`, a blank web issue, everything that predates the forms) carries a
+# hand-applied label, and without the gate `sync-labels` would strip it on the first edit.
 on:
   issues:
     types: [opened, edited]
@@ -14,11 +17,15 @@ permissions:
 
 jobs:
   label:
+    if: contains(github.event.issue.body, '### Package')
     runs-on: ubuntu-latest
     steps:
       - uses: github/issue-labeler@v3.5
         with:
           configuration-path: .github/issue-labeler.yml
+          # required by the action and without a default: the step throws before doing
+          # anything if it is missing
+          enable-versioned-regex: 0
           include-title: 0
           sync-labels: 1
           repo-token: ${{ github.token }}
