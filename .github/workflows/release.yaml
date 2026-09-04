@@ -1,36 +1,234 @@
 name: Release
+
+# ONE workflow for every distribution in this workspace. The tag says which:
+# `<dist>-v<version>`, where <dist> is a directory name under `packages/`.
+#
+# The filename is load-bearing and must not change: all four PyPI projects
+# (sphinx-needs, sphinx-mounts, sphinx-codelinks, sphinx-test-reports) name
+# `release.yaml` in their trusted-publisher entries.
+#
+# The leading `*` in the tag filter is deliberately loose -- GitHub's tag filters are globs,
+# not regexes, and cannot express "one of these four names" -- and the `plan` job is what
+# refuses everything else. That order matters: GitHub *creates* an environment that a
+# workflow names and that does not exist, with no protection rules at all, so
+# `environment: pypi-${{ needs.plan.outputs.dist }}` is a fence only for the names that
+# already exist. `plan` failing means the expression is never evaluated.
 on:
   push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
+    tags: ['*-v[0-9]+.[0-9]+.[0-9]+*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to rehearse, e.g. sphinx-needs-v8.6.0 (dry run: never publishes)'
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  # a dispatch has no tag of its own, so the input stands in for one. Everything downstream
+  # reads $TAG and does not care which trigger it came from
+  TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
 jobs:
-  publish:
-
-    name: Publish to PyPi
-    # needs: check
-    # if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+  plan:
+    name: Validate the tag
+    runs-on: ubuntu-latest
+    outputs:
+      dist: ${{ steps.plan.outputs.dist }}
+      version: ${{ steps.plan.outputs.version }}
+      previous_tag: ${{ steps.plan.outputs.previous_tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          # the plan needs two things git can only answer with history: every tag, to find
+          # the release this one follows, and the default branch, to assert the tagged
+          # commit is on it. `fetch-tags` alone would give the first and not the second.
+          # Measured on this repository: a full clone is 209 MB / 17 s against 27 MB / 3 s
+          # for the default depth-1 -- 14 seconds on a workflow whose compat cell takes
+          # minutes, and the alternative is a check that cannot run
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+      # `--no-project`: this fence reads the manifests, so it must not need an environment
+      # built from them. It is also the only thing between a mistyped tag and an
+      # unprotected environment, so it runs before anything else is built.
+      - id: plan
+        run: >
+          uv run --no-project --with packaging python .github/scripts/release_plan.py --tag "$TAG" --github-output ${{ github.event_name == 'workflow_dispatch' && '--rehearsal' || '' }} #magic___^_^___line
+  build:
+    name: Build and gate
+    needs: [plan]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v7
-      - name: Set up Python
-        uses: actions/setup-python@v7
+      - uses: actions/checkout@v7
         with:
-          # this job only runs flit to build a pure-python wheel, so the interpreter is
-          # free; 3.12 matches every other utility workflow
-          python-version: "3.12"
-      - name: install flit
-        # both distributions are pinned together: flit declares an unbounded
-        # flit_core lower bound, so pinning only flit lets the two drift apart
-        run: pip install flit==3.12.0 flit_core==3.12.0
-      - name: Build and publish
-        # --use-vcs is the flit 3 default, but flit 4 flipped it: state it
-        # explicitly so tests/ and docs/ stay in the sdist across upgrades
-        # flit builds the project whose pyproject.toml is in the working directory,
-        # and scopes `--use-vcs` to that directory's git listing
-        working-directory: packages/sphinx-needs
-        run: flit publish --use-vcs
+          persist-credentials: false
+      - name: Install graphviz
+        # the compat cell below runs the real suite, and the needflow tests fail rather than
+        # skip without `dot`. This mirrors the core test cells in ci.yaml; java, which the
+        # vendored plantuml jar needs, is already on the ubuntu runner image
+        run: sudo apt-get install graphviz
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          # deliberately NO `python-version` input: it would set UV_PYTHON, which beats the
+          # root `.python-version`, and the compat cell below is meant to run on the pin.
+          # The resolver gate names its interpreter explicitly instead
+          cache-python: true
+      - name: Check the workspace manifests agree with each other
+        run: >
+          uv run --no-project --with packaging python .github/scripts/check_workspace.py
+      - name: Build
+        # `--package`, and `-o` into a per-distribution directory: `uv publish`'s default
+        # glob is `dist/*`, which in a workspace would publish every artefact in it.
+        # `--no-sources` stops uv substituting a workspace member for a *build* requirement
         env:
-          FLIT_USERNAME: __token__
-          FLIT_PASSWORD: ${{ secrets.PYPI }}
+          DIST: ${{ needs.plan.outputs.dist }}
+        run: uv build --package "$DIST" --no-sources -o "dist/$DIST"
+      - name: Resolve the built wheel against PyPI only
+        # The release-order gate, and the strongest single check here: it resolves the whole
+        # transitive closure of what was actually built, from the index alone. An
+        # intra-workspace floor that no released version satisfies fails here with "only
+        # <dist><=<latest> is available" -- which is exactly the fact a release engineer
+        # needs to read off a red job. At the `requires-python` FLOOR, because that is the
+        # interpreter with the fewest candidates
+        env:
+          DIST: ${{ needs.plan.outputs.dist }}
+        run: |
+          uv venv --python 3.11 /tmp/gate
+          uv pip install --python /tmp/gate --no-sources --dry-run "dist/$DIST"/*.whl
+      - name: Compat cell -- the suite against the RELEASED dependencies
+        # The only content-aware guard in this pipeline. Every other one compares version
+        # numbers; this one runs the member's own test suite against its dependencies as
+        # PUBLISHED, which is the only way to catch a member developed against a sibling
+        # that has not been released yet. `uv sync --no-sources-package` would be the
+        # obvious way to build it and is broken on uv 0.12.9 (naming any package makes the
+        # root's other `workspace = true` sources unparseable), so the environment is built
+        # outside the project exactly as `scripts/smoke_needs.py` builds its own.
+        env:
+          DIST: ${{ needs.plan.outputs.dist }}
+        run: |
+          uv export --frozen --only-group test --no-emit-project --no-hashes -o /tmp/req.txt
+          uv venv /tmp/compat            # no --python: the root `.python-version` pin
+          uv pip install --python /tmp/compat --no-sources -r /tmp/req.txt
+          uv pip install --python /tmp/compat --no-sources "dist/$DIST"/*.whl
+          module=${DIST//-/_}
+          cd "packages/$DIST"
+          # the import must come from the wheel, not from the checkout one directory up --
+          # the same assertion smoke_needs.py makes, and for the same reason
+          /tmp/compat/bin/python -c "
+          import importlib, sys
+          m = importlib.import_module('$module')
+          print(m.__file__)
+          sys.exit(0 if '/tmp/compat/' in m.__file__ else 1)"
+          # serial: plantuml is load-sensitive and `-n auto` races on the shared jar copy.
+          # `-o addopts=` drops the root config's `--import-mode=importlib` so it can be
+          # given explicitly here, which is what lets the tests import the installed
+          # package while running from the package directory
+          /tmp/compat/bin/python -m pytest tests -q --import-mode=importlib \
+            --rootdir=. -o addopts="" -m "not jstest" --ignore=tests/benchmarks
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  # GitHub CREATES an environment a workflow names and that does not exist, with no
+  # protection rules at all -- so this `environment:` is a fence only for the four names
+  # that already have one. What actually refuses a bogus <dist> is the `plan` job above,
+  # and this job reaching it through `needs:` is what stops the expression being evaluated
+  # when it fails.
+  publish:
+    name: Publish to PyPI
+    needs: [plan, build]
+    if: github.event_name == 'push' # the dispatch path stops here: a dry run
+    runs-on: ubuntu-latest
+    # the contexts allowed in `environment:` are github, needs, strategy, matrix, vars and
+    # inputs -- NOT `env`, so this cannot be written as `pypi-${{ env.DIST }}`
+    environment: pypi-${{ needs.plan.outputs.dist }}
+    permissions:
+      # trusted publishing, and the only permission this job needs: downloading an artifact
+      # from the CURRENT workflow run uses the run's own scoped token and needs no
+      # `actions: read` (that is only for artifacts of other runs or repositories)
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - uses: astral-sh/setup-uv@v10.0.1
+      # `always`, not `automatic`: `automatic` falls back to unauthenticated, and even a
+      # dry run then exits 0 -- so a missing OIDC token would look like success.
+      # Attestations are on by default; there is only a flag to turn them off.
+      # Never the default `dist/*` glob: name this distribution's directory
+      - env:
+          DIST: ${{ needs.plan.outputs.dist }}
+        run: uv publish --trusted-publishing always "dist/$DIST"/*
+
+  release:
+    name: GitHub Release
+    needs: [plan, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # the only job that writes to the repository
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create the GitHub Release
+        # The notes are generated EXPLICITLY through the API with `previous_tag_name` from
+        # the plan, rather than by `gh release create --generate-notes`: this repository's
+        # tags belong to several packages, so letting GitHub pick "the previous tag" would
+        # compare a sphinx-needs release against whatever another package tagged last.
+        # `previous_tag` is empty for a package's first release, and the parameter is then
+        # omitted so GitHub falls back to its own choice.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DIST: ${{ needs.plan.outputs.dist }}
+          VERSION: ${{ needs.plan.outputs.version }}
+          PREVIOUS_TAG: ${{ needs.plan.outputs.previous_tag }}
+        run: |
+          set -euo pipefail
+          args=(-f tag_name="$TAG" -f target_commitish="$GITHUB_SHA")
+          if [ -n "$PREVIOUS_TAG" ]; then
+            args+=(-f previous_tag_name="$PREVIOUS_TAG")
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" \
+            "${args[@]}" --jq .body > /tmp/generated-notes.md
+          # `en/latest` rather than a version slug: `latest` tracks the default branch,
+          # which already carries this release's changelog entry (the entry is stamped in
+          # the release pull request, before the tag), so the link is correct the moment
+          # the release is created and does not wait for Read the Docs to build the tag.
+          # The anchor is the `_release:<version>` label the changelog stamps
+          {
+            echo "Changelog:"
+            echo "<https://$DIST.readthedocs.io/en/latest/changelog.html#release-${VERSION//./-}>"
+            echo
+            cat /tmp/generated-notes.md
+          } > /tmp/notes.md
+          gh release create "$TAG" --title "$DIST v$VERSION" --notes-file /tmp/notes.md
+
+      # ---------------------------------------------------------------------------------
+      # ONE-WAY DOOR, sphinx-needs only. Delete this step before the first tag if the bare
+      # tag namespace is not wanted; it cannot be undone afterwards, because tags in this
+      # repository are never renamed.
+      #
+      # Read the Docs derives `stable` with `packaging.version.Version(<tag name>)` and
+      # DROPS every tag it cannot parse -- `sphinx-needs-v8.6.0` is not PEP 440, so
+      # `/en/stable/` would freeze at 8.5.0 for ever, with no RTD-side setting that can fix
+      # it. A second, bare `<version>` tag keeps `stable`, every `git+...@<version>` pin and
+      # every existing inbound URL working, for the price of one extra ref per release.
+      #
+      # It triggers nothing: a push made with GITHUB_TOKEN does not start a workflow run,
+      # and the bare tag matches neither this workflow's filter (`*-v...`) nor docker.yaml's
+      # (`sphinx-needs-v...`) in any case.
+      # ---------------------------------------------------------------------------------
+      - name: Push the bare companion tag (sphinx-needs only)
+        if: needs.plan.outputs.dist == 'sphinx-needs'
+        env:
+          VERSION: ${{ needs.plan.outputs.version }}
+        run: |
+          set -euo pipefail
+          git tag "$VERSION" "$GITHUB_SHA"
+          git push origin "refs/tags/$VERSION"
