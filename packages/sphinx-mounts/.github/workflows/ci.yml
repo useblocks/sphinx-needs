@@ -44,6 +44,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # the declared floor, against every supported Sphinx series
+          - os: ubuntu-latest
+            python: "3.11"
+            tox-env: py311-sphinx7
+          - os: ubuntu-latest
+            python: "3.11"
+            tox-env: py311-sphinx8
+          - os: ubuntu-latest
+            python: "3.11"
+            tox-env: py311-sphinx9
           - os: ubuntu-latest
             python: "3.12"
             tox-env: py312-sphinx7
@@ -59,6 +69,9 @@ jobs:
           - os: ubuntu-latest
             python: "3.14"
             tox-env: py314-sphinx9
+          - os: windows-latest
+            python: "3.11"
+            tox-env: py311-sphinx9
           - os: windows-latest
             python: "3.12"
             tox-env: py312-sphinx9

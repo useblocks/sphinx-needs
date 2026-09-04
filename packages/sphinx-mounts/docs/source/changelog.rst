@@ -3,6 +3,14 @@
 Changelog
 =========
 
+Unreleased
+----------
+
+- **Python 3.11 is supported again**: the floor moves down from 3.12 to 3.11, so
+  sphinx-mounts can be used from the same environment as the other useblocks Sphinx
+  extensions. The CI matrix runs the floor against Sphinx 7.4, 8 and 9 (9.0.x is the last
+  series that installs on 3.11), on Linux and Windows.
+
 .. _`release:0.2.0`:
 
 0.2.0

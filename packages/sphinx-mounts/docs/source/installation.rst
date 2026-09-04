@@ -26,5 +26,5 @@ its document set per variant exactly as `ubCode`_ does.
 
 Supported versions:
 
-- Python 3.12 and later
+- Python 3.11 and later
 - Sphinx 7.4, 8.x, 9.x
