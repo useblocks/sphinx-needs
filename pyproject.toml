@@ -15,7 +15,7 @@
 name = "sphinx-needs-workspace"
 version = "0"
 # must equal the lowest `requires-python` of any member, and moves when theirs does
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 # EVERY workspace member is listed here. A `[project]` at the root makes `uv sync` sync this
 # project rather than every member, so this list is what keeps a bare `uv sync` installing
 # them -- without it the suite has no `sphinx_needs` to import.
@@ -78,10 +78,12 @@ benchmark = [
   "pytest-benchmark~=5.0; sys_platform != 'win32'",
   "memray>=1.3.1,<2.0.0; sys_platform != 'win32'",
 ]
-# The sphinx test matrix, one group per series. The markers are required for the lock to
-# resolve on python 3.10: sphinx 8.2 needs python>=3.11 and sphinx 9.1 needs python>=3.12.
+# The sphinx test matrix, one group per series. Sphinx 8.2 needs python>=3.11, which is now
+# the floor, so its pin is unconditional; sphinx 9.1 needs python>=3.12, above the floor, so
+# that one keeps its marker -- and the marker is what makes the `sphinx-9` group empty on
+# 3.11, which is why ci.yaml excludes that cell rather than letting it test another series.
 sphinx-7 = ["sphinx~=7.4"]
-sphinx-8 = ["sphinx~=8.2; python_version >= '3.11'"]
+sphinx-8 = ["sphinx~=8.2"]
 sphinx-9 = ["sphinx~=9.1; python_version >= '3.12'"]
 typing = [
   # the type-checking floor: the oldest supported sphinx and docutils series, resolved from
@@ -203,7 +205,7 @@ exclude = ["*.md"]
 include = ["packages/sphinx-needs/src/sphinx_needs"]
 
 [tool.ty.environment]
-python-version = "3.10"
+python-version = "3.11"
 # so a bare `ty check` and the editor extension see the same environment as the gate;
 # `uv run poe typecheck-needs` creates it, and ty errors naming this path if it is missing
 python = ".venvs/typing"
@@ -217,8 +219,6 @@ allowed-unresolved-imports = [
   "sphinx_data_viewer.**",
   "sphinxcontrib.plantuml",
   "sphinxcontrib.plantuml.**",
-  "tomli",
-  "tomli.**",
 ]
 
 [tool.ty.terminal]
@@ -293,7 +293,7 @@ executor = { type = "uv", frozen = true, no-group = "dev", group = [
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-7" }
 
 [tool.poe.tasks.test-needs-sphinx8]
-help = "Run the suite against sphinx 8.2 (python >= 3.11; set UV_PYTHON to pick the interpreter)"
+help = "Run the suite against sphinx 8.2 (set UV_PYTHON to pick the interpreter)"
 cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m 'not jstest'"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", group = [

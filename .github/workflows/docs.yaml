@@ -11,7 +11,6 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
-          # the docs extra requires python>=3.11 (sphinx-syntax-example)
           python-version: "3.12"
       - name: Install Dependencies
         run: uv sync --frozen --no-default-groups --extra docs

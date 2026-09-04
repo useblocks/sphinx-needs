@@ -24,8 +24,9 @@ from sphinx_needs.schema.config import (
 )
 
 if TYPE_CHECKING:
+    from typing import NotRequired, Required
+
     from sphinx.util.logging import SphinxLoggerAdapter
-    from typing_extensions import NotRequired, Required
 
     from sphinx_needs.functions.functions import DynamicFunction
     from sphinx_needs.need_item import NeedItem

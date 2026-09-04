@@ -40,11 +40,6 @@ project and its development dependencies into an isolated environment:
    group, so no group has to be named. Syncing from inside ``packages/sphinx-needs`` instead
    installs the package alone, without ``pytest``.
 
-.. note::
-
-   The ``docs`` extra requires Python >= 3.11.
-   On Python 3.10 the extra still installs, but the documentation cannot be built.
-
 ``uv.lock`` is committed, so ``uv sync`` installs exactly the versions recorded in it,
 and every contributor and CI job gets the same environment.
 If you change the dependencies in ``pyproject.toml``, the ``uv-lock`` hook below updates
@@ -101,11 +96,6 @@ To build the **Sphinx-Needs** documentation stored under ``/packages/sphinx-need
 
    # ... and first remove all old build files
    uv run poe docs-needs-clean
-
-.. note::
-
-   Building the documentation requires Python >= 3.11;
-   set ``UV_PYTHON`` (with ``uv run --no-sync``) if your default interpreter is older.
 
 The other themes have a task each — ``docs-needs-alabaster``, ``docs-needs-im``, ``docs-needs-pds``
 and ``docs-needs-rtd`` — and the link checker is its own task:

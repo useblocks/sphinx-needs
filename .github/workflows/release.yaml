@@ -14,10 +14,12 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v7
-      - name: Set up Python 3.10
+      - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.10"
+          # this job only runs flit to build a pure-python wheel, so the interpreter is
+          # free; 3.12 matches every other utility workflow
+          python-version: "3.12"
       - name: install flit
         # both distributions are pinned together: flit declares an unbounded
         # flit_core lower bound, so pinning only flit lets the two drift apart

@@ -85,12 +85,12 @@ jobs:
       fail-fast: false # Set on "false" to get the results of ALL builds
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.10", "3.12", "3.13", "3.14"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
         sphinx-group: ["sphinx-7", "sphinx-8", "sphinx-9"]
         include:
           # corner cases for Windows
           - os: "windows-latest"
-            python-version: "3.10"
+            python-version: "3.11"
             sphinx-group: "sphinx-7"
           - os: "windows-latest"
             python-version: "3.12"
@@ -99,12 +99,13 @@ jobs:
             python-version: "3.14"
             sphinx-group: "sphinx-9"
         exclude:
-          # Sphinx 8.2 only supports py3.11+
+          # Sphinx 9.1 requires python 3.12, one above this project's floor, so the
+          # `sphinx-9` group carries a `python_version >= '3.12'` marker and contributes
+          # nothing on 3.11. The sync would still exit 0 -- the environment just falls back
+          # to the project's own sphinx range -- and `check_sphinx_cell.py` below would then
+          # fail the cell for testing a sphinx it never asked for. Exclude it instead.
           - os: "ubuntu-latest"
-            python-version: "3.10"
-            sphinx-group: "sphinx-8"
-          - os: "ubuntu-latest"
-            python-version: "3.10"
+            python-version: "3.11"
             sphinx-group: "sphinx-9"
 
     steps:
@@ -151,7 +152,7 @@ jobs:
       matrix:
         include:
           - os: "ubuntu-latest"
-            python-version: "3.10"
+            python-version: "3.11"
             sphinx-group: "sphinx-7"
           - os: "ubuntu-latest"
             python-version: "3.13"
@@ -185,7 +186,6 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
-          # the docs extra requires python>=3.11 (sphinx-syntax-example)
           python-version: "3.12"
       - name: Install Dependencies
         run: |
@@ -222,7 +222,7 @@ jobs:
           # the declared `requires-python` floor: the throwaway environment the wheel is
           # installed into inherits it through UV_PYTHON, so this cell is what keeps that
           # floor honest
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Build the wheel, install it out of the project and build a doc with it
         run: uv run --frozen poe smoke-needs
 

@@ -3,7 +3,7 @@
 ## Claude Code cloud sessions
 
 What a cloud environment for this repository needs, measured on the Ubuntu 24.04 image
-(Python 3.10–3.13, uv, Node, OpenJDK 21 and `gh` are preinstalled):
+(Python 3.11–3.13, uv, Node, OpenJDK 21 and `gh` are preinstalled):
 
 - **Network**: Custom, keeping the default package-manager list, plus `docs.python.org` and
   `www.sphinx-doc.org` (intersphinx — without them `docs-needs` fails under `-nW`),

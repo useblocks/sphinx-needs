@@ -5,7 +5,7 @@ which is stored in the Sphinx environment.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from enum import Enum
+from enum import StrEnum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,9 +21,10 @@ from sphinx_needs.logging import log_warning
 from sphinx_needs.views import NeedsView
 
 if TYPE_CHECKING:
+    from typing import NotRequired
+
     from sphinx.application import Sphinx
     from sphinx.environment import BuildEnvironment
-    from typing_extensions import NotRequired
 
     from sphinx_needs.need_item import NeedItem
     from sphinx_needs.needs_schema import (
@@ -599,7 +600,7 @@ class NeedsBarType(NeedsBaseDataType):
     text_color: str
 
 
-class ExtendType(str, Enum):
+class ExtendType(StrEnum):
     """Enum to represent the type of extend operation."""
 
     REPLACE = ""
