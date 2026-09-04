@@ -41,8 +41,12 @@ def _expect_hide_class(locator: Locator, *, present: bool) -> None:
             expect(element).not_to_have_class(_has_class(HIDE_CLASS))
 
 
-def _check_collapse_buttons(app: SphinxTestApp, page: Page) -> None:
-    """Build the project, open its index page and exercise every collapse control."""
+def _check_collapse_buttons(app: SphinxTestApp, page: Page) -> set[str]:
+    """Build the project, open its index page and exercise every collapse control.
+
+    :return: the modes (``show`` / ``hide``) actually met on the page, so a caller can
+        assert which branch of the script it covered.
+    """
     app.build()
 
     page_errors: list[str] = []
@@ -53,6 +57,7 @@ def _check_collapse_buttons(app: SphinxTestApp, page: Page) -> None:
     controls = page.locator("table.need span.needs.needs_collapse")
     control_count = controls.count()
     assert control_count, "the built page has no collapse control to test"
+    modes_seen: set[str] = set()
 
     for index in range(control_count):
         control = controls.nth(index)
@@ -64,6 +69,7 @@ def _check_collapse_buttons(app: SphinxTestApp, page: Page) -> None:
         _, mode, *rows = control_id.split("__")
         assert mode in {"show", "hide"}, f"unexpected collapse mode in {control_id!r}"
         assert rows, f"no rows named in {control_id!r}"
+        modes_seen.add(mode)
 
         # the enclosing need container -- `ancestor::…[1]` on a reverse axis is the
         # NEAREST one, i.e. the `closest()` the script itself uses to scope its lookups
@@ -97,6 +103,8 @@ def _check_collapse_buttons(app: SphinxTestApp, page: Page) -> None:
     # carried, and if one is ever needed it should match the exact message and say why
     assert not page_errors, f"the page raised: {page_errors}"
 
+    return modes_seen
+
 
 @pytest.mark.jstest
 @pytest.mark.parametrize(
@@ -129,3 +137,28 @@ def test_collapse_button_in_variant_doc(test_app: SphinxTestApp, page: Page) -> 
 def test_collapse_button_in_doc_basic(test_app: SphinxTestApp, page: Page) -> None:
     """Check the Sphinx-Needs collapse button works in the basic documentation source."""
     _check_collapse_buttons(test_app, page)
+
+
+@pytest.mark.jstest
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/import_doc",
+            "no_plantuml": True,
+        }
+    ],
+    indirect=True,
+)
+def test_collapse_button_in_import_doc(test_app: SphinxTestApp, page: Page) -> None:
+    """Check the collapse button in a project that renders *collapsed* needs too.
+
+    The other two projects emit only ``show`` controls, so on their own they never run the
+    script's ``hide`` branch -- neither did the JavaScript specs they replace. This project's
+    index imports one set of needs with ``:collapse: True``, so it carries both.
+    """
+    modes = _check_collapse_buttons(test_app, page)
+    assert {"show", "hide"} <= modes, (
+        f"expected both collapse modes, met {sorted(modes)}"
+    )

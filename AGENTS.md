@@ -66,14 +66,14 @@ install-browser` (`playwright install chromium`) fetches one per machine into
 `~/.cache/ms-playwright` — `~/Library/Caches/ms-playwright` on macOS — measured at ~274 MiB
 downloaded, 554 MB on disk, 27 s. It comes from `cdn.playwright.dev`, with
 `playwright.download.prss.microsoft.com` as playwright's fallback mirror, so a sandbox must
-allow those; once that cache is warm nothing is fetched. `uv run poe test-needs-js
---browser-channel chrome` drives a Chrome already on the machine and downloads nothing. `docs-needs` needs `docs.python.org` and
-`www.sphinx-doc.org` for intersphinx (and `api.github.com` for the GitHub-service example,
-whose warning is suppressed): behind a proxy that blocks the first two, `-nW` turns the
-unresolved references into dozens of errors that look like a docs regression. Run the test
-suite serially: plantuml
-is load-sensitive (a docs or wheel build running alongside it has failed a zero-warnings
-assertion), and `-n auto` races on the shared jar copy.
+allow those; once that cache is warm nothing is fetched, and `uv run poe test-needs-js
+--browser-channel chrome` drives a Chrome already on the machine and downloads nothing.
+`docs-needs` needs `docs.python.org` and `www.sphinx-doc.org` for intersphinx (and
+`api.github.com` for the GitHub-service example, whose warning is suppressed): behind a
+proxy that blocks the first two, `-nW` turns the unresolved references into dozens of errors
+that look like a docs regression. Run the test suite serially: plantuml is load-sensitive (a
+docs or wheel build running alongside it has failed a zero-warnings assertion), and
+`-n auto` races on the shared jar copy.
 
 Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
 `typecheck-needs` seconds once `.venvs/typing` exists (the first run creates it) ·
