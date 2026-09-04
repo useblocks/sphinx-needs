@@ -108,6 +108,10 @@ def setup(app: Sphinx):
     # something else) to match a metamodel that spells them verbatim.
     app.add_config_value("tr_source_file_option", "case_file", "html")
     app.add_config_value("tr_source_line_option", "case_line", "html")
+    # Derive test-case IDs from the source location and case name instead of
+    # hashing (type, title, content) -- the latter moves the ID when a test
+    # starts failing differently. Off by default: enabling it changes IDs.
+    app.add_config_value("tr_deterministic_case_ids", False, "html")
 
     log = logging.getLogger(__name__)
     log.info("Setting up sphinx-test-reports extension")

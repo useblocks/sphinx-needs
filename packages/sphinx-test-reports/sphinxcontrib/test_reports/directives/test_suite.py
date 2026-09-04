@@ -163,15 +163,19 @@ class TestSuiteDirective(TestCommonDirective):
             case_count = 0
 
             for case in suite["testcases"]:
-                case_id = self.test_id
-                case_id += (
-                    "_"
-                    + hashlib.sha1(
-                        case["classname"].encode("UTF-8") + case["name"].encode("UTF-8")
+                case_id = self.deterministic_case_id_for(case)
+                if case_id is None:
+                    # Default: a hash fragment scoped to the parent suite.
+                    case_id = self.test_id
+                    case_id += (
+                        "_"
+                        + hashlib.sha1(
+                            case["classname"].encode("UTF-8")
+                            + case["name"].encode("UTF-8")
+                        )
+                        .hexdigest()
+                        .upper()[: self.app.config.tr_case_id_length]
                     )
-                    .hexdigest()
-                    .upper()[: self.app.config.tr_case_id_length]
-                )
 
                 if case_id not in self.case_ids:
                     self.case_ids.append(case_id)

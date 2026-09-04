@@ -15,6 +15,7 @@ from sphinxcontrib.test_reports.exceptions import (
     SphinxError,
     TestReportFileNotSetError,
 )
+from sphinxcontrib.test_reports.identity import deterministic_case_id
 from sphinxcontrib.test_reports.jsonparser import JsonParser
 from sphinxcontrib.test_reports.junitparser import JUnitParser
 
@@ -84,6 +85,18 @@ class TestCommonDirective(Directive):
             file_field: "" if source_file in ("unknown", None) else str(source_file),
             line_field: "" if source_line in (-1, None) else str(source_line),
         }
+
+    def deterministic_case_id_for(self, case):
+        """Deterministic ID for ``case``, or ``None`` if the option is off."""
+        if not getattr(self.app.config, "tr_deterministic_case_ids", False):
+            return None
+
+        return deterministic_case_id(
+            classname=case.get("classname", ""),
+            name=case.get("name", ""),
+            file=case.get("file", ""),
+            prefix=self.app.config.tr_case[1],
+        )
 
     def collect_extra_options(self):
         """Collect any extra options and their values that were specified in the directive"""

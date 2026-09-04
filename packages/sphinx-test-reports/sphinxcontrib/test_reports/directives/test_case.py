@@ -99,6 +99,13 @@ class TestCaseDirective(TestCommonDirective):
                 f"and testsuite {suite_name}"
             )
 
+        # A deterministic ID must come from the located case, which is only
+        # known here. An explicitly authored :id: always wins.
+        if "id" not in self.options:
+            deterministic_id = self.deterministic_case_id_for(case)
+            if deterministic_id is not None:
+                self.test_id = deterministic_id
+
         result = case["result"]
         content = self.test_content
         if case["text"] is not None and len(case["text"]) > 0:

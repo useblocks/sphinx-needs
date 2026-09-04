@@ -19,6 +19,9 @@ Unreleased
 * Bugfix: ``tr_file_option`` is now honoured by the directives, not only by the
   field registration. Renaming the field previously produced needs carrying an
   unregistered field.
+* Feature: New ``tr_deterministic_case_ids`` option derives test-case IDs from
+  the source location instead of the need content, so an ID no longer changes
+  when a test starts failing differently.
 
 .. _`release:1.4.0`:
 
