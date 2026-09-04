@@ -17,13 +17,12 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable, Mapping
-from enum import Enum, IntEnum
+from enum import IntEnum, StrEnum
 from functools import cache
 from pathlib import Path
-from typing import Any, Final, Literal, TypedDict, cast
+from typing import Any, Final, Literal, NotRequired, TypedDict, cast
 
 import jsonschema_rs
-from typing_extensions import NotRequired
 
 FIELD_BASE_TYPES_STR: Final[set[str]] = {
     "string",
@@ -381,7 +380,7 @@ class NeedFieldsSchemaWithVersionType(NeedFieldsSchemaType, SchemaVersionType):
     """Schema for a set of need fields with schema version."""
 
 
-class MessageRuleEnum(str, Enum):
+class MessageRuleEnum(StrEnum):
     """All known rules for debugging and validation warnings."""
 
     cfg_schema_error = "cfg_schema_error"

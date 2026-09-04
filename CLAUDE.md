@@ -3,7 +3,7 @@
 ## Claude Code cloud sessions
 
 What a cloud environment for this repository needs, measured on the Ubuntu 24.04 image
-(Python 3.10–3.13, uv, Node, OpenJDK 21 and `gh` are preinstalled):
+(Python 3.11–3.13, uv, Node, OpenJDK 21 and `gh` are preinstalled):
 
 - **Network**: Custom, keeping the default package-manager list, plus `docs.python.org` and
   `www.sphinx-doc.org` (intersphinx — without them `docs-needs` fails under `-nW`),
@@ -12,8 +12,9 @@ What a cloud environment for this repository needs, measured on the Ubuntu 24.04
 - **Setup script**: `apt-get install -y graphviz` — `dot` is absent from the image and the
   needflow tests fail rather than skip. Nothing else is needed: `prek` and `poe` come from
   `uv sync`.
-- **Environment variables**: `UV_PYTHON=3.12` — the image's default `python3` is 3.11, which
-  caps a bare `uv sync` at sphinx 8.2 and skips the 3.12-gated tests (see `AGENTS.md`).
+- **Environment variables**: none. The root `.python-version` pins the default environment to
+  3.13, which the image has, so a bare `uv sync` resolves the newest sphinx without help. Do
+  not set `UV_PYTHON` globally — it overrides the file for every command in the session.
 
 The Cypress binary does not survive the session proxy: node's download is reset a few MB
 before the end of the 250 MB transfer, and the installer reports `Corrupted download` at a

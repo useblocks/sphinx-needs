@@ -12,7 +12,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
-          # the docs extra requires python>=3.11 (sphinx-syntax-example)
+          # 3.12+: on 3.11 the lock resolves sphinx 8.2, and this job wants the newest sphinx
           python-version: "3.12"
       - name: Install package
         run: uv sync --frozen --no-default-groups --extra docs

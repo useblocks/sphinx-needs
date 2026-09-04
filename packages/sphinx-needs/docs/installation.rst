@@ -27,6 +27,8 @@ Installation
 Using pip
 ---------
 
+**Sphinx-Needs** requires Python 3.11 or newer.
+
 .. code-block:: bash
 
     pip install sphinx-needs

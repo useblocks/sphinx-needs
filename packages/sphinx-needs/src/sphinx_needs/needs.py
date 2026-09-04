@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import json
-import sys
+import tomllib
 from collections.abc import Callable
 from copy import deepcopy
 from itertools import chain
@@ -151,12 +151,6 @@ from sphinx_needs.variant_data import (
     resolve_variant_data,
 )
 from sphinx_needs.warnings import process_warnings
-
-if sys.version_info >= (3, 11):
-    import tomllib  # added in python 3.11
-else:
-    import tomli as tomllib
-
 
 VERSION = __version__
 

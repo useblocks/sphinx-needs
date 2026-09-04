@@ -32,7 +32,7 @@ from sphinx_needs.schema.utils import get_properties_from_schema
 from sphinx_needs.views import NeedsView
 
 if TYPE_CHECKING:
-    from typing_extensions import NotRequired
+    from typing import NotRequired
 
     from sphinx_needs.needs_schema import FieldsSchema
 

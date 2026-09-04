@@ -13,6 +13,9 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
+          # the pinned interpreter (root `.python-version`) is not on the runner image, so
+          # without this uv downloads it on every run
+          cache-python: true
       - run: uv run --frozen prek run --all-files --show-diff-on-failure
         env:
           PREK_COLOR: always
@@ -52,11 +55,47 @@ jobs:
             echo "::error::syncing sphinx-7 and sphinx-9 together should be an error"
             exit 1
           fi
-      - name: Check the default environment resolves to the newest sphinx
-        # the `sphinx-7` and `typing` groups both cap sphinx at the 7.4 series;
-        # both are in
-        # the conflict set so that a plain `uv sync` is not capped by either
-        run: uv run --frozen python -c "import sphinx; assert sphinx.version_info[0] >= 9, sphinx.__version__"
+      - name: Check the default environment is the one the repository pins
+        # Two assertions about a bare `uv sync`, because it has two axes and each drifts on
+        # its own.
+        # Sphinx: the `sphinx-7` and `typing` groups both cap sphinx at the 7.4 series, and
+        # both are in the conflict set so that a plain `uv sync` is not capped by either.
+        # Interpreter: the root `.python-version` is what makes a bare `uv sync` the same
+        # environment everywhere. `setup-uv` is given no `python-version` input in THIS job
+        # precisely so uv reads that file (the monthly `prek-update` job omits it too, so it
+        # runs on the pin as well); every other job passes one, which `setup-uv` turns into
+        # `UV_PYTHON`, and the environment variable beats the file. So this is the job that
+        # tests the pin. The expected series is read back out of the file rather than written
+        # down a second time here.
+        run: |
+          v=$(cut -d. -f1,2 .python-version)
+          uv run --frozen python -c "
+          import sys, sphinx
+          assert sphinx.version_info[0] >= 9, 'sphinx ' + sphinx.__version__ + ' is not the newest series'
+          series = '%d.%d' % sys.version_info[:2]
+          assert series == '$v', 'the default environment is on python ' + series + ', but .python-version says $v'
+          "
+      - name: Check every member declares the root's requires-python
+        # The root's `requires-python` must equal every member's, and the root's own comment
+        # on it promises exactly that. Nothing enforced it: uv resolves one lock against the
+        # ROOT, so a member that floored itself higher (or failed to move when the root did)
+        # would still lock, build and publish, and the mismatch would only surface as an
+        # install failure for a user on the interpreter in the gap.
+        run: |
+          python3 -c "
+          import sys, tomllib
+          from pathlib import Path
+          root = tomllib.loads(Path('pyproject.toml').read_text())['project']['requires-python']
+          bad = 0
+          for member in sorted(Path('packages').glob('*/pyproject.toml')):
+              got = tomllib.loads(member.read_text())['project']['requires-python']
+              if got == root:
+                  print(str(member) + ': ' + got)
+              else:
+                  print('::error file=' + str(member) + '::requires-python is ' + got + ', but the root declares ' + root)
+                  bad = 1
+          sys.exit(bad)
+          "
       - name: Check the typing floor is the floor it claims to be
         # .venvs/typing exists because the `ty` hook ran the typecheck task above; the
         # stubs must match the installed docutils, and that docutils must be the lowest
@@ -85,12 +124,12 @@ jobs:
       fail-fast: false # Set on "false" to get the results of ALL builds
       matrix:
         os: ["ubuntu-latest"]
-        python-version: ["3.10", "3.12", "3.13", "3.14"]
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
         sphinx-group: ["sphinx-7", "sphinx-8", "sphinx-9"]
         include:
           # corner cases for Windows
           - os: "windows-latest"
-            python-version: "3.10"
+            python-version: "3.11"
             sphinx-group: "sphinx-7"
           - os: "windows-latest"
             python-version: "3.12"
@@ -99,12 +138,13 @@ jobs:
             python-version: "3.14"
             sphinx-group: "sphinx-9"
         exclude:
-          # Sphinx 8.2 only supports py3.11+
+          # Sphinx 9.1 requires python 3.12, one above this project's floor, so the
+          # `sphinx-9` group carries a `python_version >= '3.12'` marker and contributes
+          # nothing on 3.11. The sync would still exit 0 -- the environment just falls back
+          # to the project's own sphinx range -- and `check_sphinx_cell.py` below would then
+          # fail the cell for testing a sphinx it never asked for. Exclude it instead.
           - os: "ubuntu-latest"
-            python-version: "3.10"
-            sphinx-group: "sphinx-8"
-          - os: "ubuntu-latest"
-            python-version: "3.10"
+            python-version: "3.11"
             sphinx-group: "sphinx-9"
 
     steps:
@@ -151,7 +191,7 @@ jobs:
       matrix:
         include:
           - os: "ubuntu-latest"
-            python-version: "3.10"
+            python-version: "3.11"
             sphinx-group: "sphinx-7"
           - os: "ubuntu-latest"
             python-version: "3.13"
@@ -185,7 +225,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
-          # the docs extra requires python>=3.11 (sphinx-syntax-example)
+          # 3.12+: on 3.11 the lock resolves sphinx 8.2, and this job wants the newest sphinx
           python-version: "3.12"
       - name: Install Dependencies
         run: |
@@ -221,8 +261,9 @@ jobs:
           enable-cache: true
           # the declared `requires-python` floor: the throwaway environment the wheel is
           # installed into inherits it through UV_PYTHON, so this cell is what keeps that
-          # floor honest
-          python-version: "3.10"
+          # floor honest. `setup-uv` sets UV_PYTHON from this input, which beats the root
+          # `.python-version` -- drop the input and this job would silently test 3.13.
+          python-version: "3.11"
       - name: Build the wheel, install it out of the project and build a doc with it
         run: uv run --frozen poe smoke-needs
 

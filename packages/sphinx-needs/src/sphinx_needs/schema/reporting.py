@@ -17,7 +17,7 @@ from sphinx_needs.schema.config import (
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import NotRequired
+    from typing import NotRequired
 
 
 class OntologyWarning(TypedDict):
