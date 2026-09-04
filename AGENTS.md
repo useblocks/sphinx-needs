@@ -63,11 +63,31 @@ graphviz's `dot` on `PATH` — the needflow tests do not skip without them, so i
 graphviz as CI does (`apt-get install graphviz`). The browser tests (`-m jstest`, which
 `test-needs` excludes) additionally need a browser, and it is not a package: `uv run poe
 install-browser` (`playwright install chromium`) fetches one per machine into
-`~/.cache/ms-playwright` — `~/Library/Caches/ms-playwright` on macOS — measured at ~274 MiB
-downloaded, 554 MB on disk, 27 s. It comes from `cdn.playwright.dev`, with
-`playwright.download.prss.microsoft.com` as playwright's fallback mirror, so a sandbox must
-allow those; once that cache is warm nothing is fetched, and `uv run poe test-needs-js
---browser-channel chrome` drives a Chrome already on the machine and downloads nothing.
+`~/.cache/ms-playwright` — `~/Library/Caches/ms-playwright` on macOS, or wherever
+`PLAYWRIGHT_BROWSERS_PATH` points, which some prepared images set — measured at ~274 MiB
+downloaded, 554 MB on disk, 27 s. On linux-x64 it comes from `cdn.playwright.dev` and
+nothing else: chromium and chrome-headless-shell are Chrome-for-Testing builds, and the
+driver pins that one mirror for them (`cftUrl` in its `coreBundle.js`), so the three-mirror
+`PLAYWRIGHT_CDN_MIRRORS` list — where `playwright.download.prss.microsoft.com` lives — never
+gets a turn and allowing it alone buys nothing. A sandbox must allow `cdn.playwright.dev`;
+once the cache is warm nothing is fetched, and `uv run poe test-needs-js --browser-channel
+chrome` drives a Chrome already on the machine and downloads nothing.
+
+**A browser already on the machine is not necessarily the browser playwright will look
+for.** It resolves one exact path, `<cache>/chromium-<revision>/…`, with the revision that
+the *pinned* playwright names in its `driver/package/browsers.json`; an image that baked in
+a different revision leaves `test-needs-js` erroring `Executable doesn't exist at …`, which
+reads like a missing install rather than a mismatch. `playwright install chromium` is the
+answer when the host is reachable. When it is not, the revision can be shimmed — measured:
+playwright 1.62 drives a Chromium 141 build that its own pin (1234 / Chrome 151) did not
+ship, and these tests are jQuery class toggling, so the version gap does not touch what they
+assert. Two directories have to appear under the cache, and their inner layout is the
+driver's `EXECUTABLE_PATHS`, not the pre-Chrome-for-Testing one —
+`chromium-<rev>/chrome-linux64/chrome` and
+`chromium_headless_shell-<rev>/chrome-headless-shell-linux64/chrome-headless-shell`, each
+beside an empty `INSTALLATION_COMPLETE`; headless is the default, so the second one is not
+optional. Recipe for a cloud session in `CLAUDE.md`.
+
 `docs-needs` needs `docs.python.org` and `www.sphinx-doc.org` for intersphinx (and
 `api.github.com` for the GitHub-service example, whose warning is suppressed): behind a
 proxy that blocks the first two, `-nW` turns the unresolved references into dozens of errors
