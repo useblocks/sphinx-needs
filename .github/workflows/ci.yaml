@@ -179,6 +179,23 @@ jobs:
         run: uv run --no-sync sphinx-build -b html . _build
         working-directory: docs
 
+  smoke-needs:
+    name: Smoke test the built package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install graphviz
+        run: sudo apt-get install graphviz
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          # the declared `requires-python` floor: the throwaway environment the wheel is
+          # installed into inherits it through UV_PYTHON, so this cell is what keeps that
+          # floor honest
+          python-version: "3.10"
+      - name: Build the wheel, install it out of the project and build a doc with it
+        run: uv run --frozen poe smoke-needs
+
   check:
 
     # This job does nothing and is only used for the branch protection
@@ -191,6 +208,7 @@ jobs:
       - tests-core
       - tests-js
       - tests-no-mpl
+      - smoke-needs
 
     runs-on: ubuntu-latest
 
