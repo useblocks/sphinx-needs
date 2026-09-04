@@ -18,6 +18,55 @@ index_on_save = true
 [needs]
 id_required = true
 
+# The variant map. Sphinx-Needs reads this table (its ``needs_variant_data``
+# confval) at its own ``config-inited`` priority and sphinx-mounts takes the
+# resolved map FROM Sphinx-Needs when it is installed, so the two tools
+# cannot disagree about which documents exist. Flip the ``edition`` value
+# (or point ``variant_data_file`` at another JSON) to build the other
+# variant of the example.
+[needs.variant_data]
+edition = "basic"
+
+# ---------------------------------------------------------------------------
+# Variant-gated source selection (conditional sources). The two rules below
+# narrow the HOST's own document set per edition: ``variants/basic.rst`` is
+# in the build only for the basic edition, ``variants/pro.rst`` only for the
+# pro one. Rule globs are anchored at the source root (docs/ — the same
+# directory as this file), which is also Sphinx's ``srcdir`` — the one layout
+# where no ``[source] dir`` needs to be declared. The host ``index`` toctree
+# references both pages by hand; the reference to the page the current
+# variant excludes is downgraded to INFO (``mounts.variant_excluded_reference``),
+# so ``sphinx-build -W`` passes in either variant.
+
+[[source.variant_sources]]
+if = "var.edition == 'pro'"
+files = ["variants/pro.rst"]
+
+[[source.variant_sources]]
+if = "var.edition == 'basic'"
+files = ["variants/basic.rst"]
+
+# ---------------------------------------------------------------------------
+# Conditional mounts: an ``if`` on a mount entry gates the WHOLE bundle
+# per variant. The two checked-in edition bundles below carry mutually
+# exclusive conditions and (per the docs' recommendation) DISTINCT
+# ``mount_at`` prefixes, so the gated bundle's attribution survives and
+# ``sphinx-build -W`` passes in either variant. ``attach_to`` wires only
+# the live bundle's index into the host ``index`` toctree. The two bundles
+# are plain checked-in files(not Bazel-generated), exactly like the ``showcase/``
+# bundles above.
+[[source.mounts]]
+dir = "../reference/basic"
+mount_at = "_generated/reference/basic"
+attach_to = "index"
+if = "var.edition == 'basic'"
+
+[[source.mounts]]
+dir = "../reference/pro"
+mount_at = "_generated/reference/pro"
+attach_to = "index"
+if = "var.edition == 'pro'"
+
 # Bazel-generated RST bundle. Source is resolved relative to *this*
 # file's directory (docs/), so ``../bazel-bin/bundles/api-foo`` lands
 # at ``tests/example/bazel-bin/bundles/api-foo`` regardless of which
