@@ -50,14 +50,16 @@ jobs:
           # minutes, and the alternative is a check that cannot run
           fetch-depth: 0
       - uses: astral-sh/setup-uv@v10.0.1
-        with:
-          enable-cache: true
       # `--no-project`: this fence reads the manifests, so it must not need an environment
       # built from them. It is also the only thing between a mistyped tag and an
       # unprotected environment, so it runs before anything else is built.
+      # On a dispatch, `--rehearsal` downgrades two verdicts to notices -- the version
+      # being on PyPI already, and the commit not being on the default branch -- without
+      # skipping either check, so a rehearsal exercises `git merge-base` and the
+      # `fetch-depth: 0` above rather than leaving them for the first real tag.
       - id: plan
-        run: >
-          uv run --no-project --with packaging python .github/scripts/release_plan.py --tag "$TAG" --github-output ${{ github.event_name == 'workflow_dispatch' && '--rehearsal' || '' }} #magic___^_^___line
+        run: uv run --no-project --with packaging python .github/scripts/release_plan.py --tag "$TAG" --github-output ${{ github.event_name == 'workflow_dispatch' && '--rehearsal' || '' }}
+
   build:
     name: Build and gate
     needs: [plan]
@@ -73,10 +75,16 @@ jobs:
         run: sudo apt-get install graphviz
       - uses: astral-sh/setup-uv@v10.0.1
         with:
-          enable-cache: true
-          # deliberately NO `python-version` input: it would set UV_PYTHON, which beats the
-          # root `.python-version`, and the compat cell below is meant to run on the pin.
-          # The resolver gate names its interpreter explicitly instead
+          # no `enable-cache`: setup-uv's own default is `auto`, which caches on
+          # GitHub-hosted runners EXCEPT for release, tag push and a few other events --
+          # and a tag push is this workflow's real trigger, so `true` would write a cache
+          # keyed on `refs/tags/<dist>-v<x.y.z>` that no later run can ever restore. The
+          # default still restores the default branch's caches on a tag run, and still
+          # caches normally on the dispatch rehearsal.
+          #
+          # Deliberately NO `python-version` input either: it would set UV_PYTHON, which
+          # beats the root `.python-version`, and the compat cell below is meant to run on
+          # the pin. The resolver gate names its interpreter explicitly instead
           cache-python: true
       - name: Check the workspace manifests agree with each other
         run: >
@@ -120,6 +128,10 @@ jobs:
           # FileNotFoundError on a runner or -- worse, locally -- silently use whatever
           # `sphinx-build` an activated virtualenv happens to have left on PATH
           export PATH="/tmp/compat/bin:$PATH"
+          # both of these assume the distribution name IS the directory name and, with
+          # `-`->`_`, the module name. `check_workspace.py` deliberately honours
+          # `[tool.flit.module] name`, so a second member that sets it needs this step
+          # taught the same thing
           module=${DIST//-/_}
           cd "packages/$DIST"
           # the import must come from the wheel, not from the checkout one directory up --
@@ -167,7 +179,10 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
       # `always`, not `automatic`: `automatic` falls back to unauthenticated, and even a
       # dry run then exits 0 -- so a missing OIDC token would look like success.
-      # Attestations are on by default; there is only a flag to turn them off.
+      # `--no-attestations` only suppresses uploading attestation FILES that already sit
+      # next to the distributions -- uv 0.12.9 does not generate any ("`uv publish` does
+      # not currently generate attestations", its own docs), and nothing here writes one,
+      # so this publish carries none.
       # Never the default `dist/*` glob: name this distribution's directory
       - env:
           DIST: ${{ needs.plan.outputs.dist }}
@@ -224,6 +239,11 @@ jobs:
       # `/en/stable/` would freeze at 8.5.0 for ever, with no RTD-side setting that can fix
       # it. A second, bare `<version>` tag keeps `stable`, every `git+...@<version>` pin and
       # every existing inbound URL working, for the price of one extra ref per release.
+      #
+      # Debian is a second, independent reason: `debian/watch` scans the repository's tags
+      # page with `(?:.*?/)v?@ANY_VERSION@@ARCHIVE_EXT@`, which matches `8.6.0.tar.gz` and
+      # not `sphinx-needs-v8.6.0.tar.gz`, so without the bare tag `uscan` stops finding
+      # releases.
       #
       # It triggers nothing: a push made with GITHUB_TOKEN does not start a workflow run,
       # and the bare tag matches neither this workflow's filter (`*-v...`) nor docker.yaml's

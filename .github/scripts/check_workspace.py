@@ -136,8 +136,15 @@ def find_members(root: Path, manifest: dict[str, Any], report: Report) -> list[M
         )
         return []
     found: list[Member] = []
+    # `members` is a list of globs, and two of them can name the same directory
+    # (`packages/*` and `packages/sphinx-needs`, say). uv resolves that to one member, so
+    # this has to as well, or every per-member check is reported twice
+    seen: set[Path] = set()
     for pattern in globs:
         for path in sorted(root.glob(f"{pattern}/pyproject.toml")):
+            if path in seen:
+                continue
+            seen.add(path)
             relative = path.relative_to(root).as_posix()
             try:
                 data = load(path)
@@ -146,6 +153,13 @@ def find_members(root: Path, manifest: dict[str, Any], report: Report) -> list[M
                 continue
             if "project" not in data:
                 report.error(relative, "no [project] table -- is this a package?")
+                continue
+            if "name" not in data["project"]:
+                report.error(
+                    relative,
+                    "[project] declares no `name`. Every other check here is keyed on the "
+                    "distribution name, and uv cannot resolve a member without one",
+                )
                 continue
             found.append(Member(root, path, data))
     if not found:
@@ -160,6 +174,7 @@ def check_root_lists_members(
     manifest: dict[str, Any], members: list[Member], report: Report
 ) -> None:
     """(1) the root depends on every member, bare, and on nothing else."""
+    before = report.failures
     declared: dict[str, str] = {}
     for spec in manifest.get("project", {}).get("dependencies", []):
         try:
@@ -191,7 +206,7 @@ def check_root_lists_members(
             "it is resolved from PyPI. The root's [project] dependencies list exists only "
             "to install the members; shared tooling belongs in a [dependency-groups] group",
         )
-    if not (known - set(declared)) and not (set(declared) - known):
+    if report.failures == before:
         report.ok(
             f"the root lists every member, bare: {', '.join(sorted(known)) or '-'}"
         )
@@ -201,10 +216,18 @@ def check_workspace_sources(
     manifest: dict[str, Any], members: list[Member], report: Report
 ) -> None:
     """(2) every member has a `= { workspace = true }` source entry at the root."""
-    sources = manifest.get("tool", {}).get("uv", {}).get("sources", {})
+    # uv canonicalises source keys, so `my_member`, `My-Member` and `my.member` all name
+    # the same member; comparing raw strings would false-red a workspace uv accepts
+    sources = {
+        canonicalize_name(key): value
+        for key, value in manifest.get("tool", {})
+        .get("uv", {})
+        .get("sources", {})
+        .items()
+    }
     good = 0
     for member in sorted(members, key=lambda m: m.key):
-        entry = sources.get(member.name, sources.get(member.key))
+        entry = sources.get(member.key)
         if entry == {"workspace": True}:
             good += 1
             continue
@@ -347,7 +370,7 @@ def module_version(member: Member) -> tuple[Path, str] | None:
     return None
 
 
-def check_module_version(members: list[Member], report: Report) -> None:
+def check_module_version(root: Path, members: list[Member], report: Report) -> None:
     """(5) `__version__` in the module equals `[project] version`."""
     for member in sorted(members, key=lambda m: m.key):
         declared = member.project.get("version")
@@ -357,7 +380,10 @@ def check_module_version(members: list[Member], report: Report) -> None:
         if found is None:
             continue  # a module without a `__version__` literal is not an error
         path, literal = found
-        where = path.relative_to(member.path.parent.parent).as_posix()
+        # relative to the ROOT, not to `packages/`: GitHub resolves an `::error file=` path
+        # against the workspace, and a member nested deeper than one level would otherwise
+        # emit a path it cannot find -- silently dropping the inline annotation
+        where = path.relative_to(root).as_posix()
         if literal == declared:
             report.ok(f"{where}: __version__ == {declared}")
         else:
@@ -405,7 +431,7 @@ def main(argv: list[str] | None = None) -> int:
     check_workspace_sources(manifest, members, report)
     check_requires_python(manifest, members, report)
     check_specifiers(members, not args.no_policy, report)
-    check_module_version(members, report)
+    check_module_version(root, members, report)
     return 1 if report.failures else 0
 
 

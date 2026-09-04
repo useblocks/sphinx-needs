@@ -245,21 +245,36 @@ def test_a_tag_off_the_default_branch(workspace, capsys, offline) -> None:
     assert "Merge first, then tag the merged commit" in out
 
 
-def test_the_ancestry_check_is_skipped_in_a_rehearsal(
-    workspace, capsys, offline
+@pytest.mark.parametrize(
+    ("on_branch", "expected"),
+    [(True, "HEAD is an ancestor of"), (False, "HEAD is NOT an ancestor of")],
+)
+def test_the_ancestry_check_is_reported_but_not_fatal_in_a_rehearsal(
+    workspace, capsys, offline, on_branch: bool, expected: str
 ) -> None:
+    """A rehearsal must still RUN it: otherwise `git merge-base` -- and the checkout depth
+    it needs -- would first execute on a real tag."""
     published(offline, {("acme-core", "1.0.0"): False})
-
-    def explode(commit: str, branch: str) -> bool:
-        raise AssertionError("a rehearsal must not ask git about the default branch")
-
-    offline.setattr(release_plan, "is_ancestor", explode)
+    offline.setattr(release_plan, "is_ancestor", lambda commit, branch: on_branch)
     root = workspace({"acme-core": {"version": "1.0.0"}})
     assert run(root, "--tag", "acme-core-v1.0.0", "--rehearsal") == 0
-    assert (
-        "::notice::not checking that HEAD is on origin/master"
-        in capsys.readouterr().out
-    )
+    out = capsys.readouterr().out
+    assert f"::notice::{expected} origin/master" in out
+    assert "informational" in out
+    assert "::error" not in out
+
+
+def test_a_git_failure_is_fatal_even_in_a_rehearsal(workspace, capsys, offline) -> None:
+    """The verdict is downgraded in a rehearsal; an unusable answer is not."""
+    published(offline, {("acme-core", "1.0.0"): False})
+
+    def raising(commit: str, branch: str) -> bool:
+        raise release_plan.PlanError("no such ref origin/master")
+
+    offline.setattr(release_plan, "is_ancestor", raising)
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root, "--tag", "acme-core-v1.0.0", "--rehearsal") == 1
+    assert "::error::no such ref origin/master" in capsys.readouterr().out
 
 
 def test_no_git_skips_the_ancestry_check(workspace, offline) -> None:
@@ -342,6 +357,19 @@ def test_previous_tag_is_reported_and_written_to_github_output(
     )
 
 
+def test_github_output_without_the_variable_is_fatal(
+    workspace, capsys, offline
+) -> None:
+    """The one flag that could fail OPEN: asked for, did nothing, exit 0."""
+    published(offline, {("acme-core", "1.0.0"): False})
+    offline.delenv("GITHUB_OUTPUT", raising=False)
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root, "--tag", "acme-core-v1.0.0", "--github-output") == 1
+    assert "--github-output was asked for but GITHUB_OUTPUT is not set" in (
+        capsys.readouterr().out
+    )
+
+
 def test_no_previous_tag_is_reported_as_such(workspace, capsys, offline) -> None:
     published(offline, {("acme-core", "1.0.0"): False})
     root = workspace({"acme-core": {"version": "1.0.0"}})
@@ -355,3 +383,19 @@ def test_a_dynamic_member_version_stops_the_plan(workspace, capsys, offline) -> 
     root = workspace({"acme-core": {"version": None}})
     assert run(root, "--tag", "acme-core-v1.0.0") == 1
     assert "has a dynamic version" in capsys.readouterr().out
+
+
+def test_a_member_with_no_version_is_annotated_not_a_traceback(
+    workspace, capsys, offline
+) -> None:
+    """Neither dynamic nor declared: the commonest PEP 621 mistake. It used to KeyError."""
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    (root / "packages/acme-core/pyproject.toml").write_text(
+        '[project]\nname = "acme-core"\nrequires-python = ">=3.11,<4"\n',
+        encoding="utf-8",
+    )
+    assert run(root, "--tag", "acme-core-v1.0.0") == 1
+    out = capsys.readouterr().out
+    assert "::error::" in out
+    assert "acme-core declares no [project] version" in out
+    assert "Traceback" not in out

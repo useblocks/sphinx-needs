@@ -97,8 +97,10 @@ jobs:
         # may publish, and the one that rewrites floors. They are not in any package, so
         # this is the only job that runs their tests. They are in the root `testpaths`, so
         # a bare `pytest` at the root runs them too -- but every matrix cell names the
-        # package's `tests` path explicitly and so never collects them
-        run: uv run --frozen --no-sync pytest .github/scripts/tests -q
+        # package's `tests` path explicitly and so never collects them. The directory is
+        # `selftests/` rather than `tests/` so that no importable `tests` exists outside a
+        # package
+        run: uv run --frozen --no-sync pytest .github/scripts/selftests -q
 
   # ubc:
   #   name: ubc

@@ -19,9 +19,13 @@ Given a tag `<dist>-v<version>` it asserts, in order:
 4. every *other* workspace member this one depends on at runtime is on PyPI **at the
    version this tree builds**. That is the release-order gate: an extension cannot be
    published against a core that only exists on somebody's disk;
-5. (push runs only) the tagged commit is an ancestor of the default branch. A tag pushed
-   from a branch that was never merged would publish code no one reviewed on `master`,
-   and the tag is the only human approval in this pipeline.
+5. the tagged commit is an ancestor of the default branch. A tag pushed from a branch that
+   was never merged would publish code no one reviewed on `master`, and the tag is the only
+   human approval in this pipeline. A rehearsal *reports* the answer rather than failing on
+   it -- a dispatch legitimately runs from whatever ref it was given -- but it still runs
+   the check, so the plumbing this one depends on (a checkout deep enough to have
+   `origin/master`) is exercised before a real tag needs it; a git failure is fatal in both
+   modes.
 
 It also emits `previous_tag`, the release this one follows, for GitHub's
 `releases/generate-notes` API.
@@ -84,6 +88,11 @@ def members(root: Path) -> dict[str, dict[str, Any]]:
                 raise PlanError(
                     f"{path}: {data['name']} has a dynamic version; the release pipeline "
                     "cannot read it without running the build backend"
+                )
+            if "version" not in data:
+                raise PlanError(
+                    f"{path}: {data['name']} declares no [project] version; the tag says "
+                    "which version is being released and this is what it is checked against"
                 )
             out[canonicalize_name(data["name"])] = data
     return out
@@ -275,14 +284,21 @@ def plan(args: argparse.Namespace) -> int:
             )
             failures += 1
 
-    # 5. the tagged commit is on the default branch (push runs only)
-    if args.rehearsal:
-        print(
-            f"::notice::not checking that {args.commit} is on {args.default_branch}: a "
-            "rehearsal runs from whatever ref was dispatched"
-        )
-    elif not args.no_git:
-        if is_ancestor(args.commit, args.default_branch):
+    # 5. the tagged commit is on the default branch. The check RUNS in a rehearsal too and
+    #    only its verdict is downgraded: a dispatch legitimately runs from another ref, but
+    #    if the answer were never computed then `git merge-base` -- and the checkout depth
+    #    it needs -- would first execute on a real tag, which is the worst possible moment
+    #    to find out the history is not there. A PlanError out of git stays fatal in both
+    #    modes for the same reason.
+    if not args.no_git:
+        on_branch = is_ancestor(args.commit, args.default_branch)
+        if args.rehearsal:
+            print(
+                f"::notice::{args.commit} is{'' if on_branch else ' NOT'} an ancestor of "
+                f"{args.default_branch} (a rehearsal runs from whatever ref was dispatched, "
+                "so this is informational)"
+            )
+        elif on_branch:
             print(f"OK    {args.commit} is an ancestor of {args.default_branch}")
         else:
             print(
@@ -303,7 +319,16 @@ def plan(args: argparse.Namespace) -> int:
         f"  [{len(tags)} tags]"
     )
 
-    if args.github_output and (destination := os.environ.get("GITHUB_OUTPUT")):
+    if args.github_output:
+        # the one place in these scripts that could fail OPEN: the flag was asked for, the
+        # variable is missing, and every job downstream of `plan` would read an empty `dist`
+        destination = os.environ.get("GITHUB_OUTPUT")
+        if not destination:
+            raise PlanError(
+                "--github-output was asked for but GITHUB_OUTPUT is not set; the job's "
+                "outputs would be empty and every job downstream of `plan` would run "
+                "against an empty distribution name"
+            )
         with open(destination, "a", encoding="utf-8") as handle:
             handle.write(f"dist={dist}\nversion={version}\nprevious_tag={previous}\n")
     print(json.dumps({"dist": dist, "version": version, "previous_tag": previous}))
@@ -319,7 +344,8 @@ def main(argv: list[str] | None = None) -> int:
         "--rehearsal",
         action="store_true",
         help="dry run: an already-published version and a commit off the default branch "
-        "become notices instead of errors. Every other check stays fatal",
+        "are reported as notices instead of errors. Every check still RUNS, and every "
+        "other one stays fatal",
     )
     parser.add_argument(
         "--commit",

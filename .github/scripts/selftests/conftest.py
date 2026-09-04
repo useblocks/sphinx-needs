@@ -1,4 +1,4 @@
-"""Scratch workspaces for the repository's own scripts.
+"""Scratch workspaces for the repository's own scripts (`.github/scripts/*.py`).
 
 Every test here builds a throwaway uv workspace under `tmp_path` and runs one script's
 `main()` against it. Nothing reaches the network and nothing runs `uv`: the scripts under
@@ -9,10 +9,19 @@ run often enough to be a fence.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Any
 
 import pytest
+
+# The scripts under test are loose files, not a package, and nothing installs them. Putting
+# `.github/scripts` on `sys.path` HERE rather than in the root `[tool.pytest.ini_options]
+# pythonpath` confines the change to this subtree's session: a repository-wide entry would
+# also expose this directory's own siblings by name, and a directory called `tests` next to
+# the scripts would then shadow -- or be shadowed by -- a package's `tests` for every pytest
+# run rooted at the repository. Hence `selftests`, and hence this line.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 ROOT_TEMPLATE = """\
 [project]
@@ -87,9 +96,11 @@ def workspace(tmp_path: Path):
         sources: dict[str, str] | None = None,
         requires_python: str = ">=3.11,<4",
         member_globs: list[str] | None = None,
+        directories: dict[str, str] | None = None,
     ) -> Path:
         for name, options in members.items():
-            write_member(tmp_path / "packages" / name, name, **options)
+            where = (directories or {}).get(name, f"packages/{name}")
+            write_member(tmp_path / where, name, **options)
         names = list(members)
         source_lines = (
             sources

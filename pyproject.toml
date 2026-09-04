@@ -138,11 +138,7 @@ conflicts = [
 # carry a `tests/test_utils.py`.
 [tool.pytest.ini_options]
 addopts = "--import-mode=importlib"
-testpaths = ["packages/sphinx-needs/tests", ".github/scripts/tests"]
-# the repository's scripts are not a package and are not installed anywhere, so their unit
-# tests import them by module name off this path. `scripts` is here for the same reason,
-# against the day `smoke_needs.py` grows a test of its own
-pythonpath = [".github/scripts", "scripts"]
+testpaths = ["packages/sphinx-needs/tests", ".github/scripts/selftests"]
 # The package tasks run from the package with `--ignore=performance` rather than a path, so
 # the walk covers the whole package -- including whatever a docs build left in `docs/_build`,
 # which pytest's default list does NOT skip (it skips `build`, not `_build`). Setting this key
@@ -232,8 +228,9 @@ include = [
 # the scripts' own tests are not checked, for the same reason the package's are not: pytest
 # is deliberately absent from the `typing` environment, which pins the oldest supported
 # sphinx and docutils and nothing else it does not need. What the tests assert is asserted
-# by running them
-exclude = [".github/scripts/tests"]
+# by running them. (They live in `selftests/`, not `tests/`: nothing outside a package may
+# be a directory called `tests`, or it competes with a package's own for the name)
+exclude = [".github/scripts/selftests"]
 
 [tool.ty.environment]
 python-version = "3.11"

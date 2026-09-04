@@ -241,6 +241,71 @@ def test_every_failure_is_reported_in_one_run(workspace, capsys) -> None:
     assert "__version__" in out
 
 
+def test_a_member_with_no_name_is_annotated_not_a_traceback(workspace, capsys) -> None:
+    """It used to raise KeyError('name') -- fail closed, but with no annotation."""
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    (root / "packages/acme-core/pyproject.toml").write_text(
+        '[project]\nversion = "1.0.0"\n', encoding="utf-8"
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=packages/acme-core/pyproject.toml::" in out
+    assert "[project] declares no `name`" in out
+    assert "Traceback" not in out
+
+
+# --- source keys are canonicalised, as uv canonicalises them ---------------------------
+
+
+def test_a_source_key_spelled_differently_is_the_same_member(workspace, capsys) -> None:
+    """uv accepts `my_member` for a member named `My_Member`; so must this."""
+    root = workspace(
+        {"My_Member": {"version": "1.0.0"}},
+        root_dependencies=["My_Member"],
+        sources={"my_member": "{ workspace = true }"},
+    )
+    assert run(root) == 0
+    assert "every member is sourced from the workspace" in capsys.readouterr().out
+
+
+# --- the edges ---------------------------------------------------------------------------
+
+
+def test_a_member_below_the_first_level_gets_a_root_relative_annotation(
+    workspace, capsys
+) -> None:
+    """`::error file=` is resolved against the workspace root, so the path must be too."""
+    root = workspace(
+        {"acme-core": {"version": "8.5.0", "module_version": "8.5.1"}},
+        member_globs=["packages/*/*"],
+        directories={"acme-core": "packages/group/acme-core"},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=packages/group/acme-core/src/acme_core/__init__.py::" in out, (
+        out
+    )
+
+
+def test_a_member_matched_by_two_globs_is_counted_once(workspace, capsys) -> None:
+    root = workspace(
+        {"acme-core": {"version": "1.0.0"}},
+        member_globs=["packages/*", "packages/acme-core"],
+    )
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert out.count("packages/acme-core/pyproject.toml: requires-python") == 1
+    assert "among 1 member(s)" in out
+
+
+def test_a_non_bare_root_dependency_does_not_also_print_ok(workspace, capsys) -> None:
+    root = workspace({"acme-core": {}}, root_dependencies=["acme-core>=1"])
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "is not bare" in out
+    assert "the root lists every member, bare" not in out
+
+
 def test_no_workspace_members_key(tmp_path: Path, capsys) -> None:
     (tmp_path / "pyproject.toml").write_text(
         '[project]\nname = "x"\nversion = "0"\n', encoding="utf-8"
