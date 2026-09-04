@@ -8,9 +8,9 @@ if TYPE_CHECKING:
 
 DEFAULT_DIAGRAM_TEMPLATE = """
 {%- if is_need -%}
-<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
+<size:12>{{type_name}}</size>\\n**{{title|wordwrap(width=15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>
 {%- else -%}
-<size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
+<size:12>{{type_name}} (part)</size>\\n**{{content|wordwrap(width=15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id_parent}}.**{{id}}**</size>
 {%- endif -%}
 """
 

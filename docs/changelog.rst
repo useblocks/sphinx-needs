@@ -128,6 +128,45 @@ Internal changes
   Sphinx 9. Every earlier release caps Sphinx below 9.0, so a documentation build with the
   furo theme could not use the Sphinx this package already supports.
 
+Breaking changes
+................
+
+- ‼️ ``|wordwrap`` is now MiniJinja's own filter — a positional width must become
+  ``width=`` **(changed output)** (:pr:`1802`)
+
+  Sphinx-Needs shipped its own ``wordwrap``, written on Python's ``textwrap``, because the
+  minijinja wheel was built without minijinja-contrib's ``wordwrap`` Cargo feature and the
+  filter the default :ref:`needs_diagram_template` calls simply did not exist
+  (``unknown filter: filter wordwrap is unknown``).  The 2.24.0 wheel compiles it, so the
+  Python filter is deleted and the native one does the work.  The dependency is now
+  ``minijinja~=2.24``.
+
+  **The width must now be passed by name.**  The native filter takes no positional width,
+  so ``{{ title|wordwrap(15) }}`` — the jinja2 spelling — ends the build with
+  ``too many arguments``.  The built-in :ref:`needs_diagram_template` has been updated to
+  ``{{ title|wordwrap(width=15, wrapstring='**\\\\n**') }}``, which renders byte-identically;
+  **a custom template of your own calling** ``|wordwrap`` **with a positional width must
+  change to** ``width=`` **when you upgrade.**  Only the width is affected —
+  ``wrapstring`` and ``break_long_words`` were already keyword arguments.  The failure
+  names its own fix: on every template surface, the ``too many arguments`` error now
+  carries a hint to write ``wordwrap(width=15)`` instead of ``wordwrap(15)``.
+
+  The feature the wheel compiles is contrib's plain ``wordwrap``, not its
+  ``unicode_wordwrap`` variant, and its **hyphen handling differs from Python's**
+  ``textwrap``.  A hyphenated word longer than the wrap width breaks right after the
+  hyphen, where ``textwrap`` filled the line first.  At the default width of 15 this needs
+  a long hyphenated word in a need title to show at all; at width 6 it is
+  ``abc-defghij`` → ``abc-`` / ``defghi`` / ``j``, where before it was ``abc-de`` /
+  ``fghij``.  The same holds when a non-letter precedes the hyphen: ``ab²-cdefghij`` →
+  ``ab²-`` / ``cdefgh`` / ``ij``, previously ``ab²-cd`` / ``efghij``.  Wrapping of text
+  without hyphens is unchanged, as are ``wrapstring``, ``break_long_words``, empty input,
+  and the independent wrapping of each existing line.
+
+  Note that :ref:`needflow`'s ``graphviz`` engine wraps its labels with Python
+  ``textwrap`` directly rather than through a template, so it keeps the old hyphen
+  behaviour: a hyphenated title long enough to hit the width can now wrap differently
+  under the two engines.
+
 Bug fixes
 .........
 

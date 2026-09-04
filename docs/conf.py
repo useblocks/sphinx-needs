@@ -326,7 +326,7 @@ needs_render_context = {
 # ]
 
 # You can uncomment some of the following lines to override the default configuration for Sphinx-Needs.
-# DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
+# DEFAULT_DIAGRAM_TEMPLATE = "<size:12>{{type_name}}</size>\\n**{{title|wordwrap(width=15, wrapstring='**\\\\n**')}}**\\n<size:10>{{id}}</size>"
 # needs_diagram_template = DEFAULT_DIAGRAM_TEMPLATE
 
 # Absolute path to the needs_report_template_file based on the conf.py directory
