@@ -154,7 +154,7 @@ uv pip install|uninstall …       # NOT project-scoped: it targets the activate
 **The sdist's contents come from `[tool.flit.sdist]`, not from git.** `uv build` runs
 `flit_core.buildapi`, which never consults git: measured, the sdist built in a worktree and
 the one built in a `git clone --depth 1` of it have identical entry lists *and* identical
-entry sizes (1384 each). So what decides whether `tests/`, `docs/` and `performance/` ship
+entry sizes. So what decides whether `tests/`, `docs/` and `performance/` ship
 is the `include`/`exclude` table in `packages/sphinx-needs/pyproject.toml`, and
 `uv run poe smoke-needs` asserts on every run that those trees are in the tarball and that
 nothing a docs or test run left behind is. (Until flit 4 this was a worktree hazard rather
@@ -202,6 +202,12 @@ workflow holds no API token, and every one of its checks fails closed.
    second, bare `<version>` tag, which is what keeps Read the Docs' `stable`, every
    `git+…@<version>` pin and every existing inbound link working — prefixed tags are not
    PEP 440 and RTD drops what it cannot parse.
+
+**If a job goes red after the publish succeeded** — the GitHub Release step, say — use
+**Re-run failed jobs** (`gh run rerun <id> --failed`), never *Re-run all jobs*: a partial
+re-run keeps `plan`'s outputs and `build`'s artifact, while a full one fails at `plan`
+because the version is on PyPI by then. A red `publish` is the other case and needs nothing
+special: nothing was uploaded, so fix the cause and re-run the workflow from the same tag.
 
 **Rehearsing**: `gh workflow run release.yaml -f tag=<dist>-v<version>` runs `plan` and
 `build` against `master` and stops there — the publish job is `if: github.event_name ==

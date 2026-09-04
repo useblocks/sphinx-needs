@@ -205,7 +205,7 @@ Publishing a new release
 This repository is a workspace, and every distribution under ``packages/`` releases
 independently. One workflow, ``.github/workflows/release.yaml``, serves all of them, and
 the tag says which: it must read ``<distribution>-v<version>``, so ``sphinx-needs-v8.6.0``.
-Nothing else triggers it, and a tag that names no distribution in the workspace is refused
+No other tag triggers it, and a tag that names no distribution in the workspace is refused
 before anything is built.
 
 A release is two steps, a pull request and a tag.
@@ -234,8 +234,8 @@ Once that pull request is merged, push the tag from ``master``::
 The workflow then validates the tag against the tree, builds the wheel and the source
 distribution, resolves the built wheel against PyPI alone, runs the test suite against the
 dependencies as they are *published* rather than as they are in this repository, uploads to
-PyPI with trusted publishing (OIDC, with Sigstore attestations — the workflow holds no API
-token), and creates the GitHub Release. For sphinx-needs it also pushes a second,
+PyPI with trusted publishing (OIDC — the workflow holds no API token), and creates the
+GitHub Release. For sphinx-needs it also pushes a second,
 bare ``8.6.0`` tag, which is the one Read the Docs and any ``git+…@8.6.0`` requirement use.
 
 To rehearse the pipeline without publishing anything, run the workflow by hand:

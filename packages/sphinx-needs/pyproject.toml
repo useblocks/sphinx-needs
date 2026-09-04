@@ -68,14 +68,17 @@ theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
 # The sdist. flit 3 inferred its contents from git (`flit build --use-vcs`, which is what
 # CI ran until this workflow was rewritten); flit 4 flipped that default off, and
 # `uv build` -- which resolves `flit_core >=3.4,<5` to 4.x -- never had it at all. Without
-# this table the sdist silently drops from 28 MB / 1385 files to 2.5 MB / 707: module only,
-# no warning, exit 0. Declaring the contents makes the sdist independent of which
-# flit_core is resolved and of whether the build ran in a git checkout at all.
+# this table the sdist silently drops from ~28 MB / ~1400 files to ~2.5 MB / ~700: module
+# only, no warning, exit 0. (Approximate on purpose -- the exact counts move with every
+# test file added; measured 2026-09.) Declaring the contents makes the sdist independent of
+# which flit_core is resolved and of whether the build ran in a git checkout at all.
 #
-# `tests/`, `docs/` and `performance/` ship on purpose: Debian, Fedora and conda-forge
-# build from the sdist and run the suite out of it. `scripts/smoke_needs.py` asserts they
-# are there (and that none of the junk below is), so losing them would be a red gate
-# rather than a discovery on PyPI.
+# `tests/`, `docs/` and `performance/` ship on purpose, and the two downstream cases were
+# checked rather than assumed: conda-forge builds from this sdist (its test step is an
+# import check), and Debian runs the suite -- out of the GitHub tag tarball its
+# `debian/watch` fetches, not out of this file. `scripts/smoke_needs.py` asserts the trees
+# are here (and that none of the junk below is), so losing them would be a red gate rather
+# than a discovery on PyPI.
 [tool.flit.sdist]
 include = ["docs/", "tests/", "performance/"]
 # Whatever a *used* checkout leaves lying under those three trees. flit reads the working
