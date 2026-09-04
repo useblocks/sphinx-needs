@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788550237679,
+  "lastUpdate": 1788559691908,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19476,6 +19476,42 @@ window.BENCHMARK_DATA = {
             "value": 62.027480198000006,
             "unit": "s",
             "extra": "Commit: 62cb7670464276647c19a3d5383879e3585a44ff\nBranch: master\nTime: 2026-09-04T21:29:07+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "06a7cbb4f1e92d1f824bc101854348caada03faf",
+          "message": "🧪 Replace Cypress with pytest-playwright for the JavaScript tests (#1845)",
+          "timestamp": "2026-09-05T00:06:46+02:00",
+          "tree_id": "92344b20a046c1c9e18ce43f28f417ec9f32c710",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/06a7cbb4f1e92d1f824bc101854348caada03faf"
+        },
+        "date": 1788559685014,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.12399887799995213,
+            "unit": "s",
+            "extra": "Commit: 06a7cbb4f1e92d1f824bc101854348caada03faf\nBranch: master\nTime: 2026-09-05T00:06:46+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 58.818526022000015,
+            "unit": "s",
+            "extra": "Commit: 06a7cbb4f1e92d1f824bc101854348caada03faf\nBranch: master\nTime: 2026-09-05T00:06:46+02:00"
           }
         ]
       }
