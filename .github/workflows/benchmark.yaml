@@ -15,10 +15,12 @@ jobs:
           # the docs extra requires python>=3.11 (sphinx-syntax-example)
           python-version: "3.12"
       - name: Install dependencies
-        # the `benchmark` group includes the `test` group
+        # `benchmark` is one of the root's shared groups and includes the root's `test`
+        # group; the `docs` extra belongs to the package but resolves by name from the
+        # workspace root, so this stays a root-level sync. `--no-default-groups` drops `dev`
         run: uv sync --frozen --no-default-groups --group benchmark --extra docs
       - name: Run Benchmark for time
-        run: uv run --no-sync pytest --benchmark-json output.json -k _time tests/benchmarks
+        run: uv run --no-sync pytest --benchmark-json output.json -k _time packages/sphinx-needs/tests/benchmarks
 
       - name: Download previous benchmark data
         uses: actions/cache@v6
@@ -44,13 +46,18 @@ jobs:
           comment-always: false
           auto-push: true
           gh-pages-branch: "benchmarks"
+          # a path on the orphan `benchmarks` branch, not in this tree -- it does not
+          # move with the package (nor does `docs/memory.html` below)
           benchmark-data-dir-path: "docs/bench"
           alert-comment-cc-users: '@danwos'
 
       - name: Run Benchmark for memory
-        run: uv run --no-sync pytest --benchmark-json output.json -k _memory tests/benchmarks
+        run: uv run --no-sync pytest --benchmark-json output.json -k _memory packages/sphinx-needs/tests/benchmarks
       - name: Create memory flamegraph
-        run: uv run --no-sync memray flamegraph -o mem_out.html mem_out.bin
+        # the benchmark writes the trace relative to its own file
+        # (tests/benchmarks/test_official.py:101, `Path(__file__).parent / ".." / ".."`),
+        # so after the move it lands next to the package, not at the repository root
+        run: uv run --no-sync memray flamegraph -o mem_out.html packages/sphinx-needs/mem_out.bin
       - name: Publish memory flamegraph
         run: |
           git checkout benchmarks

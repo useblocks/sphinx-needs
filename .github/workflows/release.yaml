@@ -25,6 +25,9 @@ jobs:
       - name: Build and publish
         # --use-vcs is the flit 3 default, but flit 4 flipped it: state it
         # explicitly so tests/ and docs/ stay in the sdist across upgrades
+        # flit builds the project whose pyproject.toml is in the working directory,
+        # and scopes `--use-vcs` to that directory's git listing
+        working-directory: packages/sphinx-needs
         run: flit publish --use-vcs
         env:
           FLIT_USERNAME: __token__

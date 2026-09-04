@@ -16,6 +16,11 @@ on:
     paths: ['docker/**']
 
 env:
+  # bumped by hand in each release PR, and it must name a tag cut AFTER the workspace move:
+  # the Dockerfile installs `git+...@$NEEDS_VERSION#subdirectory=packages/sphinx-needs`, a
+  # path that does not exist in an earlier tag. The `pull_request` run below only proves the
+  # `docker/**` path filter fires -- it builds this literal version, and the `pre-release`
+  # branch of the Dockerfile is never exercised by CI at all.
   NEEDS_VERSION: 8.5.0
   DEPLOY_IMAGE: ${{ github.event_name != 'pull_request' }}
 

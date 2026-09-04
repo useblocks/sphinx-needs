@@ -134,11 +134,11 @@ feedback while network requires building the full network index first.
 .. note::
 
    The
-   `full example <https://github.com/useblocks/sphinx-needs/tree/master/tests/doc_test/doc_schema_example>`__
+   `full example <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-needs/tests/doc_test/doc_schema_example>`__
    for below configuration can be found in the tests.
    It can directly be executed with::
 
-     tests/doc_test/doc_schema_example $ uv run sphinx-build -b html . _build
+     packages/sphinx-needs/tests/doc_test/doc_schema_example $ uv run sphinx-build -b html . _build
 
 Here are the full example files as a reference:
 
@@ -1478,7 +1478,7 @@ patterns and their expected outcomes.
 
 **Test fixtures**
 
-The `YAML-based test fixtures <https://github.com/useblocks/sphinx-needs/tree/master/tests/schema/fixtures>`__
+The `YAML-based test fixtures <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-needs/tests/schema/fixtures>`__
 contain complete, self-contained project examples with:
 
 - Full ``conf.py`` or ``ubproject.toml`` configuration
@@ -1492,7 +1492,7 @@ Each fixture is a working example you can study and adapt for your own projects.
 
 The tests use snapshot testing to verify validation behavior. The expected outputs and error messages
 can be found in the
-`test snapshots <https://github.com/useblocks/sphinx-needs/blob/master/tests/schema/__snapshots__/test_schema.ambr>`__.
+`test snapshots <https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-needs/tests/schema/__snapshots__/test_schema.ambr>`__.
 
 These snapshots show:
 

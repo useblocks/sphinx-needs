@@ -17,14 +17,19 @@ jobs:
       - name: Install package
         run: uv sync --frozen --no-default-groups --extra docs
       - name: Install Node dependencies
+        # package.json lives with the package it tests
         run: npm install cypress
+        working-directory: packages/sphinx-needs
       - name: Build Docs
         id: sphinx-build-docs
-        run: uv run --no-sync sphinx-build -a -T -E -j 4 -b html -d /tmp/sphinx_build/doctrees ./docs /tmp/sphinx_build/html
+        run: uv run --no-sync sphinx-build -a -T -E -j 4 -b html -d /tmp/sphinx_build/doctrees ./packages/sphinx-needs/docs /tmp/sphinx_build/html
       - name: E2E Cypress Test on Chrome
         uses: cypress-io/github-action@v7
         with:
           browser: chrome
+          # the cypress project is the package: `config-file`, the config's own
+          # `specPattern`/`supportFile` and `npm start` are all relative to it
+          working-directory: packages/sphinx-needs
           config-file: tests/js_test/cypress.config.js
           start: npm start
           # quote the url to be safe against YML parsing surprises

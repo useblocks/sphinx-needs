@@ -35,6 +35,13 @@ project and its development dependencies into an isolated environment:
 
 .. note::
 
+   Run it from the repository root. This repository is a uv workspace: the test tooling is a
+   dependency group of the workspace root, which is included in the root's default ``dev``
+   group, so no group has to be named. Syncing from inside ``packages/sphinx-needs`` instead
+   installs the package alone, without ``pytest``.
+
+.. note::
+
    The ``docs`` extra requires Python >= 3.11.
    On Python 3.10 the extra still installs, but the documentation cannot be built.
 
@@ -70,14 +77,14 @@ Words written after a task name are appended to the command it runs, so ``pytest
 A task that needs something other than the default environment — one sphinx version, a
 documentation theme — installs into its own ``.venvs/`` directory, so tasks do not
 overwrite each other's environment.
-``uv run poe typecheck`` is one of those tasks: it installs the ``typing`` dependency
+``uv run poe typecheck-needs`` is one of those tasks: it installs the ``typing`` dependency
 group — the oldest supported Sphinx and Docutils, plus ty itself — into ``.venvs/typing``
 and checks against it, which is what CI and the prek ``ty`` hook do too.
 Running ``ty`` by hand, or through an editor extension, uses ``.venvs/typing`` as well,
 because ``[tool.ty.environment] python`` names it; run the task once to create it.
 
 Set ``UV_PYTHON`` to choose the interpreter a task runs on, for example
-``UV_PYTHON=3.12 uv run --no-sync poe test-sphinx8``.
+``UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8``.
 uv downloads an interpreter it does not have, so no separate version manager is needed.
 Give the outer ``uv run`` the ``--no-sync`` flag in that form: without it, uv also rebuilds
 the default ``.venv`` on that interpreter (``uv sync --python 3.13`` puts it back).
@@ -85,28 +92,28 @@ the default ``.venv`` on that interpreter (``uv sync --python 3.13`` puts it bac
 Build docs
 ----------
 
-To build the **Sphinx-Needs** documentation stored under ``/docs``, run:
+To build the **Sphinx-Needs** documentation stored under ``/packages/sphinx-needs/docs``, run:
 
 .. code-block:: bash
 
    # Build HTML pages with the furo theme
-   uv run poe docs
+   uv run poe docs-needs
 
    # ... and first remove all old build files
-   uv run poe docs-clean
+   uv run poe docs-needs-clean
 
 .. note::
 
    Building the documentation requires Python >= 3.11;
    set ``UV_PYTHON`` (with ``uv run --no-sync``) if your default interpreter is older.
 
-The other themes have a task each — ``docs-alabaster``, ``docs-im``, ``docs-pds`` and
-``docs-rtd`` — and the link checker is its own task:
+The other themes have a task each — ``docs-needs-alabaster``, ``docs-needs-im``, ``docs-needs-pds``
+and ``docs-needs-rtd`` — and the link checker is its own task:
 
 .. code-block:: bash
 
    # Check links in the documentation
-   uv run poe docs-linkcheck
+   uv run poe docs-needs-linkcheck
 
 
 Running Tests
@@ -116,22 +123,22 @@ Run the tests against the newest supported sphinx with:
 
 .. code-block:: bash
 
-   uv run poe test
+   uv run poe test-needs
 
 The CI matrix tests three sphinx versions, and each is a task of its own —
-``test-sphinx7``, ``test-sphinx8``, ``test-sphinx9``.
+``test-needs-sphinx7``, ``test-needs-sphinx8``, ``test-needs-sphinx9``.
 Every one of them is exactly what CI runs, so a failing cell can be reproduced locally:
 
 .. code-block:: bash
 
-   UV_PYTHON=3.12 uv run --no-sync poe test-sphinx8 tests/test_basic_doc.py
+   UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8 tests/test_basic_doc.py
 
 Note some tests use `syrupy <https://github.com/tophat/syrupy>`__ to perform snapshot testing.
 These snapshots can be updated by running:
 
 .. code-block:: bash
 
-   uv run poe test --snapshot-update
+   uv run poe test-needs --snapshot-update
 
 Running JS Testcases with PyTest
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -223,11 +230,11 @@ After you set the ``spec_pattern`` key-value pair as part of the ``test_app`` fi
             "stderr": "Errors encountered,
         }
 
-You can run the ``make test-js`` command to check all JS testcases.
+You can run ``uv run poe test-needs-js`` to check all JS testcases.
 
 .. note::
 
-    The ``http_server`` process invoked by the ``make test-js`` command may not terminate properly in some instances.
+    The ``http_server`` process invoked by that command may not terminate properly in some instances.
     Kindly check your system's monitoring app to end the process if not terminated automatically.
 
 Benchmarks

@@ -1,7 +1,7 @@
 name: Docs CI
 on:
   pull_request:
-    paths: [docs/**]
+    paths: [packages/sphinx-needs/docs/**]
 jobs:
   linkcheck:
     name: Docs-Linkcheck
@@ -17,4 +17,4 @@ jobs:
         run: uv sync --frozen --no-default-groups --extra docs
       - name: Run linkcheck
         run: uv run --no-sync sphinx-build -W -b linkcheck . _build
-        working-directory: docs
+        working-directory: packages/sphinx-needs/docs

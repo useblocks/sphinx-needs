@@ -1091,9 +1091,9 @@ The packaged default template
 If you do not set ``needs_report_template``, this template, shipped with Sphinx-Needs,
 is used:
 
-.. literalinclude:: ../sphinx_needs/directives/needreport_template.rst
+.. literalinclude:: ../src/sphinx_needs/directives/needreport_template.rst
    :language: jinja
-   :caption: sphinx_needs/directives/needreport_template.rst
+   :caption: packages/sphinx-needs/src/sphinx_needs/directives/needreport_template.rst
 
 .. note::
 
