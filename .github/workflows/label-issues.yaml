@@ -17,7 +17,8 @@ permissions:
 
 jobs:
   label:
-    if: contains(github.event.issue.body, '### Package')
+    # quoted: an unquoted scalar containing `#` survives only because a `'` precedes it
+    if: "contains(github.event.issue.body, '### Package')"
     runs-on: ubuntu-latest
     steps:
       - uses: github/issue-labeler@v3.5
