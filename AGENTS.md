@@ -10,7 +10,9 @@ repository root**; every command below is written for it.
 
 Each package has its own `AGENTS.md` with the detail for that package — start with
 [`packages/sphinx-needs/AGENTS.md`](packages/sphinx-needs/AGENTS.md), which carries the
-extension's architecture.
+extension's architecture. The `CLAUDE.md` next to each `AGENTS.md` is a one-line shim that
+imports it (Claude Code reads `CLAUDE.md`, not `AGENTS.md`): edit the `AGENTS.md`, never
+the shim.
 
 ## Where things are
 
@@ -41,6 +43,11 @@ uv run poe docs-needs                 # the furo docs build
 uv run poe smoke-needs                # build the wheel and test the built package
 UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8   # one CI matrix cell
 ```
+
+The machine needs `java` (the plantuml jar is vendored under `tests/doc_test/utils/`) and
+graphviz's `dot` on `PATH` — the needflow tests do not skip without them, so install
+graphviz as CI does (`apt-get install graphviz`). The Cypress tests (`-m jstest`, which
+`test-needs` excludes) additionally need Node.
 
 **Naming rule:** a task that acts on the whole repository is bare (`lint`); a task that
 acts on one package ends in that package's short name — the distribution name minus its

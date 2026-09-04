@@ -27,4 +27,4 @@ package end in that package's short name (`test-needs`, `docs-needs`, `typecheck
 
 Contributions are very welcome — see
 [the contributing guide](packages/sphinx-needs/docs/contributing.rst), and `AGENTS.md` for
-the repository's layout in more detail.
+the repository's layout in more detail (`CLAUDE.md` only imports it).
