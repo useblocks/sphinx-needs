@@ -1,0 +1,24 @@
+name: Label issues
+
+# Reads the "Package" dropdown that the issue forms render into the body and applies
+# the matching `pkg:` labels (.github/issue-labeler.yml). Runs on edits too, so a
+# changed answer moves the label; `sync-labels` only touches the labels named in that
+# file, so anything else on the issue is left alone.
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: github/issue-labeler@v3.5
+        with:
+          configuration-path: .github/issue-labeler.yml
+          include-title: 0
+          sync-labels: 1
+          repo-token: ${{ github.token }}

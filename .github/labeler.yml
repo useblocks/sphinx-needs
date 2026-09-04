@@ -1,0 +1,26 @@
+# Labels pull requests by the paths they touch (.github/workflows/label-prs.yaml):
+# one entry per distribution under packages/, plus one for the repository itself.
+# uv.lock is deliberately absent from the repository entry -- a member's dependency
+# change relocks it, and that is not a repository concern.
+'pkg: sphinx-needs':
+  - changed-files:
+      - any-glob-to-any-file: 'packages/sphinx-needs/**'
+'pkg: workspace':
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**'
+          - '.claude/**'
+          - 'docker/**'
+          - 'scripts/**'
+          - 'pyproject.toml'
+          - '.pre-commit-config.yaml'
+          - '.readthedocs.yml'
+          - '.gitattributes'
+          - '.gitignore'
+          - '.yamlfmt'
+          - 'codecov.yml'
+          - 'context7.json'
+          - 'AGENTS.md'
+          - 'CLAUDE.md'
+          - 'README.md'
+          - 'LICENSE'

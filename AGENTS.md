@@ -150,3 +150,15 @@ move's pull request.
 3. **Documentation**: update the docs if behaviour changes or options are added
 4. **Changelog**: update `packages/sphinx-needs/docs/changelog.rst`
 5. **Code quality**: `uv run poe lint` and `uv run poe typecheck-needs` pass
+
+## Issues and labels
+
+Every issue and pull request carries one `pkg:` label naming what it concerns:
+`pkg: <distribution>` (today `pkg: sphinx-needs`) or `pkg: workspace` for the repository
+itself — workflows, CI, release, docker, tooling, the workspace root. Pull requests get
+theirs automatically from the paths they touch (`.github/labeler.yml`); the issue forms
+set it from their "Package" dropdown (`.github/issue-labeler.yml`). **An issue created
+without a form — `gh issue create`, the API — gets no label from anywhere, so pass it
+yourself**, together with the kind (`bug`, `enhancement`, `documentation`):
+`gh issue create --label 'pkg: sphinx-needs' --label bug --title … --body-file …`.
+Templates never constrain the API; they only shape the web "New issue" page.

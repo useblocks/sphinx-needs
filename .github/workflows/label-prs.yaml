@@ -1,0 +1,24 @@
+name: Label pull requests
+
+# `pull_request_target` rather than `pull_request`: a pull request from a fork gets a
+# read-only token under `pull_request`, so labelling it would fail. Under
+# `pull_request_target` the workflow file and the token come from the base branch and
+# nothing from the pull request is checked out or executed -- the action only reads the
+# list of changed files and applies labels from .github/labeler.yml.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/labeler@v7
+        with:
+          configuration-path: .github/labeler.yml
+          # a push that stops touching a path removes that path's label again
+          sync-labels: true

@@ -1,0 +1,62 @@
+name: Bug report
+description: A build, an output or a warning is wrong
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. A minimal example and the exact versions are what turn
+        "cannot reproduce" into a fix, so the fields asking for them are required.
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: >-
+        Which distribution in this repository is affected? Pick "the repository" for workflows, CI, release, docker or tooling.
+      multiple: true
+      options:
+        - sphinx-needs
+        - the repository (workflows, CI, release, docker, tooling)
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happens
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Minimal example
+      description: >-
+        The smallest conf.py and source that reproduce it. A link to a repository or a zip is fine too.
+      render: rst
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Build output
+      description: The warning, traceback or wrong output, as text.
+      render: text
+  - type: input
+    id: version-needs
+    attributes:
+      label: sphinx-needs version
+      placeholder: "8.5.0"
+    validations:
+      required: true
+  - type: input
+    id: version-sphinx
+    attributes:
+      label: Sphinx and Python versions
+      placeholder: "sphinx 9.1.0, python 3.13"
+    validations:
+      required: true
+  - type: input
+    id: builder
+    attributes:
+      label: Builder and theme
+      placeholder: "html with furo; latexpdf; needs"
