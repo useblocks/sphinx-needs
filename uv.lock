@@ -2326,6 +2326,7 @@ wheels = [
 
 [[package]]
 name = "sphinx-needs"
+version = "8.5.0"
 source = { editable = "packages/sphinx-needs" }
 dependencies = [
     { name = "jsonschema-rs" },
@@ -2390,7 +2391,7 @@ requires-dist = [
     { name = "sphinxcontrib-programoutput", marker = "extra == 'docs'", specifier = "~=0.17" },
     { name = "typing-extensions", specifier = ">=4.14.0" },
 ]
-provides-extras = ["docs", "plotting", "theme-furo", "theme-im", "theme-pds", "theme-rtd"]
+provides-extras = ["plotting", "docs", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
 
 [[package]]
 name = "sphinx-needs-workspace"

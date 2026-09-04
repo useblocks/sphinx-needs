@@ -351,7 +351,12 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/benchmark" }
 
 [tool.poe.tasks.build-needs]
 help = "Build the sphinx-needs sdist + wheel into dist/sphinx-needs"
-cmd = "uv build packages/sphinx-needs -o dist/sphinx-needs"
+# character for character the command release.yaml runs, and `smoke-needs` runs it too:
+# `--package` so uv resolves the member out of the workspace, `--no-sources` so a *build*
+# requirement is never substituted from it, and a per-distribution `-o` because
+# `uv publish`'s default glob is `dist/*` -- which in a workspace would publish every
+# artefact anyone left in that directory
+cmd = "uv build --package sphinx-needs --no-sources -o dist/sphinx-needs"
 
 [tool.poe.tasks.smoke-needs]
 help = "Install the built sphinx-needs wheel out of this project and build a doc with it"

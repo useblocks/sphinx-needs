@@ -5,16 +5,21 @@ Every other gate in this repository imports the source tree: the tests, the docs
 and the type check all run against a checkout, so a file that never reaches the wheel is
 invisible to all of them (issue #1829).  This script closes that gap:
 
-1. build the sdist + wheel with ``uv build``;
-2. create a throwaway virtual environment *outside* the project;
-3. install the wheel into it with ``--no-sources``, so uv resolves from the index instead
+1. build the sdist + wheel with the *same* ``uv build`` invocation the release workflow
+   runs (``--package <dist> --no-sources -o dist/<dist>``);
+2. assert the sdist still carries the trees it is meant to ship, and none of the rubbish a
+   used checkout leaves behind. flit 4 does not infer sdist contents from git, so those
+   trees are in the sdist only because ``[tool.flit.sdist] include`` says so -- and the
+   failure mode of losing them is an 11x smaller tarball, no warning and exit 0;
+3. create a throwaway virtual environment *outside* the project;
+4. install the wheel into it with ``--no-sources``, so uv resolves from the index instead
    of silently substituting the local source tree;
-4. assert ``sphinx_needs.__file__`` is inside that environment -- without this the whole
+5. assert ``sphinx_needs.__file__`` is inside that environment -- without this the whole
    run can pass while testing the checkout again;
-5. assert the wheel carries every file git tracks under the module directory -- the
+6. assert the wheel carries every file git tracks under the module directory -- the
    non-Python payload (vendored JS/CSS, images, templates, JSON schemas) is 88% of it by
    file count, and it is the part a packaging mistake drops;
-6. build a tiny documentation project with ``-W`` and assert the rendered need, the link,
+7. build a tiny documentation project with ``-W`` and assert the rendered need, the link,
    the table, the flow image and the copied static assets.
 
 It is parameterised on the package directory and the distribution name so that a sibling
@@ -33,6 +38,7 @@ import argparse
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 import zipfile
@@ -49,6 +55,11 @@ WHEEL_FILES = [
     "templates/time_measurements.html",
     "needsfile.json",
 ]
+
+# Nothing a build or a test run leaves in the working directory may reach the sdist. flit
+# reads the working tree, not git, so `[tool.flit.sdist] exclude` is the only thing keeping
+# `docs/_build/` (456 files after one docs build) out of a released tarball.
+SDIST_JUNK = ("__pycache__", ".pyc", "_build/", ".pytest_cache")
 
 CONF_PY = """\
 extensions = ["sphinx.ext.graphviz", "sphinx_needs"]
@@ -108,18 +119,60 @@ class Checks:
             self.failures.append(label)
 
 
-def build_wheel(package_dir: Path, dist_name: str) -> Path:
-    """Build the distribution and return the path of the freshly built wheel."""
+def build(dist_name: str) -> tuple[Path, Path]:
+    """Build the distribution; return the freshly built (wheel, sdist).
+
+    This is character for character the command the release workflow runs -- `--package`
+    rather than a path so uv resolves the member out of the workspace, `--no-sources` so a
+    *build* requirement is never substituted from the workspace, and `-o dist/<dist>` so
+    that `uv publish` is later pointed at one distribution's artefacts instead of its
+    default `dist/*` glob. A smoke test that built the artefact differently from the
+    release would not be testing the release.
+    """
     out_dir = REPO_ROOT / "dist" / dist_name
     # a stale wheel here would be a silent false pass, so start from nothing
     shutil.rmtree(out_dir, ignore_errors=True)
-    run(["uv", "build", str(package_dir), "-o", str(out_dir)], cwd=REPO_ROOT)
+    run(
+        ["uv", "build", "--package", dist_name, "--no-sources", "-o", str(out_dir)],
+        cwd=REPO_ROOT,
+    )
     wheels = sorted(out_dir.glob("*.whl"))
     if len(wheels) != 1:
         raise SmokeError(f"expected exactly one wheel in {out_dir}, found {wheels}")
-    if not list(out_dir.glob("*.tar.gz")):
-        raise SmokeError(f"no sdist was built in {out_dir}")
-    return wheels[0]
+    sdists = sorted(out_dir.glob("*.tar.gz"))
+    if len(sdists) != 1:
+        raise SmokeError(f"expected exactly one sdist in {out_dir}, found {sdists}")
+    return wheels[0], sdists[0]
+
+
+def check_sdist_contents(sdist: Path, wanted: list[str], checks: Checks) -> None:
+    """The sdist ships the declared trees, and nothing a used checkout left behind.
+
+    `uv build` runs `flit_core.buildapi`, and flit 4 dropped flit 3's "infer the sdist from
+    git" behaviour -- so `tests/` and `docs/` are in the tarball only while
+    `[tool.flit.sdist] include` names them. Losing them costs 11x the size and warns about
+    nothing, which is exactly why it is asserted here and not left to review.
+    """
+    with tarfile.open(sdist) as tar:
+        names = tar.getnames()
+    # every path is prefixed with `<name>-<version>/`; compare on the part after it
+    inner = [name.split("/", 1)[1] for name in names if "/" in name]
+    for tree in wanted:
+        entries = [name for name in inner if name.startswith(f"{tree}/")]
+        checks.check(
+            bool(entries),
+            f"the sdist ships {tree}/",
+            f"{len(entries)} entries"
+            if entries
+            else "none -- is it in [tool.flit.sdist] include?",
+        )
+    junk = sorted(name for name in inner if any(bad in name for bad in SDIST_JUNK))
+    shown = ", ".join(junk[:3]) + (" ..." if len(junk) > 3 else "")
+    checks.check(
+        not junk,
+        f"the sdist carries no build rubbish ({len(names)} entries, {sdist.stat().st_size} bytes)",
+        f"{len(junk)} unwanted: {shown}" if junk else "",
+    )
 
 
 def tracked_module_files(package_dir: Path, module: str) -> set[str]:
@@ -219,6 +272,13 @@ def main() -> int:
         help="distribution name (default: sphinx-needs)",
     )
     parser.add_argument(
+        "--sdist-dirs",
+        nargs="*",
+        default=["tests", "docs"],
+        metavar="DIR",
+        help="directories the sdist must ship (default: tests docs); pass none to skip",
+    )
+    parser.add_argument(
         "--python",
         default=None,
         help="interpreter for the throwaway environment (default: uv's)",
@@ -237,9 +297,10 @@ def main() -> int:
 
     started = time.monotonic()
     checks = Checks()
-    wheel = build_wheel(package_dir, args.dist_name)
-    print(f"built {wheel.name}")
+    wheel, sdist = build(args.dist_name)
+    print(f"built {wheel.name} and {sdist.name}")
     check_wheel_contents(wheel, module, package_dir, checks)
+    check_sdist_contents(sdist, args.sdist_dirs, checks)
 
     tmp = Path(tempfile.mkdtemp(prefix=f"smoke-{args.dist_name}-"))
     try:
