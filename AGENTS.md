@@ -44,10 +44,30 @@ uv run poe smoke-needs                # build the wheel and test the built packa
 UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8   # one CI matrix cell
 ```
 
+**The default environment's sphinx follows whichever interpreter uv picks.** Below Python
+3.12 the lock resolves sphinx 8.2, so a bare `uv sync` on such a machine makes `test-needs`
+a second sphinx-8 run, skips the 3.12-gated tests, and fails CI's "newest sphinx" canary
+locally. Export `UV_PYTHON=3.12` (or newer) before `uv sync` to get the cell CI expects;
+the per-cell `UV_PYTHON=…` in the commands above still overrides it.
+
 The machine needs `java` (the plantuml jar is vendored under `tests/doc_test/utils/`) and
 graphviz's `dot` on `PATH` — the needflow tests do not skip without them, so install
 graphviz as CI does (`apt-get install graphviz`). The Cypress tests (`-m jstest`, which
-`test-needs` excludes) additionally need Node.
+`test-needs` excludes) additionally need Node, and `npm install cypress` reaches
+`download.cypress.io`. `docs-needs` needs `docs.python.org` and `www.sphinx-doc.org` for
+intersphinx: behind a proxy that blocks them, `-nW` turns the unresolved references into
+dozens of errors that look like a docs regression. Run the test suite serially: plantuml
+is load-sensitive (a docs or wheel build running alongside it has failed a zero-warnings
+assertion), and `-n auto` races on the shared jar copy.
+
+Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
+`typecheck-needs` seconds once `.venvs/typing` exists (the first run creates it) ·
+`smoke-needs` 6 s · `docs-needs` under 2 min · `test-needs` 7–8 min serial ·
+`benchmark-needs` 4 min. `docs-needs` runs with `--keep-going`, so it prints every warning
+and then exits 1 — do not read a full log as success. `benchmark-needs` is currently red
+(12 failures in `tests/benchmarks/test_querying.py`: the test mocks `NeedsSphinxConfig`
+with a spec, which lacks the dynamically assigned `variant_data_proxy` — #1840, unrelated
+to the layout); CI runs only its `_time` and `_memory` subsets, which pass.
 
 **Naming rule:** a task that acts on the whole repository is bare (`lint`); a task that
 acts on one package ends in that package's short name — the distribution name minus its
@@ -56,7 +76,9 @@ acts on one package ends in that package's short name — the distribution name 
 ty reads the root `[tool.ty]` from any directory in the tree, because it walks up for a
 `pyproject.toml` and the package has no `[tool.ty]` of its own — so
 `cd packages/sphinx-needs && ty check`, `ty check packages/sphinx-needs` and an editor
-opened anywhere all give the gate's result.
+opened anywhere all give the gate's result. `ty` itself lives only in the `typing`
+environment — `.venvs/typing/bin/ty`, created by the first `uv run poe typecheck-needs` —
+not in `.venv` and not on `PATH`.
 
 **Some tests are gated to one interpreter** — `grep -rn 'skipif.*version_info' packages/*/tests`
 finds them (today: the schema snapshot test, Python 3.12 only). A default run skips them
