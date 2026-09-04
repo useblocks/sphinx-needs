@@ -6,13 +6,9 @@ import json
 import os.path
 import secrets
 import shutil
-import socket
 import string
-import subprocess
-import sys
 import tempfile
 from pathlib import Path
-from typing import Any
 
 import pytest
 import yaml
@@ -23,7 +19,6 @@ from sphinx.application import Sphinx
 from sphinx.testing.util import SphinxTestApp
 from sphinx.util.console import strip_colors
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
-from xprocess import ProcessStarter
 
 from sphinx_needs._jinja import render_template_string
 
@@ -70,147 +65,6 @@ def create_src_files_in_tmpdir(files: list[tuple[Path, str]], tmp: Path) -> Path
         file_abs.parent.mkdir(exist_ok=True)
         file_abs.write_text(content)
     return tmproot
-
-
-def get_abspath(relpath: str) -> str:
-    """
-    Get the absolute path from a relative path.
-
-    This function returns an absolute path relative to the conftest.py file.
-
-    :param relpath: The relative path to convert.
-    :return: The absolute path, or the input if it's not a valid relative path.
-    """
-    if isinstance(relpath, str) and relpath:
-        abspath = Path(__file__).parent.joinpath(relpath).resolve()
-        return str(abspath)
-    return relpath
-
-
-@pytest.fixture(scope="session")
-def test_server(xprocess, sphinx_test_tempdir):
-    """
-    Fixture to start and manage the test server process.
-
-    :param sphinx_test_tempdir: The directory to serve.
-    :return: Information about the server process.
-    """
-    addr = "127.0.0.1"
-    port = 62343
-
-    class Starter(ProcessStarter):
-        pattern = "Serving HTTP on [0-9.]+ port 62343|Address already in use"
-        timeout = 20
-        terminate_on_interrupt = True
-        args = [
-            "python3",
-            "-m",
-            "http.server",
-            "--directory",
-            sphinx_test_tempdir,
-            "--bind",
-            addr,
-            port,
-        ]
-        env = {"PYTHONUNBUFFERED": "1"}
-
-    def check_server_connection(log_path: str):
-        """
-        Checks the connection status to a server.
-
-        :param log_path: The path to the log file.
-        :return: True if the server connection is successful, False otherwise.
-        """
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        result = sock.connect_ex((addr, port))
-        sock.close()
-        if result == 0:
-            with open(str(log_path), "wb", 0) as stdout:
-                stdout.write(
-                    bytes(
-                        "Serving HTTP on 127.0.0.1 port 62343 (http://127.0.0.1:62343/) ...\n",
-                        "utf8",
-                    )
-                )
-            return True
-        return False
-
-    if not check_server_connection(log_path=xprocess.getinfo("http_server").logpath):
-        # Start the process and ensure it is running
-        xprocess.ensure("http_server", Starter, persist_logs=False)
-
-    http_server_process = xprocess.getinfo("http_server")
-    server_url = f"http://{addr}:{port}"
-    http_server_process.url = server_url
-
-    yield http_server_process
-
-    # clean up whole process tree afterward
-    xprocess.getinfo("http_server").terminate()
-
-
-def test_js(self) -> dict[str, Any]:
-    """
-    Executes Cypress tests using the specified `spec_pattern`.
-
-    :param self: An instance of the :class:`Sphinx` application object this function is bounded to.
-    :return: A dictionary with test execution information.
-             Keys:
-                - 'returncode': Return code of the Cypress test execution.
-                - 'stdout': Standard output of the Cypress test execution.
-                - 'stderr': Standard error of the Cypress test execution.
-    """
-    cypress_testpath = get_abspath(self.spec_pattern)
-
-    if not cypress_testpath or not (
-        os.path.isabs(cypress_testpath) and os.path.exists(cypress_testpath)
-    ):
-        return {
-            "returncode": 1,
-            "stdout": None,
-            "stderr": f"The spec_pattern '{self.spec_pattern}' cannot be found.",
-        }
-    _, out_dir = str(self.outdir).split("sn_test_build_data")
-    srcdir_url = f"http://127.0.0.1:62343/{out_dir.lstrip('/')}/"
-    js_test_config = {
-        "specPattern": cypress_testpath,
-        "supportFile": get_abspath("js_test/cypress/support/e2e.js"),
-        "fixturesFolder": False,
-        "baseUrl": srcdir_url,
-    }
-
-    cypress_config = json.dumps(js_test_config)
-    cypress_config_file = get_abspath("js_test/cypress.config.js")
-
-    # Run the Cypress test command
-    completed_process = subprocess.run(
-        [
-            "npx",
-            "cypress",
-            "run",
-            # "--browser",
-            # "chrome",
-            "--config-file",
-            rf"{cypress_config_file}",
-            "--config",
-            rf"{cypress_config}",
-        ],
-        capture_output=True,
-    )
-
-    # Send back return code, stdout, and stderr
-    stdout = completed_process.stdout.decode("utf-8")
-    stderr = completed_process.stderr.decode("utf-8")
-
-    if completed_process.returncode != 0:
-        print(stdout)
-        print(stderr, file=sys.stderr)
-
-    return {
-        "returncode": completed_process.returncode,
-        "stdout": stdout,
-        "stderr": stderr,
-    }
 
 
 def pytest_addoption(parser):
@@ -355,16 +209,6 @@ def test_app(make_app, sphinx_test_tempdir, plantuml_command, request):
         ).splitlines()
     else:
         app.warning_list = None
-
-    # Add the spec_pattern as an attribute to the Sphinx app object
-    app.spec_pattern = builder_params.get("spec_pattern", "*.cy.js")
-    # Add the ``test_js`` function as an attribute to the Sphinx app object
-    # This is done by accessing the special method ``__get__`` which allows the ``test_js`` function
-    # to be bound to the Sphinx app object, enabling it to access the object's attributes.
-    # We can later call ``test_js`` function as an attribute of the Sphinx app object.
-    # Since we've bound the ``test_js`` function to the Sphinx object using ``__get__``,
-    # ``test_js`` behaves like a method.
-    app.test_js = test_js.__get__(app, Sphinx)
 
     # Check created all parent-child node relationships after any other
     # code within the doctree-resolved event by setting the priority to 999.

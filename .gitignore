@@ -3,7 +3,6 @@
 .DS_Store
 .venv*
 .pvenv
-node_modules
 
 .envrc
 *.pyc
@@ -29,8 +28,6 @@ packages/sphinx-needs/docs/_static/tutorial_needs.json
 .dockerignore
 
 .benchmarks/
-packages/sphinx-needs/tests/cypress/
-cypress/
 
 output.json
 mem_out.*

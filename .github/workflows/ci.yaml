@@ -198,12 +198,6 @@ jobs:
             sphinx-group: "sphinx-9"
     steps:
       - uses: actions/checkout@v7
-      - name: Use Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 18
-      - name: Install Cypress Test Framework
-        run: npm install cypress
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true

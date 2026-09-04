@@ -92,8 +92,9 @@ def _check_collapse_buttons(app: SphinxTestApp, page: Page) -> None:
         _expect_hide_class(icon_collapsed, present=hidden_after_click)
         _expect_hide_class(icon_visible, present=not hidden_after_click)
 
-    # nothing on these pages throws today, so this is an unconditional assertion: there is
-    # no allowance for "<x> is not defined" like the retired Cypress support file carried
+    # nothing on these pages throws today, so this is an unconditional assertion -- there
+    # is no allowance for "<x> is not defined" like the retired JS harness's support file
+    # carried, and if one is ever needed it should match the exact message and say why
     assert not page_errors, f"the page raised: {page_errors}"
 
 
