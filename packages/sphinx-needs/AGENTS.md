@@ -16,7 +16,6 @@ Sphinx-Needs is a Sphinx extension for managing needs/requirements and specifica
 ```
 pyproject.toml         # Distribution metadata, extras and dependency groups
 README.rst  LICENSE  AUTHORS
-package.json           # the Cypress harness's npm project
 
 src/sphinx_needs/      # Main source code (importable package)
 ├── api/               # Public API
@@ -29,7 +28,6 @@ src/sphinx_needs/      # Main source code (importable package)
 
 tests/                 # Test suite
 ├── doc_test/          # Test documentation projects
-├── js_test/           # Cypress JavaScript tests
 ├── benchmarks/        # Performance benchmarks
 ├── conformance/       # The needflow conformance corpus (shared with ubCode — see the root file)
 ├── __snapshots__/     # Syrupy snapshot files
@@ -89,14 +87,14 @@ def process_need(
 - Tests use `pytest` with fixtures defined in `tests/conftest.py`
 - Test documentation projects are in `tests/doc_test/`
 - Snapshot testing uses `syrupy` - update snapshots with `--snapshot-update`
-- JavaScript tests use Cypress and require the `@pytest.mark.jstest` marker
+- Browser tests use pytest-playwright and require the `@pytest.mark.jstest` marker
 
 ### Writing Tests
 
 1. Create a test documentation project in `tests/doc_test/` if needed
 2. Use the `test_app` fixture for Sphinx application testing
 3. Mark tests appropriately:
-   - `@pytest.mark.jstest` - JavaScript/Cypress tests
+   - `@pytest.mark.jstest` - browser tests (pytest-playwright)
    - `@pytest.mark.benchmark` - Performance benchmarks
    - `@pytest.mark.fixture_file` - Tests using fixture files
 

@@ -60,22 +60,37 @@ run on the pin, and Lint asserts the series it got equals the file.
 
 The machine needs `java` (the plantuml jar is vendored under `tests/doc_test/utils/`) and
 graphviz's `dot` on `PATH` — the needflow tests do not skip without them, so install
-graphviz as CI does (`apt-get install graphviz`). The Cypress tests (`-m jstest`, which
-`test-needs` excludes) additionally need Node and `npm install cypress`, run in
-`packages/sphinx-needs` where the `package.json` is: its postinstall fetches a ~250 MB
-binary from `download.cypress.io`, which redirects to `cdn.cypress.io`, into the per-machine
-cache `~/.cache/Cypress/<version>/` — a sandbox must allow both hosts, and once that cache
-is warm the install needs neither. `docs-needs` needs `docs.python.org` and
-`www.sphinx-doc.org` for intersphinx (and `api.github.com` for the GitHub-service example,
-whose warning is suppressed): behind a proxy that blocks the first two, `-nW` turns the
-unresolved references into dozens of errors that look like a docs regression. Run the test
-suite serially: plantuml
-is load-sensitive (a docs or wheel build running alongside it has failed a zero-warnings
-assertion), and `-n auto` races on the shared jar copy.
+graphviz as CI does (`apt-get install graphviz`). The browser tests (`-m jstest`, which
+`test-needs` excludes) additionally need a browser, and it is not a package: `uv run poe
+install-browser` (`playwright install chromium`) fetches one per machine into
+`~/.cache/ms-playwright` — `~/Library/Caches/ms-playwright` on macOS, or wherever
+`PLAYWRIGHT_BROWSERS_PATH` points, which some prepared images set — measured at ~274 MiB
+downloaded, 554 MB on disk, 27 s. It comes from `cdn.playwright.dev` and nothing else on
+linux-x64, macOS and Windows: chromium and chrome-headless-shell are Chrome-for-Testing
+builds there, and the driver pins that one host for them (`cftUrl` in its `coreBundle.js`),
+so the three-mirror `PLAYWRIGHT_CDN_MIRRORS` list — where
+`playwright.download.prss.microsoft.com` lives — is only consulted for the linux-arm64
+build. A sandbox must allow `cdn.playwright.dev`; once the cache is warm nothing is
+fetched, and `uv run poe test-needs-js --browser-channel chrome` drives a Chrome already on
+the machine and downloads nothing.
+
+**A browser already on the machine is not necessarily the browser playwright will look
+for.** It resolves one exact path, `<cache>/chromium-<revision>/…`, with the revision that
+the *pinned* playwright names in its `driver/package/browsers.json`; an image that baked in
+a different revision leaves `test-needs-js` erroring `Executable doesn't exist at …`, which
+reads like a missing install rather than a mismatch. `uv run poe install-browser` is the
+answer; it fetches only what the pin names.
+
+`docs-needs` needs `docs.python.org` and `www.sphinx-doc.org` for intersphinx (and
+`api.github.com` for the GitHub-service example, whose warning is suppressed): behind a
+proxy that blocks the first two, `-nW` turns the unresolved references into dozens of errors
+that look like a docs regression. Run the test suite serially: plantuml is load-sensitive (a
+docs or wheel build running alongside it has failed a zero-warnings assertion), and
+`-n auto` races on the shared jar copy.
 
 Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
 `typecheck-needs` seconds once `.venvs/typing` exists (the first run creates it) ·
-`smoke-needs` 6 s · `test-needs-js` 20 s once cypress is installed · `docs-needs` under
+`smoke-needs` 6 s · `test-needs-js` 3 s once the browser is installed (9 s cold) · `docs-needs` under
 2 min · `test-needs` 7–8 min serial · `benchmark-needs` 4 min. `docs-needs` runs with `--keep-going`, so it prints every warning
 and then exits 1 — do not read a full log as success. `benchmark-needs` is currently red
 (12 failures in `tests/benchmarks/test_querying.py`: the test mocks `NeedsSphinxConfig`
