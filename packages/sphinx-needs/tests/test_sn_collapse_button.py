@@ -11,10 +11,22 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
-from playwright.sync_api import Locator, Page, expect
 from sphinx.testing.util import SphinxTestApp
+
+# the browser driver is the `js` dependency group, which the CI matrix cells deliberately do
+# not install: without this the module fails at COLLECTION there, which fails the whole run
+# even though `-m "not jstest"` would deselect these tests
+_playwright = pytest.importorskip(
+    "playwright.sync_api",
+    reason="the browser tests need the `js` dependency group (`uv sync --group js`)",
+)
+expect = _playwright.expect
+
+if TYPE_CHECKING:
+    from playwright.sync_api import Locator, Page
 
 #: the class ``sphinx_needs_collapse.js`` adds and removes
 HIDE_CLASS = "collapse_is_hidden"
