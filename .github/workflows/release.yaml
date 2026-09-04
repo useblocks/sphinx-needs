@@ -115,6 +115,11 @@ jobs:
           uv venv /tmp/compat            # no --python: the root `.python-version` pin
           uv pip install --python /tmp/compat --no-sources -r /tmp/req.txt
           uv pip install --python /tmp/compat --no-sources "dist/$DIST"/*.whl
+          # the compat environment's scripts have to be on PATH, not just its interpreter:
+          # 23 tests shell out to `sphinx-build`, and without this they either fail with
+          # FileNotFoundError on a runner or -- worse, locally -- silently use whatever
+          # `sphinx-build` an activated virtualenv happens to have left on PATH
+          export PATH="/tmp/compat/bin:$PATH"
           module=${DIST//-/_}
           cd "packages/$DIST"
           # the import must come from the wheel, not from the checkout one directory up --
