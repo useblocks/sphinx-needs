@@ -77,7 +77,7 @@ docs or wheel build running alongside it has failed a zero-warnings assertion), 
 
 Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
 `typecheck-needs` seconds once `.venvs/typing` exists (the first run creates it) ·
-`smoke-needs` 6 s · `test-needs-js` 2 s once the browser is installed · `docs-needs` under
+`smoke-needs` 6 s · `test-needs-js` 3 s once the browser is installed (9 s cold) · `docs-needs` under
 2 min · `test-needs` 7–8 min serial · `benchmark-needs` 4 min. `docs-needs` runs with `--keep-going`, so it prints every warning
 and then exits 1 — do not read a full log as success. `benchmark-needs` is currently red
 (12 failures in `tests/benchmarks/test_querying.py`: the test mocks `NeedsSphinxConfig`

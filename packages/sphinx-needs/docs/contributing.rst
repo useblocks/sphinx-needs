@@ -179,7 +179,7 @@ it with Playwright's ``expect``:
     def test_something(test_app, page: Page):
         test_app.build()
         page.goto(Path(test_app.outdir, "index.html").as_uri())
-        expect(page.locator("table.need")).to_be_visible()
+        expect(page.locator("table.need")).to_have_count(2)  # locators are sets
 
 Register ``page.on("pageerror", ...)`` before ``page.goto`` if the test should also assert
 that the page raised nothing.

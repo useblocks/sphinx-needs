@@ -98,9 +98,12 @@ def _check_collapse_buttons(app: SphinxTestApp, page: Page) -> set[str]:
         _expect_hide_class(icon_collapsed, present=hidden_after_click)
         _expect_hide_class(icon_visible, present=not hidden_after_click)
 
-    # nothing on these pages throws today, so this is an unconditional assertion -- there
-    # is no allowance for "<x> is not defined" like the retired JS harness's support file
-    # carried, and if one is ever needed it should match the exact message and say why
+    # nothing on THESE pages throws (the three test projects use the default theme), so
+    # this is an unconditional assertion -- there is no allowance for "<x> is not defined"
+    # like the retired JS harness's support file carried. It is not true of every theme: a
+    # docs build with `sphinx_immaterial` raises `DOCUMENTATION_OPTIONS is not defined` from
+    # sphinx-copybutton on every page (the theme emits no documentation_options.js), so a
+    # case on such a page needs an allowance that matches that exact message and says why
     assert not page_errors, f"the page raised: {page_errors}"
 
     return modes_seen

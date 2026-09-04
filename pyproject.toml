@@ -288,7 +288,7 @@ cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m jstest"
 cwd = "packages/sphinx-needs"
 
 [tool.poe.tasks.install-browser]
-help = "Download Playwright's Chromium into ~/.cache/ms-playwright (once per machine)"
+help = "Download Playwright's Chromium into ~/.cache/ms-playwright (~/Library/Caches/ms-playwright on macOS), once per machine"
 # BARE name, not `install-browser-needs`: the naming rule is about tasks that act on a
 # package, and this acts on the machine -- it puts a browser in a per-user cache that any
 # package's tests would share. `--browser-channel chrome` passed to `test-needs-js` drives
