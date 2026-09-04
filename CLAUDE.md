@@ -14,10 +14,13 @@ What a cloud environment for this repository needs, measured on the Ubuntu 24.04
 - **Setup script**: `apt-get install -y graphviz` — `dot` is absent from the image and the
   needflow tests fail rather than skip. Nothing else is needed: `prek` and `poe` come from
   `uv sync`.
-- **Environment variables**: `UV_HTTP_TIMEOUT=180`. Not a correctness requirement, but
+- **Environment variables**: `UV_HTTP_TIMEOUT=600`. Not a correctness requirement, but
   uv's 30 s default is not enough for this lock through the session proxy — a cold
   `uv sync --frozen` here died on `babel` with "network timeout" and only got through on a
-  second run off the warm cache. Do **not** set `UV_PYTHON`: the root `.python-version` pins
+  second run off the warm cache, and prek's hook install died the same way on `setuptools`.
+  Even 180 s was not enough for the `ty` hook building `.venvs/typing` while a second uv
+  process was running, so give it room and run heavy tasks one at a time. Do **not** set
+  `UV_PYTHON` globally: the root `.python-version` pins
   the default environment to 3.13, which the image has, so a bare `uv sync` resolves the
   newest sphinx without help, and the variable would override the file for every command in
   the session.
@@ -65,6 +68,31 @@ So one of these has to happen, and the first is much the better environment fix:
 
 `--browser-channel chrome`, the other download-free route, is **not** available here: the
 image has no Google Chrome, only playwright's Chromium.
+
+### Python HTTPS through the session proxy fails on 3.13
+
+Measured, and not a repository bug: on Python **3.13** every `https://` request from Python
+through the proxy dies with
+
+```
+CERTIFICATE_VERIFY_FAILED: CA cert does not include key usage extension
+```
+
+3.13 turns on `ssl.VERIFY_X509_STRICT` in `create_default_context()` by default, and the
+proxy's own CA — `CN = CCR Upstream Proxy CA (staging), O = Anthropic`, one of four certs in
+`/root/.ccr/ca-bundle.crt` with no `X509v3 Key Usage` extension — is exactly what that flag
+rejects. Clearing the flag on the same interpreter and the same bundle gives 200, so
+`REQUESTS_CA_BUNDLE` and `SSL_CERT_FILE` do **not** help: the bundle is not the problem, the
+CA's shape is. `curl` to the same host returns 200 because it does not apply that
+strictness, which makes a curl probe useless as evidence that Python will get through.
+
+For this repository it lands on `docs-needs`: the GitHub-service example raises `SSLError`
+at read time and takes the build down with exit 2, rather than degrading to the warning
+`conf.py` suppresses. `UV_PYTHON=3.12 uv run poe docs-needs` builds clean (`build succeeded`
+under `-nW --keep-going`) and is the workaround — one command, not the global `UV_PYTHON`
+the section above warns against. The tests, browser tests included, are unaffected: nothing
+in them reaches the network. The real fix belongs to the proxy, whose CA should carry
+`keyUsage`/`keyCertSign`; the `(staging)` in its CN suggests this may not outlive that build.
 
 Attribution: this repository wants no `Co-Authored-By` trailers, "Generated with Claude
 Code" lines or session links in commits, pull requests, issues or comments.
