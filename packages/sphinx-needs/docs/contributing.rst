@@ -41,7 +41,9 @@ project and its development dependencies into an isolated environment:
    installs the package alone, without ``pytest``.
 
    The interpreter comes from the ``.python-version`` file at the repository root, so every
-   contributor gets the same one; uv downloads it if the machine does not have it.
+   contributor gets the same one; uv downloads it if the machine does not have it. If you use
+   pyenv, run ``pyenv install 3.13`` once, or its shims will report the version as missing
+   inside this repository.
 
 ``uv.lock`` is committed, so ``uv sync`` installs exactly the versions recorded in it,
 and every contributor and CI job gets the same environment.

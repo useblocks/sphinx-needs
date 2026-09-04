@@ -13,6 +13,9 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
+          # the pinned interpreter (root `.python-version`) is not on the runner image, so
+          # without this uv downloads it on every run
+          cache-python: true
       - run: uv run --frozen prek run --all-files --show-diff-on-failure
         env:
           PREK_COLOR: always
@@ -59,10 +62,11 @@ jobs:
         # both are in the conflict set so that a plain `uv sync` is not capped by either.
         # Interpreter: the root `.python-version` is what makes a bare `uv sync` the same
         # environment everywhere. `setup-uv` is given no `python-version` input in THIS job
-        # precisely so uv reads that file -- every other job passes one, which `setup-uv`
-        # turns into `UV_PYTHON`, and the environment variable beats the file. So this is the
-        # only job that tests the pin. The expected series is read back out of the file
-        # rather than written down a second time here.
+        # precisely so uv reads that file (the monthly `prek-update` job omits it too, so it
+        # runs on the pin as well); every other job passes one, which `setup-uv` turns into
+        # `UV_PYTHON`, and the environment variable beats the file. So this is the job that
+        # tests the pin. The expected series is read back out of the file rather than written
+        # down a second time here.
         run: |
           v=$(cut -d. -f1,2 .python-version)
           uv run --frozen python -c "
@@ -221,6 +225,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
+          # 3.12+: on 3.11 the lock resolves sphinx 8.2, and this job wants the newest sphinx
           python-version: "3.12"
       - name: Install Dependencies
         run: |

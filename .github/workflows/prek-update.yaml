@@ -30,6 +30,9 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
+          # no `python-version` input, so uv reads the root `.python-version`; cache that
+          # interpreter rather than downloading it every month
+          cache-python: true
 
       # `prek update` is workspace-aware: one invocation updates every
       # .pre-commit-config.yaml in the tree, so the whole tree is checked for changes.

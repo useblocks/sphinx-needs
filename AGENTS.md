@@ -49,12 +49,14 @@ UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8   # one CI matrix cell
 interpreter: below Python 3.12 the lock resolves sphinx 8.2, so on such a machine `test-needs`
 would quietly be a second sphinx-8 run and CI's "newest sphinx" canary would fail locally.
 With the file there, none of that depends on the machine — uv downloads 3.13 if it does not
-have it, and pyenv, asdf and mise read the same file, so a pyenv user needs
-`pyenv install 3.13` once. `UV_PYTHON=…` **overrides** the file (measured: the environment
-variable wins for both `uv sync` and `uv run`), which is how the per-cell commands above pick
-their interpreter, and how CI's matrix cells do — `setup-uv`'s `python-version` input is
-documented as setting `UV_PYTHON`. CI's Lint job deliberately passes no such input, so it is
-the one job running on the pin, and it asserts the series it got equals the file.
+have it. pyenv reads the same file (asdf and mise only with their legacy / idiomatic
+version-file setting enabled), so a pyenv user runs `pyenv install 3.13` once; until then
+every pyenv shim reports the version as missing inside this repository. `UV_PYTHON=…`
+**overrides** the file (measured: the environment variable wins for both `uv sync` and
+`uv run`), which is how the per-cell commands above pick their interpreter, and how CI's
+matrix cells do — `setup-uv`'s `python-version` input is documented as setting `UV_PYTHON`.
+CI's Lint job (and the monthly `prek-update` job) deliberately pass no such input, so they
+run on the pin, and Lint asserts the series it got equals the file.
 
 The machine needs `java` (the plantuml jar is vendored under `tests/doc_test/utils/`) and
 graphviz's `dot` on `PATH` — the needflow tests do not skip without them, so install

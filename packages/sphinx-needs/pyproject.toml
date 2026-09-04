@@ -33,7 +33,7 @@ dependencies = [
   "jsonschema-rs>=0.37.1,<0.53.0", # schema validation
   "sphinx-data-viewer~=0.1.5",     # needservice debug output
   "sphinxcontrib-jquery~=4.0",     # needed for datatables in sphinx>=6
-  "typing-extensions>=4.14.0",     # for `Unpack`, which typing gained in python 3.12
+  "typing-extensions>=4.14.0",     # for `**kwargs: Unpack[...]` (PEP 692), which typing supports from 3.12
   "minijinja~=2.15",               # lightweight jinja2-compatible template engine
 ]
 
