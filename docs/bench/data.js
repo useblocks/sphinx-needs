@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788545523098,
+  "lastUpdate": 1788550237679,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19440,6 +19440,42 @@ window.BENCHMARK_DATA = {
             "value": 64.86263292799998,
             "unit": "s",
             "extra": "Commit: 2664a10e4d2abae2ebd2f99cbf2c8a69f0fd94ca\nBranch: master\nTime: 2026-09-04T20:10:28+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "62cb7670464276647c19a3d5383879e3585a44ff",
+          "message": "⬆️ Raise the Python floor to 3.11, and pin the workspace interpreter (#1844)",
+          "timestamp": "2026-09-04T21:29:07+02:00",
+          "tree_id": "320401f9ac807a51c9124e2c67b1c25fc9a72fbd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/62cb7670464276647c19a3d5383879e3585a44ff"
+        },
+        "date": 1788550229398,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1655458509999974,
+            "unit": "s",
+            "extra": "Commit: 62cb7670464276647c19a3d5383879e3585a44ff\nBranch: master\nTime: 2026-09-04T21:29:07+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 62.027480198000006,
+            "unit": "s",
+            "extra": "Commit: 62cb7670464276647c19a3d5383879e3585a44ff\nBranch: master\nTime: 2026-09-04T21:29:07+02:00"
           }
         ]
       }
