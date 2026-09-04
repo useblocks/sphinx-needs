@@ -135,102 +135,54 @@ These snapshots can be updated by running:
 
    uv run poe test-needs --snapshot-update
 
-Running JS Testcases with PyTest
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Running the browser tests
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Setup Cypress Locally**
+The tests marked ``jstest`` drive a real browser through
+`pytest-playwright <https://playwright.dev/python/docs/intro>`__; ``poe test-needs``
+excludes them. The browser binary is not a Python package, so download it once per machine:
 
-* Install Node JS on your computer and ensure it can be accessed through the CMD.
-* Install Cypress using the npm package manager by running ``npm install cypress``. Visit this link for more information on `how to install Cypress <https://docs.cypress.io/guides/getting-started/installing-cypress>`_.
-* Verify if Cypress is installed correctly and is executable by running: ``npx cypress verify``. Get out this page for more information about `Cypress commandline <https://docs.cypress.io/guides/guides/command-line>`_.
-* If everything is successful then we can use Cypress.
+.. code-block:: bash
 
-**Enable Cypress Test in Python Test Files**
+   uv run poe install-browser
 
-Under the ``js_test`` folder, you can save your Cypress JS test files (files should end with: ``*.cy.js``). For each Cypress JS test file, you will need to write the Cypress JS test cases in the file. You can read more from the `Cypress Docs <https://docs.cypress.io/>`_. You can also check the ``tests/js_test/sn-collapse-button.cy.js`` file as reference.
+That is ``playwright install chromium``, which lands in ``~/.cache/ms-playwright``
+(``~/Library/Caches/ms-playwright`` on macOS). Then:
 
-In your Python test files, you must mark every JS related test case with the marker - ``jstest`` and you must include the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter.
-Also, you need to pass the ``test_server`` fixture to your test function for it to use the automated HTTP test server. For example, your test case could look like this:
+.. code-block:: bash
 
-.. code-block:: python
+   uv run poe test-needs-js
 
-    # tests/test_sn_collapse_button.py
+To skip the download altogether and drive a Chrome that is already on the machine, pass
+pytest-playwright's own flag: ``uv run poe test-needs-js --browser-channel chrome``.
 
-    import pytest
-
-
-    @pytest.mark.jstest
-    @pytest.mark.parametrize(
-        "test_app",
-        [
-            {
-                "buildername": "html",
-                "srcdir": "doc_test/variant_doc",
-                "tags": ["tag_a"],
-                "spec_pattern": "js_test/js-test-sn-collapse-button.cy.js"
-            }
-        ],
-        indirect=True,
-    )
-    def test_collapse_button_in_docs(test_app, test_server):
-        ...
-
-.. note::
-
-    The ``spec_pattern`` key is required to ensure Cypress locates your test files or folder. Visit this link for more info on how to set the `spec_pattern <https://docs.cypress.io/guides/guides/command-line#cypress-run-spec-lt-spec-gt>`_.
-
-After you set the ``spec_pattern`` key-value pair as part of the ``test_app`` fixture parameter, you can call ``app.test_js()`` in your Python test case to run a JS test for the ``spec_pattern`` you provided. For example, you can use ``app.test_js()`` like below:
+A browser test builds its project with the usual ``test_app`` fixture, opens the built page
+over ``file://`` -- nothing on the page fetches, so no server is involved -- and asserts on
+it with Playwright's ``expect``:
 
 .. code-block:: python
 
     # tests/test_sn_collapse_button.py
 
+    from pathlib import Path
+
     import pytest
+    from playwright.sync_api import Page, expect
 
 
     @pytest.mark.jstest
     @pytest.mark.parametrize(
         "test_app",
-        [
-            {
-                "buildername": "html",
-                "srcdir": "doc_test/variant_doc",
-                "tags": ["tag_a"],
-                "spec_pattern": "js_test/js-test-sn-collapse-button.cy.js"
-            }
-        ],
+        [{"buildername": "html", "srcdir": "doc_test/doc_basic"}],
         indirect=True,
     )
-    def test_collapse_button_in_docs(test_app, test_server):
-        """Check if the Sphinx-Needs collapse button works in the provided documentation source."""
-        app = test_app
-        app.build()
+    def test_something(test_app, page: Page):
+        test_app.build()
+        page.goto(Path(test_app.outdir, "index.html").as_uri())
+        expect(page.locator("table.need")).to_be_visible()
 
-        # Call `app.test_js()` to run the JS test for a particular specPattern
-        js_test_result = app.test_js()
-
-        # Check the return code and stdout
-        assert js_test_result["returncode"] == 0
-        assert "All specs passed!" in js_test_result["stdout"].decode("utf-8")
-
-.. note::
-
-    ``app.test_js()`` will return a dictionary object containing the ``returncode``, ``stdout``, and ``stderr``. Example:
-
-    .. code-block:: python
-
-        return {
-            "returncode": 0,
-            "stdout": "Test passed string",
-            "stderr": "Errors encountered,
-        }
-
-You can run ``uv run poe test-needs-js`` to check all JS testcases.
-
-.. note::
-
-    The ``http_server`` process invoked by that command may not terminate properly in some instances.
-    Kindly check your system's monitoring app to end the process if not terminated automatically.
+Register ``page.on("pageerror", ...)`` before ``page.goto`` if the test should also assert
+that the page raised nothing.
 
 Benchmarks
 ----------
