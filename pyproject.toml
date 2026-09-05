@@ -92,10 +92,10 @@ test = [
   "responses>=0.22,<0.27",
   "pydantic~=2.12",
   "pyyaml ~= 6.0",
-  "myst-parser>=4,<6",           # host coverage for directives usable from Markdown
-  "pytest-xdist~=3.0",           # for `pytest -n auto`
-  "beautifulsoup4>=4.12",         # sphinx-mounts: HTML assertions
-  "sphinxcontrib-mermaid>=1.0.0", # sphinx-mounts: path-directive rendering
+  "myst-parser>=4,<6",               # host coverage for directives usable from Markdown
+  "pytest-xdist~=3.0",               # for `pytest -n auto`
+  "beautifulsoup4>=4.12",            # sphinx-mounts: HTML assertions
+  "sphinxcontrib-mermaid>=1.0.0",    # sphinx-mounts: path-directive rendering
 ]
 # The browser tests (`-m jstest`). Kept out of `test` on purpose: `test` is what the CI
 # matrix cells install, and only the two JS cells want a browser driver -- they add

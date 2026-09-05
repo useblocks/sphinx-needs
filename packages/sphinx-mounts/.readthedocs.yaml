@@ -11,12 +11,12 @@
 version: 2
 
 build:
+  # deliberately no `apt_packages`: these docs load sphinx_design, myst_parser and
+  # intersphinx and render no diagrams, so there is no `dot`, `java` or plantuml to
+  # install. (sphinx-needs' config installs graphviz and a JDK because its docs do.)
   os: ubuntu-24.04
   tools:
     python: "3.13"
-  # deliberately no `apt_packages`: these docs load sphinx_design, myst_parser and
-  # intersphinx and render no diagrams, so there is no `dot`, `java` or plantuml to install.
-  # (sphinx-needs' config installs graphviz and a JDK because its docs do render them.)
 
 sphinx:
   configuration: packages/sphinx-mounts/docs/conf.py
