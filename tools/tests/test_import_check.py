@@ -1,0 +1,306 @@
+"""`import_check.py`: the wheel-only import walk, and the environment it runs in.
+
+The **inner** layer is tested for real -- a scratch package on `PYTHONPATH`, imported by a
+subprocess with `sys.executable` -- because its entire subject is what happens at import
+time, and a mocked import would prove nothing about it.
+
+The **outer** layer is tested with `subprocess.run` monkeypatched, on its argv. It exists to
+issue four exact commands, and one flag on one of them (`--no-sources` on the install) is
+the whole reason the check means anything: without it uv substitutes the sibling member from
+the checkout and the walk passes against code that was never released. So the assertions are
+on the commands, not on their results.
+"""
+
+from __future__ import annotations
+
+import os
+import shutil
+import subprocess
+import sys
+import textwrap
+from pathlib import Path
+
+import pytest
+from sn_tools import import_check
+
+SCRIPT = Path(import_check.__file__).resolve()
+
+
+# --- the inner layer ----------------------------------------------------------------------
+
+
+def scratch_package(root: Path, modules: dict[str, str]) -> Path:
+    for name, body in modules.items():
+        path = root / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(textwrap.dedent(body), encoding="utf-8")
+    return root
+
+
+def walk(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    """Run the inner layer the way the outer layer does: by path, in another process."""
+    return subprocess.run(
+        [sys.executable, str(SCRIPT), "--walk", *args],
+        cwd=root,
+        text=True,
+        capture_output=True,
+        env={**os.environ, "PYTHONPATH": str(root)},
+    )
+
+
+def test_a_clean_walk_counts_every_module(tmp_path: Path) -> None:
+    root = scratch_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/one.py": "VALUE = 1\n",
+            "pkg/sub/__init__.py": "",
+            "pkg/sub/two.py": "VALUE = 2\n",
+        },
+    )
+    proc = walk(root, "pkg")
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "OK    4 modules imported in" in proc.stdout
+
+
+def test_every_failing_module_is_reported_not_just_the_first(tmp_path: Path) -> None:
+    """The reader wants every missing symbol at once: the next run costs a wheel build."""
+    root = scratch_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/good.py": "VALUE = 1\n",
+            "pkg/missing_symbol.py": (
+                "raise ImportError(\"cannot import name 'gone' from 'dep'\")\n"
+            ),
+            "pkg/explodes.py": "raise RuntimeError('a module-level boom')\n",
+        },
+    )
+    proc = walk(root, "pkg")
+    assert proc.returncode == 1
+    out = proc.stdout
+    assert (
+        "FAIL  pkg.missing_symbol: ImportError: cannot import name 'gone' from 'dep'"
+        in out
+    )
+    assert "FAIL  pkg.explodes: RuntimeError: a module-level boom" in out
+    assert "FAIL  2 of 4 modules failed to import" in out
+    assert "(2 imported)" in out
+    # the innermost frame, so the reader gets the line rather than only the exception
+    assert "missing_symbol.py:1 in <module>: raise ImportError" in out
+
+
+def test_a_package_that_cannot_import_stops_its_own_subtree(tmp_path: Path) -> None:
+    root = scratch_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/broken/__init__.py": "raise RuntimeError('no')\n",
+            "pkg/broken/child.py": "VALUE = 1\n",
+            "pkg/fine.py": "VALUE = 1\n",
+        },
+    )
+    proc = walk(root, "pkg")
+    assert proc.returncode == 1
+    out = proc.stdout
+    assert "FAIL  pkg.broken: RuntimeError: no" in out
+    assert "pkg.broken did not import, so anything under it was never walked" in out
+    assert "FAIL  1 of 3 modules failed to import" in out
+
+
+def test_a_warning_at_import_time_is_not_a_failure(tmp_path: Path) -> None:
+    """Measured on the real tree: `sphinx_needs.api.exceptions` emits one on import."""
+    root = scratch_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/noisy.py": (
+                "import warnings\nwarnings.warn('deprecated', UserWarning)\n"
+            ),
+        },
+    )
+    proc = walk(root, "pkg")
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "OK    2 modules imported" in proc.stdout
+
+
+def test_a_module_that_is_not_there_at_all(tmp_path: Path) -> None:
+    proc = walk(tmp_path, "no_such_module_anywhere")
+    assert proc.returncode == 1
+    assert "FAIL  no_such_module_anywhere: ModuleNotFoundError" in proc.stdout
+
+
+def test_expect_prefix_accepts_the_tree_it_names(tmp_path: Path) -> None:
+    root = scratch_package(tmp_path, {"pkg/__init__.py": ""})
+    proc = walk(root, "pkg", "--expect-prefix", str(root))
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    assert "pkg imported from" in proc.stdout
+
+
+def test_expect_prefix_refuses_another_copy(tmp_path: Path) -> None:
+    """Without this the walk could import the checkout and pass against unreleased code."""
+    root = scratch_package(tmp_path, {"pkg/__init__.py": ""})
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    proc = walk(root, "pkg", "--expect-prefix", str(elsewhere))
+    assert proc.returncode == 1
+    out = proc.stdout
+    assert "which is not under" in out
+    assert "the walk is meant to test the installed wheel; this is another copy" in out
+
+
+# --- the outer layer ----------------------------------------------------------------------
+
+
+class FakeRun:
+    """Records every argv, and fakes the two side effects the outer layer depends on."""
+
+    def __init__(self, inner_returncode: int = 0, build_returncode: int = 0) -> None:
+        self.calls: list[list[str]] = []
+        self.inner_returncode = inner_returncode
+        self.build_returncode = build_returncode
+
+    def __call__(self, cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+        self.calls.append(list(cmd))
+        if cmd[:2] == ["uv", "build"]:
+            if self.build_returncode:
+                return subprocess.CompletedProcess(cmd, self.build_returncode)
+            out = Path(cmd[cmd.index("-o") + 1])
+            out.mkdir(parents=True, exist_ok=True)
+            (out / "acme_core-1.0.0-py3-none-any.whl").write_bytes(b"")
+        elif cmd[:2] == ["uv", "venv"]:
+            binary = Path(cmd[-1]) / "bin" / "python"
+            binary.parent.mkdir(parents=True, exist_ok=True)
+            binary.write_text("", encoding="utf-8")
+        elif "--walk" in cmd:
+            return subprocess.CompletedProcess(cmd, self.inner_returncode)
+        return subprocess.CompletedProcess(cmd, 0)
+
+
+@pytest.fixture
+def fake_uv(monkeypatch):
+    """Point the outer layer at a scratch workspace and record what it would run."""
+
+    def build(root: Path, **kwargs: int) -> FakeRun:
+        monkeypatch.setattr(import_check, "REPO_ROOT", root)
+        fake = FakeRun(**kwargs)
+        monkeypatch.setattr(import_check.subprocess, "run", fake)
+        return fake
+
+    return build
+
+
+def test_the_commands_are_the_release_build_and_a_no_sources_install(
+    workspace, fake_uv
+) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    fake = fake_uv(root)
+    assert import_check.main(["acme-core"]) == 0
+    build, venv, install, inner = fake.calls
+    # character for character `release.yaml`'s build step and `poe build-needs`
+    assert build[:6] == ["uv", "build", "--package", "acme-core", "--no-sources", "-o"]
+    assert build[6].endswith("/dist")
+    assert venv[:2] == ["uv", "venv"]
+    assert venv[2].endswith("/venv")
+    # THE flag: without it uv installs the sibling member from the checkout
+    assert install[:6] == ["uv", "pip", "install", "--python", venv[2], "--no-sources"]
+    assert install[6].endswith(".whl")
+    # and the walk runs under the environment's own interpreter, told where to expect it
+    assert inner[0] == str(Path(venv[2]) / "bin" / "python")
+    assert inner[1] == str(SCRIPT)
+    assert inner[2:] == ["--walk", "acme_core", "--expect-prefix", venv[2]]
+
+
+def test_the_python_flag_is_passed_to_uv_venv(workspace, fake_uv) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    fake = fake_uv(root)
+    assert import_check.main(["acme-core", "--python", "3.11"]) == 0
+    venv = fake.calls[1]
+    assert venv[:4] == ["uv", "venv", "--python", "3.11"]
+
+
+def test_a_given_wheel_is_not_rebuilt(workspace, fake_uv, tmp_path: Path) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    fake = fake_uv(root)
+    wheel = tmp_path / "acme_core-1.0.0-py3-none-any.whl"
+    wheel.write_bytes(b"")
+    assert import_check.main(["acme-core", "--wheel", str(wheel)]) == 0
+    assert [call[:2] for call in fake.calls[:2]] == [["uv", "venv"], ["uv", "pip"]]
+    assert not any(call[:2] == ["uv", "build"] for call in fake.calls)
+    assert str(wheel) in fake.calls[1]
+    assert fake.calls[2][1:] == [
+        str(SCRIPT),
+        "--walk",
+        "acme_core",
+        "--expect-prefix",
+        fake.calls[0][-1],
+    ]
+
+
+def test_the_module_name_honours_tool_flit_module(workspace, fake_uv) -> None:
+    """`check_workspace.Member.module`'s rule, duplicated because these run by path."""
+    root = workspace({"acme-core": {"version": "1.0.0", "module_name": "acme"}})
+    fake = fake_uv(root)
+    assert import_check.main(["acme-core"]) == 0
+    assert fake.calls[3][2:4] == ["--walk", "acme"]
+
+
+def test_the_outer_exit_status_is_the_inner_one(workspace, fake_uv) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    fake_uv(root, inner_returncode=1)
+    assert import_check.main(["acme-core"]) == 1
+
+
+def test_a_failed_build_is_named_not_walked_around(workspace, fake_uv, capsys) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    fake_uv(root, build_returncode=2)
+    assert import_check.main(["acme-core"]) == 1
+    assert "`uv` failed with exit code 2" in capsys.readouterr().err
+
+
+def test_a_virtual_member_has_no_wheel_to_check(workspace, fake_uv, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-tools": {"version": "0", "virtual": True},
+        }
+    )
+    fake_uv(root)
+    assert import_check.main(["acme-tools"]) == 1
+    err = capsys.readouterr().err
+    assert "`acme-tools` is a virtual member (`[tool.uv] package = false`)" in err
+    assert "there is no released wheel for anything to import" in err
+
+
+def test_an_unknown_distribution_names_the_ones_there_are(
+    workspace, fake_uv, capsys
+) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    fake_uv(root)
+    assert import_check.main(["acme-nope"]) == 1
+    err = capsys.readouterr().err
+    assert "`acme-nope` is not a member of this workspace" in err
+    assert "known: acme-core" in err
+
+
+def test_the_name_is_canonicalised(workspace, fake_uv) -> None:
+    """PEP 503: `Acme_Core` and `acme-core` are the same distribution."""
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    fake = fake_uv(root)
+    assert import_check.main(["Acme_Core"]) == 0
+    assert fake.calls[0][3] == "Acme_Core"
+
+
+def test_keep_leaves_the_directory_and_says_where(workspace, fake_uv, capsys) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    fake_uv(root)
+    assert import_check.main(["acme-core", "--keep"]) == 0
+    kept = [
+        line
+        for line in capsys.readouterr().out.splitlines()
+        if line.startswith("kept ")
+    ]
+    assert len(kept) == 1
+    directory = Path(kept[0].removeprefix("kept "))
+    assert directory.is_dir()
+    shutil.rmtree(directory, ignore_errors=True)
