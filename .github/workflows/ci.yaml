@@ -130,9 +130,13 @@ jobs:
   # `Mounts …`), so the checks list on a pull request reads by package. `Lint` and
   # `check` are workspace-wide and are also required status contexts on master, so
   # their names must not change without updating the branch protection.
+  #
+  # The two matrix jobs below call `test-package.yaml`, which holds the steps they used
+  # to carry a copy each. A called job's name is appended to its caller's, so these
+  # checks read `Needs py3.13 sphinx-9 ubuntu-latest / pytest` -- the ` / ` join is
+  # unconditional and cannot be suppressed. Neither required context is among them.
   tests-core:
     name: "Needs py${{ matrix.python-version }} ${{ matrix.sphinx-group }} ${{ matrix.os }}"
-    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false # Set on "false" to get the results of ALL builds
       matrix:
@@ -154,48 +158,27 @@ jobs:
           # Sphinx 9.1 requires python 3.12, one above this project's floor, so the
           # `sphinx-9` group carries a `python_version >= '3.12'` marker and contributes
           # nothing on 3.11. The sync would still exit 0 -- the environment just falls back
-          # to the project's own sphinx range -- and `check_sphinx_cell.py` below would then
-          # fail the cell for testing a sphinx it never asked for. Exclude it instead.
+          # to the project's own sphinx range -- and `check_sphinx_cell.py` in the unit
+          # would then fail the cell for testing a sphinx it never asked for. Exclude it
+          # instead.
           - os: "ubuntu-latest"
             python-version: "3.11"
             sphinx-group: "sphinx-9"
-
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install graphviz (linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get install graphviz
-      - name: Install graphviz (windows)
-        if: matrix.os == 'windows-latest'
-        run: choco install -y --no-progress graphviz
-      - uses: astral-sh/setup-uv@v10.0.1
-        with:
-          enable-cache: true
-          # the lock is the same file for every cell while the installed set is not,
-          # so each cell needs its own cache entry
-          cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
-          python-version: ${{ matrix.python-version }}
-      - name: Install the cell
-        run: uv sync --frozen --no-default-groups --group test --group ${{ matrix.sphinx-group }}
-      - name: Report the resolved versions
-        run: uv run --no-sync python -c "import sys, sphinx, docutils; print(sys.version, sphinx.__version__, docutils.__version__)"
-      - name: Check the cell installed the sphinx it names
-        # against the group's own specifier: a group whose marker excludes this python
-        # contributes nothing, the environment falls back to the project's sphinx range and
-        # the sync still exits 0, so without this the cell would silently test another series
-        run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ matrix.sphinx-group }}
-      - name: Run pytest
-        run: uv run --no-sync pytest -v packages/sphinx-needs/tests --ignore=packages/sphinx-needs/tests/benchmarks -m "not jstest" --cov=sphinx_needs --cov-report=xml --cov-report=term-missing
-      - name: Upload to Codecov
-        # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it
-        if: github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14' && github.actor != 'dependabot[bot]'
-        uses: codecov/codecov-action@v7
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          name: sphinx-need-pytests
-          flags: pytests
-          files: ./coverage.xml # `file` was renamed to `files` in codecov-action v5
-          fail_ci_if_error: true
+    uses: ./.github/workflows/test-package.yaml
+    with:
+      os: ${{ matrix.os }}
+      python-version: ${{ matrix.python-version }}
+      sphinx-group: ${{ matrix.sphinx-group }}
+      cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
+      test-path: packages/sphinx-needs/tests
+      # `benchmarks` is `benchmark.yaml`'s; `jstest` is the `tests-js` lane's
+      pytest-args: '--ignore=packages/sphinx-needs/tests/benchmarks -m "not jstest"'
+      cov-module: sphinx_needs
+      codecov-flag: pytests
+      codecov-name: sphinx-need-pytests
+      upload-coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14' }}
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   tests-js:
     name: "Needs JS py${{ matrix.python-version }} ${{ matrix.sphinx-group }} ${{ matrix.os }}"
@@ -221,7 +204,7 @@ jobs:
         # these two cells want it
         run: uv sync --frozen --no-default-groups --group test --group js --group ${{ matrix.sphinx-group }}
       - name: Check the cell installed the sphinx it names
-        # against the group's own specifier — see the comment in tests-core
+        # against the group's own specifier — see the comment in test-package.yaml
         run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ matrix.sphinx-group }}
       - name: Install the browser
         # the binary is not a package: playwright fetches it from cdn.playwright.dev into
@@ -267,7 +250,6 @@ jobs:
 
   tests-mounts:
     name: "Mounts ${{ matrix.sphinx-group }} ${{ matrix.os }}"
-    runs-on: ${{ matrix.os }}
     # A matrix of its own rather than more paths in `tests-core`, the way `tests-js` and
     # `tests-no-mpl` already sit beside it: this package needs a diagram renderer that the
     # core cells do not, wants its own codecov flag, and takes 1-3 minutes -- which folded
@@ -282,51 +264,27 @@ jobs:
           # one Windows cell is not optional coverage; its own CI ran three
           - os: "windows-latest"
             sphinx-group: "sphinx-9"
-    env:
-      # no `plantuml` executable is installed anywhere: the uml tests take the jar
-      # `packages/sphinx-needs` vendors for its own suite, through `java`, which every
-      # runner image has. `_require_renderer` asserts rather than skips, so if this line
-      # ever stops naming a real file the cell goes red
-      PLANTUML_JAR: ${{ github.workspace }}/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install graphviz (linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get install graphviz
-      - name: Install graphviz (windows)
-        if: matrix.os == 'windows-latest'
-        run: choco install -y --no-progress graphviz
-      - uses: astral-sh/setup-uv@v10.0.1
-        with:
-          enable-cache: true
-          cache-suffix: mounts-${{ matrix.sphinx-group }}
-          # deliberately NO `python-version`: that input becomes UV_PYTHON, which beats the
-          # root `.python-version`. These cells vary the sphinx series, not the
-          # interpreter, so they run on the repository's pin
-          cache-python: true
-      - name: Install the cell
-        run: uv sync --frozen --no-default-groups --group test --group ${{ matrix.sphinx-group }}
-      - name: Report the resolved versions
-        run: uv run --no-sync python -c "import sys, sphinx, docutils; print(sys.version, sphinx.__version__, docutils.__version__)"
-      - name: Check the cell installed the sphinx it names
-        # against the group's own specifier -- see the comment in tests-core
-        run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ matrix.sphinx-group }}
-      - name: Run pytest
-        # `-m "not bazel"` deselects the two tests the `bazel` job below owns; they would
-        # skip here rather than fail, but a skip nobody reads is what the separate lane
-        # exists to avoid
-        run: uv run --no-sync pytest -v packages/sphinx-mounts/tests -m "not bazel" --cov=sphinx_mounts --cov-report=xml --cov-report=term-missing
-      - name: Upload to Codecov
-        # its own flag: `codecov.yml` gives the two packages separate targets, so a young
-        # package's coverage is not averaged into a mature one's 80%
-        if: github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && matrix.os == 'ubuntu-latest' && matrix.sphinx-group == 'sphinx-9' && github.actor != 'dependabot[bot]'
-        uses: codecov/codecov-action@v7
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          name: sphinx-mounts-pytests
-          flags: mounts
-          files: ./coverage.xml
-          fail_ci_if_error: true
+    uses: ./.github/workflows/test-package.yaml
+    with:
+      os: ${{ matrix.os }}
+      # deliberately NO `python-version`: that input becomes UV_PYTHON, which beats the
+      # root `.python-version`. These cells vary the sphinx series, not the interpreter,
+      # so they run on the repository's pin -- which is what the unit's empty default means
+      sphinx-group: ${{ matrix.sphinx-group }}
+      cache-suffix: mounts-${{ matrix.sphinx-group }}
+      test-path: packages/sphinx-mounts/tests
+      # `-m "not bazel"` deselects the two tests the `bazel` job below owns; they would
+      # skip here rather than fail, but a skip nobody reads is what the separate lane
+      # exists to avoid
+      pytest-args: '-m "not bazel"'
+      cov-module: sphinx_mounts
+      codecov-flag: mounts
+      codecov-name: sphinx-mounts-pytests
+      upload-coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.sphinx-group == 'sphinx-9' }}
+      # the uml tests render for real and `_require_renderer` asserts rather than skips
+      needs-plantuml: true
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   bazel:
     name: Mounts Bazel integration
