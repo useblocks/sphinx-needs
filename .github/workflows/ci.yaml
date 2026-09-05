@@ -21,7 +21,7 @@ jobs:
         # need an environment built from them -- a mistake in a manifest is exactly when
         # `uv sync` fails, and a fence that syncs first reports "sync failed" instead of
         # naming the mistake. It also replaces the inline requires-python check that used
-        # to sit further down this job, and adds four more assertions of the same kind
+        # to sit further down this job, and adds six more assertions of the same kind
         # (see the script's docstring). The local prek hook runs the same script against
         # the synced environment, so `uv run poe lint` covers it too
         run: >

@@ -25,7 +25,7 @@ repos:
       - id: check-workspace
         name: check-workspace
         language: system
-        # the manifests have to agree with each other in five ways that no other gate can
+        # the manifests have to agree with each other in seven ways that no other gate can
         # see -- see the script's docstring. CI runs the same script with
         # `--no-project --with packaging`, so that a mistake in the manifests is named
         # rather than reported as a failed sync; here the synced environment already

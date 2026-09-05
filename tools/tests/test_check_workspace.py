@@ -519,3 +519,76 @@ def test_an_unparseable_root_manifest_is_named(tmp_path: Path, capsys) -> None:
     (tmp_path / "pyproject.toml").write_text("[project\n", encoding="utf-8")
     assert check_workspace.main(["--root", str(tmp_path)]) == 2
     assert "::error file=pyproject.toml::" in capsys.readouterr().out
+
+
+# --- (7) no member carries a table the root owns ---------------------------------------
+
+
+def test_a_member_with_no_root_owned_table_is_green(workspace, capsys) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root) == 0
+    assert "no member carries a root-owned table" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("table", "planted"),
+    [
+        ("tool.ruff", '[tool.ruff.lint]\nextend-select = ["T20"]'),
+        ("tool.ruff", "[tool.ruff]\nline-length = 100"),
+        ("tool.pytest", '[tool.pytest.ini_options]\ntestpaths = ["tests"]'),
+        ("tool.ty", '[tool.ty.src]\ninclude = ["src"]'),
+        ("dependency-groups", '[dependency-groups]\ntesting = ["pytest"]'),
+    ],
+)
+def test_a_root_owned_table_in_a_member_is_an_error(
+    workspace, capsys, table: str, planted: str
+) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0", "extra_tables": planted}})
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=packages/acme-core/pyproject.toml::" in out
+    assert f"[{table}] is configured at the ROOT" in out
+    assert "no member carries a root-owned table" not in out
+
+
+def test_the_ruff_message_says_the_root_ruleset_is_replaced(workspace, capsys) -> None:
+    """The one failure mode that is silent in both directions gets its own words."""
+    root = workspace(
+        {"acme-core": {"version": "1.0.0", "extra_tables": "[tool.ruff]\nsrc = []"}}
+    )
+    assert run(root) == 1
+    assert "REPLACES it" in capsys.readouterr().out
+
+
+def test_a_virtual_member_is_checked_for_root_owned_tables_too(
+    workspace, capsys
+) -> None:
+    root = workspace(
+        {
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "extra_tables": '[tool.ty.src]\ninclude = ["src"]',
+            }
+        }
+    )
+    assert run(root) == 1
+    assert "[tool.ty] is configured at the ROOT" in capsys.readouterr().out
+
+
+def test_several_root_owned_tables_are_all_reported(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {
+                "version": "1.0.0",
+                "extra_tables": (
+                    '[dependency-groups]\ntesting = ["pytest"]\n\n'
+                    '[tool.ruff.lint]\nextend-select = ["T20"]\n\n'
+                    '[tool.pytest.ini_options]\ntestpaths = ["tests"]'
+                ),
+            }
+        }
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert out.count("::error") == 3, out
