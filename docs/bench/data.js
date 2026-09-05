@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788639914993,
+  "lastUpdate": 1788642185245,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19620,6 +19620,42 @@ window.BENCHMARK_DATA = {
             "value": 55.715846983000006,
             "unit": "s",
             "extra": "Commit: 3a8eacf95476c7bdfa470b89075a1e7003a7f26c\nBranch: master\nTime: 2026-09-05T22:23:48+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49699333+dependabot[bot]@users.noreply.github.com",
+            "name": "dependabot[bot]",
+            "username": "dependabot[bot]"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2b06a3386fbf29e332c0465d9356387b2902d28e",
+          "message": "⬆️ Bump the python-minor-and-patch group with 3 updates (#1851)\n\nBumps prek 0.5.1 to 0.5.2 (dev group), lxml 6.1.2 to 6.1.3 (test group) and jsonschema-rs 0.52.1 to 0.53.0 (a sphinx-needs runtime dependency).\n\nDependabot proposed rewriting sphinx-needs's `jsonschema-rs>=0.37.1,<0.53.0` to `>=0.53.0,<0.54.0`, which would raise the published floor for no reason. Only the cap moves here, to `<0.54.0`, keeping the floor at 0.37.1 as #1819 did; the lock changes in one line beyond the three version bumps.",
+          "timestamp": "2026-09-05T23:01:41+02:00",
+          "tree_id": "a85966ba3df6ff54ee1da5a92f5d680f650acd19",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2b06a3386fbf29e332c0465d9356387b2902d28e"
+        },
+        "date": 1788642178414,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11372291800000056,
+            "unit": "s",
+            "extra": "Commit: 2b06a3386fbf29e332c0465d9356387b2902d28e\nBranch: master\nTime: 2026-09-05T23:01:41+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 57.812943516000004,
+            "unit": "s",
+            "extra": "Commit: 2b06a3386fbf29e332c0465d9356387b2902d28e\nBranch: master\nTime: 2026-09-05T23:01:41+02:00"
           }
         ]
       }
