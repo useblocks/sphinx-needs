@@ -1,0 +1,16 @@
+# Project-level configuration consumed by useblocks tooling — most
+# importantly the ubCode language server (https://ubcode.useblocks.com/),
+# but also any other static reader (IDE plugins, indexers, CI gates)
+# that wants to understand this project's documentation setup without
+# evaluating ``conf.py``.
+#
+# This project does *not* use sphinx-needs, but the file is still useful:
+# it tells ubCode which schema to validate against and how to behave
+# while editing.
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+# Make the language server reindex the project automatically whenever a
+# source document is saved, so cross-references and diagnostics reflect
+# the latest edits without having to trigger a manual rebuild.
+[server]
+index_on_save = true

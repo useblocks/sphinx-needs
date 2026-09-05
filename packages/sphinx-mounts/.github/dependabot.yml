@@ -1,0 +1,39 @@
+# Keep CI action pins and Python dependencies fresh.
+# Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+version: 2
+updates:
+  # GitHub Actions used by the CI workflow.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - ci
+    groups:
+      # Bundle routine minor/patch action bumps into a single weekly PR
+      # to keep review load light. Major bumps still get their own PR
+      # so the breaking surface is visible.
+      actions-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # Python deps declared in pyproject.toml (runtime, testing, docs, ty,
+  # ruff dependency groups).
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - python
+    groups:
+      python-minor-and-patch:
+        update-types:
+          - minor
+          - patch

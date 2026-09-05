@@ -1,0 +1,4 @@
+module(
+    name = "sphinx_mounts_test",
+    version = "0.0.0",
+)

@@ -1,0 +1,241 @@
+# Full sphinx-mounts example (Bazel-driven)
+
+This directory is a complete, checked-in reference example of a
+sphinx-mounts setup whose external bundles are produced by Bazel.
+Nothing here is bootstrapped at test time — every file you see is
+the real file on disk. Browse the tree to see what the production
+shape looks like.
+
+The pytest binding at `../test_example.py` runs the whole pipeline
+end-to-end (marked `bazel`, skipped when no `bazel`/`bazelisk` is on
+`PATH`).
+
+## Layout
+
+    tests/example/
+    ├── .bazelrc                       # bzlmod-only Bazel config
+    ├── BUILD.bazel                    # :all_bundles, :build_docs, :docs_html
+    ├── MODULE.bazel                   # depends on rules_shell
+    ├── build_docs.sh                  # wrapper for ``bazel run //:build_docs``
+    ├── build_docs_sandbox.sh          # wrapper for ``bazel build //:docs_html``
+    ├── bundles/
+    │   ├── api-foo/BUILD.bazel        # index + reference + coverage docs (genrules)
+    │   └── api-bar/BUILD.bazel        # 1 Markdown file emitted by genrule
+    ├── coverage_report/BUILD.bazel    # pre-built HTML report (html_extra_path source)
+    ├── showcase/                      # checked-in bundles — one per directive
+    │   ├── literalinclude/            # index.rst + greeter.py
+    │   ├── include/                   # index.rst + intro.txt
+    │   ├── csv-table/                 # index.rst + data.csv
+    │   ├── raw/                       # index.rst + snippet.html
+    │   ├── image/                     # index.rst + diagram.png
+    │   ├── figure/                    # index.rst + chart.png
+    │   ├── graphviz/                  # index.rst + graph.dot
+    │   ├── uml/                       # index.rst + sequence.puml
+    │   ├── mermaid/                   # index.rst + flow.mmd
+    │   └── needs/                     # Sphinx-Needs kitchen sink — page per directive
+    │       ├── index.rst              # entry doc — the bundle's own needs + toctree
+    │       ├── needuml.rst            # !include arch-common.puml
+    │       ├── needarch.rst           # !include arch-common.puml, inside a need
+    │       ├── needimport.rst         # needimport:: imported-needs.json
+    │       ├── needreport.rst         # needreport:: :template: report-template.rst
+    │       ├── arch-common.puml       # bundle-local PlantUML library
+    │       ├── imported-needs.json    # vendored needs.json export
+    │       └── report-template.rst    # Jinja input, NOT a doc -> mount `exclude`
+    ├── release-notes/                 # checked-in bundle mounted via file-list mode (files=)
+    │   ├── index.rst                  # entry doc — toctree over the picked notes
+    │   └── notes/
+    │       ├── 2026-q1.rst            # mounted -> flat docname .../release-notes/2026-q1
+    │       ├── 2026-q2.rst            # mounted -> flat docname .../release-notes/2026-q2
+    │       └── 2026-q3-draft.rst      # on disk but NOT in the files list -> not mounted
+    ├── fragments/                     # loose files mounted with attach_each (NO index)
+    │   ├── note-one.rst               # attached directly -> .../fragments/note-one
+    │   └── note-two.rst               # attached directly -> .../fragments/note-two
+    └── docs/
+        ├── conf.py                    # host project + graphviz/plantuml/mermaid/needs + html_extra_path
+        ├── index.rst                  # host toctree — names api-bar only
+        ├── installation.rst           # host-only page
+        └── ubproject.toml             # 2 Bazel + 10 showcase + 1 file-list + 1 attach_each mount
+                                       #   … plus the [needs] table sphinx-needs reads
+
+## Pipeline
+
+Run the commands below from this directory (`tests/example/`).
+
+> **Building the docs needs `dot` (Graphviz), `java`, and `plantuml` on
+> `PATH`.** The `api-foo` directives showcase renders Graphviz and
+> PlantUML diagrams at build time. Mermaid is configured for client-side
+> (`raw`) rendering, so no `mmdc` binary is required.
+
+1. **Build the bundles with Bazel.**
+
+   ```sh
+   bazel build //:all_bundles
+   ```
+
+   Files appear under `bazel-bin/bundles/api-foo/` and
+   `bazel-bin/bundles/api-bar/`. These are the paths
+   `docs/ubproject.toml` mounts.
+
+2. **Build the docs.** Pick one of the two Bazel entry points
+   depending on whether you want the output in your source tree
+   (iterative editing) or as a Bazel-tracked artefact (a release
+   artifact, a CI handoff):
+
+   ```sh
+   # (a) In-workspace build — rendered HTML lands under
+   #     ``docs/_build/html``. Convenient for live editing.
+   bazel run //:build_docs
+
+   # (b) Sandboxed build — rendered HTML lands under
+   #     ``bazel-bin/docs_html.tar.gz`` as a Bazel-tracked artefact
+   #     on the build graph. No source-tree mutation. This is what
+   #     you wire into a downstream Bazel target (release packager,
+   #     CI artifact upload, etc.).
+   bazel build //:docs_html
+   tar xzf bazel-bin/docs_html.tar.gz   # extract when you want to view
+   ```
+
+   Both targets live next to `:all_bundles` in `BUILD.bazel` and
+   depend on it, so step 1 runs automatically if you skipped it.
+   Both ultimately invoke `sphinx-build`; the difference is where
+   the action runs and where its output lands.
+
+   `sphinx-mounts` reads `docs/ubproject.toml`, mounts both Bazel
+   bundles in place, and uses `attach_to = "index"` on the
+   `api-foo` mount to wire its entry doc into the host's
+   `index.rst` toctree at doctree-read time. The `api-bar` mount
+   carries no `attach_to`, so the host's `index.rst` references its
+   entry doc by hand. No `_generated/` directory is ever created in
+   the source tree.
+
+   Equivalent direct invocation if you prefer to skip Bazel for
+   step 2:
+
+   ```sh
+   uv run --group testing sphinx-build -nW --keep-going -b html -c docs docs docs/_build/html
+   ```
+
+   *Note on the `:docs_html` genrule:* the action runs with `local
+   = 1` and calls `uv` from `PATH`. The umbrella project's `sphinx`
+   and `sphinx-mounts` come from its default dependencies in the
+   uv-managed environment at `../../`; the host `conf.py`'s extra
+   extensions (`myst-parser`, `sphinxcontrib-plantuml` / `-mermaid`,
+   `sphinx-needs`) live in that project's `testing` dependency group,
+   so the wrapper passes `--group testing`. Projects that need a fully sandboxed,
+   hermetic build can swap the wrapper for a `rules_python`
+   `py_binary` with a pinned `requirements.txt`; the genrule shape
+   stays the same.
+
+3. **Edit with ubCode** *(future capability — not available
+   today)*. Once the ubCode language server adds support for the
+   `[[mounts]]` schema in `ubproject.toml`, opening any RST/MD file
+   under `docs/` will resolve cross-references to the mounted
+   bundles automatically — provided step 1 has already run so the
+   bundle files exist on disk. This integration is on the roadmap;
+   the TOML shape in this example is the same one ubCode will
+   read.
+
+## What to notice
+
+- **Two wiring styles side-by-side.** `api-foo` (RST) uses
+  `attach_to` + `entry_doc` and never gets mentioned in the host's
+  source RST. `api-bar` (Markdown) is a "raw" mount with no
+  `attach_to`; the host references its entry doc by hand in
+  `docs/index.rst`. Both result in toctree links in the rendered
+  `index.html`.
+- **`ubproject.toml` paths are TOML-anchored.** `dir =
+  "../bazel-bin/bundles/api-foo"` resolves relative to *this*
+  TOML's directory (`docs/`), not to wherever Bazel happens to be
+  invoked from. The Bazel `bazel-bin` / `bazel-out` symlinks sit at
+  the workspace-relative path on every OS, so this TOML is
+  check-in-able as-is.
+- **Mixed formats.** `api-foo` is RST and `api-bar` is Markdown;
+  both flow through the same mount with no per-format setup beyond
+  loading `myst_parser` in the host's `conf.py`.
+- **Bundle discipline.** Each bundle is a self-contained tree with
+  relative `:doc:` / Markdown links only. Neither bundle references
+  back into the host project — see
+  [Integration → Anti-pattern: mounted sources linking back to the
+  host](../../docs/source/integration.rst) for why.
+- **File references stay inside the bundle.** The `showcase/` folder holds
+  ten **checked-in** bundles — one per file-referencing directive
+  (`literalinclude`, `include`, `csv-table` / `raw` with `:file:`,
+  `image`, `figure`, `graphviz`, `uml`, `mermaid`), plus a Sphinx-Needs
+  kitchen sink (below). Open a folder to see
+  the directive sitting next to the file it references. Every path is
+  relative to the bundle root, so each bundle is self-contained and passes
+  `sphinx-mounts`' `path_check` (default `"warn"`) once mounted; a path
+  that pointed into the host (a leading `/`) or climbed out with `..`
+  would be reported as a `mounts.path_escape` warning instead — or fail
+  the build under `path_check = "error"` or `sphinx-build -W`. These are plain files mounted in place —
+  not Bazel-generated — so each directive's usage is visible at a glance.
+- **Sphinx-Needs, and the limits of `path_check`.** `showcase/needs/` is the
+  one showcase covering several directives, because
+  [Sphinx-Needs](https://sphinx-needs.readthedocs.io/) contributes three
+  doc-relative file references that do *not* behave alike — one page each:
+  `needimport` (a vendored `needs.json`), `needreport` (a bundle-local Jinja
+  `:template:`), and the PlantUML `!include` shared by `needuml` /
+  `needarch`. Only `needimport` registers its file as a Sphinx dependency, so
+  it is the only one `path_check` and incremental rebuilds can see; the other
+  two must stay bundle-relative by convention. The `!include` is also what
+  needs **sphinx-needs > 8.3.0**: PlantUML runs in a working directory that
+  has to come from the document's physical source file, not its logical
+  docname ([sphinx-needs#1749](https://github.com/useblocks/sphinx-needs/issues/1749)).
+  Note `report-template.rst` in the mount's `exclude` list — it is Jinja input
+  wearing an `.rst` suffix, and without the exclude a directory mount would
+  publish it as an orphan page of unrendered Jinja.
+- **Two tools, one `ubproject.toml`.** The host `conf.py` says
+  `needs_from_toml = "ubproject.toml"`, so Sphinx-Needs reads its options from
+  the `[needs]` table of the very same file whose `[[mounts]]` array
+  `sphinx-mounts` reads. Neither tool parses the other's section, and no tool
+  has to evaluate `conf.py` to find either.
+- **Directory mode vs file-list mode.** Every mount above uses `dir` (walk a
+  whole tree). The `release-notes/` bundle instead uses `files` — a hand-picked
+  list of individual files. Two behaviours are visible only in this mode: (1)
+  `notes/2026-q3-draft.rst` sits right next to the mounted notes but is left
+  out of the `files` list, so it is never mounted — a `dir` mount would have
+  walked and mounted it; and (2) each file's *basename* becomes the docname
+  tail, so the source-side `notes/` subdirectory is dropped and the notes land
+  at the flat docnames `_generated/release-notes/2026-q1` / `.../2026-q2`.
+  `include` / `exclude` / `gitignore` do not apply in file-list mode — the
+  list itself is the filter.
+- **`attach_each`: loose files without an index.** The `fragments/` bundle is
+  a file-list mount of loose files with **no `index.rst`**. Setting
+  `attach_each = true` makes `attach_to` wire *every* listed file into the
+  host toctree (in `files` order) instead of a single entry doc — so the
+  fragments need no index to stitch them together and raise no orphan
+  warnings. Contrast with `release-notes/`, which keeps an `index.rst` to
+  group its notes under one page. `attach_each` is file-list mode only.
+- **A pre-built HTML report, no copy of sources.** `//coverage_report`
+  generates a small lcov-style HTML tree. The host `conf.py` lists it in
+  Sphinx's `html_extra_path`, which copies it **verbatim into the build
+  output** (`<site>/coverage/`) — so the rendered site is *self-contained*
+  and can be published anywhere with the report travelling alongside it,
+  while the report itself is read in place from `bazel-bin/` and never
+  staged into the docs source tree. The `api-foo` bundle ships a
+  `coverage` page that links to and `<iframe>`-embeds it via the
+  bundle-relative URL `../../coverage/index.html`. The `html_extra_path`
+  entry is added only when the report has been built, so the host still
+  builds when the artefact is absent (mirroring the mount behaviour). This
+  is plain Sphinx — *not* a sphinx-mounts feature; mounts handle source
+  trees, `html_extra_path` handles finished static artefacts, and they
+  compose.
+
+## Running the test
+
+From the repo root:
+
+```sh
+tox -e bazel                                # full bazel job
+# or, with deps already in the current environment:
+uv run pytest -m bazel tests/test_example.py
+```
+
+The test copies this directory into a temporary workspace (so your
+real `bazel-bin/` is not touched), runs `bazel build //:all_bundles`
+with an isolated `--output_base`, runs `sphinx-build` against the
+host project, and asserts that the rendered HTML contains content
+from the host, the RST bundle, and the Markdown bundle — and that
+both wiring styles (`api-foo` via `attach_to`, `api-bar` via the
+host's hand-written toctree entry) produce links in the host's
+`index.html`.
