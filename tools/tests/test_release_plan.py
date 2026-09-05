@@ -1455,3 +1455,20 @@ def test_a_head_off_the_root_repositorys_master_is_reported(
     out = capsys.readouterr().out
     assert "HEAD is not on origin/master -- releases are cut from master" in out
     assert "origin/master not found" not in out
+
+
+def test_an_unreachable_pypi_names_the_reason_not_the_wrapper(monkeypatch) -> None:
+    """A `URLError` is reported by its `.reason` -- `[Errno 61] Connection refused` -- exactly
+    as `on_pypi` reports it two functions away, not by the `<urlopen error ...>` wrapper that
+    `str(exc)` gives. The two messages must not drift: they describe the same outage."""
+    import urllib.error
+
+    def raising(url: str, timeout: int = 30):
+        raise urllib.error.URLError(OSError(61, "Connection refused"))
+
+    monkeypatch.setattr(release_plan.urllib.request, "urlopen", raising)
+    with pytest.raises(release_plan.PlanError) as caught:
+        release_plan.published_versions("acme-core")
+    message = str(caught.value)
+    assert "cannot reach PyPI ([Errno 61] Connection refused)" in message
+    assert "<urlopen error" not in message

@@ -100,6 +100,12 @@ def submodule_names(
     is caught here and handed back so the caller can report it: the per-module loop below
     will import the same package again and file the real failure, and the walk it cut short
     is named.
+
+    One boundary this cannot see: a package that imports cleanly but empties its own
+    `__path__` reports no submodules, so `pkgutil` truthfully yields none, nothing lands in
+    `unwalkable` or the cut-short exit, and a child module on disk is never imported while
+    the walk prints `OK`. Closing that would mean walking the filesystem behind the import
+    system's back; the walk trusts what a package declares.
     """
     names: list[str] = []
     walker = pkgutil.walk_packages(
