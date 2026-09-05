@@ -23,8 +23,10 @@ Usage::
     python tools/src/sn_tools/propagate_floors.py sphinx-variants --version 2.0.0
     python tools/src/sn_tools/propagate_floors.py sphinx-variants --check   # report, write nothing
 
-Run at the workspace root. Needs `tomlkit` and `packaging` (both in the root `dev` group;
-in CI, `uv run --no-project --with tomlkit --with packaging python ...`). Afterwards run
+Run at the workspace root. Needs `tomlkit` and `packaging`, declared once in
+`tools/pyproject.toml` and installed into every environment through the root's dependency on
+that member; in CI, where no environment is synced, `uv run --no-project --with tomlkit
+--with packaging python ...`. Afterwards run
 `uv lock` -- usually a no-op, which is precisely why this cannot be delegated to the lock.
 """
 

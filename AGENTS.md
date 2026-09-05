@@ -33,9 +33,9 @@ the shim.
 | the docker image | `docker/` — a repository-level deliverable, like the workflows |
 | Read the Docs | `.readthedocs.yml`, and it stays at the root under that exact name: the configuration path applies to every version, so moving it makes older tags unbuildable |
 
-**`tools/` is the workspace's tooling — a virtual member, never built and never
-published, whose manifest declares the tooling's dependencies; `.github/scripts/` keeps
-only the checks that must execute inside a specific CI environment.** The distinction is
+**`tools/` is the workspace's tooling — a virtual member, never released, whose manifest
+declares the tooling's dependencies; `.github/scripts/` keeps only the checks that must
+execute inside a specific CI environment.** The distinction is
 what each script *inspects*. `tools/src/sn_tools/` holds the ones that read the manifests
 before any environment exists — `check_workspace.py`, `release_plan.py`,
 `propagate_floors.py` — and they are run by path, never imported
@@ -46,13 +46,22 @@ inside `.venvs/typing`) and `extract_benchmark_data.py` (it runs inside the benc
 none of which could move without dragging a member into every matrix cell. `scripts/smoke_needs.py`
 stays too: its whole point is to run outside every project environment.
 
-The member is `[tool.uv] package = false`, which is this workspace's `publish = false` and
-is stronger than declaring an intent: `uv build --all-packages` skips it,
-`uv build --package sphinx-needs-workspace-tools` is refused for having no `build-system`,
-and the lock records `source = { virtual = "tools" }`. So no uv command can produce a
-distribution of it, `uv sync` installs its *dependencies* without installing it (`import
-sn_tools` fails, which is correct — the tooling is run by path), and
-`tools/src/sn_tools/release_plan.py` refuses a tag that names it.
+The member is `[tool.uv] package = false`. That makes it **invisible to uv's workspace
+selectors**: `uv build --all-packages` skips it, `uv build --package
+sphinx-needs-workspace-tools` is refused ("is missing a `build-system`"), the lock records
+`source = { virtual = "tools" }`, and `uv sync` installs its *dependencies* without
+installing it (`import sn_tools` fails, which is correct — the tooling is run by path). So
+nothing in this repository's workflows can build it.
+
+**It is not a build prohibition**, and anything written here that says otherwise is wrong:
+`uv build tools/` (likewise `cd tools && uv build`) does not go through the selector at all
+— with no `[build-system]`, PEP 517 says the default backend applies, uv runs
+`setuptools.build_meta:__legacy__`, and a real sdist and wheel come out. Two things make the
+member unreleasable, and neither is `package = false`:
+`tools/src/sn_tools/release_plan.py` refuses a tag that names a virtual member — and since a
+tag is the only thing that starts the release workflow, that is the fence, not a
+belt-and-braces extra — and the manifest carries `Private :: Do Not Upload`, which PyPI
+rejects on upload, for the by-hand path.
 
 ## Commands
 

@@ -20,13 +20,16 @@ a failure mode that no other gate in this repository can see:
    zero-line lock diff and `uv lock --check` still exits 0 -- so no amount of `--frozen`
    and no review of the lock can ever see it. "Tight" is the workspace's tracking policy:
    `>=<the dependency's current version>,<<its next major>`. A dependency on a member
-   declaring `[tool.uv] package = false` is refused outright: uv can build such a member
-   with no command, so it is never on PyPI and the wheel could not be installed at all.
-   Extensions carry no
+   declaring `[tool.uv] package = false` is refused outright: such a member is never
+   released, so it is never on PyPI and the wheel could not be installed at all. The
+   tight-tracking half is asked only of a PUBLISHABLE dependant -- the cap exists to stop a
+   future major being co-installed with a wheel written against the old one, and nothing is
+   ever co-installed with a virtual member. Extensions carry no
    backwards-compatibility code, so the floor is a claim about what was actually tested,
    and the cap is what stops a future major being co-installed with a dependant written
    against the old one. `--no-policy` keeps only the honesty half.
-5. **`__version__` equals `[project] version`.** sphinx-needs writes `__version__` into
+5. **`__version__` equals `[project] version`.** (Virtual members are skipped: nothing they
+   stamp ever ships.) sphinx-needs writes `__version__` into
    every generated `needs.json`, a documented interchange format, so it cannot become an
    `importlib.metadata` lookup; the number is therefore written twice and this is what
    keeps the two equal. A module with no `__version__` is skipped, not an error.
@@ -103,11 +106,14 @@ class Member:
 
     @property
     def virtual(self) -> bool:
-        """`[tool.uv] package = false` -- the workspace's `publish = false`.
+        """`[tool.uv] package = false` -- a member this repository never releases.
 
-        uv can build such a member with no command (`--all-packages` skips it,
-        `--package` is refused), so it is never on PyPI and nothing may declare a runtime
-        dependency on it.
+        The flag hides the member from uv's workspace selectors (`--all-packages` skips
+        it, `--package` is refused), which is not the same as a build prohibition:
+        `uv build tools/` falls through to PEP 517's default backend and does produce a
+        distribution. What makes the member unreleasable is the release plan refusing a tag
+        that names it -- so nothing may declare a runtime dependency on one, because such a
+        wheel would name a distribution that is never on PyPI.
         """
         return self.data.get("tool", {}).get("uv", {}).get("package") is False
 
@@ -358,7 +364,9 @@ def check_specifiers(members: list[Member], policy: bool, report: Report) -> Non
                     "(uv#9811), so this would publish a wheel nobody can install",
                 )
                 continue
-            if policy:
+            # the honesty half applies to everyone; the tight-tracking half is about
+            # what a PUBLISHED wheel promises, and a virtual member publishes nothing
+            if policy and not member.virtual:
                 want = SpecifierSet(f">={current},<{current.major + 1}")
                 if set(requirement.specifier) != set(want):
                     report.error(
@@ -409,6 +417,12 @@ def module_version(member: Member) -> tuple[Path, str] | None:
 def check_module_version(root: Path, members: list[Member], report: Report) -> None:
     """(5) `__version__` in the module equals `[project] version`."""
     for member in sorted(members, key=lambda m: m.key):
+        if member.virtual:
+            # by rule, not by accident: nothing a virtual member stamps into a module ever
+            # ships, and its module name need not derive from its distribution name (this
+            # repository's own `sphinx-needs-workspace-tools` is imported as `sn_tools`), so
+            # the derivation below would look in the wrong place and silently find nothing
+            continue
         declared = member.project.get("version")
         if "version" in member.dynamic or not isinstance(declared, str):
             continue  # already reported by check (4)

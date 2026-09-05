@@ -84,7 +84,8 @@ def write_member(
     if module_name:
         lines += ["", "[tool.flit.module]", f'name = "{module_name}"']
     if virtual:
-        # the workspace's `publish = false`: uv can build this member with no command
+        # a member this repository never releases: `package = false` hides it from uv's
+        # workspace selectors, and the release plan refuses a tag that names it
         lines += ["", "[tool.uv]", "package = false"]
     manifest = directory / "pyproject.toml"
     manifest.write_text("\n".join(lines) + "\n", encoding="utf-8")

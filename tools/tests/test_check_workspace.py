@@ -154,8 +154,8 @@ def test_specifier_is_admitted_but_not_tight(workspace, capsys) -> None:
 def test_a_runtime_dependency_on_a_virtual_member_is_an_error(
     workspace, capsys
 ) -> None:
-    """`[tool.uv] package = false` means uv can build it with no command, so it is never on
-    PyPI and a wheel naming it could not be installed."""
+    """A virtual member is never released, so it is never on PyPI and a wheel naming it
+    could not be installed."""
     root = workspace(
         {
             "acme-core": {"version": "2.0.0", "dependencies": ["acme-tools>=0,<1"]},
@@ -188,6 +188,58 @@ def test_a_virtual_member_is_otherwise_checked_like_any_other(
         "::error file=packages/acme-tools/pyproject.toml::requires-python is >=3.12,<4"
         in out
     )
+
+
+def test_a_virtual_dependant_is_not_held_to_the_tracking_policy(
+    workspace, capsys
+) -> None:
+    """The cap stops a future major being co-installed with a published wheel; a virtual
+    member publishes none, so a loose floor outward is its own business."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "dependencies": ["acme-core>=1.0"],
+            },
+        }
+    )
+    assert run(root) == 0
+    assert "OK    acme-tools -> acme-core>=1.0" in capsys.readouterr().out
+
+
+def test_a_virtual_dependant_is_still_held_to_honesty(workspace, capsys) -> None:
+    """Only the policy half is relaxed: a floor the tree cannot satisfy is still red."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "dependencies": ["acme-core>=99"],
+            },
+        }
+    )
+    assert run(root) == 1
+    assert "which this specifier does not admit" in capsys.readouterr().out
+
+
+def test_check_five_skips_a_virtual_member_by_rule(workspace, capsys) -> None:
+    """Not by module-name derivation: a virtual member with a module present and a
+    mismatching `__version__` is still skipped."""
+    root = workspace(
+        {
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "module_version": "9.9.9",
+            }
+        }
+    )
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "__version__" not in out
 
 
 def test_no_policy_accepts_a_loose_but_honest_floor(workspace, capsys) -> None:

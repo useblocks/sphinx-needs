@@ -11,9 +11,13 @@ is not a clear "no" is an error, never a pass.
 Given a tag `<dist>-v<version>` it asserts, in order:
 
 0. `<dist>` is a member this repository actually publishes. A member declaring
-   `[tool.uv] package = false` is VIRTUAL -- uv can build it with no command, so there is
-   nothing a tag could release -- and a runtime dependency on one is refused for the same
-   reason: the wheel would name a distribution that is never on PyPI;
+   `[tool.uv] package = false` is VIRTUAL, and this check is what makes it unreleasable.
+   The flag itself only hides the member from uv's workspace selectors (`--all-packages`
+   skips it, `--package` is refused); it is not a build prohibition, because
+   `uv build tools/` falls through to PEP 517's default backend and does produce a
+   distribution. Since a tag is the only thing that starts this workflow, refusing the tag
+   here is the fence -- do not remove it as redundant. A dependency on one is refused for a
+   related reason: the wheel would name a distribution that is never on PyPI;
 1. the tag parses, and `<dist>` is a member of this workspace;
 2. `<version>` is exactly the version that member declares -- the tag cannot publish
    something the tree does not build;
@@ -85,9 +89,11 @@ def members(root: Path) -> tuple[dict[str, dict[str, Any]], set[str]]:
     """Every workspace member's `[project]` table, and the names of the virtual ones.
 
     A member with `[tool.uv] package = false` is virtual: `uv build --all-packages` skips
-    it and `uv build --package <it>` is refused, so no uv command can produce a
-    distribution of it. That is this workspace's `publish = false`, and it is what makes
-    the rules below safe to state as errors rather than as warnings.
+    it and `uv build --package <it>` is refused, so nothing this repository's workflows run
+    can build one. That is a selector property, not a build prohibition -- `uv build
+    tools/` still produces a distribution through PEP 517's default backend -- which is why
+    the caller's rules below are the actual fence, and why they are errors rather than
+    warnings.
     """
     manifest = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     globs = manifest["tool"]["uv"]["workspace"]["members"]
@@ -271,7 +277,8 @@ def plan(args: argparse.Namespace) -> int:
     if dist in virtual:
         raise PlanError(
             f"`{found[dist]['name']}` is a virtual member (`[tool.uv] package = false`): "
-            "never built, never published -- there is nothing to release"
+            "this repository never releases it, and refusing this tag is what makes that "
+            "true -- there is nothing to release"
         )
 
     # 2. the tag's version is the version this tree builds
@@ -308,7 +315,7 @@ def plan(args: argparse.Namespace) -> int:
     for dependency in sorted(graph[dist]):
         if dependency in virtual:
             raise PlanError(
-                f"{found[dist]['name']} declares a runtime dependency on "
+                f"{found[dist]['name']} declares a runtime (or extra) dependency on "
                 f"{found[dependency]['name']}, which is a virtual member "
                 "(`[tool.uv] package = false`); the published wheel could never be "
                 f"installed: `{found[dependency]['name']}` is never on PyPI"

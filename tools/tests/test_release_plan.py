@@ -108,8 +108,26 @@ def test_a_runtime_dependency_on_a_virtual_member_is_refused(
     )
     assert run(root, "--tag", "acme-core-v2.0.0", "--rehearsal", "--no-git") == 1
     out = capsys.readouterr().out
-    assert "acme-core declares a runtime dependency on acme-tools" in out
+    assert "acme-core declares a runtime (or extra) dependency on acme-tools" in out
     assert "`acme-tools` is never on PyPI" in out
+
+
+def test_an_extra_only_edge_to_a_virtual_member_is_refused(
+    workspace, capsys, offline
+) -> None:
+    """`edges()` folds extras into the graph, so the message must not say "runtime" flatly."""
+    published(offline, {("acme-core", "2.0.0"): False})
+    root = workspace(
+        {
+            "acme-core": {
+                "version": "2.0.0",
+                "optional_dependencies": {"dev": ["acme-tools>=0"]},
+            },
+            "acme-tools": {"version": "0", "virtual": True},
+        }
+    )
+    assert run(root, "--tag", "acme-core-v2.0.0", "--rehearsal", "--no-git") == 1
+    assert "runtime (or extra) dependency" in capsys.readouterr().out
 
 
 def test_pypi_is_never_asked_about_a_virtual_member(workspace, offline) -> None:

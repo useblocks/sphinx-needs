@@ -1,23 +1,39 @@
 # The workspace's tooling: the manifest fences and the release plan. It is a member so that
 # its dependencies are declared in one place and installed everywhere the tooling runs,
 # rather than being borrowed from whatever a test dependency happened to pull in -- and it
-# is a VIRTUAL member so that it can never be released.
+# is a VIRTUAL member so that it is never released.
 #
-# `[tool.uv] package = false` is this workspace's `publish = false`, and it is stronger than
-# Cargo's, because the artefact cannot be produced at all. Measured on uv 0.12.9:
+# `[tool.uv] package = false` makes the member invisible to uv's workspace SELECTORS.
+# Measured on uv 0.12.9:
 #
 #   * `uv build --all-packages` skips it -- only the publishable members are built;
-#   * `uv build --package sphinx-needs-workspace-tools` is REFUSED ("does not have a
-#     `build-system`"), so there is no way to produce a distribution of it by hand either;
+#   * `uv build --package sphinx-needs-workspace-tools` is refused, verbatim: "Package
+#     `sphinx-needs-workspace-tools` is missing a `build-system`";
 #   * `uv lock` records it as `source = { virtual = "tools" }`, and `uv sync` installs its
 #     DEPENDENCIES without installing it -- `import sn_tools` fails in `.venv`, which is
 #     correct: the tooling is run by path, from the repository, never imported by the suite;
 #   * `uv version --package sphinx-needs-workspace-tools` still works, so the fences that
 #     read every member's version have something to read.
 #
-# `tools/src/sn_tools/release_plan.py`'s own rule closes the loop: a tag naming a virtual
-# member is refused before anything is built, and a publishable member that declares a
-# runtime dependency on one is refused too, because that wheel could never be installed.
+# So nothing in this repository's workflows can build it. It is NOT a build prohibition, and
+# an earlier version of this comment wrongly said it was: `uv build tools/` (likewise
+# `cd tools && uv build`, `uv build --directory tools`) does not go through the selector at
+# all -- with no `[build-system]`, PEP 517 says the default backend applies, uv runs
+# `setuptools.build_meta:__legacy__`, and a complete sdist and wheel come out.
+#
+# Which is why the two fences below are load-bearing rather than decorative:
+#
+#   1. `tools/src/sn_tools/release_plan.py` refuses a tag that names a virtual member,
+#      before anything is built -- and since a tag is the only thing that starts the release
+#      workflow, that is what makes a release impossible. It also refuses a publishable
+#      member that declares a runtime dependency on one, because that wheel could never be
+#      installed. Do not delete those rules as redundant; they are the fence.
+#   2. `Private :: Do Not Upload` below, for the by-hand path: "To prevent a package from
+#      being uploaded to PyPI, use the special `Private :: Do Not Upload` classifier. PyPI
+#      will always reject packages with classifiers beginning with `Private ::`."
+#      (packaging.python.org/en/latest/guides/writing-pyproject-toml/). Measured here only
+#      as far as the metadata -- `uv build tools/` puts the classifier in METADATA; no
+#      upload has ever been attempted from this repository.
 #
 # It lives OUTSIDE `packages/`, which keeps meaning "distributions this repository
 # publishes", and it carries no `pkg:` label of its own -- `.github/labeler.yml` files it
@@ -25,7 +41,10 @@
 [project]
 name = "sphinx-needs-workspace-tools"
 version = "0"
-description = "Repository tooling: the workspace fences and the release plan. Never built, never published."
+description = "Repository tooling: the workspace fences and the release plan. Never released."
+# the second fence, for the `uv build tools/` path uv's selectors do not cover: PyPI rejects
+# any distribution whose metadata carries a classifier beginning `Private ::`
+classifiers = ["Private :: Do Not Upload"]
 # must equal the root's, and `check_workspace.py` check (3) is what says so
 requires-python = ">=3.11,<4"
 dependencies = [

@@ -1,8 +1,9 @@
 # The workspace root. It builds and publishes nothing of its own: every distribution lives
 # under `packages/<dist-name>/`, and the directory name is the distribution name. Today there
 # is exactly one, `packages/sphinx-needs`; `tools/` is a second member, virtual, which this
-# repository's own fences and release plan live in and which nothing can ever build or
-# publish. What the root owns is repository-level policy --
+# repository's own fences and release plan live in and which is never released (see
+# `tools/pyproject.toml` for what `[tool.uv] package = false` does and, just as important,
+# what it does not). What the root owns is repository-level policy --
 # the lock, the dependency groups shared by every member, and the lint, type-check, pytest
 # and task configuration.
 
@@ -45,8 +46,9 @@ sphinx-needs = { workspace = true }
 sphinx-needs-workspace-tools = { workspace = true }
 
 # `packages/*` is the published distributions; `tools` is the repository's own tooling and
-# is never built or published (see `tools/pyproject.toml`). Both are members so that one
-# lock, one `uv sync` and one set of fences cover everything in the tree.
+# is never released (see `tools/pyproject.toml` for what makes that true, and for what
+# `[tool.uv] package = false` does NOT do). Both are members so that one lock, one
+# `uv sync` and one set of fences cover everything in the tree.
 [tool.uv.workspace]
 members = ["packages/*", "tools"]
 
@@ -61,8 +63,9 @@ members = ["packages/*", "tools"]
 # nothing to collide with. What does NOT belong here is a dependency of the repository's own
 # tooling: `tools/pyproject.toml` declares those, and the root depends on that member, so
 # `packaging` and `tomlkit` reach every environment -- including `.venvs/typing`, where ty
-# has to resolve the tooling's imports -- without a line in any group. A package gets a prefixed group of its own only once it genuinely
-# needs a different pin from the workspace's.
+# has to resolve the tooling's imports -- without a line in any group. A package gets a
+# prefixed group of its own only once it genuinely needs a different pin from the
+# workspace's.
 [dependency-groups]
 dev = [
   "prek>=0.5.1",
