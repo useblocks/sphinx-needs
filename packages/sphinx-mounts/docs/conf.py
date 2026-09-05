@@ -20,7 +20,7 @@ extensions = [
 ]
 
 exclude_patterns: list[str] = []
-templates_path = ["source/_static/_templates/furo"]
+templates_path = ["_static/_templates/furo"]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
@@ -29,8 +29,8 @@ intersphinx_mapping = {
 
 html_title = "sphinx-mounts"
 html_theme = "furo"
-html_static_path = ["source/_static"]
-html_favicon = "source/_static/favicon.svg"
+html_static_path = ["_static"]
+html_favicon = "_static/favicon.svg"
 html_theme_options = {
     # The logo carries the project name, so hide the textual title.
     "sidebar_hide_name": True,
@@ -38,7 +38,7 @@ html_theme_options = {
     "dark_logo": "sphinx-mounts-logo_dark.svg",
     "source_repository": "https://github.com/useblocks/sphinx-mounts",
     "source_branch": "main",
-    "source_directory": "docs/source/",
+    "source_directory": "packages/sphinx-mounts/docs/",
 }
 html_sidebars = {
     "**": [
