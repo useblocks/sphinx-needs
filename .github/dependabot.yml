@@ -49,6 +49,9 @@ updates:
       # named `sphinx-needs` in the uv ecosystem, so a future member that legitimately
       # depends on the published distribution would stop being bumped. Revisit then.
       - dependency-name: sphinx-needs
+      # the second member, for exactly the same reason: `sphinx-mounts` is a real PyPI
+      # project as well as the name of a directory under `packages/`
+      - dependency-name: sphinx-mounts
       # the workspace root itself. Its name is not on PyPI at all, so there is nothing to
       # bump to -- this pre-empts the same #14004 noise rather than fixing a live proposal
       - dependency-name: sphinx-needs-workspace
