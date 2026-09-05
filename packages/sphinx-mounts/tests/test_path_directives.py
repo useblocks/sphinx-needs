@@ -1297,11 +1297,17 @@ def _require_sphinx_needs() -> None:
     ``__init__.py`` that raises, would satisfy ``find_spec`` and then fail
     several seconds later inside Sphinx with a much worse message.
     """
-    assert importlib.import_module("sphinx_needs"), (
-        "sphinx-needs is required to run this test and is not installed. In "
-        "this workspace it is a sibling member; outside it, install the "
-        "packages/sphinx-mounts/compat-requirements.txt list"
-    )
+    # not `assert import_module(...)`: the import raises before an assert's message
+    # is ever evaluated, so that message would be dead code and the reader would
+    # get a bare ModuleNotFoundError instead of the instruction below
+    try:
+        importlib.import_module("sphinx_needs")
+    except ImportError as exc:
+        raise AssertionError(
+            "sphinx-needs is required to run this test and is not installed. In "
+            "this workspace it is a sibling member; outside it, install the "
+            "packages/sphinx-mounts/compat-requirements.txt list"
+        ) from exc
 
 
 def _plantuml_jar_command() -> tuple[str, ...] | None:
