@@ -313,7 +313,11 @@ def plan(args: argparse.Namespace) -> int:
     #    ask the index -- it is a wheel that could not be installed, and it is fatal here
     #    exactly as it is in `check_workspace.py` on every pull request.
     for dependency in sorted(graph[dist]):
-        if dependency in virtual:
+        # `and dist not in virtual` is belt and braces -- rule 0 above already refused a
+        # tag naming a virtual member -- but it states the actual rule: the objection is
+        # that the WHEEL would name something never on PyPI, and only a publishable
+        # dependant has a wheel
+        if dependency in virtual and dist not in virtual:
             raise PlanError(
                 f"{found[dist]['name']} declares a runtime (or extra) dependency on "
                 f"{found[dependency]['name']}, which is a virtual member "

@@ -63,6 +63,7 @@ def write_member(
     module_version: str | None = None,
     module_name: str | None = None,
     virtual: bool = False,
+    private_classifier: bool = True,
 ) -> Path:
     """One member manifest, plus (optionally) a module carrying a `__version__` literal."""
     directory.mkdir(parents=True, exist_ok=True)
@@ -76,6 +77,10 @@ def write_member(
         lines.append(f'version = "{version}"')
     lines.append(f'requires-python = "{requires_python}"')
     lines.append(f"dependencies = [{toml_list(dependencies or [])}]")
+    if virtual and private_classifier:
+        # what check (6) demands of every virtual member; a test that wants it red passes
+        # `private_classifier=False`
+        lines.append('classifiers = ["Private :: Do Not Upload"]')
     if optional_dependencies:
         lines.append("")
         lines.append("[project.optional-dependencies]")

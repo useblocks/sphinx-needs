@@ -130,6 +130,30 @@ def test_an_extra_only_edge_to_a_virtual_member_is_refused(
     assert "runtime (or extra) dependency" in capsys.readouterr().out
 
 
+def test_a_virtual_to_virtual_edge_does_not_block_a_release(
+    workspace, capsys, offline
+) -> None:
+    """The refusal is about a wheel naming something never on PyPI; a virtual dependant
+    ships no wheel, so its edge onto a virtual sibling is nobody's problem."""
+    published(offline, {("acme-core", "2.0.0"): False})
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "dependencies": ["acme-more>=0"],
+            },
+            "acme-more": {"version": "0", "virtual": True},
+        }
+    )
+    assert run(root, "--tag", "acme-core-v2.0.0", "--rehearsal", "--no-git") == 0
+    out = capsys.readouterr().out
+    assert "-- acme-more 0   (virtual -- never published)" in out
+    assert "-- acme-tools 0   (virtual -- never published)" in out
+    assert "::error" not in out
+
+
 def test_pypi_is_never_asked_about_a_virtual_member(workspace, offline) -> None:
     """Check 4 must not turn a virtual dependency into a 404 lookup."""
     asked: list[str] = []

@@ -53,8 +53,7 @@ sphinx-needs-workspace-tools` is refused ("is missing a `build-system`"), the lo
 installing it (`import sn_tools` fails, which is correct — the tooling is run by path). So
 nothing in this repository's workflows can build it.
 
-**It is not a build prohibition**, and anything written here that says otherwise is wrong:
-`uv build tools/` (likewise `cd tools && uv build`) does not go through the selector at all
+**It is not a build prohibition**: `uv build tools/` (likewise `cd tools && uv build`) does not go through the selector at all
 — with no `[build-system]`, PEP 517 says the default backend applies, uv runs
 `setuptools.build_meta:__legacy__`, and a real sdist and wheel come out. Two things make the
 member unreleasable, and neither is `package = false`:

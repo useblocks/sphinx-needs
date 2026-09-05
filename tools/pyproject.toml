@@ -15,11 +15,11 @@
 #   * `uv version --package sphinx-needs-workspace-tools` still works, so the fences that
 #     read every member's version have something to read.
 #
-# So nothing in this repository's workflows can build it. It is NOT a build prohibition, and
-# an earlier version of this comment wrongly said it was: `uv build tools/` (likewise
-# `cd tools && uv build`, `uv build --directory tools`) does not go through the selector at
-# all -- with no `[build-system]`, PEP 517 says the default backend applies, uv runs
-# `setuptools.build_meta:__legacy__`, and a complete sdist and wheel come out.
+# So nothing in this repository's workflows can build it. It is NOT a build prohibition:
+# `uv build tools/` (likewise `cd tools && uv build`, `uv build --directory tools`) does not
+# go through the selector at all -- with no `[build-system]`, PEP 517 says the default
+# backend applies, uv runs `setuptools.build_meta:__legacy__`, and a complete sdist and
+# wheel come out.
 #
 # Which is why the two fences below are load-bearing rather than decorative:
 #
@@ -33,7 +33,9 @@
 #      will always reject packages with classifiers beginning with `Private ::`."
 #      (packaging.python.org/en/latest/guides/writing-pyproject-toml/). Measured here only
 #      as far as the metadata -- `uv build tools/` puts the classifier in METADATA; no
-#      upload has ever been attempted from this repository.
+#      upload has ever been attempted from this repository. `check_workspace.py`'s check
+#      (6) asserts this line is here, for every virtual member: it is one line that looks
+#      like decoration, so without a fence it is the line a tidy-up deletes.
 #
 # It lives OUTSIDE `packages/`, which keeps meaning "distributions this repository
 # publishes", and it carries no `pkg:` label of its own -- `.github/labeler.yml` files it

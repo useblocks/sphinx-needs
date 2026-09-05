@@ -19,20 +19,25 @@ a failure mode that no other gate in this repository can see:
    can satisfy. Worse, the specifier is not in `uv.lock` at all -- changing it gives a
    zero-line lock diff and `uv lock --check` still exits 0 -- so no amount of `--frozen`
    and no review of the lock can ever see it. "Tight" is the workspace's tracking policy:
-   `>=<the dependency's current version>,<<its next major>`. A dependency on a member
-   declaring `[tool.uv] package = false` is refused outright: such a member is never
-   released, so it is never on PyPI and the wheel could not be installed at all. The
-   tight-tracking half is asked only of a PUBLISHABLE dependant -- the cap exists to stop a
-   future major being co-installed with a wheel written against the old one, and nothing is
-   ever co-installed with a virtual member. Extensions carry no
+   `>=<the dependency's current version>,<<its next major>`. Extensions carry no
    backwards-compatibility code, so the floor is a claim about what was actually tested,
-   and the cap is what stops a future major being co-installed with a dependant written
-   against the old one. `--no-policy` keeps only the honesty half.
+   and the cap is what stops a future major of the dependency being co-installed with a
+   published wheel written against the old one. Both halves are asked of a publishable
+   member; only the honesty half is asked of a virtual one, which publishes nothing and is
+   therefore never co-installed with anything. A PUBLISHABLE member depending on a virtual
+   one is refused outright: that wheel would name a distribution which is never on PyPI.
+   `--no-policy` keeps only the honesty half.
 5. **`__version__` equals `[project] version`.** (Virtual members are skipped: nothing they
    stamp ever ships.) sphinx-needs writes `__version__` into
    every generated `needs.json`, a documented interchange format, so it cannot become an
    `importlib.metadata` lookup; the number is therefore written twice and this is what
    keeps the two equal. A module with no `__version__` is skipped, not an error.
+
+6. **every virtual member declares `Private :: Do Not Upload`.** `[tool.uv] package =
+   false` only hides a member from uv's workspace selectors; `uv build <dir>/` still
+   produces a distribution through PEP 517's default backend. That classifier is what makes
+   PyPI refuse the artefact if anyone ever tries, and being one line that looks like
+   decoration it is exactly the line a future tidy-up deletes -- so it is asserted here.
 
 Every failure is reported before the script exits, each on its own `::error file=...::`
 line, so one run names every mistake rather than the first one.
@@ -64,6 +69,10 @@ from packaging.utils import canonicalize_name
 from packaging.version import InvalidVersion, Version
 
 ROOT_MANIFEST = "pyproject.toml"
+# PyPI rejects any distribution whose metadata carries a classifier beginning `Private ::`
+# (packaging.python.org/en/latest/guides/writing-pyproject-toml/), which is the only thing
+# standing between a by-hand `uv build tools/` and an upload
+PRIVATE_CLASSIFIER = "Private :: Do Not Upload"
 
 
 class Report:
@@ -344,7 +353,10 @@ def check_specifiers(members: list[Member], policy: bool, report: Report) -> Non
                 continue
             edges += 1
             where = f"{member.name}{f'[{extra}]' if extra else ''} -> {requirement}"
-            if target in virtual:
+            # only a PUBLISHABLE dependant is refused: the objection is that the wheel
+            # would name a distribution which is never on PyPI, and a virtual member ships
+            # no wheel. uv resolves a virtual -> virtual edge happily, and so does this
+            if target in virtual and not member.virtual:
                 report.error(
                     member.relative,
                     f"{where}: `{target}` is `[tool.uv] package = false` and is therefore "
@@ -357,11 +369,16 @@ def check_specifiers(members: list[Member], policy: bool, report: Report) -> Non
             # prereleases=True so a member sitting on a release candidate is not reported
             # as un-admitted by a floor that names that very candidate
             if not requirement.specifier.contains(current, prereleases=True):
+                consequence = (
+                    "so this would publish a wheel nobody can install"
+                    if not member.virtual
+                    else "so the specifier says something untrue about the tree"
+                )
                 report.error(
                     member.relative,
                     f"{where}: the workspace builds {target} {current}, which this "
                     "specifier does not admit -- uv resolves the workspace copy regardless "
-                    "(uv#9811), so this would publish a wheel nobody can install",
+                    f"(uv#9811), {consequence}",
                 )
                 continue
             # the honesty half applies to everyone; the tight-tracking half is about
@@ -382,6 +399,29 @@ def check_specifiers(members: list[Member], policy: bool, report: Report) -> Non
             f"no intra-workspace runtime dependencies among {len(members)} member(s): "
             + (", ".join(f"{k} {v}" for k, v in sorted(versions.items())) or "-")
         )
+
+
+def check_virtual_classifier(members: list[Member], report: Report) -> None:
+    """(6) every virtual member declares `Private :: Do Not Upload`.
+
+    The classifier is the second of the two fences that keep a virtual member off PyPI (the
+    first is the release plan refusing its tag), and it is a single line that looks like
+    decoration -- which is why it is asserted rather than trusted.
+    """
+    for member in sorted(members, key=lambda m: m.key):
+        if not member.virtual:
+            continue
+        if PRIVATE_CLASSIFIER in member.project.get("classifiers", []):
+            report.ok(f"{member.relative}: declares `{PRIVATE_CLASSIFIER}`")
+        else:
+            report.error(
+                member.relative,
+                f"{member.name} is `[tool.uv] package = false` but does not declare the "
+                f'classifier "{PRIVATE_CLASSIFIER}". `package = false` only hides the '
+                "member from uv's workspace selectors -- it can still be built by hand "
+                "(`uv build <dir>/` falls through to PEP 517's default backend) -- and "
+                "that classifier is what makes PyPI refuse the artefact",
+            )
 
 
 def module_version(member: Member) -> tuple[Path, str] | None:
@@ -482,6 +522,7 @@ def main(argv: list[str] | None = None) -> int:
     check_requires_python(manifest, members, report)
     check_specifiers(members, not args.no_policy, report)
     check_module_version(root, members, report)
+    check_virtual_classifier(members, report)
     return 1 if report.failures else 0
 
 

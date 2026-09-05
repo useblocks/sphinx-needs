@@ -242,6 +242,71 @@ def test_check_five_skips_a_virtual_member_by_rule(workspace, capsys) -> None:
     assert "__version__" not in out
 
 
+def test_a_virtual_member_must_declare_the_private_classifier(
+    workspace, capsys
+) -> None:
+    """The classifier is the second fence; without this, it is the line a tidy-up deletes."""
+    root = workspace(
+        {"acme-tools": {"version": "0", "virtual": True, "private_classifier": False}}
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "::error file=packages/acme-tools/pyproject.toml::" in out
+    assert 'does not declare the classifier "Private :: Do Not Upload"' in out
+    assert "can still be built by hand" in out
+
+
+def test_a_virtual_member_with_the_classifier_is_green(workspace, capsys) -> None:
+    root = workspace({"acme-tools": {"version": "0", "virtual": True}})
+    assert run(root) == 0
+    assert "declares `Private :: Do Not Upload`" in capsys.readouterr().out
+
+
+def test_a_publishable_member_is_not_asked_for_the_classifier(
+    workspace, capsys
+) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root) == 0
+    assert "Private :: Do Not Upload" not in capsys.readouterr().out
+
+
+def test_a_virtual_member_may_depend_on_a_virtual_sibling(workspace, capsys) -> None:
+    """uv resolves it, and there is no wheel to be uninstallable."""
+    root = workspace(
+        {
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "dependencies": ["acme-more>=0"],
+            },
+            "acme-more": {"version": "0", "virtual": True},
+        }
+    )
+    assert run(root) == 0
+    assert "OK    acme-tools -> acme-more>=0" in capsys.readouterr().out
+
+
+def test_a_virtual_dependant_gets_the_honesty_message_without_publish(
+    workspace, capsys
+) -> None:
+    """It is still an error -- uv resolves the workspace copy regardless -- but a virtual
+    member publishes no wheel, so the consequence is worded for the tree, not for PyPI."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "dependencies": ["acme-core>=99"],
+            },
+        }
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "so the specifier says something untrue about the tree" in out
+    assert "publish a wheel nobody can install" not in out
+
+
 def test_no_policy_accepts_a_loose_but_honest_floor(workspace, capsys) -> None:
     root = workspace(
         {
