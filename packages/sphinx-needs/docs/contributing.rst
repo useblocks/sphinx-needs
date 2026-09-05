@@ -202,12 +202,45 @@ source.
 
 Publishing a new release
 ------------------------
-There is a release pipeline installed for the CI.
+This repository is a workspace, and every distribution under ``packages/`` releases
+independently. One workflow, ``.github/workflows/release.yaml``, serves all of them, and
+the tag says which: it must read ``<distribution>-v<version>``, so ``sphinx-needs-v8.6.0``.
+No other tag triggers it, and a tag that names no distribution in the workspace is refused
+before anything is built.
 
-This gets triggered automatically, if a tag is created and pushed.
-The tag must follow the format: ``[0-9].[0-9]+.[0-9]``. Otherwise the release jobs won't trigger.
+A release is two steps, a pull request and a tag.
 
-The release jobs will build the source and wheel distribution and try to upload them.
+The pull request bumps the version and stamps the changelog. From ``master``, with a clean
+tree and from the repository root::
+
+    uv version --package sphinx-needs --bump patch --no-sync
+    uv lock
+
+``--no-sync`` matters: ``--frozen`` would leave ``uv.lock`` claiming the old version, and a
+bare ``uv version --bump`` re-resolves the whole lock from scratch. Then update the two
+numbers ``uv version`` does not touch — ``__version__`` in
+``packages/sphinx-needs/src/sphinx_needs/__init__.py``, which is written into every
+generated ``needs.json``, and the ``NEEDS_VERSION`` fallback in
+``.github/workflows/docker.yaml``, which becomes ``sphinx-needs-v<version>`` — and add the
+changelog entry in ``docs/changelog.rst`` (the ``_release:<version>`` label, the heading,
+``:Released:``, the ``:Full Changelog:`` compare link and a summary paragraph).
+``uv run poe lint`` fails if the version and ``__version__`` disagree.
+
+Once that pull request is merged, push the tag from ``master``::
+
+    git tag sphinx-needs-v8.6.0
+    git push origin sphinx-needs-v8.6.0
+
+The workflow then validates the tag against the tree, builds the wheel and the source
+distribution, resolves the built wheel against PyPI alone, runs the test suite against the
+dependencies as they are *published* rather than as they are in this repository, uploads to
+PyPI with trusted publishing (OIDC — the workflow holds no API token), and creates the
+GitHub Release. For sphinx-needs it also pushes a second,
+bare ``8.6.0`` tag, which is the one Read the Docs and any ``git+…@8.6.0`` requirement use.
+
+To rehearse the pipeline without publishing anything, run the workflow by hand:
+``gh workflow run release.yaml -f tag=sphinx-needs-v8.6.0``. The publish job only runs for
+a real tag push, so a manual run stops after the build and the checks.
 
 .. Include our contributors and maintainers.
 .. include:: ../AUTHORS

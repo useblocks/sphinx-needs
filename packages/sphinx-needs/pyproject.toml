@@ -4,7 +4,17 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "sphinx-needs"
-dynamic = ["version", "description"]
+# Static, and deliberately so: `uv version --package sphinx-needs` cannot read (or write) a
+# dynamic version, and every gate downstream of it -- the release workflow's tag/version
+# agreement check, the floor propagation, the workspace fence -- needs the number without
+# running the build backend. It is duplicated once, as `__version__` in
+# `src/sphinx_needs/__init__.py` (which is stamped into every generated `needs.json`, so it
+# cannot become an `importlib.metadata` lookup); `tools/src/sn_tools/check_workspace.py` is
+# what keeps the two equal.
+version = "8.5.0"
+# `description` stays dynamic: flit_core reads the module docstring by AST, so a static
+# version alongside a dynamic description is a supported combination.
+dynamic = ["description"]
 authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
 license.file = "LICENSE"
 readme = "README.rst"
@@ -54,3 +64,35 @@ theme-im = ["sphinx-immaterial>=0.11.11,<0.14.0"]
 theme-furo = ["furo>=2025.12.19"]
 theme-pds = ["pydata-sphinx-theme>=0.15.2,<0.20.0"]
 theme-rtd = ["sphinx_rtd_theme>=3.0.2,<4"]
+
+# The sdist. flit 3 inferred its contents from git (`flit build --use-vcs`, which is what
+# CI ran until this workflow was rewritten); flit 4 flipped that default off, and
+# `uv build` -- which resolves `flit_core >=3.4,<5` to 4.x -- never had it at all. Without
+# this table the sdist silently drops from ~28 MB / ~1400 files to ~2.5 MB / ~700: module
+# only, no warning, exit 0. (Approximate on purpose -- the exact counts move with every
+# test file added; measured 2026-09.) Declaring the contents makes the sdist independent of
+# which flit_core is resolved and of whether the build ran in a git checkout at all.
+#
+# `tests/`, `docs/` and `performance/` ship on purpose, and the two downstream cases were
+# checked rather than assumed: conda-forge builds from this sdist (its test step is an
+# import check), and Debian runs the suite -- out of the GitHub tag tarball its
+# `debian/watch` fetches, not out of this file. `scripts/smoke_needs.py` asserts the trees
+# are here (and that none of the junk below is), so losing them would be a red gate rather
+# than a discovery on PyPI.
+[tool.flit.sdist]
+include = ["docs/", "tests/", "performance/"]
+# Whatever a *used* checkout leaves lying under those three trees. flit reads the working
+# directory, not git, so anything a docs build or a test run wrote is a candidate: measured
+# on a tree where `poe docs-needs` and part of the suite had run, the docs build alone adds
+# 456 files (`docs/_build/`) plus the two generated artefacts named below. The `__pycache__`
+# and `.pyc` patterns are belt and braces -- flit_core 4 already drops those -- and they
+# cost nothing to state next to the ones it does not.
+exclude = [
+  "docs/_build/",
+  "docs/github_images/",
+  "docs/_static/tutorial_needs.json",
+  "**/_build/",
+  "**/__pycache__/",
+  "**/*.pyc",
+  "**/.pytest_cache/",
+]

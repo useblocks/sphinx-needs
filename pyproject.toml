@@ -1,6 +1,9 @@
 # The workspace root. It builds and publishes nothing of its own: every distribution lives
 # under `packages/<dist-name>/`, and the directory name is the distribution name. Today there
-# is exactly one, `packages/sphinx-needs`. What the root owns is repository-level policy --
+# is exactly one, `packages/sphinx-needs`; `tools/` is a second member, virtual, which this
+# repository's own fences and release plan live in and which is never released (see
+# `tools/pyproject.toml` for what `[tool.uv] package = false` does and, just as important,
+# what it does not). What the root owns is repository-level policy --
 # the lock, the dependency groups shared by every member, and the lint, type-check, pytest
 # and task configuration.
 
@@ -18,8 +21,11 @@ version = "0"
 requires-python = ">=3.11,<4"
 # EVERY workspace member is listed here. A `[project]` at the root makes `uv sync` sync this
 # project rather than every member, so this list is what keeps a bare `uv sync` installing
-# them -- without it the suite has no `sphinx_needs` to import.
-dependencies = ["sphinx-needs"]
+# them -- without it the suite has no `sphinx_needs` to import. The tooling member is
+# virtual (`[tool.uv] package = false`), so what this line installs for it is its
+# DEPENDENCIES, not the member: that is how `packaging` and `tomlkit` reach every
+# environment from one declaration in `tools/pyproject.toml`.
+dependencies = ["sphinx-needs", "sphinx-needs-workspace-tools"]
 
 # Pass-throughs to the members' published extras, and the reason they have to exist: uv
 # resolves `--extra` (and poe's `extra =`) against the PROJECT, which is now this root, so
@@ -37,9 +43,14 @@ theme-rtd = ["sphinx-needs[theme-rtd]"]
 
 [tool.uv.sources]
 sphinx-needs = { workspace = true }
+sphinx-needs-workspace-tools = { workspace = true }
 
+# `packages/*` is the published distributions; `tools` is the repository's own tooling and
+# is never released (see `tools/pyproject.toml` for what makes that true, and for what
+# `[tool.uv] package = false` does NOT do). Both are members so that one lock, one
+# `uv sync` and one set of fences cover everything in the tree.
 [tool.uv.workspace]
-members = ["packages/*"]
+members = ["packages/*", "tools"]
 
 # EVERY dependency group in this workspace is declared here, at the root, under its
 # pre-move name. Groups cannot be composed across the root/member boundary in either
@@ -49,8 +60,12 @@ members = ["packages/*"]
 # includes `test`, so `uv sync` with no arguments is already a working test environment.
 # There is no `needs-` prefix on any of them: a prefix would only be needed to stop two
 # members' groups colliding under a bare `--group` name, and declared once here there is
-# nothing to collide with. A package gets a prefixed group of its own only once it genuinely
-# needs a different pin from the workspace's.
+# nothing to collide with. What does NOT belong here is a dependency of the repository's own
+# tooling: `tools/pyproject.toml` declares those, and the root depends on that member, so
+# `packaging` and `tomlkit` reach every environment -- including `.venvs/typing`, where ty
+# has to resolve the tooling's imports -- without a line in any group. A package gets a
+# prefixed group of its own only once it genuinely needs a different pin from the
+# workspace's.
 [dependency-groups]
 dev = [
   "prek>=0.5.1",
@@ -128,7 +143,7 @@ conflicts = [
 # carry a `tests/test_utils.py`.
 [tool.pytest.ini_options]
 addopts = "--import-mode=importlib"
-testpaths = ["packages/sphinx-needs/tests"]
+testpaths = ["packages/sphinx-needs/tests", "tools/tests"]
 # The package tasks run from the package with `--ignore=performance` rather than a path, so
 # the walk covers the whole package -- including whatever a docs build left in `docs/_build`,
 # which pytest's default list does NOT skip (it skips `build`, not `_build`). Setting this key
@@ -207,7 +222,23 @@ exclude = ["*.md"]
 # excluding the package under it, leaves the CI canary green because a CLI path still selects
 # the files -- what breaks then is only the editor's view.
 [tool.ty.src]
-include = ["packages/sphinx-needs/src/sphinx_needs"]
+# The repository's own tooling is checked too -- `tools/src` for the fences and the release
+# plan, `.github/scripts` for the three checks that must run inside a specific CI
+# environment, and `scripts` for the smoke test. None of it is imported by the suite, so
+# nothing else would ever look at it, and `tools/src/sn_tools/release_plan.py` is the script
+# whose failure mode is a bad release
+include = [
+  "packages/sphinx-needs/src/sphinx_needs",
+  "tools/src",
+  ".github/scripts",
+  "scripts",
+]
+# the scripts' own tests are not checked, for the same reason the package's are not: pytest
+# is deliberately absent from the `typing` environment, which pins the oldest supported
+# sphinx and docutils and nothing else it does not need. What the tests assert is asserted
+# by running them. `tools/tests` is a directory called `tests`, which is safe only because
+# nothing ever puts `tools/` itself on `sys.path` -- its conftest inserts `tools/src`
+exclude = ["tools/tests"]
 
 [tool.ty.environment]
 python-version = "3.11"
@@ -332,7 +363,7 @@ help = "Type-check sphinx_needs with ty against the oldest supported sphinx (the
 # but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
 # makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
 # guards that.
-cmd = "ty check packages/sphinx-needs/src/sphinx_needs --python .venvs/typing"
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs tools/src .github/scripts scripts --python .venvs/typing"
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 
@@ -343,6 +374,14 @@ cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", group = "benchmark", extra = "docs" }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/benchmark" }
 
+[tool.poe.tasks.check-workspace]
+help = "Check the workspace manifests agree with each other (the fence CI's Lint job runs)"
+# a bare name: it acts on the whole repository, not on one package. In CI this runs as
+# `uv run --no-project --with packaging`, deliberately -- a check on the manifests must not
+# need an environment built from those manifests -- but locally the prek hook and this task
+# use the synced one, because it is already there
+cmd = "python tools/src/sn_tools/check_workspace.py"
+
 # --- The built package ---
 # These two are named for the distribution they act on rather than for the repository, so
 # the names stay correct if a second distribution is ever built here. Every other task in
@@ -351,7 +390,12 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/benchmark" }
 
 [tool.poe.tasks.build-needs]
 help = "Build the sphinx-needs sdist + wheel into dist/sphinx-needs"
-cmd = "uv build packages/sphinx-needs -o dist/sphinx-needs"
+# character for character the command release.yaml runs, and `smoke-needs` runs it too:
+# `--package` so uv resolves the member out of the workspace, `--no-sources` so a *build*
+# requirement is never substituted from it, and a per-distribution `-o` because
+# `uv publish`'s default glob is `dist/*` -- which in a workspace would publish every
+# artefact anyone left in that directory
+cmd = "uv build --package sphinx-needs --no-sources -o dist/sphinx-needs"
 
 [tool.poe.tasks.smoke-needs]
 help = "Install the built sphinx-needs wheel out of this project and build a doc with it"

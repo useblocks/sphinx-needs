@@ -10,18 +10,27 @@ on:
         required: true
         default: 'n'
   push:
-    tags:
-      - '*.*.*'
+    # This image is sphinx-needs', so it keys on sphinx-needs' tags only. The previous
+    # filter was `'*.*.*'`, and GitHub's tag globs match hyphens (only `/` is excluded), so
+    # under `<dist>-v<version>` tags it fired for EVERY member of the workspace and handed
+    # `docker/metadata-action` a string that is not PEP 440.
+    tags: ['sphinx-needs-v[0-9]+.[0-9]+.[0-9]+']
   pull_request:
     paths: ['docker/**']
 
 env:
-  # bumped by hand in each release PR, and it must name a tag cut AFTER the workspace move:
-  # the Dockerfile installs `git+...@$NEEDS_VERSION#subdirectory=packages/sphinx-needs`, a
-  # path that does not exist in an earlier tag. The `pull_request` run below only proves the
-  # `docker/**` path filter fires -- it builds this literal version, and the `pre-release`
-  # branch of the Dockerfile is never exercised by CI at all.
-  NEEDS_VERSION: 8.5.0
+  # On a tag run this IS the tag: the Dockerfile uses it as a git ref
+  # (`git+...@$NEEDS_VERSION#subdirectory=packages/sphinx-needs`), and the prefixed tag is
+  # the ref that release.yaml was triggered by -- the bare companion tag it pushes may not
+  # exist yet when this workflow starts. That is #540.
+  #
+  # The literal is only for the runs that have no tag: the `docker/**` `pull_request` path
+  # filter and a manual dispatch. It has to name a ref cut AFTER the workspace move,
+  # because the subdirectory in that URL does not exist in an earlier one -- `8.5.0`
+  # predates the move, so this path stays red until the first monorepo release, at which
+  # point the release recipe bumps it to `sphinx-needs-v<version>`. (The `pre-release`
+  # branch of the Dockerfile is never exercised by CI at all.)
+  NEEDS_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '8.5.0' }}
   DEPLOY_IMAGE: ${{ github.event_name != 'pull_request' }}
 
 jobs:
@@ -53,7 +62,9 @@ jobs:
           flavor: |
             latest=true
           tags: |
-            type=pep440,pattern={{version}}
+            # the image version is the tag with its `sphinx-needs-v` prefix stripped;
+            # `type=pep440` cannot be used because the tag itself is not PEP 440
+            type=match,pattern=sphinx-needs-v(.*),group=1
 
       - name: Check if deployment manually disabled
         if: github.event.inputs.deploy == 'n'

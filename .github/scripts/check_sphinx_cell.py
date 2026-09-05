@@ -13,16 +13,12 @@ exits 2 rather than passing quietly.
 """
 
 import sys
+import tomllib
 from pathlib import Path
 
 import sphinx
 from packaging.requirements import Requirement
 from packaging.version import Version
-
-try:
-    import tomllib
-except ModuleNotFoundError:  # python < 3.11
-    import tomli as tomllib
 
 
 def check(group):
