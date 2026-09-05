@@ -17,6 +17,17 @@ build:
   os: ubuntu-24.04
   tools:
     python: "3.13"
+  jobs:
+    post_checkout:
+      # PROBE ONLY -- never to be merged. Cancels EVERY pull-request build of this project
+      # unconditionally, to observe what commit status Read the Docs reports for a build
+      # cancelled through exit code 183. The real, conditional job (cancel when nothing
+      # under packages/sphinx-mounts/ changed) lands separately once that is known.
+      - |
+        if [ "$READTHEDOCS_VERSION_TYPE" = "external" ]; then
+          echo "probe: cancelling this pull-request build via exit 183"
+          exit 183
+        fi
 
 sphinx:
   configuration: packages/sphinx-mounts/docs/conf.py
