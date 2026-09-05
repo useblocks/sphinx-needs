@@ -13,5 +13,15 @@ build --color=no
 # Sphinx. Inherit the client's PATH (so uv is found) and HOME (so uv has a
 # cache dir). A fully hermetic build would use rules_python instead and not
 # need these — see build_docs_sandbox.sh.
+#
+# PLANTUML_JAR is the third for the same reason, and it is not optional: the
+# uml pages in the mounted showcase bundles render through
+# sphinxcontrib-plantuml, whose ``plantuml`` command ``docs/conf.py`` builds
+# from that variable. Unset inside the action, the extension falls back to the
+# executable name ``plantuml``, which no CI runner has, and ``-nW`` fails the
+# build on three "plantuml command 'plantuml' cannot be run" warnings.
+# ``local = 1`` opts the genrule out of the SANDBOX, not out of Bazel's fixed
+# action environment — only this list adds to that.
 build --action_env=PATH
 build --action_env=HOME
+build --action_env=PLANTUML_JAR

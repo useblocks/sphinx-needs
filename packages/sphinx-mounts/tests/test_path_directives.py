@@ -18,7 +18,7 @@ dependency.
 
 from __future__ import annotations
 
-import importlib.util
+import importlib
 import json
 import os
 import re
@@ -1291,15 +1291,20 @@ def _require_sphinx_needs() -> None:
     sibling member instead of the release). ``compat-requirements.txt`` is
     what installs it there, and this assertion is what makes that file
     load-bearing. In the workspace it is always installed.
+
+    The predicate really imports rather than asking ``find_spec``: a leftover
+    empty ``sphinx_needs/`` directory picked up as a namespace package, or an
+    ``__init__.py`` that raises, would satisfy ``find_spec`` and then fail
+    several seconds later inside Sphinx with a much worse message.
     """
-    assert importlib.util.find_spec("sphinx_needs") is not None, (
+    assert importlib.import_module("sphinx_needs"), (
         "sphinx-needs is required to run this test and is not installed. In "
         "this workspace it is a sibling member; outside it, install the "
         "packages/sphinx-mounts/compat-requirements.txt list"
     )
 
 
-def _plantuml_jar_command() -> str | None:
+def _plantuml_jar_command() -> tuple[str, ...] | None:
     """The ``plantuml`` configuration value for a jar named by ``PLANTUML_JAR``.
 
     The second of the two ways this suite can reach PlantUML, and the one CI
@@ -1316,9 +1321,12 @@ def _plantuml_jar_command() -> str | None:
     jar = os.environ.get("PLANTUML_JAR")
     if not jar:
         return None
-    # headless, like the sphinx-needs fixture that supplies the same jar: a
-    # windowing toolkit is not available on a CI runner
-    return f"java -Djava.awt.headless=true -jar {jar}"
+    # A TUPLE, not a string: sphinxcontrib-plantuml's ``_split_cmdargs`` passes a
+    # list or tuple through untouched and ``shlex``-splits anything else, which
+    # would break on a checkout under a path containing a space (and, on posix,
+    # on a Windows path's backslashes). Headless, like the sphinx-needs fixture
+    # that supplies the same jar: a CI runner has no windowing toolkit.
+    return ("java", "-Djava.awt.headless=true", "-jar", jar)
 
 
 def _require_renderer(directive_rst: str) -> None:
@@ -1357,7 +1365,8 @@ def _plantuml_extra_conf() -> tuple[str, ...]:
     """
     jar_command = _plantuml_jar_command()
     if jar_command is not None:
-        # `repr`, so a Windows path's backslashes survive into the conf.py
+        # `repr` of the tuple, so both a Windows path's backslashes and any
+        # space in it survive into the conf.py as one argument
         return (f"plantuml = {jar_command!r}",)
     if os.name == "nt":
         return ("plantuml = 'plantumlc'",)

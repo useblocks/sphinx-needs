@@ -104,6 +104,14 @@ jobs:
         # in the root `testpaths`, so a bare `pytest` at the root runs them too -- but every
         # matrix cell names the package's `tests` path explicitly and so never collects them
         run: uv run --frozen --no-sync pytest tools/tests -q
+      - name: Check a bare root pytest still collects
+        # `[tool.pytest.ini_options] testpaths` exists so that a plain `pytest` at the root
+        # works, and NOTHING else in this repository exercises that: every other job and
+        # every poe task passes an explicit path or cds into a package. So a `testpaths`
+        # entry that makes collection fail outright -- two members' `tests/__init__.py` both
+        # resolving to `tests.conftest`, which is exactly what adding sphinx-mounts' suite
+        # did -- is invisible to all of them. Collection only: this runs no test
+        run: uv run --frozen --no-sync pytest --collect-only -q > /dev/null
 
   # ubc:
   #   name: ubc

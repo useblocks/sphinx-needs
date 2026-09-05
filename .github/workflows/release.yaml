@@ -137,10 +137,18 @@ jobs:
           # exports as `-e ./packages/<member>` and the cell would test the checkout --
           # exactly the false green this cell exists to prevent. `uv pip install -r` does
           # not apply those sources, so the name resolves from PyPI here
+          # ... and it is passed AGAIN as a constraint on the wheel install below. `uv pip
+          # install` re-resolves the whole environment, so a later install can move an
+          # already-installed package: measured, `uv pip install 'sphinx-needs<8.4'` into
+          # this environment downgrades 8.5.0 -> 8.3.1. Ordering alone therefore protects
+          # the floor only for as long as no member's `Requires-Dist` names something its
+          # compat file also names -- true today, and not something to leave to luck
+          constraint=()
           if [ -f "packages/$DIST/compat-requirements.txt" ]; then
             uv pip install --python /tmp/compat --no-sources -r "packages/$DIST/compat-requirements.txt"
+            constraint=(-c "packages/$DIST/compat-requirements.txt")
           fi
-          uv pip install --python /tmp/compat --no-sources "dist/$DIST"/*.whl
+          uv pip install --python /tmp/compat --no-sources "${constraint[@]}" "dist/$DIST"/*.whl
           # the compat environment's scripts have to be on PATH, not just its interpreter:
           # 23 tests shell out to `sphinx-build`, and without this they either fail with
           # FileNotFoundError on a runner or -- worse, locally -- silently use whatever

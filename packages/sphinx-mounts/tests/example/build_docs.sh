@@ -22,12 +22,23 @@ cd "${BUILD_WORKSPACE_DIRECTORY}"
 # sphinxcontrib-{plantuml,mermaid}) live in the root's ``test`` group,
 # so ``--group test`` pulls them in. ``uv run --project`` selects the
 # right interpreter regardless of where the user invoked Bazel from.
+#
+# ``--no-default-groups`` matters: ``--group`` ADDS to the default
+# groups, so without it this build syncs ``dev`` as well and downloads
+# ~70 MiB of tooling (uv, playwright, prek) a docs build has no use for
+# — in CI, on top of the ``--no-default-groups --group test``
+# environment the job installed one step earlier. Measured: with it,
+# from a cell-shaped environment nothing is installed at all, and from
+# a contributor's dev-synced ``.venv`` nothing is REMOVED either (uv's
+# sync is inexact, so prek/poe/uv/playwright survive). ``--frozen``
+# keeps it from touching the lock.
 # Output lands under ``_build/html`` so the existing project-wide
 # ``**/_build`` gitignore rule covers it.
 out="docs/_build/html"
 
 if command -v uv >/dev/null 2>&1; then
-    exec uv run --project="$(realpath ../../../..)" --group test \
+    exec uv run --frozen --no-default-groups --group test \
+        --project="$(realpath ../../../..)" \
         sphinx-build -nW --keep-going -b html -c docs docs "${out}" "$@"
 fi
 

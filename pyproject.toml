@@ -152,11 +152,18 @@ conflicts = [
 # carry a `tests/test_utils.py`.
 [tool.pytest.ini_options]
 addopts = "--import-mode=importlib"
-testpaths = [
-  "packages/sphinx-needs/tests",
-  "packages/sphinx-mounts/tests",
-  "tools/tests",
-]
+# `packages/sphinx-mounts/tests` is deliberately NOT here, and it is not an oversight.
+# Both packages ship a `tests/__init__.py`, so under `--import-mode=importlib` above both
+# `tests/conftest.py` resolve to the module name `tests.conftest`, and a rootdir-invoked
+# pytest refuses the second with `ValueError: Plugin already registered under a different
+# name` before it collects anything -- so listing it here breaks the bare `pytest` this key
+# exists to make work, rather than adding to it. (`consider_namespace_packages = true` gives
+# the same error, and deleting the member's `tests/__init__.py` breaks four modules that
+# import `tests.conftest`; both were measured.) `tools/tests` has no `__init__.py`, which is
+# why it can sit beside sphinx-needs' here. sphinx-mounts' suite is run by `poe test-mounts`
+# (which cds into the package) and by the explicit path every CI cell passes; the Lint job's
+# "Check a bare root pytest still collects" step is what keeps this list honest.
+testpaths = ["packages/sphinx-needs/tests", "tools/tests"]
 # The package tasks run from the package with `--ignore=performance` rather than a path, so
 # the walk covers the whole package -- including whatever a docs build left in `docs/_build`,
 # which pytest's default list does NOT skip (it skips `build`, not `_build`). Setting this key

@@ -94,12 +94,15 @@ mkdir -p "$(dirname "${out_dir}")"
 # sphinx + sphinx-mounts come from the uv workspace root's environment;
 # the host conf.py's extra extensions (myst-parser,
 # sphinxcontrib-{plantuml,mermaid}) live in the root's ``test``
-# dependency group, so ``--group test`` pulls them in. Fall back to
-# ``python -m sphinx`` for environments that already have the deps
-# installed.
+# dependency group, so ``--group test`` pulls them in.
+# ``--no-default-groups`` is what stops ``--group`` ADDING to the
+# default groups and syncing ``dev`` too — see the longer note in
+# build_docs.sh. Fall back to ``python -m sphinx`` for environments
+# that already have the deps installed.
 cd "${stage}"
 if command -v uv >/dev/null 2>&1; then
-    uv run --project="${project_root}" --group test \
+    uv run --frozen --no-default-groups --group test \
+        --project="${project_root}" \
         sphinx-build -nW --keep-going -b html -c docs docs "${out_dir}"
 else
     python3 -m sphinx -nW --keep-going -b html -c docs docs "${out_dir}"

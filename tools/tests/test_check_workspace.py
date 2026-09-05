@@ -551,6 +551,30 @@ def test_a_root_owned_table_in_a_member_is_an_error(
     assert "no member carries a root-owned table" not in out
 
 
+@pytest.mark.parametrize(
+    "planted",
+    [
+        # a table whose NAME merely starts with a forbidden one -- the walk is over exact
+        # keys, and a future "simplification" into a prefix match would fire on these
+        "[tool.ruff-something]\nx = 1",
+        "[tool.pytest-randomly]\nx = 1",
+        # tables a member is entitled to, and which no member-owned check may claim
+        '[tool.poe.tasks.x]\ncmd = "true"',
+        '[tool.flit.sdist]\ninclude = ["docs/"]',
+        # the forbidden names as DATA rather than as tables
+        '[tool.poe.tasks."tool.ruff"]\ncmd = "true"',
+    ],
+)
+def test_a_table_that_only_looks_root_owned_stays_green(
+    workspace, capsys, planted: str
+) -> None:
+    root = workspace({"acme-core": {"version": "1.0.0", "extra_tables": planted}})
+    exit_code = run(root)
+    out = capsys.readouterr().out
+    assert exit_code == 0, out
+    assert "no member carries a root-owned table" in out
+
+
 def test_the_ruff_message_says_the_root_ruleset_is_replaced(workspace, capsys) -> None:
     """The one failure mode that is silent in both directions gets its own words."""
     root = workspace(

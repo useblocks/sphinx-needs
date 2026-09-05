@@ -40,7 +40,10 @@ mermaid_output_format = "raw"
 
 _plantuml_jar = os.environ.get("PLANTUML_JAR")
 if _plantuml_jar:
-    plantuml = f"java -Djava.awt.headless=true -jar {_plantuml_jar}"
+    # a tuple rather than a command string: sphinxcontrib-plantuml passes a
+    # list/tuple straight through and shlex-splits anything else, which would
+    # break on a jar path containing a space
+    plantuml = ("java", "-Djava.awt.headless=true", "-jar", _plantuml_jar)
 
 # SVG rather than the PlantUML default of PNG. Sphinx-Needs always stamps a
 # ``scale`` attribute onto the diagram nodes it generates (100, i.e. no

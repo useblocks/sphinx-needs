@@ -169,6 +169,14 @@ not the repository-relative path. (`testpaths` is only honoured when pytest is i
 the rootdir, so the tasks carry `--ignore=performance` instead of naming `tests`: a path in
 the task's own command would be *added* to yours rather than replaced by it.)
 
+**A bare `pytest` at the root collects sphinx-needs' suite and the tooling's, not
+sphinx-mounts'.** Its `tests` directory is deliberately absent from `testpaths`: both
+packages ship a `tests/__init__.py`, so under `--import-mode=importlib` both `conftest.py`
+resolve to the module name `tests.conftest` and a rootdir-invoked pytest refuses the second
+outright — listing it there collects *nothing*, rather than more. Run that suite through
+`poe test-mounts` (which cds into the package), the way CI does with an explicit path. The
+Lint job's "Check a bare root pytest still collects" step is what keeps the list honest.
+
 `uv sync` with no arguments is enough: the root's default `dev` group includes the shared
 `test` group, and the root depends on every member. The `sphinx-7`, `sphinx-8`, `sphinx-9`
 and `typing` groups are the workspace's one test matrix and one type-checking floor, and all
