@@ -4,6 +4,10 @@ repos:
     rev: v0.9.3
     hooks:
       - id: taplo-format
+        # the variant-condition conformance corpus is shared byte-for-byte with ubCode,
+        # which pins its digest, so a formatter local to this repository must not rewrite
+        # it. taplo's current defaults happen to leave it alone; this says it is deliberate
+        exclude: ^packages/sphinx-mounts/tests/fixtures/variant_condition_conformance\.toml$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.5

@@ -1,162 +1,108 @@
-# AGENTS.md
+# AGENTS.md — packages/sphinx-mounts
 
-This file provides guidance for AI coding agents working on the
-**sphinx-mounts** repository.
+The delta for this package. Everything repository-level — the workspace layout, the
+commands, the lock, lint/format/type-check configuration, the release recipe, the pull
+request requirements — is in the ROOT [`AGENTS.md`](../../AGENTS.md), and this file does
+not repeat it. What is here is what an agent has to know that is true of sphinx-mounts and
+not of the workspace.
 
 ## Project Overview
 
-sphinx-mounts is a Sphinx extension that mounts external RST source trees
-into a Sphinx build *without copying or symlinking the files*. It is intended
-for build systems (Bazel, Buck2, Pants, etc.) that generate documentation
-fragments into output directories outside the Sphinx `srcdir`, and for
-mono-repo setups where doc bundles are owned by different teams and consumed
-by a host doc project.
+sphinx-mounts is a Sphinx extension that mounts external RST/Markdown source trees into a
+Sphinx build *without copying or symlinking the files*. It is aimed at build systems
+(Bazel, Buck2, Pants) that generate documentation fragments into output directories outside
+the Sphinx `srcdir`, and at monorepos where doc bundles are owned by different teams and
+consumed by a host doc project.
 
 Key design properties:
 
-- **No staging step**: sources are read in place from their original
-  filesystem location. Sphinx's reader opens the absolute external path
-  directly.
-- **Declarative TOML config is primary**: mount mappings live in
-  `ubproject.toml` (default file name, resolved relative to confdir;
-  overridable via `mounts_from_toml` in `conf.py`). The TOML schema is a
-  top-level `[[mounts]]` array of tables — one block per mount entry.
-  The TOML is the source of truth so that IDE plugins, language servers,
-  indexers, and build-system integrations written in any language can
-  read the mount mapping without evaluating `conf.py`. Shared file
-  convention with sibling tools (`[needs]` for sphinx-needs,
-  `[codelinks]` for sphinx-codelinks).
-- **Legacy `conf.py` fallback**: if no TOML file is present (or
-  `mounts_from_toml` is set to `None`), the extension reads
-  `mounts = [...]` from `conf.py` instead. When both are present, the
-  TOML file wins.
-- **Bundle discipline**: each mount source is expected to be a
-  self-contained tree — relative links only, no cross-bundle `:ref:`,
-  no `..` escapes. The extension does not currently enforce this; a
-  separate linter is on the roadmap.
+- **No staging step**: sources are read in place from their original filesystem location.
+  Sphinx's reader opens the absolute external path directly.
+- **Declarative TOML config is primary**: mount mappings live in `ubproject.toml` (default
+  file name, resolved relative to confdir; overridable via `mounts_from_toml` in
+  `conf.py`). The schema is a top-level `[[mounts]]` array of tables — one block per mount
+  entry. The TOML is the source of truth so that IDE plugins, language servers, indexers
+  and build-system integrations written in any language can read the mount mapping without
+  evaluating `conf.py`. Same file convention as its sibling tools (`[needs]` for
+  sphinx-needs, `[codelinks]` for sphinx-codelinks).
+- **Legacy `conf.py` fallback**: with no TOML file present (or `mounts_from_toml = None`),
+  the extension reads `mounts = [...]` from `conf.py`. When both are present, TOML wins.
+- **Bundle discipline**: each mount source is expected to be a self-contained tree —
+  relative links only, no cross-bundle `:ref:`, no `..` escapes. The extension does not
+  enforce all of this; `path_check` enforces the escape half.
 
 ## How It Works
 
-The extension hooks `config-inited`. For each mount, it walks the external
-source directory, builds docnames under the configured mount prefix, and
-injects them into `app.project._docname_to_path` with **absolute** filesystem
-paths. The relevant detail is `pathlib.Path.__truediv__`: when the right
-operand is absolute, the left operand is discarded. So when Sphinx later
-calls `Project.doc2path(docname, absolute=True)` and computes
-`srcdir / stored_path`, the stored absolute path wins and Sphinx reads from
-the external location transparently.
+The extension hooks `config-inited`. For each mount it walks the external source directory,
+builds docnames under the configured mount prefix, and injects them into
+`app.project._docname_to_path` with **absolute** filesystem paths. The relevant detail is
+`pathlib.Path.__truediv__`: when the right operand is absolute, the left operand is
+discarded. So when Sphinx later calls `Project.doc2path(docname, absolute=True)` and
+computes `srcdir / stored_path`, the stored absolute path wins and Sphinx reads from the
+external location transparently.
 
-## Repository Structure
+## Package Structure
 
 ```text
-pyproject.toml          # Project configuration and dependencies
-tox.ini                 # Tox test environment configuration
-README.md               # Project README
-LICENSE                 # MIT License
+pyproject.toml          # `[project]` and `[build-system]` ONLY -- see below
+README.md · LICENSE
+compat-requirements.txt # released deps the suite needs, for release.yaml's compat cell
+.readthedocs.yaml       # this package's RTD config; its paths are REPOSITORY-root relative
 
 src/sphinx_mounts/
-├── __init__.py         # Package init with Sphinx setup() entry point
+├── __init__.py         # package init with the Sphinx setup() entry point
 ├── extension.py        # Sphinx event handlers, including the TOML loader
-├── config.py           # MountConfig dataclass, hand-rolled validation,
-│                       # and the TOML loader for the `mounts` config
-├── logging.py          # Typed `mounts.*` warning helpers (suppress_warnings)
-└── mounter.py          # Core logic — discovers external files and
-                        # injects them into app.project
+├── config.py           # MountConfig dataclass, hand-rolled validation
+├── dialect.py          # the variant-condition dialect
+├── logging.py          # typed `mounts.*` warning helpers (suppress_warnings)
+├── warnings.py         # warning topics
+└── mounter.py          # core logic -- discovers external files and injects them
 
 tests/
-├── conftest.py         # Pytest fixtures and Sphinx test harness
-├── test_config.py      # Tests for config validation
-├── test_mounting.py    # Tests for end-to-end mounting
-├── test_bazel.py       # Bazel integration test (marker: bazel)
-└── fixtures/
-    ├── bundle_simple/  # A simple self-contained RST bundle
-    ├── bundle_nested/  # A bundle with nested subdirectories
-    ├── host_project/   # A minimal Sphinx project that mounts the bundles
-    └── bazel/          # A self-contained Bazel workspace
+├── conftest.py         # pytest fixtures and the Sphinx test harness
+├── test_*.py           # one module per area; `test_bazel.py` and part of
+│                       #   `test_example.py` carry the `bazel` marker
+├── example/            # the checked-in end-to-end Bazel example (see below)
+└── fixtures/           # checked-in static bundles, plus the vendored conformance corpus
 
-docs/                   # Documentation source (RST)
-├── conf.py             # Sphinx configuration
-├── ubproject.toml      # Declarative metadata for the ubCode language
-│                       # server and other static readers (schema +
-│                       # `index_on_save = true`)
-└── source/
-    ├── index.rst       # Documentation index
-    ├── motivation.rst
-    ├── installation.rst
-    ├── configuration.rst
-    ├── usage.rst
-    ├── integration.rst
-    ├── bazel.rst
-    └── changelog.rst
+docs/                   # conf.py BESIDE its sources -- see "Documentation" below
+design/                 # mapping-contract.md, and the import commit map
 ```
 
-## Development Commands
+**The manifest carries `[project]` and `[build-system]` and nothing else.** No
+`[dependency-groups]`, no `[tool.ruff]`, no `[tool.pytest.ini_options]`, no `[tool.ty]`:
+those are the workspace root's, and `tools/src/sn_tools/check_workspace.py` check (7)
+refuses them here. A `[tool.ruff]` table in this file would not extend the root's ruleset —
+ruff resolves configuration per file by walking up to the nearest `pyproject.toml` that has
+one, so it would silently *replace* it for every file in this package.
 
-All commands should be run via [`tox`](https://tox.wiki) for consistency.
+## Commands
 
-### Testing
+All from the repository root, all through poe (there is no `tox.ini` any more):
 
 ```bash
-# Run default test environment (skips Bazel tests)
-tox
-
-# Run a specific tox environment
-tox -e py312-sphinx9
-
-# Run Bazel integration tests (requires bazel on PATH)
-tox -e bazel
-
-# Run a specific test
-tox -e py312-sphinx9 -- tests/test_mounting.py::test_basic_mount
+uv run poe test-mounts                 # the suite, `-m 'not bazel'`
+uv run poe test-mounts-bazel           # only the bazel-marked tests
+uv run poe test-mounts-sphinx7         # one matrix cell (UV_PYTHON picks the interpreter)
+uv run poe docs-mounts                 # the furo docs build, -nW
+uv run poe typecheck                   # ty, over both packages, against the sphinx floor
+uv run poe import-check-mounts         # import every module from the built wheel
 ```
 
-### Documentation
+A path passed to a package task is relative to `packages/sphinx-mounts`.
 
-```bash
-tox -e docs-clean
-tox -e docs-update
-tox -e docs-live
-```
+## Documentation
 
-### Code Quality
+`docs/conf.py` sits **beside** its sources in `docs/`, not above them in `docs/source/`.
+That is not cosmetic: Read the Docs names a `conf.py` and then runs sphinx with that file's
+own directory as the source directory, with no `-c` — so the split layout this package used
+as a standalone repository cannot be built there at all. Do not reintroduce it.
 
-```bash
-tox -e ty
-tox -e ruff-check
-tox -e ruff-fmt
-uv run prek run --all-files
-```
+### Documentation Style (RST)
 
-## Code Style Guidelines
-
-- **Formatter/Linter**: Ruff (configured in `pyproject.toml`)
-- **Type Checking**: [ty](https://github.com/astral-sh/ty) (Astral's fast
-  Python type checker, written in Rust). Run via `tox -e ty`.
-- **Prek**: Use prek (drop-in pre-commit replacement) for consistent code style
-
-### Best Practices
-
-- **Type annotations**: Use complete type annotations for all function
-  signatures. Use frozen :func:`dataclasses.dataclass` for configuration
-  data structures, with validation in ``__post_init__`` and ``from_dict``
-  classmethods for dict input. No pydantic or other heavyweight schema
-  dependency — the surface area is small enough to validate by hand.
-- **Docstrings**: Use Sphinx-style docstrings
-  (`:param:`, `:return:`, `:raises:`). Types belong in type hints, not in
-  docstrings.
-- **Immutability**: Prefer immutable data structures. Configuration
-  dataclasses use ``frozen=True, slots=True``.
-- **Internal access discipline**: This extension intentionally reads and
-  writes `sphinx.project.Project._docname_to_path`. Any use of Sphinx
-  private attributes is gated to `src/sphinx_mounts/mounter.py` and called
-  out in a comment that names the upstream code being relied on.
-
-## Documentation Style (RST)
-
-- **No nested inline markup.** RST does not support inline markup
-  nesting. Specifically, never put an inline literal (double-backtick
-  span) inside strong (`**...**`) or emphasis (`*...*`). The outer
-  delimiters render as raw asterisks rather than bold/italic, e.g.
+- **No nested inline markup.** RST does not support inline markup nesting. Specifically,
+  never put an inline literal (double-backtick span) inside strong (`**...**`) or emphasis
+  (`*...*`). The outer delimiters render as raw asterisks rather than bold/italic:
 
   ```rst
   the **legacy ``conf.py`` fallback**     <- BROKEN, ``**`` shown raw
@@ -164,98 +110,87 @@ uv run prek run --all-files
   the **legacy conf.py fallback**         <- OK, drop the literal
   ```
 
-  The inline code is already visually distinct, so dropping the strong
-  wrapper is usually the right fix. The same restriction applies to any
-  combination of `**`, `*`, and double-backticks inside one another.
-  When in doubt, build the docs (`tox -e docs-update`) and check the
-  rendered HTML.
+  The inline code is already visually distinct, so dropping the strong wrapper is usually
+  the right fix. When in doubt, build the docs and read the rendered HTML.
 
 ## Testing Guidelines
 
 - Tests use `pytest` with `sphinx.testing.fixtures`.
-- **External binaries are a prerequisite, not an optional extra.** The
-  graphviz and PlantUML cases in `tests/test_path_directives.py` render for
-  real, and `_require_renderer` **asserts** that `dot` and `plantuml` are on
-  `PATH` rather than skipping — the point of those tests is to exercise the
-  whole mounts chain including the render step, so tolerating a missing
-  binary would silently drop coverage. Five tests fail without them. Install
-  with e.g. `apt install graphviz plantuml` (CI does the same). Mermaid uses
-  `raw` output, so `mmdc` is not needed.
-- Bazel integration tests live in `tests/test_bazel.py` and are marked with
-  `@pytest.mark.bazel`. They skip when `bazel` is not on `PATH`.
-  `tests/test_example.py` needs it too.
-- Fixture bundles in `tests/fixtures/` are checked-in static RST trees;
-  they are not generated.
-- Two mount modes, two code paths: `_attach_mount_dir` and
-  `_attach_mount_files` differ in docname derivation, in dotfile handling,
-  and in how the bundle root is computed. A behaviour change to one usually
-  needs a test for the other.
+- **Renderers are a prerequisite, not an optional extra.** The graphviz and PlantUML cases
+  in `tests/test_path_directives.py` render for real, and `_require_renderer` **asserts**
+  rather than skipping — the point of those tests is to exercise the whole mounts chain
+  including the render step. Two routes, and either satisfies them:
+  - `dot` (graphviz) on `PATH`, which is required and has no alternative; and
+  - PlantUML, from **either** a `plantuml` executable on `PATH` **or** a plantuml jar named
+    by `PLANTUML_JAR`, with `java` on `PATH`. The second is what CI uses: no runner image
+    has a `plantuml` package, so `ci.yaml` and `release.yaml` point the variable at
+    `packages/sphinx-needs/tests/doc_test/utils/plantuml.jar`, which that package vendors
+    for its own tests. Locally:
+    `PLANTUML_JAR=$PWD/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar uv run poe test-mounts`.
 
-## Commit Message Format
+  Mermaid uses `raw` output, so no `mmdc` binary is needed.
+- **The three sphinx-needs integration tests assert rather than skip too.** They are the
+  only coverage of that integration, and they exist for the release workflow's compat cell,
+  which runs this suite against the dependencies as PUBLISHED. sphinx-needs is a test-only
+  dependency, so it reaches that cell only through `compat-requirements.txt`; the assertion
+  is what makes that file load-bearing. In the workspace it is a sibling member and always
+  installed.
+- **Bazel tests** live in `tests/test_bazel.py` and `tests/test_example.py`, carry
+  `@pytest.mark.bazel`, and skip when no `bazel`/`bazelisk` is on `PATH`. They are
+  deselected from the ordinary cells and run in CI's own `bazel` lane, which also builds
+  the three targets `tests/example/README.md` documents. The two wrappers under
+  `tests/example/` (`build_docs.sh`, `build_docs_sandbox.sh`) run `uv run --project` against
+  the WORKSPACE ROOT, four levels up — dependency groups belong to the root in a uv
+  workspace, so pointing them at this member would install the member and nothing else.
+- **The vendored conformance corpus.** `tests/fixtures/variant_condition_conformance.toml`
+  is shared byte-for-byte with ubCode, which is its repository of record: do not reformat
+  it, do not edit its prose, and treat a change to it as owing a re-sync pull request there.
+  `.gitattributes` pins its line endings and the taplo hook excludes it, exactly as the
+  needflow conformance corpus under `packages/sphinx-needs` is protected.
+  `test_variant_conditions.py` asserts the case COUNT, so a trimmed vendor is a red test
+  rather than reduced coverage.
+- Fixture bundles in `tests/fixtures/` are checked-in static trees; they are not generated.
+- Two mount modes, two code paths: `_attach_mount_dir` and `_attach_mount_files` differ in
+  docname derivation, in dotfile handling, and in how the bundle root is computed. A
+  behaviour change to one usually needs a test for the other.
 
-Use this format:
+## Code Style
 
-```text
-<EMOJI> <KEYWORD>: Summarize in 72 chars or less (#<PR>)
+The root owns the formatter, the linter and the type checker. What is specific here:
 
-Optional detailed explanation.
-```
+- **Type annotations**: complete annotations on every signature. Frozen
+  `dataclasses.dataclass` for configuration data, with validation in `__post_init__` and
+  `from_dict` classmethods for dict input. No pydantic — the surface area is small enough
+  to validate by hand.
+- **Docstrings**: Sphinx-style (`:param:`, `:return:`, `:raises:`). Types belong in the
+  hints, not in the docstring.
+- **Immutability**: prefer immutable data structures; the configuration dataclasses are
+  `frozen=True, slots=True`.
+- **Internal access discipline**: this extension deliberately reads and writes
+  `sphinx.project.Project._docname_to_path`. Every use of a Sphinx private attribute is
+  confined to `src/sphinx_mounts/mounter.py` and carries a comment naming the upstream code
+  it relies on.
+- **The sphinx floor is real.** The `typing` group pins the oldest supported sphinx, and
+  ty checks against it; annotations that only hold on the newest sphinx are caught there
+  (that is how `_MountAwareProject.__init__`'s `srcdir` annotation was found on import).
 
-Keywords:
+## Local-only files (do not commit)
 
-- `✨ NEW:` – New feature
-- `🐛 FIX:` – Bug fix
-- `👌 IMPROVE:` – Improvement (no breaking changes)
-- `‼️ BREAKING:` – Breaking change
-- `📚 DOCS:` – Documentation
-- `🔧 MAINTAIN:` – Maintenance changes only
-- `🧪 TEST:` – Tests or CI changes only
-- `♻️ REFACTOR:` – Refactoring
+`docs/superpowers/` is a gitignored workspace for AI agent workflow artefacts — specs,
+implementation plans, scratch documents. The directory is in the root `.gitignore`; do not
+override it with `git add -f` or commit individual files under it.
 
-## Pull Request Requirements
+## Reference documentation
 
-1. **Description**: A meaningful description of the change.
-2. **Tests**: Test cases for new functionality or bug fixes.
-3. **Documentation**: Update `docs/source/` if behavior changes.
-4. **Changelog**: Update `docs/source/changelog.rst`.
-5. **Code Quality**: `uv run prek run --all-files` must pass — exactly what
-   the CI `Prek` gate runs.
-
-   The `ruff-format` / `ruff` hooks are **version-pinned** in
-   `.pre-commit-config.yaml`. A *local* `prek` run can report
-   `python format ... Passed` while CI's pinned version reformats and fails
-   the job — a stale local hook cache may hold a different ruff. Before
-   pushing, reproduce CI's formatter with the pinned version:
-
-   ```bash
-   uvx ruff@<version-in-.pre-commit-config.yaml> format <changed-files>
-   ```
-
-   When it matches, ruff reports no changes — its result equals what CI
-   expects (the formatted file's git blob hash is identical).
-
-## Release PRs
-
-A release PR carries only the version bump and the changelog stamp, nothing else.
-
-- **Title**: `🚀 Release vX.Y.Z` (with the `v` prefix). The published *tag*
-  stays bare semver — `X.Y.Z`, no `v` — per `.github/workflows/release.yaml`.
-- **Do not note the changes in the PR description.** The
-  `docs/source/changelog.rst` entry for the version is the record; the PR body
-  must not restate or itemize what changed.
-
-## Local-Only Files (Do Not Commit)
-
-`docs/superpowers/` is a gitignored workspace for AI agent workflow
-artifacts — specs, implementation plans, and other scratch documents
-produced by the Superpowers / brainstorming / writing-plans skills.
-These files are local to a contributor's checkout and **must never be
-committed**. The directory is in `.gitignore`; do not override the
-ignore via `git add -f` or commit individual files under it.
-
-## Reference Documentation
-
-- [Sphinx Documentation](https://www.sphinx-doc.org/)
-- [Sphinx Project class](https://github.com/sphinx-doc/sphinx/blob/master/sphinx/project.py)
+- [Sphinx](https://www.sphinx-doc.org/)
+- [Sphinx `Project` class](https://github.com/sphinx-doc/sphinx/blob/master/sphinx/project.py)
   — the upstream class whose internals this extension reads and writes.
 - [Bazel](https://bazel.build/)
+
+## History
+
+This package was imported from `useblocks/sphinx-mounts` in 2026-09 with its full history,
+rewritten so that every historical commit already places its files under
+`packages/sphinx-mounts/`. So `git log <path>` works with no `--follow` — unlike the
+sphinx-needs files, which the workspace restructure moved. `design/import-commit-map.txt`
+maps every old hash to its hash here, for links into the archived old repository.
