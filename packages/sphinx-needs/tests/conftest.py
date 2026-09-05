@@ -109,21 +109,69 @@ def sphinx_test_tempdir(request) -> Path:
     return sphinx_test_tempdir
 
 
+_PLANTUML_JAVA = "java -Djava.awt.headless=true -jar {}"
+
+
+def resolve_plantuml_command(vendored_jar: Path) -> str:
+    """Work out how this suite renders PlantUML, from three sources in this order.
+
+    The point of the chain is that the jar's *location* is an implementation detail of
+    this package rather than a fact its callers have to know.
+
+    1. ``PLANTUML_JAR``, run through ``java``. Naming a jar is an explicit choice, so it
+       wins: it is how sphinx-mounts' suite is already pointed at a renderer, and it is
+       the only route open to someone running these tests from the sdist with the jar
+       unpacked elsewhere -- or repacked away, which is what a distribution packager does
+       with an embedded pre-built jar. A variable that is set but names no file is a
+       mistake worth a red run rather than a silent fall-through: falling through would
+       render with a renderer the caller did not ask for and say nothing.
+    2. The vendored jar, as copied into the test tempdir. The default, and unchanged: a
+       fresh clone still renders with the copy under ``tests/doc_test/utils/`` and needs
+       nothing installed.
+    3. A ``plantuml`` executable on ``PATH`` -- and only once (2) is gone. This suite
+       renders for real and asserts on the output, so a developer machine that happens to
+       carry a homebrew ``plantuml`` must not quietly swap the renderer version out from
+       under it. The executable is the fallback for a checkout or sdist with no jar, not
+       a preference.
+
+    :param vendored_jar: Where the vendored jar was copied to for this session.
+    :return: The value for the ``plantuml`` configuration.
+    """
+    env_jar = os.environ.get("PLANTUML_JAR")
+    if env_jar:
+        if not Path(env_jar).is_file():
+            raise RuntimeError(
+                f"PLANTUML_JAR names {env_jar!r}, which is not a file. "
+                "Point it at a plantuml jar, or unset it to render with the "
+                "jar this package vendors."
+            )
+        return _PLANTUML_JAVA.format(env_jar)
+    if vendored_jar.is_file():
+        return _PLANTUML_JAVA.format(vendored_jar)
+    if executable := shutil.which("plantuml"):
+        return executable
+    raise RuntimeError(
+        f"no PlantUML to render with: {vendored_jar} does not exist, no `plantuml` is "
+        "on PATH, and PLANTUML_JAR is unset. Set PLANTUML_JAR to a plantuml jar (with "
+        "java on PATH), or install a plantuml executable."
+    )
+
+
 @pytest.fixture(scope="session")
 def plantuml_command(sphinx_test_tempdir) -> str:
     """The plantuml command every test project must build its diagrams with.
 
     CI runners have java and the vendored jar but no ``plantuml`` on ``PATH``, so a
     project left on sphinxcontrib-plantuml's default command fails to render there while
-    passing on any machine that happens to have one installed. Every test therefore
-    points at the jar this fixture set copies, whether it goes through :func:`test_app`
-    or calls ``make_app`` itself.
+    passing on any machine that happens to have one installed. Every test therefore takes
+    its command from here, whether it goes through :func:`test_app` or calls ``make_app``
+    itself -- no test builds the path to the jar for itself.
 
     :param sphinx_test_tempdir: The directory holding the copied jar.
     :return: The value for the ``plantuml`` configuration.
     """
-    return "java -Djava.awt.headless=true -jar {}".format(
-        os.path.join(sphinx_test_tempdir, "utils", "plantuml.jar")
+    return resolve_plantuml_command(
+        Path(sphinx_test_tempdir) / "utils" / "plantuml.jar"
     )
 
 

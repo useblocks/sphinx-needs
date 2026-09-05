@@ -107,6 +107,10 @@ and its tests assert rather than skip**: either a `plantuml` executable on `PATH
 `release.yaml` use, pointed at the jar sphinx-needs already vendors, so no runner installs
 a plantuml package:
 `PLANTUML_JAR=$PWD/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar uv run poe test-mounts`.
+**sphinx-needs' own suite honours `PLANTUML_JAR` too**, ahead of the jar it vendors and ahead
+of any `plantuml` on `PATH`, so one export points both suites at one renderer — and a run from
+the sdist, whose embedded jar a distribution packager repacks away, has a supported route to a
+system PlantUML.
 `bazel` (or `bazelisk`) is the other optional binary — without it the `bazel`-marked tests
 skip, and `test-mounts` deselects them anyway. The browser tests (`-m jstest`, which
 `test-needs` excludes) additionally need a browser, and it is not a package: `uv run poe

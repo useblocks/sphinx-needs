@@ -198,15 +198,14 @@ def mounted_project(tmp_path: Path) -> tuple[Path, Path]:
 
 def test_incdir_uses_physical_source_dir(
     mounted_project: tuple[Path, Path],
-    sphinx_test_tempdir: Path,
+    plantuml_command: str,
     make_app: Callable[..., SphinxTestApp],
     get_warnings_list: Callable[[SphinxTestApp], list[str]],
 ) -> None:
     host, bundle = mounted_project
-    plantuml = "java -Djava.awt.headless=true -jar {}".format(
-        sphinx_test_tempdir / "utils" / "plantuml.jar"
+    app = make_app(
+        srcdir=host, freshenv=True, confoverrides={"plantuml": plantuml_command}
     )
-    app = make_app(srcdir=host, freshenv=True, confoverrides={"plantuml": plantuml})
     app.build()
 
     incdirs: dict[str, list[str]] = app.collected_incdirs  # type: ignore[attr-defined]
