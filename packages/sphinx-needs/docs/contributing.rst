@@ -208,6 +208,19 @@ the tag says which: it must read ``<distribution>-v<version>``, so ``sphinx-need
 No other tag triggers it, and a tag that names no distribution in the workspace is refused
 before anything is built.
 
+Before either step, ask what is pending::
+
+    uv run poe release-plan
+
+That prints, for every distribution the workspace publishes, its last release tag, what
+PyPI has, the commits since that tag that touched the code it *ships*, and — where one
+package depends on another — the version the release workflow's compatibility check would
+install from PyPI, followed by a suggested order with the commands. It is advice, not a
+gate: it exits 0 whatever it finds. ``uv run poe import-check-needs`` is the companion
+question for a package that depends on another one in this workspace: it builds the wheel,
+installs it with ``--no-sources`` so every sibling comes from PyPI as published, and
+imports every module — which answers "is a name missing?" in seconds.
+
 A release is two steps, a pull request and a tag.
 
 The pull request bumps the version and stamps the changelog. From ``master``, with a clean

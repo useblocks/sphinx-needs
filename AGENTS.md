@@ -38,9 +38,11 @@ declares the tooling's dependencies; `.github/scripts/` keeps only the checks th
 execute inside a specific CI environment.** The distinction is
 what each script *inspects*. `tools/src/sn_tools/` holds the ones that read the manifests
 before any environment exists — `check_workspace.py`, `release_plan.py`,
-`propagate_floors.py` — and they are run by path, never imported
-(`uv run --no-project --with packaging python tools/src/sn_tools/<script>.py` in CI, so a
-manifest mistake is named rather than reported as a failed sync). `.github/scripts/` keeps
+`propagate_floors.py` — plus `import_check.py`, which builds a member's wheel and imports
+it in a throwaway environment outside every project one. They are run by path, never
+imported (`uv run --no-project --with packaging python tools/src/sn_tools/<script>.py` in
+CI for the three manifest readers, so a manifest mistake is named rather than reported as a
+failed sync). `.github/scripts/` keeps
 `check_sphinx_cell.py` (it imports the cell's own sphinx), `check_typing_floor.py` (it runs
 inside `.venvs/typing`) and `extract_benchmark_data.py` (it runs inside the benchmark job) —
 none of which could move without dragging a member into every matrix cell. `scripts/smoke_needs.py`
@@ -73,6 +75,8 @@ uv run poe typecheck-needs            # ty, against the oldest supported sphinx
 uv run poe docs-needs                 # the furo docs build
 uv run poe smoke-needs                # build the wheel and test the built package
 uv run poe check-workspace            # the manifests agree with each other (Lint runs it)
+uv run poe release-plan               # what is pending, in what order (advice; exits 0)
+uv run poe import-check-needs         # import the wheel against PyPI-resolved dependencies
 uv run --frozen --no-sync pytest tools/tests -q   # the tooling's own tests
 UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8   # one CI matrix cell
 ```
@@ -201,6 +205,16 @@ Every distribution under `packages/` releases independently. One workflow,
 `<dist>-v<version>`. It publishes with PyPI trusted publishing (OIDC), so the
 workflow holds no API token, and every one of its checks fails closed.
 
+0. **What is pending, and in what order**: `uv run poe release-plan`. Per publishable
+   member it prints the last release tag, what PyPI has, the commits since that tag that
+   touched the member's *shipped* code, and — for each dependant — the version the compat
+   cell would install from PyPI; then a suggested sequence with the commands. It is advice
+   and exits 0 whatever it finds; the fences are still the plan job and the compat cell.
+   For a member with an intra-workspace dependency,
+   `python tools/src/sn_tools/import_check.py <dist>` (for sphinx-needs,
+   `uv run poe import-check-needs`) installs its freshly built wheel with `--no-sources`,
+   so every sibling comes from PyPI *as published*, and imports every module of it — a
+   missing symbol named in seconds rather than six minutes into a red compat cell.
 1. **Release pull request**, from `master` with a clean tree:
    ```bash
    uv version --package <dist> --bump {patch|minor|major} --no-sync
