@@ -7,6 +7,9 @@
 'pkg: sphinx-needs':
   - changed-files:
       - any-glob-to-any-file: 'packages/sphinx-needs/**'
+'pkg: sphinx-mounts':
+  - changed-files:
+      - any-glob-to-any-file: 'packages/sphinx-mounts/**'
 'pkg: workspace':
   - changed-files:
       - any-glob-to-any-file:

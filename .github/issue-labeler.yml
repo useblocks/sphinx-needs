@@ -7,5 +7,11 @@
 # patterns case-insensitive, like the workflow's `contains()` gate, so the two agree.
 'pkg: sphinx-needs':
   - '/### Package[^#]*\bsphinx-needs\b/i'
+# `sphinx-mounts` does not contain `sphinx-needs`, so the two patterns cannot both match
+# one choice. Both have to be present before either option is offered by a form, though:
+# the workflow runs with `sync-labels: 1`, so a pattern that is missing when its option is
+# picked means the label is synced away rather than merely not added
+'pkg: sphinx-mounts':
+  - '/### Package[^#]*\bsphinx-mounts\b/i'
 'pkg: workspace':
   - '/### Package[^#]*\bthe repository\b/i'
