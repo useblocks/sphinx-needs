@@ -9,6 +9,7 @@ definitions and the CI workflows.
 | package | distribution | what it is |
 |---|---|---|
 | [`packages/sphinx-needs`](packages/sphinx-needs) | [`sphinx-needs`](https://pypi.org/project/sphinx-needs/) | the Sphinx extension for managing requirements and specifications — [documentation](https://sphinx-needs.readthedocs.io), [README](packages/sphinx-needs/README.rst) |
+| [`packages/sphinx-mounts`](packages/sphinx-mounts) | [`sphinx-mounts`](https://pypi.org/project/sphinx-mounts/) | the Sphinx extension that mounts external source trees into a build without copying or symlinking — [documentation](https://sphinx-mounts.useblocks.com), [README](packages/sphinx-mounts/README.md) |
 
 ## Working here
 
