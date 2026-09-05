@@ -214,12 +214,16 @@ Before either step, ask what is pending::
 
 That prints, for every distribution the workspace publishes, its last release tag, what
 PyPI has, the commits since that tag that touched the code it *ships*, and — where one
-package depends on another — the version the release workflow's compatibility check would
-install from PyPI, followed by a suggested order with the commands. It is advice, not a
-gate: it exits 0 whatever it finds. ``uv run poe import-check-needs`` is the companion
-question for a package that depends on another one in this workspace: it builds the wheel,
-installs it with ``--no-sources`` so every sibling comes from PyPI as published, and
-imports every module — which answers "is a name missing?" in seconds.
+package depends on another — which check would stop a release of the dependant, or the
+version the release workflow's compatibility check would install from PyPI. Then a
+suggested order, with the commands. It is advice, not a gate: it exits 0 whatever it finds.
+
+``uv run python tools/src/sn_tools/import_check.py <dist>`` (for sphinx-needs,
+``uv run poe import-check-needs``) is the companion question for a package that depends on
+another one in this workspace. It builds that package's wheel and installs it into a
+throwaway environment *outside* this project, so uv resolves the wheel's own dependencies
+from PyPI and every sibling arrives as published, then imports every module of it — which
+answers "is a name missing?" in seconds, where the compatibility check takes minutes.
 
 A release is two steps, a pull request and a tag.
 

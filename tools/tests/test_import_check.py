@@ -105,7 +105,12 @@ def test_a_package_that_cannot_import_stops_its_own_subtree(tmp_path: Path) -> N
     out = proc.stdout
     assert "FAIL  pkg.broken: RuntimeError: no" in out
     assert "pkg.broken did not import, so anything under it was never walked" in out
-    assert "FAIL  1 of 3 modules failed to import" in out
+    # the count understates the tree -- `pkg.broken.child` exists and was never reached --
+    # so the summary says how many packages hid contents from it
+    assert (
+        "FAIL  1 of 3 modules failed to import in 0.0s (2 imported; 1 package(s) did not "
+        "import, so their contents were never walked)" in out
+    )
 
 
 def test_a_warning_at_import_time_is_not_a_failure(tmp_path: Path) -> None:
@@ -304,3 +309,106 @@ def test_keep_leaves_the_directory_and_says_where(workspace, fake_uv, capsys) ->
     directory = Path(kept[0].removeprefix("kept "))
     assert directory.is_dir()
     shutil.rmtree(directory, ignore_errors=True)
+
+
+# --- fix round 1: `SystemExit` is a failure, and entry points are not import surface -------
+# H1. `SystemExit` is a `BaseException`, so it escaped `except Exception`, escaped `walk()`
+# and escaped `main()`: the process exited with the module's own code having printed
+# NOTHING. `sys.exit(0)` anywhere in the tree turned the compat cell's gate green.
+
+
+def test_an_entry_point_is_skipped_rather_than_run(tmp_path: Path) -> None:
+    """`__main__.py` is a CLI, not import surface: importing it runs it against the
+    walker's own argv, and its `sys.exit()` used to end the walk silently."""
+    root = scratch_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/one.py": "VALUE = 1\n",
+            "pkg/__main__.py": "import sys\n\n\ndef main():\n    return 0\n\n\nsys.exit(main())\n",
+        },
+    )
+    proc = walk(root, "pkg")
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    out = proc.stdout
+    assert "skipped 1 entry point(s) (__main__): pkg.__main__" in out
+    assert "OK    2 modules imported in" in out
+
+
+def test_a_module_that_exits_is_a_failure_not_a_silent_pass(tmp_path: Path) -> None:
+    root = scratch_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/good.py": "VALUE = 1\n",
+            "pkg/quits.py": "raise SystemExit(0)\n",
+        },
+    )
+    proc = walk(root, "pkg")
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    out = proc.stdout
+    assert "FAIL  pkg.quits: SystemExit: 0" in out
+    assert "quits.py:1 in <module>: raise SystemExit(0)" in out
+    assert "FAIL  1 of 3 modules failed to import" in out
+
+
+def test_a_top_level_module_that_exits_is_reported(tmp_path: Path) -> None:
+    """Every path out of the walk prints at least one line: the absence of `OK` is the only
+    thing a reader would otherwise notice about a silent pass."""
+    root = scratch_package(tmp_path, {"pkg/__init__.py": "import sys\n\nsys.exit(7)\n"})
+    proc = walk(root, "pkg")
+    assert proc.returncode == 1
+    assert "FAIL  pkg: SystemExit: 7" in proc.stdout
+
+
+def test_a_package_that_exits_during_the_walk_is_reported(tmp_path: Path) -> None:
+    """`pkgutil.walk_packages` imports each package it finds, and its own handlers do not
+    cover `SystemExit` -- so the generator died and took the whole walk with it."""
+    root = scratch_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/aaa/__init__.py": "import sys\n\nsys.exit(3)\n",
+            "pkg/aaa/child.py": "VALUE = 1\n",
+            "pkg/zzz.py": "VALUE = 1\n",
+        },
+    )
+    proc = walk(root, "pkg")
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    out = proc.stdout
+    assert "FAIL  pkg.aaa: SystemExit: 3" in out
+    assert "the walk itself was cut short by SystemExit: 3" in out
+
+
+def test_the_prefix_is_asserted_for_every_module_not_only_the_top(
+    tmp_path: Path,
+) -> None:
+    """A package can pull a submodule in from elsewhere on the path -- here by extending
+    its own `__path__`, which is what a plugin package or a stale `.pth` does for real -- so
+    the wheel-only claim has to be checked per module, not once at the top."""
+    inside = tmp_path / "inside"
+    outside = tmp_path / "outside"
+    outside.mkdir(parents=True)
+    (outside / "stray.py").write_text("VALUE = 2\n", encoding="utf-8")
+    scratch_package(
+        inside,
+        {
+            "pkg/__init__.py": f"__path__.append({str(outside)!r})\n",
+            "pkg/local.py": "VALUE = 1\n",
+        },
+    )
+    proc = subprocess.run(
+        [sys.executable, str(SCRIPT), "--walk", "pkg", "--expect-prefix", str(inside)],
+        cwd=tmp_path,
+        text=True,
+        capture_output=True,
+        env={**os.environ, "PYTHONPATH": str(inside)},
+    )
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+    out = proc.stdout
+    # the top-level module IS under the prefix, and passes its own check
+    assert "pkg imported from" in out
+    assert f"FAIL  pkg.stray: imported from {outside}" in out
+    assert "which is not under" in out
+    # the honest submodule is untouched
+    assert "pkg.local" not in out

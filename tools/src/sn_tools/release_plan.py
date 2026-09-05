@@ -221,7 +221,14 @@ def published_versions(name: str) -> dict[Version, bool]:
     than printing nothing.
 
     Versions PyPI reports that are not PEP 440 are skipped rather than fatal -- they are
-    somebody else's history, and no release decision here can turn on one.
+    somebody else's history, and no release decision here can turn on one. A document that
+    is not the shape this function assumes is not skipped: it is a `PlanError`, because the
+    alternative is an `AttributeError` traceback out of the one script whose subject is
+    never guessing.
+
+    `except OSError` rather than `except URLError`: a socket read timeout raises
+    `TimeoutError`, which is an `OSError` and NOT a `URLError` -- `urlopen`'s read phase
+    does not wrap it -- so the narrower clause let a timeout through as a traceback.
     """
     url = PYPI_PROJECT.format(name=name)
     try:
@@ -234,28 +241,52 @@ def published_versions(name: str) -> dict[Version, bool]:
             f"PyPI returned {exc.code} for {url}; refusing to advise on a guess about "
             f"what {name} has published"
         ) from exc
-    except urllib.error.URLError as exc:
+    except OSError as exc:  # URLError, and a read TimeoutError, which is not one
         raise PlanError(
-            f"cannot reach PyPI ({exc.reason}); refusing to advise on a guess about what "
+            f"cannot reach PyPI ({exc}); refusing to advise on a guess about what "
             f"{name} has published"
         ) from exc
     except ValueError as exc:  # json.JSONDecodeError
         raise PlanError(f"PyPI returned unreadable JSON for {url}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise PlanError(
+            f"PyPI returned a {type(payload).__name__}, not an object, for {url}"
+        )
+    releases = payload.get("releases", {})
+    if not isinstance(releases, dict):
+        raise PlanError(
+            f"PyPI's `releases` for {url} is a {type(releases).__name__}, not an object"
+        )
     out: dict[Version, bool] = {}
-    for raw, files in payload.get("releases", {}).items():
+    for raw, files in releases.items():
         try:
             parsed = Version(raw)
         except InvalidVersion:
             continue
+        if not isinstance(files, list) or not all(
+            isinstance(item, dict) for item in files
+        ):
+            raise PlanError(
+                f"PyPI's file list for {name} {raw} is not a list of objects ({url})"
+            )
         # yanked means "every file of this release is yanked", because one usable file is
         # enough to install. A release with no files left is unusable for the same reason
         out[parsed] = all(item.get("yanked") for item in files) if files else True
     return out
 
 
-def git(*args: str) -> str:
-    """Run git, returning stdout; a failure is a PlanError, never a silent empty answer."""
-    proc = subprocess.run(["git", *args], text=True, capture_output=True, check=False)
+def git(*args: str, cwd: Path | None = None) -> str:
+    """Run git, returning stdout; a failure is a PlanError, never a silent empty answer.
+
+    `cwd` is what makes `--root` mean something to the planner: without it every git call
+    would answer about the process's working directory while the pathspecs were built for
+    another tree, which is confident misinformation rather than an error. It defaults to
+    None -- `subprocess.run`'s own default -- so the tag path, which passes no `cwd`, runs
+    byte-identically to before.
+    """
+    proc = subprocess.run(
+        ["git", *args], text=True, capture_output=True, check=False, cwd=cwd
+    )
     if proc.returncode != 0:
         raise PlanError(
             f"`git {' '.join(args)}` failed ({proc.returncode}): {proc.stderr.strip()}"
@@ -263,18 +294,23 @@ def git(*args: str) -> str:
     return proc.stdout
 
 
-def list_tags() -> list[str]:
+def list_tags(cwd: Path | None = None) -> list[str]:
     """Every tag in the checkout. The plan job's checkout has to fetch them."""
-    return [line.strip() for line in git("tag", "--list").splitlines() if line.strip()]
+    return [
+        line.strip()
+        for line in git("tag", "--list", cwd=cwd).splitlines()
+        if line.strip()
+    ]
 
 
-def is_ancestor(commit: str, branch: str) -> bool:
+def is_ancestor(commit: str, branch: str, cwd: Path | None = None) -> bool:
     """Is `commit` on `branch`? Anything other than a clean yes/no is fatal."""
     proc = subprocess.run(
         ["git", "merge-base", "--is-ancestor", commit, branch],
         capture_output=True,
         text=True,
         check=False,
+        cwd=cwd,
     )
     if proc.returncode == 0:
         return True
@@ -287,7 +323,7 @@ def is_ancestor(commit: str, branch: str) -> bool:
     )
 
 
-def resolve(ref: str) -> str | None:
+def resolve(ref: str, cwd: Path | None = None) -> str | None:
     """The commit `ref` names, or None when it does not resolve. Never fatal.
 
     Only the planner uses this, and only for context: a checkout without `origin/master`
@@ -300,18 +336,21 @@ def resolve(ref: str) -> str | None:
         capture_output=True,
         text=True,
         check=False,
+        cwd=cwd,
     )
     return proc.stdout.strip() or None
 
 
-def head_context() -> tuple[str, str]:
+def head_context(cwd: Path | None = None) -> tuple[str, str]:
     """(short sha, branch name or "detached") for HEAD, for the planner's header line."""
-    sha = git("rev-parse", "--short", "HEAD").strip()
-    branch = git("rev-parse", "--abbrev-ref", "HEAD").strip()
+    sha = git("rev-parse", "--short", "HEAD", cwd=cwd).strip()
+    branch = git("rev-parse", "--abbrev-ref", "HEAD", cwd=cwd).strip()
     return sha, "detached" if branch == "HEAD" else branch
 
 
-def commits_since(ref: str, paths: list[str]) -> list[tuple[str, str]]:
+def commits_since(
+    ref: str, paths: list[str], cwd: Path | None = None
+) -> list[tuple[str, str]]:
     """(short sha, subject) for every commit since `ref` that touched `paths`, newest first.
 
     An empty `ref` means the member has never been tagged, and the range becomes the whole
@@ -320,24 +359,41 @@ def commits_since(ref: str, paths: list[str]) -> list[tuple[str, str]]:
     """
     span = [f"{ref}..HEAD"] if ref else ["HEAD"]
     out: list[tuple[str, str]] = []
-    for line in git("log", "--format=%h%x09%s", *span, "--", *paths).splitlines():
+    for line in git(
+        "log", "--format=%h%x09%s", *span, "--", *paths, cwd=cwd
+    ).splitlines():
         sha, tab, subject = line.partition("\t")
         if tab:
             out.append((sha, subject))
     return out
 
 
-def touched_files(ref: str, paths: list[str]) -> dict[str, set[str]]:
+def touched_files(
+    ref: str, paths: list[str], cwd: Path | None = None
+) -> dict[str, set[str]]:
     """Every commit since `ref` touching `paths`, mapped to which of those files it changed.
 
     One `git log` for as many path sets as the caller cares about, which is what lets the
     "this commit changed the core AND the extension" heuristic cost one process rather than
     one per dependency edge. `--name-only` honours the pathspec, so the file lists are
     already restricted to `paths`.
+
+    `core.quotePath=false` is load-bearing: by default git C-quotes any path with a
+    non-ASCII or control character -- `"packages/core/src/x/t\303\253st.py"`, quotes and
+    all -- and `under()` would then see a name that starts with `"` and match nothing, so
+    the both-packages heuristic would silently miss such a commit. Measured.
     """
     span = [f"{ref}..HEAD"] if ref else ["HEAD"]
     raw = git(
-        "log", f"--format={COMMIT_SEP}%h%x09%s", "--name-only", *span, "--", *paths
+        "-c",
+        "core.quotePath=false",
+        "log",
+        f"--format={COMMIT_SEP}%h%x09%s",
+        "--name-only",
+        *span,
+        "--",
+        *paths,
+        cwd=cwd,
     )
     out: dict[str, set[str]] = {}
     for record in raw.split(COMMIT_SEP):
@@ -422,6 +478,7 @@ class Status(NamedTuple):
     declared_tag: str  # the tag naming `declared`, if one exists locally
     commits: list[tuple[str, str]]  # unreleased commits touching the shipped code
     paths: list[str]  # that shipped code, repository-relative
+    root: Path  # the tree those paths and every git call below are relative to
     verdict: int  # 1 up to date | 2 bump first | 3 ready to tag | 4 behind PyPI
 
 
@@ -459,7 +516,7 @@ def requirement_for(project: dict[str, Any], dependency: str) -> str | None:
 
 
 def status_of(
-    name: str, project: dict[str, Any], paths: list[str], tags: list[str]
+    name: str, project: dict[str, Any], paths: list[str], tags: list[str], root: Path
 ) -> Status:
     """Gather one member's facts and reach a verdict. Every outside call here is a seam."""
     try:
@@ -475,7 +532,7 @@ def status_of(
     published = published_versions(name)
     live = [version for version, yanked in published.items() if not yanked]
     latest = max(live) if live else None
-    commits = commits_since(last_tag, paths)
+    commits = commits_since(last_tag, paths, cwd=root)
     # order matters: a tree BEHIND the index is an old branch, and that is the useful
     # answer even though `declared` is (necessarily) published as well
     if latest is not None and declared < latest:
@@ -493,6 +550,7 @@ def status_of(
         declared_tag,
         commits,
         paths,
+        root,
         verdict,
     )
 
@@ -520,11 +578,14 @@ def print_status(status: Status, directory: str) -> None:
         )
     if status.published:
         yanked = sum(1 for value in status.published.values() if value)
-        newest = status.latest if status.latest is not None else "(every one yanked)"
-        note = f", {yanked} yanked" if yanked else ""
-        print(
-            f"  on PyPI            {len(status.published)} versions, latest {newest}{note}"
-        )
+        how_many = f"{len(status.published)} version{'' if len(status.published) == 1 else 's'}"
+        if status.latest is None:
+            print(
+                f"  on PyPI            {how_many}, latest: none -- every version yanked"
+            )
+        else:
+            note = f", {yanked} yanked" if yanked else ""
+            print(f"  on PyPI            {how_many}, latest {status.latest}{note}")
     else:
         print(f"  on PyPI            nothing -- {name} has never been published")
     if status.verdict == 1:
@@ -565,7 +626,7 @@ def shared_commits(core: Status, dependant: Status) -> list[tuple[str, str]]:
     extension together, so the extension almost certainly relies on the core that is not
     released yet. One `git log` covers both path sets.
     """
-    changed = touched_files(core.last_tag, core.paths + dependant.paths)
+    changed = touched_files(core.last_tag, core.paths + dependant.paths, cwd=core.root)
     subjects = dict(core.commits)
     out: list[tuple[str, str]] = []
     for sha, _ in core.commits:
@@ -578,35 +639,69 @@ def shared_commits(core: Status, dependant: Status) -> list[tuple[str, str]]:
 
 
 def print_dependant(core: Status, dependant: Status, spec: str) -> None:
-    """What a release of `dependant` would be tested against, and what that misses."""
+    """What a release of `dependant` would be stopped by, or tested against.
+
+    The gates are asked in the order the pipeline asks them, and each branch names the ONE
+    that fires:
+
+    1. the plan job's check (4) -- `on_pypi(<core>, <core's TREE version>)`. Note what that
+       predicate is: not "does something published satisfy the dependant's specifier" but
+       "is the version this tree builds on the index at all". Answering the second question
+       and reporting it as the first is how this line came to reassure a reader about a tag
+       the plan job then refused (and to threaten a refusal that never came, for a yanked
+       release: the per-version PyPI URL answers 200 for one, so check (4) passes);
+    2. the resolver gate and the compat cell's install, which resolve a RANGE from the
+       index and therefore skip yanked releases even though check (4) accepted one;
+    3. the compat cell itself, which is the only content-aware guard and the only thing
+       that can catch a behaviour change.
+
+    One limit worth stating: `SpecifierSet.filter` compares versions and nothing else, so a
+    release whose only artefacts are incompatible with the compat cell's interpreter -- a
+    higher `Requires-Python`, a platform-specific wheel set -- would be named here and
+    passed over by uv. Both members are pure-python `py3-none-any` today.
+    """
     live = sorted(version for version, yanked in core.published.items() if not yanked)
-    usable = sorted(Requirement(spec).specifier.filter(live))
     tag = f"{dependant.name}-v{dependant.declared}"
     count = len(core.commits)
     plural = "" if count == 1 else "s"
     print(f"    {dependant.name} {dependant.declared} needs {spec}")
-    if not usable:
-        have = f"only up to {core.latest}" if core.latest else "nothing"
+    if core.declared not in core.published:
+        # check (4)'s own predicate, verbatim: is the TREE's version on the index?
+        have = (
+            f"has {core.latest} as its newest live version"
+            if core.latest is not None
+            else "has nothing"
+        )
         print(
-            f"      the plan job WILL refuse `{tag}`: it needs {spec}, and PyPI has {have} -- release {core.name} first"
+            f"      the plan job WILL refuse `{tag}`: check 4 needs {core.name} {core.declared} on PyPI, and PyPI {have} -- release {core.name} first"
+        )
+    elif core.published[core.declared]:
+        print(
+            f"      the plan job passes ({core.name} {core.declared} is on PyPI) but every file of it is yanked, so the resolver gate -- `uv pip install --dry-run` against the index -- will not pick it for a range: release a new {core.name}"
         )
     else:
-        lacks = (
-            f", which lacks {core.name}'s {count} commit{plural} since {core.last_tag or 'the start of history'}"
-            if count
-            else ""
-        )
-        print(
-            f"      the compat cell installs {core.name} from PyPI: `{tag}` would be tested against {core.name} {usable[-1]}{lacks}"
-        )
-        both = shared_commits(core, dependant)
-        if both:
+        usable = sorted(Requirement(spec).specifier.filter(live))
+        if not usable:
             print(
-                f"      these changed both {core.name} and {dependant.name} -- {dependant.name} very likely relies on the unreleased {core.name}; bump and release {core.name} first:"
+                f"      no published {core.name} satisfies {spec}: the resolver gate fails (and Lint's check-workspace refuses a specifier that does not admit the tree's {core.declared})"
             )
-            print_commits(both, "        ")
+        else:
+            lacks = (
+                f", which lacks {core.name}'s {count} commit{plural} since {core.last_tag or 'the start of history'}"
+                if count
+                else ""
+            )
+            print(
+                f"      the compat cell installs {core.name} from PyPI: `{tag}` would be tested against {core.name} {usable[-1]}{lacks}"
+            )
+            both = shared_commits(core, dependant)
+            if both:
+                print(
+                    f"      these changed both {core.name} and {dependant.name} -- {dependant.name} very likely relies on the unreleased {core.name}; bump and release {core.name} first:"
+                )
+                print_commits(both, "        ")
     print(
-        f"      `python tools/src/sn_tools/import_check.py {dependant.name}` installs the PUBLISHED {core.name} and imports every {dependant.name} module -- a missing symbol is named in seconds; behaviour changes still need the suite (the compat cell)"
+        f"      `uv run python tools/src/sn_tools/import_check.py {dependant.name}` installs the PUBLISHED {core.name} and imports every {dependant.name} module -- a missing symbol is named in seconds; behaviour changes still need the suite (the compat cell)"
     )
 
 
@@ -617,10 +712,10 @@ def print_sequence(sequence: list[str], statuses: dict[str, Status]) -> None:
     behind = [name for name in sequence if statuses[name].verdict == 4]
     print()
     if not pending:
+        # one line, not two: the "behind" note IS the answer when nothing is pending
         if behind:
-            print("nothing to release from this tree")
             print(
-                f"  behind PyPI, so nothing to release from this tree: {', '.join(behind)}"
+                f"behind PyPI, so nothing to release from this tree: {', '.join(behind)}"
             )
         else:
             print("nothing to release: every member is up to date")
@@ -656,11 +751,11 @@ def planner(
     found, _virtual, directories = workspace
     print()
     print("release plan -- advice, never a gate: this exits 0 whatever it finds")
-    sha, branch = head_context()
+    sha, branch = head_context(cwd=root)
     print(f"  HEAD {sha} ({branch})")
-    if resolve("origin/master") is None:
+    if resolve("origin/master", cwd=root) is None:
         print("  origin/master not found (no fetch?): ancestry not checked")
-    elif not is_ancestor("HEAD", "origin/master"):
+    elif not is_ancestor("HEAD", "origin/master", cwd=root):
         print(
             "  HEAD is not on origin/master -- releases are cut from master; this describes THIS tree"
         )
@@ -668,9 +763,11 @@ def planner(
         '  "unreleased" counts commits touching a member\'s SHIPPED code -- <member>/src and <member>/pyproject.toml. Docs and tests are deliberately not counted'
     )
 
-    tags = list_tags()
+    tags = list_tags(cwd=root)
     statuses = {
-        name: status_of(name, found[name], shipped_paths(root, directories[name]), tags)
+        name: status_of(
+            name, found[name], shipped_paths(root, directories[name]), tags, root
+        )
         for name in sequence
     }
     for name in sequence:

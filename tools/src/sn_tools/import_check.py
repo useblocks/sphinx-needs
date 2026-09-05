@@ -7,12 +7,20 @@ release workflow's compat cell -- which answers it by running the whole suite, s
 into a release job that has already built and gated the wheel. A missing symbol does not
 need six minutes; it needs one import.
 
-**`--no-sources` is the whole trick.** Installing the wheel with it makes uv resolve every
-intra-workspace dependency from the index instead of substituting the checkout, so the
-scratch environment holds this member as built and its siblings exactly as released. Then
-importing every module of the member is a complete answer to "is any name it uses missing
-from what is published". It is not a complete answer to "does it still work" -- a behaviour
-change imports perfectly -- and the compat cell stays the guard for that.
+**What makes the answer trustworthy is the throwaway environment, plus `--expect-prefix`.**
+The wheel is installed with `uv pip install` into an environment OUTSIDE the project, so uv
+reads the wheel's own `Requires-Dist` and resolves it from the index -- `uv pip` applies
+`[tool.uv.sources]` only to requirements it reads from a pyproject (measured on uv 0.12.9:
+with and without `--no-sources`, `uv pip install <wheel>` resolves a sibling from the
+registry identically; the flag IS load-bearing for `uv pip install -r pyproject.toml`). So
+the siblings arrive as published. `--no-sources` is passed anyway, and kept: it states the
+intent, it is correct defence in depth, and it makes this recipe the release build's and the
+compat cell's character for character. What would silently make the check prove nothing is
+importing the checkout instead of the wheel, and `--expect-prefix` is what refuses that.
+
+Importing every module of the member is then a complete answer to "is any name it uses
+missing from what is published". It is not a complete answer to "does it still work" -- a
+behaviour change imports perfectly -- and the compat cell stays the guard for that.
 
 Two layers, one file:
 
@@ -33,11 +41,14 @@ names the missing symbol before the suite starts.
 
 Usage::
 
-    python tools/src/sn_tools/import_check.py sphinx-needs        # or: uv run poe import-check-needs
-    python tools/src/sn_tools/import_check.py sphinx-needs --keep
-    python tools/src/sn_tools/import_check.py --walk sphinx_needs --expect-prefix /tmp/compat
+    uv run python tools/src/sn_tools/import_check.py sphinx-needs   # or: uv run poe import-check-needs
+    uv run python tools/src/sn_tools/import_check.py sphinx-needs --keep
+    /tmp/compat/bin/python tools/src/sn_tools/import_check.py --walk sphinx_needs --expect-prefix /tmp/compat
 
-Run at the workspace root. The outer layer needs `uv`; the inner needs nothing.
+Run at the workspace root. `uv run python …` rather than a bare `python`: this file needs
+`tomllib`, so whatever is on PATH has to be 3.11 or newer, and `uv run` guarantees it. The
+outer layer needs `uv`; the inner needs nothing but the interpreter it is handed, which is
+why the compat cell can run it with `/tmp/compat/bin/python`.
 """
 
 from __future__ import annotations
@@ -77,25 +88,75 @@ def innermost(exc: BaseException) -> str:
     return f"{where}: {frame.line.strip()}" if frame.line else where
 
 
+def submodule_names(
+    top: Any, module: str, unwalkable: list[str]
+) -> tuple[list[str], SystemExit | None]:
+    """Every submodule `pkgutil` can find under `top`, and the walk's own fatal exit.
+
+    `pkgutil.walk_packages` IMPORTS each package it finds, to read its `__path__` and
+    recurse, and its own `except ImportError` / `except Exception` do not cover
+    `SystemExit`. So a package whose `__init__` calls `sys.exit()` kills the generator, and
+    with it the whole walk -- silently, with the process taking that module's exit code. It
+    is caught here and handed back so the caller can report it: the per-module loop below
+    will import the same package again and file the real failure, and the walk it cut short
+    is named.
+    """
+    names: list[str] = []
+    walker = pkgutil.walk_packages(
+        getattr(top, "__path__", []), prefix=f"{module}.", onerror=unwalkable.append
+    )
+    while True:
+        try:
+            info = next(walker)
+        except StopIteration:
+            return names, None
+        except SystemExit as exc:
+            return names, exc
+        names.append(info.name)
+
+
+def is_entry_point(name: str) -> bool:
+    """`<anything>.__main__` -- a CLI entry point, not import surface.
+
+    Importing one runs it, against the WALKER's argv, and a `sys.exit()` outside an
+    `if __name__ == "__main__"` guard then ends the walk. `python -m <pkg>` is what that
+    file is for; the wheel's import surface is everything else.
+    """
+    return name.rpartition(".")[2] == "__main__"
+
+
 def walk(module: str, expect_prefix: str | None) -> int:
     """Import `module` and every submodule under it, reporting every failure.
 
     Deliberately not fail-fast: the reader wants every missing symbol at once, because the
-    next run costs another wheel build and another environment. Only `Exception` is caught
-    -- a `KeyboardInterrupt` or a `SystemExit` raised by a module at import time must still
-    stop the walk rather than be filed as one module's problem.
+    next run costs another wheel build and another environment.
+
+    `SystemExit` is caught BY NAME, everywhere a module is imported. R4's rule is "never
+    `BaseException`", and naming it satisfies that while closing a fail-open that made this
+    gate worthless: `SystemExit` is not an `Exception`, so before this it escaped the
+    per-module handler, escaped `walk()` and escaped `main()` -- and the process exited
+    with the module's own code, printing nothing at all. `sys.exit(0)` in one module made
+    the release workflow's compat-cell step go GREEN having imported nothing.
+    `KeyboardInterrupt` still propagates, which is what a caught interrupt should do.
+
+    Every path out of this function prints at least one line. That is the invariant: the
+    only thing a reader would notice about a silent pass is the absence of the `OK` line.
     """
     started = time.monotonic()
+    prefix = Path(expect_prefix).resolve() if expect_prefix is not None else None
     try:
         top = importlib.import_module(module)
+    except SystemExit as exc:
+        print(f"FAIL  {module}: SystemExit: {exc.code}")
+        print(f"        {innermost(exc)}")
+        return 1
     except Exception as exc:
         print(f"FAIL  {module}: {type(exc).__name__}: {exc}")
         print(f"        {innermost(exc)}")
         return 1
 
     location = getattr(top, "__file__", None)
-    if expect_prefix is not None:
-        prefix = Path(expect_prefix).resolve()
+    if prefix is not None:
         if location is None:
             print(
                 f"FAIL  {module} has no __file__, so it cannot be shown to come from {prefix}"
@@ -111,30 +172,63 @@ def walk(module: str, expect_prefix: str | None) -> int:
             return 1
         print(f"      {module} imported from {location}")
 
-    names = [module]
     unwalkable: list[str] = []
-    for info in pkgutil.walk_packages(
-        getattr(top, "__path__", []), prefix=f"{module}.", onerror=unwalkable.append
-    ):
-        names.append(info.name)
+    found, cut_short = submodule_names(top, module, unwalkable)
+    skipped = [name for name in found if is_entry_point(name)]
+    names = [module] + [name for name in found if not is_entry_point(name)]
 
     failures: list[tuple[str, str, str]] = []
+    homeless: list[str] = []
     for name in names:
         try:
-            importlib.import_module(name)
+            imported = importlib.import_module(name)
+        except SystemExit as exc:
+            failures.append((name, f"SystemExit: {exc.code}", innermost(exc)))
+            continue
         except Exception as exc:
             failures.append((name, f"{type(exc).__name__}: {exc}", innermost(exc)))
+            continue
+        # the prefix is asserted for EVERY module, not only the top one: a package can
+        # perfectly well pull a submodule in from somewhere else on the path
+        if prefix is None or name == module:
+            continue
+        where = getattr(imported, "__file__", None)
+        if where is None:
+            homeless.append(name)
+        elif not Path(where).resolve().is_relative_to(prefix):
+            failures.append(
+                (name, f"imported from {where}, which is not under {prefix}", "")
+            )
     elapsed = time.monotonic() - started
 
     for name, summary, frame in failures:
         print(f"FAIL  {name}: {summary}")
-        print(f"        {frame}")
+        if frame:
+            print(f"        {frame}")
+    for name in homeless:
+        print(
+            f"      {name} has no __file__ (a namespace package?); prefix not checked"
+        )
     for name in unwalkable:
         print(f"      {name} did not import, so anything under it was never walked")
+    if cut_short is not None:
+        print(
+            f"      the walk itself was cut short by SystemExit: {cut_short.code} -- "
+            "anything after that package was never listed"
+        )
+    if skipped:
+        print(
+            f"      skipped {len(skipped)} entry point(s) (__main__): {', '.join(skipped)}"
+        )
     if failures:
+        blocked = (
+            f"; {len(unwalkable)} package(s) did not import, so their contents were never walked"
+            if unwalkable
+            else ""
+        )
         print(
             f"FAIL  {len(failures)} of {len(names)} modules failed to import in "
-            f"{elapsed:.1f}s ({len(names) - len(failures)} imported)"
+            f"{elapsed:.1f}s ({len(names) - len(failures)} imported{blocked})"
         )
         return 1
     print(f"OK    {len(names)} modules imported in {elapsed:.1f}s")
@@ -244,8 +338,12 @@ def check(dist: str, wheel_arg: str | None, python: str | None, keep: bool) -> i
             ["uv", "venv", *(["--python", python] if python else []), venv],
             cwd=REPO_ROOT,
         )
-        # `--no-sources` is THE flag. Without it uv honours `[tool.uv.sources]` and installs
-        # the sibling member from the checkout, and the check silently proves nothing
+        # `--no-sources` here is the recipe, not the mechanism: measured on uv 0.12.9, a
+        # wheel's `Requires-Dist` is resolved from the index with or without it (the flag
+        # governs requirements uv reads from a pyproject). It is kept so this command is
+        # the compat cell's character for character, and because it states the intent.
+        # What stops the checkout being imported instead is the environment plus
+        # `--expect-prefix` on the walk below
         run(
             ["uv", "pip", "install", "--python", venv, "--no-sources", wheel],
             cwd=REPO_ROOT,
