@@ -4,6 +4,13 @@ on:
     branches: [master]
   pull_request:
 
+# A fix-up push otherwise leaves the superseded head's 25 jobs running to completion, and
+# the useblocks organisation shares 60 concurrent runners across all of its repositories.
+# `cancel-in-progress` is deliberately conditional: a push to master is never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   lint:
     name: Lint
