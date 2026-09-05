@@ -64,6 +64,13 @@ jobs:
     name: Build and gate
     needs: [plan]
     runs-on: ubuntu-latest
+    # The compat cell runs the member's real suite, and sphinx-mounts' uml tests assert on
+    # a PlantUML rather than skipping. No runner image has a `plantuml` executable, so they
+    # take the jar route instead: `packages/sphinx-needs` vendors one for its own tests, and
+    # this is the whole of the coupling. If it ever stops vendoring it, this line fails
+    # loudly rather than the tests quietly finding nothing.
+    env:
+      PLANTUML_JAR: ${{ github.workspace }}/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar
     steps:
       - uses: actions/checkout@v7
         with:
@@ -124,6 +131,15 @@ jobs:
           uv export --frozen --only-group test --no-emit-project --no-hashes -o /tmp/req.txt
           uv venv /tmp/compat            # no --python: the root `.python-version` pin
           uv pip install --python /tmp/compat --no-sources -r /tmp/req.txt
+          # A package whose suite needs a RELEASED sibling declares it here, in a plain
+          # requirements file. It cannot be declared in the `test` group above: that group
+          # resolves through the root's `[tool.uv.sources]`, so a workspace member's name
+          # exports as `-e ./packages/<member>` and the cell would test the checkout --
+          # exactly the false green this cell exists to prevent. `uv pip install -r` does
+          # not apply those sources, so the name resolves from PyPI here
+          if [ -f "packages/$DIST/compat-requirements.txt" ]; then
+            uv pip install --python /tmp/compat --no-sources -r "packages/$DIST/compat-requirements.txt"
+          fi
           uv pip install --python /tmp/compat --no-sources "dist/$DIST"/*.whl
           # the compat environment's scripts have to be on PATH, not just its interpreter:
           # 23 tests shell out to `sphinx-build`, and without this they either fail with

@@ -18,6 +18,7 @@ dependency.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 import re
@@ -419,7 +420,7 @@ def test_needimport_resolves_needs_json_within_bundle(
     make_app, make_host_project, tmp_path
 ):
     """``needimport`` addresses its needs.json relative to the importing doc."""
-    pytest.importorskip("sphinx_needs")
+    _require_sphinx_needs()
     bundle = tmp_path / "bundle"
     bundle.mkdir()
     (bundle / "needs.json").write_text(
@@ -463,7 +464,7 @@ def test_needreport_resolves_template_within_bundle(
     make_app, make_host_project, tmp_path
 ):
     """``needreport``'s ``:template:`` is relfn2path'd like needimport's arg."""
-    pytest.importorskip("sphinx_needs")
+    _require_sphinx_needs()
     bundle = tmp_path / "bundle"
     bundle.mkdir()
     # Kept out of the doc set by ``exclude``: Jinja input, not a page — but it
@@ -513,7 +514,7 @@ def test_needuml_include_resolves_within_bundle(make_app, make_host_project, tmp
     ``plantuml`` binary on PATH — and it is a hard requirement: without it
     the mounts chain is not really exercised.
     """
-    pytest.importorskip("sphinx_needs")
+    _require_sphinx_needs()
     pytest.importorskip("sphinxcontrib.plantuml")
     _require_renderer(".. uml::\n")
 
@@ -1276,6 +1277,26 @@ def _write_payload(path: Path, content: str | bytes) -> None:
         path.write_bytes(content)
     else:
         path.write_text(content, encoding="utf-8")
+
+
+def _require_sphinx_needs() -> None:
+    """Fail -- never skip -- when sphinx-needs is not importable.
+
+    These three tests are the only coverage of the sphinx-needs integration,
+    and they were added for the release workflow's compat cell, which runs
+    this suite against the dependencies as PUBLISHED. A ``importorskip`` here
+    made that cell green with all three silently not run: sphinx-needs is a
+    test-only dependency, so it is in neither the wheel's ``Requires-Dist``
+    nor the workspace's ``test`` group (where the name would resolve to the
+    sibling member instead of the release). ``compat-requirements.txt`` is
+    what installs it there, and this assertion is what makes that file
+    load-bearing. In the workspace it is always installed.
+    """
+    assert importlib.util.find_spec("sphinx_needs") is not None, (
+        "sphinx-needs is required to run this test and is not installed. In "
+        "this workspace it is a sibling member; outside it, install the "
+        "packages/sphinx-mounts/compat-requirements.txt list"
+    )
 
 
 def _plantuml_jar_command() -> str | None:
