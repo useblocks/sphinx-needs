@@ -1,10 +1,17 @@
-"""`release_plan.py`: the five fail-closed checks, the rehearsal, and `previous_tag`.
+"""`release_plan.py`: the five fail-closed checks, the rehearsal, and the planner.
 
-PyPI and git are monkeypatched here -- `on_pypi`, `list_tags` and `is_ancestor` are the
-three functions that touch the outside world, and they are separate functions so that this
-file can run offline. The one thing that must never be mocked away is the *direction* of a
-failure: every check has to fail closed, so each test asserts the exit code as well as the
-message.
+PyPI and git are monkeypatched here -- every function that touches the outside world
+(`on_pypi`, `published_versions`, `list_tags`, `is_ancestor`, `commits_since`,
+`touched_files`, `head_context`, `resolve`) is a separate function for exactly that reason,
+so this file runs offline. It matters more for the planner than for the tag checks: git
+answers about the working directory, which in these tests is this repository rather than
+the scratch workspace under `tmp_path`, so an un-mocked seam would make a test agree with
+whatever the branch happens to look like today.
+
+The one thing that must never be mocked away is the *direction* of an answer. The tag
+checks fail closed, so each of those tests asserts the exit code as well as the message;
+the planner is advice and must never gate, so its tests assert exit 0 as hard as they
+assert the words.
 """
 
 from __future__ import annotations
@@ -12,6 +19,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from packaging.version import Version
 from sn_tools import release_plan
 
 pytestmark = pytest.mark.filterwarnings("error")
@@ -22,6 +30,14 @@ def offline(monkeypatch):
     """No network, no git, unless a test says otherwise."""
     monkeypatch.setattr(release_plan, "list_tags", lambda: [])
     monkeypatch.setattr(release_plan, "is_ancestor", lambda commit, branch: True)
+    # the planner's seams. A plain `run(root)` reaches all of them, so the defaults are
+    # "PyPI has nothing, git has nothing, HEAD is on origin/master" -- a workspace whose
+    # every member is unreleased, which each planner test then overrides
+    monkeypatch.setattr(release_plan, "published_versions", lambda name: {})
+    monkeypatch.setattr(release_plan, "commits_since", lambda ref, paths: [])
+    monkeypatch.setattr(release_plan, "touched_files", lambda ref, paths: {})
+    monkeypatch.setattr(release_plan, "head_context", lambda: ("abc1234", "master"))
+    monkeypatch.setattr(release_plan, "resolve", lambda ref: "abc1234")
     return monkeypatch
 
 
@@ -32,6 +48,29 @@ def published(monkeypatch, mapping: dict[tuple[str, str], bool]) -> None:
     monkeypatch.setattr(release_plan, "on_pypi", fake)
 
 
+def pypi(monkeypatch, mapping: dict[str, dict[str, bool]]) -> None:
+    """`published_versions` per distribution: {version: is the whole release yanked}."""
+
+    def fake(name: str) -> dict[Version, bool]:
+        return {Version(raw): yanked for raw, yanked in mapping.get(name, {}).items()}
+
+    monkeypatch.setattr(release_plan, "published_versions", fake)
+
+
+def history(monkeypatch, per_member: dict[str, list[tuple[str, str]]]) -> None:
+    """`commits_since`, keyed by the member whose shipped paths were asked about.
+
+    The scratch workspaces put every member at `packages/<name>`, so the second segment of
+    the path filter names the member -- which is also a small assertion that the planner
+    asked about the paths it said it would.
+    """
+
+    def fake(ref: str, paths: list[str]) -> list[tuple[str, str]]:
+        return per_member.get(paths[0].split("/")[1], [])
+
+    monkeypatch.setattr(release_plan, "commits_since", fake)
+
+
 def run(root: Path, *args: str) -> int:
     return release_plan.main([*args, "--root", str(root)])
 
@@ -39,7 +78,7 @@ def run(root: Path, *args: str) -> int:
 # --- the order ---------------------------------------------------------------------------
 
 
-def test_prints_the_topological_order(workspace, capsys) -> None:
+def test_prints_the_topological_order(workspace, capsys, offline) -> None:
     root = workspace(
         {
             "acme-core": {"version": "2.0.0"},
@@ -68,7 +107,9 @@ def test_a_cycle_is_an_error(workspace, capsys) -> None:
 # --- (0) a virtual member is never a release ---------------------------------------------
 
 
-def test_a_virtual_member_is_listed_but_not_numbered(workspace, capsys) -> None:
+def test_a_virtual_member_is_listed_but_not_numbered(
+    workspace, capsys, offline
+) -> None:
     root = workspace(
         {
             "acme-core": {"version": "2.0.0"},
@@ -530,3 +571,389 @@ def test_a_member_with_no_version_is_annotated_not_a_traceback(
     assert "::error::" in out
     assert "acme-core declares no [project] version" in out
     assert "Traceback" not in out
+
+
+# --- the planner: what to release, in what order, tested against what ---------------------
+# Everything below runs with no `--tag`. The planner is ADVICE: every one of these asserts
+# exit 0 unless the data itself could not be gathered.
+
+
+def test_up_to_date_says_nothing_to_release(workspace, capsys, offline) -> None:
+    pypi(offline, {"acme-core": {"2.0.0": False}})
+    offline.setattr(release_plan, "list_tags", lambda: ["acme-core-v2.0.0"])
+    root = workspace({"acme-core": {"version": "2.0.0"}})
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "up to date, nothing to release: 2.0.0 is on PyPI" in out
+    assert "no commit since acme-core-v2.0.0 touched its shipped code" in out
+    assert "nothing to release: every member is up to date" in out
+
+
+def test_unreleased_commits_on_a_published_version_ask_for_a_bump(
+    workspace, capsys, offline
+) -> None:
+    pypi(offline, {"acme-core": {"2.0.0": False}})
+    offline.setattr(release_plan, "list_tags", lambda: ["acme-core-v2.0.0"])
+    history(offline, {"acme-core": [("aaa1111", "a fix"), ("bbb2222", "another")]})
+    root = workspace({"acme-core": {"version": "2.0.0"}})
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "2 unreleased commits since acme-core-v2.0.0" in out
+    assert "2.0.0 is already published -- bump before tagging" in out
+    assert "uv version --package acme-core --bump {patch|minor|major} --no-sync" in out
+    assert "aaa1111  a fix" in out
+    assert "bbb2222  another" in out
+
+
+def test_a_declared_version_that_is_not_published_is_ready_to_tag(
+    workspace, capsys, offline
+) -> None:
+    pypi(offline, {"acme-core": {"1.9.0": False}})
+    offline.setattr(release_plan, "list_tags", lambda: ["acme-core-v1.9.0"])
+    history(offline, {"acme-core": [("aaa1111", "the feature")]})
+    root = workspace({"acme-core": {"version": "2.0.0"}})
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "release pending: 2.0.0 is not on PyPI, and this tree builds it" in out
+    assert "git tag acme-core-v2.0.0 && git push origin acme-core-v2.0.0" in out
+    assert "rehearse first: gh workflow run release.yaml -f tag=acme-core-v2.0.0" in out
+    assert "1 commit since acme-core-v1.9.0 touched its shipped code" in out
+
+
+def test_a_tag_whose_release_never_completed_says_so(
+    workspace, capsys, offline
+) -> None:
+    """The tag exists, PyPI does not have it: re-run the workflow, do not re-tag."""
+    pypi(offline, {"acme-core": {"1.9.0": False}})
+    offline.setattr(
+        release_plan, "list_tags", lambda: ["acme-core-v1.9.0", "acme-core-v2.0.0"]
+    )
+    root = workspace({"acme-core": {"version": "2.0.0"}})
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "the tag acme-core-v2.0.0 exists but PyPI has no 2.0.0" in out
+    assert "re-run the workflow from the tag, do not re-tag" in out
+
+
+def test_a_tree_behind_pypi_is_reported_and_still_exits_zero(
+    workspace, capsys, offline
+) -> None:
+    pypi(offline, {"acme-core": {"1.0.0": False, "2.0.0": False}})
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "this tree is BEHIND PyPI (1.0.0 vs 2.0.0) -- an old branch?" in out
+    assert "::error" not in out
+    assert "behind PyPI, so nothing to release from this tree: acme-core" in out
+
+
+def test_a_yanked_release_is_not_the_latest(workspace, capsys, offline) -> None:
+    """A yanked 3.0.0 must not make a 2.0.0 tree look BEHIND: it cannot be installed."""
+    pypi(offline, {"acme-core": {"2.0.0": False, "3.0.0": True}})
+    offline.setattr(release_plan, "list_tags", lambda: ["acme-core-v2.0.0"])
+    root = workspace({"acme-core": {"version": "2.0.0"}})
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "2 versions, latest 2.0.0, 1 yanked" in out
+    assert "up to date, nothing to release" in out
+    assert "BEHIND PyPI" not in out
+
+
+def test_a_project_pypi_has_never_heard_of_is_not_an_error(
+    workspace, capsys, offline
+) -> None:
+    """A whole-project 404 is a first release, not a failure."""
+    root = workspace({"acme-core": {"version": "0.1.0"}})
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "on PyPI            nothing -- acme-core has never been published" in out
+    assert "release pending: 0.1.0 is not on PyPI" in out
+    assert "::error" not in out
+
+
+def test_a_404_for_the_whole_project_is_an_empty_answer(monkeypatch) -> None:
+    import urllib.error
+
+    def raising(url: str, timeout: int = 30):
+        raise urllib.error.HTTPError(url, 404, "nope", None, None)  # ty: ignore[invalid-argument-type]
+
+    monkeypatch.setattr(release_plan.urllib.request, "urlopen", raising)
+    assert release_plan.published_versions("acme-core") == {}
+
+
+@pytest.mark.parametrize("status", [403, 500, 503])
+def test_a_non_404_pypi_answer_stops_the_planner(
+    workspace, capsys, offline, status: int
+) -> None:
+    """The planner never gates -- but it also never advises on a guess."""
+    import urllib.error
+
+    def raising(url: str, timeout: int = 30):
+        raise urllib.error.HTTPError(url, status, "boom", None, None)  # ty: ignore[invalid-argument-type]
+
+    offline.undo()
+    offline.setattr(release_plan, "list_tags", lambda: [])
+    offline.setattr(release_plan, "commits_since", lambda ref, paths: [])
+    offline.setattr(release_plan, "head_context", lambda: ("abc1234", "master"))
+    offline.setattr(release_plan, "resolve", lambda ref: None)
+    offline.setattr(release_plan.urllib.request, "urlopen", raising)
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert f"PyPI returned {status}" in out
+    assert "refusing to advise on a guess about what acme-core has published" in out
+
+
+def test_a_git_failure_stops_the_planner(workspace, capsys, offline) -> None:
+    def raising(ref: str, paths: list[str]) -> list[tuple[str, str]]:
+        raise release_plan.PlanError("`git log` failed (128): not a git repository")
+
+    offline.setattr(release_plan, "commits_since", raising)
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root) == 1
+    assert "::error::`git log` failed (128)" in capsys.readouterr().out
+
+
+def test_no_git_is_refused_in_planner_mode(workspace, capsys, offline) -> None:
+    """The planner IS git reasoning; --no-git would empty the answer, not skip a check."""
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root, "--no-git") == 1
+    out = capsys.readouterr().out
+    assert "--no-git makes no sense without --tag" in out
+    assert "since each member's last release tag" in out
+
+
+def test_the_context_header_names_head_and_the_branch(
+    workspace, capsys, offline
+) -> None:
+    offline.setattr(release_plan, "head_context", lambda: ("deadbee", "detached"))
+    offline.setattr(release_plan, "is_ancestor", lambda commit, branch: False)
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "HEAD deadbee (detached)" in out
+    assert "HEAD is not on origin/master -- releases are cut from master" in out
+    assert "<member>/src and <member>/pyproject.toml" in out
+
+
+def test_an_absent_origin_master_is_reported_not_fatal(
+    workspace, capsys, offline
+) -> None:
+    def explode(commit: str, branch: str) -> bool:
+        raise AssertionError(
+            "is_ancestor must not be asked about a ref that is not there"
+        )
+
+    offline.setattr(release_plan, "resolve", lambda ref: None)
+    offline.setattr(release_plan, "is_ancestor", explode)
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root) == 0
+    assert "origin/master not found (no fetch?): ancestry not checked" in (
+        capsys.readouterr().out
+    )
+
+
+# --- the planner: dependant advice --------------------------------------------------------
+
+
+DIAMOND = {
+    "acme-core": {"version": "2.0.0"},
+    "acme-ext": {"version": "0.1.0", "dependencies": ["acme-core>=2.0.0,<3"]},
+}
+
+
+def test_the_plan_job_would_refuse_the_dependant_is_said_in_advance(
+    workspace, capsys, offline
+) -> None:
+    """Check (4) of the tag mode, six minutes and one red job earlier."""
+    pypi(offline, {"acme-core": {"1.9.0": False}})
+    root = workspace(DIAMOND)
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    # the manifest's own text, not `packaging`'s sorted rendering of it
+    assert "acme-ext 0.1.0 needs acme-core>=2.0.0,<3" in out
+    assert (
+        "the plan job WILL refuse `acme-ext-v0.1.0`: it needs acme-core>=2.0.0,<3, and "
+        "PyPI has only up to 1.9.0 -- release acme-core first" in out
+    )
+
+
+def test_advice_never_gates(workspace, capsys, offline) -> None:
+    """ "release acme-core first" is the strongest thing the planner says, and it exits 0."""
+    pypi(offline, {"acme-core": {"1.9.0": False}})
+    root = workspace(DIAMOND)
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "release acme-core first" in out
+    assert "::error" not in out
+
+
+def test_a_dependant_with_nothing_published_names_that_too(
+    workspace, capsys, offline
+) -> None:
+    root = workspace(DIAMOND)
+    assert run(root) == 0
+    assert (
+        "it needs acme-core>=2.0.0,<3, and PyPI has nothing" in capsys.readouterr().out
+    )
+
+
+def test_the_compat_cell_target_and_what_it_lacks(workspace, capsys, offline) -> None:
+    pypi(offline, {"acme-core": {"2.0.0": False}, "acme-ext": {"0.1.0": False}})
+    offline.setattr(release_plan, "list_tags", lambda: ["acme-core-v2.0.0"])
+    history(offline, {"acme-core": [("aaa1111", "a core fix"), ("bbb2222", "another")]})
+    root = workspace(DIAMOND)
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert (
+        "the compat cell installs acme-core from PyPI: `acme-ext-v0.1.0` would be tested "
+        "against acme-core 2.0.0, which lacks acme-core's 2 commits since acme-core-v2.0.0"
+        in out
+    )
+    assert (
+        "`python tools/src/sn_tools/import_check.py acme-ext` installs the PUBLISHED "
+        "acme-core and imports every acme-ext module" in out
+    )
+    assert "behaviour changes still need the suite (the compat cell)" in out
+
+
+def test_a_commit_touching_both_packages_is_singled_out(
+    workspace, capsys, offline
+) -> None:
+    """Chris's scenario: one feature commit changed the core and the extension together."""
+    pypi(offline, {"acme-core": {"2.0.0": False}})
+    offline.setattr(release_plan, "list_tags", lambda: ["acme-core-v2.0.0"])
+    history(
+        offline,
+        {"acme-core": [("5ha12ed0", "the shared feature"), ("c0e0n1y0", "a core fix")]},
+    )
+    offline.setattr(
+        release_plan,
+        "touched_files",
+        lambda ref, paths: {
+            "5ha12ed0": {
+                "packages/acme-core/src/a.py",
+                "packages/acme-ext/src/b.py",
+            },
+            "c0e0n1y0": {"packages/acme-core/src/c.py"},
+        },
+    )
+    root = workspace(DIAMOND)
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert (
+        "these changed both acme-core and acme-ext -- acme-ext very likely relies on the "
+        "unreleased acme-core; bump and release acme-core first" in out
+    )
+    assert "5ha12ed0  the shared feature" in out
+    # the core-only commit is counted, but it is not evidence about the extension
+    assert "which lacks acme-core's 2 commits" in out
+    assert "c0e0n1y0  a core fix" not in out.split("dependants:", 1)[1]
+
+
+def test_an_extra_only_edge_gets_the_same_advice(workspace, capsys, offline) -> None:
+    """`edges()` folds extras in, so the specifier lookup has to as well."""
+    pypi(offline, {"acme-core": {"1.9.0": False}})
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-ext": {
+                "version": "0.1.0",
+                "optional_dependencies": {"all": ["acme-core>=2.0.0,<3"]},
+            },
+        }
+    )
+    assert run(root) == 0
+    assert "the plan job WILL refuse `acme-ext-v0.1.0`" in capsys.readouterr().out
+
+
+# --- the planner: tags, the sequence, and the seam that must stay out of `--tag` ----------
+
+
+def test_a_bare_tag_is_a_release_of_sphinx_needs_only(
+    workspace, capsys, offline
+) -> None:
+    offline.setattr(release_plan, "list_tags", lambda: ["8.5.0"])
+    root = workspace(
+        {"sphinx-needs": {"version": "8.5.0"}, "acme-core": {"version": "8.5.0"}}
+    )
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "  last release tag   8.5.0" in out
+    assert "last release tag   none -- never tagged" in out
+
+
+def test_release_tags_skips_what_is_not_a_release(workspace) -> None:
+    """`v.1.4` and a backup ref are tags in this repository and are not releases.
+
+    `v2.0.0` is: PEP 440 normalises a leading `v` away, so it parses as 2.0.0 and names
+    the pre-move release it says it does. That is the behaviour `previous_tag` has always
+    had -- this factoring must not change it -- and it is harmless either way, because
+    `2.0.0` is tagged as well and neither is ever the maximum.
+    """
+    tags = [
+        "8.5.0",
+        "v2.0.0",
+        "v.1.4",
+        "depbatch-backup-f8556477",
+        "sphinx-needs-v8.6.0",
+    ]
+    assert release_plan.release_tags("sphinx-needs", tags) == [
+        (Version("8.5.0"), "8.5.0"),
+        (Version("2.0.0"), "v2.0.0"),
+        (Version("8.6.0"), "sphinx-needs-v8.6.0"),
+    ]
+    assert release_plan.release_tags("acme-core", tags) == []
+
+
+def test_the_suggested_sequence_is_dependencies_first(
+    workspace, capsys, offline
+) -> None:
+    pypi(offline, {"acme-core": {"2.0.0": False}})
+    offline.setattr(release_plan, "list_tags", lambda: ["acme-core-v2.0.0"])
+    history(offline, {"acme-core": [("aaa1111", "a core fix")]})
+    root = workspace(DIAMOND)
+    assert run(root) == 0
+    out = capsys.readouterr().out.split("suggested sequence")[1]
+    assert "1. after a bump: acme-core" in out
+    assert "uv version --package acme-core --bump {patch|minor|major} --no-sync" in out
+    assert "gh workflow run release.yaml -f tag=acme-core-v<new version>" in out
+    assert "2. acme-ext 0.1.0" in out
+    assert "git tag acme-ext-v0.1.0 && git push origin acme-ext-v0.1.0" in out
+
+
+def test_a_virtual_member_is_never_analysed(workspace, capsys, offline) -> None:
+    def explode(name: str):
+        assert name != "acme-tools", "the planner asked PyPI about a virtual member"
+        return {}
+
+    offline.setattr(release_plan, "published_versions", explode)
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-tools": {"version": "0", "virtual": True},
+        }
+    )
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "-- acme-tools 0   (virtual -- never published)" in out
+    assert "acme-tools 0   (packages/acme-tools)" not in out
+
+
+def test_tag_mode_never_reaches_the_planner_seams(workspace, capsys, offline) -> None:
+    """R3: the plan job runs `--tag` with `--no-project`; the planner must not wake up."""
+
+    def explode(*args, **kwargs):
+        raise AssertionError("`--tag` mode must not call the planner's seams")
+
+    published(offline, {("acme-core", "1.0.0"): False})
+    offline.setattr(release_plan, "published_versions", explode)
+    offline.setattr(release_plan, "commits_since", explode)
+    offline.setattr(release_plan, "touched_files", explode)
+    offline.setattr(release_plan, "head_context", explode)
+    offline.setattr(release_plan, "resolve", explode)
+    root = workspace({"acme-core": {"version": "1.0.0"}})
+    assert run(root, "--tag", "acme-core-v1.0.0") == 0
+    out = capsys.readouterr().out
+    assert "release plan -- advice" not in out
+    assert '"dist": "acme-core"' in out
