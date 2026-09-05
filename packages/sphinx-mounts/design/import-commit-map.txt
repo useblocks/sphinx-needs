@@ -6,7 +6,9 @@
 # and this file is how such a permalink is resolved to the commit here. The old repository
 # stays archived and readable, so those links keep working; this maps them across.
 # All 48 commits the rewrite parsed are listed, including the ones on branches that were
-# not imported (only `main` was merged).
+# not imported (only `main` was merged). So 33 of the right-hand hashes exist in this
+# repository and 15 do not: those 15 lived only on branches that were left behind, and they
+# are resolvable in the archived old repository through the LEFT-hand column alone.
 old                                      new
 0081258c6a90ca8b632c61979d14797671406861 2d020a7ca638e301cf203c96eacb0c0509312cca
 08ec273b2c7280d003fa9c54d8b23212bf0daa80 af7144330fb1521986da22409dcd2386fa6d04b9

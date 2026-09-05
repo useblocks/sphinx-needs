@@ -366,6 +366,6 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
 
 def _have_sphinx_module() -> bool:
     """``python -m sphinx`` only works if Sphinx is importable from the
-    current interpreter — which it is when running the project's tests
-    via tox."""
+    current interpreter — which it is when the suite runs out of the
+    workspace environment."""
     return importlib.util.find_spec("sphinx") is not None

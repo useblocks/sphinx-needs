@@ -161,7 +161,7 @@ Run the commands below from this directory (`tests/example/`).
   relative `:doc:` / Markdown links only. Neither bundle references
   back into the host project — see
   [Integration → Anti-pattern: mounted sources linking back to the
-  host](../../docs/source/integration.rst) for why.
+  host](../../docs/integration.rst) for why.
 - **File references stay inside the bundle.** The `showcase/` folder holds
   ten **checked-in** bundles — one per file-referencing directive
   (`literalinclude`, `include`, `csv-table` / `raw` with `:file:`,
@@ -231,9 +231,9 @@ Run the commands below from this directory (`tests/example/`).
 From the repo root:
 
 ```sh
-tox -e bazel                                # full bazel job
-# or, with deps already in the current environment:
-uv run pytest -m bazel tests/test_example.py
+uv run poe test-mounts-bazel
+# the same thing, written out:
+uv run --frozen --no-sync pytest -m bazel packages/sphinx-mounts/tests
 ```
 
 The test copies this directory into a temporary workspace (so your

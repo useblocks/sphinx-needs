@@ -42,7 +42,7 @@ if command -v uv >/dev/null 2>&1; then
         sphinx-build -nW --keep-going -b html -c docs docs "${out}" "$@"
 fi
 
-# Fallback for environments without uv on PATH (CI runners that install
-# sphinx-mounts globally, the project's tox env): rely on ``python3 -m
-# sphinx`` finding sphinx in the current interpreter.
+# Fallback for environments without uv on PATH (a CI runner that installs
+# sphinx-mounts globally, say): rely on ``python3 -m sphinx`` finding
+# sphinx in the current interpreter.
 exec python3 -m sphinx -nW --keep-going -b html -c docs docs "${out}" "$@"

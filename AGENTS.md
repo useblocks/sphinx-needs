@@ -293,7 +293,8 @@ and publish `dist/<dist>/*`, which is what `release.yaml` and `poe build-needs` 
 Files moved in 2026-09, so `git log <path>` — which is what GitHub's per-file *History*
 button runs — shows only the commits since. Use `git log --follow <path>` for the full
 history (`git blame` follows renames on its own and needs nothing), and
-`git log --first-parent` to read the squash-merged mainline.
+`git log --first-parent` to read the mainline -- squash merges, plus the one merge commit
+the sphinx-mounts import landed as.
 
 **sphinx-mounts' files are the opposite case and need no `--follow`.** Its history was
 imported in 2026-09 through `git filter-repo`, which rewrote the paths in every historical

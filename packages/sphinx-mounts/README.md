@@ -87,13 +87,13 @@ If TOML isn't an option for your setup, the legacy `mounts = [...]` list in
   extension mounts that directory, and Sphinx reads in place. Pick the
   former for fine-grained multi-project rule collection and tag-driven
   variants; pick the latter when "Bazel build, then Sphinx" is enough.
-  See `docs/source/bazel.rst` for a side-by-side comparison.
+  See `docs/bazel.rst` for a side-by-side comparison.
 
 ## Documentation
 
-See `docs/source/` for the full configuration reference and the Bazel
+See `docs/` for the full configuration reference and the Bazel
 integration walkthrough. The "Related projects" section in
-`docs/source/index.rst` lists sibling tools ([Sphinx-Needs],
+`docs/index.rst` lists sibling tools ([Sphinx-Needs],
 [sphinx-codelinks], [ubCode], [bazel-drives-sphinx]) that share the
 `ubproject.toml` convention.
 

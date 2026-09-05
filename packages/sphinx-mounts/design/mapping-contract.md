@@ -19,7 +19,7 @@ Those divergences surface to a user as "the editor shows a page the build does n
 (or the reverse), which is worse than either behaviour alone.
 
 Audience: implementers of a second reader.
-End users should read [`docs/source/configuration.rst`](../docs/source/configuration.rst),
+End users should read [`docs/configuration.rst`](../docs/configuration.rst),
 which links here for the precise rules.
 
 Status: describes the implementation as it is, not as it might become.

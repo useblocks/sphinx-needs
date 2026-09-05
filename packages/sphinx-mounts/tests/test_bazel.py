@@ -6,8 +6,7 @@ that mounts that directory. Confirms the genrule content reaches the
 HTML output via sphinx-mounts.
 
 The test is marked ``bazel`` and skipped when no bazel/bazelisk binary is
-on ``PATH``. Run it with ``tox -e bazel`` or
-``pytest -m bazel tests/test_bazel.py``.
+on ``PATH``. Run it with ``uv run poe test-mounts-bazel``.
 """
 
 from __future__ import annotations
