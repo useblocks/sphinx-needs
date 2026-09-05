@@ -7,6 +7,7 @@ graphviz / plantuml / mermaid for the api-foo "directives showcase"
 page, and ``sphinx_needs`` for the Sphinx-Needs showcase bundle.
 """
 
+import os
 from pathlib import Path
 
 project = "sphinx-mounts example"
@@ -32,8 +33,14 @@ needs_from_toml = "ubproject.toml"
 # Mermaid renders client-side ("raw"), so the build needs no ``mmdc``
 # binary. Graphviz and PlantUML do shell out at build time — to ``dot``
 # and ``plantuml`` (Java) respectively — so building this example
-# requires those on PATH (see this directory's README).
+# requires ``dot`` on PATH and either a ``plantuml`` executable or, when
+# ``PLANTUML_JAR`` names a plantuml jar, ``java`` (see this directory's
+# README). CI takes the second route.
 mermaid_output_format = "raw"
+
+_plantuml_jar = os.environ.get("PLANTUML_JAR")
+if _plantuml_jar:
+    plantuml = f"java -Djava.awt.headless=true -jar {_plantuml_jar}"
 
 # SVG rather than the PlantUML default of PNG. Sphinx-Needs always stamps a
 # ``scale`` attribute onto the diagram nodes it generates (100, i.e. no

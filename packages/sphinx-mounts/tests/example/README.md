@@ -61,9 +61,12 @@ end-to-end (marked `bazel`, skipped when no `bazel`/`bazelisk` is on
 
 Run the commands below from this directory (`tests/example/`).
 
-> **Building the docs needs `dot` (Graphviz), `java`, and `plantuml` on
-> `PATH`.** The `api-foo` directives showcase renders Graphviz and
-> PlantUML diagrams at build time. Mermaid is configured for client-side
+> **Building the docs needs `dot` (Graphviz) on `PATH`, plus PlantUML.**
+> The `api-foo` directives showcase renders Graphviz and PlantUML diagrams
+> at build time. PlantUML comes from either a `plantuml` executable on
+> `PATH` or a plantuml jar named by `PLANTUML_JAR` with `java` on `PATH` —
+> `docs/conf.py` reads that variable, and CI sets it to the jar
+> `packages/sphinx-needs` vendors. Mermaid is configured for client-side
 > (`raw`) rendering, so no `mmdc` binary is required.
 
 1. **Build the bundles with Bazel.**

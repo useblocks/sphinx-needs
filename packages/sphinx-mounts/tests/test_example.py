@@ -28,6 +28,7 @@ Marked ``bazel``; skipped when no ``bazel``/``bazelisk`` is on PATH.
 from __future__ import annotations
 
 import importlib.util
+import os
 import shutil
 import subprocess
 import sys
@@ -58,12 +59,22 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
     pytest.importorskip("sphinxcontrib.plantuml")
     pytest.importorskip("sphinxcontrib.mermaid")
     pytest.importorskip("sphinx_needs")
-    for tool in ("dot", "java", "plantuml"):
-        if shutil.which(tool) is None:
-            pytest.skip(
-                f"{tool!r} not on PATH — required to render the showcase "
-                "graphviz/plantuml bundles under -nW"
-            )
+    if shutil.which("dot") is None:
+        pytest.skip(
+            "'dot' not on PATH — required to render the showcase graphviz "
+            "bundle under -nW"
+        )
+    # PlantUML comes either from an executable on PATH or, when PLANTUML_JAR
+    # names a jar, from java — the route CI takes; the example's conf.py reads
+    # the same variable.
+    if not (
+        (os.environ.get("PLANTUML_JAR") and shutil.which("java"))
+        or shutil.which("plantuml")
+    ):
+        pytest.skip(
+            "no PlantUML — set PLANTUML_JAR (with java on PATH) or install a "
+            "`plantuml` executable, to render the showcase uml bundle under -nW"
+        )
 
     workspace = tmp_path / "ws"
     shutil.copytree(EXAMPLE_DIR, workspace)

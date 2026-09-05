@@ -5,9 +5,12 @@ Covers literalinclude, include, csv-table :file:, raw :file:, image,
 figure, graphviz, uml, mermaid, the three Sphinx-Needs directives that take a
 doc-relative path (needimport, needreport, needuml), plus the path_check
 enforcement. The graphviz/uml cases render for real and **hard-require**
-their renderer binaries (``dot`` / ``plantuml``) — the full mounts chain,
-render included, must be exercised rather than silently skipped when the
-binary is missing (CI installs them; see ``ci.yml``). Mermaid uses 'raw'
+their renderers — the full mounts chain, render included, must be
+exercised rather than silently skipped when one is missing. ``dot`` has to be
+on ``PATH``; PlantUML is taken either from a ``plantuml`` executable on
+``PATH`` or, when ``PLANTUML_JAR`` names one, from a plantuml jar run through
+``java`` (which is how CI supplies it — see ``.github/workflows/ci.yaml`` and
+the package's ``AGENTS.md``). Mermaid uses 'raw'
 output, so no mmdc is needed. The needuml ``!include`` case renders for
 real too, since PlantUML resolves that path itself and records no Sphinx
 dependency.
@@ -1275,14 +1278,35 @@ def _write_payload(path: Path, content: str | bytes) -> None:
         path.write_text(content, encoding="utf-8")
 
 
+def _plantuml_jar_command() -> str | None:
+    """The ``plantuml`` configuration value for a jar named by ``PLANTUML_JAR``.
+
+    The second of the two ways this suite can reach PlantUML, and the one CI
+    uses: no ``plantuml`` package is installed anywhere, and the workflows
+    point this variable at the jar ``packages/sphinx-needs`` vendors for its
+    own tests. ``java`` has to be on ``PATH`` for it, which it is on every
+    GitHub runner image.
+
+    Returns ``None`` when the variable is unset, so the ``plantuml``-on-PATH
+    route is used instead; a variable that names a file which is not there is
+    a mistake worth failing on rather than falling back from, so it returns
+    the command regardless and lets the render fail loudly.
+    """
+    jar = os.environ.get("PLANTUML_JAR")
+    if not jar:
+        return None
+    # headless, like the sphinx-needs fixture that supplies the same jar: a
+    # windowing toolkit is not available on a CI runner
+    return f"java -Djava.awt.headless=true -jar {jar}"
+
+
 def _require_renderer(directive_rst: str) -> None:
-    """Fail the test when a diagram directive's external renderer binary is
-    not installed.
+    """Fail the test when a diagram directive's renderer is not available.
 
     The graphviz/uml cases must exercise the full mounts chain *including*
-    the real renderer — tolerating a missing binary would silently skip the
-    render step. Install the renderers (e.g. ``apt install graphviz
-    default-jre plantuml``) rather than running the suite without them.
+    the real renderer — tolerating a missing one would silently skip the
+    render step, which is the whole point of those tests. So this asserts; it
+    never skips.
     """
     if "graphviz" in directive_rst:
         assert shutil.which("dot"), (
@@ -1290,9 +1314,12 @@ def _require_renderer(directive_rst: str) -> None:
             "install it (e.g. `apt install graphviz`)"
         )
     elif "uml" in directive_rst:
-        assert shutil.which("plantuml"), (
-            "plantuml is required to run this test — install it (e.g. "
-            "`apt install plantuml`, `brew install plantuml`, "
+        assert _plantuml_jar_command() or shutil.which("plantuml"), (
+            "PlantUML is required to run this test. Either set PLANTUML_JAR to "
+            "a plantuml jar and have `java` on PATH (this repository vendors "
+            "one at packages/sphinx-needs/tests/doc_test/utils/plantuml.jar, "
+            "which is what CI points the variable at), or install a `plantuml` "
+            "executable (e.g. `apt install plantuml`, `brew install plantuml`, "
             "`choco install plantuml`)"
         )
 
@@ -1300,10 +1327,17 @@ def _require_renderer(directive_rst: str) -> None:
 def _plantuml_extra_conf() -> tuple[str, ...]:
     """Extra conf.py lines for the uml tests.
 
-    sphinxcontrib.plantuml invokes the ``plantuml`` command synchronously;
-    on Windows the chocolatey package's ``plantuml`` shim is non-blocking
-    (javaw), so its ``plantumlc`` (java) shim must be used there.
+    ``PLANTUML_JAR`` wins when it is set: it is an explicit choice, and it is
+    the one CI makes on every runner including Windows.
+
+    Otherwise sphinxcontrib.plantuml invokes the ``plantuml`` command
+    synchronously; on Windows the chocolatey package's ``plantuml`` shim is
+    non-blocking (javaw), so its ``plantumlc`` (java) shim must be used there.
     """
+    jar_command = _plantuml_jar_command()
+    if jar_command is not None:
+        # `repr`, so a Windows path's backslashes survive into the conf.py
+        return (f"plantuml = {jar_command!r}",)
     if os.name == "nt":
         return ("plantuml = 'plantumlc'",)
     return ()
