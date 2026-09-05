@@ -32,3 +32,6 @@ python:
         # the MEMBER's extra, not the root's `docs-mounts` pass-through: RTD pip-installs
         # the package directory itself, so the name it resolves is the member's own
         - docs
+
+# Pull request builds are a per-project setting on Read the Docs ("Build pull requests for
+# this project"); each project posts its own commit status, `docs/readthedocs.org:<slug>`.
