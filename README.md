@@ -23,7 +23,7 @@ No group has to be named: the test tooling is a group of the workspace root, and
 default `dev` group includes it.
 
 Tasks that act on the whole repository are named plainly (`lint`); tasks that act on one
-package end in that package's short name (`test-needs`, `docs-needs`, `typecheck-needs`).
+package end in that package's short name (`test-needs`, `docs-needs`, `docs-mounts`).
 
 Contributions are very welcome — see
 [the contributing guide](packages/sphinx-needs/docs/contributing.rst), and `AGENTS.md` for

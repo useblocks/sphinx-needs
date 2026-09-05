@@ -36,8 +36,8 @@ has a test.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 import re
+from collections.abc import Callable
 
 #: The two path separators a pattern may be written with. ``\`` is a separator
 #: on Windows and an ordinary filename character on POSIX, so a pattern that

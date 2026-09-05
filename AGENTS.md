@@ -72,7 +72,7 @@ uv sync --frozen                      # every member, plus the shared test tooli
 uv run poe                            # list every task with its help
 uv run poe test-needs -k <expr>       # trailing words are appended to the task's command
 uv run poe lint                       # every prek hook over the whole tree
-uv run poe typecheck-needs            # ty, against the oldest supported sphinx
+uv run poe typecheck                  # ty over both packages, against the oldest supported sphinx
 uv run poe docs-needs                 # the furo docs build
 uv run poe smoke-needs                # build the wheel and test the built package
 uv run poe check-workspace            # the manifests agree with each other (Lint runs it)
@@ -127,7 +127,7 @@ docs or wheel build running alongside it has failed a zero-warnings assertion), 
 `-n auto` races on the shared jar copy.
 
 Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
-`typecheck-needs` seconds once `.venvs/typing` exists (the first run creates it) ·
+`typecheck` seconds once `.venvs/typing` exists (the first run creates it) ·
 `smoke-needs` 6 s · `test-needs-js` 3 s once the browser is installed (9 s cold) · `docs-needs` under
 2 min · `test-needs` 7–8 min serial · `benchmark-needs` 4 min. `docs-needs` runs with `--keep-going`, so it prints every warning
 and then exits 1 — do not read a full log as success. `benchmark-needs` is currently red
@@ -137,13 +137,14 @@ to the layout); CI runs only its `_time` and `_memory` subsets, which pass.
 
 **Naming rule:** a task that acts on the whole repository is bare (`lint`); a task that
 acts on one package ends in that package's short name — the distribution name minus its
-`sphinx-` prefix (`test-needs`, `docs-needs`, `typecheck-needs`).
+`sphinx-` prefix (`test-needs`, `docs-needs`, `test-mounts`, `docs-mounts`). `typecheck` is
+bare because it checks both packages out of one configuration and one environment.
 
 ty reads the root `[tool.ty]` from any directory in the tree, because it walks up for a
 `pyproject.toml` and the package has no `[tool.ty]` of its own — so
 `cd packages/sphinx-needs && ty check`, `ty check packages/sphinx-needs` and an editor
 opened anywhere all give the gate's result. `ty` itself lives only in the `typing`
-environment — `.venvs/typing/bin/ty`, created by the first `uv run poe typecheck-needs` —
+environment — `.venvs/typing/bin/ty`, created by the first `uv run poe typecheck` —
 not in `.venv` and not on `PATH`.
 
 **Some tests are gated to one interpreter** — `grep -rn 'skipif.*version_info' packages/*/tests`
@@ -286,7 +287,7 @@ move's pull request.
 2. **Tests**: test cases for new functionality or bug fixes
 3. **Documentation**: update the docs if behaviour changes or options are added
 4. **Changelog**: update `packages/sphinx-needs/docs/changelog.rst`
-5. **Code quality**: `uv run poe lint` and `uv run poe typecheck-needs` pass
+5. **Code quality**: `uv run poe lint` and `uv run poe typecheck` pass
 
 ## Issues and labels
 

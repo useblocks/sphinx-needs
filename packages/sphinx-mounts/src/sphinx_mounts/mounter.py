@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _mount_problem(  # noqa: PLR0913
+def _mount_problem(
     project: _MountAwareProject,
     index: int,
     message: str,
@@ -212,7 +212,7 @@ class _MountAwareProject(Project):
 
     def __init__(
         self,
-        srcdir: str | Path,
+        srcdir: str | os.PathLike[str],
         source_suffix: Iterable[str],
         mounts: tuple[MountConfig, ...],
     ) -> None:
@@ -664,7 +664,7 @@ def _attach_mount_files(
     )
 
 
-def _attach_entries(  # noqa: PLR0913
+def _attach_entries(
     project: _MountAwareProject,
     mount: MountConfig,
     entries: list[tuple[str, Path]],

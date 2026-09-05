@@ -21,9 +21,9 @@ what the reader computed.
 from __future__ import annotations
 
 import logging as stdlib_logging
-from pathlib import Path
 import pickle
 import textwrap
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -460,7 +460,7 @@ def test_the_layout_guard_still_fires_for_a_rule_declaring_project(make_app, tmp
     edition = "basic"
     """
     confdir, _ = make_project(tmp_path, toml=toml)
-    with pytest.raises(Exception, match="mounts.variant_layout"):
+    with pytest.raises(Exception, match=r"mounts\.variant_layout"):
         _build(make_app, confdir)
 
 
@@ -540,7 +540,7 @@ def test_a_condition_this_reader_never_evaluates_still_gates_off(make_app, tmp_p
     a gating key must not have, so it is gated off — and reported, because a
     silent disappearance is exactly what the record exists to prevent.
     """
-    confdir, bundle = make_project(
+    confdir, _bundle = make_project(
         tmp_path,
         toml="",
         conf_extra=(
@@ -867,9 +867,7 @@ def test_the_gated_docnames_stay_out_of_the_pickled_environment(make_app, tmp_pa
         "_gated_skips",
     ):
         assert not state[field], field
-    env = pickle.loads(  # noqa: S301
-        (Path(app.doctreedir) / "environment.pickle").read_bytes()
-    )
+    env = pickle.loads((Path(app.doctreedir) / "environment.pickle").read_bytes())
     assert getattr(env.project, "_gated_skips", {}) == {}
     assert getattr(env.project, "_gated_entry_docnames", {}) == {}
     assert getattr(env.project, "_mounts", ()) == ()

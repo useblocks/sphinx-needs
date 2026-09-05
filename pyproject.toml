@@ -240,7 +240,7 @@ exclude = ["*.md"]
 # An editor's language server opened at the repository root therefore reads this file, so
 # the editor and the gate see one configuration by construction; with the table in the
 # member instead, the editor finds no `[tool.ty]` at all and reports ~475 diagnostics of
-# noise. The `typecheck-needs` task passes the source path explicitly for the same reason:
+# noise. The `typecheck` task passes the source paths explicitly for the same reason:
 # a stale `include` only warns and still exits 0, so the path has to be named where a
 # mistake in it is loud. Note the reverse case is not gated at all: deleting `include`, or
 # excluding the package under it, leaves the CI canary green because a CLI path still selects
@@ -270,7 +270,7 @@ exclude = ["tools/tests"]
 [tool.ty.environment]
 python-version = "3.11"
 # so a bare `ty check` and the editor extension see the same environment as the gate;
-# `uv run poe typecheck-needs` creates it, and ty errors naming this path if it is missing
+# `uv run poe typecheck` creates it, and ty errors naming this path if it is missing
 python = ".venvs/typing"
 
 [tool.ty.analysis]
@@ -308,7 +308,7 @@ unresolved-attribute = "ignore"
 # dependency set other than the default one says so with `executor` options (never with a
 # nested `uv run` in the cmd — that syncs twice and pollutes the environment) and redirects
 # `UV_PROJECT_ENVIRONMENT`, so `.venv` is never clobbered by a matrix cell or a docs build.
-# Type checking is one of them: `typecheck-needs` installs the `typing` group into
+# Type checking is one of them: `typecheck` installs the `typing` group into
 # `.venvs/typing` — the oldest supported sphinx and docutils, plus ty itself, all from the
 # lock — and checks against it, so the task, the prek `ty` hook (which runs the task) and CI
 # all see the same environment. The interpreter is the other axis, from `UV_PYTHON`, e.g.
@@ -383,14 +383,18 @@ executor = { type = "uv", frozen = true, no-group = "dev", group = [
 ] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
-[tool.poe.tasks.typecheck-needs]
-help = "Type-check sphinx_needs with ty against the oldest supported sphinx (the `typing` group)"
+# BARE, not `typecheck-needs`: the naming rule suffixes a task that acts on ONE package,
+# and this one checks the whole repository -- both packages plus the tooling -- out of a
+# single `[tool.ty]` configuration and a single environment. Splitting it per package would
+# run that environment twice for no gain.
+[tool.poe.tasks.typecheck]
+help = "Type-check every package with ty against the oldest supported sphinx (the `typing` group)"
 # runs at the ROOT (no `cwd`), because the `[tool.ty]` configuration above is the root's.
 # The explicit path documents what is checked and fails loudly if it is absent from disk --
 # but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
 # makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
 # guards that.
-cmd = "ty check packages/sphinx-needs/src/sphinx_needs tools/src .github/scripts scripts --python .venvs/typing"
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts tools/src .github/scripts scripts --python .venvs/typing"
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 

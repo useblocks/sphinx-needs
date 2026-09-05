@@ -66,8 +66,8 @@ from __future__ import annotations
 
 import logging as stdlib_logging
 import posixpath
-from typing import TYPE_CHECKING
 import weakref
+from typing import TYPE_CHECKING
 
 import sphinx.directives.other
 import sphinx.environment.adapters.toctree
@@ -301,7 +301,7 @@ def install_downgrade_filter(
     return installed, names, degraded
 
 
-def remove_downgrade_filters(owner: object | None = None) -> None:  # noqa: ARG001
+def remove_downgrade_filters(owner: object | None = None) -> None:
     """Detach every :class:`DowngradeFilter` from the emitting loggers.
 
     The loggers are **process-global** while a ``Sphinx`` application is not,

@@ -12,10 +12,10 @@ on ``PATH``. Run it with ``tox -e bazel`` or
 
 from __future__ import annotations
 
-from pathlib import Path
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest

@@ -13,17 +13,17 @@ couple of tests at the bottom still cover the legacy
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import re
 import shutil
 import struct
 import subprocess
-from typing import TYPE_CHECKING
 import zlib
+from pathlib import Path
+from typing import TYPE_CHECKING
 
-from docutils import nodes
 import pytest
 import sphinx
+from docutils import nodes
 from sphinx import addnodes
 from sphinx.testing.fixtures import SharedResult  # noqa: F401  (registers fixture)
 

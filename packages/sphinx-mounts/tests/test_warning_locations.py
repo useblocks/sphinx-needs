@@ -30,8 +30,8 @@ Coverage:
 
 from __future__ import annotations
 
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest

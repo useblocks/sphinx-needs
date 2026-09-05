@@ -28,10 +28,10 @@ Marked ``bazel``; skipped when no ``bazel``/``bazelisk`` is on PATH.
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import shutil
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 

@@ -22,15 +22,15 @@ Four things are load-bearing enough to have their own sections below:
 from __future__ import annotations
 
 import gc
-from io import StringIO
 import json
 import logging as stdlib_logging
 import os
-from pathlib import Path
 import shutil
 import textwrap
-from typing import Any
 import unicodedata
+from io import StringIO
+from pathlib import Path
+from typing import Any
 
 import pytest
 from sphinx.application import Sphinx

@@ -17,12 +17,12 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 import re
 import shutil
 import struct
-from typing import TYPE_CHECKING
 import zlib
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 import sphinx

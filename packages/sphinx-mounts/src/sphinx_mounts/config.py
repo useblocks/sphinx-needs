@@ -7,10 +7,10 @@ extension, and avoids the runtime weight of a full schema library.
 
 from __future__ import annotations
 
+import tomllib
 from collections.abc import Mapping
 from dataclasses import dataclass, fields
 from pathlib import Path
-import tomllib
 from typing import Any
 
 from sphinx.errors import ExtensionError

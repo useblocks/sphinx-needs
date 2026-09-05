@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import os
+import unicodedata
 from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
-import os
 from pathlib import Path
 from typing import Any
-import unicodedata
 
 from docutils import nodes
 from sphinx import addnodes
@@ -497,7 +497,7 @@ def _on_env_get_outdated(
     return actionable
 
 
-def _select_or_create_toctree(  # noqa: PLR0913
+def _select_or_create_toctree(
     doctree: nodes.document,
     toctrees: list[addnodes.toctree],
     docname: str,
@@ -560,7 +560,7 @@ def _on_check_consistency(app: Sphinx, env: Any) -> None:
             log_warning(logger, msg, "attach_to_missing")
 
 
-def _on_check_path_confinement(app: Sphinx, env: Any) -> None:  # noqa: ARG001
+def _on_check_path_confinement(app: Sphinx, env: Any) -> None:
     """Fail (or warn) when a mounted doc references a file outside its
     bundle root.
 
@@ -1443,7 +1443,7 @@ def _needs_toml_pointer(app: Sphinx, config: Config) -> Path | None:
     return (Path(app.confdir) / candidate).resolve()
 
 
-def _guard_mispointed_needs(  # noqa: PLR0913
+def _guard_mispointed_needs(
     app: Sphinx,
     config: Config,
     spec: VariantSourcesConfig,
@@ -2163,7 +2163,7 @@ def _mount_excluded_docnames(
 
 def _walked_relatives(narrowed: _NarrowedMount, excludes: tuple[str, ...]) -> set[str]:
     """Mount-relative POSIX paths one walk configuration produces."""
-    assert narrowed.dir is not None  # noqa: S101 - guarded by the caller
+    assert narrowed.dir is not None
     walker = _build_walker(
         narrowed.dir,
         include=narrowed.include,
