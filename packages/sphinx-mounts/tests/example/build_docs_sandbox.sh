@@ -30,12 +30,13 @@ mkdir -p "$(dirname "${out_tar}")"
 out_tar="$(realpath -m "${out_tar}")"
 
 # Anchor: ``docs/conf.py`` is a source file, so realpath gives its
-# real on-disk path. ``../../..`` from there is the umbrella project
-# root (the dir holding ``pyproject.toml`` and ``.venv``). The
-# genrule sets ``local = 1`` so this dereference works.
+# real on-disk path. From ``tests/example`` the uv WORKSPACE ROOT (the
+# dir holding ``pyproject.toml``, ``uv.lock`` and ``.venv``) is four
+# levels up: example -> tests -> sphinx-mounts -> packages -> the root.
+# The genrule sets ``local = 1`` so this dereference works.
 docs_dir_src="$(dirname "$(realpath "${conf_py}")")"
 example_src="$(dirname "${docs_dir_src}")"
-project_root="$(realpath "${example_src}/../..")"
+project_root="$(realpath "${example_src}/../../../..")"
 
 stage="$(mktemp -d -t sphinx-mounts-stage.XXXXXX)"
 trap 'rm -rf "${stage}"' EXIT
@@ -90,15 +91,15 @@ done
 out_dir="${stage}/_build/html"
 mkdir -p "$(dirname "${out_dir}")"
 
-# sphinx + sphinx-mounts come from the umbrella project's uv-managed
-# environment; the host conf.py's extra extensions (myst-parser,
-# sphinxcontrib-{plantuml,mermaid}) live in its ``testing`` dependency
-# group, so ``--group testing`` pulls them in. Fall back to
+# sphinx + sphinx-mounts come from the uv workspace root's environment;
+# the host conf.py's extra extensions (myst-parser,
+# sphinxcontrib-{plantuml,mermaid}) live in the root's ``test``
+# dependency group, so ``--group test`` pulls them in. Fall back to
 # ``python -m sphinx`` for environments that already have the deps
 # installed.
 cd "${stage}"
 if command -v uv >/dev/null 2>&1; then
-    uv run --project="${project_root}" --group testing \
+    uv run --project="${project_root}" --group test \
         sphinx-build -nW --keep-going -b html -c docs docs "${out_dir}"
 else
     python3 -m sphinx -nW --keep-going -b html -c docs docs "${out_dir}"

@@ -13,18 +13,21 @@ set -euo pipefail
 # ``ubproject.toml`` resolve.
 cd "${BUILD_WORKSPACE_DIRECTORY}"
 
-# sphinx + sphinx-mounts come from the umbrella project's uv-managed
-# environment (../../); the host conf.py's extra extensions
-# (myst-parser, sphinxcontrib-{plantuml,mermaid}) live in that
-# project's ``testing`` dependency group, so ``--group testing`` pulls
-# them in. ``uv run --project`` selects the right interpreter
-# regardless of where the user invoked Bazel from.
+# sphinx + sphinx-mounts come from the uv WORKSPACE ROOT's environment,
+# four levels up from here (example -> tests -> sphinx-mounts ->
+# packages -> the root). It has to be the root and not the member:
+# dependency groups belong to the root in a uv workspace, so
+# ``uv run --project packages/sphinx-mounts`` would install the member
+# and nothing else. The host conf.py's extra extensions (myst-parser,
+# sphinxcontrib-{plantuml,mermaid}) live in the root's ``test`` group,
+# so ``--group test`` pulls them in. ``uv run --project`` selects the
+# right interpreter regardless of where the user invoked Bazel from.
 # Output lands under ``_build/html`` so the existing project-wide
 # ``**/_build`` gitignore rule covers it.
 out="docs/_build/html"
 
 if command -v uv >/dev/null 2>&1; then
-    exec uv run --project="$(realpath ../..)" --group testing \
+    exec uv run --project="$(realpath ../../../..)" --group test \
         sphinx-build -nW --keep-going -b html -c docs docs "${out}" "$@"
 fi
 

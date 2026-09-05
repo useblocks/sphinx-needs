@@ -115,16 +115,18 @@ Run the commands below from this directory (`tests/example/`).
    step 2:
 
    ```sh
-   uv run --group testing sphinx-build -nW --keep-going -b html -c docs docs docs/_build/html
+   uv run --project=../../../.. --group test sphinx-build -nW --keep-going -b html -c docs docs docs/_build/html
    ```
 
    *Note on the `:docs_html` genrule:* the action runs with `local
-   = 1` and calls `uv` from `PATH`. The umbrella project's `sphinx`
-   and `sphinx-mounts` come from its default dependencies in the
-   uv-managed environment at `../../`; the host `conf.py`'s extra
-   extensions (`myst-parser`, `sphinxcontrib-plantuml` / `-mermaid`,
-   `sphinx-needs`) live in that project's `testing` dependency group,
-   so the wrapper passes `--group testing`. Projects that need a fully sandboxed,
+   = 1` and calls `uv` from `PATH`. `sphinx` and `sphinx-mounts` come
+   from the uv workspace root four levels up (`../../../..`), whose
+   default dependencies install every member; the host `conf.py`'s
+   extra extensions (`myst-parser`, `sphinxcontrib-plantuml` /
+   `-mermaid`, `sphinx-needs`) live in that root's `test` dependency
+   group, so the wrapper passes `--group test`. Dependency groups
+   belong to the root in a uv workspace, which is why `--project` must
+   name it rather than this package. Projects that need a fully sandboxed,
    hermetic build can swap the wrapper for a `rules_python`
    `py_binary` with a pinned `requirements.txt`; the genrule shape
    stays the same.
