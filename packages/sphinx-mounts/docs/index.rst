@@ -42,8 +42,9 @@ Use cases:
    shape, mount semantics, and edge-case behavior may still change before
    ``1.0``. Feedback on the mount mechanism — what works, what surprises
    you, what is missing — is very much appreciated; please open an issue
-   at `github.com/useblocks/sphinx-mounts/issues
-   <https://github.com/useblocks/sphinx-mounts/issues>`__.
+   at `github.com/useblocks/sphinx-needs/issues
+   <https://github.com/useblocks/sphinx-needs/issues>`__ (this package
+   develops in that repository, under ``packages/sphinx-mounts/``).
 
 .. toctree::
    :maxdepth: 2

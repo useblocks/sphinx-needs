@@ -56,7 +56,7 @@ problem, see :ref:`vs-sphinx-collections` in the motivation page.
 
    "Declarative TOML so any language can read the mapping" is only a real
    promise if the mapping is written down. `design/mapping-contract.md
-   <https://github.com/useblocks/sphinx-mounts/blob/main/design/mapping-contract.md>`__
+   <https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-mounts/design/mapping-contract.md>`__
    in the repository is the normative specification: per-key types and
    defaults, path anchoring and resolution, the pattern dialect, docname
    derivation including suffix iteration order, every collision tie-break,
@@ -1314,7 +1314,7 @@ extension.
    rather than four.
 
    The full tables are in `design/mapping-contract.md
-   <https://github.com/useblocks/sphinx-mounts/blob/main/design/mapping-contract.md>`__
+   <https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-mounts/design/mapping-contract.md>`__
    §12.5. If the two engines ever move to Python's semantics, they move
    together.
 

@@ -36,8 +36,8 @@ html_theme_options = {
     "sidebar_hide_name": True,
     "light_logo": "sphinx-mounts-logo_light.svg",
     "dark_logo": "sphinx-mounts-logo_dark.svg",
-    "source_repository": "https://github.com/useblocks/sphinx-mounts",
-    "source_branch": "main",
+    "source_repository": "https://github.com/useblocks/sphinx-needs",
+    "source_branch": "master",
     "source_directory": "packages/sphinx-mounts/docs/",
 }
 html_sidebars = {
@@ -52,7 +52,7 @@ html_sidebars = {
         "sidebar/variant-selector.html",
     ]
 }
-html_context = {"repository": "useblocks/sphinx-mounts"}
+html_context = {"repository": "useblocks/sphinx-needs"}
 html_css_files = ["furo.css"]
 
 # Named hyperlink targets for sibling useblocks projects. Defined once

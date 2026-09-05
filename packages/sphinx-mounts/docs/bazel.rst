@@ -152,7 +152,7 @@ Make, or any script that lands files under a known path — nothing in
    A full, browsable reference example of this pattern (Bazel-driven
    bundles + a host project + ``attach_to`` wiring) lives at
    `tests/example/
-   <https://github.com/useblocks/sphinx-mounts/tree/main/tests/example>`__
+   <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-mounts/tests/example>`__
    in the repository. Every file is checked in (no pytest
    bootstrapping); the README there walks through the layout, the
    ``bazel build`` step, and the ``sphinx-build`` step. The pytest

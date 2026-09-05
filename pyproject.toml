@@ -465,6 +465,22 @@ executor = { type = "uv", frozen = true, no-group = "dev", extra = [
 ] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs", DOCS_THEME = "furo" }
 
+[tool.poe.tasks.docs-mounts]
+help = "Build the sphinx-mounts HTML docs"
+# `extra = "docs-mounts"` is the ROOT's pass-through name, not the member's `docs`: poe
+# asks uv for the extra, and uv resolves it against the project, which is the root
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html -T"
+cwd = "packages/sphinx-mounts"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs-mounts" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-mounts" }
+
+[tool.poe.tasks.docs-mounts-clean]
+help = "Delete the built sphinx-mounts HTML docs, then build them again from scratch"
+sequence = [
+  { script = "shutil:rmtree('packages/sphinx-mounts/docs/_build/html', ignore_errors=True)" },
+  { ref = "docs-mounts" },
+]
+
 [tool.poe.tasks.docs-needs-clean]
 help = "Delete the built HTML docs, then build them again from scratch"
 sequence = [
