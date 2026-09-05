@@ -135,14 +135,16 @@ jobs:
           # `[tool.flit.module] name`, so a second member that sets it needs this step
           # taught the same thing
           module=${DIST//-/_}
+          # Import every module of the wheel BEFORE the suite. A name that is missing from
+          # a dependency AS PUBLISHED is then reported in seconds, by name, instead of
+          # somewhere inside a six-minute pytest run -- and `--expect-prefix` subsumes the
+          # assertion this step used to make inline: the import must come from the wheel,
+          # not from the checkout one directory up, which is what smoke_needs.py asserts
+          # too. The walk is stdlib only, so it runs under this scratch interpreter, which
+          # has the wheel's dependencies and nothing else. Run from the repository root,
+          # before the `cd` below, so the script is where it says it is
+          /tmp/compat/bin/python tools/src/sn_tools/import_check.py --walk "$module" --expect-prefix /tmp/compat
           cd "packages/$DIST"
-          # the import must come from the wheel, not from the checkout one directory up --
-          # the same assertion smoke_needs.py makes, and for the same reason
-          /tmp/compat/bin/python -c "
-          import importlib, sys
-          m = importlib.import_module('$module')
-          print(m.__file__)
-          sys.exit(0 if '/tmp/compat/' in m.__file__ else 1)"
           # serial: plantuml is load-sensitive and `-n auto` races on the shared jar copy.
           # `-o addopts=` drops the root config's `--import-mode=importlib` so it can be
           # given explicitly here, which is what lets the tests import the installed

@@ -382,6 +382,12 @@ help = "Check the workspace manifests agree with each other (the fence CI's Lint
 # use the synced one, because it is already there
 cmd = "python tools/src/sn_tools/check_workspace.py"
 
+[tool.poe.tasks.release-plan]
+help = "What is pending, in what order, and what the compat cell would test it against"
+# a bare name: like `check-workspace` it acts on the whole workspace, not on one package.
+# Advice, never a gate -- it exits 0 whatever it finds. Step 0 of the release recipe
+cmd = "python tools/src/sn_tools/release_plan.py"
+
 # --- The built package ---
 # These two are named for the distribution they act on rather than for the repository, so
 # the names stay correct if a second distribution is ever built here. Every other task in
@@ -402,6 +408,16 @@ help = "Install the built sphinx-needs wheel out of this project and build a doc
 # builds the wheel itself -- a stale one left in dist/ would be a silent pass -- so this
 # does not depend on `build-needs` having been run first
 cmd = "python scripts/smoke_needs.py packages/sphinx-needs"
+
+[tool.poe.tasks.import-check-needs]
+help = "Import every sphinx-needs module from its built wheel, with dependencies as PUBLISHED"
+# named for the package it acts on, like `smoke-needs`: it builds one distribution's wheel.
+# The wheel goes into an environment OUTSIDE this project, so uv reads its `Requires-Dist`
+# and resolves it from the index and every sibling arrives as published; `--no-sources` is
+# passed for the recipe and the intent (measured on uv 0.12.9, it is inert for a wheel
+# install). What stops the checkout being imported instead is that environment plus the
+# walk's `--expect-prefix`
+cmd = "python tools/src/sn_tools/import_check.py sphinx-needs"
 
 # --- Documentation ---
 # One task per theme, because the theme selects a different *extra* and executor options

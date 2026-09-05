@@ -12,8 +12,11 @@ invisible to all of them (issue #1829).  This script closes that gap:
    trees are in the sdist only because ``[tool.flit.sdist] include`` says so -- and the
    failure mode of losing them is an 11x smaller tarball, no warning and exit 0;
 3. create a throwaway virtual environment *outside* the project;
-4. install the wheel into it with ``--no-sources``, so uv resolves from the index instead
-   of silently substituting the local source tree;
+4. install the wheel into it with ``uv pip install``, which reads the wheel's own
+   ``Requires-Dist`` and resolves it from the index (measured on uv 0.12.9: ``uv pip
+   install <wheel>`` does that with or without ``--no-sources`` -- the flag governs
+   requirements uv reads from a *pyproject*, so it is passed here for the recipe and the
+   intent, not as the mechanism);
 5. assert ``sphinx_needs.__file__`` is inside that environment -- without this the whole
    run can pass while testing the checkout again;
 6. assert the wheel carries every file git tracks under the module directory -- the
@@ -322,8 +325,12 @@ def main() -> int:
             / ("Scripts" if sys.platform == "win32" else "bin")
             / ("python.exe" if sys.platform == "win32" else "python")
         )
-        # `--no-sources` is load-bearing: without it uv honours `tool.uv.sources` and
-        # installs the local source tree even into an environment outside the workspace
+        # `--no-sources` states the intent and keeps this identical to the release
+        # workflow's install, but it is not what stops the source tree being installed:
+        # measured on uv 0.12.9, `uv pip install <wheel>` resolves the wheel's
+        # `Requires-Dist` from the index either way (`[tool.uv.sources]` applies to
+        # requirements read from a pyproject). The assertion below -- the import comes from
+        # this environment -- is what actually catches a checkout being tested instead
         run(
             [
                 "uv",
