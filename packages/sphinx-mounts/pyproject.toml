@@ -1,0 +1,54 @@
+[project]
+name = "sphinx-mounts"
+version = "0.2.0"
+description = "Mount external sources into a Sphinx build without copying or symlinking"
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+maintainers = [
+  { name = "Marco Heinemann", email = "marco.heinemann@useblocks.com" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.11,<4"
+dependencies = ["sphinx>=7.4,<10", "ignore-python>=0.3.3"]
+keywords = ["sphinx", "documentation", "mount", "bazel", "monorepo"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: Sphinx :: Extension",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Documentation",
+  "Topic :: Documentation :: Sphinx",
+  "Topic :: Software Development :: Documentation",
+]
+
+# The member's own extra. The root re-exports it as `docs-mounts` -- uv resolves
+# `--extra` against the project, which is the workspace root, so an extra that lives only
+# here is not reachable by name without that pass-through.
+[project.optional-dependencies]
+docs = ["furo>=2024.5.6", "myst-parser>=4.0.0", "sphinx-design>=0.6.1"]
+
+[project.urls]
+Homepage = "https://sphinx-mounts.useblocks.com"
+Documentation = "https://sphinx-mounts.useblocks.com"
+Repository = "https://github.com/useblocks/sphinx-needs"
+Issues = "https://github.com/useblocks/sphinx-needs/issues"
+Changelog = "https://github.com/useblocks/sphinx-needs/blob/master/packages/sphinx-mounts/docs/changelog.rst"
+
+[build-system]
+requires = ["flit_core >=3.4,<5"]
+build-backend = "flit_core.buildapi"
+
+# Deliberately NO `[tool.flit.sdist]`: this wheel and sdist carry no non-Python payload, so
+# flit's module-only sdist is exactly what is already published on PyPI and nothing
+# downstream builds from it (unlike sphinx-needs, whose sdist conda-forge consumes).
+# Everything else -- ruff, ty, pytest and the dependency groups -- is the ROOT's, and
+# `tools/src/sn_tools/check_workspace.py` refuses those tables here: a member `[tool.ruff]`
+# does not extend the root's configuration, it replaces it.

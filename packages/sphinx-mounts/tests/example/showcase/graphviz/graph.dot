@@ -1,0 +1,4 @@
+digraph showcase {
+    rankdir = LR;
+    request -> handler -> response;
+}

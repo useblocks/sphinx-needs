@@ -1,0 +1,4 @@
+common --enable_bzlmod
+common --noenable_workspace
+build --announce_rc=false
+build --color=no

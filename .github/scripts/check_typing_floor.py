@@ -53,7 +53,7 @@ def check():
     except PackageNotFoundError as exc:
         print(
             f"::error::{exc.name} is not installed here; this check runs inside "
-            "`.venvs/typing`, which `uv run poe typecheck-needs` creates"
+            "`.venvs/typing`, which `uv run poe typecheck` creates"
         )
         return 2
 

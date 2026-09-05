@@ -64,6 +64,7 @@ def write_member(
     module_name: str | None = None,
     virtual: bool = False,
     private_classifier: bool = True,
+    extra_tables: str | None = None,
 ) -> Path:
     """One member manifest, plus (optionally) a module carrying a `__version__` literal."""
     directory.mkdir(parents=True, exist_ok=True)
@@ -92,6 +93,9 @@ def write_member(
         # a member this repository never releases: `package = false` hides it from uv's
         # workspace selectors, and the release plan refuses a tag that names it
         lines += ["", "[tool.uv]", "package = false"]
+    if extra_tables:
+        # raw TOML appended verbatim, for the tables check (7) refuses
+        lines += ["", extra_tables.strip()]
     manifest = directory / "pyproject.toml"
     manifest.write_text("\n".join(lines) + "\n", encoding="utf-8")
     if module_version is not None:

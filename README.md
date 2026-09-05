@@ -9,6 +9,7 @@ definitions and the CI workflows.
 | package | distribution | what it is |
 |---|---|---|
 | [`packages/sphinx-needs`](packages/sphinx-needs) | [`sphinx-needs`](https://pypi.org/project/sphinx-needs/) | the Sphinx extension for managing requirements and specifications — [documentation](https://sphinx-needs.readthedocs.io), [README](packages/sphinx-needs/README.rst) |
+| [`packages/sphinx-mounts`](packages/sphinx-mounts) | [`sphinx-mounts`](https://pypi.org/project/sphinx-mounts/) | the Sphinx extension that mounts external source trees into a build without copying or symlinking — [documentation](https://sphinx-mounts.useblocks.com), [README](packages/sphinx-mounts/README.md) |
 
 ## Working here
 
@@ -23,7 +24,7 @@ No group has to be named: the test tooling is a group of the workspace root, and
 default `dev` group includes it.
 
 Tasks that act on the whole repository are named plainly (`lint`); tasks that act on one
-package end in that package's short name (`test-needs`, `docs-needs`, `typecheck-needs`).
+package end in that package's short name (`test-needs`, `docs-needs`, `docs-mounts`).
 
 Contributions are very welcome — see
 [the contributing guide](packages/sphinx-needs/docs/contributing.rst), and `AGENTS.md` for

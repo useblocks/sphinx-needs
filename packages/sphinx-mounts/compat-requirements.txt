@@ -1,0 +1,14 @@
+# The RELEASED dependencies this package's test suite needs, for the compat cell in
+# .github/workflows/release.yaml -- the one gate that runs the suite against everything as
+# PUBLISHED rather than as checked out. A plain requirements file, because `uv pip install
+# -r` does not apply `[tool.uv.sources]`: written in the root `test` group instead, the name
+# below would resolve to the workspace member and the cell would test the checkout.
+#
+# It cannot go in the wheel's `Requires-Dist` either: sphinx-mounts has no runtime
+# dependency on sphinx-needs. This is test-only, and `>8.3.0` is the floor the three
+# integration tests in tests/test_path_directives.py need (the PlantUML `!include` fix,
+# useblocks/sphinx-needs#1750, released in 8.3.1).
+#
+# No fence reads this file -- the fence is that those three tests ASSERT sphinx-needs is
+# importable instead of skipping, so deleting this line turns the compat cell red.
+sphinx-needs>8.3.0

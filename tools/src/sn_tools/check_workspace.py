@@ -1,4 +1,4 @@
-"""Assert the five facts that hold this uv workspace together, from the manifests alone.
+"""Assert the seven facts that hold this uv workspace together, from the manifests alone.
 
 Each of these is a pair of statements in two different files that must agree, and each has
 a failure mode that no other gate in this repository can see:
@@ -39,6 +39,20 @@ a failure mode that no other gate in this repository can see:
    PyPI refuse the artefact if anyone ever tries, and being one line that looks like
    decoration it is exactly the line a future tidy-up deletes -- so it is asserted here.
 
+7. **no member carries a table the root owns.** `[dependency-groups]`, `[tool.ruff]`,
+   `[tool.pytest]` and `[tool.ty]` (with everything nested under them) are declared once,
+   at the root, for the whole workspace. A member that carries one of them does not extend
+   the root's configuration -- in the ruff case it silently REPLACES it, because ruff
+   resolves configuration per file by walking up to the nearest `pyproject.toml` that has a
+   `[tool.ruff]` section, so the package quietly gets a different rule set (and, with no
+   explicit `select`, one that moves with every ruff release). The others fail more quietly
+   still: a second `[tool.pytest.ini_options]` moves pytest's rootdir with the directory
+   pytest was invoked from, `[tool.ty]` in a member is read by neither the gate nor an
+   editor opened at the root, and a `[dependency-groups]` group cannot be composed across
+   the root/member boundary at all. Nothing else in this repository can see any of it: the
+   lock does not change, every command still exits 0, and the only symptom is a rule that
+   stopped being enforced.
+
 Every failure is reported before the script exits, each on its own `::error file=...::`
 line, so one run names every mistake rather than the first one.
 
@@ -73,6 +87,33 @@ ROOT_MANIFEST = "pyproject.toml"
 # (packaging.python.org/en/latest/guides/writing-pyproject-toml/), which is the only thing
 # standing between a by-hand `uv build tools/` and an upload
 PRIVATE_CLASSIFIER = "Private :: Do Not Upload"
+
+# Configuration the ROOT owns, for the whole workspace, with the reason a copy in a member
+# is worse than a duplicate. Each key is a table path: everything nested under it is covered
+# too, so `("tool", "ruff")` also catches `[tool.ruff.lint.isort]`
+ROOT_OWNED_TABLES: dict[tuple[str, ...], str] = {
+    ("dependency-groups",): (
+        "a dependency group cannot be composed across the root/member boundary in either "
+        "direction, so a group here is unreachable from a plain `uv sync` at the root -- "
+        "which is the only place the test tooling is installed from"
+    ),
+    ("tool", "ruff"): (
+        "ruff resolves configuration per file by walking up to the NEAREST pyproject.toml "
+        "carrying a [tool.ruff] section, so this does not extend the root's ruleset -- it "
+        "REPLACES it, for every file in this package, with a set that (having no explicit "
+        "`select`) then moves with every ruff release"
+    ),
+    ("tool", "pytest"): (
+        "a second pytest configuration moves pytest's rootdir with the directory pytest "
+        "happens to be invoked from, so which configuration is in force depends on where "
+        "the caller was standing"
+    ),
+    ("tool", "ty"): (
+        "ty is not workspace-aware: it reads the pyproject.toml of its project directory, "
+        "so a table here is read by neither the gate nor an editor opened at the root, "
+        "while the root's stays in force"
+    ),
+}
 
 
 class Report:
@@ -424,6 +465,33 @@ def check_virtual_classifier(members: list[Member], report: Report) -> None:
             )
 
 
+def check_root_owned_tables(members: list[Member], report: Report) -> None:
+    """(7) no member manifest carries a table the root owns."""
+    before = report.failures
+    for member in sorted(members, key=lambda m: m.key):
+        for path, reason in ROOT_OWNED_TABLES.items():
+            node: Any = member.data
+            for key in path:
+                if not isinstance(node, dict) or key not in node:
+                    node = None
+                    break
+                node = node[key]
+            if node is None:
+                continue
+            table = ".".join(path)
+            report.error(
+                member.relative,
+                f"[{table}] is configured at the ROOT, for the whole workspace, and "
+                f"{member.relative} carries its own. Delete it: {reason}",
+            )
+    if report.failures == before:
+        report.ok(
+            "no member carries a root-owned table ("
+            + ", ".join(".".join(path) for path in ROOT_OWNED_TABLES)
+            + ")"
+        )
+
+
 def module_version(member: Member) -> tuple[Path, str] | None:
     """`__version__` as a literal in the member's top-level module, if it has one.
 
@@ -523,6 +591,7 @@ def main(argv: list[str] | None = None) -> int:
     check_specifiers(members, not args.no_policy, report)
     check_module_version(root, members, report)
     check_virtual_classifier(members, report)
+    check_root_owned_tables(members, report)
     return 1 if report.failures else 0
 
 

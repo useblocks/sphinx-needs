@@ -7,3 +7,10 @@
 # specific pattern wins over it. The harness additionally normalises line endings before
 # hashing, so the contract holds even where this pin is absent.
 packages/sphinx-needs/tests/conformance/needflow/** text eol=lf
+
+# The variant-condition conformance corpus is the second such file, shared byte-for-byte
+# with ubCode in the same way and pinned by a digest fence in that repository. taplo leaves
+# it alone today, but its defaults are not a contract, so the exclude in
+# .pre-commit-config.yaml states the intent -- and this line keeps the working-tree bytes
+# canonical on Windows regardless.
+packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml text eol=lf

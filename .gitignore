@@ -20,6 +20,13 @@ coverage.xml
 .doctrees
 packages/sphinx-needs/docs/github_images/
 packages/sphinx-needs/docs/_static/tutorial_needs.json
+packages/sphinx-mounts/docs/superpowers/
+
+# `bazel build` in packages/sphinx-mounts/tests/example writes these convenience symlinks
+# into the workspace; the root pytest `norecursedirs` skips them for the same reason
+bazel-*
+.ruff_cache
+/prompts.md
 .eggs/
 
 

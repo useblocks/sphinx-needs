@@ -1,0 +1,8 @@
+module(
+    name = "sphinx_mounts_example",
+    version = "0.0.0",
+)
+
+# ``sh_binary`` moved out of the Bazel binary in Bazel 8 and now ships
+# from this dedicated rules module.
+bazel_dep(name = "rules_shell", version = "0.8.0")
