@@ -383,6 +383,53 @@ executor = { type = "uv", frozen = true, no-group = "dev", group = [
 ] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
+# The sphinx-mounts suite. `-m 'not bazel'` deselects the two tests that need a Bazel
+# installation, the way the sphinx-needs tasks deselect `jstest`; `test-mounts-bazel` is
+# their task. No path is named, for the reason given at the top of this section: a
+# positional argument here would be ADDED to whatever the caller appends. pytest therefore
+# collects the working directory, and the root's `norecursedirs` is what keeps it out of
+# `docs/_build` and the `bazel-*` symlinks.
+
+[tool.poe.tasks.test-mounts]
+help = "Run the sphinx-mounts suite against the default (newest) sphinx; trailing args go to pytest"
+cmd = "pytest -m 'not bazel'"
+cwd = "packages/sphinx-mounts"
+
+[tool.poe.tasks.test-mounts-bazel]
+help = "Run only the Bazel integration tests; needs bazel or bazelisk on PATH"
+cmd = "pytest -m bazel"
+cwd = "packages/sphinx-mounts"
+
+[tool.poe.tasks.test-mounts-sphinx7]
+help = "Run the sphinx-mounts suite against sphinx 7.4 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest -m 'not bazel'"
+cwd = "packages/sphinx-mounts"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-7",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-7" }
+
+[tool.poe.tasks.test-mounts-sphinx8]
+help = "Run the sphinx-mounts suite against sphinx 8.2 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest -m 'not bazel'"
+cwd = "packages/sphinx-mounts"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-8",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-8" }
+
+[tool.poe.tasks.test-mounts-sphinx9]
+help = "Run the sphinx-mounts suite against sphinx 9.1 (python >= 3.12; set UV_PYTHON to pick the interpreter)"
+cmd = "pytest -m 'not bazel'"
+cwd = "packages/sphinx-mounts"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-9",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
+
 # BARE, not `typecheck-needs`: the naming rule suffixes a task that acts on ONE package,
 # and this one checks the whole repository -- both packages plus the tooling -- out of a
 # single `[tool.ty]` configuration and a single environment. Splitting it per package would
@@ -449,6 +496,20 @@ help = "Import every sphinx-needs module from its built wheel, with dependencies
 # install). What stops the checkout being imported instead is that environment plus the
 # walk's `--expect-prefix`
 cmd = "python tools/src/sn_tools/import_check.py sphinx-needs"
+
+[tool.poe.tasks.build-mounts]
+help = "Build the sphinx-mounts sdist + wheel into dist/sphinx-mounts"
+cmd = "uv build --package sphinx-mounts --no-sources -o dist/sphinx-mounts"
+
+[tool.poe.tasks.import-check-mounts]
+help = "Import every sphinx-mounts module from its built wheel, with dependencies as PUBLISHED"
+cmd = "python tools/src/sn_tools/import_check.py sphinx-mounts"
+
+# There is no `smoke-mounts`. `scripts/smoke_needs.py`'s reason for existing is that 88% of
+# the sphinx-needs wheel by file count is non-Python payload that no test run touches;
+# sphinx-mounts' wheel has none at all, so `import-check-mounts` plus the release
+# workflow's compat cell -- which runs the real suite against the built wheel -- cover the
+# artefact. Revisit if this package ever ships package data.
 
 # --- Documentation ---
 # One task per theme, because the theme selects a different *extra* and executor options
