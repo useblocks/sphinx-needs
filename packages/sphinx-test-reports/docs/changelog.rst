@@ -22,10 +22,6 @@ Unreleased
 * Feature: New ``tr_deterministic_case_ids`` option derives test-case IDs from
   the source location instead of the need content, so an ID no longer changes
   when a test starts failing differently.
-* Feature: New ``test-reports convert`` command line interface, converting
-  test-result XML into a ``needs.json`` without running Sphinx, so the
-  conversion can run as a cacheable build action and the documentation build
-  only imports the result. See :ref:`cli`.
 
 .. _`release:1.4.0`:
 
