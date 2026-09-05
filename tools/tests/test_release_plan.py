@@ -1083,7 +1083,11 @@ def test_a_yanked_tree_version_names_the_resolver_gate_not_the_plan_job(
     workspace, capsys, offline
 ) -> None:
     """The reviewer's case (b): the per-version PyPI URL is 200 for a yanked release, so
-    check (4) PASSES -- what stops the release is resolving a range from the index."""
+    check (4) PASSES -- what stops the release is resolving a range from the index.
+
+    Here the range has nothing else to resolve to: 2.0.0 is live but the dependant's floor
+    is 2.1.0. When it DOES have something, the answer is different -- see the test below.
+    """
     pypi_pair(
         offline,
         {"acme-core": {"2.0.0": False, "2.1.0": True}},
@@ -1096,9 +1100,10 @@ def test_a_yanked_tree_version_names_the_resolver_gate_not_the_plan_job(
     )
     out, tag_exit = both_modes(root, capsys, "acme-ext-v0.1.0")
     assert (
-        "the plan job passes (acme-core 2.1.0 is on PyPI) but every file of it is yanked, "
-        "so the resolver gate -- `uv pip install --dry-run` against the index -- will not "
-        "pick it for a range: release a new acme-core" in out
+        "the plan job passes (acme-core 2.1.0 is on PyPI) but every file of it is yanked "
+        "and no other live acme-core satisfies acme-core>=2.1.0,<3, so the resolver gate "
+        "-- `uv pip install --dry-run` against the index -- cannot resolve it: release a "
+        "new acme-core" in out
     )
     assert "the plan job WILL refuse" not in out
     assert tag_exit == 0, "check 4 accepts a yanked release; the planner must not lie"
@@ -1339,3 +1344,114 @@ def test_a_release_with_no_files_left_counts_as_yanked(monkeypatch) -> None:
 def test_under_respects_the_path_boundary(path: str, expected: bool) -> None:
     roots = ["packages/core/src", "packages/core/pyproject.toml"]
     assert release_plan.under(path, roots) is expected
+
+
+# --- fix round 2: the yank only matters when the range has nowhere else to go -------------
+
+
+def test_a_yanked_tree_version_the_range_can_route_around_is_not_a_blocker(
+    workspace, capsys, offline
+) -> None:
+    """V2. `2.1.0` is yanked, but `2.0.0` is live and satisfies `>=2.0.0,<3` -- so the
+    resolver gate succeeds and the compat cell tests against `2.0.0`.
+
+    Firing the yanked branch unconditionally asserted the opposite, told the reader to cut a
+    release that is not needed, and (because it returned first) suppressed the compat-cell
+    line, the "lacks N commits" clause and the both-packages heuristic entirely.
+    """
+    pypi_pair(offline, {"acme-core": {"2.0.0": False, "2.1.0": True}})
+    offline.setattr(release_plan, "list_tags", lambda cwd=None: ["acme-core-v2.0.0"])
+    history(offline, {"acme-core": [("5ha12ed0", "the shared feature")]})
+    offline.setattr(
+        release_plan,
+        "touched_files",
+        lambda ref, paths, cwd=None: {
+            "5ha12ed0": {"packages/acme-core/src/a.py", "packages/acme-ext/src/b.py"}
+        },
+    )
+    root = workspace(
+        {
+            "acme-core": {"version": "2.1.0"},
+            "acme-ext": {"version": "0.1.0", "dependencies": ["acme-core>=2.0.0,<3"]},
+        }
+    )
+    out, tag_exit = both_modes(root, capsys, "acme-ext-v0.1.0")
+    assert (
+        "the compat cell installs acme-core from PyPI: `acme-ext-v0.1.0` would be tested "
+        "against acme-core 2.0.0 (acme-core 2.1.0, this tree's version, is yanked, so the "
+        "index resolves to 2.0.0 instead), which lacks acme-core's 1 commit since "
+        "acme-core-v2.0.0" in out
+    )
+    # the branch that used to swallow all of this
+    assert "cannot resolve it: release a new acme-core" not in out
+    assert "these changed both acme-core and acme-ext" in out
+    assert "5ha12ed0  the shared feature" in out
+    assert tag_exit == 0
+
+
+def test_an_index_that_is_entirely_yanked_is_not_an_empty_one(
+    workspace, capsys, offline
+) -> None:
+    """V3. `core.latest` is None when every release is yanked, and "PyPI has nothing" is a
+    different, wronger fact -- `print_status` five lines above already gets this right."""
+    pypi_pair(offline, {"acme-core": {"1.0.0": True, "2.0.0": True}})
+    root = workspace(
+        {
+            "acme-core": {"version": "3.0.0"},
+            "acme-ext": {"version": "0.1.0", "dependencies": ["acme-core>=3.0.0,<4"]},
+        }
+    )
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert (
+        "check 4 needs acme-core 3.0.0 on PyPI, and PyPI has 2 versions, all yanked -- "
+        "release acme-core first" in out
+    )
+    assert "PyPI has nothing" not in out
+    # and the member's own block agrees with the dependant's
+    assert "on PyPI            2 versions, latest: none -- every version yanked" in out
+
+
+# --- fix round 2: the sixth `cwd` call site --------------------------------------------
+
+
+def test_the_ancestry_check_asks_the_root_repository(
+    git_workspace, capsys, monkeypatch
+) -> None:
+    """V5. The one `--root` call site no test reached: the existing fixture has no
+    `origin/master`, so `is_ancestor` never ran and dropping its `cwd` stayed green.
+
+    Asking THIS repository instead would answer about a HEAD that is not on origin/master
+    (this branch is not), so the false line appears exactly when the true one should not.
+    """
+    monkeypatch.setattr(release_plan, "published_versions", lambda name: {})
+    root = git_workspace({"acme-core": {"version": "1.0.0"}})
+    commit(
+        root,
+        "the first commit",
+        {"packages/acme-core/src/acme_core/__init__.py": "VALUE = 1\n"},
+    )
+    git_in(root, "update-ref", "refs/remotes/origin/master", "HEAD")
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "origin/master not found" not in out
+    assert "HEAD is not on origin/master" not in out
+
+
+def test_a_head_off_the_root_repositorys_master_is_reported(
+    git_workspace, capsys, monkeypatch
+) -> None:
+    """The other direction, so the absence above is a measurement and not a silence."""
+    monkeypatch.setattr(release_plan, "published_versions", lambda name: {})
+    root = git_workspace({"acme-core": {"version": "1.0.0"}})
+    first = commit(
+        root,
+        "the first commit",
+        {"packages/acme-core/src/acme_core/__init__.py": "VALUE = 1\n"},
+    )
+    git_in(root, "update-ref", "refs/remotes/origin/master", first)
+    commit(root, "off master", {"packages/acme-core/src/acme_core/x.py": "VALUE = 2\n"})
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "HEAD is not on origin/master -- releases are cut from master" in out
+    assert "origin/master not found" not in out

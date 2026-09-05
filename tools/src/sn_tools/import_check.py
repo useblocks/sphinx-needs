@@ -121,6 +121,11 @@ def is_entry_point(name: str) -> bool:
     Importing one runs it, against the WALKER's argv, and a `sys.exit()` outside an
     `if __name__ == "__main__"` guard then ends the walk. `python -m <pkg>` is what that
     file is for; the wheel's import surface is everything else.
+
+    The cost is real and deliberate: `__main__.py` IS import surface for `python -m <pkg>`,
+    so a name missing from it -- exactly the failure this whole check exists to catch -- is
+    invisible here. That is why the skip is announced on every run rather than done
+    quietly; do not read a green walk as covering a member's CLI entry point.
     """
     return name.rpartition(".")[2] == "__main__"
 
@@ -229,6 +234,26 @@ def walk(module: str, expect_prefix: str | None) -> int:
         print(
             f"FAIL  {len(failures)} of {len(names)} modules failed to import in "
             f"{elapsed:.1f}s ({len(names) - len(failures)} imported{blocked})"
+        )
+        return 1
+    # An INCOMPLETE walk is not a pass. Both of the lists above rely on the package failing
+    # again when the loop re-imports it, and an import-time failure need not be idempotent:
+    # a `sys.exit()` behind an "already configured?" test, a module that writes a cache and
+    # then fails, a plugin that registers itself on first import. Every one of those leaves
+    # a subtree unlisted and every module the loop DID reach importing cleanly -- which used
+    # to print `OK` and exit 0, with the compat cell's gate step green over an unwalked tree
+    if cut_short is not None or unwalkable:
+        reasons = []
+        if unwalkable:
+            reasons.append(
+                f"{len(unwalkable)} package(s) did not import on the walker's first pass, "
+                "so their contents were never listed"
+            )
+        if cut_short is not None:
+            reasons.append(f"the walk was cut short by SystemExit: {cut_short.code}")
+        print(
+            f"FAIL  walk incomplete: {'; '.join(reasons)} -- {len(names)} modules "
+            f"imported in {elapsed:.1f}s, and an unknown number never were"
         )
         return 1
     print(f"OK    {len(names)} modules imported in {elapsed:.1f}s")

@@ -242,9 +242,12 @@ def published_versions(name: str) -> dict[Version, bool]:
             f"what {name} has published"
         ) from exc
     except OSError as exc:  # URLError, and a read TimeoutError, which is not one
+        # `.reason` where there is one, so a URLError still reads `[Errno 61] Connection
+        # refused` rather than `<urlopen error [Errno 61] Connection refused>` -- which is
+        # what `on_pypi` prints two functions away, and the two should not drift
         raise PlanError(
-            f"cannot reach PyPI ({exc}); refusing to advise on a guess about what "
-            f"{name} has published"
+            f"cannot reach PyPI ({getattr(exc, 'reason', exc)}); refusing to advise on a "
+            f"guess about what {name} has published"
         ) from exc
     except ValueError as exc:  # json.JSONDecodeError
         raise PlanError(f"PyPI returned unreadable JSON for {url}: {exc}") from exc
@@ -667,32 +670,46 @@ def print_dependant(core: Status, dependant: Status, spec: str) -> None:
     print(f"    {dependant.name} {dependant.declared} needs {spec}")
     if core.declared not in core.published:
         # check (4)'s own predicate, verbatim: is the TREE's version on the index?
-        have = (
-            f"has {core.latest} as its newest live version"
-            if core.latest is not None
-            else "has nothing"
-        )
+        if core.latest is not None:
+            have = f"has {core.latest} as its newest live version"
+        elif core.published:
+            # `latest` is None but the index is not empty: every release is yanked, and
+            # "PyPI has nothing" would be a different, wronger fact
+            how_many = f"{len(core.published)} version{'' if len(core.published) == 1 else 's'}"
+            have = f"has {how_many}, all yanked"
+        else:
+            have = "has nothing"
         print(
             f"      the plan job WILL refuse `{tag}`: check 4 needs {core.name} {core.declared} on PyPI, and PyPI {have} -- release {core.name} first"
         )
-    elif core.published[core.declared]:
-        print(
-            f"      the plan job passes ({core.name} {core.declared} is on PyPI) but every file of it is yanked, so the resolver gate -- `uv pip install --dry-run` against the index -- will not pick it for a range: release a new {core.name}"
-        )
     else:
+        # the specifier is consulted BEFORE the yank, because a yanked tree version is only
+        # a problem when nothing else live satisfies the dependant: the resolver gate and the
+        # compat cell resolve a RANGE, so a live 2.0.0 answers `>=2.0.0,<3` perfectly well
+        # even while the tree's own 2.1.0 is withdrawn
         usable = sorted(Requirement(spec).specifier.filter(live))
-        if not usable:
+        withdrawn = core.published[core.declared]
+        if not usable and withdrawn:
+            print(
+                f"      the plan job passes ({core.name} {core.declared} is on PyPI) but every file of it is yanked and no other live {core.name} satisfies {spec}, so the resolver gate -- `uv pip install --dry-run` against the index -- cannot resolve it: release a new {core.name}"
+            )
+        elif not usable:
             print(
                 f"      no published {core.name} satisfies {spec}: the resolver gate fails (and Lint's check-workspace refuses a specifier that does not admit the tree's {core.declared})"
             )
         else:
+            instead = (
+                f" ({core.name} {core.declared}, this tree's version, is yanked, so the index resolves to {usable[-1]} instead)"
+                if withdrawn
+                else ""
+            )
             lacks = (
                 f", which lacks {core.name}'s {count} commit{plural} since {core.last_tag or 'the start of history'}"
                 if count
                 else ""
             )
             print(
-                f"      the compat cell installs {core.name} from PyPI: `{tag}` would be tested against {core.name} {usable[-1]}{lacks}"
+                f"      the compat cell installs {core.name} from PyPI: `{tag}` would be tested against {core.name} {usable[-1]}{instead}{lacks}"
             )
             both = shared_commits(core, dependant)
             if both:

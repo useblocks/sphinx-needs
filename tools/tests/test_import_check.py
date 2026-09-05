@@ -94,6 +94,62 @@ def test_every_failing_module_is_reported_not_just_the_first(tmp_path: Path) -> 
     assert "missing_symbol.py:1 in <module>: raise ImportError" in out
 
 
+FLAKY_PACKAGE = """\
+import pathlib
+
+marker = pathlib.Path({marker!r})
+if not marker.exists():
+    marker.write_text("seen")
+    raise {failure}
+"""
+
+
+@pytest.mark.parametrize(
+    ("failure", "expected"),
+    [
+        # the walker's own generator dies on this one, so nothing after it is even listed
+        ("SystemExit(0)", "the walk was cut short by SystemExit: 0"),
+        # this one goes through `onerror`, so the siblings are listed and the subtree is not
+        (
+            "ImportError('not yet')",
+            "1 package(s) did not import on the walker's first pass",
+        ),
+    ],
+)
+def test_an_incomplete_walk_is_never_ok(
+    tmp_path: Path, failure: str, expected: str
+) -> None:
+    """V1. An import-time failure need not be idempotent.
+
+    A `sys.exit()` behind an "already configured?" test, a module that writes a cache and
+    then fails, a plugin that registers itself on first import: the package fails while
+    `pkgutil` is walking, and succeeds when the loop re-imports it. Every module the loop
+    reached then imports cleanly, `failures` is empty -- and the walk printed `OK` and
+    exited 0 over a subtree it never listed, with the compat cell's gate step green.
+    """
+    root = scratch_package(
+        tmp_path,
+        {
+            "pkg/__init__.py": "",
+            "pkg/sub/__init__.py": FLAKY_PACKAGE.format(
+                marker=str(tmp_path / "marker"), failure=failure
+            ),
+            "pkg/sub/child.py": "VALUE = 1\n",
+            "pkg/zzz.py": "VALUE = 1\n",
+        },
+    )
+    proc = walk(root, "pkg")
+    out = proc.stdout
+    # the second import succeeds, so nothing is recorded as a per-module failure ...
+    assert "FAIL  pkg.sub:" not in out
+    assert "OK    " not in out
+    # ... and the walk is still not a pass, because it did not finish
+    assert "FAIL  walk incomplete:" in out
+    assert expected in out
+    assert "and an unknown number never were" in out
+    assert proc.returncode == 1, proc.stdout + proc.stderr
+
+
 def test_a_package_that_cannot_import_stops_its_own_subtree(tmp_path: Path) -> None:
     root = scratch_package(
         tmp_path,
