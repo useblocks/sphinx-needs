@@ -5,10 +5,14 @@ subprocess with `sys.executable` -- because its entire subject is what happens a
 time, and a mocked import would prove nothing about it.
 
 The **outer** layer is tested with `subprocess.run` monkeypatched, on its argv. It exists to
-issue four exact commands, and one flag on one of them (`--no-sources` on the install) is
-the whole reason the check means anything: without it uv substitutes the sibling member from
-the checkout and the walk passes against code that was never released. So the assertions are
-on the commands, not on their results.
+issue four exact commands, so the assertions are on the commands rather than on their
+results -- and what they pin is the RECIPE: that these are, character for character, the
+release build's and the compat cell's own commands. Measured on uv 0.12.9, `--no-sources` on
+a *wheel* install changes nothing (a wheel's `Requires-Dist` resolves from the index either
+way; the flag governs requirements uv reads from a pyproject), so the argv assertion is the
+only thing that can catch its loss -- and losing it would make this check stop matching the
+pipeline it stands in for. What makes the check *mean* something is the out-of-project
+environment plus `--expect-prefix`, and those are tested against real imports above.
 """
 
 from __future__ import annotations
@@ -207,7 +211,8 @@ def test_the_commands_are_the_release_build_and_a_no_sources_install(
     assert build[6].endswith("/dist")
     assert venv[:2] == ["uv", "venv"]
     assert venv[2].endswith("/venv")
-    # THE flag: without it uv installs the sibling member from the checkout
+    # `--no-sources` pins the recipe, not a behaviour: this has to stay the same command
+    # the compat cell runs (measured -- for a wheel install the flag is inert)
     assert install[:6] == ["uv", "pip", "install", "--python", venv[2], "--no-sources"]
     assert install[6].endswith(".whl")
     # and the walk runs under the environment's own interpreter, told where to expect it
