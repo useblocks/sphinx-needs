@@ -30,7 +30,7 @@ repos:
         # `--no-project --with packaging`, so that a mistake in the manifests is named
         # rather than reported as a failed sync; here the synced environment already
         # exists, so the hook uses it and stays fast
-        entry: uv run --frozen --no-sync python .github/scripts/check_workspace.py
+        entry: uv run --frozen --no-sync python tools/src/sn_tools/check_workspace.py
         pass_filenames: false
         files: ^(pyproject\.toml|packages/[^/]+/pyproject\.toml|packages/[^/]+/src/[^/]+/__init__\.py)$
       - id: ty

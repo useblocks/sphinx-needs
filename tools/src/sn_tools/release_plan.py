@@ -10,6 +10,10 @@ is not a clear "no" is an error, never a pass.
 
 Given a tag `<dist>-v<version>` it asserts, in order:
 
+0. `<dist>` is a member this repository actually publishes. A member declaring
+   `[tool.uv] package = false` is VIRTUAL -- uv can build it with no command, so there is
+   nothing a tag could release -- and a runtime dependency on one is refused for the same
+   reason: the wheel would name a distribution that is never on PyPI;
 1. the tag parses, and `<dist>` is a member of this workspace;
 2. `<version>` is exactly the version that member declares -- the tag cannot publish
    something the tree does not build;
@@ -35,13 +39,13 @@ the answer to "what do I release, and in what sequence".
 
 Usage::
 
-    python .github/scripts/release_plan.py                      # print the order
-    python .github/scripts/release_plan.py --tag sphinx-needs-v8.6.0
-    python .github/scripts/release_plan.py --tag ... --rehearsal --github-output
+    python tools/src/sn_tools/release_plan.py                      # print the order
+    python tools/src/sn_tools/release_plan.py --tag sphinx-needs-v8.6.0
+    python tools/src/sn_tools/release_plan.py --tag ... --rehearsal --github-output
 
 Run at the workspace root. Needs `packaging`; PyPI is reached with the standard library,
 and git with `git`. In CI it runs as
-`uv run --no-project --with packaging python .github/scripts/release_plan.py`, so a
+`uv run --no-project --with packaging python tools/src/sn_tools/release_plan.py`, so a
 manifest mistake is named here rather than reported as "sync failed".
 """
 
@@ -77,10 +81,18 @@ class PlanError(RuntimeError):
     """A condition that must stop the release rather than be guessed at."""
 
 
-def members(root: Path) -> dict[str, dict[str, Any]]:
+def members(root: Path) -> tuple[dict[str, dict[str, Any]], set[str]]:
+    """Every workspace member's `[project]` table, and the names of the virtual ones.
+
+    A member with `[tool.uv] package = false` is virtual: `uv build --all-packages` skips
+    it and `uv build --package <it>` is refused, so no uv command can produce a
+    distribution of it. That is this workspace's `publish = false`, and it is what makes
+    the rules below safe to state as errors rather than as warnings.
+    """
     manifest = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     globs = manifest["tool"]["uv"]["workspace"]["members"]
     out: dict[str, dict[str, Any]] = {}
+    virtual: set[str] = set()
     for pattern in globs:
         for path in sorted(root.glob(f"{pattern}/pyproject.toml")):
             raw = tomllib.loads(path.read_text(encoding="utf-8"))
@@ -102,8 +114,11 @@ def members(root: Path) -> dict[str, dict[str, Any]]:
                     f"{path}: {data['name']} declares no [project] version; the tag says "
                     "which version is being released and this is what it is checked against"
                 )
-            out[canonicalize_name(data["name"])] = data
-    return out
+            key = canonicalize_name(data["name"])
+            out[key] = data
+            if raw.get("tool", {}).get("uv", {}).get("package") is False:
+                virtual.add(key)
+    return out, virtual
 
 
 def edges(project: dict[str, Any], names: set[str]) -> set[str]:
@@ -233,23 +248,31 @@ def split_tag(tag: str, known: list[str]) -> tuple[str, str]:
 
 def plan(args: argparse.Namespace) -> int:
     root: Path = args.root
-    found = members(root)
+    found, virtual = members(root)
     names = set(found)
     graph = {name: edges(data, names) for name, data in found.items()}
-    sequence = order(graph)
+    sequence = [name for name in order(graph) if name not in virtual]
 
     print("release order (dependencies first):")
     for rank, name in enumerate(sequence, 1):
         deps = ", ".join(sorted(graph[name])) or "-"
         print(f"  {rank}. {name} {found[name]['version']}   depends on: {deps}")
+    # listed, but not numbered: a virtual member has no release to order
+    for name in sorted(virtual):
+        print(f"  -- {name} {found[name]['version']}   (virtual -- never published)")
 
     if not args.tag:
         return 0
 
     failures = 0
 
-    # 1. the tag names a member
+    # 1. the tag names a member, and one this repository publishes
     dist, version = split_tag(args.tag, sorted(names))
+    if dist in virtual:
+        raise PlanError(
+            f"`{found[dist]['name']}` is a virtual member (`[tool.uv] package = false`): "
+            "never built, never published -- there is nothing to release"
+        )
 
     # 2. the tag's version is the version this tree builds
     declared = found[dist]["version"]
@@ -278,8 +301,18 @@ def plan(args: argparse.Namespace) -> int:
     else:
         print(f"OK    {dist} {version} is not on PyPI yet")
 
-    # 4. every intra-workspace runtime dependency is published at the tree's version
+    # 4. every intra-workspace runtime dependency is published at the tree's version.
+    #    A virtual dependency is never on PyPI at any version, so it is not a question to
+    #    ask the index -- it is a wheel that could not be installed, and it is fatal here
+    #    exactly as it is in `check_workspace.py` on every pull request.
     for dependency in sorted(graph[dist]):
+        if dependency in virtual:
+            raise PlanError(
+                f"{found[dist]['name']} declares a runtime dependency on "
+                f"{found[dependency]['name']}, which is a virtual member "
+                "(`[tool.uv] package = false`); the published wheel could never be "
+                f"installed: `{found[dependency]['name']}` is never on PyPI"
+            )
         needed = found[dependency]["version"]
         if on_pypi(dependency, needed):
             print(f"OK    {dependency} {needed} is on PyPI")

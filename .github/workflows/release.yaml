@@ -58,7 +58,7 @@ jobs:
       # skipping either check, so a rehearsal exercises `git merge-base` and the
       # `fetch-depth: 0` above rather than leaving them for the first real tag.
       - id: plan
-        run: uv run --no-project --with packaging python .github/scripts/release_plan.py --tag "$TAG" --github-output ${{ github.event_name == 'workflow_dispatch' && '--rehearsal' || '' }}
+        run: uv run --no-project --with packaging python tools/src/sn_tools/release_plan.py --tag "$TAG" --github-output ${{ github.event_name == 'workflow_dispatch' && '--rehearsal' || '' }}
 
   build:
     name: Build and gate
@@ -90,7 +90,7 @@ jobs:
           cache-python: true
       - name: Check the workspace manifests agree with each other
         run: >
-          uv run --no-project --with packaging python .github/scripts/check_workspace.py
+          uv run --no-project --with packaging python tools/src/sn_tools/check_workspace.py
       - name: Build
         # `--package`, and `-o` into a per-distribution directory: `uv publish`'s default
         # glob is `dist/*`, which in a workspace would publish every artefact in it.

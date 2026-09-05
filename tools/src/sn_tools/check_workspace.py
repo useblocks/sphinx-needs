@@ -19,7 +19,10 @@ a failure mode that no other gate in this repository can see:
    can satisfy. Worse, the specifier is not in `uv.lock` at all -- changing it gives a
    zero-line lock diff and `uv lock --check` still exits 0 -- so no amount of `--frozen`
    and no review of the lock can ever see it. "Tight" is the workspace's tracking policy:
-   `>=<the dependency's current version>,<<its next major>`. Extensions carry no
+   `>=<the dependency's current version>,<<its next major>`. A dependency on a member
+   declaring `[tool.uv] package = false` is refused outright: uv can build such a member
+   with no command, so it is never on PyPI and the wheel could not be installed at all.
+   Extensions carry no
    backwards-compatibility code, so the floor is a claim about what was actually tested,
    and the cap is what stops a future major being co-installed with a dependant written
    against the old one. `--no-policy` keeps only the honesty half.
@@ -33,13 +36,13 @@ line, so one run names every mistake rather than the first one.
 
 Usage::
 
-    python .github/scripts/check_workspace.py [--no-policy]
+    python tools/src/sn_tools/check_workspace.py [--no-policy]
 
 Run at the workspace root. Needs `packaging` and nothing else, and it reads only manifests
 and source text -- deliberately: a check on the manifests must not depend on an environment
 built from those manifests, or a manifest mistake is reported as "sync failed" instead of
 being named. In CI it runs as
-`uv run --no-project --with packaging python .github/scripts/check_workspace.py`, which
+`uv run --no-project --with packaging python tools/src/sn_tools/check_workspace.py`, which
 needs no `uv sync` at all.
 """
 
@@ -97,6 +100,16 @@ class Member:
             return Version(raw)
         except InvalidVersion:
             return None
+
+    @property
+    def virtual(self) -> bool:
+        """`[tool.uv] package = false` -- the workspace's `publish = false`.
+
+        uv can build such a member with no command (`--all-packages` skips it,
+        `--package` is refused), so it is never on PyPI and nothing may declare a runtime
+        dependency on it.
+        """
+        return self.data.get("tool", {}).get("uv", {}).get("package") is False
 
     @property
     def module(self) -> str:
@@ -290,6 +303,7 @@ def check_requires_python(
 
 def check_specifiers(members: list[Member], policy: bool, report: Report) -> None:
     """(4) intra-workspace runtime specifiers are honest, and tight."""
+    virtual = {member.key for member in members if member.virtual}
     versions: dict[str, Version] = {}
     for member in members:
         if "version" in member.dynamic:
@@ -324,6 +338,15 @@ def check_specifiers(members: list[Member], policy: bool, report: Report) -> Non
                 continue
             edges += 1
             where = f"{member.name}{f'[{extra}]' if extra else ''} -> {requirement}"
+            if target in virtual:
+                report.error(
+                    member.relative,
+                    f"{where}: `{target}` is `[tool.uv] package = false` and is therefore "
+                    "never on PyPI, so this wheel could never be installed. A virtual "
+                    "member is repository tooling; if a published package needs its code, "
+                    "the code belongs in a published package",
+                )
+                continue
             current = versions[target]
             # prereleases=True so a member sitting on a release candidate is not reported
             # as un-admitted by a floor that names that very candidate
@@ -342,7 +365,7 @@ def check_specifiers(members: list[Member], policy: bool, report: Report) -> Non
                         member.relative,
                         f"{where}: tight tracking wants `{target}{want}` (the floor is "
                         f"{target}'s current version and the cap is its next major); run "
-                        f"`python .github/scripts/propagate_floors.py {target}`",
+                        f"`python tools/src/sn_tools/propagate_floors.py {target}`",
                     )
                     continue
             report.ok(f"{where}  (workspace {target} {current})")

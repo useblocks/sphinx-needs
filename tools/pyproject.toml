@@ -1,0 +1,37 @@
+# The workspace's tooling: the manifest fences and the release plan. It is a member so that
+# its dependencies are declared in one place and installed everywhere the tooling runs,
+# rather than being borrowed from whatever a test dependency happened to pull in -- and it
+# is a VIRTUAL member so that it can never be released.
+#
+# `[tool.uv] package = false` is this workspace's `publish = false`, and it is stronger than
+# Cargo's, because the artefact cannot be produced at all. Measured on uv 0.12.9:
+#
+#   * `uv build --all-packages` skips it -- only the publishable members are built;
+#   * `uv build --package sphinx-needs-workspace-tools` is REFUSED ("does not have a
+#     `build-system`"), so there is no way to produce a distribution of it by hand either;
+#   * `uv lock` records it as `source = { virtual = "tools" }`, and `uv sync` installs its
+#     DEPENDENCIES without installing it -- `import sn_tools` fails in `.venv`, which is
+#     correct: the tooling is run by path, from the repository, never imported by the suite;
+#   * `uv version --package sphinx-needs-workspace-tools` still works, so the fences that
+#     read every member's version have something to read.
+#
+# `tools/src/sn_tools/release_plan.py`'s own rule closes the loop: a tag naming a virtual
+# member is refused before anything is built, and a publishable member that declares a
+# runtime dependency on one is refused too, because that wheel could never be installed.
+#
+# It lives OUTSIDE `packages/`, which keeps meaning "distributions this repository
+# publishes", and it carries no `pkg:` label of its own -- `.github/labeler.yml` files it
+# under `pkg: workspace`, which is what it is.
+[project]
+name = "sphinx-needs-workspace-tools"
+version = "0"
+description = "Repository tooling: the workspace fences and the release plan. Never built, never published."
+# must equal the root's, and `check_workspace.py` check (3) is what says so
+requires-python = ">=3.11,<4"
+dependencies = [
+  "packaging>=24", # requirement/specifier/version parsing, in every fence
+  "tomlkit>=0.13", # round-tripping a manifest in propagate_floors.py
+]
+
+[tool.uv]
+package = false

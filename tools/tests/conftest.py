@@ -1,4 +1,4 @@
-"""Scratch workspaces for the repository's own scripts (`.github/scripts/*.py`).
+"""Scratch workspaces for the repository's own tooling (`tools/src/sn_tools/`).
 
 Every test here builds a throwaway uv workspace under `tmp_path` and runs one script's
 `main()` against it. Nothing reaches the network and nothing runs `uv`: the scripts under
@@ -15,15 +15,21 @@ from typing import Any
 
 import pytest
 
-# The scripts under test are loose files, not a package, and nothing installs them. Putting
-# `.github/scripts` on `sys.path` HERE rather than in the root `[tool.pytest.ini_options]
-# pythonpath` confines the change to the sessions that collect these tests -- a bare root
-# `pytest` collects both trees and so shares one `sys.path` throughout, which is harmless
-# because the name that could collide (`tests`) no longer exists outside a package. That
-# rename is the half of this that does the work; a repository-wide `pythonpath` entry would
-# have exposed this directory's siblings by name to every pytest run rooted here, including
-# the ones that never look at these tests. Hence `selftests`, and hence this line.
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+# `tools` is a VIRTUAL member (`[tool.uv] package = false`), so nothing installs
+# `sn_tools` into any environment -- deliberately: the tooling is run by path, from the
+# repository, and is never imported by anything the suite ships. These tests therefore put
+# it on `sys.path` themselves.
+#
+# `tools/src`, NOT `tools/`. Putting `tools/` on a path root would make this very
+# directory importable as a top-level package called `tests`, competing for the name with
+# `packages/sphinx-needs/tests` in any session that collects both -- which a bare root
+# `pytest` does, because `testpaths` names them both. `tools/src` contains exactly one
+# name, `sn_tools`, which nothing else claims.
+#
+# Doing it here rather than in a repository-wide `[tool.pytest.ini_options] pythonpath`
+# also confines the change to the sessions that collect these tests: the CI matrix cells,
+# which pass the package's `tests` path explicitly, never execute this file at all.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 ROOT_TEMPLATE = """\
 [project]
@@ -56,6 +62,7 @@ def write_member(
     requires_python: str = ">=3.11,<4",
     module_version: str | None = None,
     module_name: str | None = None,
+    virtual: bool = False,
 ) -> Path:
     """One member manifest, plus (optionally) a module carrying a `__version__` literal."""
     directory.mkdir(parents=True, exist_ok=True)
@@ -76,6 +83,9 @@ def write_member(
             lines.append(f"{extra} = [{toml_list(specs)}]")
     if module_name:
         lines += ["", "[tool.flit.module]", f'name = "{module_name}"']
+    if virtual:
+        # the workspace's `publish = false`: uv can build this member with no command
+        lines += ["", "[tool.uv]", "package = false"]
     manifest = directory / "pyproject.toml"
     manifest.write_text("\n".join(lines) + "\n", encoding="utf-8")
     if module_version is not None:

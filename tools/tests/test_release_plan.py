@@ -12,7 +12,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-import release_plan
+from sn_tools import release_plan
 
 pytestmark = pytest.mark.filterwarnings("error")
 
@@ -63,6 +63,74 @@ def test_a_cycle_is_an_error(workspace, capsys) -> None:
     )
     assert run(root) == 1
     assert "cycle among workspace members: acme-a, acme-b" in capsys.readouterr().out
+
+
+# --- (0) a virtual member is never a release ---------------------------------------------
+
+
+def test_a_virtual_member_is_listed_but_not_numbered(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-tools": {"version": "0", "virtual": True},
+        }
+    )
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "1. acme-core 2.0.0   depends on: -" in out
+    assert "-- acme-tools 0   (virtual -- never published)" in out
+    assert "2. acme-tools" not in out
+
+
+def test_a_tag_naming_a_virtual_member_is_refused(workspace, capsys, offline) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-tools": {"version": "0", "virtual": True},
+        }
+    )
+    assert run(root, "--tag", "acme-tools-v0", "--rehearsal", "--no-git") == 1
+    out = capsys.readouterr().out
+    assert "`acme-tools` is a virtual member (`[tool.uv] package = false`)" in out
+    assert "there is nothing to release" in out
+
+
+def test_a_runtime_dependency_on_a_virtual_member_is_refused(
+    workspace, capsys, offline
+) -> None:
+    """The wheel would name a distribution that is never on PyPI."""
+    published(offline, {("acme-core", "2.0.0"): False})
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0", "dependencies": ["acme-tools>=0"]},
+            "acme-tools": {"version": "0", "virtual": True},
+        }
+    )
+    assert run(root, "--tag", "acme-core-v2.0.0", "--rehearsal", "--no-git") == 1
+    out = capsys.readouterr().out
+    assert "acme-core declares a runtime dependency on acme-tools" in out
+    assert "`acme-tools` is never on PyPI" in out
+
+
+def test_pypi_is_never_asked_about_a_virtual_member(workspace, offline) -> None:
+    """Check 4 must not turn a virtual dependency into a 404 lookup."""
+    asked: list[str] = []
+
+    def fake(name: str, version: str) -> bool:
+        asked.append(name)
+        return False
+
+    offline.setattr(release_plan, "on_pypi", fake)
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0", "dependencies": ["acme-tools>=0"]},
+            "acme-tools": {"version": "0", "virtual": True},
+        }
+    )
+    assert run(root, "--tag", "acme-core-v2.0.0", "--rehearsal", "--no-git") == 1
+    # check 3 asked about the release candidate; check 4 refused the virtual edge before
+    # it could turn it into a lookup that is guaranteed to 404
+    assert asked == ["acme-core"]
 
 
 # --- (1) the tag names a member ----------------------------------------------------------

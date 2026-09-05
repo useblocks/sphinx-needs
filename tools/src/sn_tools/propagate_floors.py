@@ -11,7 +11,7 @@ specifier says (uv#9811), and the specifier is not in `uv.lock` at all.
 So it is mechanical. Run it in the release **pull request**, right after
 `uv version --package X --bump ...`, and never in the release job: the job runs *after* the
 tag, so a rewrite there would not be in the tagged commit and the published wheel would
-disagree with the tree the tag names. `.github/scripts/check_workspace.py` in Lint is what
+disagree with the tree the tag names. `tools/src/sn_tools/check_workspace.py` in Lint is what
 fails if somebody forgets.
 
 tomlkit rather than tomllib plus text munging because it round-trips comments and
@@ -19,9 +19,9 @@ formatting: the diff is one line per dependant and nothing else.
 
 Usage::
 
-    python .github/scripts/propagate_floors.py sphinx-variants           # the tree's version
-    python .github/scripts/propagate_floors.py sphinx-variants --version 2.0.0
-    python .github/scripts/propagate_floors.py sphinx-variants --check   # report, write nothing
+    python tools/src/sn_tools/propagate_floors.py sphinx-variants           # the tree's version
+    python tools/src/sn_tools/propagate_floors.py sphinx-variants --version 2.0.0
+    python tools/src/sn_tools/propagate_floors.py sphinx-variants --check   # report, write nothing
 
 Run at the workspace root. Needs `tomlkit` and `packaging` (both in the root `dev` group;
 in CI, `uv run --no-project --with tomlkit --with packaging python ...`). Afterwards run

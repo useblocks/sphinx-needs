@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import propagate_floors
 import pytest
+from sn_tools import propagate_floors
 
 pytestmark = pytest.mark.filterwarnings("error")
 

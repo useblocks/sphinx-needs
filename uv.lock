@@ -16,6 +16,7 @@ conflicts = [[
 members = [
     "sphinx-needs",
     "sphinx-needs-workspace",
+    "sphinx-needs-workspace-tools",
 ]
 
 [[package]]
@@ -2399,6 +2400,7 @@ version = "0"
 source = { virtual = "." }
 dependencies = [
     { name = "sphinx-needs" },
+    { name = "sphinx-needs-workspace-tools" },
 ]
 
 [package.optional-dependencies]
@@ -2456,7 +2458,6 @@ dev = [
     { name = "responses" },
     { name = "sphinxcontrib-plantuml" },
     { name = "syrupy" },
-    { name = "tomlkit" },
     { name = "uv" },
 ]
 js = [
@@ -2489,7 +2490,6 @@ test = [
 typing = [
     { name = "docutils", version = "0.20.1", source = { registry = "https://pypi.org/simple" } },
     { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" } },
-    { name = "tomlkit" },
     { name = "ty" },
     { name = "types-docutils" },
     { name = "types-requests" },
@@ -2504,6 +2504,7 @@ requires-dist = [
     { name = "sphinx-needs", extras = ["theme-im"], marker = "extra == 'theme-im'", editable = "packages/sphinx-needs" },
     { name = "sphinx-needs", extras = ["theme-pds"], marker = "extra == 'theme-pds'", editable = "packages/sphinx-needs" },
     { name = "sphinx-needs", extras = ["theme-rtd"], marker = "extra == 'theme-rtd'", editable = "packages/sphinx-needs" },
+    { name = "sphinx-needs-workspace-tools", virtual = "tools" },
 ]
 provides-extras = ["plotting", "docs", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
 
@@ -2540,7 +2541,6 @@ dev = [
     { name = "responses", specifier = ">=0.22,<0.27" },
     { name = "sphinxcontrib-plantuml", specifier = "~=0.0" },
     { name = "syrupy", specifier = ">=4,<7" },
-    { name = "tomlkit", specifier = ">=0.13" },
     { name = "uv", specifier = ">=0.12.9" },
 ]
 js = [{ name = "pytest-playwright", specifier = "~=0.9" }]
@@ -2564,10 +2564,24 @@ test = [
 typing = [
     { name = "docutils", specifier = "~=0.20.0" },
     { name = "sphinx", specifier = "~=7.4" },
-    { name = "tomlkit", specifier = ">=0.13" },
     { name = "ty", specifier = "~=0.0.77" },
     { name = "types-docutils", specifier = "~=0.20.0" },
     { name = "types-requests" },
+]
+
+[[package]]
+name = "sphinx-needs-workspace-tools"
+version = "0"
+source = { virtual = "tools" }
+dependencies = [
+    { name = "packaging" },
+    { name = "tomlkit" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "packaging", specifier = ">=24" },
+    { name = "tomlkit", specifier = ">=0.13" },
 ]
 
 [[package]]

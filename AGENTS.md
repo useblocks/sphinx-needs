@@ -2,10 +2,11 @@
 
 Guidance for AI coding agents working on this repository. It is a
 [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/). Each distribution
-lives under `packages/<distribution-name>/`. The root is a project named
-`sphinx-needs-workspace` that is **never built and never published** (`[tool.uv] package =
-false`, no `[build-system]`): it exists to depend on every member, to own the dependency
-groups they share, and to hold repository-level policy. **Assume the working directory is the
+lives under `packages/<distribution-name>/`, and the repository's own tooling is a further,
+virtual member in `tools/`. The root is a project named `sphinx-needs-workspace` that is
+**never built and never published** (`[tool.uv] package = false`, no `[build-system]`): it
+exists to depend on every member, to own the dependency groups they share, and to hold
+repository-level policy. **Assume the working directory is the
 repository root**; every command below is written for it.
 
 Each package has its own `AGENTS.md` with the detail for that package — start with
@@ -27,9 +28,31 @@ the shim.
 | lint, format, type-check, pytest and task configuration | the root `pyproject.toml` |
 | the lock | the root `uv.lock` — one lock for the whole workspace |
 | hooks | the root `.pre-commit-config.yaml` — one config; anything triggered by `uv.lock` has to live here |
-| CI, scripts | `.github/` |
+| the repository's own tooling | `tools/` — the workspace fences and the release plan |
+| CI | `.github/workflows/`, and `.github/scripts/` for the three checks that must run *inside* a CI environment |
 | the docker image | `docker/` — a repository-level deliverable, like the workflows |
 | Read the Docs | `.readthedocs.yml`, and it stays at the root under that exact name: the configuration path applies to every version, so moving it makes older tags unbuildable |
+
+**`tools/` is the workspace's tooling — a virtual member, never built and never
+published, whose manifest declares the tooling's dependencies; `.github/scripts/` keeps
+only the checks that must execute inside a specific CI environment.** The distinction is
+what each script *inspects*. `tools/src/sn_tools/` holds the ones that read the manifests
+before any environment exists — `check_workspace.py`, `release_plan.py`,
+`propagate_floors.py` — and they are run by path, never imported
+(`uv run --no-project --with packaging python tools/src/sn_tools/<script>.py` in CI, so a
+manifest mistake is named rather than reported as a failed sync). `.github/scripts/` keeps
+`check_sphinx_cell.py` (it imports the cell's own sphinx), `check_typing_floor.py` (it runs
+inside `.venvs/typing`) and `extract_benchmark_data.py` (it runs inside the benchmark job) —
+none of which could move without dragging a member into every matrix cell. `scripts/smoke_needs.py`
+stays too: its whole point is to run outside every project environment.
+
+The member is `[tool.uv] package = false`, which is this workspace's `publish = false` and
+is stronger than declaring an intent: `uv build --all-packages` skips it,
+`uv build --package sphinx-needs-workspace-tools` is refused for having no `build-system`,
+and the lock records `source = { virtual = "tools" }`. So no uv command can produce a
+distribution of it, `uv sync` installs its *dependencies* without installing it (`import
+sn_tools` fails, which is correct — the tooling is run by path), and
+`tools/src/sn_tools/release_plan.py` refuses a tag that names it.
 
 ## Commands
 
@@ -42,6 +65,7 @@ uv run poe typecheck-needs            # ty, against the oldest supported sphinx
 uv run poe docs-needs                 # the furo docs build
 uv run poe smoke-needs                # build the wheel and test the built package
 uv run poe check-workspace            # the manifests agree with each other (Lint runs it)
+uv run --frozen --no-sync pytest tools/tests -q   # the tooling's own tests
 UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8   # one CI matrix cell
 ```
 
@@ -172,7 +196,7 @@ workflow holds no API token, and every one of its checks fails closed.
 1. **Release pull request**, from `master` with a clean tree:
    ```bash
    uv version --package <dist> --bump {patch|minor|major} --no-sync
-   python .github/scripts/propagate_floors.py <dist>   # only if a member depends on <dist>
+   python tools/src/sn_tools/propagate_floors.py <dist>   # only if a member depends on <dist>
    uv lock
    ```
    `--no-sync` is not optional. `--frozen` leaves `uv.lock` claiming the old version, and

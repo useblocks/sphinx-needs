@@ -9,7 +9,7 @@ name = "sphinx-needs"
 # agreement check, the floor propagation, the workspace fence -- needs the number without
 # running the build backend. It is duplicated once, as `__version__` in
 # `src/sphinx_needs/__init__.py` (which is stamped into every generated `needs.json`, so it
-# cannot become an `importlib.metadata` lookup); `.github/scripts/check_workspace.py` is
+# cannot become an `importlib.metadata` lookup); `tools/src/sn_tools/check_workspace.py` is
 # what keeps the two equal.
 version = "8.5.0"
 # `description` stays dynamic: flit_core reads the module docstring by AST, so a static

@@ -25,7 +25,7 @@ jobs:
         # (see the script's docstring). The local prek hook runs the same script against
         # the synced environment, so `uv run poe lint` covers it too
         run: >
-          uv run --no-project --with packaging python .github/scripts/check_workspace.py
+          uv run --no-project --with packaging python tools/src/sn_tools/check_workspace.py
       - run: uv run --frozen prek run --all-files --show-diff-on-failure
         env:
           PREK_COLOR: always
@@ -92,15 +92,12 @@ jobs:
         env:
           UV_PROJECT_ENVIRONMENT: .venvs/typing
         run: uv run --frozen --no-sync --no-group dev --group typing python .github/scripts/check_typing_floor.py
-      - name: Test the repository's own scripts
-        # `.github/scripts/` holds the release fences: the one that decides whether a tag
-        # may publish, and the one that rewrites floors. They are not in any package, so
-        # this is the only job that runs their tests. They are in the root `testpaths`, so
-        # a bare `pytest` at the root runs them too -- but every matrix cell names the
-        # package's `tests` path explicitly and so never collects them. The directory is
-        # `selftests/` rather than `tests/` so that no importable `tests` exists outside a
-        # package
-        run: uv run --frozen --no-sync pytest .github/scripts/selftests -q
+      - name: Test the repository's own tooling
+        # `tools/` holds the release fences: the one that decides whether a tag may publish,
+        # and the one that rewrites floors. Nothing else in CI exercises them, and they are
+        # in the root `testpaths`, so a bare `pytest` at the root runs them too -- but every
+        # matrix cell names the package's `tests` path explicitly and so never collects them
+        run: uv run --frozen --no-sync pytest tools/tests -q
 
   # ubc:
   #   name: ubc

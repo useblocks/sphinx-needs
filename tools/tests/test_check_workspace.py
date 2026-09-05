@@ -11,8 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import check_workspace
 import pytest
+from sn_tools import check_workspace
 
 pytestmark = pytest.mark.filterwarnings("error")
 
@@ -149,6 +149,45 @@ def test_specifier_is_admitted_but_not_tight(workspace, capsys) -> None:
     out = capsys.readouterr().out
     assert "tight tracking wants `acme-core<2,>=1.2.3`" in out
     assert "propagate_floors.py acme-core" in out
+
+
+def test_a_runtime_dependency_on_a_virtual_member_is_an_error(
+    workspace, capsys
+) -> None:
+    """`[tool.uv] package = false` means uv can build it with no command, so it is never on
+    PyPI and a wheel naming it could not be installed."""
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0", "dependencies": ["acme-tools>=0,<1"]},
+            "acme-tools": {"version": "0", "virtual": True},
+        }
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "`acme-tools` is `[tool.uv] package = false`" in out
+    assert "could never be installed" in out
+
+
+def test_a_virtual_member_is_otherwise_checked_like_any_other(
+    workspace, capsys
+) -> None:
+    """Only the runtime-edge rule is special: the rest applies unchanged."""
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-tools": {
+                "version": "0",
+                "virtual": True,
+                "requires_python": ">=3.12,<4",
+            },
+        }
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert (
+        "::error file=packages/acme-tools/pyproject.toml::requires-python is >=3.12,<4"
+        in out
+    )
 
 
 def test_no_policy_accepts_a_loose_but_honest_floor(workspace, capsys) -> None:
