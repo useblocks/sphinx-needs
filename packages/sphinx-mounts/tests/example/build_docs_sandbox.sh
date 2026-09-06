@@ -71,6 +71,16 @@ if [ -d "${example_src}/fragments" ]; then
     cp -RL "${example_src}/fragments" "${stage}/fragments"
 fi
 
+# Stage the checked-in edition "reference" bundles. Like the ``showcase/``
+# bundles they are plain source folders (not Bazel outputs) that
+# ``ubproject.toml`` mounts via ``../reference/<edition>``, so they must
+# sit next to ``${stage}/docs`` too. Each is gated by an ``if`` on its
+# mount entry, so both are staged and the variant fold keeps exactly the
+# live edition's bundle in the build.
+if [ -d "${example_src}/reference" ]; then
+    cp -RL "${example_src}/reference" "${stage}/reference"
+fi
+
 # Stage each artefact under ``bazel-bin/`` so the workspace-relative
 # paths in the host config resolve from ``${stage}/docs/``:
 #   - source bundle files at ``bazel-bin/bundles/<bundle>/<file>``
