@@ -50,11 +50,18 @@ end-to-end (marked `bazel`, skipped when no `bazel`/`bazelisk` is on
     ├── fragments/                     # loose files mounted with attach_each (NO index)
     │   ├── note-one.rst               # attached directly -> .../fragments/note-one
     │   └── note-two.rst               # attached directly -> .../fragments/note-two
+    ├── reference/                     # checked-in edition bundles — one per variant, gated by `if`
+    │   ├── basic/                     # index.rst + reference.rst — mounted when edition = "basic"
+    │   └── pro/                      # index.rst + reference.rst — mounted when edition = "pro"
     └── docs/
         ├── conf.py                    # host project + graphviz/plantuml/mermaid/needs + html_extra_path
-        ├── index.rst                  # host toctree — names api-bar only
+        ├── index.rst                  # host toctree — names api-bar by hand + the variant pages
         ├── installation.rst           # host-only page
-        └── ubproject.toml             # 2 Bazel + 10 showcase + 1 file-list + 1 attach_each mount
+        ├── variants/                  # host pages narrowed per edition by [[source.variant_sources]]
+        │   ├── basic.rst              # built only when edition = "basic"
+        │   └── pro.rst               # built only when edition = "pro"
+        └── ubproject.toml             # 2 Bazel + 10 showcase + 1 file-list + 1 attach_each
+                                       #   + 2 variant rules + 2 edition-gated mounts + variant map
                                        #   … plus the [needs] table sphinx-needs reads
 
 ## Pipeline
@@ -130,6 +137,16 @@ Run the commands below from this directory (`tests/example/`).
    hermetic build can swap the wrapper for a `rules_python`
    `py_binary` with a pinned `requirements.txt`; the genrule shape
    stays the same.
+
+   **The example is edition-variant.** ``[needs.variant_data]`` in
+   ``docs/ubproject.toml`` sets ``edition = "basic"``, and both
+   variant-gating keys read that map:the ``[[source.variant_sources]]``
+   rules keep exactly one of ``docs/variants/{basic,pro}.rst`` in the
+   build,and the two ``reference/`` bundles are each gated by an ``if``
+   on their mount entry. Flip ``edition`` (or point ``variant_data_file``
+   at a different JSON) to build the other variant — ``sphinx-build -W``
+   passes in either,because references to the variant-excluded page are
+   downgraded to INFO rather than warned.
 
 3. **Edit with ubCode** *(future capability — not available
    today)*. Once the ubCode language server adds support for the
@@ -211,6 +228,26 @@ Run the commands below from this directory (`tests/example/`).
   fragments need no index to stitch them together and raise no orphan
   warnings. Contrast with `release-notes/`, which keeps an `index.rst` to
   group its notes under one page. `attach_each` is file-list mode only.
+- **Variant handling, two keys, one map.** `[needs.variant_data]` in
+  `docs/ubproject.toml` sets `edition = "basic"`; both variant-gating
+  keys read that map, and the test builds **both** editions end-to-end.
+  Flip the value to `"pro"` (or point `variant_data_file` at another
+  JSON) to build the other variant — `sphinx-build -W` passes in either.
+- **Conditional sources: `[[source.variant_sources]]` narrows the host's own
+  document set per edition.** The two rules gate `docs/variants/basic.rst`
+  and `docs/variants/pro.rst` by glob: exactly one of them is in the
+  build for the current edition. The host `index` toctree still names both
+  pages by hand;the reference to the excluded one is **downgraded** to
+  INFO (`[mounts.variant_excluded_reference]`),so the host stays
+  `-W`-clean in either variant.
+- **Conditional mounts: `if` on a mount entry gates a whole bundle.** The
+  two checked-in `reference/` bundles carry mutually exclusive conditions
+  (`if = "var.edition == 'basic'"` / `... 'pro'"`)and**distinct** ``mount_at``
+  prefixes (per the docs' recommendation),so the gated bundle's
+  attribution survives and `-W` passes in either variant. Only the live
+  bundle's index is wired into the host toctree via `attach_to`;the gated
+  one contributes no documents,no wiring,and no diagnostics of its own
+  (its `mounts.mount_gated` record is INFO,not a warning.
 - **A pre-built HTML report, no copy of sources.** `//coverage_report`
   generates a small lcov-style HTML tree. The host `conf.py` lists it in
   Sphinx's `html_extra_path`, which copies it **verbatim into the build
@@ -238,9 +275,14 @@ uv run --frozen --no-sync pytest -m bazel packages/sphinx-mounts/tests
 
 The test copies this directory into a temporary workspace (so your
 real `bazel-bin/` is not touched), runs `bazel build //:all_bundles`
-with an isolated `--output_base`, runs `sphinx-build` against the
-host project, and asserts that the rendered HTML contains content
-from the host, the RST bundle, and the Markdown bundle — and that
-both wiring styles (`api-foo` via `attach_to`, `api-bar` via the
-host's hand-written toctree entry) produce links in the host's
-`index.html`.
+with an isolated `--output_base`, then runs `sphinx-build` **twice**
+against the host project — once with `edition = "basic"` (the checked-in
+default) and once with the TOML flipped to `edition = "pro"` — and
+asserts that each rendered tree contains exactly its edition's content:
+the host, the RST bundle, the Markdown bundle, the conditional
+source page,and the gated edition bundle — while the other edition's
+page and bundle are absent. Both builds pass under `-nW`, which is
+itself the proof that the variant-excluded toctree reference and the gated
+mount were downgraded to INFO rather than warned. Both wiring styles
+(`api-foo` via `attach_to`, `api-bar` via the host's hand-written toctree
+entry) produce links in the host's `index.html`.
