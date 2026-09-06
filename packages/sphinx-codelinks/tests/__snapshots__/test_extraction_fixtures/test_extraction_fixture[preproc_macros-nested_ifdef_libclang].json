@@ -1,0 +1,43 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_TOP",
+      "title": "Top",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    },
+    {
+      "id": "IMPL_OUTER",
+      "title": "Outer On",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 3
+    },
+    {
+      "id": "IMPL_INNER",
+      "title": "Inner On",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 5
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

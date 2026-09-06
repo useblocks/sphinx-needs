@@ -17,6 +17,17 @@ _build
 .pytest_cache
 .coverage
 coverage.xml
+# the Extensions CI cell runs two suites in one working directory, so each names its own
+# coverage report (`--cov-report=xml:<name>.xml`) instead of sharing `coverage.xml`
+mounts.xml
+codelinks.xml
+.ty_cache
+
+# packages/sphinx-codelinks' tests write these at the CWD: `tests/test_cmd.py` writes
+# `invalid_objs.json`, and the `codelinks analyse` runs in its docs and tests write
+# `output/`. They were in that repository's own .gitignore, which retired at the import
+invalid_objs.json
+output/
 .doctrees
 packages/sphinx-needs/docs/github_images/
 packages/sphinx-needs/docs/_static/tutorial_needs.json

@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_1",
+      "title": "My Title",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_1"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

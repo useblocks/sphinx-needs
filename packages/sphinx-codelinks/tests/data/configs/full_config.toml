@@ -1,0 +1,43 @@
+[codelinks]
+# Configuration for source tracing
+set_local_url = true            # Set to true to enable local code html and URL generation
+local_url_field = "local-url"   # Need's field name for local URL
+set_remote_url = true           # Set to true to enable remote url to be generated
+remote_url_field = "remote-url" # Need's field name for remote URL
+outdir = "codelinks_output"     # Output directory for generated files
+
+# Configuration for source tracing project "dcdc"
+[codelinks.projects.dcdc]
+remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}" # URL pattern for remote source code
+
+[codelinks.projects.dcdc.source_discover]
+src_dir = "../dcdc"            # Relative path from this TOML config to the source directory
+comment_type = "cpp"
+exclude = []
+include = ["**/*.c", "**/*.h"]
+gitignore = false
+
+[codelinks.projects.dcdc.analyse]
+get_need_id_refs = false
+get_oneline_needs = true
+get_rst = false
+
+[codelinks.projects.dcdc.analyse.oneline_comment_style]
+# Configuration for oneline comment style
+start_sequence = "[["  # Start sequence for oneline comments
+end_sequence = "]]"    # End sequence for the online comments; default is newline character
+field_split_char = "," # Character to split fields in the comment
+# Fields that are defined in the oneline comment style
+needs_fields = [
+  { "name" = "id", "type" = "str" },
+  { "name" = "title", "type" = "str" },
+  { "name" = "type", "type" = "str", "default" = "impl" },
+  { "name" = "links", "type" = "list[str]", "default" = [
+  ] },
+]
+
+[codelinks.projects.src]
+remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+
+[codelinks.projects.src.source_discover]
+src_dir = "../doc_test/minimum_config"

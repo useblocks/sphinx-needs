@@ -1,0 +1,572 @@
+# @Test suite for one-line comment parser functionality, TEST_OLP_1, test, [IMPL_OLP_1]
+import pytest
+
+from sphinx_codelinks.analyse.oneline_parser import (
+    OnelineParserInvalidWarning,
+    WarningSubTypeEnum,
+    oneline_parser,
+)
+from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
+
+from .conftest import ONELINE_COMMENT_STYLE, ONELINE_COMMENT_STYLE_DEFAULT
+
+
+@pytest.mark.parametrize(
+    "oneline, result",
+    [
+        (
+            f"@title 1, IMPL_1 {UNIX_NEWLINE}",
+            {
+                "title": "title 1",
+                "id": "IMPL_1",
+                "type": "impl",
+                "links": [],
+                "start_column": 1,
+                "end_column": 17,
+            },
+        ),
+        # Test case for leading space after start sequence (bug fix)
+        (
+            f"@ title 1, IMPL_1 {UNIX_NEWLINE}",
+            {
+                "title": "title 1",
+                "id": "IMPL_1",
+                "type": "impl",
+                "links": [],
+                "start_column": 1,
+                "end_column": 18,
+            },
+        ),
+        # Test case for multiple leading spaces after start sequence
+        (
+            f"@   title 1, IMPL_1 {UNIX_NEWLINE}",
+            {
+                "title": "title 1",
+                "id": "IMPL_1",
+                "type": "impl",
+                "links": [],
+                "start_column": 1,
+                "end_column": 20,
+            },
+        ),
+        # Test case for trailing space before end sequence
+        (
+            f"@title 1, IMPL_1  {UNIX_NEWLINE}",
+            {
+                "title": "title 1",
+                "id": "IMPL_1",
+                "type": "impl",
+                "links": [],
+                "start_column": 1,
+                "end_column": 18,
+            },
+        ),
+        # Test case for both leading and trailing spaces
+        (
+            f"@  title 1, IMPL_1   {UNIX_NEWLINE}",
+            {
+                "title": "title 1",
+                "id": "IMPL_1",
+                "type": "impl",
+                "links": [],
+                "start_column": 1,
+                "end_column": 21,
+            },
+        ),
+    ],
+)
+def test_oneline_parser_default_config_positive(
+    oneline: str, result: dict[str, str | list[str]]
+) -> None:
+    oneline_need = oneline_parser(oneline, ONELINE_COMMENT_STYLE_DEFAULT)
+    assert oneline_need == result
+
+
+# Test case for space as field separator (as mentioned by Kilian)
+# Example: @Implementation <field1> <field2>
+ONELINE_COMMENT_STYLE_SPACE_SEPARATOR = OneLineCommentStyle(
+    start_sequence="@",
+    end_sequence=UNIX_NEWLINE,
+    field_split_char=" ",
+    needs_fields=[
+        {"name": "title"},
+        {"name": "id"},
+        {"name": "type", "default": "impl"},
+    ],
+)
+
+
+@pytest.mark.parametrize(
+    "oneline, result",
+    [
+        # Basic space-separated fields
+        (
+            f"@Implementation IMPL_1{UNIX_NEWLINE}",
+            {
+                "title": "Implementation",
+                "id": "IMPL_1",
+                "type": "impl",
+                "start_column": 1,
+                "end_column": 22,
+            },
+        ),
+        # Space separator with explicit type
+        (
+            f"@MyFeature FEAT_001 feature{UNIX_NEWLINE}",
+            {
+                "title": "MyFeature",
+                "id": "FEAT_001",
+                "type": "feature",
+                "start_column": 1,
+                "end_column": 27,
+            },
+        ),
+        # Leading space after @ (the bug Kilian reported)
+        (
+            f"@ Implementation IMPL_2{UNIX_NEWLINE}",
+            {
+                "title": "Implementation",
+                "id": "IMPL_2",
+                "type": "impl",
+                "start_column": 1,
+                "end_column": 23,
+            },
+        ),
+        # Trailing space before newline
+        (
+            f"@Implementation IMPL_3 {UNIX_NEWLINE}",
+            {
+                "title": "Implementation",
+                "id": "IMPL_3",
+                "type": "impl",
+                "start_column": 1,
+                "end_column": 23,
+            },
+        ),
+        # Multiple leading spaces after @
+        (
+            f"@  Title ID_456{UNIX_NEWLINE}",
+            {
+                "title": "Title",
+                "id": "ID_456",
+                "type": "impl",
+                "start_column": 1,
+                "end_column": 15,
+            },
+        ),
+        # Title contain spaces
+        (
+            f"@  Title\ escape\ space ID_456{UNIX_NEWLINE}",
+            {
+                "title": "Title escape space",
+                "id": "ID_456",
+                "type": "impl",
+                "start_column": 1,
+                "end_column": 30,
+            },
+        ),
+    ],
+)
+def test_oneline_parser_space_separator(
+    oneline: str, result: dict[str, str | list[str]]
+) -> None:
+    """Test oneline parser with space as field separator."""
+    oneline_need = oneline_parser(oneline, ONELINE_COMMENT_STYLE_SPACE_SEPARATOR)
+    assert oneline_need == result
+
+
+@pytest.mark.parametrize(
+    "oneline, result",
+    [
+        (
+            "[[IMPL_1, title 1]]",
+            {
+                "id": "IMPL_1",
+                "title": "title 1",
+                "type": "impl",
+                "links": [],
+                "status": "open",
+                "priority": "low",
+                "start_column": 2,
+                "end_column": 17,
+            },
+        ),
+        (
+            "[[IMPL_2, title 2, impl, [], closed]]",
+            {
+                "id": "IMPL_2",
+                "title": "title 2",
+                "type": "impl",
+                "links": [],
+                "status": "closed",
+                "priority": "low",
+                "start_column": 2,
+                "end_column": 35,
+            },
+        ),
+        (
+            "[[IMPL_3, title\, 3, impl, [], closed]]",
+            {
+                "id": "IMPL_3",
+                "title": "title, 3",
+                "type": "impl",
+                "links": [],
+                "status": "closed",
+                "priority": "low",
+                "start_column": 2,
+                "end_column": 37,
+            },
+        ),
+        (
+            "[[IMPL_5, title 5, impl, [SPEC_1, SPEC_2], open]]",
+            {
+                "id": "IMPL_5",
+                "title": "title 5",
+                "type": "impl",
+                "links": ["SPEC_1", "SPEC_2"],
+                "status": "open",
+                "priority": "low",
+                "start_column": 2,
+                "end_column": 47,
+            },
+        ),
+        (
+            "[[IMPL_7, Function has a, in the title]]",
+            {
+                "id": "IMPL_7",
+                "title": "Function has a",
+                "type": "in the title",
+                "links": [],
+                "status": "open",
+                "priority": "low",
+                "start_column": 2,
+                "end_column": 38,
+            },
+        ),
+        (
+            "[[IMPL_8, [Title starts with a bracket], impl]]",
+            {
+                "id": "IMPL_8",
+                "title": "[Title starts with a bracket]",
+                "type": "impl",
+                "links": [],
+                "status": "open",
+                "priority": "low",
+                "start_column": 2,
+                "end_column": 45,
+            },
+        ),
+        (
+            "[[IMPL_9, Function Baz, impl, [SPEC_1, SPEC_2[text], SPEC_3], open]]",
+            {
+                "id": "IMPL_9",
+                "title": "Function Baz",
+                "type": "impl",
+                "links": ["SPEC_1", "SPEC_2[text"],
+                "status": "SPEC_3]",
+                "priority": "open",
+                "start_column": 2,
+                "end_column": 66,
+            },
+        ),
+        (
+            "[[IMPL_10, title 10, impl, [SPEC_1], open]]",
+            {
+                "id": "IMPL_10",
+                "title": "title 10",
+                "type": "impl",
+                "links": ["SPEC_1"],
+                "status": "open",
+                "priority": "low",
+                "start_column": 2,
+                "end_column": 41,
+            },
+        ),
+        (
+            "[[IMPL_11, title 11, impl, [SPEC\,_1], open]]",
+            {
+                "id": "IMPL_11",
+                "title": "title 11",
+                "type": "impl",
+                "links": ["SPEC,_1"],
+                "status": "open",
+                "priority": "low",
+                "start_column": 2,
+                "end_column": 43,
+            },
+        ),
+        (
+            "[[IMPL_12, title 12, impl, [\[SPEC\,_1\]], open]]",
+            {
+                "id": "IMPL_12",
+                "title": "title 12",
+                "type": "impl",
+                "links": ["[SPEC,_1]"],
+                "status": "open",
+                "priority": "low",
+                "start_column": 2,
+                "end_column": 47,
+            },
+        ),
+        (
+            "[[IMPL_13, title\\ 13, impl, [\[SPEC\,_1\]], open]]",
+            {
+                "id": "IMPL_13",
+                "title": "title\ 13",
+                "type": "impl",
+                "links": ["[SPEC,_1]"],
+                "status": "open",
+                "priority": "low",
+                "start_column": 2,
+                "end_column": 48,
+            },
+        ),
+    ],
+)
+def test_oneline_parser_custom_config_positive(
+    oneline: str, result: dict[str, str | list[str]]
+) -> None:
+    oneline_need = oneline_parser(oneline, ONELINE_COMMENT_STYLE)
+    assert oneline_need == result
+
+
+@pytest.mark.parametrize(
+    "oneline, result",
+    [
+        (
+            f"[[IMPL_4, title{ESCAPE}{ESCAPE}, 4, impl, [], closed]]",
+            OnelineParserInvalidWarning(
+                sub_type=WarningSubTypeEnum.missing_square_brackets,
+                msg="Field links with 'type': 'list[str]' must be given with '[]' brackets",
+            ),
+        ),
+        (
+            "[[IMPL_2, Function Bar, impl, [SPEC_1, SPEC_2, open]]",
+            OnelineParserInvalidWarning(
+                sub_type=WarningSubTypeEnum.missing_square_brackets,
+                msg="Field links with 'type': 'list[str]' must be given with '[]' brackets",
+            ),
+        ),
+        (
+            "[[IMPL_13, title 13, impl, 13[\[SPEC\,_1\]], open]]",
+            OnelineParserInvalidWarning(
+                sub_type=WarningSubTypeEnum.not_start_or_end_with_square_brackets,
+                msg="Field links with 'type': 'list[str]' must start with '[' and end with ']'",
+            ),
+        ),
+        (
+            "[[IMPL_14, title 13, impl, 13[\[SPEC\,_1\]], open, low, high]]",
+            OnelineParserInvalidWarning(
+                sub_type=WarningSubTypeEnum.too_many_fields,
+                msg="7 given fields. They shall be less than 6",
+            ),
+        ),
+        (
+            "[[IMPL_15]]",
+            OnelineParserInvalidWarning(
+                sub_type=WarningSubTypeEnum.too_few_fields,
+                msg="1 given fields. They shall be more than 2",
+            ),
+        ),
+        (
+            f"[[IMPL_16]]{UNIX_NEWLINE}, title 16]]",
+            OnelineParserInvalidWarning(
+                sub_type=WarningSubTypeEnum.newline_in_field,
+                msg="Field id has newline character. It is not allowed",
+            ),
+        ),
+    ],
+)
+def test_oneline_parser_custom_config_negative(
+    oneline: str, result: OnelineParserInvalidWarning
+) -> None:
+    res = oneline_parser(oneline, ONELINE_COMMENT_STYLE)
+    assert res == result
+
+
+@pytest.mark.parametrize(
+    "oneline, result",
+    [
+        (
+            f"@title 17]]{UNIX_NEWLINE}, IMPL_17 {UNIX_NEWLINE}",
+            OnelineParserInvalidWarning(
+                sub_type=WarningSubTypeEnum.newline_in_field,
+                msg="Field title has newline character. It is not allowed",
+            ),
+        ),
+        (
+            f"@title 17]], IMPL_17, impl, [SPEC_3, SPEC_4{UNIX_NEWLINE} ] {UNIX_NEWLINE}",
+            OnelineParserInvalidWarning(
+                sub_type=WarningSubTypeEnum.newline_in_field,
+                msg="Field links has newline character. It is not allowed",
+            ),
+        ),
+    ],
+)
+def test_oneline_parser_default_config_negative(
+    oneline: str, result: OnelineParserInvalidWarning
+) -> None:
+    assert oneline_parser(oneline, ONELINE_COMMENT_STYLE_DEFAULT) == result
+
+
+@pytest.mark.parametrize(
+    "oneline_config, result",
+    [
+        (
+            OneLineCommentStyle(
+                start_sequence="[[",
+                end_sequence="]]",
+                field_split_char=",",
+                needs_fields=[
+                    {"name": "title"},
+                    {"name": "id"},
+                    {"name": "type", "default": "impl"},
+                    {"name": "links", "type": "list[]", "default": []},  # wrong type
+                ],
+            ),
+            [
+                "Schema validation error in need_fields 'links': 'list[]' is not one of ['str', 'list[str]']"
+            ],
+        ),
+        (
+            OneLineCommentStyle(
+                start_sequence="[[",
+                end_sequence="]]",
+                field_split_char=",",
+                needs_fields=[
+                    {"name": "title"},
+                    {"name": "id"},
+                    {"name": "type", "default": 123},  # int is invalid
+                    {"name": "links", "type": "list[str]", "default": []},
+                ],
+            ),
+            [
+                "Schema validation error in need_fields 'type': 123 is not of type 'string'"
+            ],
+        ),
+        (
+            OneLineCommentStyle(
+                start_sequence="[[",
+                end_sequence="]]",
+                field_split_char=",",
+                needs_fields=[
+                    {"name": "title", "qwe": "qwe"},  # invalid qwe filed
+                    {"name": "id"},
+                    {"name": "type", "default": "impl"},
+                    {"name": "links", "type": "list[str]", "default": []},
+                ],
+            ),
+            [
+                "Schema validation error in need_fields 'title': Additional properties are not allowed ('qwe' was unexpected)"
+            ],
+        ),
+        (
+            OneLineCommentStyle(
+                start_sequence="[[",
+                end_sequence="]]",
+                field_split_char=",",
+                needs_fields=[
+                    {"name": "title"},
+                    {"name": "id"},
+                    {
+                        "name": "type",
+                        "type: ": "list[str]",
+                        "default": "impl",
+                    },  # wring combination of type and default
+                    {"name": "links", "type": "list[str]", "default": []},
+                ],
+            ),
+            [
+                "Schema validation error in need_fields 'type': Additional properties are not allowed ('type: ' was unexpected)"
+            ],
+        ),
+        (
+            OneLineCommentStyle(
+                start_sequence="[[",
+                end_sequence="]]",
+                field_split_char=",",
+                needs_fields=[
+                    {"name": "id"}  # "title" and "type" are not given
+                ],
+            ),
+            ["Missing required fields: ['title', 'type']"],
+        ),
+        (
+            OneLineCommentStyle(
+                start_sequence="[[",
+                end_sequence="]]",
+                field_split_char=",",
+                needs_fields=[
+                    {"name": "id"},
+                    {"name": "id"},  # duplicate
+                ],
+            ),
+            [
+                "Missing required fields: ['title', 'type']",
+                "Field 'id' is defined multiple times.",
+            ],
+        ),
+        (
+            OneLineCommentStyle(
+                start_sequence=1234,  # wrong type
+                end_sequence=5678,
+                field_split_char=2222,
+                needs_fields=[
+                    {"name": "id"},
+                ],
+            ),
+            [
+                "Schema validation error in field 'field_split_char': 2222 is not of type 'string'",
+                "Schema validation error in field 'end_sequence': 5678 is not of type 'string'",
+                "Schema validation error in field 'start_sequence': 1234 is not of type 'string'",
+                "Missing required fields: ['title', 'type']",
+            ],
+        ),
+    ],
+)
+def test_oneline_schema_validator_negative(oneline_config, result):
+    errors = oneline_config.check_fields_configuration()
+    assert sorted(errors) == sorted(result)
+
+
+@pytest.mark.parametrize(
+    "oneline",
+    [
+        # A start sequence embedded in free-form prose (word chars before it)
+        # must not be treated as a one-line marker (issue #88).
+        f"// Some prose that mentions @@another-tag(item_1, item_2): more text{UNIX_NEWLINE}",
+        f"// See @author, check the example{UNIX_NEWLINE}",
+        f"// We parse things matching @pattern, then act{UNIX_NEWLINE}",
+    ],
+)
+def test_oneline_parser_ignores_start_sequence_in_prose(oneline: str) -> None:
+    """Issue #88: only anchor a marker at the start of the comment content."""
+    assert oneline_parser(oneline, ONELINE_COMMENT_STYLE_DEFAULT) is None
+
+
+@pytest.mark.parametrize(
+    "oneline, expected_id",
+    [
+        (f"// @My Title, IMPL_1{UNIX_NEWLINE}", "IMPL_1"),  # line-comment leader
+        (f"    // @My Title, IMPL_2{UNIX_NEWLINE}", "IMPL_2"),  # indented
+        (f"* @My Title, IMPL_3{UNIX_NEWLINE}", "IMPL_3"),  # block-comment continuation
+        (f"/// @My Title, IMPL_4{UNIX_NEWLINE}", "IMPL_4"),  # doc comment
+        (f"//! @My Title, IMPL_5{UNIX_NEWLINE}", "IMPL_5"),  # inner doc comment
+    ],
+)
+def test_oneline_parser_marker_preceded_only_by_comment_decoration(
+    oneline: str, expected_id: str
+) -> None:
+    """A marker preceded only by comment syntax/whitespace is still recognized."""
+    res = oneline_parser(oneline, ONELINE_COMMENT_STYLE_DEFAULT)
+    assert isinstance(res, dict)
+    assert res["id"] == expected_id
+
+
+def test_oneline_parser_bounded_marker_allowed_after_prose() -> None:
+    """Explicitly-bounded markers ([[ ... ]]) are self-delimiting, so they may
+    be embedded after prose; only newline-terminated markers are anchored."""
+    oneline = "// one-line comment style: [[IMPL_1, title 1]]"
+    res = oneline_parser(oneline, ONELINE_COMMENT_STYLE)
+    assert isinstance(res, dict)
+    assert res["id"] == "IMPL_1"

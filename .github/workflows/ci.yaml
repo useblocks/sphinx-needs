@@ -145,14 +145,17 @@ jobs:
   #       run: ubc build index docs --show-warnings
 
   # Display names carry the PACKAGE they exercise as their first word (`Needs …`,
-  # `Mounts …`), so the checks list on a pull request reads by package. `Lint` and
+  # `Extensions …` for the two that extend sphinx-needs), so the checks list on a pull
+  # request reads by package. `Lint` and
   # `check` are workspace-wide and are also required status contexts on master, so
   # their names must not change without updating the branch protection.
   #
-  # The two matrix jobs below call `test-package.yaml`, which holds the steps they used
-  # to carry a copy each. A called job's name is appended to its caller's, so these
-  # checks read `Needs py3.13 sphinx-9 ubuntu-latest / pytest` -- the ` / ` join is
-  # unconditional and cannot be suppressed. Neither required context is among them.
+  # `tests-core` calls `test-package.yaml` and `tests-extensions` calls
+  # `test-extensions.yaml`; both units get everything from the renderer installs to the
+  # sphinx-series fence from `.github/actions/prepare-cell`, so no job carries a copy of
+  # them. A called job's name is appended to its caller's, so these checks read
+  # `Needs py3.13 sphinx-9 ubuntu-latest / pytest` -- the ` / ` join is unconditional and
+  # cannot be suppressed. Neither required context is among them.
   tests-core:
     name: "Needs py${{ matrix.python-version }} ${{ matrix.sphinx-group }} ${{ matrix.os }}"
     strategy:
@@ -293,12 +296,19 @@ jobs:
         run: uv run --no-sync sphinx-build -b html . _build
         working-directory: packages/sphinx-needs/docs
 
-  tests-mounts:
-    name: "Mounts ${{ matrix.sphinx-group }} ${{ matrix.os }}"
-    # A matrix of its own rather than more paths in `tests-core`, the way `tests-js` and
-    # `tests-no-mpl` already sit beside it: this package needs a diagram renderer that the
-    # core cells do not, wants its own codecov flag, and takes 1-3 minutes -- which folded
-    # into the core matrix would be paid eleven times, three of them on Windows.
+  tests-extensions:
+    name: "Extensions ${{ matrix.sphinx-group }} ${{ matrix.os }}"
+    # One cell per sphinx series running BOTH extension packages' suites, as steps. A
+    # matrix of its own rather than more paths in `tests-core`, the way `tests-js` and
+    # `tests-no-mpl` already sit beside it: these packages need a diagram renderer and a
+    # libclang wheel the core cells do not, they want codecov flags of their own, and
+    # sphinx-mounts takes 1-3 minutes -- which folded into the core matrix would be paid
+    # eleven times, three of them on Windows.
+    #
+    # And ONE cell for the two of them rather than a second three-cell matrix:
+    # sphinx-codelinks' whole suite is under 20 seconds, so a matrix of its own would
+    # spend more runner time starting jobs than testing, and would put three more entries
+    # on every pull request's checks list.
     strategy:
       fail-fast: false
       matrix:
@@ -306,30 +316,73 @@ jobs:
         sphinx-group: ["sphinx-7", "sphinx-8", "sphinx-9"]
         include:
           # sphinx-mounts' subject is filesystem paths, symlinks and path confinement, so
-          # one Windows cell is not optional coverage; its own CI ran three
+          # one Windows cell is not optional coverage; its own CI ran three. It is worth
+          # as much to sphinx-codelinks, whose two latent path bugs -- `locate_git_root`
+          # and `form_https_url` -- are exactly this class
           - os: "windows-latest"
             sphinx-group: "sphinx-9"
-    uses: ./.github/workflows/test-package.yaml
+    uses: ./.github/workflows/test-extensions.yaml
     with:
       os: ${{ matrix.os }}
       # deliberately NO `python-version`: that input becomes UV_PYTHON, which beats the
       # root `.python-version`. These cells vary the sphinx series, not the interpreter,
-      # so they run on the repository's pin -- which is what the unit's empty default means
+      # so they run on the repository's pin
       sphinx-group: ${{ matrix.sphinx-group }}
-      cache-suffix: mounts-${{ matrix.sphinx-group }}
-      test-path: packages/sphinx-mounts/tests
-      # `-m "not bazel"` deselects the two tests the `bazel` job below owns; they would
-      # skip here rather than fail, but a skip nobody reads is what the separate lane
-      # exists to avoid
-      pytest-args: '-m "not bazel"'
-      cov-module: sphinx_mounts
-      codecov-flag: mounts
-      codecov-name: sphinx-mounts-pytests
+      cache-suffix: extensions-${{ matrix.sphinx-group }}
       upload-coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.sphinx-group == 'sphinx-9' }}
-      # the uml tests render for real and `_require_renderer` asserts rather than skips
-      needs-plantuml: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  docs-codelinks:
+    name: Docs codelinks
+    runs-on: ubuntu-latest
+    # the only job in this file with one, because it is the only one added since the two
+    # reusable workflows set `contents: read` on theirs. It reads the checkout and uploads
+    # nothing. Giving the other nine the same is a whole-file change and not this one's
+    permissions:
+      contents: read
+    # sphinx-codelinks' documentation is the one END-TO-END exercise of the extension:
+    # `src-trace` runs over four projects of its own source, so a build is the extension
+    # doing its real job rather than a rendering check. It is also what caught the
+    # worktree bug the import fixed. `docs.yaml` is a linkcheck scoped to sphinx-needs'
+    # docs, the Read the Docs pull-request build is neither required nor even run when the
+    # package did not change, and a 7-second build is a cheap price for the only gate there
+    # is (measured locally; the rest of the job is checkout and the one sync below).
+    #
+    # No `paths:` filter and no `if:`: it runs on every pull request, because the thing it
+    # builds reads `src/` -- a change to the extension with no change to `docs/` is
+    # precisely the change that breaks it.
+    steps:
+      - uses: actions/checkout@v7
+        # the `src-trace` directive turns every traced source line into a blob link at
+        # the current rev, which it reads from `.git/HEAD` and `.git/config`. It reads no
+        # history, so the default shallow checkout is enough -- but it does need `.git`,
+        # so this job must not be given `fetch-depth: 0`-free surprises like a
+        # `sparse-checkout` that omits it
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          cache-suffix: docs-codelinks
+          # no `python-version`, so this runs on the root `.python-version`, which is not
+          # on the runner image
+          cache-python: true
+      # `docs.yaml`'s Docs-Linkcheck idiom -- sync ONE environment, then run the builder in
+      # it with `--no-sync` -- rather than `uv run --frozen poe docs-codelinks`. That form
+      # is the same build, but it pays for two environments: the outer `uv run` syncs the
+      # DEFAULT one (the `dev` group: prek, poethepoet, uv, the whole `test` group, the `js`
+      # group -- 108 packages, 415 MB) purely so that `poe` exists, and poe's executor then
+      # syncs `.venvs/docs-codelinks` (71 packages, 138 MB) and builds there. There is no
+      # cheap way to keep poe as the single source of truth here, because poe itself lives
+      # in the `dev` group; so the command is restated, exactly as `docs.yaml` restates its
+      # own. Keep the two in step with the `docs-codelinks` poe task.
+      - name: Install the docs environment
+        run: uv sync --frozen --no-default-groups --extra docs-codelinks
+      - name: Build the docs
+        # `-nW --keep-going`, from the poe task, so a nitpick warning is an error. No
+        # renderer: these docs draw no diagrams, so unlike `docs-needs` there is no
+        # graphviz, java or plantuml to install
+        run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
+        working-directory: packages/sphinx-codelinks
 
   bazel:
     name: Mounts Bazel integration
@@ -406,7 +459,8 @@ jobs:
       - tests-core
       - tests-js
       - tests-no-mpl
-      - tests-mounts
+      - tests-extensions
+      - docs-codelinks
       - bazel
       - smoke-needs
 

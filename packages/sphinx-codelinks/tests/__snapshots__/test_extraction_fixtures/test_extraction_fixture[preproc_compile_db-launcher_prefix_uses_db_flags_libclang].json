@@ -1,0 +1,31 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_ALWAYS",
+      "title": "Always",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    },
+    {
+      "id": "IMPL_VAR_A",
+      "title": "Variant A",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 3
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

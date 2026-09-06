@@ -1,0 +1,77 @@
+# C/C++ standard-version support matrix for the libclang engine.
+#
+# Each case parses a source that uses a construct introduced in a specific
+# standard, under the matching `std`, and asserts the marker still extracts. The
+# engine lexes comments at the token level and pins `-x` to the `std` (see
+# defines_to_args), so a source written to a given standard is parsed as that
+# standard and its markers survive. This documents which standards are exercised;
+# a regression that broke parsing under one of them would drop its marker here.
+
+cpp11_constexpr_std_cpp11:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  std: "c++11"
+  extract: [oneline]
+  source: |
+    // @C++11 constexpr, IMPL_CPP11, impl, [REQ]
+    constexpr int square(int x) { return x * x; }
+    static_assert(square(3) == 9, "constexpr");
+
+cpp14_variable_template_std_cpp14:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  std: "c++14"
+  extract: [oneline]
+  source: |
+    // @C++14 variable template, IMPL_CPP14, impl, [REQ]
+    template <typename T>
+    constexpr T pi = T(3.1415926535);
+
+cpp17_inline_variable_std_cpp17:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  std: "c++17"
+  extract: [oneline]
+  source: |
+    // @C++17 inline variable, IMPL_CPP17, impl, [REQ]
+    inline int global_counter = 0;
+
+cpp20_concept_std_cpp20:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  std: "c++20"
+  extract: [oneline]
+  source: |
+    // @C++20 concept, IMPL_CPP20, impl, [REQ]
+    template <typename T>
+    concept Addable = requires(T a, T b) { a + b; };
+
+c11_static_assert_std_c11:
+  lang: c
+  engine: libclang
+  config: default
+  defines: []
+  std: "c11"
+  extract: [oneline]
+  source: |
+    // @C11 _Static_assert, IMPL_C11, impl, [REQ]
+    _Static_assert(sizeof(int) >= 2, "int too small");
+
+gnucpp17_std_gnu_cpp17:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  std: "gnu++17"
+  extract: [oneline]
+  source: |
+    // @GNU C++17 dialect, IMPL_GNUCPP17, impl, [REQ]
+    inline int global_counter = 0;

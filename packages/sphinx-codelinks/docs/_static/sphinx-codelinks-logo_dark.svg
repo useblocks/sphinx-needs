@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="Ebene_1"
+   data-name="Ebene 1"
+   version="1.1"
+   viewBox="0 0 751.86999 289.60095"
+   sodipodi:docname="CodeLinks_logo_text_vert_dark.svg"
+   width="751.87"
+   height="289.60095"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview10"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="true"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.85241722"
+     inkscape:cx="322.61197"
+     inkscape:cy="164.82539"
+     inkscape:window-width="1566"
+     inkscape:window-height="1074"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="Ebene_1" />
+  <defs
+     id="defs1">
+    <style
+       id="style1">
+      .cls-1 {
+        fill: #fff;
+        stroke-width: 0px;
+      }
+    </style>
+  </defs>
+  <text
+     xml:space="preserve"
+     style="font-size:280.86px;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#e4ff3e;fill-opacity:1;stroke-width:23.4051"
+     x="291.80042"
+     y="185.00006"
+     id="text1"><tspan
+       sodipodi:role="line"
+       id="tspan1"
+       x="291.80042"
+       y="185.00006"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-family:'Liberation Mono';-inkscape-font-specification:'Liberation Mono Bold';fill:#e4ff3e;fill-opacity:1;stroke-width:23.4051">#</tspan></text>
+  <text
+     xml:space="preserve"
+     style="font-weight:bold;font-size:98.2447px;font-family:'Liberation Mono';-inkscape-font-specification:'Liberation Mono Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke-width:8.18708"
+     x="51.852169"
+     y="343.4859"
+     id="text2"
+     transform="scale(1.1893791,0.84077482)"><tspan
+       sodipodi:role="line"
+       id="tspan2"
+       x="51.852169"
+       y="343.4859"
+       style="fill:#ffffff;fill-opacity:1;stroke-width:8.18708">CodeLinks</tspan></text>
+</svg>

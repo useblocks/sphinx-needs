@@ -1,0 +1,74 @@
+# Read the Docs configuration for the sphinx-codelinks project.
+#
+# It lives HERE, next to the package, and the codelinks RTD project points at it with its
+# per-project "Build configuration file" setting (`readthedocs_yaml_path`). The sphinx-needs
+# project keeps the repository-root `.readthedocs.yml` and must NOT be repointed: that
+# setting applies to every version a project builds, so moving an existing project's config
+# path makes every pre-move tag unbuildable.
+#
+# EVERY PATH BELOW IS RELATIVE TO THE REPOSITORY ROOT, not to this file -- RTD's monorepo
+# guide is explicit about it -- which is why they all start `packages/sphinx-codelinks/`.
+version: 2
+
+build:
+  # deliberately no `apt_packages`: these docs render no diagrams, so there is no `dot`,
+  # `java` or plantuml to install. (sphinx-needs' config installs graphviz and a JDK
+  # because its docs do.)
+  os: ubuntu-24.04
+  tools:
+    python: "3.13"
+  jobs:
+    post_checkout:
+      # Every pull request against this repository builds every Read the Docs project it
+      # has. A pull request that leaves `packages/sphinx-codelinks/` untouched has nothing
+      # for this one to build, so cancel it. Exit code 183 is Read the Docs' documented
+      # "skip" code (https://docs.readthedocs.com/platform/stable/guides/build/skip-build.html):
+      # the build is recorded as `cancelled`, and the commit status sent to GitHub is
+      # `success` with the description "Read the Docs build skipped", so no pull request is
+      # ever blocked by it. Measured for sphinx-mounts on build 34411602 (pull request
+      # #1861): 10 s, `cancelled`, status `success`.
+      #
+      # Why a plain two-dot `git diff` and not a merge base: Read the Docs clones the default
+      # branch with `--depth 1` and then fetches the pull-request head with `--depth 50`, so
+      # `origin/master` is a shallow root with no ancestry and `git merge-base` has nothing
+      # to walk. The diff therefore compares against master's CURRENT tip: if master moved
+      # and touched this package, the build runs although the pull request did not touch it.
+      # That is the safe direction; it never skips a build that was needed.
+      #
+      # `packages/sphinx-codelinks/` is the complete set of inputs: this file lives inside
+      # it, `docs/conf.py` reads only the package's own `pyproject.toml`, and
+      # `python.install` below installs the package directory with its own `docs` extra, so
+      # no root file takes part in this build. Branch and tag builds (`latest`, releases)
+      # are never cancelled.
+      - |
+        if [ "$READTHEDOCS_VERSION_TYPE" != "external" ]; then
+          exit 0
+        fi
+        if ! git rev-parse --verify --quiet origin/master > /dev/null; then
+          echo "origin/master is not available in this clone; building to be safe"
+          exit 0
+        fi
+        if git diff --quiet origin/master -- packages/sphinx-codelinks/; then
+          echo "nothing under packages/sphinx-codelinks/ changed; skipping this build (exit 183)"
+          exit 183
+        fi
+
+sphinx:
+  # `docs/conf.py` is IN the source directory, so Read the Docs' own invocation
+  # (`sphinx-build -b html <confdir> …`, with no `-c`) finds it -- which is why the sources
+  # were flattened up out of `docs/source/` before the import.
+  configuration: packages/sphinx-codelinks/docs/conf.py
+  builder: html
+  # the same strictness the `docs-codelinks` poe task and the `Docs codelinks` CI job use
+  fail_on_warning: true
+
+python:
+  install:
+    - method: pip
+      path: packages/sphinx-codelinks
+      extra_requirements:
+        # the MEMBER's extra, not the root's `docs-codelinks` pass-through: RTD pip-installs
+        # the package directory itself, so the name it resolves is the member's own. An
+        # extra rather than a dependency group, because `python.install` has no way to
+        # install a PEP 735 group
+        - docs

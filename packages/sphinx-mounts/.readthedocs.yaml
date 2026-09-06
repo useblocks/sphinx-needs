@@ -19,9 +19,9 @@ build:
     python: "3.13"
   jobs:
     post_checkout:
-      # Every pull request against this repository builds BOTH Read the Docs projects. A
-      # pull request that leaves `packages/sphinx-mounts/` untouched has nothing for this
-      # one to build, so cancel it. Exit code 183 is Read the Docs' documented "skip" code
+      # Every pull request against this repository builds every Read the Docs project it
+      # has. A pull request that leaves `packages/sphinx-mounts/` untouched has nothing for
+      # this one to build, so cancel it. Exit code 183 is Read the Docs' documented "skip" code
       # (https://docs.readthedocs.com/platform/stable/guides/build/skip-build.html): the
       # build is recorded as `cancelled`, and the commit status sent to GitHub is `success`
       # with the description "Read the Docs build skipped", so no pull request is ever

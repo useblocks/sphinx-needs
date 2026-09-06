@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_GNUCPP17",
+      "title": "GNU C++17 dialect",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

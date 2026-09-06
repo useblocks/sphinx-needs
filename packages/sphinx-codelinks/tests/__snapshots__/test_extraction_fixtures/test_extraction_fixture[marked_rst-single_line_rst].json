@@ -1,0 +1,12 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "marked_rst": [
+    {
+      "content": " .. impl:: X\\n   :id: Y\\n",
+      "start_line": 2,
+      "end_line": 2
+    }
+  ],
+  "warnings": []
+}

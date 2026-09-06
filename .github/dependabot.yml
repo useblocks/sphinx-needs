@@ -52,6 +52,11 @@ updates:
       # the second member, for exactly the same reason: `sphinx-mounts` is a real PyPI
       # project as well as the name of a directory under `packages/`
       - dependency-name: sphinx-mounts
+      # the third member, same reason again -- and here the blanket ignore above is worth
+      # rereading: sphinx-codelinks depends on the PUBLISHED sphinx-needs by name
+      # (`sphinx-needs>=8.5.0,<9`), and that specifier is a floor moved by hand at release
+      # time by `propagate_floors.py`, not by dependabot
+      - dependency-name: sphinx-codelinks
       # the workspace root itself. Its name is not on PyPI at all, so there is nothing to
       # bump to -- this pre-empts the same #14004 noise rather than fixing a live proposal
       - dependency-name: sphinx-needs-workspace

@@ -1,0 +1,39 @@
+# Marked reStructuredText blocks (``@rst`` ... ``@endrst``) inside comments.
+# cpp only. Default marked-rst markers (@rst / @endrst) are used. These cases set
+# ``extract: [rst]`` so only rst extraction runs (the ``@rst`` / ``@endrst`` lines
+# also begin with ``@``, so running the one-line parser here would add noise).
+#
+# In the snapshot, marked_rst entries carry ``content`` plus ``start_line`` and
+# ``end_line`` (both 1-indexed; the extractor maps both to the row of the @rst
+# marker, so they coincide). For a single-line block the content is the verbatim
+# text between the markers (leading/trailing spaces kept). For a multi-line block
+# the rst starts on the line after @rst, ends before @endrst, and the leading
+# ``*`` of each doxygen line is stripped from the content.
+
+single_line_rst:
+  # @rst and @endrst on one line inside a /* */ block comment. Backslashes in a
+  # YAML ``|`` scalar are literal, so ``\n`` here is the two-char sequence, not a
+  # real newline -- the block stays single-line and content is kept verbatim.
+  lang: cpp
+  config: default
+  extract: [rst]
+  source: |
+    /* @rst .. impl:: X\n   :id: Y\n@endrst */
+    void f() {}
+
+multi_line_rst_doxygen:
+  # A doxygen /** ... */ block with a leading ``*`` on each line; confirm the
+  # leading ``*`` is stripped from the extracted content.
+  lang: cpp
+  config: default
+  extract: [rst]
+  source: |
+    /**
+     * @rst
+     * .. impl:: Multi
+     *    :id: M_1
+     *
+     *    Body line.
+     * @endrst
+     */
+    void f() {}

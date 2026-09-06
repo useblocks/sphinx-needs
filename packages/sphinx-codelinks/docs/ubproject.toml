@@ -1,0 +1,172 @@
+"$schema" = "https://ubcode.useblocks.com/ubproject.schema.json"
+
+[rst_lint]
+ignore = ["block.title_line"]
+
+[needs]
+id_required = true
+
+[[needs.types]]
+directive = "feature"
+title = "Feature"
+prefix = "FEAT_"
+color = "#Gold"
+style = "rectangle"
+
+[[needs.types]]
+directive = "usecase"
+title = "Use Case"
+prefix = "USE_"
+color = "#Thistle"
+style = "rectangle"
+
+[[needs.types]]
+directive = "fault"
+title = "Fault"
+prefix = "FAULT_"
+color = "#Pink"
+style = "rectangle"
+
+[[needs.types]]
+directive = "impl"
+title = "Implementation"
+prefix = "IMPL_"
+color = "#LightGreen"
+style = "node"
+
+[[needs.types]]
+directive = "test"
+title = "Test"
+prefix = "TEST_"
+color = "#DarkTurquoise"
+style = "node"
+
+[parse.extend_directives.src-trace]
+argument = false
+options = true
+content = false
+content_required = false
+parse_content = false
+description = "A directive to generate need items from one-line definition"
+extension = "sphinx-codelinks"                                              # The extension that provides the directive
+
+[parse.extend_directives.video]
+argument = true
+content = false
+options = true
+
+[parse.extend_directives.tabs]
+argument = true
+content = true
+options = true
+
+[parse.extend_directives.typer]
+argument = true
+content = true
+options = true
+
+[parse.extend_directives.button-ref]
+argument = true
+content = true
+options = true
+
+[parse.extend_directives.button-link]
+argument = true
+content = true
+options = true
+
+[codelinks]
+# Configuration for source tracing
+set_local_url = true            # Set to true to enable local code html and URL generation
+local_url_field = "local-url"   # Need's field name for local URL
+set_remote_url = true           # Set to true to enable remote url to be generated
+remote_url_field = "remote-url" # Need's field name for remote URL
+
+# Configuration for source tracing project "dcdc"
+[codelinks.projects.dcdc]
+remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}" # URL pattern for remote source code
+
+[codelinks.projects.dcdc.source_discover]
+src_dir = "../tests/data/dcdc" # Relative path from this TOML config to the source directory
+
+[codelinks.projects.dcdc.analyse]
+get_need_id_refs = false
+get_oneline_needs = true
+
+[codelinks.projects.dcdc.analyse.oneline_comment_style]
+# Configuration for oneline comment style
+start_sequence = "[["  # Start sequence for oneline comments
+end_sequence = "]]"    # End sequence for the online comments; default is newline character
+field_split_char = "," # Character to split fields in the comment
+# Fields that are defined in the oneline comment style
+needs_fields = [
+  { "name" = "id", "type" = "str" },
+  { "name" = "title", "type" = "str" },
+  { "name" = "type", "type" = "str", "default" = "impl" },
+  { "name" = "links", "type" = "list[str]", "default" = [
+  ] },
+]
+
+[codelinks.projects.src]
+remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}"
+
+[codelinks.projects.src.source_discover]
+src_dir = "../tests/doc_test/minimum_config"
+
+# Configuration for source tracing project "sphinx_codelinks"
+[codelinks.projects.sphinx_codelinks]
+remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}"
+
+[codelinks.projects.sphinx_codelinks.source_discover]
+src_dir = "../src"
+include = ["**/*.py"]
+comment_type = "python"
+gitignore = true
+
+[codelinks.projects.sphinx_codelinks.analyse]
+get_need_id_refs = false
+get_oneline_needs = true
+comment_type = "python"
+
+[codelinks.projects.sphinx_codelinks.analyse.oneline_comment_style]
+start_sequence = "@"
+field_split_char = ","
+needs_fields = [
+  { "name" = "title", "type" = "str" },
+  { "name" = "id", "type" = "str" },
+  { "name" = "type", "type" = "str", "default" = "impl" },
+  { "name" = "links", "type" = "list[str]", "default" = [
+  ] },
+]
+
+# Configuration for tests project
+[codelinks.projects.tests]
+remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}"
+
+[codelinks.projects.tests.source_discover]
+src_dir = "../tests"
+include = ["**/*.py"]
+exclude = [
+  "**/__pycache__/**",
+  "**/data/**",
+  "**/doc_test/**",
+  "**/__snapshots__/**",
+]
+comment_type = "python"
+gitignore = true
+
+[codelinks.projects.tests.analyse]
+get_need_id_refs = false
+get_oneline_needs = true
+comment_type = "python"
+
+[codelinks.projects.tests.analyse.oneline_comment_style]
+start_sequence = "@"
+field_split_char = ","
+needs_fields = [
+  { "name" = "title", "type" = "str" },
+  { "name" = "id", "type" = "str" },
+  { "name" = "type", "type" = "str", "default" = "test" },
+  { "name" = "links", "type" = "list[str]", "default" = [
+  ] },
+]

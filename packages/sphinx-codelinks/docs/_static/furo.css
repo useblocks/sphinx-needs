@@ -1,0 +1,331 @@
+/* Styling for the https://github.com/pradyunsg/furo theme. */
+
+:root {
+    --ub-color-neutral-0: #FFFFFF;
+    --ub-color-neutral-50: #FAFAFA;
+    --ub-color-neutral-100: #F5F5F5;
+    --ub-color-neutral-200: #EEEEEE;
+    --ub-color-neutral-300: #E0E0E0;
+    --ub-color-neutral-400: #BDBDBD;
+    --ub-color-neutral-500: #9E9E9E;
+    --ub-color-neutral-600: #757575;
+    --ub-color-neutral-700: #616161;
+    --ub-color-neutral-800: #424242;
+    --ub-color-neutral-900: #212121;
+    --ub-color-neutral-1000: #000000;
+}
+
+/* furo light colors */
+body {
+    --ub-color-brand-main: #583eff;
+    --ub-color-brand-muted: #b7a3ff;
+    --ub-color-brand-opaque: rgb(88, 62, 255, 0.2);
+    --sn-architecture-bg: url(../architecture_bg-light.png);
+
+    --color-brand-primary: var(--ub-color-brand-main);
+
+    /* anchored heading title */
+    --color-highlight-on-target: var(--ub-color-brand-opaque);
+
+    /* Left ToC */
+    --color-sidebar-brand-text: var(--color-foreground-primary);
+    --color-sidebar-caption-text: var(--ub-color-neutral-900);
+    --color-sidebar-link-text--top-level: var(--ub-color-neutral-800);
+    --color-sidebar-link-text: var(--ub-color-neutral-600);
+    --color-sidebar-link-text--current: var(--ub-color-brand-main);
+    --color-sidebar-item-background--hover: var(--ub-color-brand-opaque);
+
+    /* Right ToC */
+    --color-toc-item-text--active: var(--ub-color-brand-main);
+
+    /* Links */
+    --color-link: var(--color-content-foreground);
+    --color-link--hover: var(--color-content-foreground);
+    --color-link-underline: var(--ub-color-brand-muted);
+    --color-link-underline--hover: var(--ub-color-brand-main);
+    --color-link--visited: var(--color-content-foreground);
+    --color-link--visited--hover: var(--color-content-foreground);
+    --color-link-underline--visited: var(--ub-color-brand-muted);
+    --color-link-underline--visited--hover: var(--ub-color-brand-main);
+
+    /* Admonitions */
+    --color-admonition-title-background--note: var(--ub-color-brand-opaque);
+    --color-admonition-title--note: var(--ub-color-brand-main);
+
+    /* Sphinx Design */
+    --sd-fontsize-dropdown: var(--admonition-font-size);
+    --sd-fontsize-dropdown-title: var(--admonition-title-font-size);
+    --sd-fontweight-dropdown-title: 500;
+    --sd-color-card-header: var(--ub-color-brand-opaque);
+    --sd-color-card-border-hover: var(--ub-color-brand-opaque);
+}
+
+/* furo dark colors */
+@media not print {
+    body[data-theme="dark"] {
+
+        --ub-color-brand-main: #e4ff3e;
+        --ub-color-brand-muted: #b3bb00;
+        --ub-color-brand-opaque: rgba(228, 255, 62, 0.15);
+        --sn-architecture-bg: url(../architecture_bg-dark.png);
+
+        --color-brand-primary: var(--ub-color-brand-main);
+
+        /* anchored heading title */
+        --color-highlight-on-target: var(--ub-color-brand-opaque);
+
+        /* Left ToC */
+        --color-sidebar-brand-text: var(--color-foreground-primary);
+        --color-sidebar-caption-text: var(--ub-color-neutral-100);
+        --color-sidebar-link-text--top-level: var(--ub-color-neutral-300);
+        --color-sidebar-link-text: var(--ub-color-neutral-500);
+        --color-sidebar-link-text--current: var(--ub-color-brand-main);
+        --color-sidebar-item-background--hover: var(--ub-color-brand-opaque);
+
+        /* Right ToC */
+        --color-toc-item-text--active: var(--ub-color-brand-main);
+
+        /* Links */
+        --color-link: var(--color-content-foreground);
+        --color-link--hover: var(--color-content-foreground);
+        --color-link-underline: var(--ub-color-brand-muted);
+        --color-link-underline--hover: var(--ub-color-brand-main);
+        --color-link--visited: var(--color-content-foreground);
+        --color-link--visited--hover: var(--color-content-foreground);
+        --color-link-underline--visited: var(--ub-color-brand-muted);
+        --color-link-underline--visited--hover: var(--ub-color-brand-main);
+
+        /* Admonitions */
+        --color-admonition-title-background--note: var(--ub-color-brand-opaque);
+        --color-admonition-title--note: var(--ub-color-brand-main);
+    }
+
+    @media (prefers-color-scheme: dark) {
+        body:not([data-theme="light"]) {
+
+            --ub-color-brand-main: #e4ff3e;
+            --ub-color-brand-muted: #b3bb00;
+            --ub-color-brand-opaque: rgba(228, 255, 62, 0.15);
+            --sn-architecture-bg: url(../architecture_bg-dark.png);
+
+            --color-brand-primary: var(--ub-color-brand-main);
+
+            /* anchored heading title */
+            --color-highlight-on-target: var(--ub-color-brand-opaque);
+
+            /* Left ToC */
+            --color-sidebar-brand-text: var(--color-foreground-primary);
+            --color-sidebar-caption-text: var(--ub-color-neutral-100);
+            --color-sidebar-link-text--top-level: var(--ub-color-neutral-300);
+            --color-sidebar-link-text: var(--ub-color-neutral-500);
+            --color-sidebar-link-text--current: var(--ub-color-brand-main);
+            --color-sidebar-item-background--hover: var(--ub-color-brand-opaque);
+
+            /* Right ToC */
+            --color-toc-item-text--active: var(--ub-color-brand-main);
+
+            /* Links */
+            --color-link: var(--color-content-foreground);
+            --color-link--hover: var(--color-content-foreground);
+            --color-link-underline: var(--ub-color-brand-muted);
+            --color-link-underline--hover: var(--ub-color-brand-main);
+            --color-link--visited: var(--color-content-foreground);
+            --color-link--visited--hover: var(--color-content-foreground);
+            --color-link-underline--visited: var(--ub-color-brand-muted);
+            --color-link-underline--visited--hover: var(--ub-color-brand-main);
+
+            /* Admonitions */
+            --color-admonition-title-background--note: var(--ub-color-brand-opaque);
+            --color-admonition-title--note: var(--ub-color-brand-main);
+        }
+    }
+}
+
+/* sphinx-needs colors */
+/* doc config start */
+/* Note, the recommended way to set colors for furo is in the `html_theme_options`
+https://pradyunsg.me/furo/customisation/#light-css-variables-dark-css-variables
+
+But here we are setting the colors directly in the CSS,
+to make it a little easier to compare to the different themes.
+*/
+body {
+    --color-code-background: #eeffcc;
+    --color-code-foreground: black;
+    --sn-color-need-border: #555;
+    --sn-color-need-row-border: hsla(232, 75%, 95%, 0.12);
+    --sn-color-need-bg: #eee;
+    --sn-color-need-bg-head: rgba(0, 0, 0, 0.1);
+    --sn-color-complete-bg-head: rgba(0, 0, 0, 0.1);
+    --sn-color-complete-bg-foot: rgba(0, 0, 0, 0.1);
+    --sn-color-bg-gray: #eee;
+    --sn-color-bg-lightgray: rgba(0, 0, 0, 0.004);
+    --sn-color-bg-green: #05c46b;
+    --sn-color-bg-red: #ff3f34;
+    --sn-color-bg-yellow: #ffc048;
+    --sn-color-bg-blue: #0fbcf9;
+    --sn-color-debug-btn-border: #333;
+    --sn-color-debug-btn-on-text: #f43333;
+    --sn-color-debug-btn-off-text: #096285;
+    --sn-color-datatable-label: var(--color-foreground-muted);
+    --sn-color-datatable-btn-border: var(--color-foreground-muted);
+}
+
+@media not print {
+    body[data-theme="dark"] {
+        --color-code-background: #202020;
+        --color-code-foreground: #d0d0d0;
+        --sn-color-need-border: #aaaaaa;
+        --sn-color-need-row-border: hsla(52, 75%, 5%, 0.12);
+        --sn-color-need-bg: #111111;
+        --sn-color-need-bg-head: rgba(255, 255, 255, 0.1);
+        --sn-color-complete-bg-head: rgba(255, 255, 255, 0.1);
+        --sn-color-complete-bg-foot: rgba(255, 255, 255, 0.1);
+        --sn-color-bg-gray: #111111;
+        --sn-color-bg-lightgray: rgba(255, 255, 255, 0.1);
+        --sn-color-bg-green: #024e2a;
+        --sn-color-bg-red: #81201b;
+        --sn-color-bg-yellow: #a97c32;
+        --sn-color-bg-blue: #096285;
+        --sn-color-debug-btn-border: #888;
+        --sn-color-debug-btn-on-text: #ff3f34;
+        --sn-color-debug-btn-off-text: #0fbcf9;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        body:not([data-theme="light"]) {
+            --color-code-background: #202020;
+            --color-code-foreground: #d0d0d0;
+            --sn-color-need-border: #aaaaaa;
+            --sn-color-need-row-border: hsla(52, 75%, 5%, 0.12);
+            --sn-color-need-bg: #111111;
+            --sn-color-need-bg-head: rgba(255, 255, 255, 0.1);
+            --sn-color-complete-bg-head: rgba(255, 255, 255, 0.1);
+            --sn-color-complete-bg-foot: rgba(255, 255, 255, 0.1);
+            --sn-color-bg-gray: #111111;
+            --sn-color-bg-lightgray: rgba(255, 255, 255, 0.1);
+            --sn-color-bg-green: #024e2a;
+            --sn-color-bg-red: #81201b;
+            --sn-color-bg-yellow: #a97c32;
+            --sn-color-bg-blue: #096285;
+            --sn-color-debug-btn-border: #888;
+            --sn-color-debug-btn-on-text: #ff3f34;
+            --sn-color-debug-btn-off-text: #0fbcf9;
+        }
+    }
+}
+
+/* doc config end */
+
+/* make the left ToC use the brand color for the current page */
+.sidebar-tree .current-page>.reference {
+    font-weight: 700;
+    color: var(--ub-color-brand-main)
+}
+
+/* styling fo the icon at the top of the left ToC bar */
+img.sidebar-logo {
+    /* furo sets this at 100% but that makes it a bit too big */
+    max-width: 85%;
+}
+
+/* for sphinxcontrib.video */
+video {
+    width: 700px;
+    max-width: 100%;
+}
+
+/* Do not underline links in the search results */
+#search-results a {
+    text-decoration: none;
+}
+
+/* styling for added the source link component in the left ToC bar */
+.gh-source {
+    display: flex;
+    align-items: center;
+    gap: .5em;
+    padding-left: var(--sidebar-item-spacing-horizontal);
+    padding-right: var(--sidebar-item-spacing-horizontal);
+    padding-top: .6em;
+    padding-bottom: .6em;
+    text-decoration: none;
+    border-top: 1px solid var(--color-background-border);
+    border-bottom: 1px solid var(--color-background-border);
+}
+
+.gh-source--icon {
+    height: 1.5em;
+}
+
+.gh-source:hover .gh-source--info * {
+    color: var(--color-foreground-primary);
+}
+
+.gh-source--info {
+    display: inline-flex;
+    flex-direction: column;
+    gap: .1em;
+}
+
+.gh-source--version {
+    display: inline-flex;
+    align-items: center;
+    gap: .2em;
+}
+
+.gh-source--version-icon {
+    height: .8em;
+}
+
+.gh-source--version-icon,
+.gh-source--version-text,
+.gh-source--repo-text {
+    font-size: .8em;
+    color: var(--color-foreground-muted);
+}
+
+
+/** styling for the flowchart diagram on the landing page **/
+svg.sn-flow-chart path.text {
+    fill: var(--color-foreground-primary);
+}
+
+svg.sn-flow-chart rect.box {
+    stroke: var(--color-foreground-border);
+}
+
+svg.sn-flow-chart path.arrow {
+    fill: var(--ub-color-brand-main);
+}
+
+/* Image width fix in need-sidebars. */
+tbody div.needs_side img.needs_image {
+    max-width: 100px;
+}
+
+/** sphinx-design additional styling **/
+svg.fill-primary {
+    fill: var(--sd-color-primary);
+}
+
+details.sd-dropdown {
+    margin: 1rem auto;
+}
+
+summary.sd-summary-title {
+    padding-right: .5em !important;
+    /* note this can be removed in sphinx-design v0.6.1 */
+}
+
+.sn-dropdown-default .sd-summary-icon svg {
+    color: var(--color-admonition-title--note);
+}
+
+.sn-dropdown-default {
+    border-left: .2rem solid var(--color-admonition-title--note) !important;
+}
+
+.sn-dropdown-default .sd-summary-title {
+    border-width: 0 !important;
+}
