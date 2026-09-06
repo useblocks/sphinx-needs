@@ -1335,6 +1335,23 @@ def _plantuml_jar_command() -> tuple[str, ...] | None:
     return ("java", "-Djava.awt.headless=true", "-jar", jar)
 
 
+def test_an_empty_plantuml_jar_is_treated_as_unset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An empty ``PLANTUML_JAR`` means "no jar", not "a jar named nothing".
+
+    That is how the variable arrives from a developer shell with ``PLANTUML_JAR=``
+    exported, and from a workflow that computes the value with an expression rather than
+    deciding whether to set it at all. Read the other way, every cell that does not want
+    a jar would go red. sphinx-needs' suite agrees, and pins it in
+    ``tests/test_plantuml_command.py``; this is the same four lines on this side, because
+    the two implementations are separate and nothing else links them.
+    """
+    monkeypatch.setenv("PLANTUML_JAR", "")
+
+    assert _plantuml_jar_command() is None
+
+
 def _require_renderer(directive_rst: str) -> None:
     """Fail the test when a diagram directive's renderer is not available.
 
