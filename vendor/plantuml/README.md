@@ -111,6 +111,14 @@ check. That is the fence on the pin: a pull request that edits `pin.toml` and do
 the matching jar is one red step naming both hashes, rather than a rendering failure in some
 other job.
 
+**And a test fences the steps themselves.** `tools/tests/test_ci_plantuml_steps.py` parses
+every `.github/workflows/*.y{a,}ml` and `.github/actions/*/action.y{a,}ml`, finds each step
+whose `run:` invokes the script, and asserts the four clauses above of every one of them --
+plus the number of sites it found, so a renamed script or a deleted step is red rather than a
+quietly empty walk. It exists because losing `--verify` at one site would be **green**: the
+script's default mode downloads, so the step would repair the runner's tree and report
+success on exactly the mistake the fence is for. Lint runs it (`pytest tools/tests`).
+
 ## Bumping the pin
 
 1. Download the release asset and hash it:
