@@ -16,15 +16,31 @@ What it does NOT do is decide anything. It writes no prose: the changelog gets i
 its heading, its `:Released:` and (where that file's convention has one) its
 `:Full Changelog:` link, and the summary paragraph stays hand-written, because a
 placeholder in a changelog is a thing that ships. It does not commit, does not tag and does
-not push. And it is not a gate: `check_workspace.py` in Lint and the plan job in
-`release.yaml` are still what stand between a half-done bump and PyPI -- this only makes
-the half-done state unlikely rather than routine.
+not push.
+
+**RETRACTION.** An earlier version of this docstring said "it is not a gate:
+`check_workspace.py` in Lint and the plan job in `release.yaml` are still what stand
+between a half-done bump and PyPI -- this only makes the half-done state unlikely rather
+than routine." That is FALSE, and measured to be false for the half-done state this module
+can actually produce: a tree bumped everywhere except the changelog is green under
+`uv run poe lint`, `check_workspace.py` AND the plan job, because **nothing in this
+repository fences a missing changelog entry**. The manifest, the literal, the lock and the
+docker fallback all agree; the only thing absent is prose no gate reads. So there is no
+downstream fence to fall back on, and this module cannot be allowed to create that state
+by refusing halfway through -- which is why `bump()` below is split into a COMPUTE phase
+and an APPLY phase: every refusal any step can raise fires while the tree is still
+untouched. What remains possible is a crash, a `KeyboardInterrupt`, or a failure of the two
+subprocesses in the apply phase; for those, the failure message names the files already
+written and the `git checkout --` that undoes them.
 
 **Preconditions, all fail-closed**: the distribution is a member this repository publishes
-(the virtual `tools` member is refused, by the same rule that refuses its tag), and every
-file this run will write is clean in `git status --porcelain`. The rest of the tree may be
-dirty and the branch is not checked: a release pull request is cut from `master`, but so is
-a rehearsal, and refusing to run anywhere else would only teach people to bypass this.
+(the virtual `tools` member is refused, by the same rule that refuses its tag); every file
+this run will write is clean in `git status --porcelain`; the new version is strictly above
+the current one (a release never moves down, and re-releasing the current version is the
+same mistake wearing a different hat); and the changelog does not already carry a label for
+it. The rest of the tree may be dirty and the branch is not checked: a release pull request
+is cut from `master`, but so is a rehearsal, and refusing to run anywhere else would only
+teach people to bypass this.
 
 **Sharing with the other scripts.** These scripts are run by path
 (`uv run --no-project --with packaging python tools/src/sn_tools/<script>.py`), which puts
@@ -53,6 +69,8 @@ import tomllib
 from datetime import date
 from pathlib import Path
 from typing import Any
+
+from packaging.version import InvalidVersion, Version
 
 if __package__ in (None, ""):  # run by path: `sys.path[0]` is this directory
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -88,9 +106,20 @@ RELEASE_LABEL = re.compile(r"^\.\. _`release:(?P<version>[^`]+)`:\s*$")
 RELEASED = re.compile(r"^:Released:\s*(?P<value>\S.*?)\s*$")
 FULL_CHANGELOG = ":Full Changelog:"
 # `03.09.2026` (sphinx-needs) as against `2026-08-27` (sphinx-mounts). Both conventions are
-# in this repository today and a release must not change the one the file it stamps uses
-DAY_FIRST = re.compile(r"^\d{2}\.\d{2}\.\d{4}$")
+# in this repository today and a release must not change the one the file it stamps uses.
+# The day-first pattern is deliberately lenient about padding: a hand-stamped `3.9.2026` is
+# still that file's format, and reading it as "unrecognised" would silently flip the file to
+# ISO for that release and every one after it
+DAY_FIRST = re.compile(r"^\d{1,2}\.\d{1,2}\.\d{4}$")
+ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 UNRELEASED = "Unreleased"
+
+# Every character docutils accepts as a section adornment. RST fixes none of them: a
+# document picks its own, and the heading LEVEL follows first use -- so `Changelog` under
+# `=` and `Unreleased` under `-` are conventions of the two files in this repository, not
+# rules. Matching one hard-coded character per heading is how an `Unreleased` section
+# underlined with `=` came to be silently left standing while the new entry went in below it
+ADORNMENT = frozenset("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~")
 
 
 class BumpError(RuntimeError):
@@ -127,21 +156,39 @@ class Runner:
 # --- the pure rewrites: everything below is text in, text out ----------------------------
 
 
-def rewrite_module_literal(text: str, old: str, new: str) -> str:
-    """Move `__version__` in a module's `__init__.py`. Exactly one match, or refuse.
+def rewrite_module_literal(
+    text: str, old: str, new: str, path: str = "__init__.py"
+) -> str:
+    """Move `__version__` in a module's `__init__.py`, or refuse. Two separate refusals.
 
-    Keyed on the OLD value, not just on the name: a module that carries two `__version__`
-    assignments, or one whose literal already disagrees with the manifest, is a state this
-    cannot silently pick a winner in -- `check_workspace.py`'s check (5) exists precisely
-    because the two numbers drift.
+    `old` is the MANIFEST's version, not the literal's own. That distinction is the whole
+    point: keying on the literal's value made the `old` argument match by construction, so
+    a literal that had drifted from the manifest was silently overwritten and the one gate
+    that knew about the drift -- `check_workspace.py`'s check (5) -- went green again
+    without anyone seeing which of the two numbers had won. A release bump is the worst
+    moment to guess which of two hand edits was the intended one.
+
+    The count is taken over EVERY `__version__` assignment, not only the matching ones, so
+    a module carrying two of them is refused whichever values they hold. (Both
+    `check_workspace.module_version` and this regex read top to bottom, so a second
+    assignment is what Python actually leaves in `__version__` at import time and what
+    would be stamped into `needs.json` -- while the fence, reading the first, stayed
+    green.)
     """
-    matches = [m for m in MODULE_LITERAL.finditer(text) if m.group("value") == old]
+    matches = list(MODULE_LITERAL.finditer(text))
     if len(matches) != 1:
         raise BumpError(
-            f'expected exactly one `__version__ = "{old}"` assignment, found '
+            f"{path}: expected exactly one `__version__` assignment, found "
             f"{len(matches)}; fix the module by hand and re-run"
         )
     match = matches[0]
+    found = match["value"]
+    if found != old:
+        raise BumpError(
+            f'{path}: `__version__` is "{found}", but the manifest declares "{old}". '
+            "`check-workspace` reports exactly this drift; fix it by hand first -- the "
+            "release bump will not guess which of the two numbers is right"
+        )
     replacement = f"{match['head']}{match['quote']}{new}{match['quote']}"
     return text[: match.start()] + replacement + text[match.end() :]
 
@@ -186,21 +233,36 @@ def dependants(projects: dict[str, dict[str, Any]], target: str) -> list[str]:
     )
 
 
-def released_line(text: str, when: date) -> str:
-    """`:Released:` in THIS file's own date format.
+def released_line(text: str, when: date, path: str = "changelog.rst") -> str:
+    """`:Released:` in THIS file's own date format, or refuse.
 
     sphinx-needs writes `03.09.2026` and sphinx-mounts writes `2026-08-27`. Neither is more
     correct, and a release is not the moment to unify them -- so the format is read off the
     newest existing entry (changelogs here are newest-first, so that is the first
-    `:Released:` in the file) and ISO is the answer only when the file has none.
+    `:Released:` in the file).
+
+    "ISO when the file has none" and "ISO when the file has one I cannot classify" are
+    different rules, and only the first is a documented convention. The second was the
+    behaviour: one hand-stamped `3 Sep 2026` -- or `2026/08/27` -- would have flipped the
+    file to ISO for that release and, by the same detection, every release after it. So an
+    unrecognised value is a refusal naming the line, and ISO is reached only by a file with
+    no `:Released:` at all, which is a first release.
     """
     for line in text.splitlines():
         match = RELEASED.match(line)
         if match:
-            iso = not DAY_FIRST.match(match["value"])
-            return (
-                f":Released: {when:%Y-%m-%d}" if iso else f":Released: {when:%d.%m.%Y}"
+            value = match["value"]
+            if DAY_FIRST.match(value):
+                return f":Released: {when:%d.%m.%Y}"
+            if ISO_DATE.match(value):
+                return f":Released: {when:%Y-%m-%d}"
+            raise BumpError(
+                f"{path}: the newest `:Released: {value}` is neither DD.MM.YYYY nor "
+                "YYYY-MM-DD, so this file states no date format to follow; fix that line, "
+                "or stamp this entry by hand"
             )
+    # the documented fallback, and the only way to reach it: a changelog with no released
+    # entry at all
     return f":Released: {when:%Y-%m-%d}"
 
 
@@ -229,30 +291,54 @@ def newest_entry_has_compare(lines: list[str]) -> bool:
     return False
 
 
+def is_heading(lines: list[str], index: int, title: str) -> bool:
+    """Is `lines[index]` a section heading reading `title`, adorned by the line below it?
+
+    By SHAPE, not by character. RST fixes no adornment character and no level ordering: a
+    document's first-used adornment becomes its top level, so `Changelog` under `=` with
+    `Unreleased` under `-` (this repository) and the same two under `-` and `=` are both
+    valid, and only one of them used to be recognised. What docutils actually requires is a
+    run of one repeated punctuation character, at least as long as the title text -- which
+    is what this asks, once, for both headings this module looks for. Two hard-coded and
+    DIFFERENT characters in one module was the drift waiting to happen: an `Unreleased`
+    section adorned with `=` was left standing above a new, empty release entry, keeping
+    the bullets that were meant to be that release's changelog, and nothing was raised.
+    """
+    if index + 1 >= len(lines) or lines[index].strip() != title:
+        return False
+    adornment = lines[index + 1].strip()
+    return (
+        len(adornment) >= len(title)
+        and len(set(adornment)) == 1
+        and adornment[0] in ADORNMENT
+    )
+
+
 def changelog_title(lines: list[str]) -> int | None:
     """The index of the `Changelog` section title, if the file has one."""
-    for index in range(len(lines) - 1):
-        underline = lines[index + 1].strip()
-        if (
-            lines[index].strip() == "Changelog"
-            and underline
-            and set(underline) == {"="}
-        ):
-            return index
-    return None
+    return next(
+        (index for index in range(len(lines)) if is_heading(lines, index, "Changelog")),
+        None,
+    )
 
 
 def unreleased_section(
     lines: list[str], title_at: int | None, label_at: int | None
 ) -> int | None:
-    """The index of an `Unreleased` heading sitting above every released entry."""
+    """The index of an `Unreleased` heading sitting above every released entry.
+
+    The `label_at` bound is what "above every released entry" means, and it is load-bearing
+    rather than tidy: an `Unreleased` heading left by mistake INSIDE an older entry's body
+    would otherwise be converted, which inserts the new release below the older one --
+    newest-first ordering broken and the older entry's body silently annexed. Below the
+    first label, the insert branch is the right answer.
+    """
     start = 0 if title_at is None else title_at + 2
-    stop = len(lines) - 1 if label_at is None else min(label_at, len(lines) - 1)
-    for index in range(start, stop):
-        underline = lines[index + 1].strip()
-        if lines[index].strip() == UNRELEASED and underline and set(underline) == {"-"}:
-            return index
-    return None
+    stop = len(lines) if label_at is None else min(label_at, len(lines))
+    return next(
+        (index for index in range(start, stop) if is_heading(lines, index, UNRELEASED)),
+        None,
+    )
 
 
 def stamp_changelog(
@@ -276,14 +362,26 @@ def stamp_changelog(
       The summary paragraph is hand-written; a placeholder here is a thing that ships.
 
     Returns the new text and a one-line description of what was written, for the caller's
-    step line.
+    step line. The output is LF-joined whatever the input used, so a CRLF changelog would
+    come back rewritten whole; in this repository `.gitattributes`' `* text=auto` normalises
+    the blobs either way, so the diff stays one hunk -- the sentence "the diff is the whole
+    file" is false here only because of that line, which nothing else connects to this code.
     """
     lines = text.splitlines()
     label_at = next(
         (i for i, line in enumerate(lines) if RELEASE_LABEL.match(line)), None
     )
     title_at = changelog_title(lines)
-    if label_at is None and title_at is None:
+    # the line a new entry goes in ABOVE: the newest label, or the first line after the
+    # `Changelog` title's adornment when the file has no released entry yet. Bound here,
+    # where each branch narrows locally, rather than re-derived as a ternary 40 lines on --
+    # which is the same invariant stated twice, and the second statement needed a
+    # `ty: ignore` because the narrowing does not survive a compound guard
+    if label_at is not None:
+        at = label_at
+    elif title_at is not None:
+        at = title_at + 2
+    else:
         raise BumpError(
             f"{path} has neither a `Changelog` title nor a `release:` label, so there is "
             "no entry shape to mirror; stamp this release by hand"
@@ -294,7 +392,7 @@ def stamp_changelog(
         version,
         "-" * len(version),
         "",
-        released_line(text, when),
+        released_line(text, when, path),
     ]
     if newest_entry_has_compare(lines):
         if not previous_tag:
@@ -326,7 +424,6 @@ def stamp_changelog(
             f"({kept} top-level bullet{'' if kept == 1 else 's'} kept)",
         )
 
-    at = label_at if label_at is not None else title_at + 2  # ty: ignore[unsupported-operator]
     before = lines[:at]
     while before and not before[-1].strip():
         before.pop()  # exactly one blank line before the new label, however many there were
@@ -361,10 +458,28 @@ def preview_version(output: str) -> str:
 
 
 def bump(args: argparse.Namespace, runner: Runner) -> int:
+    """Compute everything, refuse if anything is wrong, and only then write.
+
+    The two phases are the whole design. Every refusal this module can raise -- a drifted
+    `__version__`, a `NEEDS_VERSION` line that is not there, a changelog with no shape to
+    mirror, a `:Released:` format it cannot read, a missing previous tag for a compare
+    link, a version that does not move -- is reachable only from data, so all of them can
+    fire before a byte is written. They used to fire in file order instead, which meant the
+    changelog's refusal arrived with four files and the lock already rewritten: the exact
+    half-done state no gate in this repository can see (see the RETRACTION at the top of
+    this module). Two `uv version` calls is what that costs -- a `--dry-run` for the
+    preflight and the real one in the apply phase -- and `--no-sync` makes each of them a
+    manifest read and a manifest write, so the cost is nothing.
+
+    What is still not atomic: the apply phase runs `propagate_floors.py` and `uv lock`, and
+    a crash or a `KeyboardInterrupt` anywhere in it leaves part of the tree written. That
+    is why the apply phase tracks what it wrote and says so, with the `git checkout --`
+    that undoes it, on any failure.
+    """
     root: Path = args.root
     dry = args.dry_run
 
-    # --- 1. preconditions ----------------------------------------------------------------
+    # === PRECONDITIONS ===================================================================
     workspace = release_plan.members(root)
     dist = release_plan.canonicalize_name(args.dist)
     if dist not in workspace.projects:
@@ -388,14 +503,16 @@ def bump(args: argparse.Namespace, runner: Runner) -> int:
     changelog = directory / "docs" / "changelog.rst"
     if not changelog.is_file():
         raise BumpError(f"no changelog at {changelog.relative_to(root)}")
+    changelog_path = changelog.relative_to(root).as_posix()
     needs_docker = dist == DOCKER_DIST and (root / DOCKER_WORKFLOW).is_file()
+    workflow = root / DOCKER_WORKFLOW
     downstream = dependants(workspace.projects, dist)
 
     writes = [manifest, changelog]
     if literal is not None:
         writes.append(literal[0])
     if needs_docker:
-        writes.append(root / DOCKER_WORKFLOW)
+        writes.append(workflow)
     writes += [workspace.directories[name] / "pyproject.toml" for name in downstream]
     guarded = sorted(path.relative_to(root).as_posix() for path in writes)
     status = runner.run(
@@ -419,133 +536,212 @@ def bump(args: argparse.Namespace, runner: Runner) -> int:
         "hand-written files are clean (uv.lock is regenerated, not guarded)"
     )
 
-    # --- 2. the manifest version, written by uv and read back ----------------------------
+    # === COMPUTE: nothing below writes anything ==========================================
     value = ["--bump", args.bump] if args.bump else [args.to]
-    printed = runner.run(
-        [
-            "uv",
-            "version",
-            "--package",
-            dist,
-            *value,
-            "--no-sync",
-            *(["--dry-run"] if dry else []),
-        ]
-    )
-    # read back rather than computed: `uv version` owns the bump semantics, and a second
-    # implementation of them here is a second thing to be wrong. A dry run writes no
-    # manifest to read back from, so its own `<name> <old> => <new>` line is the preview
-    version = preview_version(printed) if dry else read_version(manifest)
-    tag = f"{dist}-v{version}"
-    print(
-        f'2. {"would set" if dry else "set"} version = "{version}" in {manifest.relative_to(root)}'
-    )
-
-    # --- 3. the `__version__` literal ----------------------------------------------------
-    if literal is None:
-        print(
-            f"3. no `__version__` literal under {directory.relative_to(root)}/src/"
-            f"{member.module}/ -- nothing to rewrite"
-        )
-    else:
-        module_path, module_value = literal
-        text = rewrite_module_literal(
-            module_path.read_text(encoding="utf-8"), module_value, version
-        )
-        if not dry:
-            module_path.write_text(text, encoding="utf-8")
-        print(
-            f'3. {"would write" if dry else "wrote"} __version__ = "{version}" in '
-            f"{module_path.relative_to(root)}"
-        )
-
-    # --- 4. the docker workflow's NEEDS_VERSION fallback ---------------------------------
-    if not needs_docker:
-        print(f"4. no version literal in a workflow for {args.dist} -- skipped")
-    else:
-        workflow = root / DOCKER_WORKFLOW
-        text = rewrite_docker_literal(workflow.read_text(encoding="utf-8"), tag)
-        if not dry:
-            workflow.write_text(text, encoding="utf-8")
-        print(
-            f"4. {'would write' if dry else 'wrote'} NEEDS_VERSION fallback `{tag}` in {DOCKER_WORKFLOW}"
-        )
-
-    # --- 5. the dependants' floors -------------------------------------------------------
-    if not downstream:
-        print(
-            f"5. no dependants: no member declares {args.dist} at runtime -- propagate_floors skipped"
-        )
-    elif dry:
-        print(
-            f"5. would run propagate_floors.py {args.dist} for {', '.join(downstream)}"
-        )
-    else:
+    # `--dry-run` prints `<name> <old> => <new>` and writes no manifest, so this is the
+    # version the real call in the apply phase will produce, obtained without producing it
+    version = preview_version(
         runner.run(
-            [
-                sys.executable,
-                str(Path(__file__).resolve().with_name("propagate_floors.py")),
-                args.dist,
-                "--root",
-                str(root),
-            ]
+            ["uv", "version", "--package", dist, *value, "--no-sync", "--dry-run"]
         )
-        print(
-            f"5. propagated the {args.dist} {version} floor to {', '.join(downstream)}"
+    )
+    tag = f"{dist}-v{version}"
+
+    try:
+        moved = Version(version) > Version(old_version)
+    except InvalidVersion as exc:
+        raise BumpError(
+            f"`{version}` is not a PEP 440 version, so nothing downstream -- the tag "
+            f"check, the index, `check-workspace` -- can compare it with {old_version}"
+        ) from exc
+    if not moved:
+        raise BumpError(
+            f"{args.dist} {old_version} -> {version} is not a release: a version never "
+            "moves down, and re-releasing the current one cannot be published again "
+            "(the plan job's check 3 refuses a version already on PyPI). Name a higher "
+            "version, or use --bump {patch|minor|major}"
+        )
+    changelog_text = changelog.read_text(encoding="utf-8")
+    if any(
+        (match := RELEASE_LABEL.match(line)) and match["version"] == version
+        for line in changelog_text.splitlines()
+    ):
+        raise BumpError(
+            f"{changelog_path} already carries a `release:{version}` label, so this would "
+            "stamp a second entry for the same version -- two identical RST targets, which "
+            "`poe docs-needs` fails on (`-nW`) minutes later with a docutils warning that "
+            "says nothing about a release. Was this release already stamped?"
         )
 
-    # --- 6. the lock ---------------------------------------------------------------------
-    # NOT `--frozen`: `--no-sync` above left uv.lock claiming the old version, and the
-    # `uv-lock` prek hook would fail the release pull request for a reason that has nothing
-    # to do with the release
-    if dry:
-        print(
-            "6. would run `uv lock` (not --frozen: the lock still claims the old version)"
-        )
-    else:
-        runner.run(["uv", "lock"])
-        print("6. relocked uv.lock")
-
-    # --- 7. the changelog ----------------------------------------------------------------
-    # through the runner like every other git call, so the whole orchestration is one seam
+    # the tag list is a pure read, and `previous_tag` is a pure function of it, the
+    # distribution and the new version -- so the compare link can be resolved here, which
+    # is what lets the changelog's refusals fire before the manifest moves
     tags = [
         line.strip()
         for line in runner.run(["git", "tag", "--list"], quiet=True).splitlines()
         if line.strip()
     ]
     previous = release_plan.previous_tag(dist, version, tags)
-    text, what = stamp_changelog(
-        changelog.read_text(encoding="utf-8"),
+
+    module_text: str | None = None
+    if literal is not None:
+        module_path, _ = literal
+        module_text = rewrite_module_literal(
+            module_path.read_text(encoding="utf-8"),
+            old_version,
+            version,
+            module_path.relative_to(root).as_posix(),
+        )
+    workflow_text: str | None = None
+    if needs_docker:
+        workflow_text = rewrite_docker_literal(
+            workflow.read_text(encoding="utf-8"), tag
+        )
+    changelog_new, what = stamp_changelog(
+        changelog_text,
         version=version,
         when=args.date,
         previous_tag=previous,
         new_tag=tag,
-        path=changelog.relative_to(root).as_posix(),
+        path=changelog_path,
     )
-    if not dry:
-        changelog.write_text(text, encoding="utf-8")
     print(
-        f"7. {'would stamp' if dry else 'stamped'} {changelog.relative_to(root)}: {what}"
+        f"   preflight: {old_version} -> {version}; every rewrite computed, "
+        f"{'nothing will be written (--dry-run)' if dry else 'nothing written yet'}"
     )
 
-    # --- 8. what was written, and what is left ------------------------------------------
+    # === APPLY ============================================================================
+    written: list[str] = []
+    try:
+        # --- 2. the manifest version, written by uv and read back -------------------------
+        if not dry:
+            runner.run(["uv", "version", "--package", dist, *value, "--no-sync"])
+            written.append(manifest.relative_to(root).as_posix())
+            # read back rather than trusted: `uv version` owns the bump semantics, and the
+            # preview above is only a preview until the manifest agrees with it
+            got = read_version(manifest)
+            if got != version:
+                raise BumpError(
+                    f"`uv version` previewed {version} but wrote {got} to "
+                    f"{manifest.relative_to(root)}; refusing to stamp two different numbers"
+                )
+        print(
+            f'2. {"would set" if dry else "set"} version = "{version}" in '
+            f"{manifest.relative_to(root)}"
+        )
+
+        # --- 3. the `__version__` literal -------------------------------------------------
+        if literal is None:
+            print(
+                f"3. no `__version__` literal under {directory.relative_to(root)}/src/"
+                f"{member.module}/ -- nothing to rewrite"
+            )
+        else:
+            module_path, _ = literal
+            if not dry:
+                module_path.write_text(module_text or "", encoding="utf-8")
+                written.append(module_path.relative_to(root).as_posix())
+            print(
+                f'3. {"would write" if dry else "wrote"} __version__ = "{version}" in '
+                f"{module_path.relative_to(root)}"
+            )
+
+        # --- 4. the docker workflow's NEEDS_VERSION fallback ------------------------------
+        if not needs_docker:
+            print(f"4. no version literal in a workflow for {args.dist} -- skipped")
+        else:
+            if not dry:
+                workflow.write_text(workflow_text or "", encoding="utf-8")
+                written.append(DOCKER_WORKFLOW)
+            print(
+                f"4. {'would write' if dry else 'wrote'} NEEDS_VERSION fallback `{tag}` "
+                f"in {DOCKER_WORKFLOW}"
+            )
+
+        # --- 5. the dependants' floors ----------------------------------------------------
+        # the numbered line comes BEFORE the subprocess, so the transcript reads as a
+        # recipe rather than as output with a caption underneath it
+        if not downstream:
+            print(
+                f"5. no dependants: no member declares {args.dist} at runtime -- "
+                "propagate_floors skipped"
+            )
+        elif dry:
+            print(
+                f"5. would run propagate_floors.py {args.dist} for {', '.join(downstream)}"
+            )
+        else:
+            print(
+                f"5. propagate the {args.dist} {version} floor to "
+                f"{', '.join(downstream)}:"
+            )
+            runner.run(
+                [
+                    sys.executable,
+                    str(Path(__file__).resolve().with_name("propagate_floors.py")),
+                    args.dist,
+                    "--root",
+                    str(root),
+                ]
+            )
+            written += [
+                (workspace.directories[name] / "pyproject.toml")
+                .relative_to(root)
+                .as_posix()
+                for name in downstream
+            ]
+
+        # --- 6. the lock ------------------------------------------------------------------
+        # NOT `--frozen`: `--no-sync` above left uv.lock claiming the old version, and the
+        # `uv-lock` prek hook would fail the release pull request for a reason that has
+        # nothing to do with the release
+        if dry:
+            print(
+                "6. would run `uv lock` (not --frozen: the lock still claims the old "
+                "version)"
+            )
+        else:
+            runner.run(["uv", "lock"])
+            written.append("uv.lock")
+            print("6. relocked uv.lock")
+
+        # --- 7. the changelog -------------------------------------------------------------
+        if not dry:
+            changelog.write_text(changelog_new, encoding="utf-8")
+            written.append(changelog_path)
+        print(f"7. {'would stamp' if dry else 'stamped'} {changelog_path}: {what}")
+    except BaseException:
+        # a crash, a Ctrl-C or a failing subprocess is the one way a half-done tree is
+        # still reachable; the least this can do is name it and how to undo it
+        if written:
+            print()
+            print(
+                "this run had already written "
+                + ", ".join(sorted(written))
+                + " when it failed. To undo them:"
+            )
+            print(f"  git checkout -- {' '.join(sorted(written))}")
+        raise
+
+    # --- 8. what was written, and what is left --------------------------------------------
     print()
     print(f"{'would write' if dry else 'wrote'}:")
     for path in relative:
         print(f"  {path}")
     print()
     print('by hand, from AGENTS.md "Releasing a package":')
+    # bullets, not numbers: the actions below are AGENTS.md's steps 2 to 4, and a second
+    # numbering that starts at 1 drifts against the file this line claims to quote every
+    # time either changes
     print(
-        f"  1. write the summary paragraph under the new {version} heading in {changelog.relative_to(root)}"
+        f"  - write the summary paragraph under the new {version} heading in "
+        f"{changelog_path}"
     )
-    print("  2. uv run poe lint")
+    print("  - uv run poe lint")
     if dist == DOCKER_DIST:
-        print("  3. uv run poe smoke-needs")
-        print("  4. merge the release pull request, then from master:")
-        print(f"  5. git tag {tag} && git push origin {tag}")
-    else:
-        print("  3. merge the release pull request, then from master:")
-        print(f"  4. git tag {tag} && git push origin {tag}")
+        print("  - uv run poe smoke-needs")
+    print("  - merge the release pull request, then from master:")
+    print(f"  - git tag {tag} && git push origin {tag}")
     return 0
 
 

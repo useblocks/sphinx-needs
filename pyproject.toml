@@ -478,8 +478,8 @@ help = "Stamp a release of one member: version, __version__, the docker literal,
 # BARE, like `release-plan` and `check-workspace`, and unlike `smoke-needs`: the naming
 # rule suffixes a task whose command names one package, and this one takes the
 # distribution as an argument -- `poe bump sphinx-mounts --bump minor` is as much its
-# subject as sphinx-needs is. Steps 1-3 of AGENTS.md's release recipe; it writes no prose
-# and pushes no tag
+# subject as sphinx-needs is. Step 1 of AGENTS.md's release recipe; it writes no prose and
+# pushes no tag
 cmd = "python tools/src/sn_tools/bump.py"
 
 # --- The built package ---
