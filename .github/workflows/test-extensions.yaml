@@ -65,6 +65,7 @@ jobs:
           # which is not on the runner image -- without this uv downloads it every run
           cache-python: true
       - uses: ./.github/actions/prepare-cell
+        id: prepare
         with:
           sphinx-group: ${{ inputs.sphinx-group }}
           # sphinx-codelinks' optional preprocessor-aware C/C++ engine. Without it 56 of
@@ -77,6 +78,26 @@ jobs:
           # sphinx-mounts' uml tests render for real and `_require_renderer` asserts
           # rather than skips
           needs-plantuml: true
+      - name: Check the libclang engine this cell asked for is really there
+        # `extra-groups: codelinks-libclang` above is the ONLY executable place that wheel
+        # is named in this repository, and losing it is SILENT: the four modules that need
+        # `clang.cindex` carry `pytest.importorskip`, so the cell would report
+        # `301 passed, 26 skipped` and exit 0 with 56 test cases gone. Measured. The same
+        # would happen if the group ever gained a marker (the `sphinx-9` group already has
+        # one) or if a runner platform had no libclang wheel.
+        #
+        # This is the libclang half of the composite's "Check the renderers this cell asked
+        # for are really there", and it is here rather than in the composite because the
+        # composite must not know what any one group means. It asserts in the CELL only:
+        # the polite skips are what make `poe test-codelinks` usable for a developer who
+        # has not installed the engine, and turning those into failures would make the
+        # thing CI runs stop being the thing a developer runs.
+        shell: bash
+        run: |
+          uv run --no-sync python -c "import clang.cindex" || {
+            echo "::error::libclang did not install: no clang.cindex in this cell. The codelinks-libclang dependency group is what provides it; without it 56 of sphinx-codelinks tests skip instead of running and this cell is a quieter green, not a red"
+            exit 1
+          }
       # ONE pytest and ONE codecov upload per package. Each `--cov-report` names its own
       # file: plain `xml` writes `coverage.xml`, so the second run would overwrite the
       # first and both uploads would carry the same numbers under different flags.
@@ -98,11 +119,20 @@ jobs:
         # one above is minutes, so letting a sphinx-mounts failure hide it would mean a
         # second push to learn a second fact. The job is still red either way.
         #
+        # But `!cancelled()` ALONE would also run it when `prepare-cell` failed -- and then
+        # there is no environment, `uv run --no-sync` silently CREATES an empty one, and
+        # the step dies on `ModuleNotFoundError: No module named 'sphinx_codelinks'`, which
+        # reads as "the package is broken" four steps away from the cause (the sphinx-mounts
+        # step above, on its implicit `success()`, is skipped and gives no clue).
+        # `steps.prepare.outcome` covers the whole prologue: it is `skipped` when checkout
+        # or setup-uv failed, so this condition says what it means -- run even if the FIRST
+        # SUITE failed, not run even if setup failed.
+        #
         # Run from the REPOSITORY ROOT, like every other cell. That is only legal because
         # `test_form_https_url` no longer passes a filepath relative to the CWD -- until
         # that fix this suite passed only from `packages/sphinx-codelinks`, and a
         # `working-directory:` here would also have moved where `--cov-report` writes
-        if: '!cancelled()'
+        if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
         run: uv run --no-sync pytest -v packages/sphinx-codelinks/tests --cov=sphinx_codelinks --cov-report=xml:codelinks.xml --cov-report=term-missing
       - name: "sphinx-codelinks: upload to Codecov"
         if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'

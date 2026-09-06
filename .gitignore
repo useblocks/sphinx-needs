@@ -17,6 +17,10 @@ _build
 .pytest_cache
 .coverage
 coverage.xml
+# the Extensions CI cell runs two suites in one working directory, so each names its own
+# coverage report (`--cov-report=xml:<name>.xml`) instead of sharing `coverage.xml`
+mounts.xml
+codelinks.xml
 .ty_cache
 
 # packages/sphinx-codelinks' tests write these at the CWD: `tests/test_cmd.py` writes
