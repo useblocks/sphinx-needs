@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788685139329,
+  "lastUpdate": 1788700074197,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19872,6 +19872,42 @@ window.BENCHMARK_DATA = {
             "value": 60.105463703,
             "unit": "s",
             "extra": "Commit: f7acff1716db5ca30f6d7f962c84a105e11c466e\nBranch: master\nTime: 2026-09-06T10:57:34+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2faf8710743c4d888eb08cc937264a41e1320f20",
+          "message": "🧪 Showcase variant sources and conditional mounts in the sphinx-mounts example (#1859)\n\nMoved from useblocks/sphinx-mounts#46, which Marco opened against the\nold repository before the import. The two commits are his, unchanged in\ncontent: the branch was rewritten with the same `git filter-repo` rules\nthe import used (paths under `packages/sphinx-mounts/`, `#NN` references\nqualified), which put them directly on the commit the import merged, and\nthey then cherry-picked onto `master` with no conflicts. Nothing in the\nextension changes; the diff is confined to\n`packages/sphinx-mounts/tests/example/` and `tests/test_example.py`.\n\n## Summary\n\nThe example under `packages/sphinx-mounts/tests/example/` now showcases\nboth variant-gating keys end-to-end:\n\n- **Variant map**: `docs/ubproject.toml` declares `[needs.variant_data]\nedition = \"basic\"`; sphinx-needs resolves it and sphinx-mounts reads the\nsame map, so the two tools cannot disagree about which documents exist.\n- **Conditional sources** (`[[source.variant_sources]]`): two rules gate\nthe host's own `docs/variants/{basic,pro}.rst` pages by glob, so exactly\none exists per edition. The host `index` toctree names both by hand; the\nreference to the excluded one is downgraded to INFO\n(`mounts.variant_excluded_reference`), so `sphinx-build -W` passes in\neither variant.\n- **Conditional mounts** (`if` on a `[[source.mounts]]` entry): two\nchecked-in edition bundles under `reference/{basic,pro}/` are gated\nwhole at distinct `mount_at` prefixes, as the docs recommend, with\n`attach_to` wiring only the live bundle's index into the host toctree.\n- The Bazel sandbox script stages the `reference/` bundles next to\n`docs/`, as it already does for `showcase/` and `fragments/`.\n\n## Test\n\n`tests/test_example.py` now runs the pipeline twice: as checked in\n(`edition = \"basic\"`), then with the TOML flipped to `\"pro\"`. It asserts\nthe mirror-image content sets (each edition's page and bundle present,\nthe other's absent), that both INFO downgrade records\n(`mounts.mount_gated`, `mounts.variant_excluded_reference`) appear in\nboth build logs, and that both builds pass under `-nW`. A\n`_run_sphinx_build` helper shares the invocation and returns the\ncombined log.\n\nThe test is `bazel`-marked, so locally it is `uv run poe\ntest-mounts-bazel` (needs `bazel` or `bazelisk` on `PATH`); in CI the\n`Mounts Bazel integration` job runs it, and that job is the gate for\nthis change.\n\n## Verification here\n\n- `uv run poe lint` green on the rebased branch (ruff, ty,\ncheck-workspace and the rest).\n- `uv run poe test-mounts` (the non-Bazel suite) green.\n- The Bazel lane runs in CI on this pull request; no Bazel is installed\non the machine that did the move.\n\n---------\n\nCo-authored-by: Marco Heinemann <marco.heinemann@useblocks.com>",
+          "timestamp": "2026-09-06T15:06:20+02:00",
+          "tree_id": "024072e8142da08ea0ef39a4c5b1c4151c7b0ebd",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/2faf8710743c4d888eb08cc937264a41e1320f20"
+        },
+        "date": 1788700066199,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1308297429999925,
+            "unit": "s",
+            "extra": "Commit: 2faf8710743c4d888eb08cc937264a41e1320f20\nBranch: master\nTime: 2026-09-06T15:06:20+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.279486306,
+            "unit": "s",
+            "extra": "Commit: 2faf8710743c4d888eb08cc937264a41e1320f20\nBranch: master\nTime: 2026-09-06T15:06:20+02:00"
           }
         ]
       }
