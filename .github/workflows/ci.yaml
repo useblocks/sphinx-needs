@@ -302,12 +302,18 @@ jobs:
   docs-codelinks:
     name: Docs codelinks
     runs-on: ubuntu-latest
+    # the only job in this file with one, because it is the only one added since the two
+    # reusable workflows set `contents: read` on theirs. It reads the checkout and uploads
+    # nothing. Giving the other nine the same is a whole-file change and not this one's
+    permissions:
+      contents: read
     # sphinx-codelinks' documentation is the one END-TO-END exercise of the extension:
     # `src-trace` runs over four projects of its own source, so a build is the extension
     # doing its real job rather than a rendering check. It is also what caught the
     # worktree bug the import fixed. `docs.yaml` is a linkcheck scoped to sphinx-needs'
     # docs, the Read the Docs pull-request build is neither required nor even run when the
-    # package did not change, and 40 seconds is a cheap price for the only gate there is.
+    # package did not change, and a 7-second build is a cheap price for the only gate there
+    # is (measured locally; the rest of the job is checkout and the one sync below).
     #
     # No `paths:` filter and no `if:`: it runs on every pull request, because the thing it
     # builds reads `src/` -- a change to the extension with no change to `docs/` is
@@ -326,11 +332,23 @@ jobs:
           # no `python-version`, so this runs on the root `.python-version`, which is not
           # on the runner image
           cache-python: true
+      # `docs.yaml`'s Docs-Linkcheck idiom -- sync ONE environment, then run the builder in
+      # it with `--no-sync` -- rather than `uv run --frozen poe docs-codelinks`. That form
+      # is the same build, but it pays for two environments: the outer `uv run` syncs the
+      # DEFAULT one (the `dev` group: prek, poethepoet, uv, the whole `test` group, the `js`
+      # group -- 108 packages, 415 MB) purely so that `poe` exists, and poe's executor then
+      # syncs `.venvs/docs-codelinks` (71 packages, 138 MB) and builds there. There is no
+      # cheap way to keep poe as the single source of truth here, because poe itself lives
+      # in the `dev` group; so the command is restated, exactly as `docs.yaml` restates its
+      # own. Keep the two in step with the `docs-codelinks` poe task.
+      - name: Install the docs environment
+        run: uv sync --frozen --no-default-groups --extra docs-codelinks
       - name: Build the docs
         # `-nW --keep-going`, from the poe task, so a nitpick warning is an error. No
         # renderer: these docs draw no diagrams, so unlike `docs-needs` there is no
         # graphviz, java or plantuml to install
-        run: uv run --frozen poe docs-codelinks
+        run: uv run --no-sync sphinx-build -nW --keep-going -b html docs docs/_build/html -T
+        working-directory: packages/sphinx-codelinks
 
   bazel:
     name: Mounts Bazel integration
