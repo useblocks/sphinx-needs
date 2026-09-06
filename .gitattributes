@@ -14,3 +14,7 @@ packages/sphinx-needs/tests/conformance/needflow/** text eol=lf
 # .pre-commit-config.yaml states the intent -- and this line keeps the working-tree bytes
 # canonical on Windows regardless.
 packages/sphinx-mounts/tests/fixtures/variant_condition_conformance.toml text eol=lf
+
+# The committed PlantUML jar. `text=auto` at the top would otherwise ask git to classify a
+# 30 MB zip on every checkout; git's own detection gets it right, and this states it.
+vendor/plantuml/*.jar binary
