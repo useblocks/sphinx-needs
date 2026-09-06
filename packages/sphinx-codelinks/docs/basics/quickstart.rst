@@ -37,14 +37,14 @@ Sphinx Config
 One-line comment
 ----------------
 
-.. literalinclude:: ./../../../tests/doc_test/minimum_config/dummy_src.cpp
+.. literalinclude:: ./../../tests/doc_test/minimum_config/dummy_src.cpp
    :caption: dummy_src.cpp
    :language: cpp
 
 Directive
 ---------
 
-.. literalinclude:: ./../../../tests/doc_test/minimum_config/index.rst
+.. literalinclude:: ./../../tests/doc_test/minimum_config/index.rst
    :caption: index.rst
    :language: rst
 

@@ -32,8 +32,10 @@ extensions = [
     "sphinxcontrib.video",
 ]
 
-# exclude_patterns = []
-templates_path = ["_templates"]
+# The source directory IS this directory, so the build output and the shared ubCode project
+# file live inside it and have to be kept out of the document set. (`conf.py` itself is
+# excluded by Sphinx.)
+exclude_patterns = ["_build", "ubproject.toml", "Thumbs.db", ".DS_Store"]
 show_warning_types = True
 
 todo_include_todos = True
@@ -51,19 +53,19 @@ intersphinx_mapping = {
 html_title = "CodeLinks"
 html_theme = "furo"
 # original source is in ubdocs repo at docs/developer_handbook/design/files/ubcode_favicon/favicon.ico
-html_favicon = "source/_static/favicon.ico"
-html_static_path = ["source/_static"]
+html_favicon = "_static/favicon.ico"
+html_static_path = ["_static"]
 
 html_theme_options = {
     "sidebar_hide_name": True,
     "top_of_page_buttons": ["view", "edit"],
     "source_repository": "https://github.com/useblocks/sphinx-codelinks",
     "source_branch": "main",
-    "source_directory": "docs/source/",
+    "source_directory": "docs/",
     "light_logo": "sphinx-codelinks-logo_light.svg",
     "dark_logo": "sphinx-codelinks-logo_dark.svg",
 }
-templates_path = ["source/_static/_templates/furo"]
+templates_path = ["_static/_templates/furo"]
 html_sidebars = {
     "**": [
         "sidebar/brand.html",

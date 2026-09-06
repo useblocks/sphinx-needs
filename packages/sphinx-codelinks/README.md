@@ -37,4 +37,4 @@ Full documentation: https://codelinks.useblocks.com
 
 ## Development
 
-See [Development Guide](docs/source/development/) for contributing guidelines.
+See [Development Guide](docs/development/) for contributing guidelines.

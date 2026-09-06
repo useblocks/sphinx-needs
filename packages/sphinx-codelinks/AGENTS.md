@@ -52,13 +52,14 @@ tests/                  # Test suite
 ├── __snapshots__/      # Syrupy snapshot test fixtures
 └── data/               # Test data and fixtures
 
-docs/                   # Documentation source (RST)
-├── conf.py             # Sphinx configuration
-├── source/
-│   ├── index.rst       # Documentation index
-│   ├── basics/         # Basic usage documentation
-│   ├── components/     # Component documentation
-│   └── development/    # Development documentation
+docs/                   # Documentation source (RST) -- conf.py sits IN the source dir,
+├── conf.py             #   so `sphinx-build docs docs/_build/html` needs no `-c`
+├── ubproject.toml      # Shared ubCode project file (needs + codelinks config)
+├── index.rst           # Documentation index
+├── basics/             # Basic usage documentation
+├── components/         # Component documentation
+├── development/        # Development documentation
+└── _static/            # Logos, favicon, furo overrides
 ```
 
 ## Development Commands
@@ -436,7 +437,7 @@ The CLI uses Typer for command definitions:
    ```
 
 2. Add tests in `tests/test_cmd.py`
-3. Update documentation in `docs/source/components/cli.rst`
+3. Update documentation in `docs/components/cli.rst`
 
 ### Adding Configuration Options
 
@@ -444,7 +445,7 @@ The CLI uses Typer for command definitions:
 2. Add validation if needed using Pydantic validators
 3. Update TOML configuration examples in `docs/` and `tests/data/configs/`
 4. Add tests for new configuration option
-5. Document in `docs/source/components/configuration.rst`
+5. Document in `docs/components/configuration.rst`
 
 ## Reference Documentation
 

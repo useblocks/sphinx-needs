@@ -33,6 +33,15 @@ New and Improved
   that workspace is tested on 3.11 against Sphinx 9, and this matrix is replaced by that
   one at import, so the combination is left unexercised here too, deliberately.
 
+- 📚 The documentation sources moved up beside ``conf.py``, so Read the Docs can build them.
+
+  ``docs/source/*`` is now ``docs/*``, and the docs build no longer passes ``-c``:
+  ``sphinx-build -nW --keep-going -b html docs docs/_build/html`` is what ``tox -e docs-clean``
+  runs and what Read the Docs runs by itself. A ``.readthedocs.yaml`` comes with it, and the
+  ``docs`` requirements move from a dependency group to a ``docs`` extra, which is the only
+  form Read the Docs can install. The rendered site is unchanged; only the "edit this page"
+  links point at the new paths.
+
 - ✨ The default configuration file is now ``ubproject.toml``.
 
   :ref:`src_trace_config_from_toml` now defaults to ``"ubproject.toml"`` and the
