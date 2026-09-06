@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788647197309,
+  "lastUpdate": 1788673888234,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19692,6 +19692,42 @@ window.BENCHMARK_DATA = {
             "value": 45.70615735000001,
             "unit": "s",
             "extra": "Commit: 45fa5f931ec01c713207963a36df094f90bba686\nBranch: master\nTime: 2026-09-06T00:25:30+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8e7602a145f6b658890e7c47f536a8205a131138",
+          "message": "🧪 Let the sphinx-needs test suite be pointed at any PlantUML (#1863)\n\n`packages/sphinx-needs/tests/conftest.py` built one string — `java\n-Djava.awt.headless=true\n-jar <tempdir>/utils/plantuml.jar` — and two test modules built the same\nstring a second and\na third time for themselves. So the vendored jar's *path* was a fact\nthree places in the\nsuite knew, and the suite had no way to be pointed at any other PlantUML\nat all. That last\npart is a real gap rather than a tidiness one: `tests/` ships in the\nsdist (`smoke-needs`\nasserts it does on every run), so someone building the package from that\ntarball can run\nthis suite — and a distribution packager, who has to repack an embedded\npre-built jar away\nbefore it may be shipped, then has nothing to set. sphinx-mounts' suite\nhas honoured\n`PLANTUML_JAR` since it arrived; sphinx-needs' did not, which is also\nwhy the two AGENTS.md\nfiles had to explain that the variable is a mounts-only affair.\n\n`plantuml_command` now goes through a `resolve_plantuml_command()`\nhelper that takes three\nsources in a fixed order, and the order is the whole point:\n\n1. **`PLANTUML_JAR`**, run through `java`. Naming a jar is an explicit\nchoice, so it wins.\nIf it is set and names no file the run fails immediately with the path\nin the message —\nfalling through would render with something the caller did not ask for\nand say nothing\n   about it.\n2. **The jar this package vendors**, as copied into the test tempdir.\nUnchanged, and still\nthe default: a fresh clone renders with\n`tests/doc_test/utils/plantuml.jar` and needs\n   nothing installed.\n3. **A `plantuml` executable on `PATH`** — and only once (2) is gone.\nThis is deliberately\n*last*. The suite renders for real and asserts on the output, and a\ndeveloper machine\nwith a homebrew `plantuml` (PlantUML 1.2026.x) would otherwise silently\nswap the renderer\nout from under a suite that vendors 1.2022.5. The executable is the\nfallback for a\n   checkout or sdist with no jar, not a preference.\n\nWith no jar, no executable and no variable, the message names all three\nroutes instead of\nletting sphinxcontrib-plantuml fail somewhere further downstream.\n\n`tests/test_needs_external_needs_build.py` and\n`tests/test_plantuml_incdir.py` now take the\n`plantuml_command` fixture instead of rebuilding the path from\n`sphinx_test_tempdir`; a new\n`tests/test_plantuml_command.py` pins the ordering directly, so it is\nasserted rather than\nimplied by the several hundred rendering tests that would merely go a\nstrange colour if it\nchanged.\n\nOne unrelated line comes along because it is the same mistake arriving\non its own:\n`performance/project/conf.template` pointed at\n`docs/utils/plantuml.jar`, which has never\nexisted — the docs jar is `docs/utils/plantuml-1.2022.14.jar`.\n`performance/` is not run by\nCI, so nothing caught it.\n\nThe default path through the fixture produces the same argv it produced\nbefore; the string now\ndouble-quotes the jar path, so a `PLANTUML_JAR` under a path with a\nspace survives\nsphinxcontrib-plantuml's `shlex` split the way sphinx-mounts' tuple\nalready did. One thing in CI\ndoes change as a consequence, and it is an improvement rather than an\nomission: `release.yaml`'s\nbuild job sets `PLANTUML_JAR` for its compat cell, so the sphinx-needs\nsuite there now takes the\nexplicit route to the same vendored bytes, and would fail loudly if that\npath ever stopped naming a jar.\n\nReview closed four gaps in the first version, each now pinned by a test:\nan empty `PLANTUML_JAR` is\ntreated as unset (the same four-line pin is added to sphinx-mounts'\nsuite, since CI and developer\nshells can both produce `PLANTUML_JAR=`); a variable naming a directory\nis an error, not a\nfall-through; the copy of `tests/doc_test/utils` into the session\ntempdir is guarded, so a tree\nwith the jar's directory stripped, which is what an sdist repacked\nwithout the jar looks like,\nreaches the fixture at all instead of dying in `copytree`; and on\nWindows route (3) prefers the\nblocking `plantumlc` shim over the non-blocking `plantuml` one, a lesson\nsphinx-mounts had already\npaid for.\n\nMerge order with #1864 is free. If #1864 lands first, this branch is\nrebased onto it so its Windows\ncells run through the unit's renderer check, which turns a failed\ngraphviz install into one named red\nstep instead of fifty test failures; if this lands first, #1864's unit\ncomment that names this fixture\nsimply becomes true a little earlier.\n\n**How to verify.** The explicit route and the default must give the same\nresult:\n\n```\nuv run poe test-needs -k plantuml\nPLANTUML_JAR=$PWD/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar uv run poe test-needs -k plantuml\n```\n\n**Out of scope**, deliberately: renaming either vendored jar; collapsing\nthe two of them\ninto one at a repository-level `vendor/`, fetched rather than vendored;\nbumping PlantUML off\nthe four-year-old 1.2022.5 (measured green and 11 % faster on 1.2026.8,\nbut a rendering\nchange wants its own reviewable diff); and every workflow file — the\n`PLANTUML_JAR` lines in\n`ci.yaml` and `release.yaml` are a separate change.\n\n**No changelog entry.** This is test infrastructure; the published\nmodule is untouched.",
+          "timestamp": "2026-09-06T07:50:01+02:00",
+          "tree_id": "df9b9bf95de31fb777af4e8f251841f6023fac6c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/8e7602a145f6b658890e7c47f536a8205a131138"
+        },
+        "date": 1788673878483,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1142530170000029,
+            "unit": "s",
+            "extra": "Commit: 8e7602a145f6b658890e7c47f536a8205a131138\nBranch: master\nTime: 2026-09-06T07:50:01+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 56.067363414,
+            "unit": "s",
+            "extra": "Commit: 8e7602a145f6b658890e7c47f536a8205a131138\nBranch: master\nTime: 2026-09-06T07:50:01+02:00"
           }
         ]
       }
