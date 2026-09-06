@@ -473,6 +473,15 @@ help = "What is pending, in what order, and what the compat cell would test it a
 # Advice, never a gate -- it exits 0 whatever it finds. Step 0 of the release recipe
 cmd = "python tools/src/sn_tools/release_plan.py"
 
+[tool.poe.tasks.bump]
+help = "Stamp a release of one member: version, __version__, the docker literal, floors, lock, changelog"
+# BARE, like `release-plan` and `check-workspace`, and unlike `smoke-needs`: the naming
+# rule suffixes a task whose command names one package, and this one takes the
+# distribution as an argument -- `poe bump sphinx-mounts --bump minor` is as much its
+# subject as sphinx-needs is. Steps 1-3 of AGENTS.md's release recipe; it writes no prose
+# and pushes no tag
+cmd = "python tools/src/sn_tools/bump.py"
+
 # --- The built package ---
 # These two are named for the distribution they act on rather than for the repository, so
 # the names stay correct if a second distribution is ever built here. Every other task in
