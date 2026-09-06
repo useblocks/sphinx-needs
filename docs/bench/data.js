@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788729594184,
+  "lastUpdate": 1788730531641,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20016,6 +20016,42 @@ window.BENCHMARK_DATA = {
             "value": 55.512905438000004,
             "unit": "s",
             "extra": "Commit: 89615db8d2198c924189205608c362fbf4c7453d\nBranch: master\nTime: 2026-09-06T23:18:32+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "758a43f23e3a2cd9c584b2aaeee6e526bcfab788",
+          "message": "🧪 Fence the PlantUML fence, and correct two sentences the dropped design left behind (#1897)\n\nFollow-up to #1870 (the committed jar at `vendor/plantuml/`), from\n`master` after #1871, closing\nthe four actionable findings of that pull request's round-2 review. **No\nbehaviour changes**: two\nnew tests, two strengthened assertions, four string literals and three\nsentences — nothing under\nany `src/`, so no changelog entry.\n\n## The fence had no fence (review finding 5)\n\nThe committed jar rests on **one flag**. `--verify` hashes the jar\nagainst `pin.toml` and never\ntouches the network; without it the same script is the *bump* tool,\nwhich **downloads**. A site\nthat lost the flag would turn the fence into a self-healing download\nthat exits **0** on exactly\nthe mistake it exists to catch — a bumped pin with no committed jar —\nrepairing the runner's tree\nand reporting green (measured in review: with the flag, `EXIT=1` naming\nthe missing jar; without\nit, a 29 MB download and `EXIT=0`). Nothing here could see that:\n`check_workspace.py` reads\nmanifests, `actionlint` cannot know what a flag means, and no test\nexecuted a workflow.\n\n`tools/tests/test_ci_plantuml_steps.py` parses every\n`.github/workflows/*.y{a,}ml` and\n`.github/actions/*/action.y{a,}ml`, finds each step whose `run:` invokes\nthe script, and asserts:\n\n- **`--verify`** at all **8** sites; and, for the **7** that capture the\npath, **`| tr -d '\\r'`**,\n**`shell: bash`**, and the **very next line** writing `PLANTUML_JAR=` to\n`$GITHUB_ENV`;\n- the eighth — CI's Lint job, a bare check with no pipe and no capture —\nis exempt from the last\ntwo, and that exemption is *asserted* rather than granted by being left\noff a list;\n- **a positive control**: the site count. Every other case is\nparametrised over the walk, so\nwithout it an empty walk or a renamed script would report a tidy row of\npasses.\n\nBoth clauses are load-bearing invisibly. Without `shell: bash` the\nrunner's default `bash -e` has\nno `pipefail`: the failing script inside `$( )` exits 0, the step goes\n**green**, and\n`PLANTUML_JAR` is exported **empty**, which every consumer reads as\n\"unset\". Without the `tr`,\nWindows exports a path with a trailing CR that prints identically in a\nlog and names no file. 31\ncases, each named after the file and step; Lint already runs `pytest\ntools/tests`.\n\n## A zero-byte jar (finding 4)\n\n`--verify` already refuses one — the hash of nothing is a real sha256 —\nbut nothing pinned it: a\n`st_size == 0` early return that accepted the file left all 263 tests\ngreen.\n`test_verify_refuses_an_empty_jar` writes a 0-byte jar and asserts exit\n1 and `e3b0c442…b855` in\nthe message — what a truncated checkout or a failed LFS smudge leaves\nbehind.\n\n## \"the jar `poe fetch-plantuml` puts in `vendor/plantuml/`\" (finding 1)\n\nA leftover from the fetched design #1870 dropped, in **four** places.\n`poe fetch-plantuml` does\nnot put the jar there — the checkout does, and the task re-hashes it;\nand the caller that reaches\nthis message in CI is `--verify`, which fetches nothing at all. All four\nnow read \"…or unset it to\nrender with the jar **committed at** `vendor/plantuml/`.\", word for\nword, and both tests that\nreach it assert that clause instead of the substring `\"unset it\"`.\n\n## \"22 jobs … (measured: 24 jobs, all but `Lint` and the smoke test)\"\n(finding 2)\n\n22 was right; 24 was not, and the job that went missing was `check`, the\nalls-green aggregator.\nRe-counted on this head from run `34057129950` (`ci.yaml` on `a3aebf1f`,\nsuccess): **26** jobs, now\nthat #1871 has added `Docs codelinks` and widened `tests-mounts` into\n`tests-extensions`. The four\nthat do not render are `Lint`, the smoke test, `Docs codelinks` (those\ndocs draw no diagrams) and\n`check`. Corrected in the root `AGENTS.md`, `vendor/plantuml/README.md`\nand the docstring; the\nREADME also gains a paragraph naming the new test.\n\n**Mutations.** `--verify` dropped at one site · `shell: bash` at one ·\nthe `tr` at one · capture\nand export collapsed into one `echo` · `verify()` made to accept an\nempty file — **5 of 5 red**,\neach naming the file and step, everything else green.",
+          "timestamp": "2026-09-06T23:34:05+02:00",
+          "tree_id": "57fe3b94849876f6300ac1d1e572f2c32c7de32f",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/758a43f23e3a2cd9c584b2aaeee6e526bcfab788"
+        },
+        "date": 1788730522924,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.15010258200000237,
+            "unit": "s",
+            "extra": "Commit: 758a43f23e3a2cd9c584b2aaeee6e526bcfab788\nBranch: master\nTime: 2026-09-06T23:34:05+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 54.494458835,
+            "unit": "s",
+            "extra": "Commit: 758a43f23e3a2cd9c584b2aaeee6e526bcfab788\nBranch: master\nTime: 2026-09-06T23:34:05+02:00"
           }
         ]
       }
