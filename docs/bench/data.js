@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788675334721,
+  "lastUpdate": 1788676094802,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19764,6 +19764,42 @@ window.BENCHMARK_DATA = {
             "value": 46.347787985999986,
             "unit": "s",
             "extra": "Commit: 31f6e749057d4e53c07c54cb6a2b8e8b6f2f9b2a\nBranch: master\nTime: 2026-09-06T08:14:20+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c5ffe97c6ac68ae0d57d3306f1314cbbd94e2813",
+          "message": "🔧 Skip the sphinx-needs Read the Docs build on pull requests that do not touch it (#1866)\n\nThe sphinx-needs Read the Docs project builds every pull request against\nthis repository, including the ones that touch only\n`packages/sphinx-mounts/` or `.github/`. That is a two-minute build (a\nJDK, graphviz, the furo docs) for nothing, and\n`docs/readthedocs.org:sphinx-needs` is a required status on `master`, so\nevery pull request waits for it.\n\nThis adds to the root `.readthedocs.yml` the same `post_checkout` job\nthe sphinx-mounts project gained in #1862, with this project's inputs:\non a pull-request build, if neither `packages/sphinx-needs/` nor\n`.readthedocs.yml` itself differs from `origin/master`, the job exits\n183, Read the Docs' documented skip code. The build is recorded as\n`cancelled` and the commit status posted to GitHub is `success` with the\ndescription \"Read the Docs build skipped\", so the required status is\nsatisfied rather than left hanging. Branch and tag builds (`latest`,\n`stable`, releases) are never cancelled.\n\n**Why those two paths are the complete set of inputs.** `python.install`\npip-installs `packages/sphinx-needs` with its own `docs` and\n`theme-furo` extras, so the root manifest and `uv.lock` take no part in\nthe build; `docs/conf.py` reads only files under `docs/`; every\n`literalinclude` in the docs stays inside the package\n(`../../tests/doc_test/…`); and the configuration file is at the root,\nso it is named explicitly.\n\n**Why a two-dot diff against `origin/master`.** Read the Docs clones the\ndefault branch with `--depth 1` and fetches the pull-request head with\n`--depth 50`, so `origin/master` is a shallow root with no ancestry and\n`git merge-base` has nothing to walk. The diff compares against master's\ncurrent tip: if master moved and touched the package, the build runs\nalthough the pull request did not touch it. That is the safe direction.\n\n**Measured.** Exit 183 → `cancelled` / status `success` \"Read the Docs\nbuild skipped\" was measured on the sphinx-mounts project: probe #1861\n(build 34411602), then the skipped build on #1864 and the full build on\n#1863 after #1862 merged, one observation in each direction. Both\nprojects post their statuses through the same mechanism. Locally, the\njob script was run in both directions against this branch: with the\nchange to `.readthedocs.yml` present it exits 0, with it absent it exits\n183.\n\n**What this pull request itself shows.** It touches `.readthedocs.yml`,\nso its own Read the Docs build must run and succeed: that is the\npositive control. The skip direction will be visible on the first pull\nrequest after this merges that touches neither path.\n\nNo user-visible change; no changelog entry.",
+          "timestamp": "2026-09-06T08:26:48+02:00",
+          "tree_id": "c9e365540a0c4da36ff5bbfbf09448ab3a8ed665",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/c5ffe97c6ac68ae0d57d3306f1314cbbd94e2813"
+        },
+        "date": 1788676086399,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.121867696999999,
+            "unit": "s",
+            "extra": "Commit: c5ffe97c6ac68ae0d57d3306f1314cbbd94e2813\nBranch: master\nTime: 2026-09-06T08:26:48+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 59.152544903000006,
+            "unit": "s",
+            "extra": "Commit: c5ffe97c6ac68ae0d57d3306f1314cbbd94e2813\nBranch: master\nTime: 2026-09-06T08:26:48+02:00"
           }
         ]
       }
