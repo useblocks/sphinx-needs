@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788676094802,
+  "lastUpdate": 1788684530020,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19800,6 +19800,42 @@ window.BENCHMARK_DATA = {
             "value": 59.152544903000006,
             "unit": "s",
             "extra": "Commit: c5ffe97c6ac68ae0d57d3306f1314cbbd94e2813\nBranch: master\nTime: 2026-09-06T08:26:48+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "34fb342b2b2c5b72a175117ba63289cb4b6ced3b",
+          "message": "📚 Say in the README why this is one repository but still several packages (#1867)",
+          "timestamp": "2026-09-06T10:47:17+02:00",
+          "tree_id": "6b6f74c4d8a8512d669796c02796431da7c07242",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/34fb342b2b2c5b72a175117ba63289cb4b6ced3b"
+        },
+        "date": 1788684523195,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.12355916199999939,
+            "unit": "s",
+            "extra": "Commit: 34fb342b2b2c5b72a175117ba63289cb4b6ced3b\nBranch: master\nTime: 2026-09-06T10:47:17+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 65.33732378799999,
+            "unit": "s",
+            "extra": "Commit: 34fb342b2b2c5b72a175117ba63289cb4b6ced3b\nBranch: master\nTime: 2026-09-06T10:47:17+02:00"
           }
         ]
       }
