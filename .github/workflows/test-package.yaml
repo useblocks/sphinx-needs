@@ -85,7 +85,7 @@ on:
         default: true
       needs-plantuml:
         # no runner image has a `plantuml` package, and every image has `java`
-        description: Point PLANTUML_JAR at the jar `packages/sphinx-needs` vendors.
+        description: Verify the vendored PlantUML against its pin and point PLANTUML_JAR at it.
         type: boolean
         default: false
     secrets:
