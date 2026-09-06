@@ -11,7 +11,11 @@ none of them is visible from a green test run elsewhere:
   written. That is the entire point of pinning;
 * `PLANTUML_JAR` short-circuits the whole thing, so a machine that has already made an
   explicit choice never pays for a 30 MB download it will not use -- including when the
-  network is down, which is exactly when that machine most needs the run to work;
+  network is down, which is exactly when that machine most needs the run to work; and a value
+  that names NO file stops the run here rather than being fetched around, because every
+  consumer refuses that same value seconds later;
+* a 404 is reported as a pin error, not as a network failure: the network worked, and the
+  offline alternatives are not the answer to an asset that was never published;
 * the failure messages name the two routes that need no network.
 
 Nothing here reaches the network: `urllib.request.urlopen` is monkeypatched, the way the rest
@@ -220,25 +224,77 @@ def test_an_empty_plantuml_jar_is_treated_as_unset(
     assert len(urlopen) == 1
 
 
-def test_a_plantuml_jar_naming_no_file_is_reported_and_ignored(
+def test_a_plantuml_jar_naming_no_file_stops_the_run(
     root: Path,
     urlopen: list[str],
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
-    capsys,
 ) -> None:
-    """A mistyped `PLANTUML_JAR` does not block the fetch, but it is said out loud.
+    """A mistyped `PLANTUML_JAR` is refused here, with the message its consumers give.
 
-    The consumers fail loudly on it -- `tests/conftest.py`'s chain refuses to fall through a
-    variable that names no file -- so this script's job is to leave the machine able to run,
-    with the mistake visible in the log above the failure that names it.
+    Fetching around it would be worse than useless: `tests/conftest.py`, `docs/conf.py` and
+    `performance_test.py` all raise on that same value, so the 30 MB would never be used and
+    the note saying it was ignored would sit directly above the failure it caused. In CI,
+    where this runs inside ``jar="$( … )"``, this is one red step naming the variable instead
+    of a green step followed by every rendering test erroring.
     """
-    monkeypatch.setenv("PLANTUML_JAR", str(tmp_path / "gone.jar"))
+    missing = tmp_path / "gone.jar"
+    monkeypatch.setenv("PLANTUML_JAR", str(missing))
 
-    assert run(root) == 0
+    with pytest.raises(SystemExit) as caught:
+        run(root)
 
-    assert len(urlopen) == 1
-    assert "is not a file" in capsys.readouterr().err
+    message = str(caught.value)
+    assert repr(str(missing)) in message
+    assert "is not a file" in message
+    assert "Point it at a plantuml jar" in message
+    assert "unset it" in message
+    assert urlopen == []  # and nothing was downloaded
+    assert not jar_of(root).exists()
+
+
+def test_a_404_is_reported_as_a_pin_error(
+    root: Path, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    """A missing asset is a mistake in `pin.toml`, not a connectivity problem.
+
+    The offline alternatives are the wrong advice for it -- the network worked, and it said
+    the file is not there -- so this case names the pin instead. A version that was never
+    released gets here, and so does a release whose asset is named differently (before
+    ~v1.2025.0 upstream ships only `plantuml-<version>.jar`, never a plain `plantuml.jar`).
+    """
+
+    def fake(url: str) -> io.BytesIO:
+        raise urllib.error.HTTPError(url, 404, "Not Found", {}, None)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
+
+    assert run(root) == 1
+
+    err = capsys.readouterr().err
+    assert "HTTP 404" in err
+    assert "vendor/plantuml/pin.toml" in err
+    assert "Alternatives that need no download" not in err
+    assert not jar_of(root).exists()
+    # and no `.part` file survived
+    assert [p.name for p in (root / "vendor" / "plantuml").iterdir()] == ["pin.toml"]
+
+
+def test_any_other_http_error_keeps_the_offline_advice(
+    root: Path, monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    """A 503 is not a pin error: the pin may be perfect and the server merely unwell."""
+
+    def fake(url: str) -> io.BytesIO:
+        raise urllib.error.HTTPError(url, 503, "Service Unavailable", {}, None)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
+
+    assert run(root) == 1
+
+    err = capsys.readouterr().err
+    assert "503" in err
+    assert "Alternatives that need no download" in err
 
 
 def test_print_path_fetches_nothing(root: Path, urlopen: list[str], capsys) -> None:

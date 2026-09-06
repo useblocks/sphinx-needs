@@ -292,13 +292,24 @@ def test_no_pin_and_no_executable_says_which_tree_this_is(
     """An sdist with no renderer at all gets a message about an sdist.
 
     ``None does not exist`` would be the obvious way to write this and the wrong one: the
-    reader is in a tree where ``poe fetch-plantuml`` does not exist either, so the message
-    has to say that no pin was found rather than name a path that never was one.
+    reader is in a tree where ``poe fetch-plantuml`` does not exist either -- the tarball
+    ships no ``vendor/``, no root ``pyproject.toml`` and no poe -- so the message has to say
+    that no pin was found rather than name a path that never was one, and it must not LEAD
+    with a command that cannot be run there. The two routes that do work come first; the task
+    is mentioned last and only for "a checkout of the repository".
     """
     monkeypatch.setattr(shutil, "which", lambda _name: None)
 
-    with pytest.raises(RuntimeError, match=re.escape("no vendor/plantuml/pin.toml")):
+    with pytest.raises(
+        RuntimeError, match=re.escape("no vendor/plantuml/pin.toml")
+    ) as caught:
         resolve_plantuml_command(None)
+
+    message = str(caught.value)
+    assert message.index("Set PLANTUML_JAR") < message.index(
+        "uv run poe fetch-plantuml"
+    )
+    assert "in a checkout of the repository" in message
 
 
 def test_the_workspace_jar_is_read_from_the_pin() -> None:

@@ -218,14 +218,23 @@ def resolve_plantuml_command(workspace_jar: Path | None) -> str:
     for name in ("plantumlc", "plantuml") if os.name == "nt" else ("plantuml",):
         if executable := shutil.which(name):
             return executable
-    missing = (
-        f"{workspace_jar} does not exist"
-        if workspace_jar is not None
-        else "this tree has no vendor/plantuml/pin.toml, so it has no workspace jar"
-    )
+    # Two messages, because two trees. In a CHECKOUT the fix is the task, so it leads. In a
+    # tree with no pin -- an sdist -- there is no `vendor/`, no root `pyproject.toml` and no
+    # poe to run it with, so leading with `poe fetch-plantuml` would be an instruction the
+    # reader cannot follow; the two routes that do work lead instead. `docs/conf.py` and
+    # `performance/performance_test.py` say the same two things in the same order.
+    if workspace_jar is None:
+        raise RuntimeError(
+            "no PlantUML to render with: no `plantuml` (nor, on Windows, `plantumlc`) is "
+            "on PATH and PLANTUML_JAR is unset, and this tree has no "
+            "vendor/plantuml/pin.toml naming one -- which is what an sdist looks like. "
+            "Set PLANTUML_JAR to a plantuml jar (with java on PATH), or install a "
+            "plantuml executable; in a checkout of the repository, "
+            "`uv run poe fetch-plantuml` downloads the pinned one."
+        )
     raise RuntimeError(
-        f"no PlantUML to render with: {missing}, no `plantuml` (nor, on Windows, "
-        "`plantumlc`) is on PATH, and PLANTUML_JAR is unset. Run "
+        f"no PlantUML to render with: {workspace_jar} does not exist, no `plantuml` "
+        "(nor, on Windows, `plantumlc`) is on PATH, and PLANTUML_JAR is unset. Run "
         "`uv run poe fetch-plantuml` to download the pinned jar, or set PLANTUML_JAR "
         "to a plantuml jar of your own (with java on PATH), or install a plantuml "
         "executable."

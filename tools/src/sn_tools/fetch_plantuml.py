@@ -24,12 +24,17 @@ CI does. Everything else it has to say goes to stderr.
 
 Three things about the contract are worth stating, because each of them is a decision:
 
-* **`PLANTUML_JAR`, set and naming a file, short-circuits the whole thing.** It is the first
-  step of the resolution order every consumer here applies (`PLANTUML_JAR` -> the pinned jar ->
-  `plantuml` on `PATH`), so a caller who has already made the explicit choice must not be made
-  to download 30 MB it will not use -- and the poe tasks declare this script as a dependency,
-  so that would otherwise happen on every `poe test-needs` run of a machine that sets the
-  variable.
+* **`PLANTUML_JAR` is respected AND verified.** Set and naming a file, it short-circuits the
+  whole thing: it is the first step of the resolution order every consumer here applies
+  (`PLANTUML_JAR` -> the pinned jar -> `plantuml` on `PATH`), so a caller who has already made
+  the explicit choice must not be made to download 30 MB it will not use -- and the poe tasks
+  declare this script as a dependency, so that would otherwise happen on every `poe test-needs`
+  run of a machine that sets the variable. Set and naming NO file, it is a hard failure here,
+  with the same message the consumers give. This script used to say "ignoring it" and fetch
+  anyway, on the theory that it left the machine able to run; measured, it does not -- every
+  consumer (`tests/conftest.py`, `docs/conf.py`, `performance_test.py`) refuses the same value
+  seconds later, so all the note bought was a pointless download and a log that says the value
+  was ignored just above the failure that was caused by it.
 * **A cached jar is re-hashed, not trusted.** ~0.03 s for 30 MB, against a corrupt or truncated
   jar failing somewhere inside a render minutes later. A cached jar whose hash does not match
   is re-fetched rather than refused: the likeliest cause is an interrupted download, and the
@@ -125,20 +130,26 @@ def named_jar() -> Path | None:
 
     Empty is treated as unset -- that is how the variable arrives from a shell with
     `PLANTUML_JAR=` exported and from a workflow that computes the value with an expression,
-    and both suites that read it agree. A value that names something which is not a file is
-    NOT silently ignored here: it is reported, and the fetch goes ahead, so the mistake is
-    visible without blocking the machine.
+    and both suites that read it agree.
+
+    A value that is set but names no file stops the run, with the message its consumers give.
+    Falling through to the fetch would be worse than useless: `tests/conftest.py`,
+    `docs/conf.py` and `performance_test.py` all raise on that same value, so the download
+    would never be used, and the "ignoring it" note would sit in the log immediately above a
+    failure caused by the thing it said was ignored. In CI, where this is run through
+    `jar="$( … )"`, stopping here is one red step naming the variable instead of a green step
+    followed by every rendering test erroring.
     """
     value = os.environ.get("PLANTUML_JAR")
     if not value:
         return None
     path = Path(value)
     if not path.is_file():
-        print(
-            f"note: PLANTUML_JAR names {value!r}, which is not a file; ignoring it",
-            file=sys.stderr,
+        raise SystemExit(
+            f"error: PLANTUML_JAR names {value!r}, which is not a file. Point it at a "
+            "plantuml jar (with `java` on PATH), or unset it to render with the pinned jar "
+            "this fetches into vendor/plantuml/."
         )
-        return None
     return path
 
 
@@ -193,6 +204,25 @@ def main(argv: list[str] | None = None) -> int:
     temporary = Path(name)
     try:
         download(pin.url, temporary)
+    except urllib.error.HTTPError as error:
+        # BEFORE `URLError`, which it subclasses. A 404 is not a connectivity problem and the
+        # offline alternatives are not the answer to it: the network worked, and it said the
+        # asset the pin names is not there. That is a mistake in `pin.toml` -- a version that
+        # was never released, or a release whose asset is named differently (before ~v1.2025.0
+        # only `plantuml-<version>.jar` exists, never a plain `plantuml.jar`) -- so the message
+        # points at the pin. Any other status keeps the offline advice.
+        temporary.unlink(missing_ok=True)
+        if error.code == 404:
+            print(
+                f"error: {pin.url} does not exist (HTTP 404). The pin names an asset that is "
+                "not there: check `version` and `url` in vendor/plantuml/pin.toml against "
+                "https://github.com/plantuml/plantuml/releases.",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"error: could not fetch {pin.url}: {error}", file=sys.stderr)
+        print(ALTERNATIVES, file=sys.stderr)
+        return 1
     except (urllib.error.URLError, OSError) as error:
         temporary.unlink(missing_ok=True)
         print(f"error: could not fetch {pin.url}: {error}", file=sys.stderr)

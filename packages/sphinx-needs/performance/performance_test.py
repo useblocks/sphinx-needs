@@ -47,13 +47,27 @@ def resolve_plantuml() -> str:
             )
         return quoted.format(env_jar)
     vendor = Path(__file__).resolve().parents[3] / "vendor" / "plantuml"
+    pinned = None
     if (pin := vendor / "pin.toml").is_file():
         version = tomllib.loads(pin.read_text(encoding="utf-8"))["version"]
-        if (jar := vendor / f"plantuml-{version}.jar").is_file():
-            return quoted.format(jar)
+        pinned = vendor / f"plantuml-{version}.jar"
+        if pinned.is_file():
+            return quoted.format(pinned)
     for name in ("plantumlc", "plantuml") if os.name == "nt" else ("plantuml",):
         if executable := shutil.which(name):
             return executable
+    # Two messages, because two trees -- see `resolve_plantuml_command` in
+    # `packages/sphinx-needs/tests/conftest.py`, which says the same two things in the same
+    # order: an sdist has no `vendor/` and no poe to run the task with, so an instruction to
+    # run it would be one the reader cannot follow.
+    if pinned is None:
+        raise RuntimeError(
+            "no PlantUML to render the performance project with, and this tree has no "
+            "vendor/plantuml/pin.toml naming one -- which is what an sdist looks like. "
+            "Set PLANTUML_JAR to a plantuml jar (with java on PATH), or install a "
+            "plantuml executable; in a checkout of the repository, "
+            "`uv run poe fetch-plantuml` downloads the pinned one."
+        )
     raise RuntimeError(
         "no PlantUML to render the performance project with. Run "
         "`uv run poe fetch-plantuml` to download the pinned jar into vendor/plantuml/, "

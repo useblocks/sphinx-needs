@@ -106,7 +106,8 @@ The machine needs `java` and graphviz's `dot` on `PATH` — the needflow tests d
 without them, so install graphviz as CI does (`apt-get install graphviz`). **The PlantUML
 jar is not in the repository**: it is fetched, once per checkout, into `vendor/plantuml/` at
 the version `vendor/plantuml/pin.toml` names — `uv run poe fetch-plantuml`, ~30 MB, measured
-at 4.6 s cold and 0.14 s warm (one sha256 of the file, no network). **You will rarely run it
+at a few seconds cold and well under a second warm (one sha256 of the file, no network; the
+warm figure is mostly `uv` and `poe` starting up, so it moves with the machine). **You will rarely run it
 by hand**: every task that renders declares it — the sphinx-needs suites, `docs-needs*` and
 `benchmark-needs` through `deps`, the sphinx-mounts suites through
 `uses = { PLANTUML_JAR = "fetch-plantuml" }`, because that suite reads the variable and
