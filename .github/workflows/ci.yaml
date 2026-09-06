@@ -193,7 +193,11 @@ jobs:
       cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
       test-path: packages/sphinx-needs/tests
       # `benchmarks` is `benchmark.yaml`'s; `jstest` is the `tests-js` lane's
-      pytest-args: '--ignore=packages/sphinx-needs/tests/benchmarks -m "not jstest"'
+      # `-n 4`: four workers, the runner's core count. The `-n auto` race this suite used to
+      # document was on a jar copied into every test project; since #1870 the jar is one
+      # file at a fixed path and nothing copies it, and the suite was measured at `-n 4`
+      # and `-n auto` with no failure and no flake. Measured locally: 535 s serial -> 164 s
+      pytest-args: '--ignore=packages/sphinx-needs/tests/benchmarks -m "not jstest" -n 4'
       cov-module: sphinx_needs
       codecov-flag: pytests
       codecov-name: sphinx-need-pytests

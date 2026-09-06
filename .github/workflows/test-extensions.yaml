@@ -103,7 +103,7 @@ jobs:
       # first and both uploads would carry the same numbers under different flags.
       - name: "sphinx-mounts: pytest"
         # `-m "not bazel"` deselects the two tests the `bazel` job owns
-        run: uv run --no-sync pytest -v packages/sphinx-mounts/tests -m "not bazel" --cov=sphinx_mounts --cov-report=xml:mounts.xml --cov-report=term-missing
+        run: uv run --no-sync pytest -v packages/sphinx-mounts/tests -m "not bazel" --durations=25 --cov=sphinx_mounts --cov-report=xml:mounts.xml --cov-report=term-missing
       - name: "sphinx-mounts: upload to Codecov"
         # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it
         if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
@@ -133,7 +133,7 @@ jobs:
         # that fix this suite passed only from `packages/sphinx-codelinks`, and a
         # `working-directory:` here would also have moved where `--cov-report` writes
         if: ${{ !cancelled() && steps.prepare.outcome == 'success' }}
-        run: uv run --no-sync pytest -v packages/sphinx-codelinks/tests --cov=sphinx_codelinks --cov-report=xml:codelinks.xml --cov-report=term-missing
+        run: uv run --no-sync pytest -v packages/sphinx-codelinks/tests --durations=25 --cov=sphinx_codelinks --cov-report=xml:codelinks.xml --cov-report=term-missing
       - name: "sphinx-codelinks: upload to Codecov"
         if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@v7

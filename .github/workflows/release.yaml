@@ -170,7 +170,9 @@ jobs:
           # before the `cd` below, so the script is where it says it is
           /tmp/compat/bin/python tools/src/sn_tools/import_check.py --walk "$module" --expect-prefix /tmp/compat
           cd "packages/$DIST"
-          # serial: plantuml is load-sensitive and `-n auto` races on the shared jar copy.
+          # serial, deliberately: this cell runs once per release, and a flake here costs a
+          # re-run at the worst moment. (CI's cells run `-n 4`; the "shared jar copy" race
+          # that used to keep everything serial is gone since #1870.)
           # `-o addopts=` drops the root config's `--import-mode=importlib` so it can be
           # given explicitly here, which is what lets the tests import the installed
           # package while running from the package directory
