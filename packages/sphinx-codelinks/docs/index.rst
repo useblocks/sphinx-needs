@@ -73,6 +73,6 @@ Contents
    :caption: Development
 
    development/roadmap
-   development/change_log
+   changelog
    development/contributing
    development/traceability
