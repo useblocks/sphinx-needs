@@ -1,0 +1,196 @@
+[project]
+name = "sphinx-codelinks"
+version = "1.4.0"
+description = "Fast Source Code Traceability for Sphinx-Needs"
+authors = [{ name = "team useblocks", email = "info@useblocks.com" }]
+maintainers = [
+  { name = "Marco Heinemann", email = "marco.heinemann@useblocks.com" },
+  { name = "Jui-Wen Chen", email = "jui-wen.chen@useblocks.com" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+# EQUAL to the sphinx-needs workspace root's `requires-python`, deliberately: on import
+# `tools/src/sn_tools/check_workspace.py` check (3) compares the two strings for equality,
+# because uv resolves one lock against the root and a member out of step with it still
+# locks, builds and publishes -- the gap shows up only as an install failure for a user on
+# an interpreter inside it.
+requires-python = ">=3.11,<4"
+dependencies = [
+  "comment-parser>=1.2.4",
+  "ignore-python>=0.3.3",
+  "typer>=0.16.0,<0.26.8", # 0.26.8 removed rich_utils.STYLE_METAVAR, still imported by sphinxcontrib-typer (docs)
+  "click < 8.2",           # click 8.2.* produces empty errors if no args are given
+  "jsonschema",
+  "sphinx>=7.4,<10",
+  # TIGHT tracking, not a compatibility range: sphinx-needs is a sibling in the workspace
+  # this package is being imported into, and `check_workspace.py` check (4) requires
+  # `>=<the sibling's current version>,<<its next major>` on every intra-workspace runtime
+  # edge. uv never validates a specifier it resolves through `workspace = true` (uv#9811),
+  # so the floor is the only statement of what was actually tested, and the cap is what
+  # stops a future major being co-installed with a wheel written against this one.
+  "sphinx-needs>=8.5.0,<9",
+  "jinja2",
+  "pygments",
+  "docutils",                   # constrained by user or Sphinx
+  "tree-sitter-cpp>=0.23.4",
+  "giturlparse>=0.12.0",
+  "tree-sitter-python>=0.23.6",
+  # Compiling issue on manylinux aarch64 image, so install from git instead of Pypi
+  # https://github.com/tree-sitter/py-tree-sitter/issues/386#issuecomment-3101430799
+  "tree-sitter~=0.25.1",
+  "tree-sitter-c-sharp>=0.23.1",
+  "tree-sitter-yaml>=0.7.1",
+  "tree-sitter-rust>=0.23.0",
+  "tree-sitter-go>=0.23.0",
+  "tree-sitter-json>=0.24.8",
+  "tree-sitter-bash>=0.25.1",
+]
+
+[project.optional-dependencies]
+# libclang enables the preprocessor-aware C/C++ engine (skips comments inside
+# inactive #if/#ifdef regions). Plain tree-sitter C/C++ extraction needs none of
+# this, so libclang stays optional. Named after the backend, not "cpp": the
+# engine handles C and Objective-C too, and tree-sitter already covers C++.
+# Floor 16 (not 18): the extraction snapshots are byte-identical on libclang 16,
+# 17 and 18 (the engine only uses get_all_skipped_ranges + comment tokenization,
+# stable since long before 16), so support older toolchains too. No upper bound.
+libclang = ["libclang>=16"]
+
+# An EXTRA, not a dependency group, because Read the Docs installs extras and cannot install
+# groups: its `python.install` block takes `extra_requirements`, and there is no equivalent
+# for PEP 735 groups. It is also the shape a member of the sphinx-needs workspace has --
+# the root there re-exports each member's extra (`docs-mounts = ["sphinx-mounts[docs]"]`),
+# because `uv sync --extra` resolves against the workspace root rather than the member.
+docs = [
+  "furo>=2024.5.6",
+  "myst-parser>=4.0.0",
+  "sphinx-design>=0.6.1",
+  "sphinx-code-tabs>=0.5.5",
+  "sphinxcontrib-typer>=0.5.1,<0.9.1", # 0.9.1 imports typer.rich_utils.STYLE_TYPES, absent in the capped typer <0.26.8, breaking the docs build
+  "sphinxcontrib-video>=0.4.1",
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[dependency-groups]
+testing = [
+  "pytest>=8.2.2",
+  "pytest-cov>=5.0.0",
+  "syrupy>=4.9.1",
+  # tests/test_extraction_fixtures.py imports it directly. It used to arrive by accident,
+  # through moto -> responses -> pyyaml; with moto gone it has to be declared
+  "pyyaml>=6.0",
+  "toml>=0.10.2",
+  # not a docs dependency here: tests/data/sphinx and tests/data/needextend_demo set
+  # `html_theme = "furo"`, and test_src_trace.py builds the first of them
+  "furo>=2024.5.6",
+  "libclang>=18",
+]
+# modelled on the sphinx-needs workspace root's `typing` group: ty at the root's series,
+# plus the OLDEST supported sphinx and docutils, so the gate checks the floor rather than
+# whatever happens to be newest. `pydantic` is gone with the mypy plugin that needed it --
+# nothing in `src/` or `tests/` imports pydantic.
+typing = [
+  "ty~=0.0.77",
+  "sphinx~=7.4",
+  "docutils~=0.20.0",
+  "types-docutils~=0.20.0",
+  "types-Pygments",
+  "types-jsonschema>=4.23.0.20241208",
+]
+# the rev .pre-commit-config.yaml pins, which is the sphinx-needs workspace's
+ruff = ["ruff>=0.16.5"]
+build = ["simple-build>=0.0.2", "shiv>=1.0.8"]
+
+[project.scripts]
+codelinks = "sphinx_codelinks.cmd:app"
+
+# THE WORKSPACE ROOT'S RULESET, copied verbatim except for `src` below and for the
+# per-file-ignores table further down, which the root does not have at all. sphinx-codelinks
+# is being imported into the sphinx-needs uv workspace, where `check_workspace.py` check (7)
+# refuses a `[tool.ruff]` table in a member -- because ruff resolves configuration per file
+# by walking up to the NEAREST pyproject.toml carrying one, so a member table does not
+# extend the root's, it REPLACES it. These tables therefore disappear at import and the
+# root's take over; keeping them identical now means the import is lint-neutral instead of
+# landing a tree-wide reformat in the same commit.
+[tool.ruff]
+# isort decides an import is first-party by finding the module under one of these roots.
+# The root of the workspace names `packages/<dist>` and `packages/<dist>/src`; here the
+# equivalent pair is this directory (for `tests` and `docs`) and `src` (for
+# `sphinx_codelinks` itself).
+src = [".", "src"]
+
+[tool.ruff.lint]
+# ruff's pre-0.16 default rule set, pinned explicitly.
+# ruff 0.16 replaced its default `select` wholesale, and this project only ever set
+# `extend-select`, so without this line the enabled set would change with every ruff
+# release. Adopting 0.16's much larger default set is a deliberate, separate decision.
+select = ["E4", "E7", "E9", "F"]
+extend-select = [
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "I",   # isort
+  "ICN", # flake8-import-conventions
+  "ISC", # flake8-implicit-str-concat
+  "N",   # pep8-naming
+  "RUF", # Ruff-specific rules
+  "SIM", # flake8-simplify
+  "UP",  # pyupgrade
+]
+# ISC004 is ignored for now: every occurrence here is a deliberately wrapped string
+# literal and its only fix is unsafe, so adopting it belongs with the wider ruleset review
+extend-ignore = ["B904", "ISC001", "ISC004", "ICN001", "N818", "RUF012"]
+
+# The ONE table above that is not the root's: the root has no per-file-ignores at all, so
+# this rides alongside its ruleset rather than being part of it. What survives of this
+# repository's own entries is the rules the ruleset still selects -- the ones that named
+# S101, ARG0*, PLC0415, PLR2004 and T201 went with the rules they suppressed, and the
+# `debug.py` UP047 entry went because UP047 is silent at the 3.11 target this package now
+# declares. Measured cost if this last entry were dropped instead: 2 findings, both in
+# `tests/test_preproc_libclang.py`. At import it moves to the workspace root, which is then
+# the only place a member's ruff configuration can live.
+[tool.ruff.lint.per-file-ignores]
+"**/tests/*" = [
+  "E402",   # module-import-not-at-top - pytest.importorskip guard pattern
+  "SIM300", # yoda-conditions - assert order in tests is intentional
+]
+
+[tool.ruff.format]
+# the root excludes markdown from formatting, so that a repository-local formatter cannot
+# rewrite the python blocks in a shared corpus. Copied so that the import changes nothing
+# about how this repository's own markdown is treated.
+exclude = ["*.md"]
+
+# ty, configured the way the sphinx-needs workspace root configures it. `check_workspace.py`
+# check (7) refuses a `[tool.ty]` table in a member, so at import this moves to the root; the
+# point of having it here now is that the same rules and the same floor are in force before
+# and after, and the import lands no new diagnostics.
+[tool.ty.src]
+include = ["src/sphinx_codelinks"]
+
+[tool.ty.environment]
+# the floor, as the root does it: the oldest interpreter this package supports
+python-version = "3.11"
+# so a bare `ty check` and an editor extension see the same environment as the gate.
+# The workspace uses `.venvs/typing`; here the gate is `tox -e ty`, whose virtualenv is
+# `.tox/ty` -- create it with `tox -e ty` (or `tox devenv -e ty .tox/ty`) before running
+# `ty check` by hand.
+python = ".tox/ty"
+
+[tool.ty.analysis]
+# modules with no type information that the typing environment does not install
+allowed-unresolved-imports = [
+  # the optional libclang engine; `clang.cindex` ships no py.typed and is not in the
+  # `typing` group, exactly as at runtime it is behind the `libclang` extra
+  "clang.**",
+]
+
+[tool.ty.terminal]
+# the unused-ignore ratchet: `unused-ignore-comment` is a warning by default, so without
+# this a suppression that stopped suppressing anything would pass
+error-on-warning = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,36 @@
+# Need-id references (``need_refs`` in the snapshot).
+#
+# The marker list comes from ``need_id_markers`` in the config block (the harness
+# wires it into NeedIdRefsConfig); the default marker is ``@need-ids:``. These
+# cases set ``extract: [need_refs]`` so only reference extraction runs (the
+# default one-line start is also ``@``, so running the one-line parser here would
+# add unrelated noise).
+
+default_marker:
+  # Default ``@need-ids:`` marker -> three need_refs (REQ_1, REQ_2, REQ_3).
+  lang: cpp
+  config: default
+  extract: [need_refs]
+  source: |
+    // @need-ids: REQ_1, REQ_2, REQ_3
+    void f() {}
+
+custom_marker:
+  # Custom marker ``REFS:`` via need_id_markers -> two need_refs (REQ_A, REQ_B).
+  lang: cpp
+  config:
+    need_id_markers: ["REFS:"]
+  extract: [need_refs]
+  source: |
+    // REFS: REQ_A, REQ_B
+    void f() {}
+
+default_marker_python:
+  # Same default marker, different source language (Python ``#`` comment).
+  lang: python
+  config: default
+  extract: [need_refs]
+  source: |
+    # @need-ids: REQ_1
+    def f():
+        pass

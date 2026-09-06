@@ -1,0 +1,15 @@
+{
+  "needs": [
+    {
+      "id": "FEAT_001",
+      "title": "MyFeature",
+      "type": "feature",
+      "links": {},
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

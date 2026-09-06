@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_JSONC",
+      "title": "Jsonc Title",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_JSONC"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

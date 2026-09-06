@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_CS",
+      "title": "Cs Title",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_CS"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

@@ -1,0 +1,13 @@
+{
+  "schemas": [
+    {
+      "id": "no-additional-fields",
+      "severity": "violation",
+      "validate": {
+        "local": {
+          "unevaluatedProperties": false
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+  pull_request:
+    types: [closed, labeled, reopened, unlabeled, synchronize, opened]
+
+concurrency:
+  # For PRs, cancel in progress runs, if a new commit is pushed
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Nothing in this workflow publishes anything, so it needs no OIDC token: the trusted
+# publisher lives in release.yaml, and gh_pages.yml carries its own `pages`/`id-token`
+# grant. Read access to the contents is all any job here uses.
+permissions:
+  contents: read
+
+jobs:
+  pre-commit:
+    name: Pre-commit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      - run: python -m pip install pre-commit pre-commit-uv
+      # - uses: pre-commit/action@v3.0.1  # note we don't use this, since it calls ations/cache, which actually takes longer than without it
+      - run: pre-commit run --all --show-diff-on-failure --color=always
+
+  ty:
+    name: Ty
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      - run: python -m pip install tox tox-uv
+      - run: tox -e ty
+
+  pytest:
+    name: "Pytest: ${{ matrix.tox-env }} (${{ matrix.os }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        # Eight rows, chosen so that every supported python runs at least once on ubuntu,
+        # every sphinx series runs at least once, and both ends of the matrix -- minimal
+        # (py311-sphinx7) and maximal (py314-sphinx9) -- run on ubuntu AND windows, with
+        # the maximal end also on macOS and arm64. `python` MUST equal the tox env's own
+        # python factor: setup-python installs that interpreter and tox-uv would otherwise
+        # go and fetch a different one, so the row would silently not test what it names.
+        include:
+          # minimal versions
+          - os: ubuntu-latest
+            python: "3.11"
+            tox-env: py311-sphinx7
+          - os: windows-latest
+            python: "3.11"
+            tox-env: py311-sphinx7
+          # the two pythons between the ends, each on one sphinx series
+          - os: ubuntu-latest
+            python: "3.12"
+            tox-env: py312-sphinx8
+          - os: ubuntu-latest
+            python: "3.13"
+            tox-env: py313-sphinx9
+          # maximal versions
+          - os: ubuntu-latest
+            python: "3.14"
+            tox-env: py314-sphinx9
+          - os: windows-latest
+            python: "3.14"
+            tox-env: py314-sphinx9
+          - os: macos-latest
+            python: "3.14"
+            tox-env: py314-sphinx9
+          - os: ubuntu-24.04-arm
+            python: "3.14"
+            tox-env: py314-sphinx9
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "${{ matrix.python }}"
+          allow-prereleases: true
+      - run: python -m pip install tox tox-uv
+      - run: tox -e "${{ matrix.tox-env }}"
+
+  docs:
+    name: Documentation build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      - run: python -m pip install tox tox-uv
+      - run: tox -e docs-clean
+
+  all_good:
+    # This job does nothing and is only used for the branch protection
+    # see https://github.com/marketplace/actions/alls-green#why
+
+    if: ${{ !cancelled() }}
+
+    needs:
+      - pre-commit
+      - ty
+      - pytest
+      - docs
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Decide whether the needed jobs succeeded or failed
+        uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}

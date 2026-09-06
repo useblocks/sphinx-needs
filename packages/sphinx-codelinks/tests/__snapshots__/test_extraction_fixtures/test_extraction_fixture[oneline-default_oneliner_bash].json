@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_BASH",
+      "title": "Bash Title",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_BASH"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

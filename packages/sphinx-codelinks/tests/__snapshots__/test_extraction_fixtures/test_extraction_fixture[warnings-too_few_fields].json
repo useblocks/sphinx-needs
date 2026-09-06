@@ -1,0 +1,11 @@
+{
+  "needs": [],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": [
+    {
+      "kind": "too_few_fields",
+      "line": 1
+    }
+  ]
+}

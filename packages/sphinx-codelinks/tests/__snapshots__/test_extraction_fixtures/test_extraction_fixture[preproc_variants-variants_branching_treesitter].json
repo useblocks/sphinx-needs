@@ -1,0 +1,67 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_ALWAYS",
+      "title": "Always Present",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_BASE"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    },
+    {
+      "id": "IMPL_VAR_A",
+      "title": "Variant A Feature",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_FEAT_A"
+        ]
+      },
+      "metadata": {},
+      "line": 5
+    },
+    {
+      "id": "IMPL_VAR_B",
+      "title": "Variant B Feature",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_FEAT_B"
+        ]
+      },
+      "metadata": {},
+      "line": 8
+    },
+    {
+      "id": "IMPL_PROTO_3",
+      "title": "Protocol V3",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_PROTO"
+        ]
+      },
+      "metadata": {},
+      "line": 13
+    },
+    {
+      "id": "IMPL_LINUX_A",
+      "title": "Linux And A",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ_COMBO"
+        ]
+      },
+      "metadata": {},
+      "line": 18
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

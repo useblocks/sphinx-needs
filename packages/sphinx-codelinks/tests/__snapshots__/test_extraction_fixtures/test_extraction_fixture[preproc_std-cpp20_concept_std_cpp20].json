@@ -1,0 +1,19 @@
+{
+  "needs": [
+    {
+      "id": "IMPL_CPP20",
+      "title": "C++20 concept",
+      "type": "impl",
+      "links": {
+        "links": [
+          "REQ"
+        ]
+      },
+      "metadata": {},
+      "line": 1
+    }
+  ],
+  "need_refs": [],
+  "marked_rst": [],
+  "warnings": []
+}

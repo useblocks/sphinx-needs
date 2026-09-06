@@ -1,0 +1,140 @@
+# compile_commands.json handling for the libclang engine.
+#
+# Each case materializes a real compile_commands.json (inline `compile_commands`)
+# or points at an explicit `compile_commands_path`, then extracts from a single
+# `case.<ext>` source. These exercise the per-file argument resolution the shared
+# single-`.cpp`/defines fixtures never touch: DB-provided flags, headers absent
+# from a present DB (parsed standalone), translation-unit sources absent from the
+# DB (skipped), and an unreadable explicit DB path (defines fallback).
+
+file_in_db_uses_flags_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  compile_commands:
+    - file: case.cpp
+      arguments: ["clang++", "-std=c++17", "-DVARIANT_A=1", "-c", "case.cpp"]
+  source: |
+    // @Always, IMPL_ALWAYS, impl, [REQ]
+    #ifdef VARIANT_A
+    // @Variant A, IMPL_VAR_A, impl, [REQ]
+    #else
+    // @Variant B, IMPL_VAR_B, impl, [REQ]
+    #endif
+  # -DVARIANT_A comes from the DB entry (global defines are empty), so the #ifdef
+  # branch is active only because the DB flags were applied: IMPL_ALWAYS, IMPL_VAR_A.
+
+header_absent_from_db_standalone_libclang:
+  lang: cpp_header
+  engine: libclang
+  config: default
+  defines: ["HEADER_ON=1"]
+  extract: [oneline]
+  compile_commands:
+    - file: other.cpp
+      arguments: ["clang++", "-std=c++17", "-c", "other.cpp"]
+  source: |
+    #pragma once
+    // @Header Base, IMPL_HDR_BASE, impl, [REQ]
+    #ifdef HEADER_ON
+    // @Header On, IMPL_HDR_ON, impl, [REQ]
+    #else
+    // @Header Off, IMPL_HDR_OFF, impl, [REQ]
+    #endif
+  # case.h is not in the (present) DB. A header is never a compile_commands entry,
+  # so it is parsed standalone with the global defines: IMPL_HDR_BASE, IMPL_HDR_ON.
+
+tu_source_absent_from_db_skipped_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  compile_commands:
+    - file: other.cpp
+      arguments: ["clang++", "-std=c++17", "-c", "other.cpp"]
+  source: |
+    // @Should Be Skipped, IMPL_SKIP, impl, [REQ]
+    void f() {}
+  # case.cpp is a translation-unit source absent from the applicable DB, so it is
+  # skipped entirely (spec §3.3): no markers extracted.
+
+unreadable_db_path_falls_back_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: ["FALLBACK_ON=1"]
+  extract: [oneline]
+  compile_commands_path: "missing.json"
+  source: |
+    // @Base, IMPL_BASE, impl, [REQ]
+    #ifdef FALLBACK_ON
+    // @Fallback On, IMPL_FALLBACK, impl, [REQ]
+    #endif
+  # The explicit compile_commands path does not exist, so extraction falls back to
+  # the global defines rather than skipping every file: IMPL_BASE, IMPL_FALLBACK.
+
+db_flags_replace_global_defines_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: ["FLAVOR=1", "GLOBAL_ONLY=1"]
+  extract: [oneline]
+  compile_commands:
+    - file: case.cpp
+      arguments: ["clang++", "-std=c++17", "-DFLAVOR=2", "-c", "case.cpp"]
+  source: |
+    #if FLAVOR == 1
+    // @Global flavor, IMPL_GLOBAL_FLAVOR, impl, [REQ]
+    #endif
+    #if FLAVOR == 2
+    // @DB flavor, IMPL_DB_FLAVOR, impl, [REQ]
+    #endif
+    #ifdef GLOBAL_ONLY
+    // @Global only, IMPL_GLOBAL_ONLY, impl, [REQ]
+    #endif
+  # The file IS in the DB, so its DB flags (-DFLAVOR=2) fully REPLACE the global
+  # defines (FLAVOR=1, GLOBAL_ONLY=1) instead of merging. Only FLAVOR==2 is active
+  # (IMPL_DB_FLAVOR); IMPL_GLOBAL_FLAVOR (needs FLAVOR==1) and IMPL_GLOBAL_ONLY
+  # (GLOBAL_ONLY is not in the DB entry) are both excluded. This discriminates
+  # "DB replaces defines" from a merge — a merge would surface IMPL_GLOBAL_ONLY.
+
+malformed_db_falls_back_to_defines_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: ["FALLBACK=1"]
+  extract: [oneline]
+  compile_commands_raw: "{ this is not valid json"
+  source: |
+    // @Base, IMPL_BASE, impl, [REQ]
+    #ifdef FALLBACK
+    // @Fallback, IMPL_FALLBACK, impl, [REQ]
+    #endif
+  # The compile_commands.json is present but MALFORMED. Extraction must warn and
+  # fall back to the global defines (rather than crash or skip every file), so the
+  # #ifdef branch is active via the fallback: IMPL_BASE + IMPL_FALLBACK.
+
+launcher_prefix_uses_db_flags_libclang:
+  lang: cpp
+  engine: libclang
+  config: default
+  defines: []
+  extract: [oneline]
+  compile_commands:
+    - file: case.cpp
+      arguments: ["ccache", "clang++", "-std=c++17", "-DVARIANT_A=1", "-c", "case.cpp"]
+  source: |
+    // @Always, IMPL_ALWAYS, impl, [REQ]
+    #ifdef VARIANT_A
+    // @Variant A, IMPL_VAR_A, impl, [REQ]
+    #else
+    // @Variant B, IMPL_VAR_B, impl, [REQ]
+    #endif
+  # A compiler-launcher prefix (ccache) precedes the real compiler. filter_args
+  # must drop BOTH leading tokens so libclang receives a single input; -DVARIANT_A
+  # from the DB then activates the #ifdef branch: IMPL_ALWAYS, IMPL_VAR_A. With the
+  # launcher bug (dropping only argv[0]) the compiler leaks in as a second input
+  # and the TU fails to load, dropping every marker.
