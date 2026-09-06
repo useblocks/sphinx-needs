@@ -45,7 +45,7 @@ inputs:
     default: "true"
   needs-plantuml:
     # no runner image has a `plantuml` package, and every image has `java`
-    description: Point PLANTUML_JAR at the jar `packages/sphinx-needs` vendors ('true' or 'false').
+    description: Verify the vendored PlantUML against its pin and point PLANTUML_JAR at it ('true' or 'false').
     required: false
     default: "false"
 
@@ -69,24 +69,18 @@ runs:
         echo "::error::no graphviz install step for macOS; add one before enabling this combination"
         exit 1
     - name: Point PLANTUML_JAR at the vendored jar
-      # The one place in CI this path is written. No runner image carries a `plantuml`
-      # package and every one carries `java`, so the uml tests take the jar
-      # `packages/sphinx-needs` vendors for its own suite. The suites that read the
-      # variable ASSERT rather than skip when the renderer is missing (sphinx-mounts
-      # today; sphinx-needs from #1863), so if this ever stops naming a real file the
-      # cell goes red rather than quietly testing less.
+      # the one jar `vendor/plantuml/pin.toml` names, verified against the pin first.
+      # `shell: bash` (pipefail) and `tr -d '\r'` (Windows) are both load-bearing, and so
+      # is this being a conditional STEP rather than a job-level `env:` expression --
+      # vendor/plantuml/README.md, "The step CI runs", says why
       #
-      # A STEP writing `$GITHUB_ENV`, not a job-level `env:`, because an `env:` value
-      # cannot be made conditional without an expression -- and that expression's
-      # failure mode is a literal string, not an absent variable: drop the `|| ''` from
-      # `${{ inputs.needs-plantuml && '<path>' || '' }}` and every cell that does not
-      # want a jar gets `PLANTUML_JAR=false`, which actionlint does not catch and both
-      # suites reject. Written only when it is wanted, the variable is genuinely UNSET
-      # everywhere else. `$GITHUB_ENV` written inside a composite action reaches the rest
-      # of the JOB, not only the rest of this file, which is what the pytest steps need.
+      # `$GITHUB_ENV` written inside a composite action reaches the rest of the JOB, not
+      # only the rest of this file, which is what the pytest steps need.
       if: inputs.needs-plantuml == 'true'
       shell: bash
-      run: echo "PLANTUML_JAR=$GITHUB_WORKSPACE/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar" >> "$GITHUB_ENV"
+      run: |
+        jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
+        echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
     - name: Check the renderers this cell asked for are really there
       # `choco install graphviz` EXITS 0 WHEN THE FEED FAILS. Measured on run
       # 34000562220, job 101398550280: "Failed to fetch results from V2 feed ... Unable
@@ -95,10 +89,10 @@ runs:
       # renderer that did not arrive should be one red step that names it, not N
       # assertions in the suite.
       #
-      # For PlantUML this is also the mechanical check on the step above: if it ever
-      # stops writing a path that exists, THIS is the red, rather than every cell that
-      # wanted a jar. Deliberately no retry and no change of installer -- a pinned
-      # download or `ts-graphviz/setup-graphviz` is a separate argument.
+      # For PlantUML this is also the mechanical check on the step above: if that step
+      # ever stops writing a path that exists, THIS is the red, rather than every cell
+      # that wanted a jar. Deliberately no retry and no change of installer --
+      # `ts-graphviz/setup-graphviz` is a separate argument.
       if: inputs.needs-graphviz == 'true' || inputs.needs-plantuml == 'true'
       shell: bash
       run: |

@@ -290,6 +290,14 @@ def process_needgantt(
             # "[...]" reference to the id; a reference to the title would not raise,
             # it would silently declare a second, zero length task of that name
             if complete:
+                if isinstance(complete, float):
+                    # plantuml's gantt grammar takes an INTEGER percentage, the same way it
+                    # takes an integer number of days above. Releases up to 1.2022.14
+                    # tolerated `90.0%`; 1.2026.8 rejects the statement outright with
+                    # "Syntax Error? (Assumed diagram type: gantt)", which takes the whole
+                    # chart with it -- and a completion field typed `number` (this project's
+                    # own documentation uses one) is exactly how a float arrives here
+                    complete = round(complete)
                 el_completion_string += "[{}] is {}% completed\n".format(
                     need["id"], complete
                 )

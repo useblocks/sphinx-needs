@@ -55,6 +55,29 @@ Gantt chart
    :start_date: 2020-03-25
 """
 
+#: The same project with a ``number``-typed completion field, i.e. one whose values arrive
+#: as floats. This is what the sphinx-needs documentation itself uses (its ``amount`` field
+#: is ``schema.type = "number"``, and ``needgantt``'s ``completion_option`` example points at
+#: it), and what made the four-year-old vendored PlantUML the only renderer this project's
+#: own docs would build with.
+CONF_PY_FLOAT_COMPLETION = CONF_PY.replace(
+    '"completion": {"schema": {"type": "integer"}',
+    '"completion": {"schema": {"type": "number"}',
+)
+
+#: One task, one completion value, nothing else to go wrong.
+FLOAT_COMPLETION_CHART = """\
+Gantt chart
+===========
+
+.. story:: Find and report bug
+   :id: TASK_A
+   :duration: 3
+   :completion: 90
+
+.. needgantt:: Chart
+"""
+
 #: A declaration, i.e. ``[<title>] as [<id>] lasts <n> days``.
 _DECLARATION = re.compile(r"^\[(?P<title>.*)\] as \[(?P<id>[^\]]*)\] lasts ")
 
@@ -182,3 +205,40 @@ def test_start_date_is_the_given_date(test_app, date):
 
     assert strip_colors(app._warning.getvalue()).strip() == ""
     assert f"Project starts {date}" in sources[0]
+
+
+@pytest.mark.parametrize(
+    "test_app",
+    [
+        {
+            "buildername": "html",
+            "files": [
+                (Path("conf.py"), CONF_PY_FLOAT_COMPLETION),
+                (Path("index.rst"), FLOAT_COMPLETION_CHART),
+            ],
+        }
+    ],
+    indirect=True,
+)
+def test_a_float_completion_is_an_integer_percentage(test_app):
+    """A ``number``-typed completion field must not emit ``90.0% completed``.
+
+    PlantUML's gantt grammar takes an integer percentage. Up to 1.2022.14 it tolerated a
+    fractional one; 1.2026.8 rejects the statement outright -- ``Syntax Error? (Assumed
+    diagram type: gantt)`` -- so a chart whose completion field is typed ``number`` (the
+    JSON-schema type that gives a float) stopped rendering altogether, and under ``-nW``
+    took the build with it. The directive already rounds a float *duration* for the same
+    reason; this is the other half of that.
+
+    Asserted on the generated source rather than the rendered image, like every other case
+    here, so that what is pinned is the decision the directive made.
+    """
+    app = test_app
+    sources = _capture_diagrams(app)
+    app.build()
+
+    assert strip_colors(app._warning.getvalue()).strip() == ""
+
+    uml = sources[0]
+    assert "[TASK_A] is 90% completed" in uml
+    assert "90.0" not in uml

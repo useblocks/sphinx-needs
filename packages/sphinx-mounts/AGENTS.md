@@ -122,13 +122,20 @@ as a standalone repository cannot be built there at all. Do not reintroduce it.
   including the render step. Two routes, and either satisfies them:
   - `dot` (graphviz) on `PATH`, which is required and has no alternative; and
   - PlantUML, from **either** a `plantuml` executable on `PATH` **or** a plantuml jar named
-    by `PLANTUML_JAR`, with `java` on `PATH`. The second is what CI uses: no runner image
-    has a `plantuml` package, so `ci.yaml` and `release.yaml` point the variable at
-    `packages/sphinx-needs/tests/doc_test/utils/plantuml.jar`, which that package vendors
-    for its own tests. Locally:
-    `PLANTUML_JAR=$PWD/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar uv run poe test-mounts`.
-    sphinx-needs' suite reads the same variable, ahead of that vendored jar, so one export
-    serves both packages.
+    by `PLANTUML_JAR`, with `java` on `PATH`. This suite reads the variable and never a
+    path, which is what keeps it independent of the workspace's layout — so **the jar has
+    to be handed to it**, and `uv run poe test-mounts` does exactly that:
+    `uses = { PLANTUML_JAR = "fetch-plantuml" }` runs that task and captures the path it
+    prints. The jar is the one `vendor/plantuml/pin.toml` names and it is **committed** at
+    `vendor/plantuml/plantuml-<version>.jar`, so the task hashes a file the checkout already
+    has rather than downloading anything; CI and `release.yaml` run the same script (with
+    `--verify`) and write the same variable. Pointing it somewhere else is honoured ahead of
+    everything: `PLANTUML_JAR=/any/plantuml.jar uv run poe test-mounts` (poe hands back the
+    value you set, because the script short-circuits on it). Running `pytest` directly,
+    outside the task, is the one case where you have to export it yourself —
+    `PLANTUML_JAR=$PWD/vendor/plantuml/plantuml-1.2026.8.jar`, or whatever
+    `uv run poe verify-plantuml` prints. sphinx-needs' suite reads the same variable first,
+    so one export serves both packages.
 
   Mermaid uses `raw` output, so no `mmdc` binary is needed.
 - **The three sphinx-needs integration tests assert rather than skip too.** They are the

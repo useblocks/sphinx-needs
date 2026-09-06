@@ -21,6 +21,7 @@
           - 'docker/**'
           - 'scripts/**'
           - 'tools/**'
+          - 'vendor/**'
           - 'pyproject.toml'
           - '.pre-commit-config.yaml'
           - '.readthedocs.yml'

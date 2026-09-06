@@ -31,6 +31,7 @@ the shim.
 | the lock | the root `uv.lock` — one lock for the whole workspace |
 | hooks | the root `.pre-commit-config.yaml` — one config; anything triggered by `uv.lock` has to live here |
 | the repository's own tooling | `tools/` — the workspace fences and the release plan |
+| the PlantUML renderer | `vendor/plantuml/` — `pin.toml` (version + sha256, the one place either is written), the committed `plantuml-<version>.jar` it names, and a `README.md`. `uv run poe verify-plantuml` fences the two against each other |
 | CI | `.github/workflows/`, and `.github/scripts/` for the three checks that must run *inside* a CI environment |
 | the docker image | `docker/` — a repository-level deliverable, like the workflows |
 | Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, and sphinx-codelinks: `packages/sphinx-codelinks/.readthedocs.yaml`, each of which its own RTD project points at; every path inside those is relative to the REPOSITORY root, not to the file |
@@ -81,6 +82,8 @@ uv run poe docs-needs                 # the furo docs build
 uv run poe docs-mounts                # the sphinx-mounts docs build
 uv run poe docs-codelinks             # the sphinx-codelinks docs build
 uv run poe smoke-needs                # build the wheel and test the built package
+uv run poe verify-plantuml            # the committed PlantUML jar is the one its pin names
+uv run poe fetch-plantuml             # download it -- a bump step; otherwise a hash check
 uv run poe check-workspace            # the manifests agree with each other (Lint runs it)
 uv run poe release-plan               # what is pending, in what order (advice; exits 0)
 uv run poe bump <dist> --bump minor   # stamp a release: version, literals, floors, lock, changelog
@@ -104,18 +107,38 @@ matrix cells do — `setup-uv`'s `python-version` input is documented as setting
 CI's Lint job (and the monthly `prek-update` job) deliberately pass no such input, so they
 run on the pin, and Lint asserts the series it got equals the file.
 
-The machine needs `java` (the plantuml jar is vendored under `tests/doc_test/utils/`) and
-graphviz's `dot` on `PATH` — the needflow tests do not skip without them, so install
-graphviz as CI does (`apt-get install graphviz`). **sphinx-mounts needs a PlantUML too,
-and its tests assert rather than skip**: either a `plantuml` executable on `PATH`, or
-`PLANTUML_JAR` naming a plantuml jar with `java` on `PATH`. The second is what CI and
-`release.yaml` use, pointed at the jar sphinx-needs already vendors, so no runner installs
-a plantuml package:
-`PLANTUML_JAR=$PWD/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar uv run poe test-mounts`.
-**sphinx-needs' own suite honours `PLANTUML_JAR` too**, ahead of the jar it vendors and ahead
-of any `plantuml` on `PATH`, so one export points both suites at one renderer — and a run from
-the sdist, whose embedded jar a distribution packager repacks away, has a supported route to a
-system PlantUML.
+The machine needs `java` and graphviz's `dot` on `PATH` — the needflow tests do not skip
+without them, so install graphviz as CI does (`apt-get install graphviz`). **The PlantUML jar
+is committed**, once, at `vendor/plantuml/plantuml-<version>.jar` — the version
+`vendor/plantuml/pin.toml` names — so a checkout renders and **nothing has to reach the
+network**: not the 22 jobs of a CI run that render (measured on a run of this branch: 24
+jobs, all but `Lint` and the smoke test), not a Read the Docs build, not an offline machine,
+and not a sandboxed session whose allowlist this repository cannot set. `uv run poe verify-plantuml`
+checks the file against the pin (one sha256 of 30 MB, well under a second including `uv` and
+`poe` startup) and is what CI's Lint job runs; `uv run poe fetch-plantuml` downloads the jar
+the pin names, which is a **bump** step and otherwise the same hash check. **You will rarely
+run either by hand**: every task that renders declares `fetch-plantuml` — the sphinx-needs
+suites, `docs-needs*` and `benchmark-needs` through `deps`, the sphinx-mounts suites through
+`uses = { PLANTUML_JAR = "fetch-plantuml" }`, because that suite reads the variable and
+nothing else — and `lint` declares `verify-plantuml`. `smoke-needs` does not (its doc renders
+needflow through graphviz) and neither do the sphinx-mounts docs (they render nothing, which
+is why their RTD config has no `default-jdk`).
+
+Both suites resolve a renderer in the same order, and **both assert rather than skip** when
+they find none: `PLANTUML_JAR` (an explicit choice, and an error when it names no file) →
+the committed jar under `vendor/plantuml/` → a `plantuml` executable on `PATH` (`plantumlc`
+first on Windows, whose chocolatey `plantuml` shim is a non-blocking `javaw` launcher). So
+`PLANTUML_JAR=/any/plantuml.jar uv run poe test-mounts` still works and points both suites at
+one renderer — as does an offline machine with `plantuml` installed from its package manager.
+**To bump PlantUML**, edit `version` and `sha256` in `vendor/plantuml/pin.toml`, run
+`uv run poe fetch-plantuml`, `git rm` the old jar and `git add` the new one, and edit
+`ARG PLANTUML_VERSION` in `docker/Dockerfile` (a Dockerfile cannot read TOML; the duplication
+is declared there), then re-run the renderer-heavy suites — `vendor/plantuml/README.md` has
+the recipe, including the `http.postBuffer` a 30 MB push over HTTPS needs. An sdist carries
+neither the jar nor the pin — `vendor/` is outside the directory flit builds the tarball from
+— so a distribution packager building from it takes the `PLANTUML_JAR` or `plantuml`-on-`PATH`
+route, and the sdist is ≈8 MB rather than 28.
+
 **sphinx-codelinks needs NEITHER renderer**: nothing in that package draws a diagram, its
 docs build installs no `apt_packages` and its CI cell asks for graphviz only because it
 shares a cell with sphinx-mounts. What it does need is `git` on `PATH` — its suite builds
