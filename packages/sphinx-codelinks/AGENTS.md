@@ -1,29 +1,40 @@
-# AGENTS.md
+# AGENTS.md — packages/sphinx-codelinks
 
-This file provides guidance for AI coding agents working on the **sphinx-codelinks** repository.
+The delta for this package. Everything repository-level — the workspace layout, the
+commands, the lock, lint/format/type-check configuration, the release recipe, the pull
+request requirements and the commit-message convention — is in the ROOT
+[`AGENTS.md`](../../AGENTS.md), and this file does not repeat it. What is here is what an
+agent has to know that is true of sphinx-codelinks and not of the workspace.
 
 ## Project Overview
 
-sphinx-codelinks is a Sphinx extension that provides fast source code traceability for Sphinx-Needs. It enables:
+sphinx-codelinks is a Sphinx extension that provides fast source code traceability for
+sphinx-needs. It:
 
-- **Code analysis**: Scan source code files (C++, Python, C#, Rust, YAML) for special comment markers
-- **Automatic documentation generation**: Create Sphinx-Needs items from discovered code markers
-- **Source tracing**: Link documentation to exact source code locations with line numbers
-- **Multiple languages**: Support for various programming languages via tree-sitter parsers
-- **CLI interface**: Command-line tools for analyzing code and generating RST documentation
+- **analyses source code** — scans C, C++, C#, Python, Rust, Go, YAML, JSON and Bash files
+  for special comment markers, with tree-sitter;
+- **creates needs from them** — turns discovered markers into sphinx-needs items;
+- **traces sources** — links documentation to exact source lines, and generates a
+  syntax-highlighted HTML page per traced file with line anchors;
+- **has a CLI** — `codelinks analyse` and `codelinks write`, for use outside a Sphinx build.
 
-The project integrates with [Sphinx-Needs](https://sphinx-needs.readthedocs.io/) to provide seamless source code traceability in technical documentation.
+It is the only member of this workspace whose `src/` imports `sphinx_needs`, and it
+declares it as a **runtime** dependency with a tight floor (`sphinx-needs>=8.5.0,<9`,
+which `check_workspace.py` check (4) enforces against the sibling's current version, and
+`propagate_floors.py` moves at each sphinx-needs release).
 
-## Repository Structure
+## Package structure
 
 ```text
-pyproject.toml          # Project configuration and dependencies
-tox.ini                 # Tox test environment configuration
-README.md               # Project README
-LICENSE                 # MIT License
+pyproject.toml          # `[project]`, `[project.urls]`, `[build-system]` and nothing else:
+                        #   ruff, ty, pytest and the dependency groups are the ROOT's
+.readthedocs.yaml       # this package's RTD project; every path in it is relative to the
+                        #   REPOSITORY root, not to the file
+README.md · LICENSE
+design/                 # import-commit-map.txt: old hash -> new hash for the 2026-09 import
 
 src/sphinx_codelinks/   # Main source code
-├── __init__.py         # Package init with Sphinx setup() entry point
+├── __init__.py         # `__version__` (public, in `__all__`) and the Sphinx `setup()`
 ├── cmd.py              # CLI commands using Typer
 ├── config.py           # Configuration models using Pydantic
 ├── logger.py           # Logging utilities
@@ -33,7 +44,8 @@ src/sphinx_codelinks/   # Main source code
 │   ├── models.py       # Pydantic models for analysis results
 │   ├── oneline_parser.py # One-line comment parser
 │   ├── projects.py     # Project-specific analyzers (C++, Python, etc.)
-│   └── utils.py        # Analysis utilities
+│   ├── utils.py        # Analysis utilities, including the git-root helpers
+│   └── preproc/        # the OPTIONAL libclang engine -- see below
 ├── source_discover/    # Source file discovery
 │   ├── config.py       # Discovery configuration
 │   └── source_discover.py # File discovery logic
@@ -44,103 +56,87 @@ src/sphinx_codelinks/   # Main source code
     ├── ub_sct.css       # CSS for source tracing UI
     └── directives/      # Custom Sphinx directives
 
-tests/                  # Test suite
-├── __init__.py
+tests/                  # Test suite -- `tests/__init__.py` is why this path is NOT in the
+├── __init__.py         #   root `testpaths` (see the root AGENTS.md)
 ├── conftest.py         # Pytest fixtures and configuration
-├── test_analyse.py     # Analysis tests
-├── test_*.py           # Various test modules
+├── test_*.py           # 18 test modules
 ├── __snapshots__/      # Syrupy snapshot test fixtures
-└── data/               # Test data and fixtures
+├── data/               # Test data and fixtures
+└── doc_test/           # minimal Sphinx projects for the integration tests
 
 docs/                   # Documentation source (RST) -- conf.py sits IN the source dir,
 ├── conf.py             #   so `sphinx-build docs docs/_build/html` needs no `-c`
-├── ubproject.toml      # Shared ubCode project file (needs + codelinks config)
-├── index.rst           # Documentation index
-├── basics/             # Basic usage documentation
-├── components/         # Component documentation
-├── development/        # Development documentation
-└── _static/            # Logos, favicon, furo overrides
+├── ubproject.toml      # this docs project's own needs + codelinks configuration
+├── changelog.rst       # `bump.py` stamps this path; do not move it
+├── index.rst · basics/ · components/ · development/ · _static/
 ```
 
-## Development Commands
+## The two facts that are workspace-specific
 
-All commands should be run via [`tox`](https://tox.wiki) for consistency. The project uses `tox-uv` for faster environment creation.
+### libclang is optional, and 56 tests depend on it
 
-### Testing
+The preprocessor-aware C/C++ engine (`analyse/preproc/`) needs `clang.cindex`, which comes
+from the `libclang` wheel. It is optional at runtime — the member's `libclang` extra — and
+`analyse/preproc/__init__.py` imports the loader **eagerly**, so importing anything under
+that package without the wheel raises.
 
-Test environments follow the pattern `py{VERSION}-sphinx{MAJOR}`, e.g. `py312-sphinx8`.
-Use `tox -a` to list all available combinations. There is no sphinx-needs factor: the
-package tracks sphinx-needs tightly (`sphinx-needs>=8.5.0,<9`), so there is only one
-sphinx-needs to test against. `py311-sphinx9` is deliberately not a valid environment.
+In this workspace the wheel is the root dependency group **`codelinks-libclang`**, not part
+of `test`: it is 23 MiB and 81 MB on disk, and every cell of every package would otherwise
+pay for it. Every `test-codelinks*` poe task adds the group, and so does CI's Extensions
+cell.
 
 ```bash
-# Run default test environment
-tox
-
-# Run tests for a specific Python/Sphinx/sphinx-needs combination
-tox -e py312-sphinx8
-
-# Run a specific test file
-tox -e py312-sphinx8 -- tests/test_analyse.py
-
-# Run a specific test function
-tox -e py312-sphinx8 -- tests/test_analyse.py::test_function_name
-
-# Run with coverage
-tox -e py312-sphinx8 -- --cov=sphinx_codelinks
-
-# Update snapshot test fixtures
-tox -e py312-sphinx8 -- --snapshot-update
+uv run poe test-codelinks                       # 357 passed
+uv run --frozen --no-sync pytest packages/sphinx-codelinks/tests   # 301 passed, 26 skipped
 ```
 
-### Documentation
+**Both are green, and only one of them tested the engine.** The four modules that need it
+carry `pytest.importorskip("clang.cindex")`, so a run without the group skips politely
+rather than failing — which means a task or a CI line that quietly lost the group would
+look like a pass. If you are changing anything under `analyse/preproc/`, check the number.
 
-```bash
-# Build docs (clean)
-tox -e docs-clean
+### This package caps `click` and `typer`, and nothing else in the lock does
 
-# Build docs (incremental, after clean build)
-tox -e docs-update
+`click < 8.2` (8.2 produces empty errors when the CLI is given no arguments) and
+`typer >=0.16.0,<0.26.8` (0.26.8 removed `rich_utils.STYLE_METAVAR`, which
+`sphinxcontrib-typer` still imports for the docs build). Measured across every
+`requires-dist` in `uv.lock`: **no other package in this workspace names `click`, `typer`,
+`rich` or `shellingham` at all**, so the caps constrain nothing but this package today.
+The direction to watch is the reverse one — the day a root, `test` or `dev` dependency
+wants `click>=8.2`, `uv lock` will fail and the reason will be here.
 
-# Build with different builder (e.g., linkcheck)
-BUILDER=linkcheck tox -e docs-clean
+## Documentation
 
-# Live rebuild with browser auto-reload
-tox -e docs-live
-```
+`uv run poe docs-codelinks` (and `docs-codelinks-clean`). `-nW --keep-going`, no renderer:
+these docs draw no diagrams, so unlike `docs-needs` there is no `dot`, `java` or plantuml
+to install. They DO need two things a normal checkout has and a stripped one may not:
 
-### Code Quality
+- **a git remote and a readable git directory.** `src-trace` turns every traced source line
+  into a blob link at the current rev, read out of the git directory's `config` and `HEAD`.
+  Worktrees are handled (`_git_dir` / `_git_common_dir` in `analyse/utils.py`); a checkout
+  with no `origin` is not, and the build fails under `-nW` with five
+  `[codelinks.git_remote]` warnings.
+- **network for intersphinx** to `sphinx-needs.readthedocs.io` and `www.sphinx-doc.org`.
 
-```bash
-# Type checking with ty
-tox -e ty
-
-# Linting with ruff (check only)
-tox -e ruff-check
-
-# Auto-format with ruff
-tox -e ruff-fmt
-
-# Run pre-commit hooks on all files
-pre-commit run --all-files
-```
+These docs are the one end-to-end exercise of the extension — `src-trace` runs over four
+projects of this package's own source — which is why CI builds them on every pull request
+(`Docs codelinks` in `ci.yaml`).
 
 ## Code Style Guidelines
 
-- **Formatter/Linter**: Ruff (configured in `pyproject.toml`)
-- **Type Checking**: [ty](https://github.com/astral-sh/ty) (configured in `pyproject.toml`, run with `tox -e ty`)
-- **Markdown**: Follow markdownlint rules for consistent and well-formatted Markdown files
-- **Pre-commit**: Use pre-commit hooks for consistent code style
+Formatting, linting and type checking are the ROOT's — one ruff configuration, one ty
+configuration, one prek config (`uv run poe lint`, `uv run poe typecheck`). The root's
+`[tool.ruff.lint.per-file-ignores]` carries this package's one entry
+(`packages/sphinx-codelinks/tests/*`: `E402` for the `importorskip` guard pattern, `SIM300`
+for a deliberate assert order). What is specific to this package:
 
-### Best Practices
-
-- **Type annotations**: Use complete type annotations for all function signatures. Use Pydantic models for configuration and data structures.
-- **Docstrings**: Use Sphinx-style docstrings (`:param:`, `:return:`, `:raises:`). Types are not required in docstrings as they should be in type hints.
-- **Markdown formatting**: Write clear, well-structured Markdown that adheres to markdownlint rules. Use proper headings, lists, and code blocks.
-- **Immutability**: Prefer immutable data structures where possible. Use frozen Pydantic models for configuration.
-- **Pure functions**: Where possible, write pure functions without side effects.
-- **Error handling**: Raise descriptive exceptions with helpful error messages. Use custom exception types where appropriate.
-- **Testing**: Write tests for all new functionality. Use syrupy for snapshot testing of complex outputs.
+- **Type annotations**: complete annotations on every function signature. Pydantic models
+  for configuration and data structures.
+- **Docstrings**: Sphinx-style (`:param:`, `:return:`, `:raises:`). No types in the
+  docstring — they belong in the annotations.
+- **Immutability**: prefer immutable structures; frozen Pydantic models for configuration.
+- **Pure functions** where possible.
+- **Error handling**: descriptive exceptions, custom types where they help.
 
 ### Docstring Example
 
@@ -166,12 +162,18 @@ def discover_source_files(
 
 ## Testing Guidelines
 
+`uv run poe test-codelinks` (trailing arguments go to pytest), and
+`test-codelinks-sphinx7/8/9` for one matrix cell each. Snapshots:
+`uv run poe test-codelinks -- --snapshot-update`.
+
 ### Test Structure
 
 - Tests use `pytest` with fixtures from `conftest.py`
 - Snapshot testing uses `syrupy` for complex output comparisons
-- Test data is in `tests/data/` directory
-- Sphinx integration tests use actual Sphinx projects in `tests/doc_test/`
+- Test data is in `tests/data/`
+- Sphinx integration tests use real Sphinx projects in `tests/doc_test/`
+- `tests/test_analyse_utils.py` builds real `git init` repositories and a real
+  `git worktree`, so `git` must be on PATH
 
 ### Writing Tests
 
@@ -182,12 +184,16 @@ def discover_source_files(
 
 ### Test Best Practices
 
-- **Test coverage**: Write tests for all new functionality and bug fixes
-- **Isolation**: Each test should be independent and not rely on state from other tests
-- **Descriptive names**: Test function names should describe what is being tested
-- **Snapshot testing**: Use `snapshot.assert_match()` for complex output comparisons
-- **Parametrization**: Use `@pytest.mark.parametrize` for multiple test scenarios
-- **Fixtures**: Define reusable fixtures in `conftest.py`
+- **Test coverage**: write tests for all new functionality and bug fixes
+- **Isolation**: each test independent of every other's state
+- **Descriptive names**: the function name says what is tested
+- **Snapshot testing**: `assert snapshot == result` for complex outputs
+- **Parametrization**: `@pytest.mark.parametrize` for multiple scenarios
+- **Fixtures**: reusable ones in `conftest.py`
+- **No CWD assumptions.** The suite must pass both from `packages/sphinx-codelinks` and
+  from the repository root, because CI runs it from the root. A test that resolves a
+  relative path against the CWD passes in one and fails in the other — that was
+  `test_form_https_url` until the import fixed it.
 
 ### Example Test Pattern
 
@@ -210,42 +216,6 @@ def test_analyse_cpp_file(snapshot, tmp_path):
     # Assert
     assert snapshot == result
 ```
-
-## Commit Message Format
-
-Use this format:
-
-```text
-<EMOJI> <KEYWORD>: Summarize in 72 chars or less (#<PR>)
-
-Optional detailed explanation.
-```
-
-Keywords:
-
-- `✨ NEW:` – New feature
-- `🐛 FIX:` – Bug fix
-- `👌 IMPROVE:` – Improvement (no breaking changes)
-- `‼️ BREAKING:` – Breaking change
-- `📚 DOCS:` – Documentation
-- `🔧 MAINTAIN:` – Maintenance changes only (typos, etc.)
-- `🧪 TEST:` – Tests or CI changes only
-- `♻️ REFACTOR:` – Refactoring
-
-## PR Title and Description Format
-
-Use the same as for the commit message format,
-but for the title you can omit the `KEYWORD` and only use `EMOJI`
-
-## Pull Request Requirements
-
-When submitting changes:
-
-1. **Description**: Include a meaningful description or link explaining the change
-2. **Tests**: Include test cases for new functionality or bug fixes
-3. **Documentation**: Update docs if behavior changes or new features are added
-4. **Changelog**: Update relevant changelog or release notes
-5. **Code Quality**: Ensure `pre-commit run --all-files` passes
 
 ## Architecture Overview
 
@@ -391,11 +361,11 @@ The CLI uses Typer for command definitions:
 
 ## Debugging
 
-- Use `--pdb` with pytest to drop into debugger on failures: `tox -e py312-sphinx8 -- --pdb`
-- Use `-v` for verbose test output: `tox -e py312-sphinx8 -- -v`
-- Build docs with `-T` flag for full tracebacks: `tox -e docs-clean -- -T`
-- Set logging level in tests: `tox -e py312-sphinx8 -- --log-cli-level=DEBUG`
-- Use `debug.py` module functions for development debugging
+- `uv run poe test-codelinks -- --pdb` drops into the debugger on a failure
+- `-v` for verbose output, `--log-cli-level=DEBUG` for logging
+- the docs task already passes `-T`, so a docs failure prints a full traceback
+- `sphinx_extension/debug.py` holds the development helpers (`measure_time`, the timing
+  report emitted on `build-finished`)
 
 ## Common Patterns
 
