@@ -442,7 +442,7 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
 # `uses`, not `deps`, for every sphinx-mounts task: that suite reads PLANTUML_JAR and
 # nothing else -- it has no notion of this repository's layout, which is the part it got
-# right -- so the fetch has to hand it the path rather than merely put the file there.
+# right -- so the task has to hand it the path, not merely rely on the file being there.
 # poe runs the named task and captures its STDOUT into the variable, which is why
 # `fetch_plantuml.py` prints the path there and everything else to stderr. A developer who
 # already exports PLANTUML_JAR gets that same value back, because the script short-circuits

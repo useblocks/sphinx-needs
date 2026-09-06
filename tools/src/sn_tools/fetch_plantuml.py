@@ -48,13 +48,13 @@ that is load-bearing.
 
 Three things about the contract are worth stating, because each of them is a decision:
 
-* **`PLANTUML_JAR` is respected AND verified.** Set and naming a file, it short-circuits the
-  whole thing: it is the first step of the resolution order every consumer here applies
-  (`PLANTUML_JAR` -> the pinned jar -> `plantuml` on `PATH`), so a caller who has already made
-  the explicit choice must not be made to download 30 MB it will not use -- and the poe tasks
-  declare this script as a dependency, so that would otherwise happen on every `poe test-needs`
-  run of a machine that sets the variable. Set and naming NO file, it is a hard failure here,
-  with the same message the consumers give. This script used to say "ignoring it" and fetch
+* **`PLANTUML_JAR` is respected AND verified**, in both modes. Set and naming a file, it
+  short-circuits the whole thing: it is the first step of the resolution order every consumer
+  here applies (`PLANTUML_JAR` -> the pinned jar -> `plantuml` on `PATH`), so a caller who has
+  already chosen a renderer is neither made to hash a jar it will not use nor, mid-bump, to
+  download one -- and what this prints is the value that was set, which is what the poe
+  `uses = { PLANTUML_JAR = "fetch-plantuml" }` wiring and the CI capture both hand on. Set and
+  naming NO file, it is a hard failure here, with the same message the consumers give. This script used to say "ignoring it" and fetch
   anyway, on the theory that it left the machine able to run; measured, it does not -- every
   consumer (`tests/conftest.py`, `docs/conf.py`, `performance_test.py`) refuses the same value
   seconds later, so all the note bought was a pointless download and a log that says the value
