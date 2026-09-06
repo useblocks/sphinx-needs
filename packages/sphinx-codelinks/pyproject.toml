@@ -18,7 +18,7 @@ requires-python = ">=3.11,<4"
 dependencies = [
   "comment-parser>=1.2.4",
   "ignore-python>=0.3.3",
-  "typer>=0.16.0,<0.26.8", # 0.26.8 removed rich_utils.STYLE_METAVAR, still imported by sphinxcontrib-typer (docs)
+  "typer>=0.16.0",
   "click < 8.2",           # click 8.2.* produces empty errors if no args are given
   "jsonschema",
   "sphinx>=7.4,<10",
@@ -66,7 +66,7 @@ docs = [
   "myst-parser>=4.0.0",
   "sphinx-design>=0.6.1",
   "sphinx-code-tabs>=0.5.5",
-  "sphinxcontrib-typer>=0.5.1,<0.9.1", # 0.9.1 imports typer.rich_utils.STYLE_TYPES, absent in the capped typer <0.26.8, breaking the docs build
+  "sphinxcontrib-typer>=0.9.1", # tracks typer's rich_utils internals: 0.9.1+ needs typer>=0.26.8 and declares it; older releases break on it
   "sphinxcontrib-video>=0.4.1",
 ]
 
