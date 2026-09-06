@@ -22,7 +22,16 @@ invisible to all of them (issue #1829).  This script closes that gap:
 6. assert the wheel carries every file git tracks under the module directory -- the
    non-Python payload (vendored JS/CSS, images, templates, JSON schemas) is 88% of it by
    file count, and it is the part a packaging mistake drops;
-7. build a tiny documentation project with ``-W`` and assert the rendered need, the link,
+7. build a wheel *from the sdist* -- a second throwaway environment and ``uv pip install
+   <sdist>``, which runs the PEP 517 hook (``flit_core.buildapi``) on the tarball -- and
+   import it. Step 2 asserts what the tarball *contains*; only this asserts that the
+   tarball still builds. They are different failures: a sdist can ship every declared tree
+   and still be unbuildable (a ``[build-system]`` requirement that no longer resolves, a
+   ``[tool.flit]`` key the backend rejects, a module the ``include`` list quietly stopped
+   naming), and a user who installs from source -- as every ``pip install`` on a platform
+   with no wheel does, and as conda-forge and the distributions do -- is the only person
+   who would find out;
+8. build a tiny documentation project with ``-W`` and assert the rendered need, the link,
    the table, the flow image and the copied static assets.
 
 It is parameterised on the package directory and the distribution name so that a sibling
@@ -44,6 +53,7 @@ import sys
 import tarfile
 import tempfile
 import time
+import tomllib
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -236,6 +246,96 @@ def check_wheel_contents(
         checks.check(name in owned, f"wheel has {module}/{name}")
 
 
+def interpreter_in(venv: Path) -> Path:
+    """The python of a `uv venv`, on this platform."""
+    return (
+        venv
+        / ("Scripts" if sys.platform == "win32" else "bin")
+        / ("python.exe" if sys.platform == "win32" else "python")
+    )
+
+
+def manifest_version(package_dir: Path) -> str:
+    """The version the member's manifest declares.
+
+    Read from the manifest rather than from the built artefact's file name so that the
+    assertion below compares two independent statements of the version: what the tree says
+    it is building, and what the module the sdist built actually reports.
+    """
+    data = tomllib.loads((package_dir / "pyproject.toml").read_text(encoding="utf-8"))
+    version = data.get("project", {}).get("version")
+    if not isinstance(version, str):
+        raise SmokeError(f"{package_dir}/pyproject.toml declares no [project] version")
+    return version
+
+
+def check_sdist_builds(
+    sdist: Path,
+    module: str,
+    expected: str,
+    tmp: Path,
+    python: str | None,
+    checks: Checks,
+) -> float:
+    """Build a wheel FROM the sdist, in an environment of its own, and import it.
+
+    `check_sdist_contents` above asserts what the tarball carries; this asserts that the
+    tarball still *builds*, which is a different failure and one nothing else in this
+    repository can see. `uv pip install <sdist>` is the whole mechanism: uv reads the
+    tarball's `[build-system]`, resolves it (flit_core) in an isolated build environment,
+    runs `build_wheel`, and installs the result -- exactly the path a user on a platform
+    with no wheel takes, and the one conda-forge and the distributions take always.
+
+    A SECOND environment, not the wheel's: installing the sdist over an already-installed
+    wheel of the same version is a no-op for uv, so the check would pass without ever
+    running the build backend.
+
+    Returns the seconds the build-and-install took, which is what this step costs the smoke
+    run; the caller prints it.
+    """
+    venv = tmp / "venv-sdist"
+    run(["uv", "venv", *(["--python", python] if python else []), str(venv)], cwd=tmp)
+    interpreter = interpreter_in(venv)
+    started = time.monotonic()
+    try:
+        # `--python` on every `uv pip` call: `uv pip` is NOT project-scoped, so without it
+        # this would target whatever virtualenv happens to be active
+        run(
+            [
+                "uv",
+                "pip",
+                "install",
+                "--python",
+                str(interpreter),
+                "--no-sources",
+                str(sdist),
+            ],
+            cwd=tmp,
+        )
+    except SmokeError as exc:
+        raise SmokeError(
+            f"{exc} -- could not build a wheel from the sdist {sdist}. That is a "
+            "`[build-system]` or `[tool.flit]` failure in the tarball, not a missing file: "
+            "the contents checks above passed"
+        ) from exc
+    elapsed = time.monotonic() - started
+    # `cwd=tmp` for the same reason as the wheel probe: python puts the working directory
+    # on `sys.path` for `-c`, so from the repository root this would import the checkout
+    probe = f"import {module} as m; print(m.__version__); print(m.__file__)"
+    version, location = run([str(interpreter), "-c", probe], cwd=tmp).stdout.split()
+    checks.check(
+        version == expected,
+        f"the wheel built from the sdist reports the manifest's version ({expected})",
+        f"got {version}",
+    )
+    checks.check(
+        Path(location).resolve().is_relative_to(venv.resolve()),
+        "the sdist-built import comes from ITS OWN environment, not the checkout",
+        location,
+    )
+    return elapsed
+
+
 def write_project(src: Path) -> None:
     src.mkdir(parents=True)
     (src / "conf.py").write_text(CONF_PY, encoding="utf-8")
@@ -320,11 +420,7 @@ def main() -> int:
             ],
             cwd=tmp,
         )
-        python = (
-            venv
-            / ("Scripts" if sys.platform == "win32" else "bin")
-            / ("python.exe" if sys.platform == "win32" else "python")
-        )
+        python = interpreter_in(venv)
         # `--no-sources` states the intent and keeps this identical to the release
         # workflow's install, but it is not what stops the source tree being installed:
         # measured on uv 0.12.9, `uv pip install <wheel>` resolves the wheel's
@@ -359,6 +455,11 @@ def main() -> int:
             [str(python), "-c", "import sys; print(sys.version.split()[0])"], cwd=tmp
         )
         print(f"interpreter: {interpreter.stdout.strip()}")
+
+        seconds = check_sdist_builds(
+            sdist, module, manifest_version(package_dir), tmp, args.python, checks
+        )
+        print(f"built and installed {sdist.name} from source in {seconds:.1f}s")
 
         src, out = tmp / "src", tmp / "out"
         write_project(src)
