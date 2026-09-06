@@ -22,6 +22,12 @@ packages/sphinx-needs/docs/github_images/
 packages/sphinx-needs/docs/_static/tutorial_needs.json
 packages/sphinx-mounts/docs/superpowers/
 
+# The workspace's one PlantUML renderer, fetched by `uv run poe fetch-plantuml` at the
+# version `vendor/plantuml/pin.toml` names. The PIN is committed and the jar is not: it is
+# ~30 MB, this repository already carries 49.9 MB of jar blobs in its history from the two
+# it used to vendor, and a fetched-and-checksummed file is the same bytes for everyone.
+vendor/plantuml/*.jar
+
 # `bazel build` in packages/sphinx-mounts/tests/example writes these convenience symlinks
 # into the workspace; the root pytest `norecursedirs` skips them for the same reason
 bazel-*
