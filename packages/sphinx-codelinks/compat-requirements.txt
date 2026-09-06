@@ -1,0 +1,21 @@
+# The RELEASED dependencies this package's test suite needs beyond what the wheel itself
+# declares, for the compat cell in .github/workflows/release.yaml -- the one gate that runs
+# the suite against everything as PUBLISHED rather than as checked out. It is installed
+# before the wheel and then passed as a constraint file, so it cannot be downgraded by the
+# wheel's own `Requires-Dist`.
+#
+# Unlike sphinx-mounts', this file is NOT covering an undeclared runtime dependency:
+# sphinx-codelinks declares `sphinx-needs>=8.5.0,<9` in `[project] dependencies`, so the
+# wheel's own metadata already fetches the published sphinx-needs and that half of the
+# cell is honest by construction.
+#
+# What it covers is the OPTIONAL libclang engine. `libclang` is the member's `libclang`
+# extra, and the compat cell installs a bare wheel path with no extras -- so without this
+# line the 56 tests behind `pytest.importorskip("clang.cindex")` would skip and the cell
+# would report 301 passed / 26 skipped as a pass. It is also what lets the `import_check`
+# walk in that step reach `sphinx_codelinks.analyse.preproc`, whose `__init__` imports the
+# libclang loader eagerly; without it the walk fails outright.
+#
+# The floor is 18 -- what has actually been run here -- rather than the extra's 16, which
+# states the wider range the published package supports.
+libclang>=18
