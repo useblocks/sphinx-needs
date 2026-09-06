@@ -20,9 +20,9 @@ all of that.
 **A fetched design was built and reviewed on this same pull request first, and dropped.** In
 it nothing was committed and every consumer downloaded the jar on demand. That makes rendering
 depend on `release-assets.githubusercontent.com` (measured: what the release URL redirects to)
-at 22 CI jobs per run, at every Read the Docs build, on every offline machine, and in every
-sandboxed agent session whose network allowlist is set outside this repository and does not
-include that host. A committed jar needs none of it.
+at the 22 jobs of a CI run that render, at every Read the Docs build, on every offline
+machine, and in every sandboxed agent session whose network allowlist is set outside this
+repository and does not include that host. A committed jar needs none of it.
 
 It is deliberately **stdlib only** -- `urllib`, `hashlib`, `tomllib` -- because of where it
 runs: a CI step before `uv sync` (so before any environment exists), and a developer's

@@ -32,8 +32,9 @@ without a commit.
   1.2022.5, and sat four years and ~46 releases behind without anyone noticing, because
   nothing in the tree said what it was.
 - **Zero network.** A checkout renders. That is the whole point of committing it, and it is
-  worth more than the ~30 MB: CI is 22 jobs per run, Read the Docs builds on every pull
-  request, developers work offline, and a sandboxed agent session's network allowlist is set
+  worth more than the ~30 MB: 22 jobs of a CI run render (measured: 24 jobs, all but `Lint`
+  and the smoke test), Read the Docs builds on every pull request, developers work offline,
+  and a sandboxed agent session's network allowlist is set
   on the environment rather than in this repository (this repository's own `CLAUDE.md` records
   `api.github.com` having to be added to it by hand).
 
