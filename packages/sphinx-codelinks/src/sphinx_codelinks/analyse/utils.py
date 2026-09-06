@@ -431,6 +431,27 @@ def get_remote_url(git_root: Path, remote_name: str = "origin") -> str | None:
     return None
 
 
+def _packed_ref(common_dir: Path, ref: str) -> str | None:
+    """The sha ``packed-refs`` records for ``ref``, or None.
+
+    A ref has no file of its own once ``git gc`` (or ``git pack-refs``) has run, which
+    happens unattended on any long-lived checkout -- so a loose-file lookup alone reports
+    "no rev" for a perfectly ordinary repository. The file is one ``<sha> <refname>`` per
+    line; ``^<sha>`` lines are the peeled targets of annotated tags and are skipped, as
+    is the leading ``#`` header.
+    """
+    packed = common_dir / "packed-refs"
+    if not packed.is_file():
+        return None
+    for line in packed.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not line or line.startswith(("#", "^")):
+            continue
+        sha, _, name = line.partition(" ")
+        if name.strip() == ref:
+            return sha
+    return None
+
+
 def get_current_rev(git_root: Path) -> str | None:
     """Get current commit rev from the git directory's HEAD."""
     # HEAD is per-worktree, so it is read from the worktree's OWN git directory
@@ -450,19 +471,23 @@ def get_current_rev(git_root: Path) -> str | None:
         return head_content
 
     ref = head_content.split(":", 1)[1].strip()
+    common_dir = _git_common_dir(git_dir)
     ref_path = git_dir / ref
     if not ref_path.exists():
         # every branch is a SHARED ref, so in a worktree it lives in the common
         # directory; only refs/bisect and refs/worktree are per-worktree
-        ref_path = _git_common_dir(git_dir) / ref
-    if not ref_path.exists():
-        logger.warning(
-            f"{ref_path} does not exist",
-            subtype="git_ref",
-            location=str(ref_path),
-        )
-        return None
-    return ref_path.read_text().strip()
+        ref_path = common_dir / ref
+    if ref_path.exists():
+        return ref_path.read_text().strip()
+    packed = _packed_ref(common_dir, ref)
+    if packed is not None:
+        return packed
+    logger.warning(
+        f"{ref_path} does not exist",
+        subtype="git_ref",
+        location=str(ref_path),
+    )
+    return None
 
 
 def form_https_url(

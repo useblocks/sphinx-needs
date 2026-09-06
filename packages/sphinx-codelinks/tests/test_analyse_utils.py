@@ -1258,6 +1258,33 @@ def test_get_current_rev_worktree(git_worktree: tuple[Path, str, str]) -> None:
     assert utils.get_current_rev(worktree_path) == rev
 
 
+def test_get_current_rev_packed_refs(git_worktree: tuple[Path, str, str]) -> None:
+    """`git gc` packs the loose refs away, and the branch ref is then in `packed-refs`.
+
+    Nothing unusual has to happen for this: `git gc` runs unattended on any long-lived
+    checkout, and afterwards there is no `refs/heads/<branch>` FILE in either the
+    worktree's git directory or the common one. It is the same failure shape as
+    useblocks/sphinx-codelinks#106 reached by a different route -- and CI never sees it,
+    because `actions/checkout` and Read the Docs both leave a detached HEAD.
+    """
+    worktree_path, _, rev = git_worktree
+    git_path = get_git_path()
+    subprocess.run(
+        [git_path, "pack-refs", "--all"],
+        cwd=worktree_path,
+        check=True,
+        capture_output=True,
+    )
+    git_dir = utils._git_dir(worktree_path)
+    assert git_dir is not None
+    common = utils._git_common_dir(git_dir)
+    assert not list((common / "refs" / "heads").glob("*")), (
+        "the loose refs should be gone"
+    )
+
+    assert utils.get_current_rev(worktree_path) == rev
+
+
 def test_get_current_rev_detached_head(tmp_path: Path) -> None:
     """In a detached HEAD (e.g. CI checkouts) .git/HEAD holds the commit SHA
     directly; get_current_rev returns it rather than warning and giving up."""
