@@ -76,6 +76,31 @@ def pytest_addoption(parser):
     )
 
 
+def copy_test_utils(source: Path, destination: Path) -> None:
+    """Copy ``tests/doc_test/utils`` into the session tempdir, if it is there at all.
+
+    Guarded rather than unconditional, because the directory is not guaranteed to
+    survive into every tree this suite runs in. It holds exactly one file -- the
+    vendored plantuml jar -- and flit writes no directory entries into the sdist, so a
+    distribution packager who strips ``*.jar`` from the tarball before repacking it is
+    left with no ``doc_test/utils`` at all. Unguarded, ``copytree`` then raises
+    ``FileNotFoundError`` out of a session fixture that every rendering test depends
+    on, and :func:`resolve_plantuml_command` -- the whole point of which is to let such
+    a tree be pointed at a PlantUML of its own -- is never reached.
+
+    The destination is created only when there is something to put in it, so
+    ``<tempdir>/utils/plantuml.jar`` is absent rather than empty and route (2) of the
+    chain declines cleanly.
+
+    :param source: The suite's own ``doc_test/utils`` directory.
+    :param destination: Where it is copied to for this session.
+    """
+    if not source.is_dir():
+        return
+    destination.mkdir(exist_ok=True)
+    shutil.copytree(source, destination, dirs_exist_ok=True)
+
+
 @pytest.fixture(scope="session")
 def sphinx_test_tempdir(request) -> Path:
     """
@@ -94,22 +119,27 @@ def sphinx_test_tempdir(request) -> Path:
     )
 
     sphinx_test_tempdir = Path(temp_base).joinpath("sn_test_build_data")
-    utils_dir = sphinx_test_tempdir.joinpath("utils")
 
     # if not (sphinx_test_tempdir.exists() and sphinx_test_tempdir.isdir()):
     sphinx_test_tempdir.mkdir(exist_ok=True)
-    # if not (utils_dir.exists() and utils_dir.isdir()):
-    utils_dir.mkdir(exist_ok=True)
 
     # copy plantuml.jar to current test tempdir. We want to do this once
     # since the same plantuml.jar is used for each test
-    plantuml_jar_file = Path(__file__).parent.resolve() / "doc_test/utils"
-    shutil.copytree(plantuml_jar_file, utils_dir, dirs_exist_ok=True)
+    copy_test_utils(
+        Path(__file__).parent.resolve() / "doc_test/utils",
+        sphinx_test_tempdir / "utils",
+    )
 
     return sphinx_test_tempdir
 
 
-_PLANTUML_JAVA = "java -Djava.awt.headless=true -jar {}"
+# The jar path is DOUBLE-QUOTED. sphinxcontrib-plantuml passes a list or tuple through
+# untouched and `shlex`-splits anything else -- `posix=True` off Windows, `posix=False`
+# plus its own `_ntunquote` on it -- so an unquoted path containing a space arrives as
+# two argv elements and the render dies. Both split paths strip these quotes again, so
+# the argv is unchanged for a path without one. sphinx-mounts solves the same problem by
+# returning a tuple; a string is what this fixture's callers already pass around.
+_PLANTUML_JAVA = 'java -Djava.awt.headless=true -jar "{}"'
 
 
 def resolve_plantuml_command(vendored_jar: Path) -> str:
@@ -134,6 +164,10 @@ def resolve_plantuml_command(vendored_jar: Path) -> str:
        under it. The executable is the fallback for a checkout or sdist with no jar, not
        a preference.
 
+    An EMPTY ``PLANTUML_JAR`` is treated as unset rather than as a mistake, because that
+    is how it arrives: a developer shell with ``PLANTUML_JAR=`` exported, and a workflow
+    that computes the value with an expression. sphinx-mounts reads it the same way.
+
     :param vendored_jar: Where the vendored jar was copied to for this session.
     :return: The value for the ``plantuml`` configuration.
     """
@@ -148,12 +182,18 @@ def resolve_plantuml_command(vendored_jar: Path) -> str:
         return _PLANTUML_JAVA.format(env_jar)
     if vendored_jar.is_file():
         return _PLANTUML_JAVA.format(vendored_jar)
-    if executable := shutil.which("plantuml"):
-        return executable
+    # sphinxcontrib.plantuml invokes the command synchronously; on Windows the
+    # chocolatey package's `plantuml` shim is non-blocking (javaw), so its `plantumlc`
+    # (java) shim is the one to use there -- a lesson sphinx-mounts has already paid for
+    # (see `_plantuml_extra_conf` in its tests/test_path_directives.py)
+    for name in ("plantumlc", "plantuml") if os.name == "nt" else ("plantuml",):
+        if executable := shutil.which(name):
+            return executable
     raise RuntimeError(
-        f"no PlantUML to render with: {vendored_jar} does not exist, no `plantuml` is "
-        "on PATH, and PLANTUML_JAR is unset. Set PLANTUML_JAR to a plantuml jar (with "
-        "java on PATH), or install a plantuml executable."
+        f"no PlantUML to render with: {vendored_jar} does not exist, no `plantuml` "
+        "(nor, on Windows, `plantumlc`) is on PATH, and PLANTUML_JAR is unset. Set "
+        "PLANTUML_JAR to a plantuml jar (with java on PATH), or install a plantuml "
+        "executable."
     )
 
 
