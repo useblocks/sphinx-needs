@@ -9,8 +9,14 @@ What a cloud environment for this repository needs, measured on the Ubuntu 24.04
   `www.sphinx-doc.org` (intersphinx — without them `docs-needs` fails under `-nW`),
   `cdn.playwright.dev` (Playwright's browser download — the only host it tries for
   chromium on linux-x64; its `playwright.download.prss.microsoft.com` mirror is never
-  consulted for that artefact, see `AGENTS.md`), and `api.github.com` (the GitHub-service
-  example in the docs). The allowlist lives on the environment, not in this repository:
+  consulted for that artefact, see `AGENTS.md`), `api.github.com` (the GitHub-service
+  example in the docs), and `github.com` plus `release-assets.githubusercontent.com` —
+  the PlantUML jar is no longer committed, so every rendering task fetches it once from
+  the release asset `vendor/plantuml/pin.toml` names, and `github.com` answers that with a
+  302 to the second host (measured 2026-09-06; it was `objects.githubusercontent.com`
+  before GitHub renamed it, so allow whichever the redirect names). Without them
+  `poe test-needs`, `docs-needs` and `test-mounts` fail at their first step rather than
+  half-way through. The allowlist lives on the environment, not in this repository:
   nothing under `.claude/` can add a host to it.
 - **Setup script**: `apt-get install -y graphviz` — `dot` is absent from the image and the
   needflow tests fail rather than skip. Nothing else is needed: `prek` and `poe` come from
