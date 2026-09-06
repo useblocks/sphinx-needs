@@ -16,20 +16,26 @@ New and Improved
   every historical commit already places its files under that directory: ``git log`` and
   ``git blame`` read the full history there with no ``--follow``, and
   ``packages/sphinx-codelinks/design/import-commit-map.txt`` maps every hash the old
-  repository had to its hash in the new one. The old repository is archived, not deleted,
-  so every permalink and every ``git+https://…/sphinx-codelinks.git@<sha>`` pin keeps
-  resolving.
+  repository had to its hash in the new one.
 
-  What moves with it:
+  Some of the move is mechanical and already true; the rest is a checklist being worked
+  through, and this bullet says which is which.
 
-  - **The repository**: https://github.com/useblocks/sphinx-needs. Pull requests and
-    branches are opened there, under ``packages/sphinx-codelinks/``.
-  - **The issue tracker**: https://github.com/useblocks/sphinx-needs/issues. Open issues
-    were transferred and keep their labels; the issue form has a *Package* dropdown, and
-    ``sphinx-codelinks`` is one of its options. Every issue and pull request carries a
-    ``pkg: sphinx-codelinks`` label.
-  - **The documentation**: https://codelinks.useblocks.com continues to serve it, from
-    Read the Docs rather than GitHub Pages.
+  - **The repository** (done): https://github.com/useblocks/sphinx-needs. Pull requests
+    and branches are opened there, under ``packages/sphinx-codelinks/``.
+  - **The issue tracker** (in progress): https://github.com/useblocks/sphinx-needs/issues.
+    The open issues are being transferred, keeping their labels; the issue form has a
+    *Package* dropdown with ``sphinx-codelinks`` among its options, and issues and pull
+    requests concerning this package get a ``pkg: sphinx-codelinks`` label. Old issue URLs
+    redirect.
+  - **The documentation** (in progress): https://codelinks.useblocks.com stays the address.
+    It is served by GitHub Pages from the old repository until the Read the Docs project
+    and the DNS move are done, and by Read the Docs afterwards; nothing changes for a
+    reader of that URL.
+  - **The old repository** will be archived rather than deleted, so every permalink and
+    every ``git+https://…/sphinx-codelinks.git@<sha>`` pin keeps resolving. Repositories
+    pinning ``@main`` will stop receiving updates and should re-point at PyPI or at
+    ``git+https://github.com/useblocks/sphinx-needs.git@…#subdirectory=packages/sphinx-codelinks``.
   - **Release tags** are prefixed: ``sphinx-codelinks-v1.4.0`` rather than ``1.4.0``. The
     bare namespace in that repository is Sphinx-Needs' own, and three of this project's
     seven released version numbers name existing Sphinx-Needs releases.
@@ -66,18 +72,21 @@ New and Improved
   ``pytest.importorskip``; a fourth imported ``sphinx_codelinks.analyse.preproc`` without
   a guard, and that package imports the libclang loader eagerly, so an environment without
   the wheel failed during collection rather than skipping. It now degrades honestly: the
-  56 tests that need the engine skip, and the other 301 run.
+  56 test cases that need the engine stop running, and the other 303 run -- the summary
+  reads ``303 passed, 26 skipped``, because a module-level ``importorskip`` is one skip
+  per module and never collects the tests inside it.
 
 - 🔧 Lint and type checking now use the Sphinx-Needs workspace's configuration.
 
-  The ``[tool.ruff]`` tables are the workspace root's, verbatim apart from the ``src`` paths
-  and the one per-file-ignore entry this repository still needs (``**/tests/*``: ``E402``,
-  ``SIM300`` -- 2 findings if it were dropped; it moves to the root at import, since the root
-  has no such table of its own). The pre-commit ruff hook moves to the rev that workspace
-  pins (v0.16.5). Type checking moves from mypy to `ty <https://github.com/astral-sh/ty>`__:
-  ``tox -e mypy`` becomes ``tox -e ty``, the ``mypy`` dependency group becomes a ``typing``
-  one that pins the oldest supported Sphinx and docutils, and the 61 ``# type: ignore``
-  comments become 17 ``# ty: ignore`` ones. The dead ``pydantic.mypy`` plugin -- nothing in
+  The ``[tool.ruff]`` tables are the workspace root's, and the one per-file-ignore entry
+  this package still needs went to the root with them, scoped to
+  ``packages/sphinx-codelinks/tests/*`` (``E402``, ``SIM300`` -- 2 findings if it were
+  dropped). It is scoped rather than ``**/tests/*`` because at the root that glob would
+  silently loosen the other packages' suites too. Linting and formatting are now
+  ``uv run poe lint``, which runs the whole workspace's hook set. Type checking moves from
+  mypy to `ty <https://github.com/astral-sh/ty>`__ -- ``uv run poe typecheck`` -- the
+  ``mypy`` dependency group becomes a ``typing`` one that pins the oldest supported Sphinx
+  and docutils, and the 61 ``# type: ignore`` comments become 17 ``# ty: ignore`` ones. The dead ``pydantic.mypy`` plugin -- nothing in
   the package imports pydantic -- and the unused ``pytest-docker``, ``moto`` and ``psutil``
   test dependencies go with it. No behaviour changed; the whole diff is import order,
   suppressions and configuration.
@@ -87,7 +96,7 @@ New and Improved
   Sphinx-CodeLinks is being imported into the Sphinx-Needs repository as a package of its
   uv workspace, where there is exactly one Sphinx-Needs and the manifest is required to
   track it tightly — ``sphinx-needs>=8.5.0,<9`` — so a wheel can never claim compatibility
-  with a release it was not tested against. The ``needs{5,6,7,8}`` tox factor is gone with
+  with a release it was not tested against. The per-Sphinx-Needs test factor is gone with
   it, and the two compatibility shims the old floor needed have been deleted: the
   ``add_field`` import fallback for Sphinx-Needs < 8, and the ``add_extra_option``
   signature probe that chose between a schema-aware and a schema-less registration. Both
@@ -109,8 +118,8 @@ New and Improved
 - 📚 The documentation sources moved up beside ``conf.py``, so Read the Docs can build them.
 
   ``docs/source/*`` is now ``docs/*``, and the docs build no longer passes ``-c``:
-  ``sphinx-build -nW --keep-going -b html docs docs/_build/html`` is what ``tox -e docs-clean``
-  runs and what Read the Docs runs by itself. A ``.readthedocs.yaml`` comes with it, and the
+  ``sphinx-build -nW --keep-going -b html docs docs/_build/html`` is what
+  ``uv run poe docs-codelinks`` runs and what Read the Docs runs by itself. A ``.readthedocs.yaml`` comes with it, and the
   ``docs`` requirements move from a dependency group to a ``docs`` extra, which is the only
   form Read the Docs can install. The rendered site is unchanged; only the "edit this page"
   links point at the new paths.
