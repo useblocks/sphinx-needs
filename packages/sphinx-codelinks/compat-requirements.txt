@@ -9,12 +9,19 @@
 # wheel's own metadata already fetches the published sphinx-needs and that half of the
 # cell is honest by construction.
 #
-# What it covers is the OPTIONAL libclang engine. `libclang` is the member's `libclang`
-# extra, and the compat cell installs a bare wheel path with no extras -- so without this
-# line the 56 tests behind `pytest.importorskip("clang.cindex")` would skip and the cell
-# would report 301 passed / 26 skipped as a pass. It is also what lets the `import_check`
-# walk in that step reach `sphinx_codelinks.analyse.preproc`, whose `__init__` imports the
-# libclang loader eagerly; without it the walk fails outright.
+# What it covers is the OPTIONAL libclang engine, and it makes the cell COMPLETE rather
+# than merely honest. The compat cell installs a bare wheel path with no extras, so
+# without this line `clang.cindex` is absent -- and that failure is LOUD, not silent:
+# `release.yaml` runs the `import_check` walk BEFORE pytest, and the walk fails outright
+# on `sphinx_codelinks.analyse.preproc`, whose `__init__` imports the libclang loader
+# eagerly (`FAIL 1 of 21 modules failed to import`, exit 1, under the step's default
+# `bash -e`). Measured. So deleting this line does not give a green 301/26 run -- it turns
+# the release of sphinx-codelinks red, by name, before the suite starts.
+#
+# What the line buys on top of that loud failure is the 56 tests behind
+# `pytest.importorskip("clang.cindex")`: with it the compat cell reports 359 passed, and
+# without it -- if the walk were ever removed or reordered -- it would report
+# `303 passed, 26 skipped`.
 #
 # The floor is 18 -- what has actually been run here -- rather than the extra's 16, which
 # states the wider range the published package supports.
