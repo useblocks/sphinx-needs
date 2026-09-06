@@ -39,15 +39,15 @@ build:
       # and touched this package, the build runs although the pull request did not touch it.
       # That is the safe direction; it never skips a build that was needed.
       #
-      # FOUR paths, and the last two are recent: `python.install` below pip-installs the
+      # THREE paths, and the third is recent: `python.install` below pip-installs the
       # package directory with its own extras (the root manifest and `uv.lock` take no
       # part), and every `literalinclude` in the docs stays inside the package
       # (`../../tests/doc_test/…`) -- but `docs/conf.py` no longer reads only files under
-      # `docs/`. It reads `vendor/plantuml/pin.toml` to find the renderer, and the
-      # `post_install` job below runs `tools/src/sn_tools/fetch_plantuml.py` to put it
-      # there. Without those two here, a pull request that bumps the pin or changes the
-      # fetch script would skip THIS build -- the only one that renders these docs under
+      # `docs/`. It reads `vendor/plantuml/pin.toml` to find the renderer, and renders with
+      # the jar committed beside it. Without `vendor/` here, a pull request that bumps the
+      # pin would skip THIS build -- the only one that renders these docs under
       # `fail_on_warning` -- and report `success` to GitHub for a renderer nobody tried.
+      # `tools/` is deliberately NOT here: nothing under it runs in this build any more.
       # Branch and tag builds (`latest`, `stable`, releases) are never cancelled.
       - |
         if [ "$READTHEDOCS_VERSION_TYPE" != "external" ]; then
@@ -57,27 +57,13 @@ build:
           echo "origin/master is not available in this clone; building to be safe"
           exit 0
         fi
-        if git diff --quiet origin/master -- packages/sphinx-needs/ .readthedocs.yml vendor/ tools/; then
-          echo "nothing under packages/sphinx-needs/, vendor/, tools/ or in .readthedocs.yml changed; skipping this build (exit 183)"
+        if git diff --quiet origin/master -- packages/sphinx-needs/ .readthedocs.yml vendor/; then
+          echo "nothing under packages/sphinx-needs/ or vendor/, and nothing in .readthedocs.yml, changed; skipping this build (exit 183)"
           exit 183
         fi
     pre_create_environment:
       - echo "DOT details"
       - which dot
-    post_install:
-      # The renderer. `docs/conf.py` resolves PLANTUML_JAR, then this jar, then a
-      # `plantuml` on PATH -- and Read the Docs has none of the last two, so without this
-      # step every uml diagram in these docs fails to render and `fail_on_warning` above
-      # turns that into a red build. The jar is not committed (see `vendor/plantuml/`), so
-      # it has to be fetched: an RTD build has network and python, and `default-jdk` is
-      # already in `apt_packages` above.
-      #
-      # `post_install` rather than `pre_build`: it is the first hook after an environment
-      # exists, so `python` is the build's 3.11 (the script needs `tomllib`) -- and it is
-      # still before the sphinx build that needs the file. The `post_checkout` job above
-      # runs long before this and exits 183 on a pull request with nothing for this
-      # project to build, so a skipped build fetches nothing.
-      - python tools/src/sn_tools/fetch_plantuml.py
     pre_build:
       # ideally we would just set the DOCS_THEME environment variable
       # but I couldn't see an easy way to do that for the build job

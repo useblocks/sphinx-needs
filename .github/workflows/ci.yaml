@@ -37,6 +37,13 @@ jobs:
         # the synced environment, so `uv run poe lint` covers it too
         run: >
           uv run --no-project --with packaging python tools/src/sn_tools/check_workspace.py
+      - name: Check the vendored PlantUML is the one its pin names
+        # THE fence on the committed jar: `vendor/plantuml/pin.toml` is two lines a bump has
+        # to edit and a ~30 MB file it has to replace, and the file is the half a reviewer
+        # cannot see in a diff. `--no-project` for the same reason as the check above -- this
+        # reads the checkout, not an environment built from it -- and `--verify` never
+        # touches the network. `uv run poe lint` declares the same check as a dep
+        run: uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify
       - run: uv run --frozen prek run --all-files --show-diff-on-failure
         env:
           PREK_COLOR: always
@@ -218,14 +225,14 @@ jobs:
           enable-cache: true
           cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
           python-version: ${{ matrix.python-version }}
-      - name: Fetch the pinned PlantUML
+      - name: Point PLANTUML_JAR at the vendored jar
         # yes, the browser cells need a jar: two of the three cases build through `test_app`,
         # whose `plantuml_command` fixture raises rather than skips without a renderer.
         # `shell: bash` (pipefail) and `tr -d '\r'` (Windows) are both load-bearing --
         # vendor/plantuml/README.md, "The step CI runs", says why
         shell: bash
         run: |
-          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Install the cell
         # `js` is the browser driver (pytest-playwright); it is not in `test`, because only
@@ -254,13 +261,13 @@ jobs:
           enable-cache: true
           # 3.12+: on 3.11 the lock resolves sphinx 8.2, and this job wants the newest sphinx
           python-version: "3.12"
-      - name: Fetch the pinned PlantUML
-        # the one jar `vendor/plantuml/pin.toml` names. `shell: bash` (pipefail) and
+      - name: Point PLANTUML_JAR at the vendored jar
+        # the one jar `vendor/plantuml/pin.toml` names, verified against the pin first. `shell: bash` (pipefail) and
         # `tr -d '\r'` (Windows) are both load-bearing -- vendor/plantuml/README.md,
         # "The step CI runs", says why
         shell: bash
         run: |
-          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Install Dependencies
         run: |
@@ -338,13 +345,13 @@ jobs:
           enable-cache: true
           cache-suffix: bazel
           cache-python: true
-      - name: Fetch the pinned PlantUML
-        # the one jar `vendor/plantuml/pin.toml` names. `shell: bash` (pipefail) and
+      - name: Point PLANTUML_JAR at the vendored jar
+        # the one jar `vendor/plantuml/pin.toml` names, verified against the pin first. `shell: bash` (pipefail) and
         # `tr -d '\r'` (Windows) are both load-bearing -- vendor/plantuml/README.md,
         # "The step CI runs", says why
         shell: bash
         run: |
-          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - uses: bazel-contrib/setup-bazel@0.19.0
         with:

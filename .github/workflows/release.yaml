@@ -88,13 +88,13 @@ jobs:
           # beats the root `.python-version`, and the compat cell below is meant to run on
           # the pin. The resolver gate names its interpreter explicitly instead
           cache-python: true
-      - name: Fetch the pinned PlantUML
+      - name: Point PLANTUML_JAR at the vendored jar
         # the compat cell runs the member's real suite, whose uml tests assert on a renderer.
         # `shell: bash` (pipefail) and `tr -d '\r'` (Windows) are both load-bearing --
         # vendor/plantuml/README.md, "The step CI runs", says why
         shell: bash
         run: |
-          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Check the workspace manifests agree with each other
         run: >
