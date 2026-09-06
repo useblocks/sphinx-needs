@@ -447,6 +447,44 @@ def test_the_changelog_title_is_found_under_any_rst_adornment() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    ("adornment", "found"),
+    [
+        ("----------", True),  # exactly as long as the title
+        ("--------------", True),  # longer is fine
+        ("---", False),  # SHORTER is a transition, not an adornment
+        ("-", False),
+    ],
+)
+def test_an_adornment_shorter_than_the_title_is_not_a_heading(
+    adornment: str, found: bool
+) -> None:
+    """The length rule is what tells a heading from a `---` transition. Without it,
+    `Unreleased` above a three-dash transition converts, and the transition becomes the new
+    release's underline."""
+    lines = ["Unreleased", adornment, "", "- a bullet"]
+    assert bump.is_heading(lines, 0, "Unreleased") is found
+
+
+def test_an_indented_unreleased_inside_a_literal_block_is_not_a_heading() -> None:
+    """docutils does not allow an indented section heading either. A changelog that
+    documents its own stamping in a `::` literal block would otherwise have that block
+    converted: its marker orphaned, its indented body annexed as the release's."""
+    text = (
+        ".. _changelog:\n\nChangelog\n=========\n\n"
+        "How this file is stamped, for the record::\n\n"
+        "    Unreleased\n    ----------\n\n    - your bullets go here\n\n"
+        ".. _`release:0.2.0`:\n\n0.2.0\n-----\n\n:Released: 2026-08-27\n"
+    )
+    got, what = bump.stamp_changelog(
+        text, version="0.3.0", when=WHEN, previous_tag="", new_tag="acme-v0.3.0"
+    )
+    assert "inserted 0.3.0 above the newest entry" in what
+    assert "    Unreleased\n    ----------" in got  # left exactly as written
+    lines = got.splitlines()
+    assert lines.index(".. _`release:0.3.0`:") < lines.index(".. _`release:0.2.0`:")
+
+
 @pytest.mark.parametrize("value", ["3.9.2026", "27.8.2026", "03.09.2026"])
 def test_an_unpadded_day_first_date_is_still_day_first(value: str) -> None:
     """`^\\d{2}\\.` refused a hand-stamped `3.9.2026`, so ONE such line would have flipped
@@ -873,6 +911,187 @@ def test_the_previous_tag_comes_from_git_and_keeps_its_prefix(tree, capsys) -> N
     )
     assert line.count("acme-core-v1.2.3...acme-core-v1.3.0") == 2
     assert "compare/1.2.3..." not in line
+
+
+def exploding(
+    manifest: Path, old: str, new: str, on: list[str], what: BaseException, **kwargs
+) -> FakeRunner:
+    """`uv_runner`'s two behaviours, plus a raise once the named command has run.
+
+    The only way to exercise the apply phase's recovery block: the failures it exists for
+    -- a subprocess exiting non-zero, a Ctrl-C, an OS error -- cannot be produced by a
+    scratch workspace on its own. The raise happens AFTER the command is recorded and its
+    side effect applied, which is what the real `Runner` does too (it raises on a non-zero
+    exit, by which time the subprocess has already done whatever it did).
+    """
+
+    class Boom(type(uv_runner(manifest, old, new, **kwargs))):
+        def run(self, command: list[str], *, quiet: bool = False) -> str:
+            out = super().run(command, quiet=quiet)
+            if command[: len(on)] == on:
+                raise what
+            return out
+
+    return Boom()
+
+
+def test_the_recovery_block_names_the_lock_that_step_2_wrote(tree, capsys) -> None:
+    """`uv version --no-sync` RE-LOCKS -- uv's help says "avoid syncing the virtual
+    environment after re-locking the project" -- so `uv.lock` is written at step 2, not at
+    step 6. Recording it only after step 6 meant a failure in between printed a recovery
+    line that restored the manifests and left the lock claiming the new version: a tree the
+    `uv-lock` hook then fails, measured with a real runner.
+
+    So the failure here is at `uv lock` itself, which is the latest point at which the old
+    bookkeeping was still wrong: everything before it is written, the changelog is not.
+    """
+    root = tree()
+    manifest = root / "packages" / "acme-core" / "pyproject.toml"
+    code, _ = run(
+        root,
+        "acme-core",
+        "--bump",
+        "minor",
+        "--date",
+        "2026-09-06",
+        runner=exploding(
+            manifest,
+            "1.2.3",
+            "1.3.0",
+            ["uv", "lock"],
+            bump.BumpError("`uv lock` failed (1): boom"),
+        ),
+    )
+    assert code == 1
+    out = capsys.readouterr().out
+    listed = out.split("this run had already written ")[1].split(" when it failed")[0]
+    assert listed.split(", ") == [
+        "packages/acme-core/pyproject.toml",
+        "uv.lock",
+        "packages/acme-core/src/acme_core/__init__.py",
+        "packages/acme-plugin/pyproject.toml",
+    ]
+    # the changelog is step 7 and had not run; `uv.lock` appears once, not twice
+    assert "docs/changelog.rst" not in listed
+    assert listed.count("uv.lock") == 1
+    assert (
+        "git checkout -- packages/acme-core/pyproject.toml uv.lock "
+        "packages/acme-core/src/acme_core/__init__.py "
+        "packages/acme-plugin/pyproject.toml" in out
+    )
+
+
+def test_a_keyboard_interrupt_prints_the_recovery_block_and_re_raises(tree) -> None:
+    """`except BaseException`, not `except BumpError`. A Ctrl-C mid-apply is one of the two
+    ways a half-done tree is still reachable, and it must not become a tidy exit 1 either:
+    the block prints and the interrupt goes on being an interrupt."""
+    root = tree()
+    manifest = root / "packages" / "acme-core" / "pyproject.toml"
+    runner = exploding(manifest, "1.2.3", "1.3.0", ["uv", "lock"], KeyboardInterrupt())
+    with pytest.raises(KeyboardInterrupt):
+        bump.main(
+            [
+                "acme-core",
+                "--bump",
+                "minor",
+                "--date",
+                "2026-09-06",
+                "--root",
+                str(root),
+            ],
+            runner=runner,  # ty: ignore[invalid-argument-type]
+        )
+
+
+def test_an_os_error_is_reported_after_the_recovery_block(tree, capsys) -> None:
+    """A read-only file or a missing `uv` used to leave a traceback printed after the
+    recovery block, burying the one line the reader needed."""
+    root = tree()
+    manifest = root / "packages" / "acme-core" / "pyproject.toml"
+    code, _ = run(
+        root,
+        "acme-core",
+        "--bump",
+        "minor",
+        "--date",
+        "2026-09-06",
+        runner=exploding(
+            manifest,
+            "1.2.3",
+            "1.3.0",
+            ["uv", "lock"],
+            OSError("[Errno 13] Permission denied"),
+        ),
+    )
+    assert code == 1
+    out = capsys.readouterr().out
+    assert out.index("this run had already written") < out.index("::error::")
+    assert "::error::[Errno 13] Permission denied" in out
+
+
+def test_a_release_candidates_label_does_not_block_its_own_final_release(
+    tree, capsys
+) -> None:
+    """The duplicate-label guard compares the label's version for EQUALITY. Containment
+    would make a `release:1.3.0rc1` entry block `1.3.0` -- a release candidate rendering its
+    own final release unstampable."""
+    root = tree()
+    changelog = root / "packages" / "acme-core" / "docs" / "changelog.rst"
+    changelog.write_text(
+        MOUNTS_STYLE.replace("release:0.2.0", "release:1.3.0rc1").replace(
+            "0.2.0\n-----", "1.3.0rc1\n--------"
+        ),
+        encoding="utf-8",
+    )
+    code, _ = run(
+        root,
+        "acme-core",
+        "--to",
+        "1.3.0",
+        "--date",
+        "2026-09-06",
+        runner=uv_runner(
+            root / "packages" / "acme-core" / "pyproject.toml", "1.2.3", "1.3.0"
+        ),
+    )
+    assert code == 0
+    assert ".. _`release:1.3.0`:" in changelog.read_text(encoding="utf-8")
+
+
+def test_a_uv_that_writes_a_version_other_than_it_previewed_is_refused(
+    tree, capsys
+) -> None:
+    """The read-back guard. Defensive -- measured unreachable on uv 0.12.9, where the
+    preview and the write normalise identically -- but a guard nothing exercises is a guard
+    that can rot silently, which is the whole reason it is tested rather than deleted."""
+    root = tree()
+    manifest = root / "packages" / "acme-core" / "pyproject.toml"
+
+    class Lying(FakeRunner):
+        def run(self, command: list[str], *, quiet: bool = False) -> str:
+            super().run(command, quiet=quiet)
+            if command[:2] == ["uv", "version"]:
+                if "--dry-run" in command:
+                    return "acme-core 1.2.3 => 1.3.0\n"
+                manifest.write_text(
+                    manifest.read_text(encoding="utf-8").replace(
+                        'version = "1.2.3"', 'version = "1.3.1"'
+                    ),
+                    encoding="utf-8",
+                )
+            return ""
+
+    code, _ = run(
+        root, "acme-core", "--bump", "minor", "--date", "2026-09-06", runner=Lying()
+    )
+    assert code == 1
+    out = capsys.readouterr().out
+    assert "`uv version` previewed 1.3.0 but wrote 1.3.1" in out
+    assert "refusing to stamp two different numbers" in out
+    # and it reports the recovery line like any other apply-phase failure
+    assert (
+        "this run had already written packages/acme-core/pyproject.toml, uv.lock" in out
+    )
 
 
 def test_a_member_with_no_dependants_skips_propagate_floors(tree, capsys) -> None:

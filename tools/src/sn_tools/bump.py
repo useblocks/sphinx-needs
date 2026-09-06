@@ -304,9 +304,13 @@ def is_heading(lines: list[str], index: int, title: str) -> bool:
     section adorned with `=` was left standing above a new, empty release entry, keeping
     the bullets that were meant to be that release's changelog, and nothing was raised.
     """
-    if index + 1 >= len(lines) or lines[index].strip() != title:
+    # at COLUMN 0, both lines: docutils does not allow an indented section heading, so an
+    # `Unreleased` / `----------` pair sitting inside a `::` literal block (a changelog that
+    # documents its own stamping, say) is text, not a heading -- and converting it would
+    # orphan the block's marker and turn its indented body into the release's
+    if index + 1 >= len(lines) or lines[index].rstrip() != title:
         return False
-    adornment = lines[index + 1].strip()
+    adornment = lines[index + 1].rstrip()
     return (
         len(adornment) >= len(title)
         and len(set(adornment)) == 1
@@ -460,16 +464,26 @@ def preview_version(output: str) -> str:
 def bump(args: argparse.Namespace, runner: Runner) -> int:
     """Compute everything, refuse if anything is wrong, and only then write.
 
-    The two phases are the whole design. Every refusal this module can raise -- a drifted
-    `__version__`, a `NEEDS_VERSION` line that is not there, a changelog with no shape to
-    mirror, a `:Released:` format it cannot read, a missing previous tag for a compare
-    link, a version that does not move -- is reachable only from data, so all of them can
-    fire before a byte is written. They used to fire in file order instead, which meant the
-    changelog's refusal arrived with four files and the lock already rewritten: the exact
-    half-done state no gate in this repository can see (see the RETRACTION at the top of
-    this module). Two `uv version` calls is what that costs -- a `--dry-run` for the
-    preflight and the real one in the apply phase -- and `--no-sync` makes each of them a
-    manifest read and a manifest write, so the cost is nothing.
+    The two phases are the whole design. Every refusal that can be DECIDED FROM THE TREE --
+    a drifted `__version__`, a `NEEDS_VERSION` line that is not there, a changelog with no
+    shape to mirror, a `:Released:` format it cannot read, a missing previous tag for a
+    compare link, a version that does not move -- is computed in the first phase, so all of
+    them fire before a byte is written. They used to fire in file order instead, which meant
+    the changelog's refusal arrived with four files and the lock already rewritten: the
+    exact half-done state no gate in this repository can see (see the RETRACTION at the top
+    of this module).
+
+    That claim is deliberately narrower than "every refusal": ONE refusal is raised after a
+    write, the read-back guard in step 2 below, and it cannot be otherwise -- it compares
+    what `uv version` previewed with what `uv version` wrote. It is defensive (measured
+    unreachable on uv 0.12.9, see its comment) and it reports the recovery line like any
+    other apply-phase failure.
+
+    The cost is two `uv version` calls. `--no-sync` does NOT mean "do not touch the lock":
+    uv's own help reads "avoid syncing the virtual environment AFTER RE-LOCKING the
+    project", and `--frozen` is the flag that skips the re-lock. So each call is a manifest
+    read, a manifest write and a resolve of the whole workspace -- measured 31-420 ms warm,
+    cheap, but not the "nothing" an earlier version of this docstring claimed.
 
     What is still not atomic: the apply phase runs `propagate_floors.py` and `uv lock`, and
     a crash or a `KeyboardInterrupt` anywhere in it leaves part of the tree written. That
@@ -540,9 +554,14 @@ def bump(args: argparse.Namespace, runner: Runner) -> int:
     value = ["--bump", args.bump] if args.bump else [args.to]
     # `--dry-run` prints `<name> <old> => <new>` and writes no manifest, so this is the
     # version the real call in the apply phase will produce, obtained without producing it
+    # `quiet=True`: this call and the real one in step 2 print the SAME
+    # `<name> <old> => <new>` line, and two identical lines separated only by a `--dry-run`
+    # suffix on the echoed command read like the work happening twice. The preflight line
+    # below says what this call was for; step 2's echo is the receipt for the real write
     version = preview_version(
         runner.run(
-            ["uv", "version", "--package", dist, *value, "--no-sync", "--dry-run"]
+            ["uv", "version", "--package", dist, *value, "--no-sync", "--dry-run"],
+            quiet=True,
         )
     )
     tag = f"{dist}-v{version}"
@@ -606,8 +625,8 @@ def bump(args: argparse.Namespace, runner: Runner) -> int:
         path=changelog_path,
     )
     print(
-        f"   preflight: {old_version} -> {version}; every rewrite computed, "
-        f"{'nothing will be written (--dry-run)' if dry else 'nothing written yet'}"
+        f"   preflight (`uv version --dry-run`): {old_version} -> {version}; every rewrite "
+        f"computed, {'nothing will be written (--dry-run)' if dry else 'nothing written yet'}"
     )
 
     # === APPLY ============================================================================
@@ -617,8 +636,22 @@ def bump(args: argparse.Namespace, runner: Runner) -> int:
         if not dry:
             runner.run(["uv", "version", "--package", dist, *value, "--no-sync"])
             written.append(manifest.relative_to(root).as_posix())
+            # `uv.lock` is written HERE, not at step 6. `--no-sync` re-locks -- uv's help
+            # says "avoid syncing the virtual environment after re-locking the project" --
+            # so the lock carries the new version the moment this call returns. Recording
+            # it only after step 6 meant a failure at step 3, 4 or 5 printed a recovery
+            # line that restored the manifests and left the lock claiming the new version:
+            # a tree the `uv-lock` prek hook then fails, which is the "red for a reason
+            # that has nothing to do with the release" this module opens by promising to
+            # prevent. Measured, with the module made read-only so step 3 failed for real
+            written.append("uv.lock")
             # read back rather than trusted: `uv version` owns the bump semantics, and the
-            # preview above is only a preview until the manifest agrees with it
+            # preview above is only a preview until the manifest agrees with it.
+            # DEFENSIVE ONLY: measured unreachable on uv 0.12.9, where `--dry-run` and the
+            # real call go through the same normalisation -- `8.6`, `8.6.0.0`, `08.6.0`,
+            # `8.6.0-rc1`, `8.6.0RC1` and `  8.6.0` all preview exactly what they write. It
+            # is also the one refusal in this function that fires after a write, which is
+            # why it says so here rather than pretending otherwise
             got = read_version(manifest)
             if got != version:
                 raise BumpError(
@@ -692,18 +725,22 @@ def bump(args: argparse.Namespace, runner: Runner) -> int:
             ]
 
         # --- 6. the lock ------------------------------------------------------------------
-        # NOT `--frozen`: `--no-sync` above left uv.lock claiming the old version, and the
-        # `uv-lock` prek hook would fail the release pull request for a reason that has
-        # nothing to do with the release
+        # NOT for the version: step 2's `uv version --no-sync` already re-locked that. This
+        # is for the FLOORS step 5 may have moved -- `propagate_floors.py` edits dependants'
+        # manifests with tomlkit and nothing re-resolves after it, which is exactly why its
+        # own last line says "now run `uv lock`". With no dependants it is a no-op re-lock,
+        # kept because "sometimes needed, always harmless" is a better rule for a release
+        # recipe than one the reader has to evaluate. `--frozen` is still the wrong flag
+        # here, for its own reason: it skips the re-lock altogether
         if dry:
             print(
-                "6. would run `uv lock` (not --frozen: the lock still claims the old "
-                "version)"
+                "6. would run `uv lock` (for the floors step 5 may have moved; step 2's "
+                "`uv version --no-sync` already re-locked the version)"
             )
         else:
             runner.run(["uv", "lock"])
             written.append("uv.lock")
-            print("6. relocked uv.lock")
+            print("6. relocked uv.lock (the version was already locked by step 2)")
 
         # --- 7. the changelog -------------------------------------------------------------
         if not dry:
@@ -713,14 +750,22 @@ def bump(args: argparse.Namespace, runner: Runner) -> int:
     except BaseException:
         # a crash, a Ctrl-C or a failing subprocess is the one way a half-done tree is
         # still reachable; the least this can do is name it and how to undo it
-        if written:
+        # `dict.fromkeys` rather than `sorted(set(...))`: `uv.lock` is appended twice on a
+        # run that reaches step 6, and the reader should see each path once, in the order it
+        # was written. One over-claim is deliberate: the dependants' manifests are recorded
+        # after `propagate_floors.py` returns 0, and that script writes nothing when every
+        # floor is already correct -- so a name here may be a file that did not change.
+        # `git checkout --` on an unchanged file is a no-op, and parsing the subprocess's
+        # output to find out would be more code than the risk
+        undo = list(dict.fromkeys(written))
+        if undo:
             print()
             print(
                 "this run had already written "
-                + ", ".join(sorted(written))
+                + ", ".join(undo)
                 + " when it failed. To undo them:"
             )
-            print(f"  git checkout -- {' '.join(sorted(written))}")
+            print(f"  git checkout -- {' '.join(undo)}")
         raise
 
     # --- 8. what was written, and what is left --------------------------------------------
@@ -779,6 +824,13 @@ def main(argv: list[str] | None = None, runner: Runner | None = None) -> int:
     try:
         return bump(args, runner or Runner(args.root))
     except (BumpError, release_plan.PlanError) as exc:
+        print(f"::error::{exc}")
+        return 1
+    except OSError as exc:
+        # a read-only file, a full disk, no `uv` on PATH. These used to leave a traceback
+        # printed AFTER the apply phase's recovery block, which buried the one line the
+        # reader needed. The recovery block has already run by the time this catches, so
+        # the advice is the last thing on the terminal
         print(f"::error::{exc}")
         return 1
 
