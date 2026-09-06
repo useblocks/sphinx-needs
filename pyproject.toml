@@ -155,7 +155,7 @@ typing = [
   # `error-on-warning` ratchet below then reports as unused
   "types-Pygments",
   "types-jsonschema>=4.23.0.20241208",
-  "ty~=0.0.77",
+  "ty~=0.0.78",
 ]
 
 [tool.uv]
