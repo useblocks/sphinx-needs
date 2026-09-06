@@ -84,7 +84,7 @@ remote_url_field = "remote-url" # Need's field name for remote URL
 
 # Configuration for source tracing project "dcdc"
 [codelinks.projects.dcdc]
-remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}" # URL pattern for remote source code
+remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}" # URL pattern for remote source code
 
 [codelinks.projects.dcdc.source_discover]
 src_dir = "../tests/data/dcdc" # Relative path from this TOML config to the source directory
@@ -108,14 +108,14 @@ needs_fields = [
 ]
 
 [codelinks.projects.src]
-remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}"
 
 [codelinks.projects.src.source_discover]
 src_dir = "../tests/doc_test/minimum_config"
 
 # Configuration for source tracing project "sphinx_codelinks"
 [codelinks.projects.sphinx_codelinks]
-remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}"
 
 [codelinks.projects.sphinx_codelinks.source_discover]
 src_dir = "../src"
@@ -141,7 +141,7 @@ needs_fields = [
 
 # Configuration for tests project
 [codelinks.projects.tests]
-remote_url_pattern = "https://github.com/useblocks/sphinx-codelinks/blob/{commit}/{path}#L{line}"
+remote_url_pattern = "https://github.com/useblocks/sphinx-needs/blob/{commit}/{path}#L{line}"
 
 [codelinks.projects.tests.source_discover]
 src_dir = "../tests"

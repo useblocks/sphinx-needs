@@ -59,9 +59,11 @@ html_static_path = ["_static"]
 html_theme_options = {
     "sidebar_hide_name": True,
     "top_of_page_buttons": ["view", "edit"],
-    "source_repository": "https://github.com/useblocks/sphinx-codelinks",
-    "source_branch": "main",
-    "source_directory": "docs/",
+    # the monorepo this package lives in, and the path to these sources inside it:
+    # furo's "view"/"edit" buttons build `<repo>/blob|edit/<branch>/<directory><page>`
+    "source_repository": "https://github.com/useblocks/sphinx-needs",
+    "source_branch": "master",
+    "source_directory": "packages/sphinx-codelinks/docs/",
     "light_logo": "sphinx-codelinks-logo_light.svg",
     "dark_logo": "sphinx-codelinks-logo_dark.svg",
 }
@@ -78,7 +80,7 @@ html_sidebars = {
         "sidebar/variant-selector.html",
     ]
 }
-html_context = {"repository": "useblocks/sphinx-codelinks"}
+html_context = {"repository": "useblocks/sphinx-needs"}
 html_css_files = ["furo.css"]
 
 # Sphinx-Needs configuration
