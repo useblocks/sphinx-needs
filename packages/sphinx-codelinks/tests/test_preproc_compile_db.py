@@ -3,6 +3,15 @@ from pathlib import Path
 
 import pytest
 
+# `sphinx_codelinks.analyse.preproc.__init__` imports the libclang loader eagerly, and
+# `loader.py` evaluates `PARSE_OPTIONS = _parse_options()` at module scope -- so importing
+# anything from that package needs the optional `libclang` extra. Without this guard the
+# module raises ModuleNotFoundError during COLLECTION, taking the whole run with it, while
+# the three sibling modules that already carry the guard skip politely. libclang is
+# genuinely optional here: it is behind an extra at runtime and behind the
+# `codelinks-libclang` dependency group in CI
+pytest.importorskip("clang.cindex")
+
 from sphinx_codelinks.analyse import analyse as analyse_module
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.preproc import compile_db
