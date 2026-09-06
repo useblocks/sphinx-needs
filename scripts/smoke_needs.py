@@ -320,9 +320,14 @@ def check_sdist_builds(
         ) from exc
     elapsed = time.monotonic() - started
     # `cwd=tmp` for the same reason as the wheel probe: python puts the working directory
-    # on `sys.path` for `-c`, so from the repository root this would import the checkout
+    # on `sys.path` for `-c`, so from the repository root this would import the checkout.
+    # `splitlines()`, not `split()`: the probe prints one value per LINE, and a path with a
+    # space in it -- which `TMPDIR="/…/with space"` gives every temporary directory here --
+    # makes a whitespace split yield three fields and unpack with a `ValueError`
     probe = f"import {module} as m; print(m.__version__); print(m.__file__)"
-    version, location = run([str(interpreter), "-c", probe], cwd=tmp).stdout.split()
+    version, location = run(
+        [str(interpreter), "-c", probe], cwd=tmp
+    ).stdout.splitlines()
     checks.check(
         version == expected,
         f"the wheel built from the sdist reports the manifest's version ({expected})",
@@ -443,8 +448,11 @@ def main() -> int:
         # `cwd=tmp` is not cosmetic: python puts the working directory on `sys.path` for
         # `-c`, so running this from the repository root imports the checkout instead of
         # the wheel -- which is precisely what the next assertion exists to catch
+        # `splitlines()`, not `split()`: see `check_sdist_builds` above -- the probe prints
+        # one value per line, and a temporary directory whose path contains a space made
+        # this unpack raise `ValueError: too many values to unpack`
         probe = f"import {module} as m; print(m.__version__); print(m.__file__)"
-        version, location = run([str(python), "-c", probe], cwd=tmp).stdout.split()
+        version, location = run([str(python), "-c", probe], cwd=tmp).stdout.splitlines()
         checks.check(True, f"{args.dist_name} imports", f"{version} from {location}")
         checks.check(
             Path(location).resolve().is_relative_to(venv.resolve()),
