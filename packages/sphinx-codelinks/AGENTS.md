@@ -16,7 +16,8 @@ sphinx-needs. It:
 - **creates needs from them** — turns discovered markers into sphinx-needs items;
 - **traces sources** — links documentation to exact source lines, and generates a
   syntax-highlighted HTML page per traced file with line anchors;
-- **has a CLI** — `codelinks analyse` and `codelinks write`, for use outside a Sphinx build.
+- **has a CLI** — `codelinks analyse`, `codelinks discover` and `codelinks write rst`,
+  for use outside a Sphinx build.
 
 It is the only member of this workspace whose `src/` imports `sphinx_needs`, and it
 declares it as a **runtime** dependency with a tight floor (`sphinx-needs>=8.5.0,<9`,
@@ -389,10 +390,15 @@ the shape a TOML file may carry, and a `@dataclass` holding the loaded, validate
 
 ### CLI Interface
 
-The CLI uses Typer for command definitions:
+The CLI uses Typer. `analyse` and `discover` are commands on `app`; `write` is a
+sub-app (`write_app`, added with `app.add_typer(…, name="write")`), so its formats are
+SUB-COMMANDS rather than a positional argument:
 
-- `codelinks analyse <config>`: Analyze source code and output JSON
-- `codelinks write <format> <input> --outpath <file>`: Generate RST from JSON
+- `codelinks analyse <config.toml> [--project …]`: analyse the configured projects and
+  write the extracted markers as JSON
+- `codelinks discover <src_dir>`: list the source files discovery would feed to `analyse`
+- `codelinks write rst <markers.json> --outpath <file.rst>`: generate the needextend RST
+  from that JSON
 
 ## Key Files
 
@@ -408,7 +414,8 @@ The CLI uses Typer for command definitions:
 
 ## Debugging
 
-- `uv run poe test-codelinks -- --pdb` drops into the debugger on a failure
+- `uv run poe test-codelinks --pdb` drops into the debugger on a failure (no `--` — see
+  Testing Guidelines above for why it breaks the passthrough)
 - `-v` for verbose output, `--log-cli-level=DEBUG` for logging
 - the docs task already passes `-T`, so a docs failure prints a full traceback
 - `sphinx_extension/debug.py` holds the development helpers (`measure_time`, the timing

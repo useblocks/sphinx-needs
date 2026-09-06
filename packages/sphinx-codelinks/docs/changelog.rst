@@ -86,10 +86,10 @@ New and Improved
   ``uv run poe lint``, which runs the whole workspace's hook set. Type checking moves from
   mypy to `ty <https://github.com/astral-sh/ty>`__ -- ``uv run poe typecheck`` -- the
   ``mypy`` dependency group becomes a ``typing`` one that pins the oldest supported Sphinx
-  and docutils, and the 61 ``# type: ignore`` comments become 17 ``# ty: ignore`` ones. The dead ``pydantic.mypy`` plugin -- nothing in
-  the package imports pydantic -- and the unused ``pytest-docker``, ``moto`` and ``psutil``
-  test dependencies go with it. No behaviour changed; the whole diff is import order,
-  suppressions and configuration.
+  and docutils, and the 61 ``# type: ignore`` comments become 17 ``# ty: ignore`` ones.
+  The dead ``pydantic.mypy`` plugin -- nothing in the package imports pydantic -- and the
+  unused ``pytest-docker``, ``moto`` and ``psutil`` test dependencies go with it. No
+  behaviour changed; the whole diff is import order, suppressions and configuration.
 
 - ‼️ Sphinx-Needs 8.5 or newer is now required (previously 5.0 or newer).
 
@@ -119,10 +119,10 @@ New and Improved
 
   ``docs/source/*`` is now ``docs/*``, and the docs build no longer passes ``-c``:
   ``sphinx-build -nW --keep-going -b html docs docs/_build/html`` is what
-  ``uv run poe docs-codelinks`` runs and what Read the Docs runs by itself. A ``.readthedocs.yaml`` comes with it, and the
-  ``docs`` requirements move from a dependency group to a ``docs`` extra, which is the only
-  form Read the Docs can install. The rendered site is unchanged; only the "edit this page"
-  links point at the new paths.
+  ``uv run poe docs-codelinks`` runs and what Read the Docs runs by itself. A
+  ``.readthedocs.yaml`` comes with it, and the ``docs`` requirements move from a dependency
+  group to a ``docs`` extra, which is the only form Read the Docs can install. The
+  rendered site is unchanged; only the "edit this page" links point at the new paths.
 
 - ✨ The default configuration file is now ``ubproject.toml``.
 
