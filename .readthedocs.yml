@@ -39,10 +39,15 @@ build:
       # and touched this package, the build runs although the pull request did not touch it.
       # That is the safe direction; it never skips a build that was needed.
       #
-      # `packages/sphinx-needs/` plus this file is the complete set of inputs: `python.install`
-      # below pip-installs the package directory with its own extras (the root manifest and
-      # `uv.lock` take no part), `docs/conf.py` reads only files under `docs/`, and every
-      # `literalinclude` in the docs stays inside the package (`../../tests/doc_test/…`).
+      # FOUR paths, and the last two are recent: `python.install` below pip-installs the
+      # package directory with its own extras (the root manifest and `uv.lock` take no
+      # part), and every `literalinclude` in the docs stays inside the package
+      # (`../../tests/doc_test/…`) -- but `docs/conf.py` no longer reads only files under
+      # `docs/`. It reads `vendor/plantuml/pin.toml` to find the renderer, and the
+      # `post_install` job below runs `tools/src/sn_tools/fetch_plantuml.py` to put it
+      # there. Without those two here, a pull request that bumps the pin or changes the
+      # fetch script would skip THIS build -- the only one that renders these docs under
+      # `fail_on_warning` -- and report `success` to GitHub for a renderer nobody tried.
       # Branch and tag builds (`latest`, `stable`, releases) are never cancelled.
       - |
         if [ "$READTHEDOCS_VERSION_TYPE" != "external" ]; then
@@ -52,8 +57,8 @@ build:
           echo "origin/master is not available in this clone; building to be safe"
           exit 0
         fi
-        if git diff --quiet origin/master -- packages/sphinx-needs/ .readthedocs.yml; then
-          echo "nothing under packages/sphinx-needs/ or in .readthedocs.yml changed; skipping this build (exit 183)"
+        if git diff --quiet origin/master -- packages/sphinx-needs/ .readthedocs.yml vendor/ tools/; then
+          echo "nothing under packages/sphinx-needs/, vendor/, tools/ or in .readthedocs.yml changed; skipping this build (exit 183)"
           exit 183
         fi
     pre_create_environment:

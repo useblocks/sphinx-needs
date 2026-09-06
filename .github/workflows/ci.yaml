@@ -188,6 +188,14 @@ jobs:
       codecov-flag: pytests
       codecov-name: sphinx-need-pytests
       upload-coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14' }}
+      # The whole sphinx-needs suite renders, and not only its uml tests: `test_app` takes
+      # the `plantuml_command` fixture, which RAISES rather than skipping when it can find
+      # no renderer -- so every test that goes through that fixture errors without a jar,
+      # 478 of them, measured in this exact shape. These cells run bare `pytest`, not `poe`,
+      # so the tasks' `deps = ["fetch-plantuml"]` never fires and this input is the only
+      # thing that fetches for them. It went unnoticed because until this arc route (2) was
+      # a jar committed in the tree, which `actions/checkout` brought along
+      needs-plantuml: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -221,8 +229,14 @@ jobs:
         # `--no-project` means it runs before anything is synced. It prints the jar's path
         # on stdout and everything else on stderr; the assignment is what makes a failed
         # fetch fail THIS step under the runner's `set -e`
+        shell: bash
         run: |
-          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py)"
+          # `tr -d '\r'`: on Windows python's `print()` writes CRLF, and `$( )` strips
+          # trailing NEWLINES, not carriage returns -- so without this the variable can
+          # carry a CR into `$GITHUB_ENV`. `shell: bash` above is what keeps the
+          # assignment fail-fast through the pipe: it selects `bash -eo pipefail`, where
+          # the pipeline takes the fetch's non-zero status rather than `tr`'s zero
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Install the cell
         # `js` is the browser driver (pytest-playwright); it is not in `test`, because only
@@ -258,8 +272,14 @@ jobs:
         # `--no-project` means it runs before anything is synced. It prints the jar's path
         # on stdout and everything else on stderr; the assignment is what makes a failed
         # fetch fail THIS step under the runner's `set -e`
+        shell: bash
         run: |
-          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py)"
+          # `tr -d '\r'`: on Windows python's `print()` writes CRLF, and `$( )` strips
+          # trailing NEWLINES, not carriage returns -- so without this the variable can
+          # carry a CR into `$GITHUB_ENV`. `shell: bash` above is what keeps the
+          # assignment fail-fast through the pipe: it selects `bash -eo pipefail`, where
+          # the pipeline takes the fetch's non-zero status rather than `tr`'s zero
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Install Dependencies
         run: |
@@ -344,8 +364,14 @@ jobs:
         # `--no-project` means it runs before anything is synced. It prints the jar's path
         # on stdout and everything else on stderr; the assignment is what makes a failed
         # fetch fail THIS step under the runner's `set -e`
+        shell: bash
         run: |
-          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py)"
+          # `tr -d '\r'`: on Windows python's `print()` writes CRLF, and `$( )` strips
+          # trailing NEWLINES, not carriage returns -- so without this the variable can
+          # carry a CR into `$GITHUB_ENV`. `shell: bash` above is what keeps the
+          # assignment fail-fast through the pipe: it selects `bash -eo pipefail`, where
+          # the pipeline takes the fetch's non-zero status rather than `tr`'s zero
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - uses: bazel-contrib/setup-bazel@0.19.0
         with:

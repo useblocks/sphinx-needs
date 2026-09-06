@@ -154,7 +154,12 @@ jobs:
         if: inputs.needs-plantuml
         shell: bash
         run: |
-          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py)"
+          # `tr -d '\r'`: on Windows python's `print()` writes CRLF, and `$( )` strips
+          # trailing NEWLINES, not carriage returns -- so without this the variable can
+          # carry a CR into `$GITHUB_ENV`. `shell: bash` above is what keeps the
+          # assignment fail-fast through the pipe: it selects `bash -eo pipefail`, where
+          # the pipeline takes the fetch's non-zero status rather than `tr`'s zero
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Check the renderers this cell asked for are really there
         # `choco install graphviz` EXITS 0 WHEN THE FEED FAILS. Measured on run

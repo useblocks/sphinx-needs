@@ -27,6 +27,10 @@ packages/sphinx-mounts/docs/superpowers/
 # ~30 MB, this repository already carries 49.9 MB of jar blobs in its history from the two
 # it used to vendor, and a fetched-and-checksummed file is the same bytes for everyone.
 vendor/plantuml/*.jar
+# and the temp file the fetch downloads into. It is removed on a failed download and
+# renamed into place on a successful one, but a Ctrl-C or a SIGKILL mid-fetch leaves it --
+# and an untracked ~30 MB blob would then dirty the tree and join `prek run --all-files`
+vendor/plantuml/.plantuml-*.part
 
 # `bazel build` in packages/sphinx-mounts/tests/example writes these convenience symlinks
 # into the workspace; the root pytest `norecursedirs` skips them for the same reason

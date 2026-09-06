@@ -21,8 +21,14 @@ jobs:
         # `--no-project` means it runs before anything is synced. It prints the jar's path
         # on stdout and everything else on stderr; the assignment is what makes a failed
         # fetch fail THIS step under the runner's `set -e`
+        shell: bash
         run: |
-          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py)"
+          # `tr -d '\r'`: on Windows python's `print()` writes CRLF, and `$( )` strips
+          # trailing NEWLINES, not carriage returns -- so without this the variable can
+          # carry a CR into `$GITHUB_ENV`. `shell: bash` above is what keeps the
+          # assignment fail-fast through the pipe: it selects `bash -eo pipefail`, where
+          # the pipeline takes the fetch's non-zero status rather than `tr`'s zero
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Install dependencies
         # `benchmark` is one of the root's shared groups and includes the root's `test`
