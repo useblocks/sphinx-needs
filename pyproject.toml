@@ -25,7 +25,12 @@ requires-python = ">=3.11,<4"
 # virtual (`[tool.uv] package = false`), so what this line installs for it is its
 # DEPENDENCIES, not the member: that is how `packaging` and `tomlkit` reach every
 # environment from one declaration in `tools/pyproject.toml`.
-dependencies = ["sphinx-needs", "sphinx-mounts", "sphinx-needs-workspace-tools"]
+dependencies = [
+  "sphinx-needs",
+  "sphinx-mounts",
+  "sphinx-codelinks",
+  "sphinx-needs-workspace-tools",
+]
 
 # Pass-throughs to the members' published extras, and the reason they have to exist: uv
 # resolves `--extra` (and poe's `extra =`) against the PROJECT, which is now this root, so
@@ -39,6 +44,14 @@ docs = ["sphinx-needs[docs]"]
 # sphinx-mounts publishes an extra called `docs` too, and an extra name is unique across
 # this table, so the pass-through is named for the package, the way its poe task is
 docs-mounts = ["sphinx-mounts[docs]"]
+# and so does sphinx-codelinks
+docs-codelinks = ["sphinx-codelinks[docs]"]
+# sphinx-codelinks' optional preprocessor-aware C/C++ engine. CI drives it from the
+# `codelinks-libclang` GROUP below rather than through this line -- a group composes with
+# `--no-default-groups --group test --group sphinx-N` without changing the shape of the
+# command -- but a member's published extra should be reachable by name, and
+# `import-check-codelinks` asks for it by name
+codelinks-libclang = ["sphinx-codelinks[libclang]"]
 theme-im = ["sphinx-needs[theme-im]"]
 theme-furo = ["sphinx-needs[theme-furo]"]
 theme-pds = ["sphinx-needs[theme-pds]"]
@@ -47,6 +60,7 @@ theme-rtd = ["sphinx-needs[theme-rtd]"]
 [tool.uv.sources]
 sphinx-needs = { workspace = true }
 sphinx-mounts = { workspace = true }
+sphinx-codelinks = { workspace = true }
 sphinx-needs-workspace-tools = { workspace = true }
 
 # `packages/*` is the published distributions; `tools` is the repository's own tooling and
@@ -96,7 +110,22 @@ test = [
   "pytest-xdist~=3.0",               # for `pytest -n auto`
   "beautifulsoup4>=4.12",            # sphinx-mounts: HTML assertions
   "sphinxcontrib-mermaid>=1.0.0",    # sphinx-mounts: path-directive rendering
+  # sphinx-codelinks: `tests/test_cmd.py` WRITES toml, and the stdlib's tomllib only reads
+  "toml>=0.10.2",
+  # sphinx-codelinks: `tests/data/sphinx` and `tests/data/needextend_demo` set
+  # `html_theme = "furo"` and `test_src_trace.py` builds the first, so this is a test
+  # dependency there rather than a docs one. It costs nothing in the lock -- it is already
+  # here through `sphinx-needs[theme-furo]` -- only in what the `test` group installs
+  "furo>=2024.5.6",
 ]
+# sphinx-codelinks' optional libclang engine, in a group of its own because only the job
+# that runs its suite wants it: the wheel is 23 MiB and 81 MB on disk, and 56 of its 351
+# tests use it. Every other cell of every package would pay for a renderer it never calls.
+# Without it that suite degrades honestly -- 295 passed, 26 skipped -- which is what the
+# `pytest.importorskip("clang.cindex")` guards are for. The floor is 18 rather than the
+# member extra's 16 because 18 is what has been run here; the extra states the wider range
+# the published package supports.
+codelinks-libclang = ["libclang>=18"]
 # The browser tests (`-m jstest`). Kept out of `test` on purpose: `test` is what the CI
 # matrix cells install, and only the two JS cells want a browser driver -- they add
 # `--group js` themselves. `dev` includes it, so a bare `uv sync` can run them. The
@@ -121,6 +150,11 @@ typing = [
   "docutils~=0.20.0",
   "types-docutils~=0.20.0",
   "types-requests",
+  # sphinx-codelinks: without these two, `jsonschema.validate` and the pygments imports are
+  # untyped, and its five `# ty: ignore[...]` comments suppress nothing -- which the
+  # `error-on-warning` ratchet below then reports as unused
+  "types-Pygments",
+  "types-jsonschema>=4.23.0.20241208",
   "ty~=0.0.77",
 ]
 
@@ -210,6 +244,8 @@ src = [
   "packages/sphinx-needs/src",
   "packages/sphinx-mounts",
   "packages/sphinx-mounts/src",
+  "packages/sphinx-codelinks",
+  "packages/sphinx-codelinks/src",
 ]
 
 [tool.ruff.lint]
@@ -232,6 +268,17 @@ extend-select = [
 # ISC004 is ignored for now: every occurrence here is a deliberately wrapped string
 # literal and its only fix is unsafe, so adopting it belongs with the wider ruleset review
 extend-ignore = ["B904", "ISC001", "ISC004", "ICN001", "N818", "RUF012"]
+
+# The one per-file table in this configuration, and it is SCOPED to the package that needs
+# it rather than written as `**/tests/*`: at the root that glob would silently loosen
+# sphinx-needs', sphinx-mounts' and `tools/`' suites too. It is the member's own entry,
+# re-rooted -- the root has no per-file-ignores of its own to extend.
+[tool.ruff.lint.per-file-ignores]
+"packages/sphinx-codelinks/tests/*" = [
+  "E402",   # the `pytest.importorskip("clang.cindex")` guard has to precede the imports
+  "SIM300", # `loader.PARSE_OPTIONS` reads as a constant, so `assert PARSE_OPTIONS == x`
+  # looks like a Yoda condition; the fix would reverse a deliberate assert order
+]
 
 [tool.ruff.format]
 # ruff 0.16 formats python code blocks embedded in markdown; the conformance corpus is
@@ -263,6 +310,7 @@ include = [
   # the whole `src` tree, which is how the member's own (now deleted) ty configuration
   # named it: sphinx_mounts is the only module under it
   "packages/sphinx-mounts/src",
+  "packages/sphinx-codelinks/src",
   "tools/src",
   ".github/scripts",
   "scripts",
@@ -283,6 +331,9 @@ python = ".venvs/typing"
 [tool.ty.analysis]
 # modules without type information that the floor environment does not install
 allowed-unresolved-imports = [
+  # sphinx-codelinks' optional libclang engine: `clang.cindex` ships no py.typed and sits
+  # behind the `libclang` extra at runtime, so the typing floor deliberately lacks it
+  "clang.**",
   "matplotlib",
   "matplotlib.**",
   "requests_file",
@@ -448,7 +499,7 @@ help = "Type-check every package with ty against the oldest supported sphinx (th
 # but it is NOT a fence on `src.include` above: ty intersects the two, so a stale `include`
 # makes this check zero files and exit 0. The canary step in ci.yaml's Lint job is what
 # guards that.
-cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts tools/src .github/scripts scripts --python .venvs/typing"
+cmd = "ty check packages/sphinx-needs/src/sphinx_needs packages/sphinx-mounts/src/sphinx_mounts packages/sphinx-codelinks/src/sphinx_codelinks tools/src .github/scripts scripts --python .venvs/typing"
 executor = { type = "uv", frozen = true, no-group = "dev", group = ["typing"] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 

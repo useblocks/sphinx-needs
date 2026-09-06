@@ -2904,14 +2904,21 @@ name = "sphinx-needs-workspace"
 version = "0"
 source = { virtual = "." }
 dependencies = [
+    { name = "sphinx-codelinks" },
     { name = "sphinx-mounts" },
     { name = "sphinx-needs" },
     { name = "sphinx-needs-workspace-tools" },
 ]
 
 [package.optional-dependencies]
+codelinks-libclang = [
+    { name = "sphinx-codelinks", extra = ["libclang"] },
+]
 docs = [
     { name = "sphinx-needs", extra = ["docs"] },
+]
+docs-codelinks = [
+    { name = "sphinx-codelinks", extra = ["docs"] },
 ]
 docs-mounts = [
     { name = "sphinx-mounts", extra = ["docs"] },
@@ -2936,6 +2943,7 @@ theme-rtd = [
 benchmark = [
     { name = "beautifulsoup4" },
     { name = "defusedxml" },
+    { name = "furo" },
     { name = "lxml" },
     { name = "matplotlib" },
     { name = "memray", marker = "sys_platform != 'win32' or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-8') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing')" },
@@ -2951,10 +2959,15 @@ benchmark = [
     { name = "sphinxcontrib-mermaid" },
     { name = "sphinxcontrib-plantuml" },
     { name = "syrupy" },
+    { name = "toml" },
+]
+codelinks-libclang = [
+    { name = "libclang" },
 ]
 dev = [
     { name = "beautifulsoup4" },
     { name = "defusedxml" },
+    { name = "furo" },
     { name = "lxml" },
     { name = "matplotlib" },
     { name = "myst-parser", version = "4.0.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-typing' or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9')" },
@@ -2971,6 +2984,7 @@ dev = [
     { name = "sphinxcontrib-mermaid" },
     { name = "sphinxcontrib-plantuml" },
     { name = "syrupy" },
+    { name = "toml" },
     { name = "uv" },
 ]
 js = [
@@ -2988,6 +3002,7 @@ sphinx-9 = [
 test = [
     { name = "beautifulsoup4" },
     { name = "defusedxml" },
+    { name = "furo" },
     { name = "lxml" },
     { name = "matplotlib" },
     { name = "myst-parser", version = "4.0.1", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-typing' or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9')" },
@@ -3001,17 +3016,23 @@ test = [
     { name = "sphinxcontrib-mermaid" },
     { name = "sphinxcontrib-plantuml" },
     { name = "syrupy" },
+    { name = "toml" },
 ]
 typing = [
     { name = "docutils", version = "0.20.1", source = { registry = "https://pypi.org/simple" } },
     { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" } },
     { name = "ty" },
     { name = "types-docutils" },
+    { name = "types-jsonschema" },
+    { name = "types-pygments" },
     { name = "types-requests" },
 ]
 
 [package.metadata]
 requires-dist = [
+    { name = "sphinx-codelinks", editable = "packages/sphinx-codelinks" },
+    { name = "sphinx-codelinks", extras = ["docs"], marker = "extra == 'docs-codelinks'", editable = "packages/sphinx-codelinks" },
+    { name = "sphinx-codelinks", extras = ["libclang"], marker = "extra == 'codelinks-libclang'", editable = "packages/sphinx-codelinks" },
     { name = "sphinx-mounts", editable = "packages/sphinx-mounts" },
     { name = "sphinx-mounts", extras = ["docs"], marker = "extra == 'docs-mounts'", editable = "packages/sphinx-mounts" },
     { name = "sphinx-needs", editable = "packages/sphinx-needs" },
@@ -3023,12 +3044,13 @@ requires-dist = [
     { name = "sphinx-needs", extras = ["theme-rtd"], marker = "extra == 'theme-rtd'", editable = "packages/sphinx-needs" },
     { name = "sphinx-needs-workspace-tools", virtual = "tools" },
 ]
-provides-extras = ["plotting", "docs", "docs-mounts", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
+provides-extras = ["plotting", "docs", "docs-mounts", "docs-codelinks", "codelinks-libclang", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
 
 [package.metadata.requires-dev]
 benchmark = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "defusedxml", specifier = "~=0.7.1" },
+    { name = "furo", specifier = ">=2024.5.6" },
     { name = "lxml", specifier = "~=6.1" },
     { name = "matplotlib", specifier = ">=3.3.0" },
     { name = "memray", marker = "sys_platform != 'win32'", specifier = ">=1.3.1,<2.0.0" },
@@ -3043,10 +3065,13 @@ benchmark = [
     { name = "sphinxcontrib-mermaid", specifier = ">=1.0.0" },
     { name = "sphinxcontrib-plantuml", specifier = ">=0.30,<1" },
     { name = "syrupy", specifier = ">=4,<7" },
+    { name = "toml", specifier = ">=0.10.2" },
 ]
+codelinks-libclang = [{ name = "libclang", specifier = ">=18" }]
 dev = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "defusedxml", specifier = "~=0.7.1" },
+    { name = "furo", specifier = ">=2024.5.6" },
     { name = "lxml", specifier = "~=6.1" },
     { name = "matplotlib", specifier = ">=3.3.0" },
     { name = "myst-parser", specifier = ">=4,<6" },
@@ -3062,6 +3087,7 @@ dev = [
     { name = "sphinxcontrib-mermaid", specifier = ">=1.0.0" },
     { name = "sphinxcontrib-plantuml", specifier = ">=0.30,<1" },
     { name = "syrupy", specifier = ">=4,<7" },
+    { name = "toml", specifier = ">=0.10.2" },
     { name = "uv", specifier = ">=0.12.9" },
 ]
 js = [{ name = "pytest-playwright", specifier = "~=0.9" }]
@@ -3071,6 +3097,7 @@ sphinx-9 = [{ name = "sphinx", marker = "python_full_version >= '3.12'", specifi
 test = [
     { name = "beautifulsoup4", specifier = ">=4.12" },
     { name = "defusedxml", specifier = "~=0.7.1" },
+    { name = "furo", specifier = ">=2024.5.6" },
     { name = "lxml", specifier = "~=6.1" },
     { name = "matplotlib", specifier = ">=3.3.0" },
     { name = "myst-parser", specifier = ">=4,<6" },
@@ -3083,12 +3110,15 @@ test = [
     { name = "sphinxcontrib-mermaid", specifier = ">=1.0.0" },
     { name = "sphinxcontrib-plantuml", specifier = ">=0.30,<1" },
     { name = "syrupy", specifier = ">=4,<7" },
+    { name = "toml", specifier = ">=0.10.2" },
 ]
 typing = [
     { name = "docutils", specifier = "~=0.20.0" },
     { name = "sphinx", specifier = "~=7.4" },
     { name = "ty", specifier = "~=0.0.77" },
     { name = "types-docutils", specifier = "~=0.20.0" },
+    { name = "types-jsonschema", specifier = ">=4.23.0.20241208" },
+    { name = "types-pygments" },
     { name = "types-requests" },
 ]
 
@@ -3315,6 +3345,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/00/21/39a76b01bd5eea82a04baaca7580e105d8c59450df03998345bb2cfb307b/textual-8.2.8.tar.gz", hash = "sha256:3f106a9fbc73e39dd266c9712432087de78a6d644084c7c241d6a25c3169115b", size = 1860502, upload-time = "2026-06-30T06:51:24.495Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fb/be/35261223d9416a0751cdff1c7b4a6f881387218a12d439fe22fefebc8c04/textual-8.2.8-py3-none-any.whl", hash = "sha256:267375fd402dc8d981457212efa71f0e3365fd17bba144ba9bb3ed7563cb374a", size = 731418, upload-time = "2026-06-30T06:51:26.364Z" },
+]
+
+[[package]]
+name = "toml"
+version = "0.10.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/be/ba/1f744cdc819428fc6b5084ec34d9b30660f6f9daaf70eead706e3203ec3c/toml-0.10.2.tar.gz", hash = "sha256:b3bda1d108d5dd99f4a20d24d9c348e91c4db7ab1b749200bded2f839ccbe68f", size = 22253, upload-time = "2020-11-01T01:40:22.204Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/44/6f/7120676b6d73228c96e17f1f794d8ab046fc910d781c8d151120c3f1569e/toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b", size = 16588, upload-time = "2020-11-01T01:40:20.672Z" },
 ]
 
 [[package]]
@@ -3589,6 +3628,27 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/03/2d/1eaa21bdb976db924ce458323bf2d21d82b4c95599080f61c181961764d1/types-docutils-0.20.0.20240406.tar.gz", hash = "sha256:e8ec4a5a125d06d8632bbaac8a11fbea18a1edfa94df9c5129dc45980915b84b", size = 19423, upload-time = "2024-04-06T02:13:17.51Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/bd/53/fe423688467176bd4a08b24df8f5c4ae24b2f8e8f81867a34ee80c40e3fc/types_docutils-0.20.0.20240406-py3-none-any.whl", hash = "sha256:f1966b05087c0e1227c399281ecc796cb67d0afc23398d7c5c95b3355de14113", size = 26976, upload-time = "2024-04-06T02:13:15.173Z" },
+]
+
+[[package]]
+name = "types-jsonschema"
+version = "4.26.0.20260518"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "referencing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/dd/46/73b6a5d61a61015c4248030a8cb07e5bdddb4041430fae9e585a68692578/types_jsonschema-4.26.0.20260518.tar.gz", hash = "sha256:e1dd53dc97a64f5eccdd6fa9839666e09bb500a8ebba2db6fdaf1789faea81a6", size = 16638, upload-time = "2026-05-18T06:06:44.106Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/d5/134f8a147dcecda10db7f60cfc6af0578a25a5c53c87b3907a64385e0184/types_jsonschema-4.26.0.20260518-py3-none-any.whl", hash = "sha256:30b30a518c7fe335df85c919fcbcc631b69c03d4a4b5b632fa916bea03065307", size = 16072, upload-time = "2026-05-18T06:06:43.264Z" },
+]
+
+[[package]]
+name = "types-pygments"
+version = "2.21.0.20260819"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/84/2b/b3e929c39fb056f0e44560acbe53a7c3f28f428af5362d043642d80b31ec/types_pygments-2.21.0.20260819.tar.gz", hash = "sha256:68e0cb27115b08b681c843e30a153b5d9850c048e1158623ada36ccd4cf7e89b", size = 21509, upload-time = "2026-08-19T02:47:15.827Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/a5/10a2de06b53a36f4334391fcf292b51877cbc71d3f6eac353e7b87a0a17e/types_pygments-2.21.0.20260819-py3-none-any.whl", hash = "sha256:85e216770d616db6a7e96fb70c2de9d9f283b746c37edb7768ce645bdbcaddb2", size = 29099, upload-time = "2026-08-19T02:47:14.81Z" },
 ]
 
 [[package]]
