@@ -45,9 +45,10 @@ without a commit.
   between bumps.
 - **The cost, stated.** One ~30 MB blob enters the history at each bump, for ever. Before this
   change the repository already carried **six** jar blobs, 49,933,998 bytes, from the two it
-  used to vendor; this one makes seven and 79,805,495 bytes (`git rev-list --objects <ref> |
-  grep '\.jar$'`, then `git cat-file --batch-check`). That is accepted because bumps are rare
-  — the jar this replaces was four years old — but it is not free, and two things bound it:
+  used to vendor; this one makes seven and 79,805,495 bytes. (Count them with
+  `git rev-list --objects <ref>`, filtered to `.jar`, through `git cat-file --batch-check`.)
+  That is accepted because bumps are rare — the jar this replaces was four years old — but it
+  is not free, and two things bound it:
   **GitHub warns above 50 MB and refuses a file above 100 MB**, and PlantUML's jar has roughly
   tripled in four years (10,071,904 B at 1.2022.5, 29,871,497 B at 1.2026.8). If a future
   release crosses 50 MB, this bargain has to be re-made rather than repeated.
