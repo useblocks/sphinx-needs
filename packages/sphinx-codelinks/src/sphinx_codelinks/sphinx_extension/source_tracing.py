@@ -10,7 +10,6 @@ from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
 from sphinx.util import logging
 from sphinx.util.fileutil import copy_asset
-from sphinx_needs.api import add_field, add_need_type
 
 from sphinx_codelinks.analyse.projects import AnalyseProjects
 from sphinx_codelinks.config import (
@@ -30,6 +29,7 @@ from sphinx_codelinks.sphinx_extension.directives.src_trace import (
     SourceTracingDirective,
 )
 from sphinx_codelinks.sphinx_extension.html_wrapper import html_wrapper
+from sphinx_needs.api import add_field, add_need_type
 
 logger = logging.getLogger(__name__)
 

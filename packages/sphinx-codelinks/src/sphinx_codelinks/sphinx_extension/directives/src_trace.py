@@ -8,8 +8,6 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
-from sphinx_needs.api import add_need
-from sphinx_needs.utils import add_doc
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.models import OneLineNeed
@@ -22,6 +20,8 @@ from sphinx_codelinks.config import (
 from sphinx_codelinks.source_discover.config import SourceDiscoverConfig
 from sphinx_codelinks.source_discover.source_discover import SourceDiscover
 from sphinx_codelinks.sphinx_extension.debug import measure_time
+from sphinx_needs.api import add_need
+from sphinx_needs.utils import add_doc
 
 logger = logging.getLogger(__name__)
 
