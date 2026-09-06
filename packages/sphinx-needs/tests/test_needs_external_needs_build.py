@@ -84,7 +84,13 @@ def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
 )
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needs_external_needs",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_external_needs_base_url_relative_path(test_app):

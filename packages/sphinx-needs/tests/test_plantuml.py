@@ -5,7 +5,13 @@ import pytest
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/plantuml_from_ext_list"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/plantuml_from_ext_list",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_plantuml_from_ext_list(test_app, get_warnings_list):
@@ -19,7 +25,13 @@ def test_plantuml_from_ext_list(test_app, get_warnings_list):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/plantuml_from_app_extension"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/plantuml_from_app_extension",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_plantuml_from_app_extension(test_app, get_warnings_list):

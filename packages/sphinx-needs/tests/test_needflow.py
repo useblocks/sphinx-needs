@@ -74,6 +74,7 @@ def _get_svg(config: Config, outdir: Path, file: str, id: str) -> str:
             "buildername": "html",
             "srcdir": "doc_test/doc_needflow",
             "confoverrides": {"needs_flow_engine": "plantuml"},
+            "plantuml": True,
         },
         {
             "buildername": "html",
@@ -165,6 +166,7 @@ def test_doc_build_html(test_app):
             "buildername": "html",
             "srcdir": "doc_test/doc_needflow_incl_child_needs",
             "confoverrides": {"needs_flow_engine": "plantuml"},
+            "plantuml": True,
         },
         {
             "buildername": "html",

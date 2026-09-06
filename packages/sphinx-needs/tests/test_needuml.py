@@ -177,7 +177,13 @@ def test_needumls_builder(test_app, snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_filter"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needuml_filter",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_needuml_filter(test_app, snapshot):
@@ -201,7 +207,13 @@ def test_needuml_filter(test_app, snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_flow"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needuml_jinja_func_flow",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_needuml_jinja_func_flow(test_app, snapshot):
@@ -275,7 +287,13 @@ def test_doc_needarch_jinja_import_negative(test_app):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_jinja_func_ref"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needuml_jinja_func_ref",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_needuml_jinja_func_ref(test_app, snapshot):
@@ -308,7 +326,13 @@ def test_needuml_jinja_func_ref(test_app, snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needuml_option_warnings"}],
+    [
+        {
+            "buildername": "html",
+            "srcdir": "doc_test/doc_needuml_option_warnings",
+            "plantuml": True,
+        }
+    ],
     indirect=True,
 )
 def test_needuml_option_warnings(test_app):
