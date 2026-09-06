@@ -22,7 +22,7 @@ COMMENT_FILETYPE = {
 }
 
 
-class CommentType(str, Enum):
+class CommentType(str, Enum):  # noqa: UP042  # StrEnum changes str(member), which reaches CLI warnings and error messages
     python = "python"
     cpp = "cpp"
     cs = "cs"
@@ -100,10 +100,10 @@ class SourceDiscoverConfig:
     """The file types to discover."""
 
     @classmethod
-    def get_schema(cls, name: str) -> dict[str, Any] | None:  # type: ignore[explicit-any]
+    def get_schema(cls, name: str) -> dict[str, Any] | None:
         _field = next(_field for _field in fields(cls) if _field.name is name)
         if _field.metadata and "schema" in _field.metadata:
-            return cast(dict[str, Any], _field.metadata["schema"])  # type: ignore[explicit-any]
+            return cast(dict[str, Any], _field.metadata["schema"])
         return None
 
     def check_schema(self) -> list[str]:
@@ -114,7 +114,10 @@ class SourceDiscoverConfig:
             if isinstance(value, Path):  # adapt to json schema restriction
                 value = str(value)
             try:
-                validate(instance=value, schema=schema)  # type: ignore[arg-type]  # validate has no type specified
+                validate(
+                    instance=value,
+                    schema=schema,  # ty: ignore[invalid-argument-type]
+                )  # validate has no type specified
             except ValidationError as e:
                 errors.append(
                     f"Schema validation error in field '{_field_name}': {e.message}"

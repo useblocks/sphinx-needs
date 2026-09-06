@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import shlex
+from pathlib import Path
 
 from sphinx_codelinks.config import DEFAULT_CPP_STD
 

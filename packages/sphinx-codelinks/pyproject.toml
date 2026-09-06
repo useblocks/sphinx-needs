@@ -78,124 +78,119 @@ build-backend = "flit_core.buildapi"
 testing = [
   "pytest>=8.2.2",
   "pytest-cov>=5.0.0",
-  "pytest-docker>=3.1.2",
   "syrupy>=4.9.1",
-  "psutil>=7.0.0",
-  "moto ~= 5.0",
+  # tests/test_extraction_fixtures.py imports it directly. It used to arrive by accident,
+  # through moto -> responses -> pyyaml; with moto gone it has to be declared
+  "pyyaml>=6.0",
   "toml>=0.10.2",
   # not a docs dependency here: tests/data/sphinx and tests/data/needextend_demo set
   # `html_theme = "furo"`, and test_src_trace.py builds the first of them
   "furo>=2024.5.6",
   "libclang>=18",
 ]
-mypy = [
-  "mypy>=1.12.1",
-  "pydantic ~= 2.9",
-  "types-docutils",
+# modelled on the sphinx-needs workspace root's `typing` group: ty at the root's series,
+# plus the OLDEST supported sphinx and docutils, so the gate checks the floor rather than
+# whatever happens to be newest. `pydantic` is gone with the mypy plugin that needed it --
+# nothing in `src/` or `tests/` imports pydantic.
+typing = [
+  "ty~=0.0.77",
+  "sphinx~=7.4",
+  "docutils~=0.20.0",
+  "types-docutils~=0.20.0",
   "types-Pygments",
-  "types-psutil>=7.0.0.20250218",
   "types-jsonschema>=4.23.0.20241208",
 ]
-ruff = ["ruff>=0.8.0"]
+# the rev .pre-commit-config.yaml pins, which is the sphinx-needs workspace's
+ruff = ["ruff>=0.16.5"]
 build = ["simple-build>=0.0.2", "shiv>=1.0.8"]
 
 [project.scripts]
 codelinks = "sphinx_codelinks.cmd:app"
 
+# THE WORKSPACE ROOT'S RULESET, copied verbatim except for `src` below and for the
+# per-file-ignores table further down, which the root does not have at all. sphinx-codelinks
+# is being imported into the sphinx-needs uv workspace, where `check_workspace.py` check (7)
+# refuses a `[tool.ruff]` table in a member -- because ruff resolves configuration per file
+# by walking up to the NEAREST pyproject.toml carrying one, so a member table does not
+# extend the root's, it REPLACES it. These tables therefore disappear at import and the
+# root's take over; keeping them identical now means the import is lint-neutral instead of
+# landing a tree-wide reformat in the same commit.
+[tool.ruff]
+# isort decides an import is first-party by finding the module under one of these roots.
+# The root of the workspace names `packages/<dist>` and `packages/<dist>/src`; here the
+# equivalent pair is this directory (for `tests` and `docs`) and `src` (for
+# `sphinx_codelinks` itself).
+src = [".", "src"]
+
 [tool.ruff.lint]
+# ruff's pre-0.16 default rule set, pinned explicitly.
+# ruff 0.16 replaced its default `select` wholesale, and this project only ever set
+# `extend-select`, so without this line the enabled set would change with every ruff
+# release. Adopting 0.16's much larger default set is a deliberate, separate decision.
+select = ["E4", "E7", "E9", "F"]
 extend-select = [
-  # "ANN",
-  "S",
-  "ARG",
-  "B",    # flake8-bugbear
-  "C4",   # flake8-comprehensions
-  "FURB", # refurb (modernising code)
-  "I",    # isort
-  "ICN",  # flake8-import-conventions
-  "ISC",  # flake8-implicit-str-concat
-  "N",    # pep8-naming
-  "PERF", # perflint (performance anti-patterns)
-  "PGH",  # pygrep-hooks
-  "PIE",  # flake8-pie
-  "PL",   # pylint
-  "PTH",  # flake8-use-pathlib
-  "RUF",  # Ruff-specific rules
-  "SIM",  # flake8-simplify
-  "SLF",  # private member access
-  "UP",   # pyupgrade
-  "T20",  # flake8-print
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "I",   # isort
+  "ICN", # flake8-import-conventions
+  "ISC", # flake8-implicit-str-concat
+  "N",   # pep8-naming
+  "RUF", # Ruff-specific rules
+  "SIM", # flake8-simplify
+  "UP",  # pyupgrade
 ]
-extend-ignore = [
-  "ISC001", # implicit-str-concat
-]
+# ISC004 is ignored for now: every occurrence here is a deliberately wrapped string
+# literal and its only fix is unsafe, so adopting it belongs with the wider ruleset review
+extend-ignore = ["B904", "ISC001", "ISC004", "ICN001", "N818", "RUF012"]
 
-[tool.ruff.lint.isort]
-split-on-trailing-comma = false
-force-sort-within-sections = true
-
+# The ONE table above that is not the root's: the root has no per-file-ignores at all, so
+# this rides alongside its ruleset rather than being part of it. What survives of this
+# repository's own entries is the rules the ruleset still selects -- the ones that named
+# S101, ARG0*, PLC0415, PLR2004 and T201 went with the rules they suppressed, and the
+# `debug.py` UP047 entry went because UP047 is silent at the 3.11 target this package now
+# declares. Measured cost if this last entry were dropped instead: 2 findings, both in
+# `tests/test_preproc_libclang.py`. At import it moves to the workspace root, which is then
+# the only place a member's ruff configuration can live.
 [tool.ruff.lint.per-file-ignores]
 "**/tests/*" = [
-  "ARG001",  # unused-function-argument - fixtures
-  "ARG005",  # unused-lambda-argument - monkeypatches
-  "E402",    # module-import-not-at-top - pytest.importorskip guard pattern
-  "PLC0415", # import-outside-top-level - inline imports in test bodies
-  "PLR2004", # magic-value-comparison - valueable for tests
-  "S101",    # assert - needed for tests
-  "SIM300",  # yoda-conditions - assert order in tests is intentional
-]
-"src/sphinx_codelinks/sphinx_extension/debug.py" = [
-  "T201",  # print - used for output
-  "UP047", # on-pep695-generic-function - it's generic
-]
-"src/sphinx_codelinks/cmd.py" = [
-  "PLC0415", # import on top - only import relevant modules by use cases
+  "E402",   # module-import-not-at-top - pytest.importorskip guard pattern
+  "SIM300", # yoda-conditions - assert order in tests is intentional
 ]
 
-[tool.mypy]
-exclude = ["tests/", "dist/", "docs/_build/", "docs/conf.py"]
-show_error_codes = true
-warn_unused_ignores = true
-warn_redundant_casts = true
-strict = true
-# disallow dynamic typing
-disallow_any_unimported = true
-disallow_any_expr = true
-# disallow_any_decorated = true
-disallow_any_explicit = true
-disallow_any_generics = true
-disallow_subclassing_any = true
-# dissallow untyped definitions and calls
-disallow_untyped_calls = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-disallow_untyped_decorators = true
+[tool.ruff.format]
+# the root excludes markdown from formatting, so that a repository-local formatter cannot
+# rewrite the python blocks in a shared corpus. Copied so that the import changes nothing
+# about how this repository's own markdown is treated.
+exclude = ["*.md"]
 
-plugins = ["pydantic.mypy"]
-mypy_path = "typings"
+# ty, configured the way the sphinx-needs workspace root configures it. `check_workspace.py`
+# check (7) refuses a `[tool.ty]` table in a member, so at import this moves to the root; the
+# point of having it here now is that the same rules and the same floor are in force before
+# and after, and the import lands no new diagnostics.
+[tool.ty.src]
+include = ["src/sphinx_codelinks"]
 
-[[tool.mypy.overrides]]
-# clang.cindex ships no type stubs / py.typed; the libclang engine wraps it.
-module = ["licensing.*", "tomlkit.*", "clang.*"]
-ignore_missing_imports = true
+[tool.ty.environment]
+# the floor, as the root does it: the oldest interpreter this package supports
+python-version = "3.11"
+# so a bare `ty check` and an editor extension see the same environment as the gate.
+# The workspace uses `.venvs/typing`; here the gate is `tox -e ty`, whose virtualenv is
+# `.tox/ty` -- create it with `tox -e ty` (or `tox devenv -e ty .tox/ty`) before running
+# `ty check` by hand.
+python = ".tox/ty"
 
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_any_explicit = false
-disallow_any_unimported = false
-disallow_untyped_defs = false
-disallow_any_expr = false
+[tool.ty.analysis]
+# modules with no type information that the typing environment does not install
+allowed-unresolved-imports = [
+  # the optional libclang engine; `clang.cindex` ships no py.typed and is not in the
+  # `typing` group, exactly as at runtime it is behind the `libclang` extra
+  "clang.**",
+]
 
-[[tool.mypy.overrides]]
-module = "sphinx_codelinks.*"
-disallow_any_unimported = false
-disallow_untyped_defs = false
-disallow_any_expr = false
-
-
-[tool.pydantic-mypy]
-init_forbid_extra = true
-init_typed = true
-warn_required_dynamic_aliases = true
+[tool.ty.terminal]
+# the unused-ignore ratchet: `unused-ignore-comment` is a warning by default, so without
+# this a suppression that stopped suppressing anything would pass
+error-on-warning = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

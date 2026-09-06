@@ -1,8 +1,8 @@
 # @Test suite for Sphinx extension source tracing functionality, TEST_EXT_1, test, [IMPL_LNK_1, IMPL_ONE_1, IMPL_MRST_1]
+import shutil
 from collections.abc import Callable
 from dataclasses import fields
 from pathlib import Path
-import shutil
 
 import pytest
 from sphinx.environment import CONFIG_OK
@@ -271,7 +271,7 @@ def test_incremental_build_keeps_src_trace_projects_unchanged(
 
     captured: dict[str, object] = {}
 
-    def capture_config_status(_app, env, _added, _changed, _removed):  # type: ignore[no-untyped-def]
+    def capture_config_status(_app, env, _added, _changed, _removed):
         # ``env-get-outdated`` fires during read() after the config comparison
         # but before config_status is reset to CONFIG_OK at the end of read().
         captured["status"] = env.config_status

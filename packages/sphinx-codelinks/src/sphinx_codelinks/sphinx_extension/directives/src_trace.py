@@ -1,6 +1,6 @@
+import os
 from collections.abc import Callable
 from dataclasses import replace
-import os
 from pathlib import Path
 from typing import Any, ClassVar, cast
 
@@ -8,8 +8,8 @@ from docutils import nodes
 from docutils.parsers.rst import directives
 from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective
-from sphinx_needs.api import add_need  # type: ignore[import-untyped]
-from sphinx_needs.utils import add_doc  # type: ignore[import-untyped]
+from sphinx_needs.api import add_need
+from sphinx_needs.utils import add_doc
 
 from sphinx_codelinks.analyse.analyse import SourceAnalyse
 from sphinx_codelinks.analyse.models import OneLineNeed
@@ -324,7 +324,7 @@ class SourceTracingDirective(SphinxDirective):
                     lineno=self.lineno,  # The line number where the directive is used
                     need_type=str(oneline_need.need["type"]),  # The type of the need
                     title=str(oneline_need.need["title"]),  # The title of the need
-                    **cast(dict[str, Any], kwargs),  # type: ignore[explicit-any]
+                    **cast(dict[str, Any], kwargs),
                 )
                 rendered_needs.extend(oneline_needs)
                 if local_url_field:

@@ -112,8 +112,8 @@ tox -e docs-live
 ### Code Quality
 
 ```bash
-# Type checking with mypy
-tox -e mypy
+# Type checking with ty
+tox -e ty
 
 # Linting with ruff (check only)
 tox -e ruff-check
@@ -128,7 +128,7 @@ pre-commit run --all-files
 ## Code Style Guidelines
 
 - **Formatter/Linter**: Ruff (configured in `pyproject.toml`)
-- **Type Checking**: Mypy with strict settings (configured in `pyproject.toml`)
+- **Type Checking**: [ty](https://github.com/astral-sh/ty) (configured in `pyproject.toml`, run with `tox -e ty`)
 - **Markdown**: Follow markdownlint rules for consistent and well-formatted Markdown files
 - **Pre-commit**: Use pre-commit hooks for consistent code style
 

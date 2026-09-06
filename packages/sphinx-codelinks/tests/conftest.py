@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from docutils.nodes import document
 import pytest
+from docutils.nodes import document
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 
 from sphinx_codelinks.config import OneLineCommentStyle

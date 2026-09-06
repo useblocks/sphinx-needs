@@ -1,11 +1,11 @@
 import logging
 from typing import Protocol
 
+import typer
 from rich.console import Console
 from rich.text import Text
 from sphinx import version_info as _sphinx_version_info
 from sphinx.util import logging as sphinx_logging
-import typer
 
 
 class Logger:

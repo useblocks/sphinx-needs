@@ -1,7 +1,7 @@
 # @Test suite for source file discovery with gitignore support, TEST_DISC_1, test, [IMPL_DISC_1]
 import json
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -263,7 +263,7 @@ def test_discover_fixture(case: dict, tmp_path: Path) -> None:
     # Optionally initialise a git repo (required for .gitignore support)
     if case.get("git_init", False):
         subprocess.run(
-            ["git", "init"],  # noqa: S607
+            ["git", "init"],
             cwd=str(tmp_path),
             check=True,
             capture_output=True,

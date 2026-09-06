@@ -13,10 +13,10 @@ validation (an untyped field defaults to ``""``, which is not stripped and trips
 ``unevaluatedProperties: false``).
 """
 
-from collections.abc import Callable
 import json
-from pathlib import Path
 import shutil
+from collections.abc import Callable
+from pathlib import Path
 
 from sphinx.testing.util import SphinxTestApp
 

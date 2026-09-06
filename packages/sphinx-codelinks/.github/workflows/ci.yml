@@ -32,8 +32,8 @@ jobs:
       # - uses: pre-commit/action@v3.0.1  # note we don't use this, since it calls ations/cache, which actually takes longer than without it
       - run: pre-commit run --all --show-diff-on-failure --color=always
 
-  mypy:
-    name: MyPy
+  ty:
+    name: Ty
     runs-on: ubuntu-latest
 
     steps:
@@ -42,7 +42,7 @@ jobs:
         with:
           python-version-file: ".python-version"
       - run: python -m pip install tox tox-uv
-      - run: tox -e mypy
+      - run: tox -e ty
 
   pytest:
     name: "Pytest: ${{ matrix.tox-env }} (${{ matrix.os }})"
@@ -115,7 +115,7 @@ jobs:
 
     needs:
       - pre-commit
-      - mypy
+      - ty
       - pytest
       - docs
 

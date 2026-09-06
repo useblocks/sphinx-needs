@@ -5,11 +5,11 @@ runtime and other problems with Src-Trace
 
 from __future__ import annotations
 
+import inspect
+import json
 from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
-import inspect
-import json
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
 from typing import Any, TypeVar
@@ -18,17 +18,17 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 from sphinx.application import Sphinx
 
 # Stores the timing results
-TIME_MEASUREMENTS: dict[str, Any] = {}  # type: ignore[explicit-any]
+TIME_MEASUREMENTS: dict[str, Any] = {}
 EXECUTE_TIME_MEASUREMENTS = (
     False  # Will be used to de/activate measurements. Set during a Sphinx Event
 )
 
 START_TIME = 0.0
 
-T = TypeVar("T", bound=Callable[..., Any])  # type: ignore[explicit-any]
+T = TypeVar("T", bound=Callable[..., Any])
 
 
-def measure_time(  # type: ignore[explicit-any]
+def measure_time(
     category: str | None = None, source: str = "internal", name: str | None = None
 ) -> Callable[[T], T]:
     """
@@ -58,9 +58,9 @@ def measure_time(  # type: ignore[explicit-any]
     :param name: Name to use for the measured. If not given, the function name is used.
     """
 
-    def inner(func: T) -> T:  # type: ignore[explicit-any]
+    def inner(func: T) -> T:
         @wraps(func)
-        def wrapper(*args: list[object], **kwargs: dict[object, object]) -> Any:  # type: ignore[explicit-any]
+        def wrapper(*args: list[object], **kwargs: dict[object, object]) -> Any:
             """
             Wrapper function around a given/decorated function, which cares about measurement and storing the result
 
@@ -120,12 +120,12 @@ def measure_time(  # type: ignore[explicit-any]
             runtime_dict["avg"] = runtime_dict["overall"] / runtime_dict["amount"]
             return result
 
-        return wrapper  # type: ignore[return-value]
+        return wrapper  # ty: ignore[invalid-return-type]
 
     return inner
 
 
-def measure_time_func(  # type: ignore[explicit-any]
+def measure_time_func(
     func: T,
     category: str | None = None,
     source: str = "internal",
@@ -154,7 +154,7 @@ def _print_timing_results() -> None:
         print(f" min:     {value['min']:2f} \n")
 
 
-def _store_timing_results_json(app: Sphinx, build_data: dict[str, Any]) -> None:  # type: ignore[explicit-any]
+def _store_timing_results_json(app: Sphinx, build_data: dict[str, Any]) -> None:
     json_result_path = Path(app.outdir) / "debug_measurement.json"
 
     data = {"build": build_data, "measurements": TIME_MEASUREMENTS}
@@ -163,7 +163,7 @@ def _store_timing_results_json(app: Sphinx, build_data: dict[str, Any]) -> None:
     print(f"Timing measurement results (JSON) stored under {json_result_path}")
 
 
-def _store_timing_results_html(app: Sphinx, build_data: dict[str, Any]) -> None:  # type: ignore[explicit-any]
+def _store_timing_results_html(app: Sphinx, build_data: dict[str, Any]) -> None:
     jinja_env = Environment(
         loader=PackageLoader("sphinx_needs"), autoescape=select_autoescape()
     )

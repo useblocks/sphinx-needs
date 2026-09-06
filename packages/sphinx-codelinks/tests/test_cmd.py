@@ -1,7 +1,7 @@
 # @Test suite for CLI commands including analyse, discover, and write, TEST_CLI_1, test, [IMPL_CLI_ANALYZE, IMPL_CLI_DISCOVER, IMPL_CLI_WRITE]
 import json
-from pathlib import Path
 import re
+from pathlib import Path
 
 import pytest
 import toml

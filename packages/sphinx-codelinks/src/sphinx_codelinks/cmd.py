@@ -1,8 +1,8 @@
-from collections import deque
 import json
+import tomllib
+from collections import deque
 from os import linesep
 from pathlib import Path
-import tomllib
 from typing import Annotated, TypeAlias, cast
 
 import typer
@@ -57,7 +57,7 @@ OptQuiet: TypeAlias = Annotated[  # has to be TypeAlias
 
 
 @app.command(no_args_is_help=True)
-def analyse(  # noqa: PLR0912   # for CLI, so it needs the branches
+def analyse(  # for CLI, so it needs the branches
     config: Annotated[
         Path,
         typer.Argument(
@@ -181,7 +181,7 @@ def analyse(  # noqa: PLR0912   # for CLI, so it needs the branches
 
 
 @app.command(no_args_is_help=True)
-def discover(  # noqa: PLR0913   # CLI command requires multiple parameters
+def discover(  # CLI command requires multiple parameters
     src_dir: Annotated[
         Path,
         typer.Argument(
@@ -254,7 +254,7 @@ def discover(  # noqa: PLR0913   # CLI command requires multiple parameters
 
 
 @write_app.command("rst", no_args_is_help=True)
-def write_rst(  # noqa: PLR0913  # for CLI, so it takes as many as it requires
+def write_rst(  # for CLI, so it takes as many as it requires
     jsonpath: Annotated[
         Path,
         typer.Argument(

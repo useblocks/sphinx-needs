@@ -6,7 +6,7 @@ from typing import TypedDict
 from tree_sitter import Node as TreeSitterNode
 
 
-class MarkedContentType(str, Enum):
+class MarkedContentType(str, Enum):  # noqa: UP042  # StrEnum changes str(member), which reaches CLI warnings and error messages
     need = "need"
     need_id_refs = "need-id-refs"
     rst = "rst"

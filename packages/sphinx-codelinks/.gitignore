@@ -3,7 +3,7 @@
 # python generated files
 .ruff_cache
 .pytest_cache
-.mypy_cache
+.ty_cache
 __pycache__/
 *.py[oc]
 build/

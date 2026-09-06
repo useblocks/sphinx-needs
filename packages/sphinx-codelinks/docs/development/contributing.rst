@@ -45,7 +45,7 @@ The CI also checks typing. Use the following command locally to see if your code
 
 .. code-block:: bash
 
-   tox -e mypy
+   tox -e ty
 
 Build docs
 ----------

@@ -1,11 +1,9 @@
 # @Test suite for tree-sitter parsing utilities and language support, TEST_LANG_1, test, [IMPL_LANG_1, IMPL_EXTR_1, IMPL_RST_1]
-from pathlib import Path
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
-from tree_sitter import Language, Parser, Query
-from tree_sitter import Node as TreeSitterNode
 import tree_sitter_bash
 import tree_sitter_c_sharp
 import tree_sitter_cpp
@@ -14,6 +12,8 @@ import tree_sitter_json
 import tree_sitter_python
 import tree_sitter_rust
 import tree_sitter_yaml
+from tree_sitter import Language, Parser, Query
+from tree_sitter import Node as TreeSitterNode
 
 from sphinx_codelinks.analyse import utils
 from sphinx_codelinks.config import UNIX_NEWLINE
@@ -1104,7 +1104,9 @@ def test_find_enclosing_scope_go(code, result, init_go_tree_sitter):
         )
     ],
 )
-def test_form_https_url(git_url, rev, project_path, filepath, lineno, result):  # noqa: PLR0913  # need to have these args
+def test_form_https_url(
+    git_url, rev, project_path, filepath, lineno, result
+):  # need to have these args
     url = utils.form_https_url(git_url, rev, project_path, filepath, lineno=lineno)
     assert url == result
 
@@ -1132,24 +1134,24 @@ def init_git_repo(repo_path: Path, remote_url: str) -> Path:
         raise FileNotFoundError("Git executable path is invalid")
 
     # Initialize git repo
-    subprocess.run([git_path, "init"], cwd=git_dir, check=True, capture_output=True)  # noqa: S603
-    subprocess.run(  # noqa: S603
+    subprocess.run([git_path, "init"], cwd=git_dir, check=True, capture_output=True)
+    subprocess.run(
         [git_path, "config", "user.email", "test@example.com"], cwd=git_dir, check=True
     )
-    subprocess.run(  # noqa: S603
+    subprocess.run(
         [git_path, "config", "user.name", "Test User"], cwd=git_dir, check=True
     )
 
     # Create a test file and commit
     test_file = src_dir / "test_file.py"
     test_file.write_text("# Test file\nprint('hello')\n")
-    subprocess.run([git_path, "add", "."], cwd=git_dir, check=True)  # noqa: S603
-    subprocess.run(  # noqa: S603
+    subprocess.run([git_path, "add", "."], cwd=git_dir, check=True)
+    subprocess.run(
         [git_path, "commit", "-m", "Initial commit"], cwd=git_dir, check=True
     )
 
     # Add a remote
-    subprocess.run(  # noqa: S603
+    subprocess.run(
         [git_path, "remote", "add", "origin", remote_url],
         cwd=git_dir,
         check=True,
@@ -1175,7 +1177,7 @@ def git_repo(tmp_path: str, request: pytest.FixtureRequest) -> tuple[Path, str]:
 def get_current_commit_hash(git_dir: Path) -> str:
     """Get the current commit hash of the git repository."""
     git_path = get_git_path()
-    result = subprocess.run(  # noqa: S603
+    result = subprocess.run(
         [git_path, "rev-parse", "HEAD"],
         cwd=git_dir,
         check=True,

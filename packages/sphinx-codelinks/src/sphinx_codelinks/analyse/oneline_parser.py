@@ -4,7 +4,7 @@ from enum import Enum
 from sphinx_codelinks.config import ESCAPE, UNIX_NEWLINE, OneLineCommentStyle
 
 
-class WarningSubTypeEnum(str, Enum):
+class WarningSubTypeEnum(str, Enum):  # noqa: UP042  # StrEnum changes str(member), which reaches CLI warnings and error messages
     """Enum for warning sub types."""
 
     too_many_fields = "too_many_fields"
@@ -23,7 +23,7 @@ class OnelineParserInvalidWarning:
 
 
 # @One-line comment parser for traceability markers, IMPL_OLP_1, impl, [FE_DEF, FE_CMT]
-def oneline_parser(  # noqa: PLR0912, PLR0911 # handel warnings
+def oneline_parser(  # handel warnings
     oneline: str, oneline_config: OneLineCommentStyle
 ) -> dict[str, str | list[str] | int] | OnelineParserInvalidWarning | None:
     """

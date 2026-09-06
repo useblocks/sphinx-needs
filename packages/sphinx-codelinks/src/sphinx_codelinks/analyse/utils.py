@@ -1,10 +1,10 @@
-from collections.abc import ByteString, Callable
 import configparser
+from collections.abc import ByteString, Callable
 from pathlib import Path
 from typing import TypedDict
 from urllib.request import pathname2url
 
-from giturlparse import parse  # type: ignore[import-untyped]
+from giturlparse import parse
 from tree_sitter import Language, Parser, Point, Query, QueryCursor
 from tree_sitter import Node as TreeSitterNode
 
@@ -110,42 +110,42 @@ def is_text_file(filepath: Path, sample_size: int = 2048) -> bool:
 # @Tree-sitter parser initialization for multiple languages, IMPL_LANG_1, impl, [FE_C_SUPPORT, FE_CPP, FE_PY, FE_YAML, FE_RUST, FE_GO, FE_JSONC, FE_BASH]
 def init_tree_sitter(comment_type: CommentType) -> tuple[Parser, Query]:
     if comment_type == CommentType.cpp:
-        import tree_sitter_cpp  # noqa: PLC0415
+        import tree_sitter_cpp
 
         parsed_language = Language(tree_sitter_cpp.language())
         query = Query(parsed_language, CPP_QUERY)
     elif comment_type == CommentType.python:
-        import tree_sitter_python  # noqa: PLC0415
+        import tree_sitter_python
 
         parsed_language = Language(tree_sitter_python.language())
         query = Query(parsed_language, PYTHON_QUERY)
     elif comment_type == CommentType.cs:
-        import tree_sitter_c_sharp  # noqa: PLC0415
+        import tree_sitter_c_sharp
 
         parsed_language = Language(tree_sitter_c_sharp.language())
         query = Query(parsed_language, C_SHARP_QUERY)
     elif comment_type == CommentType.yaml:
-        import tree_sitter_yaml  # noqa: PLC0415
+        import tree_sitter_yaml
 
         parsed_language = Language(tree_sitter_yaml.language())
         query = Query(parsed_language, YAML_QUERY)
     elif comment_type == CommentType.rust:
-        import tree_sitter_rust  # noqa: PLC0415
+        import tree_sitter_rust
 
         parsed_language = Language(tree_sitter_rust.language())
         query = Query(parsed_language, RUST_QUERY)
     elif comment_type == CommentType.go:
-        import tree_sitter_go  # noqa: PLC0415
+        import tree_sitter_go
 
         parsed_language = Language(tree_sitter_go.language())
         query = Query(parsed_language, GO_QUERY)
     elif comment_type == CommentType.jsonc:
-        import tree_sitter_json  # noqa: PLC0415
+        import tree_sitter_json
 
         parsed_language = Language(tree_sitter_json.language())
         query = Query(parsed_language, JSONC_QUERY)
     elif comment_type == CommentType.bash:
-        import tree_sitter_bash  # noqa: PLC0415
+        import tree_sitter_bash
 
         parsed_language = Language(tree_sitter_bash.language())
         query = Query(parsed_language, BASH_QUERY)
@@ -186,7 +186,7 @@ def find_enclosing_scope(
     while current:
         if current.type in scope_types:
             return current
-        current: TreeSitterNode | None = current.parent  # type: ignore[no-redef]  # required for node traversal
+        current: TreeSitterNode | None = current.parent  # required for node traversal
     return None
 
 
@@ -199,7 +199,9 @@ def find_next_scope(
     while current:
         if current.type in scope_types:
             return current
-        current: TreeSitterNode | None = current.next_named_sibling  # type: ignore[no-redef]  # required for node traversal
+        current: TreeSitterNode | None = (
+            current.next_named_sibling
+        )  # required for node traversal
         if current and current.type == "block":
             for child in current.named_children:
                 if child.type in scope_types:

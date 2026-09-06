@@ -200,7 +200,7 @@ def test_malformed_compile_commands_warns_and_falls_back(
     rec = _RecordingLogger()
     monkeypatch.setattr(analyse_module, "logger", rec)
 
-    args = analyse._resolve_preproc_args(src)  # noqa: SLF001
+    args = analyse._resolve_preproc_args(src)
 
     assert args is not None, "malformed DB should fall back, not skip the file"
     assert "-DFALLBACK=1" in args, "should fall back to the global defines"
@@ -228,7 +228,7 @@ def test_missing_explicit_compile_commands_warns_and_falls_back(
     rec = _RecordingLogger()
     monkeypatch.setattr(analyse_module, "logger", rec)
 
-    args = analyse._resolve_preproc_args(src)  # noqa: SLF001
+    args = analyse._resolve_preproc_args(src)
 
     assert args is not None, "missing DB path should fall back, not skip the file"
     assert "-DFALLBACK=1" in args, "should fall back to the global defines"

@@ -1,8 +1,8 @@
-from collections.abc import Iterator  # only in python 3.11 afterwards
 import contextlib
+import tomllib
+from collections.abc import Iterator  # only in python 3.11 afterwards
 from pathlib import Path
 from timeit import default_timer as timer  # Used for timing measurements
-import tomllib
 from typing import Any, cast
 
 from sphinx.application import Sphinx
@@ -10,7 +10,7 @@ from sphinx.config import Config as _SphinxConfig
 from sphinx.environment import BuildEnvironment
 from sphinx.util import logging
 from sphinx.util.fileutil import copy_asset
-from sphinx_needs.api import add_field, add_need_type  # type: ignore[import-untyped]
+from sphinx_needs.api import add_field, add_need_type
 
 from sphinx_codelinks.analyse.projects import AnalyseProjects
 from sphinx_codelinks.config import (
@@ -61,7 +61,7 @@ def _check_sphinx_needs_dependency(app: Sphinx) -> bool:
     return True
 
 
-def setup(app: Sphinx) -> dict[str, Any]:  # type: ignore[explicit-any]
+def setup(app: Sphinx) -> dict[str, Any]:
     # Route the shared analyse layer's logging through Sphinx (verbosity,
     # colour, suppress_warnings, warning stream) instead of stderr.
     configure_sphinx()
@@ -105,7 +105,7 @@ def builder_inited(app: Sphinx) -> None:
     copy_asset(custom_css, Path(app.outdir) / "_static" / "source_tracing")
 
 
-def add_custom_css(  # type: ignore[explicit-any]
+def add_custom_css(
     app: Sphinx,
     pagename: str,
     templatename: str,
@@ -219,7 +219,9 @@ def update_sn_types(app: Sphinx, _config: _SphinxConfig) -> None:
     add_need_type(app, "srctrace", "Src-Trace", "ST_", "#ffffff", "node")
 
 
-def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> None:  # noqa: ARG001  # required by Sphinx
+def prepare_env(
+    app: Sphinx, env: BuildEnvironment, _docnames: list[str]
+) -> None:  # required by Sphinx
     """
     Prepares the sphinx environment to store stc-trace internal data.
     """
@@ -227,8 +229,8 @@ def prepare_env(app: Sphinx, env: BuildEnvironment, _docnames: list[str]) -> Non
 
     # Set time measurement flag
     if src_trace_sphinx_config.debug_measurement:
-        debug.START_TIME = timer()  # Store the rough start time of Sphinx build
-        debug.EXECUTE_TIME_MEASUREMENTS = True
+        debug.START_TIME = timer()  # Store the rough start time of Sphinx build  # ty: ignore[invalid-assignment]
+        debug.EXECUTE_TIME_MEASUREMENTS = True  # ty: ignore[invalid-assignment]
 
     if src_trace_sphinx_config.debug_filters:
         with contextlib.suppress(FileNotFoundError):

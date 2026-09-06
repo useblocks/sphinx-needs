@@ -6,9 +6,9 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import tomllib
 from datetime import datetime
 from pathlib import Path
-import tomllib
 
 _project_data = tomllib.loads(
     (Path(__file__).parent.parent / "pyproject.toml").read_text("utf8")

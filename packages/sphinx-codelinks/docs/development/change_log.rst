@@ -9,6 +9,20 @@ Unreleased
 New and Improved
 ................
 
+- 🔧 Lint and type checking now use the Sphinx-Needs workspace's configuration.
+
+  The ``[tool.ruff]`` tables are the workspace root's, verbatim apart from the ``src`` paths
+  and the one per-file-ignore entry this repository still needs (``**/tests/*``: ``E402``,
+  ``SIM300`` -- 2 findings if it were dropped; it moves to the root at import, since the root
+  has no such table of its own). The pre-commit ruff hook moves to the rev that workspace
+  pins (v0.16.5). Type checking moves from mypy to `ty <https://github.com/astral-sh/ty>`__:
+  ``tox -e mypy`` becomes ``tox -e ty``, the ``mypy`` dependency group becomes a ``typing``
+  one that pins the oldest supported Sphinx and docutils, and the 61 ``# type: ignore``
+  comments become 17 ``# ty: ignore`` ones. The dead ``pydantic.mypy`` plugin -- nothing in
+  the package imports pydantic -- and the unused ``pytest-docker``, ``moto`` and ``psutil``
+  test dependencies go with it. No behaviour changed; the whole diff is import order,
+  suppressions and configuration.
+
 - ‼️ Sphinx-Needs 8.5 or newer is now required (previously 5.0 or newer).
 
   Sphinx-CodeLinks is being imported into the Sphinx-Needs repository as a package of its

@@ -34,7 +34,7 @@ ESCAPE = "\\"
 DEFAULT_CPP_STD = "c++17"
 
 
-class CommentCategory(str, Enum):
+class CommentCategory(str, Enum):  # noqa: UP042  # StrEnum changes str(member), which reaches CLI warnings and error messages
     comment = "comment"
     docstring = "expression_statement"
 
@@ -56,10 +56,10 @@ class NeedIdRefsConfig:
     """The markers to extract need ids from"""
 
     @classmethod
-    def get_schema(cls, name: str) -> dict[str, Any] | None:  # type: ignore[explicit-any]
+    def get_schema(cls, name: str) -> dict[str, Any] | None:
         _field = next(_field for _field in fields(cls) if _field.name is name)
         if _field.metadata and "schema" in _field.metadata:
-            return cast(dict[str, Any], _field.metadata["schema"])  # type: ignore[explicit-any]
+            return cast(dict[str, Any], _field.metadata["schema"])
         return None
 
     def check_schema(self) -> list[str]:
@@ -68,7 +68,12 @@ class NeedIdRefsConfig:
             schema = self.get_schema(_field_name)
             value = getattr(self, _field_name)
             try:
-                validate(instance=value, schema=schema)  # type: ignore[arg-type]  # validate has no type
+                # jsonschema's stubs type `schema` as `bool | Mapping`, but
+                # `get_schema` returns an optional dict
+                validate(
+                    instance=value,
+                    schema=schema,  # ty: ignore[invalid-argument-type]
+                )
             except ValidationError as e:
                 errors.append(
                     f"Schema validation error in field '{_field_name}': {e.message}"
@@ -95,10 +100,10 @@ class MarkedRstConfig:
     """Chars sequence to indicate the end of the rst text."""
 
     @classmethod
-    def get_schema(cls, name: str) -> dict[str, Any] | None:  # type: ignore[explicit-any]
+    def get_schema(cls, name: str) -> dict[str, Any] | None:
         _field = next(_field for _field in fields(cls) if _field.name is name)
         if _field.metadata and "schema" in _field.metadata:
-            return cast(dict[str, Any], _field.metadata["schema"])  # type: ignore[explicit-any]
+            return cast(dict[str, Any], _field.metadata["schema"])
         return None
 
     def check_schema(self) -> list[str]:
@@ -107,7 +112,12 @@ class MarkedRstConfig:
             schema = self.get_schema(_field_name)
             value = getattr(self, _field_name)
             try:
-                validate(instance=value, schema=schema)  # type: ignore[arg-type]  # validate has no type
+                # jsonschema's stubs type `schema` as `bool | Mapping`, but
+                # `get_schema` returns an optional dict
+                validate(
+                    instance=value,
+                    schema=schema,  # ty: ignore[invalid-argument-type]
+                )
             except ValidationError as e:
                 errors.append(
                     f"Schema validation error in field '{_field_name}': {e.message}"
@@ -186,7 +196,7 @@ class OneLineCommentStyleType(TypedDict):
 
 @dataclass
 class OneLineCommentStyle:
-    def __setattr__(self, name: str, value: Any) -> None:  # type: ignore[explicit-any]
+    def __setattr__(self, name: str, value: Any) -> None:
         if name == "needs_fields":
             # apply default to fields
             self.apply_needs_field_default(value)
@@ -272,7 +282,9 @@ class OneLineCommentStyle:
         for _field in given_fields:
             for _default in field_default:
                 if _default not in _field:
-                    _field[_default] = field_default[_default]  # type: ignore[literal-required]  # dynamically assign keys
+                    _field[_default] = field_default[
+                        _default
+                    ]  # dynamically assign keys
 
     @classmethod
     def get_required_fields(cls, name: str) -> list[str] | None:
@@ -282,10 +294,10 @@ class OneLineCommentStyle:
         return None
 
     @classmethod
-    def get_schema(cls, name: str) -> dict[str, Any] | None:  # type: ignore[explicit-any]
+    def get_schema(cls, name: str) -> dict[str, Any] | None:
         _field = next(_field for _field in fields(cls) if _field.name is name)
         if _field.metadata and "schema" in _field.metadata:
-            return cast(dict[str, Any], _field.metadata["schema"])  # type: ignore[explicit-any]
+            return cast(dict[str, Any], _field.metadata["schema"])
         return None
 
     def check_schema(self) -> list[str]:
@@ -294,7 +306,10 @@ class OneLineCommentStyle:
             schema = self.get_schema(_field_name)
             value = getattr(self, _field_name)
             try:
-                validate(instance=value, schema=schema)  # type: ignore[arg-type]  # validate has no type specified
+                validate(
+                    instance=value,
+                    schema=schema,  # ty: ignore[invalid-argument-type]
+                )  # validate has no type specified
             except ValidationError as e:
                 if _field_name == "needs_fields":
                     need_field_name = value[e.path[0]]["name"]
@@ -465,10 +480,10 @@ class SourceAnalyseConfig:
     """
 
     @classmethod
-    def get_schema(cls, name: str) -> dict[str, Any] | None:  # type: ignore[explicit-any]
+    def get_schema(cls, name: str) -> dict[str, Any] | None:
         _field = next(_field for _field in fields(cls) if _field.name is name)
         if _field.metadata and "schema" in _field.metadata:
-            return cast(dict[str, Any], _field.metadata["schema"])  # type: ignore[explicit-any]
+            return cast(dict[str, Any], _field.metadata["schema"])
         return None
 
     def check_schema(self) -> list[str]:
@@ -483,7 +498,9 @@ class SourceAnalyseConfig:
             if _field_name == "src_files" and isinstance(
                 value, list
             ):  # adapt to json schema restriction
-                value: list[str] = [str(src_file) for src_file in value]  # type: ignore[no-redef] # only for value adaptation
+                value: list[str] = [
+                    str(src_file) for src_file in value
+                ]  # only for value adaptation
             try:
                 validate(instance=value, schema=schema)
             except ValidationError as e:
@@ -599,7 +616,7 @@ class CodeLinksConfig:
         super().__setattr__(obj, "_sphinx_config", sphinx_config)
         return obj
 
-    def __getattribute__(self, name: str) -> Any:  # type: ignore[explicit-any]
+    def __getattribute__(self, name: str) -> Any:
         if name.startswith("__") or name == "_sphinx_config":
             return super().__getattribute__(name)
         sphinx_config = (
@@ -614,7 +631,7 @@ class CodeLinksConfig:
 
         return object.__getattribute__(self, name)
 
-    def __setattr__(self, name: str, value: Any) -> None:  # type: ignore[explicit-any]
+    def __setattr__(self, name: str, value: Any) -> None:
         if name == "_sphinx_config" and "src_trace_projects" in value:
             src_trace_projects: dict[str, CodeLinksProjectConfigType] = value[
                 "src_trace_projects"
@@ -664,11 +681,11 @@ class CodeLinksConfig:
         return {item.name for item in fields(cls)}
 
     @classmethod
-    def get_schema(cls, name: str) -> dict[str, Any] | None:  # type: ignore[explicit-any]
+    def get_schema(cls, name: str) -> dict[str, Any] | None:
         """Get the schema for a config item."""
         _field = next(field for field in fields(cls) if field.name is name)
         if _field.metadata and "schema" in _field.metadata:
-            return _field.metadata["schema"]  # type: ignore[no-any-return]
+            return _field.metadata["schema"]
         return None
 
     config_from_toml: str | None = field(
@@ -851,7 +868,7 @@ def convert_src_discovery_config(
             key: (Path(value) if key == "src_dir" and isinstance(value, str) else value)
             for key, value in config_dict.items()
         }
-        src_discover_config = SourceDiscoverConfig(**src_discover_dict)  # type: ignore[arg-type] # mypy is confused by dynamic assignment
+        src_discover_config = SourceDiscoverConfig(**src_discover_dict)  # ty: ignore[invalid-argument-type]
     else:
         src_discover_config = SourceDiscoverConfig()
 
@@ -902,9 +919,10 @@ def convert_analyse_config(
             }:
                 # Convert string paths to Path objects
                 if k in {"src_dir", "git_root"} and isinstance(v, str):
-                    analyse_config_dict[k] = Path(v)  # type: ignore[literal-required]
+                    analyse_config_dict[k] = Path(v)
                 else:
-                    analyse_config_dict[k] = v  # type: ignore[literal-required]  # dynamical assignment
+                    # dynamical assignment
+                    analyse_config_dict[k] = v  # ty: ignore[invalid-key]
 
         # Get oneline_comment_style configuration
         oneline_comment_style_dict: OneLineCommentStyleType | None = config_dict.get(
@@ -933,9 +951,8 @@ def convert_analyse_config(
         preprocessor_dict = config_dict.get("preprocessor")
         if preprocessor_dict is not None:
             # The preprocessor section has no TypedDict; its values are dynamic
-            # TOML (typed ``object``), so validate the shapes up front (a mistyped
-            # scalar would otherwise coerce into garbage flags) and keep the
-            # targeted ignores matching the concrete errors mypy reports.
+            # TOML (typed ``object``), so validate the shapes up front -- a mistyped
+            # scalar would otherwise coerce into garbage flags.
             _validate_preprocessor_dict(preprocessor_dict)
             analyse_config_dict["preprocessor"] = PreprocessorConfig(
                 compile_commands=(
@@ -943,8 +960,8 @@ def convert_analyse_config(
                     if preprocessor_dict.get("compile_commands")
                     else None
                 ),
-                defines=list(preprocessor_dict.get("defines", [])),  # type: ignore[call-overload]
-                includes=[Path(str(p)) for p in preprocessor_dict.get("includes", [])],  # type: ignore[attr-defined]
+                defines=list(preprocessor_dict.get("defines", [])),  # ty: ignore[invalid-argument-type]
+                includes=[Path(str(p)) for p in preprocessor_dict.get("includes", [])],  # ty: ignore[not-iterable]
                 std=str(preprocessor_dict.get("std", DEFAULT_CPP_STD)),
             )
 
@@ -959,7 +976,7 @@ def convert_analyse_config(
             # If invalid comment_type, keep the string value
             # Validation will catch this error later
             comment_type_str: str = src_discover.src_discover_config.comment_type
-            analyse_config_dict["comment_type"] = comment_type_str  # type: ignore[typeddict-item]
+            analyse_config_dict["comment_type"] = comment_type_str  # ty: ignore[invalid-assignment]
 
     return SourceAnalyseConfig(**analyse_config_dict)
 
@@ -1030,5 +1047,5 @@ def generate_project_configs(
         except ValueError:
             # If invalid comment_type, keep the string value
             # Validation will catch this error later
-            analyse_config.comment_type = source_discover_config.comment_type  # type: ignore[assignment]
+            analyse_config.comment_type = source_discover_config.comment_type  # ty: ignore[invalid-assignment]
         project_config["analyse_config"] = analyse_config

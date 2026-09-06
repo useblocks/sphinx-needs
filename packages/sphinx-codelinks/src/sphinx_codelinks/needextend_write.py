@@ -103,10 +103,10 @@ class MarkedContentSchema:
     """Extracted rst text."""
 
     @classmethod
-    def get_schema(cls, name: str) -> dict[str, Any] | None:  # type: ignore[explicit-any]
+    def get_schema(cls, name: str) -> dict[str, Any] | None:
         _field = next(_field for _field in fields(cls) if _field.name is name)
         if _field.metadata and "schema" in _field.metadata:
-            return cast(dict[str, Any], _field.metadata["schema"])  # type: ignore[explicit-any]
+            return cast(dict[str, Any], _field.metadata["schema"])
         return None
 
     def check_schema(self) -> list[str]:
@@ -115,7 +115,12 @@ class MarkedContentSchema:
             schema = self.get_schema(_field_name)
             value = getattr(self, _field_name)
             try:
-                validate(instance=value, schema=schema)  # type: ignore[arg-type]  # validate has no type
+                # jsonschema's stubs type `schema` as `bool | Mapping`, but
+                # `get_schema` returns an optional dict
+                validate(
+                    instance=value,
+                    schema=schema,  # ty: ignore[invalid-argument-type]
+                )
             except ValidationError as e:
                 errors.append(
                     f"Schema validation error in field '{_field_name}': {e.message}"

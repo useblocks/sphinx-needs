@@ -18,10 +18,10 @@ _INSTALL_HINT = (
 
 
 # @Guard the optional libclang dependency with an install hint, IMPL_PREPROC_6, impl, [FE_PREPROC]
-def load_clang_cindex() -> Any:  # type: ignore[explicit-any]
+def load_clang_cindex() -> Any:
     """Return the clang.cindex module or raise a clear install error."""
     try:
-        import clang.cindex as cx  # noqa: PLC0415
+        import clang.cindex as cx
     except ImportError as exc:  # pragma: no cover - exercised via patched import
         raise ImportError(_INSTALL_HINT) from exc
     return cx
@@ -58,7 +58,7 @@ _BOUND = False
 
 
 def _bind() -> None:
-    global _BOUND  # noqa: PLW0603
+    global _BOUND
     if _BOUND:
         return
     cx = load_clang_cindex()
@@ -74,7 +74,7 @@ def _bind() -> None:
     _BOUND = True
 
 
-def get_all_skipped_ranges(tu: Any) -> list[SkippedRange]:  # type: ignore[explicit-any]
+def get_all_skipped_ranges(tu: Any) -> list[SkippedRange]:
     """Return every source range the preprocessor skipped in this TU."""
     _bind()
     cx = load_clang_cindex()

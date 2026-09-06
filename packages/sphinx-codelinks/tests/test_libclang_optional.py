@@ -18,10 +18,10 @@ instead of silently making libclang mandatory for every user.
 
 from __future__ import annotations
 
-from pathlib import Path
 import subprocess
 import sys
 import textwrap
+from pathlib import Path
 
 FIXTURE = Path(__file__).parent / "data" / "preproc" / "variants_branching.cpp"
 
@@ -60,7 +60,7 @@ def _run_probe(body: str) -> None:
     stdout/stderr are surfaced in the assertion message.
     """
     code = _BLOCK_CLANG + textwrap.dedent(body)
-    proc = subprocess.run(  # noqa: S603
+    proc = subprocess.run(
         [sys.executable, "-c", code, str(FIXTURE)],
         capture_output=True,
         text=True,
