@@ -15,7 +15,11 @@ name: Test a package
 # share the five-line prologue and nothing else, and `release.yaml`'s compat cell builds
 # its environment from a wheel rather than from the workspace, so none of them belongs
 # here: folding them in would need an input that switches the body, which is how a
-# reusable workflow turns into a scripting language.
+# reusable workflow turns into a scripting language. `test-extensions.yaml` is the one
+# exception and it is a SECOND unit rather than an input on this one, for the same
+# reason: it runs two suites in one job. What the two units genuinely share -- everything
+# from the renderer installs to the sphinx-series fence -- is
+# `.github/actions/prepare-cell`, so neither holds a copy of it.
 #
 # `./`-referenced workflows come from the caller's own commit, so a pull request that
 # changes this file and `ci.yaml` together is tested as one change.
@@ -100,60 +104,6 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v7
-      - name: Install graphviz (linux)
-        if: inputs.needs-graphviz && runner.os == 'Linux'
-        run: sudo apt-get install graphviz
-      - name: Install graphviz (windows)
-        if: inputs.needs-graphviz && runner.os == 'Windows'
-        run: choco install -y --no-progress graphviz
-      - name: No graphviz install step for macOS
-        # neither branch above fires on macOS, so a cell that asked for graphviz would run
-        # without `dot` and fail somewhere far from the cause. Say so here instead
-        if: inputs.needs-graphviz && runner.os == 'macOS'
-        run: |
-          echo "::error::no graphviz install step for macOS; add one before enabling this combination"
-          exit 1
-      - name: Point PLANTUML_JAR at the vendored jar
-        # The one place in CI this path is written. No runner image carries a `plantuml`
-        # package and every one carries `java`, so the uml tests take the jar
-        # `packages/sphinx-needs` vendors for its own suite. The suites that read the
-        # variable ASSERT rather than skip when the renderer is missing (sphinx-mounts
-        # today; sphinx-needs from #1863), so if this ever stops naming a real file the
-        # cell goes red rather than quietly testing less.
-        #
-        # A STEP writing `$GITHUB_ENV`, not a job-level `env:`, because an `env:` value
-        # cannot be made conditional without an expression -- and that expression's
-        # failure mode is a literal string, not an absent variable: drop the `|| ''` from
-        # `${{ inputs.needs-plantuml && '<path>' || '' }}` and every cell that does not
-        # want a jar gets `PLANTUML_JAR=false`, which actionlint does not catch and both
-        # suites reject. Written only when it is wanted, the variable is genuinely UNSET
-        # everywhere else. `shell: bash` because the windows runners default to pwsh;
-        # bash is on all three images.
-        if: inputs.needs-plantuml
-        shell: bash
-        run: echo "PLANTUML_JAR=$GITHUB_WORKSPACE/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar" >> "$GITHUB_ENV"
-      - name: Check the renderers this cell asked for are really there
-        # `choco install graphviz` EXITS 0 WHEN THE FEED FAILS. Measured on run
-        # 34000562220, job 101398550280: "Failed to fetch results from V2 feed ... Unable
-        # to find package 'Graphviz' ... Chocolatey installed 0/0 packages", a green
-        # install step, and then two graphviz tests asserting 90 s later inside pytest. A
-        # renderer that did not arrive should be one red step that names it, not N
-        # assertions in the suite.
-        #
-        # For PlantUML this is also the mechanical check on the step above: if it ever
-        # stops writing a path that exists, THIS is the red, rather than every cell that
-        # wanted a jar. Deliberately no retry and no change of installer -- a pinned
-        # download or `ts-graphviz/setup-graphviz` is a separate argument.
-        if: inputs.needs-graphviz || inputs.needs-plantuml
-        shell: bash
-        run: |
-          if [ "${{ inputs.needs-graphviz }}" = "true" ]; then
-            dot -V || { echo "::error::graphviz did not install: no dot on PATH"; exit 1; }
-          fi
-          if [ "${{ inputs.needs-plantuml }}" = "true" ]; then
-            test -f "$PLANTUML_JAR" || { echo "::error::PLANTUML_JAR names no file: '$PLANTUML_JAR'"; exit 1; }
-            java -version || { echo "::error::no java on PATH, so the plantuml jar cannot be run"; exit 1; }
-          fi
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
@@ -163,15 +113,16 @@ jobs:
           # `.python-version`, which is not on the runner image, so without this uv
           # downloads it on every run. A cell that names one gets it from setup-uv
           cache-python: ${{ inputs.python-version == '' }}
-      - name: Install the cell
-        run: uv sync --frozen --no-default-groups --group test --group ${{ inputs.sphinx-group }}
-      - name: Report the resolved versions
-        run: uv run --no-sync python -c "import sys, sphinx, docutils; print(sys.version, sphinx.__version__, docutils.__version__)"
-      - name: Check the cell installed the sphinx it names
-        # against the group's own specifier: a group whose marker excludes this python
-        # contributes nothing, the environment falls back to the project's sphinx range and
-        # the sync still exits 0, so without this the cell would silently test another series
-        run: uv run --no-sync python .github/scripts/check_sphinx_cell.py ${{ inputs.sphinx-group }}
+      # The renderer installs, the cell sync and the two fences that guard them. They are
+      # a composite action rather than eight lines here because `test-extensions.yaml`
+      # runs exactly the same eight before its own pytest steps -- see the action's own
+      # header for why it holds no `uses:` step, and why `setup-uv` therefore sits above
+      # it rather than below
+      - uses: ./.github/actions/prepare-cell
+        with:
+          sphinx-group: ${{ inputs.sphinx-group }}
+          needs-graphviz: ${{ inputs.needs-graphviz }}
+          needs-plantuml: ${{ inputs.needs-plantuml }}
       - name: Run pytest
         run: uv run --no-sync pytest -v ${{ inputs.test-path }} ${{ inputs.pytest-args }} --cov=${{ inputs.cov-module }} --cov-report=xml --cov-report=term-missing
       - name: Upload to Codecov

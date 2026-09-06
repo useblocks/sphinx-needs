@@ -1,0 +1,115 @@
+name: Test the sphinx extensions
+
+# ONE cell running BOTH extension packages' suites, called once per sphinx series from
+# `ci.yaml`.
+#
+# `test-package.yaml` cannot do this and should not learn to: a `workflow_call` input is a
+# scalar, a job's steps cannot be generated from data, and a second suite would need an
+# input that switches the body. So this is a second unit -- and the eight steps the two
+# units share, from the renderer installs to the sphinx-series fence, are
+# `.github/actions/prepare-cell`, which is what stops it being a second copy of them.
+#
+# WHY ONE JOB AND NOT TWO CALLERS OF `test-package.yaml`. sphinx-mounts' suite is 1-3
+# minutes and sphinx-codelinks' is under 20 seconds; run as separate cells the second
+# would spend more time on checkout, setup-uv and a cell sync than on its own tests, and
+# the checks list on every pull request would grow by three entries for it. One cell per
+# series with a step per extension keeps the checks list where it is and pays the ~40 s of
+# job start-up once. The cost is that a failure in the first suite would hide the second,
+# which is why the second pytest step runs even when the first has failed.
+#
+# `./`-referenced workflows and actions come from the caller's own commit, so a pull
+# request that changes this file, the composite and `ci.yaml` together is tested as one
+# change.
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        description: The runner to test on.
+        type: string
+        default: ubuntu-latest
+      sphinx-group:
+        # deliberately no `python-version`: these cells vary the sphinx series, not the
+        # interpreter, so they run on the root `.python-version`
+        description: The dependency group naming the sphinx series this cell tests against.
+        type: string
+        required: true
+      cache-suffix:
+        description: "`setup-uv`'s cache key suffix."
+        type: string
+        required: true
+      upload-coverage:
+        description: Whether THIS cell uploads coverage for both packages.
+        type: boolean
+        default: false
+    secrets:
+      CODECOV_TOKEN:
+        description: Read only by the upload steps, and only on this repository's own pull requests.
+        required: false
+
+jobs:
+  # The job id and its display name are both `pytest`, because a called job's name is
+  # appended to the caller's: the checks read `Extensions sphinx-9 ubuntu-latest / pytest`.
+  pytest:
+    name: pytest
+    runs-on: ${{ inputs.os }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+          cache-suffix: ${{ inputs.cache-suffix }}
+          # no `python-version` above, so the cell runs on the root `.python-version`,
+          # which is not on the runner image -- without this uv downloads it every run
+          cache-python: true
+      - uses: ./.github/actions/prepare-cell
+        with:
+          sphinx-group: ${{ inputs.sphinx-group }}
+          # sphinx-codelinks' optional preprocessor-aware C/C++ engine. Without it 56 of
+          # its tests SKIP rather than fail, so a cell that lost this line would be a
+          # quieter green rather than a red one
+          extra-groups: codelinks-libclang
+          # sphinx-mounts' path directives render with `dot`; sphinx-codelinks renders
+          # nothing at all, and pays for the install here because the two share a cell
+          needs-graphviz: true
+          # sphinx-mounts' uml tests render for real and `_require_renderer` asserts
+          # rather than skips
+          needs-plantuml: true
+      # ONE pytest and ONE codecov upload per package. Each `--cov-report` names its own
+      # file: plain `xml` writes `coverage.xml`, so the second run would overwrite the
+      # first and both uploads would carry the same numbers under different flags.
+      - name: "sphinx-mounts: pytest"
+        # `-m "not bazel"` deselects the two tests the `bazel` job owns
+        run: uv run --no-sync pytest -v packages/sphinx-mounts/tests -m "not bazel" --cov=sphinx_mounts --cov-report=xml:mounts.xml --cov-report=term-missing
+      - name: "sphinx-mounts: upload to Codecov"
+        # dependabot PRs get no secrets; without a token the upload fails and takes the required `check` gate with it
+        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: sphinx-mounts-pytests
+          flags: mounts
+          files: ./mounts.xml # `file` was renamed to `files` in codecov-action v5
+          fail_ci_if_error: true
+      - name: "sphinx-codelinks: pytest"
+        # `!cancelled()` and not the default `success()`: this suite is 20 seconds and the
+        # one above is minutes, so letting a sphinx-mounts failure hide it would mean a
+        # second push to learn a second fact. The job is still red either way.
+        #
+        # Run from the REPOSITORY ROOT, like every other cell. That is only legal because
+        # `test_form_https_url` no longer passes a filepath relative to the CWD -- until
+        # that fix this suite passed only from `packages/sphinx-codelinks`, and a
+        # `working-directory:` here would also have moved where `--cov-report` writes
+        if: '!cancelled()'
+        run: uv run --no-sync pytest -v packages/sphinx-codelinks/tests --cov=sphinx_codelinks --cov-report=xml:codelinks.xml --cov-report=term-missing
+      - name: "sphinx-codelinks: upload to Codecov"
+        if: inputs.upload-coverage && github.event.pull_request.head.repo.full_name == github.repository && github.repository == 'useblocks/sphinx-needs' && github.actor != 'dependabot[bot]'
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          name: sphinx-codelinks-pytests
+          flags: codelinks
+          files: ./codelinks.xml
+          fail_ci_if_error: true
