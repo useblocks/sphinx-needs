@@ -981,10 +981,14 @@ def test_the_recovery_block_names_the_lock_that_step_2_wrote(tree, capsys) -> No
     )
 
 
-def test_a_keyboard_interrupt_prints_the_recovery_block_and_re_raises(tree) -> None:
+def test_a_keyboard_interrupt_prints_the_recovery_block_and_re_raises(
+    tree, capsys
+) -> None:
     """`except BaseException`, not `except BumpError`. A Ctrl-C mid-apply is one of the two
     ways a half-done tree is still reachable, and it must not become a tidy exit 1 either:
-    the block prints and the interrupt goes on being an interrupt."""
+    the block prints and the interrupt goes on being an interrupt. Both halves are asserted:
+    without the first, narrowing the clause to `except Exception` still passes this test
+    (the interrupt propagates untouched) while the recovery block silently stops printing."""
     root = tree()
     manifest = root / "packages" / "acme-core" / "pyproject.toml"
     runner = exploding(manifest, "1.2.3", "1.3.0", ["uv", "lock"], KeyboardInterrupt())
@@ -1001,6 +1005,9 @@ def test_a_keyboard_interrupt_prints_the_recovery_block_and_re_raises(tree) -> N
             ],
             runner=runner,  # ty: ignore[invalid-argument-type]
         )
+    out = capsys.readouterr().out
+    assert "this run had already written" in out
+    assert "git checkout -- " in out
 
 
 def test_an_os_error_is_reported_after_the_recovery_block(tree, capsys) -> None:
