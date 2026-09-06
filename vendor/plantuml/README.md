@@ -19,8 +19,8 @@ and one under `packages/sphinx-needs/docs/utils/` (PlantUML 1.2022.14, for the d
 unpinned `releases/latest` download in the docker image, a fourth version that could change
 without a commit.
 
-- **The sdist.** Both jars were 19,970,393 bytes of a 28,050,184-byte sphinx-needs sdist —
-  **71 %** — because `[tool.flit.sdist]` ships `tests/` and `docs/`. PyPI's 8.5.0 sdist is
+- **The sdist.** The two jars were 21,421,383 bytes on disk, and dropping them takes the
+  28,050,184-byte sphinx-needs sdist down by 19,962,751 bytes — **71 %** — because `[tool.flit.sdist]` ships `tests/` and `docs/`. PyPI's 8.5.0 sdist is
   28.2 MB against a 2.8 MB wheel. A repository-level directory cannot be included by flit at
   all (its `include` patterns cannot escape the package directory), so moving the jar here is
   what removes it from the tarball.
