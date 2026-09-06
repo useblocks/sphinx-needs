@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import tomllib
 import webbrowser
 from contextlib import suppress
 from pathlib import Path
@@ -16,6 +17,49 @@ import click
 from tabulate import tabulate
 
 from sphinx_needs._jinja import render_template_string
+
+
+def resolve_plantuml() -> str:
+    """How the performance project renders PlantUML, in the workspace's shared order.
+
+    ``PLANTUML_JAR`` (explicit, and an error when it names no file), else the jar
+    ``uv run poe fetch-plantuml`` puts under ``vendor/plantuml/`` at the version
+    ``vendor/plantuml/pin.toml`` names, else a ``plantuml`` executable on ``PATH``.
+
+    It has to be resolved HERE rather than in ``project/conf.template``, and that is the
+    bug this replaces: :func:`start` copies ``project/`` into a throwaway tempdir and
+    renders the template there, so the ``conf.py`` that results has ``__file__`` inside
+    that tempdir. The old line built a path under ``<tempdir>/../../docs/utils/`` and
+    never resolved to a real file in any tree -- ``performance/`` is not run by CI, so
+    nothing caught it. This module's own ``__file__`` is in the checkout, so it can find
+    the jar; the template gets the finished command.
+
+    :return: The value for the ``plantuml`` configuration.
+    """
+    quoted = 'java -Djava.awt.headless=true -jar "{}"'
+    env_jar = os.environ.get("PLANTUML_JAR")
+    if env_jar:
+        if not os.path.isfile(env_jar):
+            raise RuntimeError(
+                f"PLANTUML_JAR names {env_jar!r}, which is not a file. Point it at a "
+                "plantuml jar, or unset it to render with the jar "
+                "`uv run poe fetch-plantuml` puts in vendor/plantuml/."
+            )
+        return quoted.format(env_jar)
+    vendor = Path(__file__).resolve().parents[3] / "vendor" / "plantuml"
+    if (pin := vendor / "pin.toml").is_file():
+        version = tomllib.loads(pin.read_text(encoding="utf-8"))["version"]
+        if (jar := vendor / f"plantuml-{version}.jar").is_file():
+            return quoted.format(jar)
+    for name in ("plantumlc", "plantuml") if os.name == "nt" else ("plantuml",):
+        if executable := shutil.which(name):
+            return executable
+    raise RuntimeError(
+        "no PlantUML to render the performance project with. Run "
+        "`uv run poe fetch-plantuml` to download the pinned jar into vendor/plantuml/, "
+        "or set PLANTUML_JAR to a plantuml jar of your own (with java on PATH), or "
+        "install a plantuml executable."
+    )
 
 
 @click.group()
@@ -59,6 +103,9 @@ def start(
             "browser": browser,
             "debug": debug,
             "basic": basic,
+            # `repr`, so a Windows path's backslashes and any space in it survive into the
+            # generated conf.py as one string literal
+            "plantuml_command": repr(resolve_plantuml()),
         },
         autoescape=False,
     )

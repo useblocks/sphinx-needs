@@ -2,6 +2,8 @@
 
 import datetime
 import os
+import shutil
+import tomllib
 from pathlib import Path
 from typing import Any
 
@@ -289,10 +291,52 @@ linkcheck_workers = 5
 
 # -- Options for PlantUML extension ---------------------------------------
 
-local_plantuml_path = os.path.join(
-    os.path.dirname(__file__), "utils", "plantuml-1.2022.14.jar"
-)
-plantuml = f"java -Djava.awt.headless=true -jar {local_plantuml_path}"
+
+def _resolve_plantuml() -> str:
+    """How these docs render PlantUML, in the order the whole workspace agrees on.
+
+    1. ``PLANTUML_JAR``, through ``java``. An explicit choice wins, and a value naming no
+       file is an error rather than a silent fall-through.
+    2. The workspace's fetched jar, ``vendor/plantuml/plantuml-<pinned version>.jar``.
+       ``vendor/plantuml/pin.toml`` is the one place the version is written; ``uv run poe
+       docs-needs`` fetches it through the task's ``deps``, and Read the Docs through the
+       ``post_install`` job in ``.readthedocs.yml``.
+    3. A ``plantuml`` executable on ``PATH`` (``plantumlc`` first on Windows, whose
+       chocolatey ``plantuml`` shim is a non-blocking ``javaw`` launcher).
+
+    These docs used to carry their own jar under ``docs/utils/`` -- a second copy, at a
+    second version, beside the test suite's own. The resolution is written out
+    here rather than imported from :mod:`tests.conftest`, which applies the same order: a
+    ``conf.py`` can import neither the test suite nor ``tools/`` (a virtual member that is
+    installed into nothing), and a reader of this file should not have to look elsewhere to
+    find out what renders their diagrams.
+    """
+    quoted = 'java -Djava.awt.headless=true -jar "{}"'
+    env_jar = os.environ.get("PLANTUML_JAR")
+    if env_jar:
+        if not os.path.isfile(env_jar):
+            raise RuntimeError(
+                f"PLANTUML_JAR names {env_jar!r}, which is not a file. Point it at a "
+                "plantuml jar, or unset it to render with the jar "
+                "`uv run poe fetch-plantuml` puts in vendor/plantuml/."
+            )
+        return quoted.format(env_jar)
+    vendor = Path(__file__).resolve().parents[3] / "vendor" / "plantuml"
+    if (pin := vendor / "pin.toml").is_file():
+        version = tomllib.loads(pin.read_text(encoding="utf-8"))["version"]
+        if (jar := vendor / f"plantuml-{version}.jar").is_file():
+            return quoted.format(jar)
+    for name in ("plantumlc", "plantuml") if os.name == "nt" else ("plantuml",):
+        if executable := shutil.which(name):
+            return executable
+    raise RuntimeError(
+        "no PlantUML to render these docs with. Run `uv run poe fetch-plantuml` to "
+        "download the pinned jar into vendor/plantuml/, or set PLANTUML_JAR to a "
+        "plantuml jar of your own (with java on PATH), or install a plantuml executable."
+    )
+
+
+plantuml = _resolve_plantuml()
 
 # plantuml_output_format = 'png'
 plantuml_output_format = "svg_img"

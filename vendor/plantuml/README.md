@@ -14,8 +14,8 @@ repeats the version in an `ARG` and says so.
 ## Why the jar is fetched rather than committed
 
 Until this directory existed the repository carried **two** jars at **two** versions —
-`packages/sphinx-needs/tests/doc_test/utils/plantuml.jar` (PlantUML 1.2022.5, for the tests)
-and `packages/sphinx-needs/docs/utils/plantuml-1.2022.14.jar` (for the docs) — plus an
+one under `packages/sphinx-needs/tests/doc_test/utils/` (PlantUML 1.2022.5, for the tests)
+and one under `packages/sphinx-needs/docs/utils/` (PlantUML 1.2022.14, for the docs) — plus an
 unpinned `releases/latest` download in the docker image, a fourth version that could change
 without a commit.
 

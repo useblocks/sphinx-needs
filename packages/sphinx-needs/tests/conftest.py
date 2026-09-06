@@ -8,6 +8,7 @@ import secrets
 import shutil
 import string
 import tempfile
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -79,18 +80,18 @@ def pytest_addoption(parser):
 def copy_test_utils(source: Path, destination: Path) -> None:
     """Copy ``tests/doc_test/utils`` into the session tempdir, if it is there at all.
 
-    Guarded rather than unconditional, because the directory is not guaranteed to
-    survive into every tree this suite runs in. It holds exactly one file -- the
-    vendored plantuml jar -- and flit writes no directory entries into the sdist, so a
-    distribution packager who strips ``*.jar`` from the tarball before repacking it is
-    left with no ``doc_test/utils`` at all. Unguarded, ``copytree`` then raises
-    ``FileNotFoundError`` out of a session fixture that every rendering test depends
-    on, and :func:`resolve_plantuml_command` -- the whole point of which is to let such
-    a tree be pointed at a PlantUML of its own -- is never reached.
+    It no longer copies a jar, and today it copies nothing: ``doc_test/utils`` held
+    exactly one file -- the vendored plantuml jar -- and that jar is now fetched once
+    per checkout into ``vendor/plantuml/`` at the version ``vendor/plantuml/pin.toml``
+    names, so the directory is gone and this call is a no-op. What remains is the
+    GUARD, and it is the load-bearing half: ``copytree`` on a directory that is not
+    there raises ``FileNotFoundError`` out of a session fixture every rendering test
+    depends on, which would take out the suite before
+    :func:`resolve_plantuml_command` -- the whole point of which is to let a tree with
+    no jar be pointed at a PlantUML of its own -- was ever reached.
 
-    The destination is created only when there is something to put in it, so
-    ``<tempdir>/utils/plantuml.jar`` is absent rather than empty and route (2) of the
-    chain declines cleanly.
+    The destination is created only when there is something to put in it, so a caller
+    that finds no ``<tempdir>/utils`` knows there was nothing to copy.
 
     :param source: The suite's own ``doc_test/utils`` directory.
     :param destination: Where it is copied to for this session.
@@ -123,8 +124,10 @@ def sphinx_test_tempdir(request) -> Path:
     # if not (sphinx_test_tempdir.exists() and sphinx_test_tempdir.isdir()):
     sphinx_test_tempdir.mkdir(exist_ok=True)
 
-    # copy plantuml.jar to current test tempdir. We want to do this once
-    # since the same plantuml.jar is used for each test
+    # `doc_test/utils` is empty of anything the suite ships today -- the plantuml jar
+    # that used to live there is fetched into `vendor/plantuml/` instead -- so this is a
+    # guarded no-op kept for fixture data a test project might need copied once per
+    # session rather than per test
     copy_test_utils(
         Path(__file__).parent.resolve() / "doc_test/utils",
         sphinx_test_tempdir / "utils",
@@ -142,7 +145,35 @@ def sphinx_test_tempdir(request) -> Path:
 _PLANTUML_JAVA = 'java -Djava.awt.headless=true -jar "{}"'
 
 
-def resolve_plantuml_command(vendored_jar: Path) -> str:
+def workspace_plantuml_jar() -> Path | None:
+    """The jar ``uv run poe fetch-plantuml`` puts under ``vendor/plantuml/``.
+
+    Computed from the pin rather than hard-coded, because the version is IN the filename
+    (``plantuml-<version>.jar``) and ``vendor/plantuml/pin.toml`` is the one place this
+    repository writes it -- the jar this replaced was called ``plantuml.jar`` and was four
+    years old without anyone noticing.
+
+    Returns ``None`` when there is no pin to read, which is what an sdist looks like:
+    ``vendor/`` sits at the repository root, and flit's ``[tool.flit.sdist] include``
+    patterns cannot escape the package directory, so neither the pin nor the jar is in the
+    tarball. That is the case route (3) below exists for.
+
+    This reads the TOML itself instead of importing ``tools/src/sn_tools/fetch_plantuml.py``
+    (which computes the same path) on purpose: the tooling is a virtual member run by path
+    and installed into nothing, so a test suite that imported it would only work from a
+    checkout -- exactly the tree that does not need this fallback reasoning.
+
+    :return: The pinned jar's path, or ``None`` if this tree carries no pin.
+    """
+    root = Path(__file__).resolve().parents[3]
+    pin = root / "vendor" / "plantuml" / "pin.toml"
+    if not pin.is_file():
+        return None
+    version = tomllib.loads(pin.read_text(encoding="utf-8"))["version"]
+    return pin.parent / f"plantuml-{version}.jar"
+
+
+def resolve_plantuml_command(workspace_jar: Path | None) -> str:
     """Work out how this suite renders PlantUML, from three sources in this order.
 
     The point of the chain is that the jar's *location* is an implementation detail of
@@ -150,25 +181,23 @@ def resolve_plantuml_command(vendored_jar: Path) -> str:
 
     1. ``PLANTUML_JAR``, run through ``java``. Naming a jar is an explicit choice, so it
        wins: it is how sphinx-mounts' suite is already pointed at a renderer, and it is
-       the only route open to someone running these tests from the sdist with the jar
-       unpacked elsewhere -- or repacked away, which is what a distribution packager does
-       with an embedded pre-built jar. A variable that is set but names no file is a
-       mistake worth a red run rather than a silent fall-through: falling through would
-       render with a renderer the caller did not ask for and say nothing.
-    2. The vendored jar, as copied into the test tempdir. The default, and unchanged: a
-       fresh clone still renders with the copy under ``tests/doc_test/utils/`` and needs
-       nothing installed.
+       the only route open to someone running these tests from the sdist -- which ships no
+       jar at all now that the workspace fetches one. A variable that is set but names no
+       file is a mistake worth a red run rather than a silent fall-through: falling through
+       would render with a renderer the caller did not ask for and say nothing.
+    2. The workspace's fetched jar, ``vendor/plantuml/plantuml-<pinned version>.jar``. The
+       default in a checkout, and what every rendering poe task guarantees by declaring
+       ``deps = ["fetch-plantuml"]``.
     3. A ``plantuml`` executable on ``PATH`` -- and only once (2) is gone. This suite
        renders for real and asserts on the output, so a developer machine that happens to
        carry a homebrew ``plantuml`` must not quietly swap the renderer version out from
-       under it. The executable is the fallback for a checkout or sdist with no jar, not
-       a preference.
+       under it. The executable is the fallback for a tree with no jar, not a preference.
 
     An EMPTY ``PLANTUML_JAR`` is treated as unset rather than as a mistake, because that
     is how it arrives: a developer shell with ``PLANTUML_JAR=`` exported, and a workflow
     that computes the value with an expression. sphinx-mounts reads it the same way.
 
-    :param vendored_jar: Where the vendored jar was copied to for this session.
+    :param workspace_jar: The pinned jar's path, or ``None`` if this tree carries no pin.
     :return: The value for the ``plantuml`` configuration.
     """
     env_jar = os.environ.get("PLANTUML_JAR")
@@ -177,11 +206,11 @@ def resolve_plantuml_command(vendored_jar: Path) -> str:
             raise RuntimeError(
                 f"PLANTUML_JAR names {env_jar!r}, which is not a file. "
                 "Point it at a plantuml jar, or unset it to render with the "
-                "jar this package vendors."
+                "jar `uv run poe fetch-plantuml` puts in vendor/plantuml/."
             )
         return _PLANTUML_JAVA.format(env_jar)
-    if vendored_jar.is_file():
-        return _PLANTUML_JAVA.format(vendored_jar)
+    if workspace_jar is not None and workspace_jar.is_file():
+        return _PLANTUML_JAVA.format(workspace_jar)
     # sphinxcontrib.plantuml invokes the command synchronously; on Windows the
     # chocolatey package's `plantuml` shim is non-blocking (javaw), so its `plantumlc`
     # (java) shim is the one to use there -- a lesson sphinx-mounts has already paid for
@@ -189,30 +218,33 @@ def resolve_plantuml_command(vendored_jar: Path) -> str:
     for name in ("plantumlc", "plantuml") if os.name == "nt" else ("plantuml",):
         if executable := shutil.which(name):
             return executable
+    missing = (
+        f"{workspace_jar} does not exist"
+        if workspace_jar is not None
+        else "this tree has no vendor/plantuml/pin.toml, so it has no workspace jar"
+    )
     raise RuntimeError(
-        f"no PlantUML to render with: {vendored_jar} does not exist, no `plantuml` "
-        "(nor, on Windows, `plantumlc`) is on PATH, and PLANTUML_JAR is unset. Set "
-        "PLANTUML_JAR to a plantuml jar (with java on PATH), or install a plantuml "
+        f"no PlantUML to render with: {missing}, no `plantuml` (nor, on Windows, "
+        "`plantumlc`) is on PATH, and PLANTUML_JAR is unset. Run "
+        "`uv run poe fetch-plantuml` to download the pinned jar, or set PLANTUML_JAR "
+        "to a plantuml jar of your own (with java on PATH), or install a plantuml "
         "executable."
     )
 
 
 @pytest.fixture(scope="session")
-def plantuml_command(sphinx_test_tempdir) -> str:
+def plantuml_command() -> str:
     """The plantuml command every test project must build its diagrams with.
 
-    CI runners have java and the vendored jar but no ``plantuml`` on ``PATH``, so a
+    CI runners have java and the fetched jar but no ``plantuml`` on ``PATH``, so a
     project left on sphinxcontrib-plantuml's default command fails to render there while
     passing on any machine that happens to have one installed. Every test therefore takes
     its command from here, whether it goes through :func:`test_app` or calls ``make_app``
     itself -- no test builds the path to the jar for itself.
 
-    :param sphinx_test_tempdir: The directory holding the copied jar.
     :return: The value for the ``plantuml`` configuration.
     """
-    return resolve_plantuml_command(
-        Path(sphinx_test_tempdir) / "utils" / "plantuml.jar"
-    )
+    return resolve_plantuml_command(workspace_plantuml_jar())
 
 
 # node classes from extensions outside sphinx-needs are exempt from the parent check:
