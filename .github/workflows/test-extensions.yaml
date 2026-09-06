@@ -82,7 +82,7 @@ jobs:
         # `extra-groups: codelinks-libclang` above is the ONLY executable place that wheel
         # is named in this repository, and losing it is SILENT: the four modules that need
         # `clang.cindex` carry `pytest.importorskip`, so the cell would report
-        # `301 passed, 26 skipped` and exit 0 with 56 test cases gone. Measured. The same
+        # `303 passed, 26 skipped` and exit 0 with 56 test cases gone. Measured. The same
         # would happen if the group ever gained a marker (the `sphinx-9` group already has
         # one) or if a runner platform had no libclang wheel.
         #

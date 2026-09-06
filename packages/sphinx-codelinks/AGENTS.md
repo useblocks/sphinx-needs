@@ -36,12 +36,12 @@ design/                 # import-commit-map.txt: old hash -> new hash for the 20
 src/sphinx_codelinks/   # Main source code
 ├── __init__.py         # `__version__` (public, in `__all__`) and the Sphinx `setup()`
 ├── cmd.py              # CLI commands using Typer
-├── config.py           # Configuration models using Pydantic
+├── config.py           # Configuration dataclasses + TypedDicts, and the TOML loader
 ├── logger.py           # Logging utilities
 ├── needextend_write.py # Write RST files with Sphinx-Needs directives
 ├── analyse/            # Code analysis module
 │   ├── analyse.py      # Main analysis orchestration
-│   ├── models.py       # Pydantic models for analysis results
+│   ├── models.py       # dataclasses/TypedDicts/Enums for analysis results
 │   ├── oneline_parser.py # One-line comment parser
 │   ├── projects.py     # Project-specific analyzers (C++, Python, etc.)
 │   ├── utils.py        # Analysis utilities, including the git-root helpers
@@ -59,7 +59,7 @@ src/sphinx_codelinks/   # Main source code
 tests/                  # Test suite -- `tests/__init__.py` is why this path is NOT in the
 ├── __init__.py         #   root `testpaths` (see the root AGENTS.md)
 ├── conftest.py         # Pytest fixtures and configuration
-├── test_*.py           # 18 test modules
+├── test_*.py           # 16 test modules
 ├── __snapshots__/      # Syrupy snapshot test fixtures
 ├── data/               # Test data and fixtures
 └── doc_test/           # minimal Sphinx projects for the integration tests
@@ -85,25 +85,39 @@ of `test`: it is 23 MiB and 81 MB on disk, and every cell of every package would
 pay for it. Every `test-codelinks*` poe task adds the group, and so does CI's Extensions
 cell.
 
+**`test-codelinks` syncs the group into the DEFAULT `.venv`.** It has no
+`UV_PROJECT_ENVIRONMENT` of its own, unlike its three `-sphinx7/8/9` siblings, so the wheel
+lands in the environment every other command uses — and the next plain `uv sync --frozen`
+prunes it out again (`Uninstalled 1 package: - libclang==18.1.1`). So the two numbers only
+appear either side of that sync, and this is the sequence that shows both:
+
 ```bash
-uv run poe test-codelinks                       # 357 passed
-uv run --frozen --no-sync pytest packages/sphinx-codelinks/tests   # 301 passed, 26 skipped
+uv run poe test-codelinks                                            # 359 passed
+uv sync --frozen                                                     # removes libclang again
+uv run --frozen --no-sync pytest packages/sphinx-codelinks/tests     # 303 passed, 26 skipped
 ```
 
-**Both are green, and only one of them tested the engine.** The four modules that need it
-carry `pytest.importorskip("clang.cindex")`, so a run without the group skips politely
+**Both runs are green, and only the first tested the engine.** The four modules that need
+it carry `pytest.importorskip("clang.cindex")`, so a run without the group skips politely
 rather than failing — which means a task or a CI line that quietly lost the group would
-look like a pass. If you are changing anything under `analyse/preproc/`, check the number.
+look like a pass. (CI is fenced: the Extensions cell asserts `import clang.cindex` right
+after its sync.) If you are changing anything under `analyse/preproc/`, check the number.
+
+The summary prints **26 skipped**, not 56: three of the four guards are module-level
+`pytest.importorskip`, which pytest reports as one skip per module and never collects the
+tests inside. 56 is how many test cases stop running.
 
 ### This package caps `click` and `typer`, and nothing else in the lock does
 
 `click < 8.2` (8.2 produces empty errors when the CLI is given no arguments) and
 `typer >=0.16.0,<0.26.8` (0.26.8 removed `rich_utils.STYLE_METAVAR`, which
 `sphinxcontrib-typer` still imports for the docs build). Measured across every
-`requires-dist` in `uv.lock`: **no other package in this workspace names `click`, `typer`,
-`rich` or `shellingham` at all**, so the caps constrain nothing but this package today.
-The direction to watch is the reverse one — the day a root, `test` or `dev` dependency
-wants `click>=8.2`, `uv lock` will fail and the reason will be here.
+`requires-dist` in `uv.lock`: **no other workspace MEMBER names either**, and for `click`
+no package in the lock does at all. `typer`, `rich` and `shellingham` are named by third
+parties there — `sphinxcontrib-typer` (which is exactly what the `typer` cap exists for),
+`typer` itself, `memray` and `textual` — so the `typer` cap is the one that could bind on
+someone else. The direction to watch is the reverse one: the day a root, `test` or `dev`
+dependency wants `click>=8.2`, `uv lock` will fail and the reason will be here.
 
 ## Documentation
 
@@ -130,32 +144,30 @@ configuration, one prek config (`uv run poe lint`, `uv run poe typecheck`). The 
 (`packages/sphinx-codelinks/tests/*`: `E402` for the `importorskip` guard pattern, `SIM300`
 for a deliberate assert order). What is specific to this package:
 
-- **Type annotations**: complete annotations on every function signature. Pydantic models
-  for configuration and data structures.
+- **Type annotations**: complete annotations on every function signature. Configuration
+  and data structures are stdlib `@dataclass`, `TypedDict` and `Enum` — **there is no
+  pydantic in this package** (`grep -rn pydantic src/` is empty, and it is not a
+  dependency); a `TypedDict` describes the TOML shape and a `@dataclass` the loaded object.
 - **Docstrings**: Sphinx-style (`:param:`, `:return:`, `:raises:`). No types in the
   docstring — they belong in the annotations.
-- **Immutability**: prefer immutable structures; frozen Pydantic models for configuration.
+- **Immutability**: prefer immutable structures; `@dataclass(frozen=True)` where it fits.
 - **Pure functions** where possible.
 - **Error handling**: descriptive exceptions, custom types where they help.
 
 ### Docstring Example
 
 ```python
-def discover_source_files(
-    root_dir: Path,
-    include_patterns: list[str],
-    exclude_patterns: list[str],
-    *,
-    respect_gitignore: bool = True,
-) -> list[Path]:
-    """Discover source files matching the given patterns.
+def form_https_url(
+    git_url: str, rev: str, project_path: Path, filepath: Path, lineno: int
+) -> str | None:
+    """Build the blob URL for one traced source line.
 
-    :param root_dir: The root directory to search from.
-    :param include_patterns: Glob patterns for files to include.
-    :param exclude_patterns: Glob patterns for files to exclude.
-    :param respect_gitignore: Whether to respect .gitignore rules.
-    :return: List of discovered file paths.
-    :raises ValueError: If root_dir does not exist.
+    :param git_url: The remote URL, in any form giturlparse accepts.
+    :param rev: The commit the link should point at.
+    :param project_path: The root `filepath` is made relative to.
+    :param filepath: The traced file, ABSOLUTE and under `project_path`.
+    :param lineno: The line to anchor on.
+    :return: The URL, or the unchanged `git_url` if the host is unsupported.
     """
     ...
 ```
@@ -164,7 +176,12 @@ def discover_source_files(
 
 `uv run poe test-codelinks` (trailing arguments go to pytest), and
 `test-codelinks-sphinx7/8/9` for one matrix cell each. Snapshots:
-`uv run poe test-codelinks -- --snapshot-update`.
+`uv run poe test-codelinks --snapshot-update`.
+
+**No `--` before the pytest arguments.** poe appends trailing words to the task's command
+verbatim and forwards a `--` along with them, and pytest then reads `--snapshot-update` as
+a file path: `poe test-codelinks -- --collect-only -q` collects **0 items**, where
+`poe test-codelinks --collect-only -q` collects 359.
 
 ### Test Structure
 
@@ -198,23 +215,34 @@ def discover_source_files(
 ### Example Test Pattern
 
 ```python
-import pytest
 from pathlib import Path
 
-def test_analyse_cpp_file(snapshot, tmp_path):
-    """Test C++ file analysis produces correct output."""
-    # Arrange
-    source_file = tmp_path / "test.cpp"
-    source_file.write_text("""
-    // @req{REQ-001}
-    void function() {}
-    """)
+from sphinx_codelinks.analyse.analyse import SourceAnalyse
+from sphinx_codelinks.config import SourceAnalyseConfig
+
+
+def test_analyse_cpp_file(tmp_path: Path, snapshot) -> None:
+    """One C++ file with one one-line marker produces one need."""
+    # Arrange. The DEFAULT one-line style is `@` to end-of-line with comma-separated
+    # fields in the order title, id, type, links -- `[[...]]` in tests/data/dcdc is a
+    # configured `OneLineCommentStyle`, not the default. Each extractor is opt-in:
+    # `get_oneline_needs` is False unless asked for. And `SourceAnalyse` does NOT discover
+    # files -- `src_files` is what it reads, and `SourceDiscover` is what fills that list
+    # in the CLI and in the extension
+    source = tmp_path / "demo.cpp"
+    source.write_text("// @the demo function, IMPL_demo, impl\nvoid demo() {}\n")
+    config = SourceAnalyseConfig(
+        src_files=[source], src_dir=tmp_path, get_oneline_needs=True
+    )
 
     # Act
-    result = analyse_file(source_file)
+    analyse = SourceAnalyse(config)
+    analyse.git_remote_url = None   # a tmp_path is not a repository
+    analyse.git_commit_rev = None
+    analyse.run()
 
     # Assert
-    assert snapshot == result
+    assert analyse.all_marked_content == snapshot
 ```
 
 ## Architecture Overview
@@ -306,31 +334,50 @@ The extension connects to these Sphinx events (in execution order):
 
 #### Configuration (`config.py`)
 
-Pydantic models define all configuration options:
+Stdlib dataclasses, `TypedDict`s and `Enum`s — no pydantic, and no third-party validation
+library. Each configuration object comes in a pair: a `…ConfigType` `TypedDict` describing
+the shape a TOML file may carry, and a `@dataclass` holding the loaded, validated object.
 
-- `AnalyseConfig`: Main analysis configuration with source paths, patterns, markers
-- Uses Pydantic v2 with validation and serialization
-- Configuration loaded from TOML files
+- `SourceAnalyseConfig` (`config.py:422`): the analysis configuration — the source
+  directory, the marker styles, the need fields
+- `CodeLinksConfig` / `CodeLinksProjectConfigType`: the top level, one entry per traced
+  project
+- `OneLineCommentStyle`, `NeedIdRefsConfig`, `MarkedRstConfig`, `PreprocessorConfig`: the
+  per-feature blocks
+- validation is `jsonschema`'s `validate(instance=…, schema=…)` per field, against a
+  schema each config class returns from its own `get_schema`, collected by its
+  `check_schema` and `check_*` methods into a list of error strings — not raised
+- the TOML loader is `load_config_from_toml` in `cmd.py`
 
 #### Source Discovery (`source_discover/`)
 
-- `discover_source_files()`: Find source files matching include/exclude patterns
-- Respects `.gitignore` rules using `gitignore-parser`
-- Returns filtered list of files to analyze
+- `SourceDiscover` (`source_discover.py:32`): walks `src_dir`, filters by `include` /
+  `exclude` and by the extension table `COMMENT_FILETYPE`, and exposes `source_paths`
+- `.gitignore` rules are honoured through the **`ignore-python`** dependency (not
+  `gitignore-parser`), when the `gitignore` field of `SourceDiscoverConfig` is set
+- `CommentType` (`source_discover/config.py:25`) is the language enum the rest of the
+  pipeline dispatches on
 
 #### Code Analysis (`analyse/`)
 
 - **`analyse.py`**: Main orchestrator that coordinates analysis across all source files
-- **`projects.py`**: Language-specific analyzers (C++, Python, C#, Rust, YAML)
+- **`projects.py`**: `AnalyseProjects`, which runs one `SourceAnalyse` per configured
+  project. There is no per-language class — the language is a `CommentType` value
 - **`oneline_parser.py`**: Tree-sitter based parser for extracting comment markers
-- **`models.py`**: Pydantic models for analysis results (markers, line ranges, etc.)
+- **`models.py`**: `@dataclass` / `TypedDict` / `Enum` results — `SourceComment`,
+  `SourceFile`, `Position`, `SourceMap`, and the `Metadata` hierarchy (`OneLineNeed`,
+  `NeedIdRefs`, `MarkedRst`)
 - **`utils.py`**: Helper functions for path handling, marker extraction
 
 #### Tree-sitter Integration
 
 - Uses tree-sitter parsers for each supported language
 - Extracts comments from AST nodes
-- Parses special marker syntax (e.g., `@req{ID}`, `@test{ID}`)
+- Parses the one-line marker syntax inside a comment. The default `OneLineCommentStyle`
+  is `@` to end of line, comma-separated, fields `title, id, type, links` -- start and end
+  sequences, the split character and the field list are all configurable per project, and
+  `tests/data/dcdc` uses a `[[…]]` style to show that. Plus need-ID references and `@rst`
+  blocks
 - Maintains line number information for source tracing
 
 #### Sphinx Extension (`sphinx_extension/`)
@@ -352,7 +399,7 @@ The CLI uses Typer for command definitions:
 - `pyproject.toml` - Project configuration, dependencies, and tool settings
 - `src/sphinx_codelinks/__init__.py` - Package entry point with `setup()` for Sphinx
 - `src/sphinx_codelinks/cmd.py` - CLI commands and argument parsing
-- `src/sphinx_codelinks/config.py` - Pydantic configuration models
+- `src/sphinx_codelinks/config.py` - configuration dataclasses and the TOML schema
 - `src/sphinx_codelinks/analyse/analyse.py` - Main analysis orchestration
 - `src/sphinx_codelinks/analyse/projects.py` - Language-specific analyzers
 - `src/sphinx_codelinks/analyse/oneline_parser.py` - Tree-sitter comment parser
@@ -371,21 +418,19 @@ The CLI uses Typer for command definitions:
 
 ### Adding Support for a New Language
 
-1. Add tree-sitter parser dependency to `pyproject.toml` (e.g., `tree-sitter-java`)
-2. Create language-specific analyzer in `analyse/projects.py`:
+A language is a `CommentType` member and four table entries — there is no analyzer class
+and no registry object to subclass.
 
-   ```python
-   class JavaAnalyzer(BaseAnalyzer):
-       language = "java"
-       parser_language = "java"
-
-       def get_comment_nodes(self, tree):
-           # Return comment nodes from tree
-   ```
-
-3. Register analyzer in `LANGUAGE_ANALYZERS` dict in `projects.py`
-4. Add test files in `tests/data/<language>/`
-5. Add tests in `tests/test_analyse.py`
+1. Add the tree-sitter grammar to `[project] dependencies` in `pyproject.toml`
+   (e.g. `tree-sitter-java>=0.23`), and re-lock at the workspace root
+2. Add the member to `CommentType` in `source_discover/config.py`, and its file extensions
+   to `COMMENT_FILETYPE` in the same file
+3. In `analyse/utils.py`: a `<LANG>_QUERY` tree-sitter query naming the comment nodes, a
+   branch in the `comment_type ==` chain that builds `Language(tree_sitter_<lang>.language())`,
+   and — if scope association is wanted — an entry in `SCOPE_NODE_TYPES`
+4. Add test files under `tests/data/`
+5. Add tests in `tests/test_analyse.py`, and a fixture row in
+   `tests/test_extraction_fixtures.py` if the language should be covered declaratively
 
 ### Adding a New Marker Type
 
@@ -397,24 +442,33 @@ The CLI uses Typer for command definitions:
 
 ### Adding a CLI Command
 
-1. Add command function in `cmd.py` using Typer decorators:
+The CLI is `codelinks analyse`, `codelinks discover` and `codelinks write rst` —
+`write` is a Typer sub-app (`write_app`), the other two are commands on `app`.
+
+1. Add the function in `cmd.py` under `@app.command(no_args_is_help=True)` (or
+   `@write_app.command("<name>", …)` for a `write` subcommand):
 
    ```python
-   @app.command()
-   def new_command(arg: str = typer.Argument(..., help="Description")):
+   @app.command(no_args_is_help=True)
+   def new_command(
+       arg: Annotated[Path, typer.Argument(..., help="Description")],
+   ) -> None:
        """Command description."""
-       # Implementation
    ```
 
-2. Add tests in `tests/test_cmd.py`
+2. Add tests in `tests/test_cmd.py` (typer's `CliRunner`, in-process)
 3. Update documentation in `docs/components/cli.rst`
 
 ### Adding Configuration Options
 
-1. Add field to `AnalyseConfig` or relevant Pydantic model in `config.py`
-2. Add validation if needed using Pydantic validators
+1. Add the field to the relevant `@dataclass` in `config.py` (`SourceAnalyseConfig` for
+   analysis options) **and** to its `…ConfigType` `TypedDict`, which is what the TOML
+   schema is built from — the pair has to stay in step
+2. Add the field's schema to the class's `get_schema`, and any cross-field rule to a
+   `check_…` method beside the existing ones — they return error strings rather than
+   raising
 3. Update TOML configuration examples in `docs/` and `tests/data/configs/`
-4. Add tests for new configuration option
+4. Add tests for the new configuration option
 5. Document in `docs/components/configuration.rst`
 
 ## Reference Documentation
@@ -422,6 +476,5 @@ The CLI uses Typer for command definitions:
 - [Sphinx Documentation](https://www.sphinx-doc.org/) · [Repository](https://github.com/sphinx-doc/sphinx)
 - [Sphinx-Needs Documentation](https://sphinx-needs.readthedocs.io/) · [Repository](https://github.com/useblocks/sphinx-needs)
 - [tree-sitter Documentation](https://tree-sitter.github.io/tree-sitter/) · [Repository](https://github.com/tree-sitter/tree-sitter)
-- [Pydantic Documentation](https://docs.pydantic.dev/) · [Repository](https://github.com/pydantic/pydantic)
 - [pytest Documentation](https://docs.pytest.org/) · [Repository](https://github.com/pytest-dev/pytest)
 - [Typer Documentation](https://typer.tiangolo.com/) · [Repository](https://github.com/fastapi/typer)

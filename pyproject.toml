@@ -489,7 +489,7 @@ executor = { type = "uv", frozen = true, no-group = "dev", group = [
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
 # sphinx-codelinks. Every one of these adds `--group codelinks-libclang`, which is where
-# its optional preprocessor-aware C/C++ engine comes from: without it 56 of the 357 tests
+# its optional preprocessor-aware C/C++ engine comes from: without it 56 of the 359 tests
 # skip (politely -- the `pytest.importorskip("clang.cindex")` guards see to that), so a
 # run that quietly lacked the group would be a false green rather than a failure. The
 # default `test-codelinks` needs an `executor` for the same reason, unlike `test-mounts`.
