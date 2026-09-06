@@ -447,6 +447,59 @@ def test_a_404_means_not_published(monkeypatch) -> None:
     assert release_plan.on_pypi("acme-core", "1.0.0") is False
 
 
+def test_a_read_timeout_in_the_tag_path_is_refused_not_a_traceback(monkeypatch) -> None:
+    """The gap this closes: `TimeoutError` is an `OSError` and NOT a `URLError`, because
+    `urlopen`'s READ phase does not wrap it -- so `except URLError` let a timeout out of
+    the plan job's own PyPI call as a traceback instead of the fail-closed message. The
+    twin assertion on `published_versions` is
+    `test_a_pypi_read_timeout_is_refused_not_a_traceback`; the two functions must not
+    drift, which is the whole reason this one exists."""
+
+    def raising(url: str, timeout: int = 30):
+        raise TimeoutError("timed out")
+
+    monkeypatch.setattr(release_plan.urllib.request, "urlopen", raising)
+    with pytest.raises(release_plan.PlanError) as caught:
+        release_plan.on_pypi("acme-core", "1.0.0")
+    message = str(caught.value)
+    assert "cannot reach PyPI (timed out)" in message
+    assert "refusing to guess whether acme-core 1.0.0 is published" in message
+
+
+def test_a_urlerror_in_the_tag_path_still_names_the_reason(monkeypatch) -> None:
+    """Widening the clause must not change what a `URLError` reads like: `.reason` where
+    there is one, so this stays `[Errno 61] Connection refused` rather than the
+    `<urlopen error ...>` wrapper `str(exc)` would give."""
+    import urllib.error
+
+    def raising(url: str, timeout: int = 30):
+        raise urllib.error.URLError(OSError(61, "Connection refused"))
+
+    monkeypatch.setattr(release_plan.urllib.request, "urlopen", raising)
+    with pytest.raises(release_plan.PlanError) as caught:
+        release_plan.on_pypi("acme-core", "1.0.0")
+    message = str(caught.value)
+    assert "cannot reach PyPI ([Errno 61] Connection refused)" in message
+    assert "<urlopen error" not in message
+
+
+def test_an_http_error_is_still_answered_before_the_oserror_clause(monkeypatch) -> None:
+    """`HTTPError` is a `URLError` is an `OSError`. With the widened clause the order of
+    the two `except`s is what keeps a 404 meaning "not published" instead of "PyPI is
+    unreachable"."""
+    import urllib.error
+
+    def raising(url: str, timeout: int = 30):
+        raise urllib.error.HTTPError(url, 503, "boom", None, None)  # ty: ignore[invalid-argument-type]
+
+    monkeypatch.setattr(release_plan.urllib.request, "urlopen", raising)
+    with pytest.raises(release_plan.PlanError) as caught:
+        release_plan.on_pypi("acme-core", "1.0.0")
+    message = str(caught.value)
+    assert "PyPI returned 503" in message
+    assert "cannot reach PyPI" not in message
+
+
 # --- (5) the tagged commit is on the default branch --------------------------------------
 
 

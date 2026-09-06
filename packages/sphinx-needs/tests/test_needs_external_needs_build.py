@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 
@@ -15,16 +14,21 @@ from sphinx.util.console import strip_colors
     [{"buildername": "html", "srcdir": "doc_test/doc_needs_external_needs"}],
     indirect=True,
 )
-def test_doc_build_html(test_app: SphinxTestApp, sphinx_test_tempdir):
+def test_doc_build_html(test_app: SphinxTestApp, plantuml_command: str):
     import subprocess
 
     src_dir = Path(test_app.srcdir)
     out_dir = Path(test_app.outdir)
-    plantuml = r"java -Djava.awt.headless=true -jar {}".format(
-        os.path.join(sphinx_test_tempdir, "utils", "plantuml.jar")
-    )
     output = subprocess.run(
-        ["sphinx-build", "-b", "html", "-D", rf"plantuml={plantuml}", src_dir, out_dir],
+        [
+            "sphinx-build",
+            "-b",
+            "html",
+            "-D",
+            f"plantuml={plantuml_command}",
+            src_dir,
+            out_dir,
+        ],
         capture_output=True,
     )
     expected_warnings = [
@@ -35,7 +39,15 @@ def test_doc_build_html(test_app: SphinxTestApp, sphinx_test_tempdir):
 
     # run second time and check
     output_second = subprocess.run(
-        ["sphinx-build", "-b", "html", "-D", rf"plantuml={plantuml}", src_dir, out_dir],
+        [
+            "sphinx-build",
+            "-b",
+            "html",
+            "-D",
+            f"plantuml={plantuml_command}",
+            src_dir,
+            out_dir,
+        ],
         capture_output=True,
     )
 

@@ -80,6 +80,7 @@ uv run poe docs-mounts                # the sphinx-mounts docs build
 uv run poe smoke-needs                # build the wheel and test the built package
 uv run poe check-workspace            # the manifests agree with each other (Lint runs it)
 uv run poe release-plan               # what is pending, in what order (advice; exits 0)
+uv run poe bump <dist> --bump minor   # stamp a release: version, literals, floors, lock, changelog
 uv run poe import-check-needs         # import the wheel against PyPI-resolved dependencies
 uv run --frozen --no-sync pytest tools/tests -q   # the tooling's own tests
 UV_PYTHON=3.12 uv run --no-sync poe test-needs-sphinx8   # one CI matrix cell
@@ -107,6 +108,10 @@ and its tests assert rather than skip**: either a `plantuml` executable on `PATH
 `release.yaml` use, pointed at the jar sphinx-needs already vendors, so no runner installs
 a plantuml package:
 `PLANTUML_JAR=$PWD/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar uv run poe test-mounts`.
+**sphinx-needs' own suite honours `PLANTUML_JAR` too**, ahead of the jar it vendors and ahead
+of any `plantuml` on `PATH`, so one export points both suites at one renderer — and a run from
+the sdist, whose embedded jar a distribution packager repacks away, has a supported route to a
+system PlantUML.
 `bazel` (or `bazelisk`) is the other optional binary — without it the `bazel`-marked tests
 skip, and `test-mounts` deselects them anyway. The browser tests (`-m jstest`, which
 `test-needs` excludes) additionally need a browser, and it is not a package: `uv run poe
@@ -241,6 +246,34 @@ workflow holds no API token, and every one of its checks fails closed.
    cell.
 1. **Release pull request**, from `master` with a clean tree:
    ```bash
+   uv run poe bump <dist> --bump {patch|minor|major}    # or --to X.Y.Z; --dry-run to preview
+   ```
+   One command for every mechanical edit, printed step by step with the file it wrote:
+
+   - `[project] version` in `packages/<dist>/pyproject.toml`;
+   - `__version__` in `packages/<dist>/src/<module>/__init__.py` — it is stamped into every
+     generated `needs.json`, so it is a literal rather than an `importlib.metadata` lookup,
+     and `uv run poe check-workspace` fails when the two disagree;
+   - for sphinx-needs only, the `NEEDS_VERSION` fallback in `.github/workflows/docker.yaml`,
+     which becomes `sphinx-needs-v<version>`: it is used as a git ref, and only the runs
+     with no tag of their own read it. Nothing fences this one;
+   - every dependant's floor, when a member declares `<dist>` at runtime;
+   - `uv.lock`;
+   - the changelog entry in `packages/<dist>/docs/changelog.rst` — the `release:<version>`
+     label, the heading, `:Released:` in that file's own date format, and the
+     `:Full Changelog:` compare link where that file's newest entry has one. Both
+     conventions in this repository are honoured: a `sphinx-mounts`-style `Unreleased`
+     section is converted in place, keeping its bullets; a `sphinx-needs`-style entry is
+     inserted above the newest one, empty.
+
+   **By hand: the summary paragraph** under the new heading. `bump` deliberately writes no
+   prose — a placeholder in a changelog is a thing that ships — and it does not commit, tag
+   or push. It refuses to run if any file it would rewrite is dirty (`uv.lock` excepted:
+   `uv lock` derives it, and guarding it would make releasing two members in one pull
+   request impossible).
+
+   *What `bump` runs, for the by-hand path:*
+   ```bash
    uv version --package <dist> --bump {patch|minor|major} --no-sync
    uv run python tools/src/sn_tools/propagate_floors.py <dist>   # only if a member depends on <dist>
    uv lock
@@ -249,24 +282,19 @@ workflow holds no API token, and every one of its checks fails closed.
    the `uv-lock` hook then fails a release pull request for a reason that has nothing to do
    with the release; a bare `uv version --bump` creates and syncs `.venv` and re-resolves
    from cold, which reorders `resolution-markers` and stops the diff being readable.
-2. **The two numbers `uv version` does not write.** `__version__` in
-   `packages/<dist>/src/<module>/__init__.py` (it is stamped into every generated
-   `needs.json`, so it is a literal rather than an `importlib.metadata` lookup), and — for
-   sphinx-needs — the `NEEDS_VERSION` fallback in `.github/workflows/docker.yaml`, which
-   becomes `sphinx-needs-v<version>`: it is used as a git ref, and only the runs with no tag
-   of their own read it. `uv run poe check-workspace` fails on the first of them.
-3. **Changelog.** Stamp `packages/<dist>/docs/changelog.rst`: the `_release:<version>`
-   label, the version heading, `:Released: DD.MM.YYYY`, the `:Full Changelog:` compare link
-   (`…/compare/<previous tag>...<dist>-v<version>`) and the summary paragraph. The compare
-   link 404s in Docs-Linkcheck until the tag exists; that is expected and not a required
-   check.
-4. **Check it locally**: `uv run poe lint` (which now runs `check-workspace`) and
+2. **Write the summary paragraph** for the entry `bump` stamped, and check the rest of it:
+   `:Released: DD.MM.YYYY` for sphinx-needs, `:Released: YYYY-MM-DD` for sphinx-mounts, and
+   the compare link `…/compare/<previous tag>...<dist>-v<version>` — whose previous half is
+   a bare tag for a sphinx-needs release that follows one from before the monorepo move. The
+   compare link 404s in Docs-Linkcheck until the tag exists; that is expected and not a
+   required check.
+3. **Check it locally**: `uv run poe lint` (which now runs `check-workspace`) and
    `uv run poe smoke-needs`.
-5. **Merge**, then push the tag from `master`:
+4. **Merge**, then push the tag from `master`:
    ```bash
    git tag <dist>-v<version> && git push origin <dist>-v<version>
    ```
-6. The workflow does the rest: validate the tag, build, resolve the built wheel against
+5. The workflow does the rest: validate the tag, build, resolve the built wheel against
    PyPI alone, run the member's suite against its dependencies *as published*, publish, and
    create the GitHub Release titled `<dist> v<version>`. For sphinx-needs it then pushes a
    second, bare `<version>` tag, which is what keeps Read the Docs' `stable`, every

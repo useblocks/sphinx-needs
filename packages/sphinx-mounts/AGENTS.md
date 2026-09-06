@@ -127,6 +127,8 @@ as a standalone repository cannot be built there at all. Do not reintroduce it.
     `packages/sphinx-needs/tests/doc_test/utils/plantuml.jar`, which that package vendors
     for its own tests. Locally:
     `PLANTUML_JAR=$PWD/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar uv run poe test-mounts`.
+    sphinx-needs' suite reads the same variable, ahead of that vendored jar, so one export
+    serves both packages.
 
   Mermaid uses `raw` output, so no `mmdc` binary is needed.
 - **The three sphinx-needs integration tests assert rather than skip too.** They are the
