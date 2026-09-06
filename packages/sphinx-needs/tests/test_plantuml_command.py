@@ -22,6 +22,7 @@ here too, since it decides whether route (2) is reachable at all.
 from __future__ import annotations
 
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -48,6 +49,20 @@ def _no_inherited_jar(monkeypatch: pytest.MonkeyPatch) -> None:
     developer may well have it exported, so a case that means "unset" has to say so.
     """
     monkeypatch.delenv("PLANTUML_JAR", raising=False)
+
+
+def _expected(path: Path) -> str:
+    """A ``pytest.raises`` pattern matching the message's rendering of ``path``.
+
+    Two escapes, and both are load-bearing on Windows. ``match=`` is a REGULAR
+    EXPRESSION, so a raw ``C:\\Users\\...`` is not a path there but a pattern beginning
+    with the invalid escape ``\\U`` -- ``re`` rejects it before the assertion is reached,
+    and the three Windows cells go red on every run. And the message renders the value
+    with ``!r`` (deliberately: it is what makes a whitespace-only ``PLANTUML_JAR``
+    visible), so what appears in it is ``repr`` of the path -- with the backslashes
+    DOUBLED. Escaping the bare ``str`` fixes the crash and then fails to match.
+    """
+    return re.escape(repr(str(path)))
 
 
 def test_the_environment_variable_wins(
@@ -103,7 +118,7 @@ def test_a_named_jar_that_is_not_there_is_an_error(
     monkeypatch.setenv("PLANTUML_JAR", str(missing))
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
 
-    with pytest.raises(RuntimeError, match=str(missing)):
+    with pytest.raises(RuntimeError, match=_expected(missing)):
         resolve_plantuml_command(vendored_jar)
 
 
@@ -146,7 +161,7 @@ def test_a_named_jar_that_is_a_directory_is_an_error(
     """
     monkeypatch.setenv("PLANTUML_JAR", str(tmp_path))
 
-    with pytest.raises(RuntimeError, match=str(tmp_path)):
+    with pytest.raises(RuntimeError, match=_expected(tmp_path)):
         resolve_plantuml_command(vendored_jar)
 
 
