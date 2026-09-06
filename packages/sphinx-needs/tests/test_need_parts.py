@@ -17,7 +17,7 @@ def snapshot_json(snapshot):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_need_parts", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_need_parts"}],
     indirect=True,
 )
 def test_doc_need_parts(test_app: Sphinx, snapshot_json):

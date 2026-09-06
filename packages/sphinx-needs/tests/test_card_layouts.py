@@ -1302,7 +1302,6 @@ def conf_py(specs: dict[str, Any], extra: str = "") -> str:
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1338,7 +1337,6 @@ def test_compiled_card_renders(test_app: Any) -> None:
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1380,7 +1378,6 @@ def test_compiled_side_card_skeleton(test_app: Any) -> None:
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1452,7 +1449,6 @@ PIC_SVG = (
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1544,7 +1540,6 @@ Object form
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1752,7 +1747,6 @@ def test_name_collisions_are_refused(
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1796,7 +1790,6 @@ def setup(app):
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -1860,7 +1853,6 @@ def test_compile_card_layouts_rebinds_instead_of_mutating() -> None:
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), conf_py({})),
                 (Path("index.rst"), INDEX.replace("   :layout: my_card\n", "")),

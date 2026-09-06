@@ -10,7 +10,7 @@ from syrupy.filters import props
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needextend", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_needextend"}],
     indirect=True,
 )
 def test_doc_needextend_html(test_app: Sphinx, snapshot):
@@ -52,7 +52,6 @@ def test_doc_needextend_html(test_app: Sphinx, snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_needextend_warnings",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

@@ -8,7 +8,7 @@ from sphinx.util.console import strip_colors
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_warning", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_warning"}],
     indirect=True,
 )
 def test_proper_warning(test_app: Sphinx):
@@ -36,7 +36,6 @@ def test_proper_warning(test_app: Sphinx):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_warning",
-            "no_plantuml": True,
             "confoverrides": {"rst_prolog": ".. |drift| replace:: drift\n"},
         }
     ],

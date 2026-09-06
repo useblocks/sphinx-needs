@@ -11,7 +11,6 @@ from syrupy.filters import props
         {
             "buildername": "html",
             "srcdir": "doc_test/needs_from_toml",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -32,7 +31,6 @@ def test_needs_from_toml(test_app, snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/needs_from_toml",
-            "no_plantuml": True,
             "confoverrides": {"needs_reproducible_json": False},
         }
     ],

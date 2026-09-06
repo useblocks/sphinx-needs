@@ -166,7 +166,6 @@ needs_builder_filter = ''
                  """,
                 ),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -226,7 +225,6 @@ needs_builder_filter = ''
                  """,
                 ),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -282,7 +280,6 @@ needs_build_json = True
                  """,
                 ),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,

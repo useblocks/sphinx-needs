@@ -14,7 +14,6 @@ from syrupy.filters import props
         {
             "buildername": "html",
             "srcdir": "doc_test/need_constraints",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -106,7 +105,6 @@ def test_need_constraints(test_app, snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/need_constraints_failed",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

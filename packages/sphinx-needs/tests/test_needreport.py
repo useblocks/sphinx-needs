@@ -48,7 +48,7 @@ def build_warnings(app) -> list[str]:
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_needreport", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_needreport"}],
     indirect=True,
 )
 def test_doc_needreport(test_app):
@@ -111,7 +111,6 @@ Never rendered.
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), RENDER_FAIL_CONF),
                     (Path("index.rst"), REPORT_INDEX),
@@ -124,7 +123,6 @@ Never rendered.
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), RENDER_FAIL_CONF),
                     (Path("index.rst"), REPORT_INDEX),
@@ -181,7 +179,6 @@ needs_render_context = {
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), RESERVED_KEY_CONF),
                 (Path("index.rst"), REPORT_INDEX),
@@ -247,7 +244,6 @@ TYPES_TEMPLATE = """\
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), ABS_TEMPLATE_CONF),
                 (Path("index.rst"), REPORT_INDEX),
@@ -332,7 +328,6 @@ def test_report_template_join_semantics(srcdir, configured, expected):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_needreport_no_dropdown",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -409,7 +404,6 @@ def setup(app):
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), STUB_DROPDOWN_CONF),
                 (Path("index.rst"), REPORT_INDEX),
@@ -441,7 +435,6 @@ def test_dropdown_provider_is_left_alone(test_app):
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (
                     Path("conf.py"),
@@ -477,7 +470,6 @@ needs_render_context = {"report_directive": "dropdown"}
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), EXPLICIT_DROPDOWN_CONF),
                 (Path("index.rst"), REPORT_INDEX),
@@ -528,7 +520,6 @@ The project defines {{ types|length }} need types:
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), CUSTOM_TEMPLATE_CONF),
                 (Path("index.rst"), REPORT_INDEX),
@@ -611,7 +602,6 @@ PROSE_MENTION_TEMPLATE = """\
         pytest.param(
             {
                 "buildername": "html",
-                "no_plantuml": True,
                 "files": [
                     (Path("conf.py"), NO_PROVIDER_CONF),
                     (Path("index.rst"), REPORT_INDEX),
@@ -660,7 +650,6 @@ HARDCODED_DROPDOWN_TEMPLATE = """\
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), NO_PROVIDER_CONF),
                 (Path("index.rst"), REPORT_INDEX),
@@ -704,7 +693,6 @@ Never rendered.
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), NO_PROVIDER_CONF),
                 (Path("index.rst"), REPORT_INDEX),
@@ -763,7 +751,6 @@ NASTY_DETAIL_TEMPLATE = "{{ explode() }}\n"
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), NASTY_DETAIL_CONF),
                 (Path("index.rst"), REPORT_INDEX),
@@ -853,7 +840,6 @@ Report
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), RESERVED_KEY_CONF),
                 (Path("index.rst"), MANY_REPORTS_INDEX),
@@ -908,7 +894,6 @@ LITERAL_BLOCK_SECOND_RENDER_FAILS_TEMPLATE = """\
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), NO_PROVIDER_CONF),
                 (Path("index.rst"), REPORT_INDEX),
@@ -942,7 +927,6 @@ def test_example_markup_in_a_literal_block_is_substituted(test_app):
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), NO_PROVIDER_CONF),
                 (Path("index.rst"), REPORT_INDEX),
@@ -993,7 +977,6 @@ REAL_USE_SECOND_RENDER_FAILS_TEMPLATE = """\
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), NO_PROVIDER_CONF),
                 (Path("index.rst"), REPORT_INDEX),

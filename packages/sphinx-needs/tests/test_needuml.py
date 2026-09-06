@@ -517,7 +517,6 @@ def test_needumls_builder_rerun_keeps_saved_files(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_needuml_save_no_plantuml",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

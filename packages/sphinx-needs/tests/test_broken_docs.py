@@ -21,7 +21,6 @@ def get_warnings(app: SphinxTestApp):
             "buildername": "html",
             "srcdir": "doc_test/doc_basic",
             "confoverrides": {"needs_id_required": True},
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -35,7 +34,7 @@ def test_id_required_build_html(test_app: SphinxTestApp):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/broken_doc", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/broken_doc"}],
     indirect=True,
 )
 def test_duplicate_id(test_app: SphinxTestApp):
@@ -50,7 +49,7 @@ def test_duplicate_id(test_app: SphinxTestApp):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/broken_links", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/broken_links"}],
     indirect=True,
 )
 def test_broken_links(test_app: SphinxTestApp):
@@ -69,7 +68,6 @@ def test_broken_links(test_app: SphinxTestApp):
         {
             "buildername": "html",
             "srcdir": "doc_test/broken_statuses",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -93,7 +91,6 @@ def test_broken_statuses(test_app: SphinxTestApp):
         {
             "buildername": "html",
             "srcdir": "doc_test/broken_syntax_doc",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -113,7 +110,7 @@ def test_broken_syntax(test_app: SphinxTestApp):
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/broken_tags", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/broken_tags"}],
     indirect=True,
 )
 def test_broken_tags(test_app: SphinxTestApp):

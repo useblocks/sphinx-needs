@@ -12,7 +12,6 @@ from sphinx.util.console import strip_colors
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_needs_warnings",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -154,7 +153,6 @@ needs_warnings = {"unknown_filter": 42}
 """,
                 ),
             ],
-            "no_plantuml": True,
         }
     ],
     indirect=True,

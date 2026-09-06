@@ -6,7 +6,7 @@ from tests.util import extract_needs_from_html
 
 @pytest.mark.parametrize(
     "test_app",
-    [{"buildername": "html", "srcdir": "doc_test/doc_layout", "no_plantuml": True}],
+    [{"buildername": "html", "srcdir": "doc_test/doc_layout"}],
     indirect=True,
 )
 def test_doc_build_html(test_app):

@@ -13,7 +13,6 @@ from sphinx.util.parallel import parallel_available
             "buildername": "html",
             "srcdir": "doc_test/parallel_doc",
             "parallel": 4,
-            "no_plantuml": True,
         }
     ],
     indirect=True,

@@ -222,8 +222,6 @@ def params(
         "buildername": "html",
         "files": files(view, needs=needs, conf=PLANTUML_CONF if plantuml else conf),
     }
-    if not plantuml:
-        param["no_plantuml"] = True
     if overrides:
         param["confoverrides"] = overrides
     return param

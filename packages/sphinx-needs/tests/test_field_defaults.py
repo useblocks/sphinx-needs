@@ -29,7 +29,6 @@ def snapshot(snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_global_options",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -121,7 +120,6 @@ Test
     [
         {
             "buildername": "html",
-            "no_plantuml": True,
             "files": [
                 (Path("conf.py"), CONF_INVALID_PREDICATE),
                 (Path("index.rst"), INDEX_INVALID_PREDICATE),
@@ -182,7 +180,6 @@ def test_invalid_predicate_default(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_field_defaults",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

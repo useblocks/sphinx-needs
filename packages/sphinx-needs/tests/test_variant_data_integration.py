@@ -20,7 +20,6 @@ from sphinx_needs.exceptions import NeedsConfigException
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_variant_data",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -60,7 +59,6 @@ def test_variant_data_html(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_variant_data_file",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -97,7 +95,6 @@ def snapshot_json(snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_variant_data_fields",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -122,7 +119,6 @@ def test_variant_data_fields_html(test_app, snapshot_json):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_variant_data_field_errors",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -159,7 +155,6 @@ def test_variant_data_field_errors_html(test_app, snapshot_json):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_variant_data_config_inited",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -190,7 +185,6 @@ def test_variant_data_resolved_at_config_inited(test_app):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_variant_data_config_inited",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -342,7 +336,6 @@ def test_variant_data_file_confoverride_wins_over_toml(
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_variant_data_extension_write",
-            "no_plantuml": True,
         }
     ],
     indirect=True,

@@ -14,7 +14,6 @@ from syrupy.filters import props
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_link_conditions",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
@@ -56,7 +55,6 @@ def test_link_conditions(test_app: Sphinx, snapshot):
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_link_conditions",
-            "no_plantuml": True,
             "confoverrides": {"needs_json_include_link_conditions": False},
         }
     ],
@@ -77,7 +75,6 @@ def test_json_excludes_link_conditions_when_disabled(test_app: Sphinx, snapshot)
         {
             "buildername": "html",
             "srcdir": "doc_test/doc_link_conditions",
-            "no_plantuml": True,
         }
     ],
     indirect=True,
