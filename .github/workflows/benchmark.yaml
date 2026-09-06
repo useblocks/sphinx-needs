@@ -15,19 +15,11 @@ jobs:
           # 3.12+: on 3.11 the lock resolves sphinx 8.2, and this job wants the newest sphinx
           python-version: "3.12"
       - name: Fetch the pinned PlantUML
-        # the ONE jar `vendor/plantuml/pin.toml` names, fetched and checksummed rather than
-        # committed. `uv run --no-project` after `setup-uv`: the script needs `tomllib`, so
-        # python 3.11+, which a runner's system python is not guaranteed to be, and
-        # `--no-project` means it runs before anything is synced. It prints the jar's path
-        # on stdout and everything else on stderr; the assignment is what makes a failed
-        # fetch fail THIS step under the runner's `set -e`
+        # the one jar `vendor/plantuml/pin.toml` names. `shell: bash` (pipefail) and
+        # `tr -d '\r'` (Windows) are both load-bearing -- vendor/plantuml/README.md,
+        # "The step CI runs", says why
         shell: bash
         run: |
-          # `tr -d '\r'`: on Windows python's `print()` writes CRLF, and `$( )` strips
-          # trailing NEWLINES, not carriage returns -- so without this the variable can
-          # carry a CR into `$GITHUB_ENV`. `shell: bash` above is what keeps the
-          # assignment fail-fast through the pipe: it selects `bash -eo pipefail`, where
-          # the pipeline takes the fetch's non-zero status rather than `tr`'s zero
           jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Install dependencies

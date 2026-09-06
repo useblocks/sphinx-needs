@@ -89,20 +89,11 @@ jobs:
           # the pin. The resolver gate names its interpreter explicitly instead
           cache-python: true
       - name: Fetch the pinned PlantUML
-        # The compat cell below runs the member's real suite, and both suites' uml tests
-        # ASSERT on a PlantUML rather than skipping. No runner image has a `plantuml`
-        # executable, so they take the jar route: the one `vendor/plantuml/pin.toml` names,
-        # fetched and checksummed here. `uv run --no-project` needs no environment (the
-        # script is stdlib-only) and gives python 3.11+, which a runner's system python is
-        # not guaranteed to be; the assignment is what makes a failed fetch fail this step
-        # under the runner's `set -e`
+        # the compat cell runs the member's real suite, whose uml tests assert on a renderer.
+        # `shell: bash` (pipefail) and `tr -d '\r'` (Windows) are both load-bearing --
+        # vendor/plantuml/README.md, "The step CI runs", says why
         shell: bash
         run: |
-          # `tr -d '\r'`: on Windows python's `print()` writes CRLF, and `$( )` strips
-          # trailing NEWLINES, not carriage returns -- so without this the variable can
-          # carry a CR into `$GITHUB_ENV`. `shell: bash` above is what keeps the
-          # assignment fail-fast through the pipe: it selects `bash -eo pipefail`, where
-          # the pipeline takes the fetch's non-zero status rather than `tr`'s zero
           jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Check the workspace manifests agree with each other

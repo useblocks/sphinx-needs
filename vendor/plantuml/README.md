@@ -49,6 +49,43 @@ Every consumer resolves a renderer in the same order:
 
 Failing all three, the error names `uv run poe fetch-plantuml` and the two alternatives.
 
+## The step CI runs
+
+Every workflow job that renders a diagram runs the same step, right after `setup-uv` and
+before any `uv sync`:
+
+```yaml
+- name: Fetch the pinned PlantUML
+  shell: bash
+  run: |
+    jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
+    echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
+```
+
+The script prints the jar's path on stdout and everything else on stderr, so the capture is
+the whole of the plumbing. Each part of it is load-bearing:
+
+- **`uv run --no-project`, after `setup-uv`.** The script needs `tomllib`, so Python 3.11+,
+  and a runner's system python is not guaranteed to be one (the Windows image's default has
+  been 3.9). uv supplies the interpreter the job asked for, and `--no-project` runs the
+  script before anything is synced or resolved -- which is why it is stdlib-only.
+- **`shell: bash`.** The Windows runners default to pwsh, and the bash GitHub gives a step
+  without a `shell:` key is `bash -e`, under which a failing command inside `$( )` piped
+  into `tr` exits 0 and the variable is silently empty. `shell: bash` selects
+  `bash -eo pipefail`, so the pipeline carries the fetch's non-zero status and the step goes
+  red. The assignment form matters for the same reason: `echo "PLANTUML_JAR=$(…)"` would
+  exit 0 with an empty value and leave the failure to whatever reads the variable next.
+- **`tr -d '\r'`.** On Windows python's `print()` writes CRLF and `$( )` strips trailing
+  newlines only, so without it the variable carries a carriage return into `$GITHUB_ENV`.
+- **A step writing `$GITHUB_ENV`, not a job-level `env:`.** Where the step is conditional
+  (the reusable `test-package.yaml`, on its `needs-plantuml` input), an `env:` expression's
+  failure mode is the literal string `false` -- drop the `|| ''` and actionlint is silent --
+  while a skipped step leaves the variable genuinely unset, which is what both suites
+  treat as "no explicit choice".
+
+A jar that failed to arrive is therefore a red step named after the fetch, not a quieter
+test run: the suites that read the variable assert on a renderer rather than skip.
+
 ## Bumping the pin
 
 1. Download the release asset and hash it:

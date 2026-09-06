@@ -18,9 +18,14 @@ Usage::
     python tools/src/sn_tools/fetch_plantuml.py --print-path    # where the jar would be
     python tools/src/sn_tools/fetch_plantuml.py --root /elsewhere
 
-It prints **one line on stdout: the jar's path**, so a caller can use it directly --
-`echo "PLANTUML_JAR=$(python tools/src/sn_tools/fetch_plantuml.py)" >> "$GITHUB_ENV"` is what
-CI does. Everything else it has to say goes to stderr.
+It prints **one line on stdout: the jar's path**, and everything else it has to say goes to
+stderr, so a caller captures it directly. CI does, at every job that renders::
+
+    jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
+    echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
+
+under `shell: bash`; `vendor/plantuml/README.md` ("The step CI runs") says why each part of
+that is load-bearing.
 
 Three things about the contract are worth stating, because each of them is a decision:
 

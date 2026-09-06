@@ -123,42 +123,13 @@ jobs:
           # downloads it on every run. A cell that names one gets it from setup-uv
           cache-python: ${{ inputs.python-version == '' }}
       - name: Fetch the pinned PlantUML
-        # No runner image carries a `plantuml` package and every one carries `java`, so
-        # the uml tests take a jar -- the ONE jar `vendor/plantuml/pin.toml` names, fetched
-        # and checksummed by the script rather than committed. The suites that read the
-        # variable ASSERT rather than skip when the renderer is missing (sphinx-mounts
-        # today; sphinx-needs from #1863), so a jar that failed to arrive is a red step
-        # here, not a quieter test run.
-        #
-        # `uv run --no-project`, and after `setup-uv` rather than before it: the script
-        # needs `tomllib`, so python 3.11+, and a runner's SYSTEM python is not guaranteed
-        # to be one (the windows image's default has been 3.9). uv gives the interpreter
-        # this cell already asked for -- `setup-uv`'s `python-version` input sets
-        # UV_PYTHON, and every cell in this workspace is 3.11 or newer. `--no-project` is
-        # what makes it work before `uv sync`: nothing is installed and nothing is
-        # resolved, which is the whole reason the script is stdlib-only.
-        #
-        # A STEP writing `$GITHUB_ENV`, not a job-level `env:`, because an `env:` value
-        # cannot be made conditional without an expression -- and that expression's
-        # failure mode is a literal string, not an absent variable: drop the `|| ''` from
-        # `${{ inputs.needs-plantuml && '<path>' || '' }}` and every cell that does not
-        # want a jar gets `PLANTUML_JAR=false`, which actionlint does not catch and both
-        # suites reject. Written only when it is wanted, the variable is genuinely UNSET
-        # everywhere else. `shell: bash` because the windows runners default to pwsh;
-        # bash is on all three images. The script prints the jar's path on stdout and
-        # everything else on stderr, so `$( )` is the whole of the plumbing -- captured
-        # into a variable first, because the runner's bash runs with `set -e` and an
-        # ASSIGNMENT from a failed substitution fails the step, while
-        # `echo "…$(failing)…"` would exit 0 with an empty value and leave the failure to
-        # be reported by the check below.
+        # the one jar `vendor/plantuml/pin.toml` names. `shell: bash` (pipefail) and
+        # `tr -d '\r'` (Windows) are both load-bearing, and so is this being a conditional
+        # STEP rather than a job-level `env:` expression -- vendor/plantuml/README.md,
+        # "The step CI runs", says why
         if: inputs.needs-plantuml
         shell: bash
         run: |
-          # `tr -d '\r'`: on Windows python's `print()` writes CRLF, and `$( )` strips
-          # trailing NEWLINES, not carriage returns -- so without this the variable can
-          # carry a CR into `$GITHUB_ENV`. `shell: bash` above is what keeps the
-          # assignment fail-fast through the pipe: it selects `bash -eo pipefail`, where
-          # the pipeline takes the fetch's non-zero status rather than `tr`'s zero
           jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
           echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Check the renderers this cell asked for are really there
