@@ -17,6 +17,7 @@ body:
       options:
         - sphinx-needs
         - sphinx-mounts
+        - sphinx-codelinks
         - the repository (workflows, CI, release, docker, tooling)
     validations:
       required: true
