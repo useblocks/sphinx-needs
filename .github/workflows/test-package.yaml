@@ -132,6 +132,28 @@ jobs:
         if: inputs.needs-plantuml
         shell: bash
         run: echo "PLANTUML_JAR=$GITHUB_WORKSPACE/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar" >> "$GITHUB_ENV"
+      - name: Check the renderers this cell asked for are really there
+        # `choco install graphviz` EXITS 0 WHEN THE FEED FAILS. Measured on run
+        # 34000562220, job 101398550280: "Failed to fetch results from V2 feed ... Unable
+        # to find package 'Graphviz' ... Chocolatey installed 0/0 packages", a green
+        # install step, and then two graphviz tests asserting 90 s later inside pytest. A
+        # renderer that did not arrive should be one red step that names it, not N
+        # assertions in the suite.
+        #
+        # For PlantUML this is also the mechanical check on the step above: if it ever
+        # stops writing a path that exists, THIS is the red, rather than every cell that
+        # wanted a jar. Deliberately no retry and no change of installer -- a pinned
+        # download or `ts-graphviz/setup-graphviz` is a separate argument.
+        if: inputs.needs-graphviz || inputs.needs-plantuml
+        shell: bash
+        run: |
+          if [ "${{ inputs.needs-graphviz }}" = "true" ]; then
+            dot -V || { echo "::error::graphviz did not install: no dot on PATH"; exit 1; }
+          fi
+          if [ "${{ inputs.needs-plantuml }}" = "true" ]; then
+            test -f "$PLANTUML_JAR" || { echo "::error::PLANTUML_JAR names no file: '$PLANTUML_JAR'"; exit 1; }
+            java -version || { echo "::error::no java on PATH, so the plantuml jar cannot be run"; exit 1; }
+          fi
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
