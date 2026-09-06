@@ -488,6 +488,50 @@ executor = { type = "uv", frozen = true, no-group = "dev", group = [
 ] }
 env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 
+# sphinx-codelinks. Every one of these adds `--group codelinks-libclang`, which is where
+# its optional preprocessor-aware C/C++ engine comes from: without it 56 of the 357 tests
+# skip (politely -- the `pytest.importorskip("clang.cindex")` guards see to that), so a
+# run that quietly lacked the group would be a false green rather than a failure. The
+# default `test-codelinks` needs an `executor` for the same reason, unlike `test-mounts`.
+[tool.poe.tasks.test-codelinks]
+help = "Run the sphinx-codelinks suite against the default (newest) sphinx; trailing args go to pytest"
+cmd = "pytest tests"
+cwd = "packages/sphinx-codelinks"
+executor = { type = "uv", frozen = true, group = ["codelinks-libclang"] }
+
+[tool.poe.tasks.test-codelinks-sphinx7]
+help = "Run the sphinx-codelinks suite against sphinx 7.4 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest tests"
+cwd = "packages/sphinx-codelinks"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-7",
+  "codelinks-libclang",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-7" }
+
+[tool.poe.tasks.test-codelinks-sphinx8]
+help = "Run the sphinx-codelinks suite against sphinx 8.2 (set UV_PYTHON to pick the interpreter)"
+cmd = "pytest tests"
+cwd = "packages/sphinx-codelinks"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-8",
+  "codelinks-libclang",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-8" }
+
+[tool.poe.tasks.test-codelinks-sphinx9]
+help = "Run the sphinx-codelinks suite against sphinx 9.1 (python >= 3.12; set UV_PYTHON to pick the interpreter)"
+cmd = "pytest tests"
+cwd = "packages/sphinx-codelinks"
+executor = { type = "uv", frozen = true, no-group = "dev", group = [
+  "test",
+  "sphinx-9",
+  "codelinks-libclang",
+] }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
+
 # BARE, not `typecheck-needs`: the naming rule suffixes a task that acts on ONE package,
 # and this one checks the whole repository -- both packages plus the tooling -- out of a
 # single `[tool.ty]` configuration and a single environment. Splitting it per package would
@@ -572,6 +616,18 @@ cmd = "uv build --package sphinx-mounts --no-sources -o dist/sphinx-mounts"
 help = "Import every sphinx-mounts module from its built wheel, with dependencies as PUBLISHED"
 cmd = "python tools/src/sn_tools/import_check.py sphinx-mounts"
 
+[tool.poe.tasks.build-codelinks]
+help = "Build the sphinx-codelinks sdist + wheel into dist/sphinx-codelinks"
+cmd = "uv build --package sphinx-codelinks --no-sources -o dist/sphinx-codelinks"
+
+[tool.poe.tasks.import-check-codelinks]
+help = "Import every sphinx-codelinks module from its built wheel, with dependencies as PUBLISHED"
+# `--extra libclang` because `sphinx_codelinks.analyse.preproc.__init__` imports the
+# libclang loader eagerly: without the extra the walk reaches that package and fails, and
+# the release workflow's compat step gets the same extra from the member's
+# `compat-requirements.txt`
+cmd = "python tools/src/sn_tools/import_check.py sphinx-codelinks --extra libclang"
+
 # There is no `smoke-mounts`. `scripts/smoke_needs.py`'s reason for existing is that 88% of
 # the sphinx-needs wheel by file count is non-Python payload that no test run touches;
 # sphinx-mounts' wheel has none at all, so `import-check-mounts` plus the release
@@ -607,6 +663,23 @@ help = "Delete the built sphinx-mounts HTML docs, then build them again from scr
 sequence = [
   { script = "shutil:rmtree('packages/sphinx-mounts/docs/_build/html', ignore_errors=True)" },
   { ref = "docs-mounts" },
+]
+
+[tool.poe.tasks.docs-codelinks]
+help = "Build the sphinx-codelinks HTML docs"
+# no renderer: these docs draw no diagrams, so unlike `docs-needs` there is no `dot`,
+# `java` or plantuml on the path they need. They DO need a git remote and a readable git
+# directory -- the `src-trace` directive turns every traced source line into a blob link
+cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html -T"
+cwd = "packages/sphinx-codelinks"
+executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs-codelinks" }
+env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-codelinks" }
+
+[tool.poe.tasks.docs-codelinks-clean]
+help = "Delete the built sphinx-codelinks HTML docs, then build them again from scratch"
+sequence = [
+  { script = "shutil:rmtree('packages/sphinx-codelinks/docs/_build/html', ignore_errors=True)" },
+  { ref = "docs-codelinks" },
 ]
 
 [tool.poe.tasks.docs-needs-clean]

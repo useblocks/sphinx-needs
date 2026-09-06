@@ -338,7 +338,13 @@ def interpreter_in(venv: Path) -> Path:
     )
 
 
-def check(dist: str, wheel_arg: str | None, python: str | None, keep: bool) -> int:
+def check(
+    dist: str,
+    wheel_arg: str | None,
+    python: str | None,
+    keep: bool,
+    extras: list[str] | None = None,
+) -> int:
     """Build, install from the index, walk. Returns the inner layer's exit status."""
     started = time.monotonic()
     directory, manifest = find_member(dist)
@@ -375,8 +381,16 @@ def check(dist: str, wheel_arg: str | None, python: str | None, keep: bool) -> i
         # the compat cell's character for character, and because it states the intent.
         # What stops the checkout being imported instead is the environment plus
         # `--expect-prefix` on the walk below
+        # An extra is appended to the WHEEL PATH -- `uv pip install "<wheel>[libclang]"`,
+        # which uv accepts and resolves from the index like any other requirement. It is
+        # for a member whose own package tree cannot be imported without one:
+        # sphinx-codelinks' `analyse.preproc.__init__` imports the libclang loader
+        # eagerly, so without `--extra libclang` the walk reaches that package and fails on
+        # a dependency the wheel truthfully declares as optional. The release workflow gets
+        # the same set from the member's `compat-requirements.txt`
+        spec = f"{wheel}[{','.join(extras)}]" if extras else str(wheel)
         run(
-            ["uv", "pip", "install", "--python", venv, "--no-sources", wheel],
+            ["uv", "pip", "install", "--python", venv, "--no-sources", spec],
             cwd=REPO_ROOT,
         )
         interpreter = interpreter_in(venv)
@@ -424,6 +438,14 @@ def main(argv: list[str] | None = None) -> int:
         "--wheel", metavar="PATH", help="use this wheel instead of building one"
     )
     parser.add_argument(
+        "--extra",
+        action="append",
+        metavar="NAME",
+        dest="extras",
+        help="install the wheel with this extra (repeatable); needed when a package in "
+        "the tree cannot be imported without one",
+    )
+    parser.add_argument(
         "--python", metavar="X", help="interpreter for the throwaway environment"
     )
     parser.add_argument(
@@ -438,7 +460,7 @@ def main(argv: list[str] | None = None) -> int:
             "name a distribution (outer layer) or pass --walk MODULE (inner layer)"
         )
     try:
-        return check(args.dist, args.wheel, args.python, args.keep)
+        return check(args.dist, args.wheel, args.python, args.keep, args.extras)
     except CheckError as exc:
         print(f"::error::{exc}", file=sys.stderr)
         return 1
