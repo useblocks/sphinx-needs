@@ -2725,7 +2725,7 @@ requires-dist = [
     { name = "sphinx-code-tabs", marker = "extra == 'docs'", specifier = ">=0.5.5" },
     { name = "sphinx-design", marker = "extra == 'docs'", specifier = ">=0.6.1" },
     { name = "sphinx-needs", editable = "packages/sphinx-needs" },
-    { name = "sphinxcontrib-typer", marker = "extra == 'docs'", specifier = ">=0.5.1,<0.9.1" },
+    { name = "sphinxcontrib-typer", marker = "extra == 'docs'", specifier = ">=0.9.1" },
     { name = "sphinxcontrib-video", marker = "extra == 'docs'", specifier = ">=0.4.1" },
     { name = "tree-sitter", specifier = "~=0.25.1" },
     { name = "tree-sitter-bash", specifier = ">=0.25.1" },
@@ -2736,7 +2736,7 @@ requires-dist = [
     { name = "tree-sitter-python", specifier = ">=0.23.6" },
     { name = "tree-sitter-rust", specifier = ">=0.23.0" },
     { name = "tree-sitter-yaml", specifier = ">=0.7.1" },
-    { name = "typer", specifier = ">=0.16.0,<0.26.8" },
+    { name = "typer", specifier = ">=0.16.0" },
 ]
 provides-extras = ["libclang", "docs"]
 
@@ -3281,7 +3281,7 @@ wheels = [
 
 [[package]]
 name = "sphinxcontrib-typer"
-version = "0.9.0"
+version = "0.9.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-typing' or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9')" },
@@ -3289,9 +3289,9 @@ dependencies = [
     { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version >= '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-8' and extra != 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-8') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-typing')" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/98/e5/a3463123d69ae431ce8708cab92de0434012bd3d1f4d8e3ea82fc1a5ed82/sphinxcontrib_typer-0.9.0.tar.gz", hash = "sha256:480175de4f0ee280cde438f830996cbc7f1f5d8838157bbe9f5dc7894615a002", size = 168792, upload-time = "2026-06-02T00:01:04.857Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ce/8e/b52c126263205753d8523ed059c512898bf8431d4b4490d8063130851c22/sphinxcontrib_typer-0.9.2.tar.gz", hash = "sha256:9afa791810f193d22fbd85e7158ec3740b34c4e46364bb2ca5bfc3794783eec5", size = 169624, upload-time = "2026-09-02T23:29:42.607Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d3/1e/eca6d5b3bc072a8c02cd1ccdd558e75aec7f19f70e91d87fdd93a46ab904/sphinxcontrib_typer-0.9.0-py3-none-any.whl", hash = "sha256:f171000b4000f392517735855e5915ffc08afaf6b6d127116f239c4715a75f5c", size = 14821, upload-time = "2026-06-02T00:01:03.431Z" },
+    { url = "https://files.pythonhosted.org/packages/27/89/3d4fc0c74735cb498625ca92ffcea73f8b3eec650235af57eb006dce7c2c/sphinxcontrib_typer-0.9.2-py3-none-any.whl", hash = "sha256:d7eae60aea8e14e17b0f7bfda2c16e3f29ddb4b0bc6542951345e2f285abcc58", size = 15038, upload-time = "2026-09-02T23:29:41.235Z" },
 ]
 
 [[package]]
@@ -3608,7 +3608,7 @@ wheels = [
 
 [[package]]
 name = "typer"
-version = "0.26.7"
+version = "0.27.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annotated-doc" },
@@ -3616,9 +3616,9 @@ dependencies = [
     { name = "rich" },
     { name = "shellingham" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5e/ed/ef06584ccdd5c410df0837951ecd7e15d9a6144ea1bd4c73cecab1a89891/typer-0.26.7.tar.gz", hash = "sha256:e314a34c617e419c091b2830dda3ea1f257134ff593061a8f5b9717ab8dddb3a", size = 201709, upload-time = "2026-06-03T07:18:06.843Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/16/f7/57713ba479fd405eb76de31404b2c744c289e336b2d999511ebf51e496f7/typer-0.27.2.tar.gz", hash = "sha256:269b7eb9d3c202ca84b4bc9618cb04ebb43d3d4d1e567e4c768607232c05f945", size = 204045, upload-time = "2026-08-28T10:26:55.046Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/25/2201973529af2c954de0bb725323c3aaed6d7f0ceee8f550dec9185df013/typer-0.26.7-py3-none-any.whl", hash = "sha256:5c87cfbc5d34491c5346ebf49c23e18d56ccb863268d3a8d592b26087c2f5e58", size = 122456, upload-time = "2026-06-03T07:18:05.732Z" },
+    { url = "https://files.pythonhosted.org/packages/dc/bf/205d0004930ede8f542fb58f601526fccf4ae7626075ca1e6c4de5d3d652/typer-0.27.2-py3-none-any.whl", hash = "sha256:b3a5fc4342d5fc8fda8fc3010b1cf117e9249aab7fae800c2eff62fd3842d97d", size = 123130, upload-time = "2026-08-28T10:26:53.752Z" },
 ]
 
 [[package]]

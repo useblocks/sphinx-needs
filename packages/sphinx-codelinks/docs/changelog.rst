@@ -45,6 +45,11 @@ New and Improved
     and cherry-pick the range onto ``master`` in the monorepo. The import pull request's
     description carries the exact recipe.
 
+- ⬆️ ``typer`` is no longer capped below 0.26.8. The cap protected the documentation build,
+  whose ``sphinxcontrib-typer`` imported a ``typer.rich_utils`` name that 0.26.8 removed;
+  the ``docs`` extra now requires ``sphinxcontrib-typer`` 0.9.1 or newer, which tracks
+  the new typer and declares its own floor on it.
+
 - 🐛 ``sphinx_codelinks.__version__`` reported ``"0.1.0"``.
 
   It had said so since the first commit, through seven releases, while the distribution
