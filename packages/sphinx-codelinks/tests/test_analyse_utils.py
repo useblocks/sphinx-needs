@@ -1098,7 +1098,12 @@ def test_find_enclosing_scope_go(code, result, init_go_tree_sitter):
             "git@github.com:useblocks/sphinx-codelinks.git",
             "beef1234",
             Path(__file__).parent.parent,
-            Path("example") / "to" / "here",
+            # ABSOLUTE, and under `project_path`. `form_https_url` resolves the
+            # filepath with `.absolute()`, i.e. against the CWD, so a relative one
+            # here only agrees with `project_path` when pytest happens to run from
+            # the package directory -- which it does not when the whole workspace's
+            # suite is invoked from the repository root
+            Path(__file__).parent.parent / "example" / "to" / "here",
             3,
             "https://github.com/useblocks/sphinx-codelinks/blob/beef1234/example/to/here#L3",
         )
@@ -1205,6 +1210,52 @@ def test_get_current_rev(git_repo: tuple[Path, str]) -> None:
     repo_path, _ = git_repo
     current_rev = get_current_commit_hash(repo_path)
     assert current_rev == utils.get_current_rev(repo_path)
+
+
+@pytest.fixture(params=["detached", "branch"])
+def git_worktree(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> tuple[Path, str, str]:
+    """A LINKED WORKTREE of a scratch repository, in both shapes git makes.
+
+    A worktree is not a checkout with a `.git` directory: `.git` is a FILE holding
+    `gitdir: <path>`, `config` lives in the main repository's git directory (named by
+    the worktree's `commondir`), and only per-worktree state -- `HEAD` among it -- is in
+    the worktree's own. `detached` puts a SHA in `HEAD`; `branch` puts `ref:
+    refs/heads/...`, whose target is a shared ref in the common directory.
+
+    This repository is worked in worktrees as a matter of routine, so a helper that
+    demands a `.git` directory fails for every developer while staying green in CI
+    (useblocks/sphinx-codelinks#106).
+    """
+    remote_url = "https://github.com/test-user/test-repo.git"
+    repo_path = init_git_repo(tmp_path / "main", remote_url)
+    git_path = get_git_path()
+    worktree_path = tmp_path / "worktree"
+    add = [git_path, "worktree", "add"]
+    add += (
+        ["--detach", str(worktree_path), "HEAD"]
+        if request.param == "detached"
+        else [str(worktree_path), "-b", "a-worktree-branch"]
+    )
+    subprocess.run(add, cwd=repo_path, check=True, capture_output=True)
+    assert (worktree_path / ".git").is_file(), "a linked worktree's .git is a file"
+    return worktree_path, remote_url, get_current_commit_hash(repo_path)
+
+
+def test_locate_git_root_worktree(git_worktree: tuple[Path, str, str]) -> None:
+    worktree_path, _, _ = git_worktree
+    assert utils.locate_git_root(worktree_path / "src") == worktree_path
+
+
+def test_get_remote_url_worktree(git_worktree: tuple[Path, str, str]) -> None:
+    worktree_path, remote_url, _ = git_worktree
+    assert utils.get_remote_url(worktree_path) == remote_url
+
+
+def test_get_current_rev_worktree(git_worktree: tuple[Path, str, str]) -> None:
+    worktree_path, _, rev = git_worktree
+    assert utils.get_current_rev(worktree_path) == rev
 
 
 def test_get_current_rev_detached_head(tmp_path: Path) -> None:

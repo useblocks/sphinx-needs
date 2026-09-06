@@ -346,13 +346,53 @@ def find_associated_scope(
     return associated_scope
 
 
+def _git_dir(path: Path) -> Path | None:
+    """The git directory for a checkout rooted at ``path``, or None if it is not one.
+
+    In a plain checkout ``.git`` is a directory. In a LINKED WORKTREE it is a file
+    holding ``gitdir: <path>`` -- git's documented gitfile format -- and the real
+    directory is elsewhere, under the main repository's ``.git/worktrees/<name>``.
+    Treating the file as "not a repository" is what made every worktree of this
+    repository look unversioned (useblocks/sphinx-codelinks#106).
+    """
+    dot_git = path / ".git"
+    if dot_git.is_dir():
+        return dot_git
+    if dot_git.is_file():
+        content = dot_git.read_text(encoding="utf-8", errors="replace").strip()
+        if content.startswith("gitdir:"):
+            target = Path(content.split(":", 1)[1].strip())
+            if not target.is_absolute():
+                target = (path / target).resolve()
+            if target.is_dir():
+                return target
+    return None
+
+
+def _git_common_dir(git_dir: Path) -> Path:
+    """The repository-wide git directory that ``git_dir`` belongs to.
+
+    A linked worktree's git directory carries a ``commondir`` file naming the main
+    repository's, and that is where ``config`` and every shared ref live -- only
+    per-worktree state (``HEAD``, ``refs/bisect``, ``refs/worktree``) is local. A plain
+    checkout has no ``commondir`` and the two are the same directory.
+    """
+    commondir = git_dir / "commondir"
+    if not commondir.is_file():
+        return git_dir
+    target = Path(commondir.read_text(encoding="utf-8").strip())
+    if not target.is_absolute():
+        target = (git_dir / target).resolve()
+    return target
+
+
 def locate_git_root(src_dir: Path) -> Path | None:
     """Traverse upwards to find git root."""
     current = src_dir.resolve()
     parents = list(current.parents)
     parents.append(current)
     for parent in parents:
-        if (parent / ".git").exists() and (parent / ".git").is_dir():
+        if _git_dir(parent) is not None:
             return parent
     logger.warning(
         f"git root is not found in the parent of {src_dir}",
@@ -363,8 +403,12 @@ def locate_git_root(src_dir: Path) -> Path | None:
 
 
 def get_remote_url(git_root: Path, remote_name: str = "origin") -> str | None:
-    """Get remote url from .git/config."""
-    config_path = git_root / ".git" / "config"
+    """Get remote url from the git directory's config."""
+    git_dir = _git_dir(git_root)
+    # a worktree's remotes are the main repository's, so `config` is in the common dir
+    config_path = (
+        _git_common_dir(git_dir) if git_dir is not None else git_root / ".git"
+    ) / "config"
     if not config_path.exists():
         logger.warning(
             f"{config_path} does not exist",
@@ -388,8 +432,10 @@ def get_remote_url(git_root: Path, remote_name: str = "origin") -> str | None:
 
 
 def get_current_rev(git_root: Path) -> str | None:
-    """Get current commit rev from .git/HEAD."""
-    head_path = git_root / ".git" / "HEAD"
+    """Get current commit rev from the git directory's HEAD."""
+    # HEAD is per-worktree, so it is read from the worktree's OWN git directory
+    git_dir = _git_dir(git_root) or git_root / ".git"
+    head_path = git_dir / "HEAD"
     if not head_path.exists():
         logger.warning(
             f"{head_path} does not exist",
@@ -403,7 +449,12 @@ def get_current_rev(git_root: Path) -> str | None:
         # directly, which is exactly the rev we want.
         return head_content
 
-    ref_path = git_root / ".git" / head_content.split(":", 1)[1].strip()
+    ref = head_content.split(":", 1)[1].strip()
+    ref_path = git_dir / ref
+    if not ref_path.exists():
+        # every branch is a SHARED ref, so in a worktree it lives in the common
+        # directory; only refs/bisect and refs/worktree are per-worktree
+        ref_path = _git_common_dir(git_dir) / ref
     if not ref_path.exists():
         logger.warning(
             f"{ref_path} does not exist",
