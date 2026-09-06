@@ -340,6 +340,12 @@ frozen = true
 
 [tool.poe.tasks.lint]
 help = "Run every prek hook over the whole tree (ruff check + format, taplo, yamlfmt, ty, uv-lock)"
+# `deps`, not a step of the prek config: the fence has to run in CI's Lint job WITHOUT an
+# environment (it is `uv run --no-project python …` there, before anything is synced), and a
+# prek hook cannot be that. A dep keeps `uv run poe lint` and CI's Lint job checking the same
+# thing, and a failed dep aborts the task graph, so a pin that disagrees with its jar is red
+# before a single hook runs
+deps = ["verify-plantuml"]
 cmd = "prek run --all-files"
 
 [tool.poe.tasks.test-needs]
@@ -367,18 +373,31 @@ help = "Download Playwright's Chromium into ~/.cache/ms-playwright (~/Library/Ca
 # an already-installed Chrome instead and needs no download at all.
 cmd = "playwright install chromium"
 
+[tool.poe.tasks.verify-plantuml]
+help = "Check the committed PlantUML jar against vendor/plantuml/pin.toml (no network)"
+# THE FENCE, and the reason the jar can be committed: it names both hashes when `pin.toml`
+# and `vendor/plantuml/plantuml-<version>.jar` disagree, which is the one half of a bump a
+# reviewer cannot see in a diff. `lint` above declares it, and CI's Lint job runs the same
+# script by path with `--no-project`, so the two agree. It never touches the network.
+cmd = "python tools/src/sn_tools/fetch_plantuml.py --verify"
+
 [tool.poe.tasks.fetch-plantuml]
-help = "Download the pinned PlantUML jar into vendor/plantuml/, once per checkout"
+help = "Download the pinned PlantUML into vendor/plantuml/ — a bump step; a jar matching the pin is a 0.03 s hash check"
 # BARE, like `install-browser` and for the same reason: it acts on the checkout rather than
 # on one package -- both packages' suites, both docs builds and the performance project
-# render with the jar it puts there. `vendor/plantuml/pin.toml` is the only place the
-# version and its sha256 are written; the script is stdlib-only so that CI can run it by
-# path before any environment exists.
+# render with the jar it names. `vendor/plantuml/pin.toml` is the only place the version and
+# its sha256 are written; the script is stdlib-only so that CI can run it by path before any
+# environment exists.
 #
-# Every task below that renders a diagram declares `deps = ["fetch-plantuml"]`, so nobody
-# has to remember this exists. It is a no-op after the first run (one hash of a 30 MB file),
-# and a no-op on a machine that exports PLANTUML_JAR -- an explicit choice is never made to
-# wait for a download it will not use.
+# The jar IS COMMITTED, so on a normal checkout this downloads nothing: it hashes the file
+# that is already there and prints its path. It earns its keep during a bump -- edit the two
+# lines in `pin.toml`, run this, `git rm` the old jar and `git add` the new one -- and as the
+# repair for a jar a checkout mangled.
+#
+# Every task below that renders a diagram declares `deps = ["fetch-plantuml"]`, so nobody has
+# to remember this exists: for a developer it is the hash check, mid-bump it is the download,
+# and on a machine that exports PLANTUML_JAR it is neither -- an explicit choice is never
+# made to wait for work it will not use.
 cmd = "python tools/src/sn_tools/fetch_plantuml.py"
 
 [tool.poe.tasks.test-needs-sphinx7]

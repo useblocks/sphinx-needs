@@ -1,27 +1,46 @@
-"""Fetch the one PlantUML jar this workspace renders with, at the version `pin.toml` names.
+"""The bump tool for the workspace's one PlantUML jar, and the fence that keeps it honest.
+
+`vendor/plantuml/pin.toml` names one version and one sha256, and
+`vendor/plantuml/plantuml-<version>.jar` **is committed** beside it. This script has the two
+jobs that arrangement leaves:
+
+* **`--verify`** (no network, ever): the jar on disk is the one the pin names. It is what CI's
+  Lint job and `uv run poe lint` run, so a pull request that edits `pin.toml` without
+  committing the matching jar -- or commits a jar that is not what the pin claims -- goes red
+  on a message that names both hashes, rather than on a rendering failure somewhere else.
+* **the download**, for a bump: edit the two lines in `pin.toml`, run this, `git rm` the old
+  jar and `git add` the new one. It is also the repair for a jar that a checkout mangled.
 
 The repository used to carry two jars at two versions (10.1 MB for the test suite, 11.3 MB for
 the docs) and a third, unpinned `releases/latest` download in the docker image. They were 71 %
 of the sphinx-needs sdist, they could not be shared with a second package without a
-cross-package path, and nothing said how old they were. `vendor/plantuml/pin.toml` replaces all
-of that with two lines and a checksum; this script is what turns them into a file on disk.
+cross-package path, and nothing said how old they were. The pin plus one shared jar replaces
+all of that.
+
+**A fetched design was built and reviewed on this same pull request first, and dropped.** In
+it nothing was committed and every consumer downloaded the jar on demand. That makes rendering
+depend on `release-assets.githubusercontent.com` (measured: what the release URL redirects to)
+at 22 CI jobs per run, at every Read the Docs build, on every offline machine, and in every
+sandboxed agent session whose network allowlist is set outside this repository and does not
+include that host. A committed jar needs none of it.
 
 It is deliberately **stdlib only** -- `urllib`, `hashlib`, `tomllib` -- because of where it
-runs: a CI step before `uv sync` (so before any environment exists), a Read the Docs
-`post_install` job, and a developer's `uv run poe fetch-plantuml`. Anything it imported would
-have to be installed in all three.
+runs: a CI step before `uv sync` (so before any environment exists), and a developer's
+`uv run poe verify-plantuml` / `uv run poe fetch-plantuml`. Anything it imported would have to
+be installed in both.
 
 Usage::
 
-    uv run poe fetch-plantuml                                   # the task; what the docs say
-    python tools/src/sn_tools/fetch_plantuml.py                 # by path, no environment needed
-    python tools/src/sn_tools/fetch_plantuml.py --print-path    # where the jar would be
+    uv run poe verify-plantuml                                  # the fence; no network
+    uv run poe fetch-plantuml                                   # the bump step; downloads
+    python tools/src/sn_tools/fetch_plantuml.py --verify        # by path, no environment
+    python tools/src/sn_tools/fetch_plantuml.py --print-path    # where the jar lives
     python tools/src/sn_tools/fetch_plantuml.py --root /elsewhere
 
 It prints **one line on stdout: the jar's path**, and everything else it has to say goes to
 stderr, so a caller captures it directly. CI does, at every job that renders::
 
-    jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py | tr -d '\r')"
+    jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py --verify | tr -d '\r')"
     echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
 
 under `shell: bash`; `vendor/plantuml/README.md` ("The step CI runs") says why each part of
@@ -40,10 +59,11 @@ Three things about the contract are worth stating, because each of them is a dec
   consumer (`tests/conftest.py`, `docs/conf.py`, `performance_test.py`) refuses the same value
   seconds later, so all the note bought was a pointless download and a log that says the value
   was ignored just above the failure that was caused by it.
-* **A cached jar is re-hashed, not trusted.** ~0.03 s for 30 MB, against a corrupt or truncated
-  jar failing somewhere inside a render minutes later. A cached jar whose hash does not match
-  is re-fetched rather than refused: the likeliest cause is an interrupted download, and the
-  pin is still the authority on what the file should be.
+* **The jar on disk is re-hashed, not trusted.** ~0.03 s for 30 MB, against a corrupt or
+  truncated jar failing somewhere inside a render minutes later. Under `--verify` a mismatch
+  is a hard failure -- that is the whole job -- while the default mode re-fetches it, because
+  there the likeliest cause is an interrupted download and the pin is still the authority on
+  what the file should be.
 * **A checksum mismatch on a fresh download is a hard failure naming both hashes**, and the
   temp file is removed. That is the whole point of pinning: the alternative is rendering with
   bytes nobody chose.
@@ -158,6 +178,55 @@ def named_jar() -> Path | None:
     return path
 
 
+def verify(pin: Pin, jar: Path) -> int:
+    """`--verify`: the committed jar is the one the pin names. **Never touches the network.**
+
+    This is the fence, and it is why the jar can be committed at all: CI's Lint job and
+    `uv run poe lint` both run it, so a pull request that edits `pin.toml` and forgets the jar
+    -- or commits a jar that is not what the pin claims -- is one red step naming both hashes
+    rather than a rendering failure in some other job, or worse, a green run against bytes
+    nobody chose.
+
+    `PLANTUML_JAR` still wins, for the same reason it does everywhere else: an explicit choice
+    is the first step of the resolution order every consumer applies, and a machine that has
+    made it is not rendering with the committed jar at all, so the committed jar is not what
+    decides whether that machine can run. A value naming no file still stops the run, in
+    `named_jar()`, with the message its consumers give.
+    """
+    if (named := named_jar()) is not None:
+        print(
+            f"note: PLANTUML_JAR names {named}; the pinned jar is not what this run uses",
+            file=sys.stderr,
+        )
+        print(named)
+        return 0
+
+    fix = (
+        "Run `uv run poe fetch-plantuml` to download the pinned jar, then commit "
+        f"vendor/plantuml/plantuml-{pin.version}.jar."
+    )
+    if not jar.is_file():
+        print(
+            f"error: {jar} does not exist.\n"
+            f"  vendor/plantuml/pin.toml names PlantUML {pin.version}, sha256 {pin.sha256}\n"
+            f"{fix}",
+            file=sys.stderr,
+        )
+        return 1
+    found = sha256_of(jar)
+    if found != pin.sha256:
+        print(
+            f"error: {jar} is not what vendor/plantuml/pin.toml names.\n"
+            f"  expected {pin.sha256}\n"
+            f"  got      {found}\n"
+            f"{fix}",
+            file=sys.stderr,
+        )
+        return 1
+    print(jar)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -169,7 +238,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--print-path",
         action="store_true",
-        help="print where the pinned jar would be and exit, fetching nothing",
+        help="print where the pinned jar lives and exit, verifying nothing",
+    )
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="check the committed jar against the pin and print its path; never downloads",
     )
     args = parser.parse_args(argv)
     root = (args.root or default_root()).resolve()
@@ -181,6 +255,9 @@ def main(argv: list[str] | None = None) -> int:
         # this workspace keep its jar", which is a question about the checkout
         print(jar)
         return 0
+
+    if args.verify:
+        return verify(pin, jar)
 
     if (named := named_jar()) is not None:
         print(

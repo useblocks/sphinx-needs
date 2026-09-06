@@ -1,8 +1,13 @@
-"""`fetch_plantuml.py`: what it downloads, what it refuses, and what it never downloads.
+"""`fetch_plantuml.py`: the fence, what it downloads, what it refuses, and what it never downloads.
 
-Every rendering task in this workspace depends on this script, so its contract is the thing
-that decides whether a fresh clone can render at all. Four parts of it are load-bearing and
-none of them is visible from a green test run elsewhere:
+The jar is committed, so the load-bearing half of this script is `--verify`: CI's Lint job and
+`uv run poe lint` run it, and it is the only thing standing between a bumped `pin.toml` and a
+repository whose pin and jar disagree. Its contract is short and every clause of it is tested
+below -- above all that **it never reaches the network**, which is asserted by making the
+network raise rather than by trusting the code path.
+
+The download half is the bump step, and its own contract decides whether a bump lands clean.
+Five parts of it are load-bearing and none of them is visible from a green test run elsewhere:
 
 * a cached jar is **re-hashed**, so a truncated download is caught here rather than inside a
   render minutes later -- and re-fetched rather than refused, because an interrupted download
@@ -97,6 +102,23 @@ def offline(monkeypatch: pytest.MonkeyPatch) -> list[str]:
 
     monkeypatch.setattr(urllib.request, "urlopen", fake)
     return asked
+
+
+@pytest.fixture
+def no_network(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Any use of the network is an error.
+
+    `--verify` runs in CI's Lint job, on an offline developer's `uv run poe lint`, and in
+    every sandbox whose allowlist this repository does not control -- so "it did not download"
+    is part of its contract rather than an implementation detail, and the way to test a
+    contract like that is to make the forbidden thing explode. A `--verify` that fell through
+    to the fetch would raise `AssertionError` here instead of quietly passing.
+    """
+
+    def fake(url: str) -> None:
+        raise AssertionError("network")
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
 
 
 def run(root: Path, *args: str) -> int:
@@ -341,3 +363,98 @@ def test_an_incomplete_pin_is_named(root: Path) -> None:
         run(root)
 
     assert "missing sha256, url" in str(caught.value)
+
+
+def test_verify_accepts_the_committed_jar(root: Path, no_network: None, capsys) -> None:
+    """The ordinary case: the jar is there, it hashes to the pin, its path goes to stdout."""
+    jar_of(root).write_bytes(PAYLOAD)
+
+    assert run(root, "--verify") == 0
+
+    assert capsys.readouterr().out.strip() == str(jar_of(root))
+
+
+def test_verify_refuses_a_missing_jar(root: Path, no_network: None, capsys) -> None:
+    """A pin bumped without its jar. The fix is named, and nothing is downloaded.
+
+    This is THE failure the fence exists for: `pin.toml` is two lines a bump has to edit and
+    a ~30 MB file it has to replace, and the file is the half a reviewer cannot see in a diff.
+    """
+    assert run(root, "--verify") == 1
+
+    err = capsys.readouterr().err
+    assert str(jar_of(root)) in err
+    assert "does not exist" in err
+    assert VERSION in err
+    assert DIGEST in err
+    assert "uv run poe fetch-plantuml" in err
+    assert f"vendor/plantuml/plantuml-{VERSION}.jar" in err
+    assert not jar_of(root).exists()
+
+
+def test_verify_refuses_a_jar_that_is_not_the_pin(
+    root: Path, no_network: None, capsys
+) -> None:
+    """Both hashes named. A jar that does not match is never re-fetched under `--verify`.
+
+    The default mode would download over it, which is right for a bump and wrong for a fence:
+    a fence that repairs what it is checking cannot fail, and this one has to fail so that a
+    pull request carrying a mismatched jar is red before anything renders.
+    """
+    jar_of(root).write_bytes(b"some other jar entirely")
+
+    assert run(root, "--verify") == 1
+
+    err = capsys.readouterr().err
+    assert DIGEST in err
+    assert hashlib.sha256(b"some other jar entirely").hexdigest() in err
+    assert "uv run poe fetch-plantuml" in err
+    # and it left the file alone: repairing it is the bump step's job, not the fence's
+    assert jar_of(root).read_bytes() == b"some other jar entirely"
+
+
+def test_verify_honours_plantuml_jar(
+    root: Path,
+    no_network: None,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys,
+) -> None:
+    """An explicit choice wins here too, and the committed jar is then beside the point.
+
+    A machine that exports the variable renders with that jar, so whether the checkout's own
+    jar matches its pin does not decide whether that machine can run -- and the CI step, which
+    captures stdout into `PLANTUML_JAR`, has to hand back the value it was given.
+    """
+    named = tmp_path / "elsewhere" / "plantuml.jar"
+    named.parent.mkdir()
+    named.write_bytes(b"a jar of the caller's own")
+    monkeypatch.setenv("PLANTUML_JAR", str(named))
+
+    assert run(root, "--verify") == 0
+
+    captured = capsys.readouterr()
+    assert captured.out.strip() == str(named)
+    assert "PLANTUML_JAR names" in captured.err
+
+
+def test_verify_refuses_a_plantuml_jar_naming_no_file(
+    root: Path, no_network: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The same refusal the fetch gives, so the two modes cannot disagree about a value."""
+    jar_of(root).write_bytes(PAYLOAD)
+    missing = tmp_path / "gone.jar"
+    monkeypatch.setenv("PLANTUML_JAR", str(missing))
+
+    with pytest.raises(SystemExit) as caught:
+        run(root, "--verify")
+
+    assert "is not a file" in str(caught.value)
+
+
+def test_verify_names_a_missing_pin(tmp_path: Path, no_network: None) -> None:
+    """No pin file at all is a mistake about the tree, in either mode."""
+    with pytest.raises(SystemExit) as caught:
+        run(tmp_path, "--verify")
+
+    assert "no pin file at" in str(caught.value)
