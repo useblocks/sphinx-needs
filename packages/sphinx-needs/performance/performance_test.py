@@ -23,7 +23,7 @@ def resolve_plantuml() -> str:
     """How the performance project renders PlantUML, in the workspace's shared order.
 
     ``PLANTUML_JAR`` (explicit, and an error when it names no file), else the jar
-    ``uv run poe fetch-plantuml`` puts under ``vendor/plantuml/`` at the version
+    the workspace commits under ``vendor/plantuml/`` at the version
     ``vendor/plantuml/pin.toml`` names, else a ``plantuml`` executable on ``PATH``.
 
     It has to be resolved HERE rather than in ``project/conf.template``, and that is the

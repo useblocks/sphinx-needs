@@ -297,10 +297,10 @@ def _resolve_plantuml() -> str:
 
     1. ``PLANTUML_JAR``, through ``java``. An explicit choice wins, and a value naming no
        file is an error rather than a silent fall-through.
-    2. The workspace's fetched jar, ``vendor/plantuml/plantuml-<pinned version>.jar``.
-       ``vendor/plantuml/pin.toml`` is the one place the version is written; ``uv run poe
-       docs-needs`` fetches it through the task's ``deps``, and Read the Docs through the
-       ``post_install`` job in ``.readthedocs.yml``.
+    2. The workspace's committed jar, ``vendor/plantuml/plantuml-<pinned version>.jar``.
+       ``vendor/plantuml/pin.toml`` is the one place the version is written, and the jar
+       is committed beside it, so this route needs nothing of the environment -- which is
+       what lets Read the Docs build these docs with no network beyond its own install.
     3. A ``plantuml`` executable on ``PATH`` (``plantumlc`` first on Windows, whose
        chocolatey ``plantuml`` shim is a non-blocking ``javaw`` launcher).
 

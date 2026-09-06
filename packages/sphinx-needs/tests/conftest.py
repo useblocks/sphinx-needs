@@ -81,9 +81,10 @@ def copy_test_utils(source: Path, destination: Path) -> None:
     """Copy ``tests/doc_test/utils`` into the session tempdir, if it is there at all.
 
     It no longer copies a jar, and today it copies nothing: ``doc_test/utils`` held
-    exactly one file -- the vendored plantuml jar -- and that jar is now fetched once
-    per checkout into ``vendor/plantuml/`` at the version ``vendor/plantuml/pin.toml``
-    names, so the directory is gone and this call is a no-op. What remains is the
+    exactly one file -- a plantuml jar for this package alone -- and the workspace now
+    carries one shared jar, committed at ``vendor/plantuml/`` at the version
+    ``vendor/plantuml/pin.toml`` names, so the directory is gone and this call is a
+    no-op. What remains is the
     GUARD, and it is the load-bearing half: ``copytree`` on a directory that is not
     there raises ``FileNotFoundError`` out of a session fixture every rendering test
     depends on, which would take out the suite before
@@ -125,7 +126,7 @@ def sphinx_test_tempdir(request) -> Path:
     sphinx_test_tempdir.mkdir(exist_ok=True)
 
     # `doc_test/utils` is empty of anything the suite ships today -- the plantuml jar
-    # that used to live there is fetched into `vendor/plantuml/` instead -- so this is a
+    # that used to live there is committed at `vendor/plantuml/` instead -- so this is a
     # guarded no-op kept for fixture data a test project might need copied once per
     # session rather than per test
     copy_test_utils(
@@ -146,7 +147,7 @@ _PLANTUML_JAVA = 'java -Djava.awt.headless=true -jar "{}"'
 
 
 def workspace_plantuml_jar() -> Path | None:
-    """The jar ``uv run poe fetch-plantuml`` puts under ``vendor/plantuml/``.
+    """The workspace's one PlantUML jar, committed under ``vendor/plantuml/``.
 
     Computed from the pin rather than hard-coded, because the version is IN the filename
     (``plantuml-<version>.jar``) and ``vendor/plantuml/pin.toml`` is the one place this
@@ -182,12 +183,12 @@ def resolve_plantuml_command(workspace_jar: Path | None) -> str:
     1. ``PLANTUML_JAR``, run through ``java``. Naming a jar is an explicit choice, so it
        wins: it is how sphinx-mounts' suite is already pointed at a renderer, and it is
        the only route open to someone running these tests from the sdist -- which ships no
-       jar at all now that the workspace fetches one. A variable that is set but names no
+       jar at all now that the workspace keeps one. A variable that is set but names no
        file is a mistake worth a red run rather than a silent fall-through: falling through
        would render with a renderer the caller did not ask for and say nothing.
-    2. The workspace's fetched jar, ``vendor/plantuml/plantuml-<pinned version>.jar``. The
-       default in a checkout, and what every rendering poe task guarantees by declaring
-       ``deps = ["fetch-plantuml"]``.
+    2. The workspace's committed jar, ``vendor/plantuml/plantuml-<pinned version>.jar``.
+       The default in a checkout, which carries it; every rendering poe task additionally
+       declares ``deps = ["fetch-plantuml"]``, which hashes it against the pin.
     3. A ``plantuml`` executable on ``PATH`` -- and only once (2) is gone. This suite
        renders for real and asserts on the output, so a developer machine that happens to
        carry a homebrew ``plantuml`` must not quietly swap the renderer version out from
@@ -245,7 +246,7 @@ def resolve_plantuml_command(workspace_jar: Path | None) -> str:
 def plantuml_command() -> str:
     """The plantuml command every test project must build its diagrams with.
 
-    CI runners have java and the fetched jar but no ``plantuml`` on ``PATH``, so a
+    CI runners have java and the checkout's jar but no ``plantuml`` on ``PATH``, so a
     project left on sphinxcontrib-plantuml's default command fails to render there while
     passing on any machine that happens to have one installed. Every test therefore takes
     its command from here, whether it goes through :func:`test_app` or calls ``make_app``

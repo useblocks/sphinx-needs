@@ -30,7 +30,7 @@ the shim.
 | the lock | the root `uv.lock` — one lock for the whole workspace |
 | hooks | the root `.pre-commit-config.yaml` — one config; anything triggered by `uv.lock` has to live here |
 | the repository's own tooling | `tools/` — the workspace fences and the release plan |
-| the PlantUML renderer | `vendor/plantuml/` — `pin.toml` (version + sha256, the one place either is written) and a `README.md`; the jar itself is fetched by `uv run poe fetch-plantuml` and gitignored |
+| the PlantUML renderer | `vendor/plantuml/` — `pin.toml` (version + sha256, the one place either is written), the committed `plantuml-<version>.jar` it names, and a `README.md`. `uv run poe verify-plantuml` fences the two against each other |
 | CI | `.github/workflows/`, and `.github/scripts/` for the three checks that must run *inside* a CI environment |
 | the docker image | `docker/` — a repository-level deliverable, like the workflows |
 | Read the Docs | sphinx-needs: `.readthedocs.yml`, and it stays at the root under that exact name — the configuration path applies to every version, so moving it makes older tags unbuildable. sphinx-mounts: `packages/sphinx-mounts/.readthedocs.yaml`, which its own RTD project points at; every path inside it is relative to the REPOSITORY root, not to the file |
@@ -79,7 +79,8 @@ uv run poe typecheck                  # ty over both packages, against the oldes
 uv run poe docs-needs                 # the furo docs build
 uv run poe docs-mounts                # the sphinx-mounts docs build
 uv run poe smoke-needs                # build the wheel and test the built package
-uv run poe fetch-plantuml             # download the pinned PlantUML jar (the tasks do it for you)
+uv run poe verify-plantuml            # the committed PlantUML jar is the one its pin names
+uv run poe fetch-plantuml             # download it -- a bump step; otherwise a hash check
 uv run poe check-workspace            # the manifests agree with each other (Lint runs it)
 uv run poe release-plan               # what is pending, in what order (advice; exits 0)
 uv run poe bump <dist> --bump minor   # stamp a release: version, literals, floors, lock, changelog
@@ -103,30 +104,35 @@ CI's Lint job (and the monthly `prek-update` job) deliberately pass no such inpu
 run on the pin, and Lint asserts the series it got equals the file.
 
 The machine needs `java` and graphviz's `dot` on `PATH` — the needflow tests do not skip
-without them, so install graphviz as CI does (`apt-get install graphviz`). **The PlantUML
-jar is not in the repository**: it is fetched, once per checkout, into `vendor/plantuml/` at
-the version `vendor/plantuml/pin.toml` names — `uv run poe fetch-plantuml`, ~30 MB, measured
-at a few seconds cold and well under a second warm (one sha256 of the file, no network; the
-warm figure is mostly `uv` and `poe` starting up, so it moves with the machine). **You will rarely run it
-by hand**: every task that renders declares it — the sphinx-needs suites, `docs-needs*` and
-`benchmark-needs` through `deps`, the sphinx-mounts suites through
+without them, so install graphviz as CI does (`apt-get install graphviz`). **The PlantUML jar
+is committed**, once, at `vendor/plantuml/plantuml-<version>.jar` — the version
+`vendor/plantuml/pin.toml` names — so a checkout renders and **nothing has to reach the
+network**: not CI's 22 jobs, not a Read the Docs build, not an offline machine, and not a
+sandboxed session whose allowlist this repository cannot set. `uv run poe verify-plantuml`
+checks the file against the pin (one sha256 of 30 MB, well under a second including `uv` and
+`poe` startup) and is what CI's Lint job runs; `uv run poe fetch-plantuml` downloads the jar
+the pin names, which is a **bump** step and otherwise the same hash check. **You will rarely
+run either by hand**: every task that renders declares `fetch-plantuml` — the sphinx-needs
+suites, `docs-needs*` and `benchmark-needs` through `deps`, the sphinx-mounts suites through
 `uses = { PLANTUML_JAR = "fetch-plantuml" }`, because that suite reads the variable and
-nothing else. `smoke-needs` does not (its doc renders needflow through graphviz) and neither
-do the sphinx-mounts docs (they render nothing, which is why their RTD config has no
-`default-jdk`).
+nothing else — and `lint` declares `verify-plantuml`. `smoke-needs` does not (its doc renders
+needflow through graphviz) and neither do the sphinx-mounts docs (they render nothing, which
+is why their RTD config has no `default-jdk`).
 
 Both suites resolve a renderer in the same order, and **both assert rather than skip** when
 they find none: `PLANTUML_JAR` (an explicit choice, and an error when it names no file) →
-the fetched jar under `vendor/plantuml/` → a `plantuml` executable on `PATH` (`plantumlc`
+the committed jar under `vendor/plantuml/` → a `plantuml` executable on `PATH` (`plantumlc`
 first on Windows, whose chocolatey `plantuml` shim is a non-blocking `javaw` launcher). So
-`PLANTUML_JAR=/any/plantuml.jar uv run poe test-mounts` still works, needs no download, and
-points both suites at one renderer — as does an offline machine with `plantuml` installed
-from its package manager. **To bump PlantUML**, edit `version` and `sha256` in
-`vendor/plantuml/pin.toml` and `ARG PLANTUML_VERSION` in `docker/Dockerfile` (a Dockerfile
-cannot read TOML; the duplication is declared there), then re-run the renderer-heavy suites.
-An sdist carries neither the jar nor the pin — `vendor/` is outside the directory flit builds
-the tarball from — so a distribution packager building from it takes the `PLANTUML_JAR` or
-`plantuml`-on-`PATH` route, and the sdist is 8 MB rather than 28.
+`PLANTUML_JAR=/any/plantuml.jar uv run poe test-mounts` still works and points both suites at
+one renderer — as does an offline machine with `plantuml` installed from its package manager.
+**To bump PlantUML**, edit `version` and `sha256` in `vendor/plantuml/pin.toml`, run
+`uv run poe fetch-plantuml`, `git rm` the old jar and `git add` the new one, and edit
+`ARG PLANTUML_VERSION` in `docker/Dockerfile` (a Dockerfile cannot read TOML; the duplication
+is declared there), then re-run the renderer-heavy suites — `vendor/plantuml/README.md` has
+the recipe, including the `http.postBuffer` a 30 MB push over HTTPS needs. An sdist carries
+neither the jar nor the pin — `vendor/` is outside the directory flit builds the tarball from
+— so a distribution packager building from it takes the `PLANTUML_JAR` or `plantuml`-on-`PATH`
+route, and the sdist is ≈8 MB rather than 28.
 `bazel` (or `bazelisk`) is the other optional binary — without it the `bazel`-marked tests
 skip, and `test-mounts` deselects them anyway. The browser tests (`-m jstest`, which
 `test-needs` excludes) additionally need a browser, and it is not a package: `uv run poe

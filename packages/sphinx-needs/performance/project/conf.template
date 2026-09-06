@@ -54,7 +54,7 @@ needs_fields = {"number": {}}
 {% endif %}
 
 # Resolved by performance_test.py before this template is rendered: PLANTUML_JAR, else
-# the workspace's fetched jar (vendor/plantuml/, `uv run poe fetch-plantuml`), else a
+# the workspace's committed jar (vendor/plantuml/, at the pinned version), else a
 # `plantuml` on PATH. It cannot be resolved in here: this file is copied into a throwaway
 # tempdir first, so the rendered conf.py's own `__file__` is in that tempdir -- which is
 # why the path this line used to build never pointed at a real jar.

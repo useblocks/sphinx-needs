@@ -2,19 +2,19 @@
 
 Every test project's ``plantuml`` configuration comes from the ``plantuml_command``
 fixture, which is :func:`tests.conftest.resolve_plantuml_command` applied to
-:func:`tests.conftest.workspace_plantuml_jar` -- the jar ``uv run poe fetch-plantuml``
-downloads into ``vendor/plantuml/`` at the version ``vendor/plantuml/pin.toml`` names. The
+:func:`tests.conftest.workspace_plantuml_jar` -- the jar this repository commits at
+``vendor/plantuml/`` at the version ``vendor/plantuml/pin.toml`` names. The
 order that function applies is load-bearing rather than incidental, so it is asserted here
 instead of being left to the several hundred rendering tests that would merely go a strange
 colour if it changed:
 
 * ``PLANTUML_JAR`` beats everything, because naming a jar is an explicit choice;
-* the workspace's fetched jar beats a ``plantuml`` on ``PATH``, because this suite renders
-  for real and a developer machine carrying a homebrew ``plantuml`` must not silently swap
-  the renderer version out from under it;
-* the executable is reached only when that jar is gone -- a checkout nobody has run
-  ``fetch-plantuml`` in, or an sdist, which carries neither the jar nor the pin because
-  ``vendor/`` is outside the package directory flit builds the tarball from.
+* the workspace's committed jar beats a ``plantuml`` on ``PATH``, because this suite
+  renders for real and a developer machine carrying a homebrew ``plantuml`` must not
+  silently swap the renderer version out from under it;
+* the executable is reached only when that jar is gone -- a checkout somebody deleted it
+  from, or an sdist, which carries neither the jar nor the pin because ``vendor/`` is
+  outside the package directory flit builds the tarball from.
 
 The command it returns is a *string*, which sphinxcontrib-plantuml splits for itself, so
 two of the cases below assert through that real split rather than on the string -- what has
@@ -43,7 +43,7 @@ from tests.conftest import (
 
 @pytest.fixture
 def workspace_jar(tmp_path: Path) -> Path:
-    """A stand-in for the fetched jar under ``vendor/plantuml/``."""
+    """A stand-in for the committed jar under ``vendor/plantuml/``."""
     jar = tmp_path / "vendor" / "plantuml" / "plantuml-1.2026.8.jar"
     jar.parent.mkdir(parents=True)
     jar.write_bytes(b"not really a jar")
@@ -92,8 +92,8 @@ def test_the_environment_variable_wins(
 def test_the_workspace_jar_is_the_default(
     workspace_jar: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """With no ``PLANTUML_JAR``, the fetched jar is used even when ``plantuml`` is on
-    ``PATH`` -- the developer-machine guard."""
+    """With no ``PLANTUML_JAR``, the workspace's own jar is used even when ``plantuml``
+    is on ``PATH`` -- the developer-machine guard."""
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
 
     assert (
@@ -105,8 +105,8 @@ def test_the_workspace_jar_is_the_default(
 def test_an_executable_is_the_fallback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """With the jar gone -- a checkout nobody fetched into, or an sdist -- ``plantuml``
-    on ``PATH`` is used."""
+    """With the jar gone -- a checkout somebody deleted it from, or an sdist --
+    ``plantuml`` on ``PATH`` is used."""
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
 
     assert (
@@ -257,8 +257,8 @@ def test_a_missing_utils_directory_is_not_an_error(tmp_path: Path) -> None:
     """`copy_test_utils` declines quietly when there is nothing to copy.
 
     Which is now the ordinary case rather than the exotic one: ``doc_test/utils`` held
-    exactly one file, the vendored plantuml jar, and that jar is fetched into
-    ``vendor/plantuml/`` instead -- so the directory is not in the tree at all. Unguarded,
+    exactly one file, a plantuml jar for this package alone, and the workspace's one
+    shared jar is committed at ``vendor/plantuml/`` instead -- so the directory is not in the tree at all. Unguarded,
     the session fixture would raise ``FileNotFoundError`` before the precedence chain
     above was consulted, and every rendering test would fail for a reason that has nothing
     to do with rendering.

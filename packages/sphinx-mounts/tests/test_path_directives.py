@@ -1315,9 +1315,9 @@ def _plantuml_jar_command() -> tuple[str, ...] | None:
 
     The second of the two ways this suite can reach PlantUML, and the one CI
     uses: no ``plantuml`` package is installed anywhere, and the workflows
-    point this variable at the jar the workspace fetches into
-    ``vendor/plantuml/`` (``uv run poe fetch-plantuml``, at the version
-    ``vendor/plantuml/pin.toml`` names). ``java`` has to be on ``PATH`` for
+    point this variable at the jar the workspace commits at
+    ``vendor/plantuml/`` (at the version ``vendor/plantuml/pin.toml`` names,
+    which the workflows verify before pointing at it). ``java`` has to be on ``PATH`` for
     it, which it is on every GitHub runner image.
 
     Returns ``None`` when the variable is unset, so the ``plantuml``-on-PATH
@@ -1369,10 +1369,10 @@ def _require_renderer(directive_rst: str) -> None:
     elif "uml" in directive_rst:
         assert _plantuml_jar_command() or shutil.which("plantuml"), (
             "PlantUML is required to run this test. Either set PLANTUML_JAR to "
-            "a plantuml jar and have `java` on PATH (`uv run poe fetch-plantuml` "
-            "downloads the pinned one into vendor/plantuml/, and `uv run poe "
-            "test-mounts` does it for you and points the variable at it, which "
-            "is what CI does too), or install a `plantuml` executable (e.g. "
+            "a plantuml jar and have `java` on PATH (this repository commits the "
+            "pinned one at vendor/plantuml/, and `uv run poe test-mounts` points "
+            "the variable at it for you, which is what CI does too), or install "
+            "a `plantuml` executable (e.g. "
             "`apt install plantuml`, `brew install plantuml`, "
             "`choco install plantuml`)"
         )

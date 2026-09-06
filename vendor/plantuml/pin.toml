@@ -1,5 +1,7 @@
 # The one PlantUML the workspace uses: the sphinx-needs test suite and docs, the sphinx-mounts
-# tests, CI, Read the Docs and the docker image all read THIS file. Bump = edit both lines.
+# tests, CI, Read the Docs and the docker image all read THIS file. The jar it names is
+# COMMITTED beside it, so a bump is these two lines PLUS the file (README.md, "Bumping the
+# pin"); `uv run poe verify-plantuml`, which CI's Lint job runs, fails when they disagree.
 #
 # `url` is a format string, and `{version}` is the only placeholder. The VERSIONED asset name
 # is deliberate: releases from ~v1.2025.0 ship both `plantuml.jar` and `plantuml-<version>.jar`,
