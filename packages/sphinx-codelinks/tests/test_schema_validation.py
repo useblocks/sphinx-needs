@@ -14,26 +14,13 @@ validation (an untyped field defaults to ``""``, which is not stripped and trips
 """
 
 from collections.abc import Callable
-from inspect import signature
 import json
 from pathlib import Path
 import shutil
 
-import pytest
 from sphinx.testing.util import SphinxTestApp
-from sphinx_needs.api import add_extra_option  # type: ignore[import-untyped]
-
-# Schema validation (needs_schema_definitions) arrived in sphinx-needs 6.0.0,
-# the same release where add_extra_option gained its ``schema`` keyword. Probe
-# that keyword to gate the test, instead of pulling in ``packaging`` for a
-# version comparison.
-SN_SUPPORTS_SCHEMAS = "schema" in signature(add_extra_option).parameters
 
 
-@pytest.mark.skipif(
-    not SN_SUPPORTS_SCHEMAS,
-    reason="needs_schema_definitions requires sphinx-needs>=6.0.0",
-)
 def test_strict_schema_ignores_unset_codelinks_fields(
     tmp_path: Path,
     make_app: Callable[..., SphinxTestApp],

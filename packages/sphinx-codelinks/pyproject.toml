@@ -9,15 +9,26 @@ maintainers = [
 ]
 license = { file = "LICENSE" }
 readme = "README.md"
-requires-python = ">= 3.12"
+# EQUAL to the sphinx-needs workspace root's `requires-python`, deliberately: on import
+# `tools/src/sn_tools/check_workspace.py` check (3) compares the two strings for equality,
+# because uv resolves one lock against the root and a member out of step with it still
+# locks, builds and publishes -- the gap shows up only as an install failure for a user on
+# an interpreter inside it.
+requires-python = ">=3.11,<4"
 dependencies = [
   "comment-parser>=1.2.4",
   "ignore-python>=0.3.3",
-  "typer>=0.16.0,<0.26.8",      # 0.26.8 removed rich_utils.STYLE_METAVAR, still imported by sphinxcontrib-typer (docs)
-  "click < 8.2",                # click 8.2.* produces empty errors if no args are given
+  "typer>=0.16.0,<0.26.8", # 0.26.8 removed rich_utils.STYLE_METAVAR, still imported by sphinxcontrib-typer (docs)
+  "click < 8.2",           # click 8.2.* produces empty errors if no args are given
   "jsonschema",
   "sphinx>=7.4,<10",
-  "sphinx-needs>=5,<9",
+  # TIGHT tracking, not a compatibility range: sphinx-needs is a sibling in the workspace
+  # this package is being imported into, and `check_workspace.py` check (4) requires
+  # `>=<the sibling's current version>,<<its next major>` on every intra-workspace runtime
+  # edge. uv never validates a specifier it resolves through `workspace = true` (uv#9811),
+  # so the floor is the only statement of what was actually tested, and the cap is what
+  # stops a future major being co-installed with a wheel written against this one.
+  "sphinx-needs>=8.5.0,<9",
   "jinja2",
   "pygments",
   "docutils",                   # constrained by user or Sphinx

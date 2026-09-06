@@ -32,7 +32,7 @@ write_app = typer.Typer(
 )
 app.add_typer(write_app, name="write", rich_help_panel="Sub-menus")
 
-OptVerbose: TypeAlias = Annotated[  # noqa: UP040   # has to be TypeAlias
+OptVerbose: TypeAlias = Annotated[  # has to be TypeAlias
     bool,
     typer.Option(
         ...,
@@ -43,7 +43,7 @@ OptVerbose: TypeAlias = Annotated[  # noqa: UP040   # has to be TypeAlias
         rich_help_panel="Logging",
     ),
 ]
-OptQuiet: TypeAlias = Annotated[  # noqa: UP040 # has to be TypeAlias
+OptQuiet: TypeAlias = Annotated[  # has to be TypeAlias
     bool,
     typer.Option(
         ...,

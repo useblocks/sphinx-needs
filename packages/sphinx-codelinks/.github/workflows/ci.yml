@@ -13,9 +13,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-# These permissions are needed to interact with GitHub's OIDC Token endpoint.
+# Nothing in this workflow publishes anything, so it needs no OIDC token: the trusted
+# publisher lives in release.yaml, and gh_pages.yml carries its own `pages`/`id-token`
+# grant. Read access to the contents is all any job here uses.
 permissions:
-  id-token: write
   contents: read
 
 jobs:
@@ -48,37 +49,40 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Eight rows, chosen so that every supported python runs at least once on ubuntu,
+        # every sphinx series runs at least once, and both ends of the matrix -- minimal
+        # (py311-sphinx7) and maximal (py314-sphinx9) -- run on ubuntu AND windows, with
+        # the maximal end also on macOS and arm64. `python` MUST equal the tox env's own
+        # python factor: setup-python installs that interpreter and tox-uv would otherwise
+        # go and fetch a different one, so the row would silently not test what it names.
         include:
           # minimal versions
           - os: ubuntu-latest
+            python: "3.11"
+            tox-env: py311-sphinx7
+          - os: windows-latest
+            python: "3.11"
+            tox-env: py311-sphinx7
+          # the two pythons between the ends, each on one sphinx series
+          - os: ubuntu-latest
             python: "3.12"
-            tox-env: py312-sphinx7-needs5
+            tox-env: py312-sphinx8
+          - os: ubuntu-latest
+            python: "3.13"
+            tox-env: py313-sphinx9
           # maximal versions
           - os: ubuntu-latest
             python: "3.14"
-            tox-env: py314-sphinx8-needs8
-          # Sphinx 9 with lowest compatible sphinx-needs
-          - os: ubuntu-latest
-            python: "3.12"
-            tox-env: py312-sphinx9-needs7
-          # Sphinx 9 with highest sphinx-needs
-          - os: ubuntu-latest
-            python: "3.14"
-            tox-env: py314-sphinx9-needs8
-          # minimal version on Windows
+            tox-env: py314-sphinx9
           - os: windows-latest
             python: "3.14"
-            tox-env: py312-sphinx7-needs5
-          # maximal versions on other OSes
-          - os: ubuntu-24.04-arm
-            python: "3.14"
-            tox-env: py314-sphinx8-needs8
-          - os: windows-latest
-            python: "3.14"
-            tox-env: py314-sphinx8-needs8
+            tox-env: py314-sphinx9
           - os: macos-latest
             python: "3.14"
-            tox-env: py314-sphinx8-needs8
+            tox-env: py314-sphinx9
+          - os: ubuntu-24.04-arm
+            python: "3.14"
+            tox-env: py314-sphinx9
 
     runs-on: ${{ matrix.os }}
 
