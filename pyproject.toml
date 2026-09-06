@@ -340,15 +340,28 @@ frozen = true
 
 [tool.poe.tasks.lint]
 help = "Run every prek hook over the whole tree (ruff check + format, taplo, yamlfmt, ty, uv-lock)"
+# `deps`, not a step of the prek config: the fence has to run in CI's Lint job WITHOUT an
+# environment (it is `uv run --no-project python …` there, before anything is synced), and a
+# prek hook cannot be that. A dep keeps `uv run poe lint` and CI's Lint job checking the same
+# thing, and a failed dep aborts the task graph, so a pin that disagrees with its jar is red
+# before a single hook runs
+deps = ["verify-plantuml"]
 cmd = "prek run --all-files"
 
 [tool.poe.tasks.test-needs]
 help = "Run the test suite against the default (newest) sphinx; trailing args go to pytest"
+# `deps`, not `uses`: the suite RESOLVES the jar for itself (PLANTUML_JAR, then
+# vendor/plantuml/, then PATH), so all this has to guarantee is that the file is there
+deps = ["fetch-plantuml"]
 cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m 'not jstest'"
 cwd = "packages/sphinx-needs"
 
 [tool.poe.tasks.test-needs-js]
 help = "Run only the browser tests; run `poe install-browser` once first"
+# yes, these need a jar too, although they render no diagram anyone looks at: two of the
+# three cases build through the `test_app` fixture, which takes `plantuml_command`, and
+# that fixture RAISES when it can find no renderer rather than skipping
+deps = ["fetch-plantuml"]
 cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m jstest"
 cwd = "packages/sphinx-needs"
 
@@ -360,8 +373,36 @@ help = "Download Playwright's Chromium into ~/.cache/ms-playwright (~/Library/Ca
 # an already-installed Chrome instead and needs no download at all.
 cmd = "playwright install chromium"
 
+[tool.poe.tasks.verify-plantuml]
+help = "Check the committed PlantUML jar against vendor/plantuml/pin.toml (no network)"
+# THE FENCE, and the reason the jar can be committed: it names both hashes when `pin.toml`
+# and `vendor/plantuml/plantuml-<version>.jar` disagree, which is the one half of a bump a
+# reviewer cannot see in a diff. `lint` above declares it, and CI's Lint job runs the same
+# script by path with `--no-project`, so the two agree. It never touches the network.
+cmd = "python tools/src/sn_tools/fetch_plantuml.py --verify"
+
+[tool.poe.tasks.fetch-plantuml]
+help = "Download the pinned PlantUML into vendor/plantuml/ — a bump step; a jar matching the pin is a 0.03 s hash check"
+# BARE, like `install-browser` and for the same reason: it acts on the checkout rather than
+# on one package -- both packages' suites, both docs builds and the performance project
+# render with the jar it names. `vendor/plantuml/pin.toml` is the only place the version and
+# its sha256 are written; the script is stdlib-only so that CI can run it by path before any
+# environment exists.
+#
+# The jar IS COMMITTED, so on a normal checkout this downloads nothing: it hashes the file
+# that is already there and prints its path. It earns its keep during a bump -- edit the two
+# lines in `pin.toml`, run this, `git rm` the old jar and `git add` the new one -- and as the
+# repair for a jar a checkout mangled.
+#
+# Every task below that renders a diagram declares `deps = ["fetch-plantuml"]`, so nobody has
+# to remember this exists: for a developer it is the hash check, mid-bump it is the download,
+# and on a machine that exports PLANTUML_JAR it is neither -- an explicit choice is never
+# made to wait for work it will not use.
+cmd = "python tools/src/sn_tools/fetch_plantuml.py"
+
 [tool.poe.tasks.test-needs-sphinx7]
 help = "Run the suite against sphinx 7.4 (set UV_PYTHON to pick the interpreter)"
+deps = ["fetch-plantuml"]
 cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m 'not jstest'"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", group = [
@@ -372,6 +413,7 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-7" }
 
 [tool.poe.tasks.test-needs-sphinx8]
 help = "Run the suite against sphinx 8.2 (set UV_PYTHON to pick the interpreter)"
+deps = ["fetch-plantuml"]
 cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m 'not jstest'"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", group = [
@@ -382,6 +424,7 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-8" }
 
 [tool.poe.tasks.test-needs-sphinx9]
 help = "Run the suite against sphinx 9.1 (python >= 3.12; set UV_PYTHON to pick the interpreter)"
+deps = ["fetch-plantuml"]
 cmd = "pytest --ignore=performance --ignore=tests/benchmarks -m 'not jstest'"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", group = [
@@ -397,18 +440,29 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-9" }
 # collects the working directory, and the root's `norecursedirs` is what keeps it out of
 # `docs/_build` and the `bazel-*` symlinks.
 
+# `uses`, not `deps`, for every sphinx-mounts task: that suite reads PLANTUML_JAR and
+# nothing else -- it has no notion of this repository's layout, which is the part it got
+# right -- so the task has to hand it the path, not merely rely on the file being there.
+# poe runs the named task and captures its STDOUT into the variable, which is why
+# `fetch_plantuml.py` prints the path there and everything else to stderr. A developer who
+# already exports PLANTUML_JAR gets that same value back, because the script short-circuits
+# on it: `uses` overwrites the variable with what it printed, not with a different jar.
+
 [tool.poe.tasks.test-mounts]
 help = "Run the sphinx-mounts suite against the default (newest) sphinx; trailing args go to pytest"
+uses = { PLANTUML_JAR = "fetch-plantuml" }
 cmd = "pytest -m 'not bazel'"
 cwd = "packages/sphinx-mounts"
 
 [tool.poe.tasks.test-mounts-bazel]
 help = "Run only the Bazel integration tests; needs bazel or bazelisk on PATH"
+uses = { PLANTUML_JAR = "fetch-plantuml" }
 cmd = "pytest -m bazel"
 cwd = "packages/sphinx-mounts"
 
 [tool.poe.tasks.test-mounts-sphinx7]
 help = "Run the sphinx-mounts suite against sphinx 7.4 (set UV_PYTHON to pick the interpreter)"
+uses = { PLANTUML_JAR = "fetch-plantuml" }
 cmd = "pytest -m 'not bazel'"
 cwd = "packages/sphinx-mounts"
 executor = { type = "uv", frozen = true, no-group = "dev", group = [
@@ -419,6 +473,7 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-7" }
 
 [tool.poe.tasks.test-mounts-sphinx8]
 help = "Run the sphinx-mounts suite against sphinx 8.2 (set UV_PYTHON to pick the interpreter)"
+uses = { PLANTUML_JAR = "fetch-plantuml" }
 cmd = "pytest -m 'not bazel'"
 cwd = "packages/sphinx-mounts"
 executor = { type = "uv", frozen = true, no-group = "dev", group = [
@@ -429,6 +484,7 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/sphinx-8" }
 
 [tool.poe.tasks.test-mounts-sphinx9]
 help = "Run the sphinx-mounts suite against sphinx 9.1 (python >= 3.12; set UV_PYTHON to pick the interpreter)"
+uses = { PLANTUML_JAR = "fetch-plantuml" }
 cmd = "pytest -m 'not bazel'"
 cwd = "packages/sphinx-mounts"
 executor = { type = "uv", frozen = true, no-group = "dev", group = [
@@ -454,6 +510,7 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/typing" }
 
 [tool.poe.tasks.benchmark-needs]
 help = "Run the benchmark suite (time + memory); needs the docs extra for the corpus"
+deps = ["fetch-plantuml"]
 cmd = "pytest tests/benchmarks"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", group = "benchmark", extra = "docs" }
@@ -534,6 +591,7 @@ cmd = "python tools/src/sn_tools/import_check.py sphinx-mounts"
 
 [tool.poe.tasks.docs-needs]
 help = "Build the HTML docs with the furo theme"
+deps = ["fetch-plantuml"]
 cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/furo -T"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", extra = [
@@ -567,6 +625,7 @@ sequence = [
 
 [tool.poe.tasks.docs-needs-linkcheck]
 help = "Check every external link in the documentation"
+deps = ["fetch-plantuml"]
 cmd = "sphinx-build -E -W -b linkcheck docs docs/_build/linkcheck"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs" }
@@ -574,6 +633,7 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-plain" }
 
 [tool.poe.tasks.docs-needs-alabaster]
 help = "Build the HTML docs with the alabaster (sphinx built-in) theme"
+deps = ["fetch-plantuml"]
 cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/alabaster -T"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", extra = "docs" }
@@ -581,6 +641,7 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-plain", DOCS_THEME = "alabaster" }
 
 [tool.poe.tasks.docs-needs-im]
 help = "Build the HTML docs with the sphinx-immaterial theme"
+deps = ["fetch-plantuml"]
 cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/sphinx_immaterial -T"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", extra = [
@@ -591,6 +652,7 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-im", DOCS_THEME = "sphinx_immateri
 
 [tool.poe.tasks.docs-needs-pds]
 help = "Build the HTML docs with the pydata-sphinx-theme"
+deps = ["fetch-plantuml"]
 cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/pydata_sphinx_theme -T"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", extra = [
@@ -601,6 +663,7 @@ env = { UV_PROJECT_ENVIRONMENT = ".venvs/docs-pds", DOCS_THEME = "pydata_sphinx_
 
 [tool.poe.tasks.docs-needs-rtd]
 help = "Build the HTML docs with the sphinx-rtd-theme"
+deps = ["fetch-plantuml"]
 cmd = "sphinx-build -nW --keep-going -b html docs docs/_build/html/sphinx_rtd_theme -T"
 cwd = "packages/sphinx-needs"
 executor = { type = "uv", frozen = true, no-group = "dev", extra = [

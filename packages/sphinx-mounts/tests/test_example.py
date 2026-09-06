@@ -118,8 +118,10 @@ def test_example_pipeline_end_to_end(tmp_path: Path) -> None:
         or shutil.which("plantuml")
     ):
         pytest.skip(
-            "no PlantUML — set PLANTUML_JAR (with java on PATH) or install a "
-            "`plantuml` executable, to render the showcase uml bundle under -nW"
+            "no PlantUML — run `uv run poe test-mounts`, which sets PLANTUML_JAR "
+            "from the pinned jar in vendor/plantuml/, or set "
+            "PLANTUML_JAR yourself (with java on PATH), or install a `plantuml` "
+            "executable, to render the showcase uml bundle under -nW"
         )
 
     workspace = tmp_path / "ws"
