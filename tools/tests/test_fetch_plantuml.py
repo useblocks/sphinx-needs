@@ -270,7 +270,12 @@ def test_a_plantuml_jar_naming_no_file_stops_the_run(
     assert repr(str(missing)) in message
     assert "is not a file" in message
     assert "Point it at a plantuml jar" in message
-    assert "unset it" in message
+    # the ALTERNATIVE the message offers, asserted literally rather than as "unset it":
+    # under this design the checkout puts the jar there and `--verify` fetches nothing, so a
+    # message promising that `poe fetch-plantuml` "puts" it there described an action this
+    # branch cannot take. The same clause is in `tests/conftest.py`, `docs/conf.py` and
+    # `performance_test.py`, word for word -- `tests/test_plantuml_command.py` pins it there
+    assert "unset it to render with the jar committed at vendor/plantuml/." in message
     assert urlopen == []  # and nothing was downloaded
     assert not jar_of(root).exists()
 

@@ -207,7 +207,7 @@ def resolve_plantuml_command(workspace_jar: Path | None) -> str:
             raise RuntimeError(
                 f"PLANTUML_JAR names {env_jar!r}, which is not a file. "
                 "Point it at a plantuml jar, or unset it to render with the "
-                "jar `uv run poe fetch-plantuml` puts in vendor/plantuml/."
+                "jar committed at vendor/plantuml/."
             )
         return _PLANTUML_JAVA.format(env_jar)
     if workspace_jar is not None and workspace_jar.is_file():
