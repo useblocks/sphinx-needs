@@ -197,11 +197,13 @@ jobs:
       upload-coverage: ${{ matrix.os == 'ubuntu-latest' && matrix.python-version == '3.14' }}
       # The whole sphinx-needs suite renders, and not only its uml tests: `test_app` takes
       # the `plantuml_command` fixture, which RAISES rather than skipping when it can find
-      # no renderer -- so every test that goes through that fixture errors without a jar,
-      # 478 of them, measured in this exact shape. These cells run bare `pytest`, not `poe`,
-      # so the tasks' `deps = ["fetch-plantuml"]` never fires and this input is the only
-      # thing that fetches for them. It went unnoticed because until this arc route (2) was
-      # a jar committed in the tree, which `actions/checkout` brought along
+      # no renderer -- so every test that goes through that fixture errors without one, 478
+      # of them, measured in this exact shape. `actions/checkout` brings the committed jar
+      # along, so these cells would resolve it themselves; this input is what makes them
+      # CHECK it against `vendor/plantuml/pin.toml` first, set PLANTUML_JAR explicitly, and
+      # run the `test -f` / `java -version` step -- a jar that did not survive the checkout
+      # is then one red step naming it rather than those 478 errors. These cells run bare
+      # `pytest`, not `poe`, so the tasks' `deps = ["fetch-plantuml"]` never fires here
       needs-plantuml: true
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
