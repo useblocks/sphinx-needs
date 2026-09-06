@@ -9,6 +9,65 @@ Unreleased
 New and Improved
 ................
 
+- 🔧 Sphinx-CodeLinks now lives in the Sphinx-Needs repository, as
+  `packages/sphinx-codelinks <https://github.com/useblocks/sphinx-needs/tree/master/packages/sphinx-codelinks>`__.
+
+  The whole of ``useblocks/sphinx-codelinks``' history came with it, rewritten so that
+  every historical commit already places its files under that directory: ``git log`` and
+  ``git blame`` read the full history there with no ``--follow``, and
+  ``packages/sphinx-codelinks/design/import-commit-map.txt`` maps every hash the old
+  repository had to its hash in the new one. The old repository is archived, not deleted,
+  so every permalink and every ``git+https://…/sphinx-codelinks.git@<sha>`` pin keeps
+  resolving.
+
+  What moves with it:
+
+  - **The repository**: https://github.com/useblocks/sphinx-needs. Pull requests and
+    branches are opened there, under ``packages/sphinx-codelinks/``.
+  - **The issue tracker**: https://github.com/useblocks/sphinx-needs/issues. Open issues
+    were transferred and keep their labels; the issue form has a *Package* dropdown, and
+    ``sphinx-codelinks`` is one of its options. Every issue and pull request carries a
+    ``pkg: sphinx-codelinks`` label.
+  - **The documentation**: https://codelinks.useblocks.com continues to serve it, from
+    Read the Docs rather than GitHub Pages.
+  - **Release tags** are prefixed: ``sphinx-codelinks-v1.4.0`` rather than ``1.4.0``. The
+    bare namespace in that repository is Sphinx-Needs' own, and three of this project's
+    seven released version numbers name existing Sphinx-Needs releases.
+  - **An open pull request** can be moved across without losing its commits or their
+    authorship: clone the old repository, fetch your branch, run the same
+    ``git filter-repo --to-subdirectory-filter packages/sphinx-codelinks`` the import ran,
+    and cherry-pick the range onto ``master`` in the monorepo. The import pull request's
+    description carries the exact recipe.
+
+- 🐛 ``sphinx_codelinks.__version__`` reported ``"0.1.0"``.
+
+  It had said so since the first commit, through seven releases, while the distribution
+  metadata said otherwise -- so ``import sphinx_codelinks; sphinx_codelinks.__version__``
+  on an installed 1.4.0 returned the wrong string. It is exported in ``__all__``, so this
+  is a public-API fix rather than a cosmetic one. From now on the two move together: the
+  workspace's ``bump`` command writes both, and its ``check_workspace`` fence fails when
+  they disagree.
+
+- 🐛 ``locate_git_root`` found no git root in a linked git worktree, where ``.git`` is a
+  file rather than a directory
+  (`#106 <https://github.com/useblocks/sphinx-codelinks/issues/106>`__).
+
+  ``locate_git_root`` required ``.git`` to be a directory, and ``get_remote_url`` and
+  ``get_current_rev`` then read ``<root>/.git/config`` and ``<root>/.git/HEAD`` directly.
+  In a linked worktree ``.git`` is a file holding ``gitdir: <path>``, the remotes live in
+  the main repository's git directory named by ``commondir``, and only per-worktree state
+  is local -- so every ``remote-url`` and every source link was missing, and a
+  documentation build with ``-nW`` failed outright. Both shapes are now handled, with a
+  regression test that builds a real worktree.
+
+- 🔧 ``libclang`` is now genuinely optional for the test suite.
+
+  It has always been an optional extra at runtime, and three test modules guarded it with
+  ``pytest.importorskip``; a fourth imported ``sphinx_codelinks.analyse.preproc`` without
+  a guard, and that package imports the libclang loader eagerly, so an environment without
+  the wheel failed during collection rather than skipping. It now degrades honestly: the
+  56 tests that need the engine skip, and the other 301 run.
+
 - 🔧 Lint and type checking now use the Sphinx-Needs workspace's configuration.
 
   The ``[tool.ruff]`` tables are the workspace root's, verbatim apart from the ``src`` paths
