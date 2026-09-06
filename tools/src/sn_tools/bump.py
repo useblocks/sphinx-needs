@@ -1,6 +1,6 @@
 """Stamp a release into the tree: the version, the two literals, the floors, the lock, the changelog.
 
-Steps 1-3 of AGENTS.md's "Releasing a package" are six edits in five files that must all
+Step 1 of AGENTS.md's "Releasing a package" is six edits across five files that must all
 say the same number, and every one of them has a gate somewhere else that fails when it is
 forgotten -- `check_workspace.py` on the `__version__` literal, the `uv-lock` hook on the
 lock, the plan job on the manifest, a reader on the changelog. Doing them by hand is how a

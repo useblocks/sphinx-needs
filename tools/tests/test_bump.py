@@ -175,9 +175,9 @@ env:
 
 
 def test_the_docker_fallback_becomes_the_prefixed_tag() -> None:
-    """It is a git REF, not a version: the Dockerfile checks it out. AGENTS.md step 2 says
-    `sphinx-needs-v<version>`, and a bare version would be a ref that resolves to the tag
-    of a tree in which `packages/sphinx-needs` does not exist."""
+    """It is a git REF, not a version: the Dockerfile checks it out. AGENTS.md's release
+    recipe says `sphinx-needs-v<version>`, and a bare version would be a ref that resolves
+    to the tag of a tree in which `packages/sphinx-needs` does not exist."""
     got = bump.rewrite_docker_literal(DOCKER, "sphinx-needs-v8.6.0")
     assert "|| 'sphinx-needs-v8.6.0' }}" in got
     assert "# a comment mentioning 8.5.0" in got  # only the literal moves
