@@ -59,6 +59,20 @@ build:
     pre_create_environment:
       - echo "DOT details"
       - which dot
+    post_install:
+      # The renderer. `docs/conf.py` resolves PLANTUML_JAR, then this jar, then a
+      # `plantuml` on PATH -- and Read the Docs has none of the last two, so without this
+      # step every uml diagram in these docs fails to render and `fail_on_warning` above
+      # turns that into a red build. The jar is not committed (see `vendor/plantuml/`), so
+      # it has to be fetched: an RTD build has network and python, and `default-jdk` is
+      # already in `apt_packages` above.
+      #
+      # `post_install` rather than `pre_build`: it is the first hook after an environment
+      # exists, so `python` is the build's 3.11 (the script needs `tomllib`) -- and it is
+      # still before the sphinx build that needs the file. The `post_checkout` job above
+      # runs long before this and exits 183 on a pull request with nothing for this
+      # project to build, so a skipped build fetches nothing.
+      - python tools/src/sn_tools/fetch_plantuml.py
     pre_build:
       # ideally we would just set the DOCS_THEME environment variable
       # but I couldn't see an easy way to do that for the build job

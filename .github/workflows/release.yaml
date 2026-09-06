@@ -64,13 +64,6 @@ jobs:
     name: Build and gate
     needs: [plan]
     runs-on: ubuntu-latest
-    # The compat cell runs the member's real suite, and sphinx-mounts' uml tests assert on
-    # a PlantUML rather than skipping. No runner image has a `plantuml` executable, so they
-    # take the jar route instead: `packages/sphinx-needs` vendors one for its own tests, and
-    # this is the whole of the coupling. If it ever stops vendoring it, this line fails
-    # loudly rather than the tests quietly finding nothing.
-    env:
-      PLANTUML_JAR: ${{ github.workspace }}/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar
     steps:
       - uses: actions/checkout@v7
         with:
@@ -95,6 +88,17 @@ jobs:
           # beats the root `.python-version`, and the compat cell below is meant to run on
           # the pin. The resolver gate names its interpreter explicitly instead
           cache-python: true
+      - name: Fetch the pinned PlantUML
+        # The compat cell below runs the member's real suite, and both suites' uml tests
+        # ASSERT on a PlantUML rather than skipping. No runner image has a `plantuml`
+        # executable, so they take the jar route: the one `vendor/plantuml/pin.toml` names,
+        # fetched and checksummed here. `uv run --no-project` needs no environment (the
+        # script is stdlib-only) and gives python 3.11+, which a runner's system python is
+        # not guaranteed to be; the assignment is what makes a failed fetch fail this step
+        # under the runner's `set -e`
+        run: |
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py)"
+          echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Check the workspace manifests agree with each other
         run: >
           uv run --no-project --with packaging python tools/src/sn_tools/check_workspace.py

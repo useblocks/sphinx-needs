@@ -210,6 +210,20 @@ jobs:
           enable-cache: true
           cache-suffix: ${{ matrix.python-version }}-${{ matrix.sphinx-group }}
           python-version: ${{ matrix.python-version }}
+      - name: Fetch the pinned PlantUML
+        # yes, the BROWSER cells need a jar. Two of the three cases build through the
+        # `test_app` fixture, which takes `plantuml_command`, and that fixture raises when
+        # it can find no renderer rather than skipping -- so this lane goes red without one
+        # although nothing it asserts on is a diagram
+        # the ONE jar `vendor/plantuml/pin.toml` names, fetched and checksummed rather than
+        # committed. `uv run --no-project` after `setup-uv`: the script needs `tomllib`, so
+        # python 3.11+, which a runner's system python is not guaranteed to be, and
+        # `--no-project` means it runs before anything is synced. It prints the jar's path
+        # on stdout and everything else on stderr; the assignment is what makes a failed
+        # fetch fail THIS step under the runner's `set -e`
+        run: |
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py)"
+          echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Install the cell
         # `js` is the browser driver (pytest-playwright); it is not in `test`, because only
         # these two cells want it
@@ -237,6 +251,16 @@ jobs:
           enable-cache: true
           # 3.12+: on 3.11 the lock resolves sphinx 8.2, and this job wants the newest sphinx
           python-version: "3.12"
+      - name: Fetch the pinned PlantUML
+        # the ONE jar `vendor/plantuml/pin.toml` names, fetched and checksummed rather than
+        # committed. `uv run --no-project` after `setup-uv`: the script needs `tomllib`, so
+        # python 3.11+, which a runner's system python is not guaranteed to be, and
+        # `--no-project` means it runs before anything is synced. It prints the jar's path
+        # on stdout and everything else on stderr; the assignment is what makes a failed
+        # fetch fail THIS step under the runner's `set -e`
+        run: |
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py)"
+          echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Install Dependencies
         run: |
           uv sync --frozen --no-default-groups --group test --extra docs
@@ -304,8 +328,6 @@ jobs:
     # other job wants, and three of its four steps are `bazel build`/`bazel run` targets
     # that are not pytest at all. It is the only end-to-end proof that sphinx-mounts'
     # headline use case -- mounting `bazel-bin` outputs -- still works.
-    env:
-      PLANTUML_JAR: ${{ github.workspace }}/packages/sphinx-needs/tests/doc_test/utils/plantuml.jar
     steps:
       - uses: actions/checkout@v7
       - name: Install graphviz
@@ -315,6 +337,16 @@ jobs:
           enable-cache: true
           cache-suffix: bazel
           cache-python: true
+      - name: Fetch the pinned PlantUML
+        # the ONE jar `vendor/plantuml/pin.toml` names, fetched and checksummed rather than
+        # committed. `uv run --no-project` after `setup-uv`: the script needs `tomllib`, so
+        # python 3.11+, which a runner's system python is not guaranteed to be, and
+        # `--no-project` means it runs before anything is synced. It prints the jar's path
+        # on stdout and everything else on stderr; the assignment is what makes a failed
+        # fetch fail THIS step under the runner's `set -e`
+        run: |
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py)"
+          echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true

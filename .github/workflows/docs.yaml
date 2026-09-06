@@ -13,6 +13,16 @@ jobs:
           enable-cache: true
           # 3.12+: on 3.11 the lock resolves sphinx 8.2, and this job wants the newest sphinx
           python-version: "3.12"
+      - name: Fetch the pinned PlantUML
+        # the ONE jar `vendor/plantuml/pin.toml` names, fetched and checksummed rather than
+        # committed. `uv run --no-project` after `setup-uv`: the script needs `tomllib`, so
+        # python 3.11+, which a runner's system python is not guaranteed to be, and
+        # `--no-project` means it runs before anything is synced. It prints the jar's path
+        # on stdout and everything else on stderr; the assignment is what makes a failed
+        # fetch fail THIS step under the runner's `set -e`
+        run: |
+          jar="$(uv run --no-project python tools/src/sn_tools/fetch_plantuml.py)"
+          echo "PLANTUML_JAR=$jar" >> "$GITHUB_ENV"
       - name: Install Dependencies
         run: uv sync --frozen --no-default-groups --extra docs
       - name: Run linkcheck
