@@ -20,7 +20,7 @@ all of that.
 **A fetched design was built and reviewed on this same pull request first, and dropped.** In
 it nothing was committed and every consumer downloaded the jar on demand. That makes rendering
 depend on `release-assets.githubusercontent.com` (measured: what the release URL redirects to)
-at the 22 jobs of a CI run that render, at every Read the Docs build, on every offline
+at the 22 of a CI run's 26 jobs that render, at every Read the Docs build, on every offline
 machine, and in every sandboxed agent session whose network allowlist is set outside this
 repository and does not include that host. A committed jar needs none of it.
 
@@ -172,8 +172,8 @@ def named_jar() -> Path | None:
     if not path.is_file():
         raise SystemExit(
             f"error: PLANTUML_JAR names {value!r}, which is not a file. Point it at a "
-            "plantuml jar (with `java` on PATH), or unset it to render with the pinned jar "
-            "this fetches into vendor/plantuml/."
+            "plantuml jar (with `java` on PATH), or unset it to render with the jar "
+            "committed at vendor/plantuml/."
         )
     return path
 

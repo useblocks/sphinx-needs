@@ -111,8 +111,9 @@ The machine needs `java` and graphviz's `dot` on `PATH` — the needflow tests d
 without them, so install graphviz as CI does (`apt-get install graphviz`). **The PlantUML jar
 is committed**, once, at `vendor/plantuml/plantuml-<version>.jar` — the version
 `vendor/plantuml/pin.toml` names — so a checkout renders and **nothing has to reach the
-network**: not the 22 jobs of a CI run that render (measured on a run of this branch: 24
-jobs, all but `Lint` and the smoke test), not a Read the Docs build, not an offline machine,
+network**: not the 22 of a CI run's 26 jobs that render (counted on run 34057129950, on
+`a3aebf1f`: the four that do not are `Lint`, the smoke test, `Docs codelinks` and the `check`
+aggregator), not a Read the Docs build, not an offline machine,
 and not a sandboxed session whose allowlist this repository cannot set. `uv run poe verify-plantuml`
 checks the file against the pin (one sha256 of 30 MB, well under a second including `uv` and
 `poe` startup) and is what CI's Lint job runs; `uv run poe fetch-plantuml` downloads the jar

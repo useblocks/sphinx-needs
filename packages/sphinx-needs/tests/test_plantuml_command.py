@@ -127,8 +127,19 @@ def test_a_named_jar_that_is_not_there_is_an_error(
     monkeypatch.setenv("PLANTUML_JAR", str(missing))
     monkeypatch.setattr(shutil, "which", lambda _name: "/usr/local/bin/plantuml")
 
-    with pytest.raises(RuntimeError, match=_expected(missing)):
+    with pytest.raises(RuntimeError, match=_expected(missing)) as caught:
         resolve_plantuml_command(workspace_jar)
+
+    # and the alternative it offers is the true one. The jar is COMMITTED at
+    # ``vendor/plantuml/``: a checkout has it, and ``fetch_plantuml.py --verify`` -- which
+    # `poe lint` and CI's Lint job run -- downloads nothing at all, so a message saying
+    # ``poe fetch-plantuml`` "puts" it there named an action that path never takes. The same
+    # clause is in ``docs/conf.py``, ``performance/performance_test.py`` and
+    # ``tools/src/sn_tools/fetch_plantuml.py``, word for word, and this is the assertion that
+    # holds this copy of it to that wording
+    assert "unset it to render with the jar committed at vendor/plantuml/." in str(
+        caught.value
+    )
 
 
 def test_no_renderer_at_all_is_an_error(
