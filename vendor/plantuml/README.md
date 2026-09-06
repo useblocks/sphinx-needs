@@ -32,8 +32,9 @@ without a commit.
   1.2022.5, and sat four years and ~46 releases behind without anyone noticing, because
   nothing in the tree said what it was.
 - **Zero network.** A checkout renders. That is the whole point of committing it, and it is
-  worth more than the ~30 MB: 22 jobs of a CI run render (measured: 24 jobs, all but `Lint`
-  and the smoke test), Read the Docs builds on every pull request, developers work offline,
+  worth more than the ~30 MB: 22 of a CI run's 26 jobs render (counted on run 34057129950,
+  on `a3aebf1f`: the four that do not are `Lint`, the smoke test, `Docs codelinks` and the
+  `check` aggregator), Read the Docs builds on every pull request, developers work offline,
   and a sandboxed agent session's network allowlist is set
   on the environment rather than in this repository (this repository's own `CLAUDE.md` records
   `api.github.com` having to be added to it by hand).
@@ -109,6 +110,14 @@ CI's **Lint** job runs the same `--verify` without the capture, beside the works
 check. That is the fence on the pin: a pull request that edits `pin.toml` and does not commit
 the matching jar is one red step naming both hashes, rather than a rendering failure in some
 other job.
+
+**And a test fences the steps themselves.** `tools/tests/test_ci_plantuml_steps.py` parses
+every `.github/workflows/*.y{a,}ml` and `.github/actions/*/action.y{a,}ml`, finds each step
+whose `run:` invokes the script, and asserts the four clauses above of every one of them --
+plus the number of sites it found, so a renamed script or a deleted step is red rather than a
+quietly empty walk. It exists because losing `--verify` at one site would be **green**: the
+script's default mode downloads, so the step would repair the runner's tree and report
+success on exactly the mistake the fence is for. Lint runs it (`pytest tools/tests`).
 
 ## Bumping the pin
 

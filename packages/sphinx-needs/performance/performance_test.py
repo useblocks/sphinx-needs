@@ -43,7 +43,7 @@ def resolve_plantuml() -> str:
             raise RuntimeError(
                 f"PLANTUML_JAR names {env_jar!r}, which is not a file. Point it at a "
                 "plantuml jar, or unset it to render with the jar "
-                "`uv run poe fetch-plantuml` puts in vendor/plantuml/."
+                "committed at vendor/plantuml/."
             )
         return quoted.format(env_jar)
     vendor = Path(__file__).resolve().parents[3] / "vendor" / "plantuml"

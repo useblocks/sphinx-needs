@@ -270,7 +270,12 @@ def test_a_plantuml_jar_naming_no_file_stops_the_run(
     assert repr(str(missing)) in message
     assert "is not a file" in message
     assert "Point it at a plantuml jar" in message
-    assert "unset it" in message
+    # the ALTERNATIVE the message offers, asserted literally rather than as "unset it":
+    # under this design the checkout puts the jar there and `--verify` fetches nothing, so a
+    # message promising that `poe fetch-plantuml` "puts" it there described an action this
+    # branch cannot take. The same clause is in `tests/conftest.py`, `docs/conf.py` and
+    # `performance_test.py`, word for word -- `tests/test_plantuml_command.py` pins it there
+    assert "unset it to render with the jar committed at vendor/plantuml/." in message
     assert urlopen == []  # and nothing was downloaded
     assert not jar_of(root).exists()
 
@@ -411,6 +416,31 @@ def test_verify_refuses_a_jar_that_is_not_the_pin(
     assert "uv run poe fetch-plantuml" in err
     # and it left the file alone: repairing it is the bump step's job, not the fence's
     assert jar_of(root).read_bytes() == b"some other jar entirely"
+
+
+def test_verify_refuses_an_empty_jar(root: Path, no_network: None, capsys) -> None:
+    """A zero-byte jar is a mismatch like any other, and the message names its hash.
+
+    Its own case rather than a variant of the one above, because a zero-byte file is what
+    the plausible accidents actually leave behind -- an interrupted checkout, a failed LFS
+    smudge, a `: > vendor/plantuml/plantuml-<version>.jar` -- and because "has no content to
+    hash" is the shape a short-circuit takes when someone optimises this function: a
+    `st_size == 0` early return that accepted the file left the whole suite green
+    (reviewer B's B1 mutation, 263/263 passing). The hash of nothing is a real, stable
+    sha256, so the fence needs no special case to catch this -- it needs a test saying so.
+    """
+    jar_of(root).write_bytes(b"")
+
+    assert run(root, "--verify") == 1
+
+    err = capsys.readouterr().err
+    assert DIGEST in err  # what the pin names
+    # sha256 of the empty byte string, written out rather than computed: this is the digest
+    # that appears in the log of a truncated checkout, and it is worth being able to grep
+    assert "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" in err
+    assert "uv run poe fetch-plantuml" in err
+    # and the fence left it alone, as it does for every other mismatch
+    assert jar_of(root).read_bytes() == b""
 
 
 def test_verify_honours_plantuml_jar(

@@ -4,7 +4,7 @@ on:
     branches: [master]
   pull_request:
 
-# A fix-up push otherwise leaves the superseded head's 25 jobs running to completion, and
+# A fix-up push otherwise leaves the superseded head's 26 jobs running to completion, and
 # the useblocks organisation shares 60 concurrent runners across all of its repositories.
 # The group is the pull request's number, so every run that is NOT a pull request -- every
 # push to master -- gets a group of its own and master runs neither queue behind nor cancel
