@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788725519965,
+  "lastUpdate": 1788729594184,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -19980,6 +19980,42 @@ window.BENCHMARK_DATA = {
             "value": 56.939722417999974,
             "unit": "s",
             "extra": "Commit: a3aebf1f5b5cd2e34b91c4341c291015633f12d9\nBranch: master\nTime: 2026-09-06T22:09:51+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "89615db8d2198c924189205608c362fbf4c7453d",
+          "message": "⬆️ Lift the typer cap in sphinx-codelinks, moving sphinxcontrib-typer past its own (#1896)\n\n## Why\n\n`packages/sphinx-codelinks/pyproject.toml` capped `typer<0.26.8` because\n0.26.8 removed `typer.rich_utils.STYLE_METAVAR`, which\n`sphinxcontrib-typer` up to 0.9.0 still imports in the documentation\nbuild, and it capped `sphinxcontrib-typer<0.9.1` for the mirror-image\nreason. The two caps only make sense together, and they only come off\ntogether.\n\nDependabot cannot compose that: #1884 rewrote the typer cap alone to a\npin on 0.27.2 and its `Docs codelinks` job failed on exactly the\n`AttributeError` the cap's comment names. Closed with `@dependabot\nignore this minor version`; this is the change it wanted to make.\n\n## What changes\n\n| where | before | after |\n|---|---|---|\n| runtime dependency | `typer>=0.16.0,<0.26.8` | `typer>=0.16.0` — the\nfloor is unchanged; only the cap goes |\n| `docs` extra | `sphinxcontrib-typer>=0.5.1,<0.9.1` |\n`sphinxcontrib-typer>=0.9.1` — 0.9.1+ tracks the new typer and declares\n`typer>=0.26.8,<1.0.0` itself, so the docs extra carries the right typer\nfloor without this manifest repeating it |\n| `uv.lock` | typer 0.26.7, sphinxcontrib-typer 0.9.0 | typer 0.27.2,\nsphinxcontrib-typer 0.9.2 — nothing else moves; `click<8.2` (its own\ncap, its own reason) is untouched |\n| `docs/changelog.rst` | — | one ⬆️ bullet under *Unreleased* |\n\n## Measured on this lock\n\n- `uv run poe docs-codelinks-clean`: builds, zero warnings.\n- `uv run poe test-codelinks`: 359 passed (the CLI tests run through\ntyper's `CliRunner`).\n- `uv run poe lint`: every hook green, including the workspace check and\nthe lock check.",
+          "timestamp": "2026-09-06T23:18:32+02:00",
+          "tree_id": "5ea1b0244cd2f14e5413190d0cd0d57fa8689898",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/89615db8d2198c924189205608c362fbf4c7453d"
+        },
+        "date": 1788729586291,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.14770078800000164,
+            "unit": "s",
+            "extra": "Commit: 89615db8d2198c924189205608c362fbf4c7453d\nBranch: master\nTime: 2026-09-06T23:18:32+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 55.512905438000004,
+            "unit": "s",
+            "extra": "Commit: 89615db8d2198c924189205608c362fbf4c7453d\nBranch: master\nTime: 2026-09-06T23:18:32+02:00"
           }
         ]
       }
