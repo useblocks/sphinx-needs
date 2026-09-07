@@ -282,23 +282,40 @@ def _skip_plantuml_node(self, node: nodes.Element) -> None:
     raise nodes.SkipNode
 
 
+def _refuse_to_render(*args: object, **kwargs: object) -> None:
+    """Stand in for sphinxcontrib-plantuml's renderer on a build that did not opt in."""
+    raise AssertionError(
+        "PlantUML rendering was reached by a test_app build that did not opt into it. "
+        "Add '\"plantuml\": True' to that test's test_app parameter dict if it means "
+        "to render; otherwise find out what got past the inert node visitors."
+    )
+
+
 def make_plantuml_inert(app: SphinxTestApp) -> None:
     """Neutralise PlantUML rendering for one app, for a test that did not opt in.
 
-    Two halves, and both earn their place:
+    Three layers, and each covers what the one before it cannot:
 
-    * every node visitor sphinxcontrib-plantuml registers is replaced with one that
-      raises ``SkipNode``. The directive still parses and the ``plantuml`` node still
-      lands in the doctree -- which is why the tests that inspect those nodes, or the
+    * every node visitor sphinxcontrib-plantuml registers is replaced with one that raises
+      ``SkipNode``. That is where the time goes: the directive still parses and the node
+      still reaches the doctree -- so the tests that inspect ``plantuml`` nodes, or the
       ``.puml`` files sphinx-needs writes itself, keep passing untouched -- but no JVM
-      starts. That is where the time goes: 2.04 s a render, measured, over the 107
-      renders the old default triggered.
-    * the ``plantuml`` configuration is pointed at :data:`_INERT_PLANTUML_COMMAND`, so a
-      render reached by a route these visitors do not cover (sphinxcontrib's batch path,
-      say, or a future one) fails LOUDLY and names the parameter that would have enabled
-      it, rather than quietly using a renderer this suite never chose.
+      starts, and a JVM start is 2.04 s of every 2.13 s render, measured.
+    * THIS APP'S OWN ``PlantumlBuilder`` has its two render entry points replaced with one
+      that raises. That is the assertion that nothing renders, and it is made on the app
+      rather than on the output directory because two tests in this suite
+      (``test_needs_external_needs_build.py::test_doc_build_html`` and
+      ``test_needuml.py::test_needuml_diagram_allowmixing``) run a real ``sphinx-build``
+      SUBPROCESS into ``app.outdir``: a rendered file found there cannot be attributed to
+      the fixture's app, while a call reaching this object can only have come from it.
+    * the ``plantuml`` configuration is pointed at :data:`_INERT_PLANTUML_COMMAND`, so
+      anything that builds its own command line out of the config -- rather than going
+      through the object above -- fails naming the parameter that would have enabled it,
+      instead of quietly running whatever ``plantuml`` the machine happens to carry.
+      sphinxcontrib's own default is the bare word ``plantuml``, so "unset" would mean
+      "render with an unpinned renderer, and say nothing".
 
-    Both happen after the app exists rather than through ``confoverrides``, because a
+    All of it happens after the app exists rather than through ``confoverrides``, because a
     project that does not load ``sphinxcontrib.plantuml`` -- 88 of this suite's 138 test
     projects -- would otherwise collect an "unknown config value 'plantuml' in override,
     ignoring" warning that it never used to have.
@@ -316,34 +333,10 @@ def make_plantuml_inert(app: SphinxTestApp) -> None:
         override=True,
         **dict.fromkeys(_NODE_VISITORS, (_skip_plantuml_node, None)),
     )
-
-
-def assert_nothing_rendered(app: SphinxTestApp) -> None:
-    """Assert a build that did not opt in really rendered no diagram.
-
-    :func:`make_plantuml_inert` is what makes that true; this is what keeps it true.
-    sphinxcontrib-plantuml writes every render into ``<outdir>/<plantuml_cache_path>``
-    before copying it to the image directory, so an empty (or absent) cache is the
-    cheapest proof that no renderer ran.
-
-    :param app: The built application.
-    """
-    if "sphinxcontrib.plantuml" not in app.extensions:
-        return
-
-    cache = Path(app.outdir) / app.config.plantuml_cache_path
-    rendered = (
-        sorted(
-            str(path.relative_to(cache)) for path in cache.rglob("*") if path.is_file()
-        )
-        if cache.is_dir()
-        else []
-    )
-    assert not rendered, (
-        f"PlantUML rendered {rendered} for a test that did not ask it to. "
-        "Add '\"plantuml\": True' to this test's test_app parameters if it means to "
-        "render; otherwise find out what got past the inert renderer."
-    )
+    plantuml_builder = getattr(app.builder, "plantuml_builder", None)
+    if plantuml_builder is not None:
+        plantuml_builder.render = _refuse_to_render
+        plantuml_builder.render_batches = _refuse_to_render
 
 
 # node classes from extensions outside sphinx-needs are exempt from the parent check:
@@ -375,7 +368,8 @@ def test_app(make_app, sphinx_test_tempdir, request):
 
     **Rendering PlantUML is opt in**: a parameter dict that says ``"plantuml": True``
     gets the session's :func:`plantuml_command`; every other build gets an inert
-    renderer (:func:`make_plantuml_inert`), and is held to it (:func:`assert_nothing_rendered`).
+    renderer (:func:`make_plantuml_inert`), which REFUSES to render rather than
+    quietly rendering with whatever renderer the machine happens to carry.
     Twelve of this suite's 266 parameter dicts opt in -- diagrams are parsed everywhere,
     but only those twelve assert on a rendered one, and rendering the rest cost a third
     of the suite's wall time.
@@ -453,9 +447,6 @@ def test_app(make_app, sphinx_test_tempdir, request):
     app.connect("doctree-resolved", _check_parent_child, priority=999)
 
     yield app
-
-    if not renders:
-        assert_nothing_rendered(app)
 
     app.cleanup()
 
