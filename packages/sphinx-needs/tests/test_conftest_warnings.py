@@ -7,13 +7,16 @@ nothing, which matters because the shared test layer is about to export this fun
 other packages. These are constructed streams, so each rule is asserted on its own.
 """
 
+import os
 from pathlib import Path
 
 import pytest
 
 from tests.conftest import assert_no_warnings, build_warnings, warning_count
 
-SRCDIR = "/tmp/build/src"
+# in the platform's own form: `build_warnings` normalises the directory through `Path`, so
+# on Windows a POSIX literal here would become `\tmp\build\src` and never match the stream
+SRCDIR = str(Path("/tmp/build/src"))
 
 
 def located(text: str) -> str:
@@ -161,7 +164,7 @@ def test_an_empty_stream_has_no_records() -> None:
 
 def test_a_srcdir_given_with_a_trailing_separator_still_rewrites() -> None:
     stream = located("<S>/index.rst:5: WARNING: x [needs.a]\n")
-    assert build_warnings(stream, srcdir=SRCDIR + "/") == [
+    assert build_warnings(stream, srcdir=SRCDIR + os.sep) == [
         "<srcdir>/index.rst:5: WARNING: x [needs.a]"
     ]
 
