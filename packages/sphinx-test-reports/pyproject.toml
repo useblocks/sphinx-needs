@@ -17,14 +17,12 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Documentation",
 ]
 keywords = ["sphinx", "documentation", "test-reports"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = ["sphinx>4.0", "lxml", "sphinx-needs>=1.0.1", "packaging>=20.0"]
 
 [project.optional-dependencies]

@@ -22,6 +22,9 @@ Unreleased
 * Feature: New ``tr_deterministic_case_ids`` option derives test-case IDs from
   the source location instead of the need content, so an ID no longer changes
   when a test starts failing differently.
+* Support: Python 3.10 is no longer supported. It reached the end of upstream
+  support, and dropping it lets the package read TOML with ``tomllib`` from the
+  standard library instead of carrying a backport.
 
 .. _`release:1.4.0`:
 
