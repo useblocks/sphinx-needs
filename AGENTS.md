@@ -121,10 +121,13 @@ against the pin (one sha256 of 30 MB, well under a second including `uv` and `po
 is what CI's Lint job runs; `uv run poe fetch-plantuml` downloads the jar the pin names, which
 is a **bump** step and otherwise the same hash check. **You will rarely run either by hand**:
 every task that renders declares `fetch-plantuml` through `deps` — the sphinx-needs suites,
-`docs-needs*`, `benchmark-needs` and the sphinx-mounts suites, all of which resolve the jar
-for themselves through the shared test layer; `test-mounts-bazel` is the one that still needs
-`uses = { PLANTUML_JAR = "fetch-plantuml" }`, because its build runs in a Bazel sandbox that
-cannot see `vendor/` — and `lint` declares `verify-plantuml`. `smoke-needs`, `test-needs-js` and the
+`docs-needs*`, `benchmark-needs` and the sphinx-mounts suites. The two SUITES resolve the jar
+for themselves through the shared test layer; `docs-needs*` and `benchmark-needs` keep their
+own hand-written copies of the same three-route chain in `packages/sphinx-needs/docs/conf.py`
+and `packages/sphinx-needs/performance/performance_test.py`, and have to: a docs build and a
+benchmark must not import a test-only member. `test-mounts-bazel` is the one task that still
+needs `uses = { PLANTUML_JAR = "fetch-plantuml" }`, because its build runs in a Bazel sandbox
+that cannot see `vendor/` — and `lint` declares `verify-plantuml`. `smoke-needs`, `test-needs-js` and the
 sphinx-mounts docs render nothing and declare neither.
 
 Both suites resolve a renderer through ONE function in the shared test layer, and **both

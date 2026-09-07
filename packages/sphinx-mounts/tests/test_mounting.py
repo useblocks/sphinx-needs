@@ -1404,8 +1404,9 @@ def test_docname_conflict_warning_is_suppressible(
     app.build()
 
     assert "docname conflict" not in app._warning.getvalue()
+    # `warning_count(app) == 0` is the whole claim: a typed count of zero passes for any
+    # type string, including one no version of this package has ever emitted.
     assert warning_count(app) == 0
-    assert warning_count(app, "mounts.docname_conflict") == 0
 
 
 def test_docname_conflict_warning_group_suppressible(
@@ -1429,8 +1430,9 @@ def test_docname_conflict_warning_group_suppressible(
     app.build()
 
     assert "docname conflict" not in app._warning.getvalue()
+    # `warning_count(app) == 0` is the whole claim: a typed count of zero passes for any
+    # type string, including one no version of this package has ever emitted.
     assert warning_count(app) == 0
-    assert warning_count(app, "mounts.docname_conflict") == 0
 
 
 def test_docname_conflict_fails_under_warningiserror(

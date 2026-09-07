@@ -234,8 +234,7 @@ def test_a_member_declared_nowhere_is_not_told_the_root_depends_on_it(
     assert run(root) == 1
     out = capsys.readouterr().out
     assert (
-        "`acme-testkit` is a workspace member but the root neither depends on it"
-        in (out)
+        "`acme-testkit` is a workspace member but the root neither depends on it" in out
     )
     assert "the root depends on it in [project] dependencies" not in out
 

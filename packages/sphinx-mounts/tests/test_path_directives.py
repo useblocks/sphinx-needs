@@ -1379,10 +1379,10 @@ def _plantuml_extra_conf(
     launcher. This suite used to write that chain out for itself, without the vendored
     step, which is why the jar had to be handed to it in an environment variable.
 
-    ``renders`` is the lazy half, and it matters for the one parametrised test whose eight
+    ``renders`` is the lazy half, and it matters for the one parametrised test whose nine
     cases include a single uml one: a parameter that draws no PlantUML diagram must not
     make the session resolve a renderer, or a machine with none could not run the other
-    seven.
+    eight.
 
     ``repr`` of the command string, so a path containing a space — or a Windows path's
     backslashes — survives into the conf.py as one literal.
@@ -1536,7 +1536,7 @@ def test_changed_include_target_rereads_mounted_doc(
         _add_extensions(host, *extensions)
     # only the `uml` parameter draws a PlantUML diagram, and only it may make the
     # session resolve a renderer -- otherwise a machine with none could run none of
-    # the eight
+    # the nine
     for line in conf_lines + _plantuml_extra_conf(
         request, requires == "sphinxcontrib.plantuml"
     ):
