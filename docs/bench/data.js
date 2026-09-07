@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788761878629,
+  "lastUpdate": 1788772663776,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20196,6 +20196,42 @@ window.BENCHMARK_DATA = {
             "value": 14.859383406999996,
             "unit": "s",
             "extra": "Commit: c4d048583c7d2ac14bd7119c923f7e78eec7cd7c\nBranch: master\nTime: 2026-09-07T08:17:12+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7c749d79ec9f398973f2b166884e7d81247c95f3",
+          "message": "🧪 One way to assert on a build's warnings (#1902)\n\nThis suite read the warning stream 119 times through\n`strip_colors(...)`, in six different\nshapes, with the source directory spelled `srcdir/` in 30 places and\n`<srcdir>/` in 71, and\nnormalised in two different orders. On top of that sat two helpers, and\n**both were wrong**:\n\n- **`app.warning_list` was captured in the fixture, before the test\ncalled `app.build()`.**\nEvery assertion on it was an assertion about application *construction*.\nThirteen sites in\nthree files were in that state, **seven** of them the literal `assert\napp.warning_list == []`\n  written directly after a build they could not see.\n- **`get_warnings_list` split the stream on the substring `\"WARNING:\n\"`**, after rewriting\n`\"ERROR: \"` to it. N located warnings became N+1 entries — entry 0 a\nbare location, entry\n*i* carrying warning *i+1*'s location glued to its own message — an\nERROR read as a\nWARNING, and a message that merely quoted the token was cut in half. It\ngot away with it\nbecause all its callers happened to assert on unlocated config warnings,\nthe one shape\n  where the leading element is empty and dropped.\n\n## The one normalisation\n\n`build_warnings(source)` in `tests/conftest.py`, with\n`assert_no_warnings(source)` and\n`warning_count(source, warning_type=...)` beside it. Free functions,\nover an app **or over\ncaptured text**, so a `make_app` caller and a test that greps a real\n`sphinx-build`'s stderr\nget the same shape. One entry per warning *record*: colours stripped,\nthe source directory\nrewritten to `<srcdir>/`, the location kept attached to its message, a\nmulti-line message kept\nwhole, and the severity token left as it was emitted.\n\nA record starts at a line carrying a severity token, optionally behind\nits location prefix.\nThat is a **heuristic** over what sphinx and docutils emit, not a\nboundary either of them\ndefines: a continuation line at column 0 carrying a severity token of\nits own would still start\na new record. Every continuation this suite provokes is indented, so it\nholds — and it is a far\nnarrower failure than a substring search, which had no safe case at all.\nThe comment beside the\nregex says so, and **19 unit tests over constructed streams pin it**,\nincluding the cases that\nused to be pinned by nothing: a Windows drive-letter location, a quoted\nseverity token, a\nseverity token with no trailing space, and a capture whose leading\nstatus lines must not become\na warning.\n\n## What it found\n\nThe eight assertions in `test_card_layouts.py` (and five more elsewhere)\nrun for the first\ntime. **Twelve of the thirteen run on this platform and all twelve\npass**; the thirteenth,\n`test_import_abs_paths_win`, is `skipif`-ed to Windows and runs in that\nCI cell. So no issue is\nfiled and nothing is `xfail`ed here.\n\nThat they pass is not a reason to doubt they are live. Adding one\nconfiguration mistake to\nthat module's `conf.py` builder turns **seven of the eight red**; the\nidentical mutation on\n`master` leaves the module **completely green, 216 passed**.\n\n## The diff\n\nTwenty files were a pure codemod. Twenty had to be read, because a\n`strip_colors(...)` that\nproduced a string and a `.splitlines()` that produced a list cannot be\nconverted the same way\n— `\"x\" in text` is a substring test and `\"x\" in list` is an exact match.\nThe read files are\nwhere the value is: the `get_warnings_list` callers whose entry shape\nchanges from N+1 to N\n(`test_plantuml_unconfigured` asserted `len(...) == 2` for **one**\nwarning), the expectations\nthat listed a multi-line warning one line per entry and are now joined\ninto the record they\nbelong to, and the subprocess readers that were rewriting `<srcdir>/` by\nhand.\n\nSixty-seven schema snapshots lose exactly one trailing blank line — the\nraw stream ends with\nthe newline the last warning was written with; a join of records does\nnot. Nothing else in\nthem changed.\n\nEvery hand-rolled \"no warnings\" assertion is `assert_no_warnings` now —\n72 call sites, none\nleft on the API — the three pass-through wrappers the codemod left\nbehind are inlined, and the\nfunction is called `build_warnings`, because `warnings` is a stdlib\nmodule and the shared layer\nis about to export this name to two more suites.\n\nCounts are unchanged from `master` — **1757 passed, 12 skipped, 3\ndeselected** — plus the 19\nnew unit tests. No test is skipped, deselected, loosened or `xfail`ed.\n\nNo changelog entry: the diff touches no file under any package's `src/`.\n\nSlice 2 of a four-slice arc ending in one shared test layer for\nsphinx-needs, sphinx-mounts\nand sphinx-codelinks. The API lives in sphinx-needs' own conftest for\nnow; slice 3 moves it.",
+          "timestamp": "2026-09-07T11:17:02+02:00",
+          "tree_id": "f60388248f3702bdedaf93a3d154160ec11466a6",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/7c749d79ec9f398973f2b166884e7d81247c95f3"
+        },
+        "date": 1788772655559,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.17312910700000117,
+            "unit": "s",
+            "extra": "Commit: 7c749d79ec9f398973f2b166884e7d81247c95f3\nBranch: master\nTime: 2026-09-07T11:17:02+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 14.732674257,
+            "unit": "s",
+            "extra": "Commit: 7c749d79ec9f398973f2b166884e7d81247c95f3\nBranch: master\nTime: 2026-09-07T11:17:02+02:00"
           }
         ]
       }
