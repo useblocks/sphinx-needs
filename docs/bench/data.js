@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788786963579,
+  "lastUpdate": 1788786981181,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20338,6 +20338,42 @@ window.BENCHMARK_DATA = {
           {
             "name": "Official Sphinx-Needs documentation (without services)",
             "value": 54.618553915999996,
+            "unit": "s",
+            "extra": "Commit: 3069da1a73d23cf0768012b6e17092e7a02911a2\nBranch: master\nTime: 2026-09-07T15:14:42+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3069da1a73d23cf0768012b6e17092e7a02911a2",
+          "message": "🔧 One shared test layer for three suites: packages/sphinx-needs-testkit (#1904)\n\nThree `tests/conftest.py` in this workspace, and between them four\nimplementations of the PlantUML\nresolution, two byte-identical doctree snapshot extensions (one\ncharacter apart) and one warning\nnormalisation that only one of them has. This adds a workspace member\nthe three share, and moves the\nfirst tranche into it — **a member rather than a root `conftest.py`**,\nbecause a conftest shares\nfixtures and hooks and nothing else, and half of what is duplicated here\nis a plain function a\n`make_app` caller or a subprocess test calls directly.\n\n## The member this repository never publishes\n\n`tools/` is unreleasable because it is **virtual** (`[tool.uv] package =\nfalse`), which also makes\nit uninstallable. A shared test layer cannot be that: the release\nworkflow's compat cell builds an\nenvironment *outside* the project and runs a member's suite in it. So a\nsecond notion, marked by a\n`Private ::` classifier — the one declaration that holds outside this\nrepository too, since PyPI\nrejects anything carrying one. `release_plan.py` refuses a tag naming\nsuch a member and leaves it\nout of the release order; `check_workspace.py` holds it to every other\ncheck, `__version__`\nincluded, and asserts the classifier is there — otherwise one line of\napparent decoration is all\nthat stands between the member and PyPI. `release.yaml` needs no change:\nits `plan` job already runs\n`release_plan.py --tag`, so a rehearsal of `sphinx-needs-testkit-v0`\ngoes red there without `build`\never starting. It sits in the root's `test` **group**, not in `[project]\ndependencies` like every\nother member: the compat cell is built from `uv export --only-group\ntest`, which sees the groups and\nnot the project's dependencies, and `[project] dependencies` reach\n*every* environment — including\n`.venvs/typing`, which deliberately has no pytest. Check (1) knows both\nroutes now, and check (6)\nsays a member reached only through a group is part of no product.\n\n## What moved\n\n`test_app` and the temporary directories it builds in, the renderer\nresolution and the\ninert-renderer machinery, the doctree snapshot extension, and the\n`build_warnings` /\n`assert_no_warnings` / `warning_count` API the previous pull request\nadded. Each suite's\n`tests/conftest.py` names the plugin and keeps what is its own;\nsphinx-codelinks' copy of the\nsnapshot extension is deleted, sphinx-mounts is untouched for now. Three\ndecisions, none of them a\nrename:\n\n**The plugin order is load-bearing.** `sphinx.testing.fixtures` defines\na\n`sphinx_test_tempdir` of its own, and where two plugins define a fixture\nthe one registered last\nwins — safe by accident before, since a conftest always beats a plugin.\nGet it wrong and the suite\nquietly builds in pytest's session tempdir, `--sn-build-dir` inert and\n**every test still passing**;\n`test_app` asserts it now. **Two fixtures are the suite's, and the layer\ndefines neither** — where\nits test projects live, and what every build of one must assert; no\ndefault for either, since\n\"assert nothing extra\" would make deleting sphinx-needs' parent-child\ndoctree check a green run.\n\n**One rule for `make_app`**: no build in the sphinx-needs suite renders\nwith\nsphinxcontrib-plantuml's *default* command — the bare word `plantuml`,\nwhatever unpinned renderer\nthe machine carries. `test_app` said that for its own builds; a third of\nthis suite's applications\ncall `make_app` directly, and two modules were measured drawing six\ndiagrams with a homebrew\nPlantUML 1.2026.1 against the 1.2026.8 this repository pins. A build\nthat *has* chosen a renderer is\nuntouched.\n\n## And a test that draws nothing no longer needs a jar\n\nA fixture named in a test's signature is resolved whether the body uses\nit or not, and the renderer\nresolution raises when it finds none — so on a machine with no jar,\ncases that have never drawn a\ndiagram errored, the graphviz half of the needflow conformance corpus\namong them. They resolve it\nlazily now, keyed on the diagram engine. With no jar and no renderer on\n`PATH`, master is **1620\npassed, 158 errors** and this branch **1671 passed, 15 errors, 95\nfailed** — and of those casualties\nthe ones that never start a renderer at all go from\n**57 to 9**. Every one of the nine selects the PlantUML engine and then\nwarns before drawing\nanything; whether *that* build reaches the renderer is the test's\nknowledge, not the harness's. With\n`plantuml`/`java` shims first on `PATH` over the whole suite: 230\nrenderer starts, and for the first\ntime **not one of them the machine's unpinned PlantUML**. An opt-in on a\nproject that never loads\n`sphinxcontrib.plantuml` is refused by name, instead of rendering\nnothing and collecting an `unknown\nconfig value` warning.\n\n## Fences for the rules this adds\n\nAll four regressed to a green suite when attacked, which is how the\nambient-render defect above\nsurvived for years. Each is asserted now: the plugin order inside\n`test_app`; the `make_app` rule in\nthe two `test_needpie` builds that used to break it; and — the two no\nexisting test could carry,\nsince one fires nowhere in a green run and the other is invisible on any\nmachine with a jar — two\nunit tests beside the renderer-resolution ones. That pair is the only\ncount that moves: **1779 →\n1781, declared**. The classifier predicate is the `Private ::`\n**prefix** in both tools now, not one\nexact string (`Private :: Internal Use Only` is as unpublishable, and\nwas being *planned*), and its\nconverse is refused too: a member in the list of what this repository\nships may not carry the one\nline guaranteeing it cannot be. Otherwise counts are unchanged — **943**\nand\n**359** for the other two suites — the compat cell's own command passes\nend to end with the\nlayer installed from the checkout, and `tools/tests` gains 17 cases. No\nchangelog entry: the diff\ntouches no file under any package's `src/`. Slice 3 of a four-slice arc;\nslice 4 adopts the layer in\nsphinx-mounts and sphinx-codelinks.",
+          "timestamp": "2026-09-07T15:14:42+02:00",
+          "tree_id": "b509e9a227c1df4929006b9eb7f083d9a0898bb9",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/3069da1a73d23cf0768012b6e17092e7a02911a2"
+        },
+        "date": 1788786972825,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.1441495949999947,
+            "unit": "s",
+            "extra": "Commit: 3069da1a73d23cf0768012b6e17092e7a02911a2\nBranch: master\nTime: 2026-09-07T15:14:42+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 53.430434077,
             "unit": "s",
             "extra": "Commit: 3069da1a73d23cf0768012b6e17092e7a02911a2\nBranch: master\nTime: 2026-09-07T15:14:42+02:00"
           }
