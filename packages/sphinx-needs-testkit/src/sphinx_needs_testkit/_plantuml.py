@@ -80,8 +80,10 @@ def resolve_plantuml_command(workspace_jar: Path | None) -> str:
 
     1. ``PLANTUML_JAR``, run through ``java``. Naming a jar is an explicit choice, so it
        wins: it is how sphinx-mounts' suite is already pointed at a renderer, and it is
-       the only route open to someone running these tests from an sdist -- which ships no
-       jar at all now that the workspace keeps one. A variable that is set but names no
+       the only route open to someone running a suite from a tree with no ``vendor/`` above
+       it -- a package directory copied out of the repository, or the ``site-packages`` the
+       release workflow's compat cell installs this member into. No sdist this workspace
+       builds ships a suite at all. A variable that is set but names no
        file is a mistake worth a red run rather than a silent fall-through: falling through
        would render with a renderer the caller did not ask for and say nothing.
     2. The workspace's committed jar, ``vendor/plantuml/plantuml-<pinned version>.jar``.

@@ -7,10 +7,14 @@ invisible to all of them (issue #1829).  This script closes that gap:
 
 1. build the sdist + wheel with the *same* ``uv build`` invocation the release workflow
    runs (``--package <dist> --no-sources -o dist/<dist>``);
-2. assert the sdist still carries the trees it is meant to ship, and none of the rubbish a
-   used checkout leaves behind. flit 4 does not infer sdist contents from git, so those
-   trees are in the sdist only because ``[tool.flit.sdist] include`` says so -- and the
-   failure mode of losing them is an 11x smaller tarball, no warning and exit 0;
+2. assert the sdist carries the trees it is meant to ship, does *not* carry the ones it is
+   meant to have stopped shipping, and holds none of the rubbish a used checkout leaves
+   behind. Both directions are silent failures. flit 4 does not infer sdist contents from
+   git, so ``docs/`` is in the tarball only because ``[tool.flit.sdist] include`` says so;
+   and since 9.0.0 ``tests/`` and ``performance/`` must stay out of it, because the suite
+   loads its fixtures from ``sphinx-needs-testkit``, a private workspace member that is on
+   no index -- a shipped suite nobody can run is worse than none, and re-adding one to
+   ``include`` is a two-word edit that no other gate would notice;
 3. create a throwaway virtual environment *outside* the project;
 4. install the wheel into it with ``uv pip install``, which reads the wheel's own
    ``Requires-Dist`` and resolves it from the index (measured on uv 0.12.9: ``uv pip
@@ -159,13 +163,22 @@ def build(dist_name: str) -> tuple[Path, Path]:
     return wheels[0], sdists[0]
 
 
-def check_sdist_contents(sdist: Path, wanted: list[str], checks: Checks) -> None:
-    """The sdist ships the declared trees, and nothing a used checkout left behind.
+def check_sdist_contents(
+    sdist: Path, wanted: list[str], unwanted: list[str], checks: Checks
+) -> None:
+    """The sdist ships the declared trees, not the withdrawn ones, and no leftovers.
 
     `uv build` runs `flit_core.buildapi`, and flit 4 dropped flit 3's "infer the sdist from
-    git" behaviour -- so `tests/` and `docs/` are in the tarball only while
-    `[tool.flit.sdist] include` names them. Losing them costs 11x the size and warns about
-    nothing, which is exactly why it is asserted here and not left to review.
+    git" behaviour -- so `docs/` is in the tarball only while `[tool.flit.sdist] include`
+    names it, and losing it warns about nothing.
+
+    The `unwanted` half is the same assertion pointed the other way, and it is the one that
+    matters now: `tests/` and `performance/` were shipped until 9.0.0, the suite has since
+    moved its fixtures into `sphinx-needs-testkit` -- a member classified
+    `Private :: Do Not Upload`, which no sdist can carry -- and a tarball that ships the
+    suite anyway ships something that cannot be run. Debian, the one downstream that runs
+    these tests, runs them from the GitHub tag tarball `debian/watch` fetches, so nothing
+    is lost by keeping them out and nothing warns if they come back.
     """
     with tarfile.open(sdist) as tar:
         names = tar.getnames()
@@ -179,6 +192,18 @@ def check_sdist_contents(sdist: Path, wanted: list[str], checks: Checks) -> None
             f"{len(entries)} entries"
             if entries
             else "none -- is it in [tool.flit.sdist] include?",
+        )
+    for tree in unwanted:
+        entries = sorted(name for name in inner if name.startswith(f"{tree}/"))
+        shown = ", ".join(entries[:3]) + (" ..." if len(entries) > 3 else "")
+        checks.check(
+            not entries,
+            f"the sdist does NOT ship {tree}/",
+            f"{len(entries)} entries: {shown} -- drop {tree}/ from "
+            "[tool.flit.sdist] include; the suite needs sphinx-needs-testkit, "
+            "which is on no index"
+            if entries
+            else "",
         )
     junk = sorted(name for name in inner if any(bad in name for bad in SDIST_JUNK))
     shown = ", ".join(junk[:3]) + (" ..." if len(junk) > 3 else "")
@@ -383,9 +408,16 @@ def main() -> int:
     parser.add_argument(
         "--sdist-dirs",
         nargs="*",
-        default=["tests", "docs"],
+        default=["docs"],
         metavar="DIR",
-        help="directories the sdist must ship (default: tests docs); pass none to skip",
+        help="directories the sdist must ship (default: docs); pass none to skip",
+    )
+    parser.add_argument(
+        "--sdist-absent-dirs",
+        nargs="*",
+        default=["tests", "performance"],
+        metavar="DIR",
+        help="directories the sdist must NOT ship (default: tests performance); pass none to skip",
     )
     parser.add_argument(
         "--python",
@@ -409,7 +441,7 @@ def main() -> int:
     wheel, sdist = build(args.dist_name)
     print(f"built {wheel.name} and {sdist.name}")
     check_wheel_contents(wheel, module, package_dir, checks)
-    check_sdist_contents(sdist, args.sdist_dirs, checks)
+    check_sdist_contents(sdist, args.sdist_dirs, args.sdist_absent_dirs, checks)
 
     tmp = Path(tempfile.mkdtemp(prefix=f"smoke-{args.dist_name}-"))
     try:

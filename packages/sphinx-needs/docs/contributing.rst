@@ -186,6 +186,29 @@ it with Playwright's ``expect``:
 Register ``page.on("pageerror", ...)`` before ``page.goto`` if the test should also assert
 that the page raised nothing.
 
+The tests are not in the source distribution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The sdist on PyPI carries the package and its documentation, and nothing else. The suite
+lives in this repository: it loads its fixtures from ``sphinx-needs-testkit``, a workspace
+member classified ``Private :: Do Not Upload`` that is on no index, so a copy of ``tests/``
+inside a tarball could not be run from it anyway — shipping one would only look runnable.
+
+Run it from a repository checkout instead — ``uv sync --frozen``, then ``uv run poe
+test-needs``, which installs the testkit out of the workspace for you. From a source
+snapshot with no uv (a GitHub tag tarball, or a distribution's own copy of one) install the
+package and the testkit from the tree itself, then add the rest of the root's ``test``
+dependency group by name; that group lists the testkit as a bare requirement, so
+``pip install --group test`` on its own would go looking for it on an index and fail.
+Either way the machine needs graphviz's ``dot`` and a PlantUML renderer — the pinned jar is
+committed at ``vendor/plantuml/``, so a repository snapshot already carries it — because
+the tests that need them assert rather than skip:
+
+.. code-block:: bash
+
+   pip install ./packages/sphinx-needs ./packages/sphinx-needs-testkit
+   pytest packages/sphinx-needs/tests
+
 Benchmarks
 ----------
 
