@@ -10,7 +10,7 @@ from sphinx import version_info
 from sphinx.testing.util import SphinxTestApp
 from syrupy.filters import props
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -21,7 +21,7 @@ from tests.conftest import warnings
 def test_external_html(test_app: SphinxTestApp):
     app = test_app
     app.build()
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     # print(warnings)
     assert warning_records == [
         "WARNING: External need 'EXT_TEST_01' in 'needs_test_small.json' could not be added: Field 'extra2' is invalid: Invalid value for field 'extra2': 1 [needs.load_external_need]",
@@ -252,7 +252,7 @@ def test_external_allow_type_coercion_false(test_app):
     app = test_app
     app.build()
     assert app.statuscode == 0
-    assert warnings(app) == [
+    assert build_warnings(app) == [
         "WARNING: External need 'TEST_01' in 'needs.json' could not be added: 'tags' value is invalid: Invalid value for field 'tags': 'a,b,c' [needs.load_external_need]"
     ]
 

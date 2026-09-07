@@ -6,7 +6,7 @@ from sphinx.application import Sphinx
 from syrupy.extensions.json import JSONSnapshotExtension
 
 from sphinx_needs.data import SphinxNeedsData
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.fixture
@@ -23,7 +23,7 @@ def test_doc_need_parts(test_app: Sphinx, snapshot_json):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     # print(warnings)
     assert warning_records == [
         "<srcdir>/index.rst:38: WARNING: Need 'OTHER_1' has unknown outgoing link 'SP_TOO_001.unknown_part' in field 'links' [needs.link_outgoing]",

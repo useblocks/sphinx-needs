@@ -3,11 +3,11 @@ from pathlib import Path
 import pytest
 from sphinx.testing.util import SphinxTestApp
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 def get_warnings(app: SphinxTestApp):
-    return warnings(app)
+    return build_warnings(app)
 
 
 @pytest.mark.parametrize(

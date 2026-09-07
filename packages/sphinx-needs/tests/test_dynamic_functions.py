@@ -10,7 +10,7 @@ from sphinx_needs.functions.functions import (
     DynamicFunctionParsed,
     NeedAttribute,
 )
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -137,7 +137,7 @@ def test_doc_dynamic_functions(test_app, snapshot):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     assert warning_records == [
         '<srcdir>/index.rst:11: WARNING: The `need_func` role is deprecated. Replace with :ndf:`copy("id")` instead. [needs.deprecated]',
         "<srcdir>/index.rst:23: WARNING: Need could not be created: 'tags' value is invalid: only one string, dynamic function or variant function allowed per array item. [needs.create_need]",
@@ -170,7 +170,7 @@ def test_doc_dynamic_functions(test_app, snapshot):
 def test_doc_df_calc_sum(test_app):
     app = test_app
     app.build()
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     assert warning_records == []
     html = Path(app.outdir, "index.html").read_text()
     assert "43210" in html  # all hours
@@ -191,7 +191,7 @@ def test_doc_df_calc_sum(test_app):
 def test_doc_df_linked_values(test_app):
     app = test_app
     app.build()
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     assert warning_records == []
     html = Path(app.outdir, "index.html").read_text()
     assert "all_good" in html
@@ -212,7 +212,7 @@ def test_doc_df_linked_values(test_app):
 def test_doc_df_links_from_content(test_app, snapshot):
     app = test_app
     app.build()
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     assert warning_records == [
         "<srcdir>/index.rst:51: WARNING: links_from_content: no stored node for need 'unknown1' [needs.dynamic_function]",
         "<srcdir>/index.rst:51: WARNING: links_from_content: no stored node for need 'unknown2' [needs.dynamic_function]",
@@ -239,7 +239,7 @@ def test_doc_df_user_functions(test_app):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     # print(warnings)
     expected = [
         "<srcdir>/index.rst:10: WARNING: Error while resolving dynamic values for field 'status', of need 'TEST_2': dynamic function value <class 'object'> is not of type 'string' [needs.dynamic_function]",

@@ -4,16 +4,16 @@ from pathlib import Path
 import pytest
 from lxml import html as html_parser
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
-def build_warnings(app) -> list[str]:
-    """Return the warnings of a finished build, one per line.
+def warning_lines(app) -> list[str]:
+    """The build's warnings, one entry per LINE rather than one per record.
 
-    The source directory is randomised per test run, so it is collapsed to
-    ``<srcdir>/`` to keep the expected strings readable and stable.
+    This module's expectations were written line by line, and a multi-line warning is one
+    record; splitting the shared normalisation back into lines keeps them as they are.
     """
-    return ("\n".join(warnings(app))).splitlines()
+    return ("\n".join(build_warnings(app))).splitlines()
 
 
 @pytest.mark.parametrize(
@@ -78,7 +78,7 @@ def test_needextract_basic(test_app):
 def test_needextract_with_nested_needs(test_app):
     app = test_app
     app.build()
-    warning_records = warnings(app)
+    warning_records = warning_lines(app)
     # print(warnings)
     # note these warnings are emitted twice because they are resolved twice: once when first specified and once when copied with needextract
     assert warning_records == [
@@ -232,7 +232,7 @@ def test_needextract_early_exit_does_not_end_the_build(
     app = test_app
     app.build()
 
-    assert build_warnings(app) == expected_warnings
+    assert warning_lines(app) == expected_warnings
 
     # the page exists, and the directive contributed no need card to it
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
@@ -479,7 +479,7 @@ def test_unrenderable_view_in_extracted_content_warns(
     app = test_app
     app.build()
 
-    assert build_warnings(app) == [
+    assert warning_lines(app) == [
         f"<srcdir>/extract.rst:4: WARNING: {expected_warning} [needs.needextract]",
         *extra_warnings,
     ]
@@ -544,7 +544,7 @@ def test_extract_references_resolve_to_the_source_page(test_app):
     """
     app = test_app
     app.build()
-    assert build_warnings(app) == []
+    assert warning_lines(app) == []
 
     extract_html = Path(app.outdir, "extract.html").read_text(encoding="utf8")
 
@@ -625,7 +625,7 @@ def test_needextract_does_not_re_emit_doctree_resolved(test_app):
     """
     app = test_app
     app.build()
-    assert build_warnings(app) == []
+    assert warning_lines(app) == []
 
     recorded = Path(app.outdir, "resolved.log").read_text(encoding="utf8").split()
     # one emission per document, each with a document -- never a container
@@ -685,7 +685,7 @@ def test_footnote_in_extracted_content_degrades_to_text(test_app):
     app = test_app
     app.build()
 
-    assert build_warnings(app) == [
+    assert warning_lines(app) == [
         "<srcdir>/extract.rst:4: WARNING: A footnote reference in the content of "
         "need 'R_FOOT' cannot be resolved by needextract, and is rendered as "
         "plain text. [needs.needextract]"
@@ -769,7 +769,7 @@ def test_needextract_discards_post_transform_state(test_app):
     """
     app = test_app
     app.build()
-    assert build_warnings(app) == []
+    assert warning_lines(app) == []
 
     state = Path(app.outdir, "state.log").read_text(encoding="utf8").split()
     assert state == ["sentinel=False", "highlight_language=''"], state

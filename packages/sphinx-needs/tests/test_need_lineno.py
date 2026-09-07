@@ -30,7 +30,7 @@ import pytest
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs.api import get_needs_view
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 PROLOG = """\
 .. |project| replace:: The Project
@@ -270,7 +270,7 @@ def test_a_generated_needs_warnings_do_not_move_with_the_line_counter(
 
     reported = sorted(
         record.split(": ERROR:")[0]
-        for record in warnings(app)
+        for record in build_warnings(app)
         if "Unknown interpreted text role" in record
     )
     assert reported == ["<srcdir>/index.rst:8", "<srcdir>/index.rst:9"]

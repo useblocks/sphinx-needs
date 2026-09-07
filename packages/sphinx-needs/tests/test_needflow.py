@@ -7,7 +7,7 @@ from lxml import html as html_parser
 from sphinx import version_info
 from sphinx.config import Config
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 #: A ``conf.py`` for the inline source projects below.
 #: The id regex is relaxed, so that ids exercising the entity name sanitisation
@@ -93,7 +93,7 @@ def test_doc_build_html(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text == ""
 
     outdir = Path(app.outdir)
@@ -181,7 +181,7 @@ def test_doc_build_needflow_incl_child_needs(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text == ""
 
     outdir = Path(app.outdir)
@@ -342,7 +342,7 @@ def test_node_ids_are_injective(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text == ""
 
     debug = _debug_source(Path(app.outdir), "index.html")
@@ -418,7 +418,7 @@ def test_border_color_handling(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text == ""
 
     outdir = Path(app.outdir)
@@ -494,7 +494,7 @@ def test_highlight_can_consult_other_needs(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text == ""
 
     debug = _debug_source(Path(app.outdir), "index.html")
@@ -548,7 +548,7 @@ def test_unknown_config_names_its_config_value(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
 
     if app.config.needs_flow_engine == "plantuml":
         assert (
@@ -609,7 +609,7 @@ def test_unknown_link_type_warning_has_a_location(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
 
     assert re.search(
         r"<srcdir>/index\.rst:\d+: WARNING: Unknown link type BOGUS_LT", warnings_text
@@ -657,7 +657,7 @@ def test_graphviz_alt_text(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text == ""
 
     tree = html_parser.parse(Path(app.outdir) / "index.html")
@@ -745,7 +745,7 @@ def test_graphviz_label_does_not_break_html_entities(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text == ""
 
     debug = _debug_source(Path(app.outdir), "index.html")
@@ -810,7 +810,7 @@ def test_debug_is_a_literal_block_on_both_engines(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text == ""
 
     tree = html_parser.parse(Path(app.outdir) / "index.html")
@@ -881,7 +881,7 @@ def test_malformed_graphviz_style_warns_instead_of_crashing(test_app):
     app = test_app
     app.build()  # must not raise
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert "malformed config 'default' in 'needs_graphviz_styles'" in warnings_text
 
     assert "AAAAA" in _get_svg(
@@ -926,7 +926,7 @@ def test_invalid_flow_engine_warns_and_falls_back(test_app):
     app = test_app
     app.build()  # must not raise
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert "unknown 'needs_flow_engine' value 'nosuchengine'" in warnings_text
     assert "'plantuml'" in warnings_text
     # said once for the project, not once per diagram
@@ -981,7 +981,7 @@ def test_merging_configs_does_not_leak_into_the_next_diagram(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text == ""
 
     outdir = Path(app.outdir)
@@ -1098,7 +1098,7 @@ def test_plantuml_reports_the_direction_it_cannot_draw(
     )
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert f"the plantuml engine cannot draw {warned}" in warnings_text
     # two diagrams ask for it, and the project is told once
     assert warnings_text.count("the plantuml engine cannot draw") == 1
@@ -1130,7 +1130,7 @@ def test_graphviz_draws_every_direction_without_warning(
     )
     app.build()
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
 
 
 def test_unknown_direction_is_rejected_as_the_option_is_parsed(
@@ -1151,7 +1151,7 @@ def test_unknown_direction_is_rejected_as_the_option_is_parsed(
     )
     app.build()  # must not raise
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     # docutils' own `choice` message, which lists what the option accepts
     assert '"sideways" unknown; choose from' in warnings_text
     for accepted in ("down", "up", "right", "left", "tb", "td", "bt", "lr", "rl"):
@@ -1225,7 +1225,7 @@ def test_explicit_direction_beats_the_engine_config(
     # the option's statement must come after the blob's, or the blob wins at render time
     assert source.index(emitted) > source.index(overridden)
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert "disagrees with the direction 'down'" in warnings_text
 
 
@@ -1254,7 +1254,7 @@ def test_agreeing_engine_config_does_not_warn_or_restate(
     )
     app.build()
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
 
     source = _debug_source(Path(app.outdir), "index.html")
     if engine == "plantuml":
@@ -1285,7 +1285,7 @@ def test_project_direction_default_applies_without_the_option(
     )
     app.build()
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
     assert "left to right direction" in _debug_source(Path(app.outdir), "index.html")
 
 
@@ -1306,7 +1306,7 @@ def test_option_beats_the_project_direction_default(
     )
     app.build()
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
     source = _debug_source(Path(app.outdir), "index.html")
     assert "left to right direction" not in source
     assert "' Direction" not in source
@@ -1343,7 +1343,7 @@ def test_bad_flow_config_is_reported_without_any_needflow(
     )
     app.build()  # must not raise
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert "Invalid 'needs_flow_direction' value 'sideways'" in warnings_text
     assert "allowed values: down, up, right, left" in warnings_text
 
@@ -1373,7 +1373,7 @@ def test_bad_flow_config_is_reported_once_not_once_per_diagram(
     )
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text.count("Invalid 'needs_flow_direction' value") == 1
     # reported against the project, not against a line of the document
     assert "index.rst" not in warnings_text
@@ -1428,7 +1428,7 @@ def test_enum_config_values_ignore_case_and_padding(
     app.build()
 
     # the value is usable, so nothing is reported and nothing falls back
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
     assert needle in _debug_source(Path(app.outdir), "index.html")
 
 
@@ -1459,7 +1459,7 @@ def test_normalisation_does_not_silence_a_genuinely_wrong_value(
     )
     app.build()  # must not raise
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert message in warnings_text
     # the author's own spelling is echoed, padding and all, so it can be found in conf.py
     assert repr(next(iter(override.values()))) in warnings_text
@@ -1520,7 +1520,7 @@ def test_show_link_names_takes_a_value(
     )
     app.build()
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
 
     source = _debug_source(Path(app.outdir), "index.html")
     # only the edges are inspected: a graphviz *node* always carries an HTML label
@@ -1553,7 +1553,7 @@ def test_unknown_show_link_names_value_is_rejected_as_it_is_parsed(
     )
     app.build()  # must not raise
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert '"sideways" unknown; choose from' in warnings_text
     for accepted in ("none", "outgoing", "incoming", "type"):
         assert f'"{accepted}"' in warnings_text
@@ -1612,7 +1612,7 @@ def test_needs_flow_show_links_accepts_a_value_or_a_boolean(
     )
     app.build()
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
 
     source = _debug_source(Path(app.outdir), "index.html")
     if label is None:
@@ -1642,7 +1642,7 @@ def test_unusable_needs_flow_show_links_string_warns_and_falls_back(
     )
     app.build()  # must not raise
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert "Invalid 'needs_flow_show_links' value 'yes please'" in warnings_text
     assert "allowed values: none, outgoing, incoming, type" in warnings_text
     assert "'none' is used" in warnings_text
@@ -1669,7 +1669,7 @@ def test_show_link_names_option_beats_the_project_default(
     )
     app.build()
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
     source = _debug_source(Path(app.outdir), "index.html")
     assert "links outgoing" not in source
 
@@ -1703,7 +1703,7 @@ def test_needgantt_and_needsequence_keep_their_bare_flag(
     )
     app.build()  # must not raise
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert "unknown option" not in warnings_text
     assert "no arguments allowed" not in warnings_text
 
@@ -1825,7 +1825,7 @@ def test_bare_show_legend_still_draws_the_in_diagram_legend(
     """
     app = _build_legend(make_app, tmp_path, plantuml_command, engine, "")
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
 
     source = _debug_source(Path(app.outdir), "index.html")
     if engine == "plantuml":
@@ -1851,7 +1851,7 @@ def test_show_legend_key_selects_a_configured_legend(
     """
     app = _build_legend(make_app, tmp_path, plantuml_command, engine, " beside")
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
 
     outdir = Path(app.outdir)
     assert _legend_sections(outdir) == ["types"]
@@ -1874,7 +1874,7 @@ def test_show_legend_can_describe_link_types(
     """
     app = _build_legend(make_app, tmp_path, plantuml_command, engine, " links")
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
 
     outdir = Path(app.outdir)
     assert _legend_sections(outdir) == ["links"]
@@ -1899,7 +1899,7 @@ def test_legend_sections_keep_their_configured_order(
     """
     app = _build_legend(make_app, tmp_path, plantuml_command, engine, key)
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
     assert _legend_sections(Path(app.outdir)) == expected
 
 
@@ -1930,7 +1930,7 @@ def test_internal_placement_that_cannot_be_honoured_degrades_silently(
     )
     app.build()
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
     assert _legend_sections(Path(app.outdir)) == ["types", "links"]
 
 
@@ -1945,7 +1945,7 @@ def test_needs_flow_show_legend_supplies_the_key(make_app, tmp_path, plantuml_co
         needs_flow_show_legend="beside",
     )
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
     assert _legend_sections(Path(app.outdir)) == ["types"]
 
 
@@ -1973,7 +1973,7 @@ def test_needs_flow_show_legend_never_says_whether(
     )
     app.build()
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
     assert _legend_sections(Path(app.outdir)) == []
     assert "' Legend definition" not in _debug_source(Path(app.outdir), "index.html")
 
@@ -1989,7 +1989,7 @@ def test_option_key_beats_the_project_key(make_app, tmp_path, plantuml_command):
         needs_flow_show_legend="beside",
     )
 
-    assert "\n".join(warnings(app)) == ""
+    assert "\n".join(build_warnings(app)) == ""
     assert _legend_sections(Path(app.outdir)) == ["links", "types"]
 
 
@@ -2011,7 +2011,7 @@ def test_unknown_option_key_warns_and_hands_on_to_the_project_key(
         needs_flow_show_legend="reversed",
     )
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert (
         "legend key 'besidee' is not defined in 'needs_flow_legends'" in warnings_text
     )
@@ -2026,7 +2026,7 @@ def test_unknown_option_key_falls_back_to_the_engine_legend(
     """With nothing configured either, the chain ends at the engine's own legend."""
     app = _build_legend(make_app, tmp_path, plantuml_command, "plantuml", " besidee")
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert (
         "legend key 'besidee' is not defined in 'needs_flow_legends'" in warnings_text
     )
@@ -2056,7 +2056,7 @@ def test_unknown_option_key_is_reported_per_directive(
     )
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text.count("legend key 'besidee' is not defined") == 2
     # reported against the directives, under the needflow subtype
     assert warnings_text.count("needs.needflow") == 2
@@ -2087,7 +2087,7 @@ def test_unknown_project_key_is_reported_once_for_the_project(
     )
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     # said once, although two needflows asked for a legend
     assert warnings_text.count("legend key 'besidee'") == 1
     assert "of 'needs_flow_show_legend'" in warnings_text
@@ -2140,7 +2140,7 @@ def test_unusable_legend_config_warns_and_never_crashes(
     )
     app.build()  # must not raise
 
-    assert message in "\n".join(warnings(app))
+    assert message in "\n".join(build_warnings(app))
 
 
 def test_unusable_legend_config_is_reported_without_any_needflow(
@@ -2160,7 +2160,7 @@ def test_unusable_legend_config_is_reported_without_any_needflow(
     )
     app.build()  # must not raise
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert "'parts' of legend 'bad' must be a list" in warnings_text
     assert "legend key 'nowhere' of 'needs_flow_show_legend'" in warnings_text
 
@@ -2195,7 +2195,7 @@ def test_non_string_show_legend_key_is_reported_not_crashed(
     )
     app.build()  # must not raise
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert (
         f"legend key {quoted} of 'needs_flow_show_legend' is not defined"
         in warnings_text
@@ -2238,7 +2238,7 @@ def test_non_string_show_legend_key_still_resolves_the_chain(
     )
     app.build()  # must not raise
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert (
         f"legend key {quoted} of 'needs_flow_show_legend' is not defined"
         in warnings_text

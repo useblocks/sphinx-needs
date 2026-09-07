@@ -12,7 +12,7 @@ from sphinx_needs.need_item import (
     NeedsContent,
 )
 from sphinx_needs.views import NeedsView
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 from tests.util import chart_images, pie_slice_counts
 
 
@@ -24,7 +24,7 @@ from tests.util import chart_images, pie_slice_counts
 def test_filter_build_html(test_app):
     app = test_app
     app.build()
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     # print(warnings.splitlines())
 
     expected_warnings = [
@@ -142,7 +142,7 @@ def test_this_doc_in_charts_and_need_count(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text.splitlines() == []
 
     # index.rst holds two needs, page.rst one
@@ -241,7 +241,7 @@ def test_this_doc_in_diagram_filters(test_app):
     # no filter may have degraded to a warning either: every filter in this fixture
     # raises on failure today, so this is a backstop against a future downgrade of
     # the failure mode
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert "needs.filter" not in warnings_text
 
     index_sequence, index_flow, index_gantt = sources["index"]

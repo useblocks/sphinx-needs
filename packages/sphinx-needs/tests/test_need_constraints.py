@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from syrupy.filters import props
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -22,7 +22,7 @@ def test_need_constraints(test_app, snapshot):
     app = test_app
     app.build()
 
-    warning_records = warnings(test_app)
+    warning_records = build_warnings(test_app)
 
     # check this isolated as Sphinx version 7 and 8 behave differently for warning type logs
     assert any(
@@ -108,7 +108,7 @@ def test_need_constraints(test_app, snapshot):
 )
 def test_need_constraints_config(test_app):
     test_app.build()
-    warning_records = warnings(test_app)
+    warning_records = build_warnings(test_app)
     assert warning_records == [
         "<srcdir>/index.rst:4: WARNING: Need could not be created: Constraints {'non_existing'} not in 'needs_constraints'. [needs.create_need]"
     ]

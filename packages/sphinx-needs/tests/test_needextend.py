@@ -5,7 +5,7 @@ import pytest
 from sphinx.application import Sphinx
 from syrupy.filters import props
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -60,7 +60,7 @@ def test_doc_needextend_warnings(test_app: Sphinx):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     # print(warnings)
     assert warning_records == [
         "<srcdir>/index.rst:25: WARNING: Empty ID/filter argument in needextend directive. [needs.needextend]",

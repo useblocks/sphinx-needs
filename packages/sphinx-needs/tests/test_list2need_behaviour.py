@@ -30,7 +30,7 @@ from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.data import SphinxNeedsData
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 CONF = """\
 extensions = ["sphinx_needs"]
@@ -81,7 +81,7 @@ def needs(app: SphinxTestApp) -> dict[str, dict[str, Any]]:
 
 def warning_text(app: SphinxTestApp) -> str:
     """Every warning the build emitted, as one string; this module asserts substrings."""
-    return "\n".join(warnings(app))
+    return "\n".join(build_warnings(app))
 
 
 # ---------------------------------------------------------------------------

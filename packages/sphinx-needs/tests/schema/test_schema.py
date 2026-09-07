@@ -10,7 +10,7 @@ from sphinx.testing.util import SphinxTestApp
 from syrupy.filters import props
 
 from sphinx_needs.exceptions import NeedsConfigException
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 CURR_DIR = Path(__file__).parent
 
@@ -59,7 +59,7 @@ def test_schemas(
     app.build()
 
     assert app.statuscode == 0
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text == snapshot
 
     schema_violations: dict[str, Any] = json.loads(
@@ -79,7 +79,7 @@ def test_schemas(
 )
 def test_schema_typing(test_app: SphinxTestApp, snapshot) -> None:
     test_app.build()
-    warning_records = warnings(test_app)
+    warning_records = build_warnings(test_app)
     print(warning_records)
     assert not warning_records
 
@@ -94,7 +94,7 @@ def test_schema_typing(test_app: SphinxTestApp, snapshot) -> None:
 )
 def test_schema_e2e(test_app: SphinxTestApp, snapshot) -> None:
     test_app.build()
-    warnings_text = "\n".join(warnings(test_app))
+    warnings_text = "\n".join(build_warnings(test_app))
     assert warnings_text == snapshot
 
     json_data = Path(test_app.outdir, "needs.json").read_text()
@@ -123,7 +123,7 @@ def test_schema_e2e(test_app: SphinxTestApp, snapshot) -> None:
 def test_schema_example(test_app: SphinxTestApp, snapshot) -> None:
     """Check error-free build of the example from the docs."""
     test_app.build()
-    warnings_text = "\n".join(warnings(test_app))
+    warnings_text = "\n".join(build_warnings(test_app))
     assert not warnings_text
 
 
@@ -176,5 +176,5 @@ def test_schema_benchmark(schema_benchmark_app, snapshot):
     """Test the benchmark project works."""
     schema_benchmark_app.build()
     assert schema_benchmark_app.statuscode == 0
-    warnings_text = "\n".join(warnings(schema_benchmark_app))
+    warnings_text = "\n".join(build_warnings(schema_benchmark_app))
     assert warnings_text == snapshot

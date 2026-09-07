@@ -7,12 +7,12 @@ from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.needuml import get_debug_node_from_puml_node
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 def _warnings(app) -> list[str]:
     """Return the build's warnings, with the source directory path normalised away."""
-    return warnings(app)
+    return build_warnings(app)
 
 
 @pytest.mark.parametrize(

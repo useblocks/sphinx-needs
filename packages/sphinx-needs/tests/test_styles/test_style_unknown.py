@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -19,7 +19,7 @@ def test_doc_style_unknown(test_app):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     assert warning_records == [
         "WARNING: needs_css not an existing file: UNKNOWN.css [needs.config]"
     ]

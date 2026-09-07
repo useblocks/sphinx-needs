@@ -4,7 +4,7 @@ import pytest
 from sphinx import version_info
 from sphinx.application import Sphinx
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -15,7 +15,7 @@ from tests.conftest import warnings
 def test_proper_warning(test_app: Sphinx):
     test_app.build()
 
-    warning_records = warnings(test_app)
+    warning_records = build_warnings(test_app)
     prefix = " [docutils]" if version_info >= (8, 0) else ""
     assert warning_records == [
         f'<srcdir>/index.rst:9: ERROR: Unknown interpreted text role "unknown0".{prefix}',
@@ -59,7 +59,7 @@ def test_proper_warning_is_unaffected_by_rst_prolog(test_app: Sphinx):
     """
     test_app.build()
 
-    warning_records = warnings(test_app)
+    warning_records = build_warnings(test_app)
     prefix = " [docutils]" if version_info >= (8, 0) else ""
     assert warning_records == [
         f'<srcdir>/index.rst:9: ERROR: Unknown interpreted text role "unknown0".{prefix}',

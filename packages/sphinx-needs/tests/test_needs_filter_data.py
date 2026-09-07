@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from docutils import __version__ as doc_ver
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -15,7 +15,7 @@ def test_doc_needs_filter_data_html(test_app):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     print(warning_records)
     assert warning_records == [
         "WARNING: needs_filter_data is deprecated and will be removed in a future version. Use needs_variant_data instead. [needs.deprecated]",

@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from sphinx.util.parallel import parallel_available
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -21,7 +21,7 @@ from tests.conftest import warnings
 def test_doc_build_html(test_app):
     app = test_app
     app.build()
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     # the duplicate need documents can be in the same process,
     # then the error is different in that case (error message and also the subtype)
     deprecation_prefix = "WARNING: needs_filter_data is deprecated and will be removed in a future version. Use needs_variant_data instead. [needs.deprecated]\n"

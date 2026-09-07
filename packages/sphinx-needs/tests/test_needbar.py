@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -51,7 +51,7 @@ def test_needbar_label_defaults(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     assert warnings_text.splitlines() == []
 
     html = Path(app.outdir, "index.html").read_text()

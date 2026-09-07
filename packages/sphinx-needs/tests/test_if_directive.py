@@ -61,8 +61,8 @@ def test_if_no_variant_data(test_app):
     html = Path(app.outdir, "index.html").read_text()
     assert "SHOULD_NOT_APPEAR" not in html
     # Check that a warning was emitted
-    warnings = app._warning.getvalue()
-    assert "needs_variant_data is not configured" in warnings
+    build_warnings = app._warning.getvalue()
+    assert "needs_variant_data is not configured" in build_warnings
 
 
 @pytest.mark.parametrize(
@@ -93,8 +93,8 @@ def test_if_invalid_expression_warns(test_app):
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "SHOULD_NOT_APPEAR" not in html
-    warnings = app._warning.getvalue()
-    assert "'if' directive expression failed" in warnings
+    build_warnings = app._warning.getvalue()
+    assert "'if' directive expression failed" in build_warnings
 
 
 @pytest.mark.parametrize(
@@ -126,9 +126,9 @@ def test_if_unknown_variant_key_warns(test_app):
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "SHOULD_NOT_APPEAR" not in html
-    warnings = app._warning.getvalue()
-    assert "'if' directive expression failed" in warnings
-    assert "Unknown variant key" in warnings
+    build_warnings = app._warning.getvalue()
+    assert "'if' directive expression failed" in build_warnings
+    assert "Unknown variant key" in build_warnings
 
 
 @pytest.mark.parametrize(
@@ -160,8 +160,8 @@ def test_if_builtin_access_blocked(test_app):
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "SHOULD_NOT_APPEAR" not in html
-    warnings = app._warning.getvalue()
-    assert "'if' directive expression failed" in warnings
+    build_warnings = app._warning.getvalue()
+    assert "'if' directive expression failed" in build_warnings
 
 
 @pytest.mark.parametrize(
@@ -201,8 +201,8 @@ def test_if_needextend_to_suppressed_need(test_app):
     app.build()
     html = Path(app.outdir, "index.html").read_text()
     assert "REQ_GHOST" not in html
-    warnings = app._warning.getvalue()
-    assert "REQ_GHOST" in warnings
+    build_warnings = app._warning.getvalue()
+    assert "REQ_GHOST" in build_warnings
 
 
 @pytest.mark.parametrize(
@@ -239,5 +239,5 @@ def test_if_non_bool_warns(test_app):
     assert "INCLUDED_VIA_TRUTHY_STRING" in html
     assert "INCLUDED_VIA_TRUTHY_INT" in html
     # But warnings are emitted
-    warnings = app._warning.getvalue()
-    assert "did not return a bool" in warnings
+    build_warnings = app._warning.getvalue()
+    assert "did not return a bool" in build_warnings

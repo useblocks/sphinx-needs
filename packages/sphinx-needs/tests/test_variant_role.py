@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -23,7 +23,7 @@ def test_variant_role_html(test_app):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
 
     # The invalid reference and the mapping reference should warn.
     assert warning_records == [
@@ -68,7 +68,7 @@ def test_variant_role_no_data_html(test_app):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
 
     assert warning_records == [
         "<srcdir>/index.rst:4: WARNING: 'variant' role used but no variant data "
@@ -94,7 +94,7 @@ def test_variant_role_file_html(test_app):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     assert warning_records == []
 
     index_html = Path(app.outdir, "index.html").read_text()

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import assert_no_warnings, warnings
+from tests.conftest import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -62,7 +62,7 @@ def test_plantuml_unconfigured(test_app):
     # ONE record, location and message together. The helper this replaced split the
     # stream on the substring "WARNING: ", so a located warning arrived as a bare
     # location entry followed by its message and this assertion had to say "two".
-    records = warnings(test_app)
+    records = build_warnings(test_app)
     assert len(records) == 1
     assert records[0].startswith("<srcdir>/index.rst:")
     # the page says so, but a build nobody reads the output of said nothing at all

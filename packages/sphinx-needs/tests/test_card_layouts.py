@@ -19,7 +19,7 @@ import pytest
 
 from sphinx_needs.card_layouts import BUILTIN_CARD_SPECS, compile_card_spec
 from sphinx_needs.defaults import LAYOUTS
-from tests.conftest import assert_no_warnings, warnings
+from tests.conftest import assert_no_warnings, build_warnings
 
 CLEAN_HEAD = (
     '<<meta("type_name")>>: **<<meta("title")>>** <<meta_id()>> '
@@ -1690,10 +1690,10 @@ def test_invalid_card_warns_but_the_build_survives(
     app = make_app(srcdir=srcdir, buildername="html")
     app.build()
 
-    warnings = app._warning.getvalue()
-    assert "needs_card_layouts['bad_card']" in warnings
-    assert expected in warnings
-    assert "needs_card_layouts['good_card']" not in warnings
+    build_warnings = app._warning.getvalue()
+    assert "needs_card_layouts['bad_card']" in build_warnings
+    assert expected in build_warnings
+    assert "needs_card_layouts['good_card']" not in build_warnings
 
     # the sibling still compiled and rendered
     html = (Path(app.outdir) / "index.html").read_text()
@@ -1737,8 +1737,8 @@ def test_name_collisions_are_refused(
     app = make_app(srcdir=srcdir, buildername="html")
     app.build()
 
-    warnings = app._warning.getvalue()
-    assert expected in warnings
+    build_warnings = app._warning.getvalue()
+    assert expected in build_warnings
     # the built-in / user layout is untouched
     assert app.config.needs_layouts["clean"] == LAYOUTS["clean"]
 
@@ -1764,7 +1764,9 @@ def test_unregistered_field_warns_at_build_time(test_app: Any) -> None:
     app = test_app
     app.build()
 
-    assert any("not registered" in warning for warning in warnings(app)), warnings(app)
+    assert any("not registered" in warning for warning in build_warnings(app)), (
+        build_warnings(app)
+    )
     html = (app.outdir / "index.html").read_text()
     assert "needs_layout_my_card" in html
 

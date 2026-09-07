@@ -10,7 +10,7 @@ import pytest
 from syrupy.extensions.json import JSONSnapshotExtension
 
 from sphinx_needs.exceptions import NeedsConfigException
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -27,7 +27,7 @@ def test_variant_data_html(test_app):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     print(warning_records)
     # The needs_warnings check for wrong_platform should fire for REQ_002
     assert warning_records == [
@@ -65,7 +65,7 @@ def test_variant_data_file_html(test_app):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     assert warning_records == []
 
     index_html = Path(app.outdir, "index.html").read_text()
@@ -99,7 +99,7 @@ def test_variant_data_fields_html(test_app, snapshot_json):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     assert warning_records == []
 
     data = json.loads(Path(app.outdir, "needs.json").read_text())
@@ -125,7 +125,7 @@ def test_variant_data_field_errors_html(test_app, snapshot_json):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
 
     assert warning_records == [
         "<srcdir>/index.rst:4: WARNING: Error while resolving dynamic values for field 'mystring', of need 'REQ_SYNTAX': variant data reference 'platform' is invalid: expected a dotted 'var.*' path [needs.dynamic_function]",
@@ -185,7 +185,7 @@ def test_variant_data_nested_inline_overrides_file(test_app):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     assert warning_records == []
 
     index_html = Path(app.outdir, "index.html").read_text()
@@ -342,7 +342,7 @@ def test_variant_data_extension_write_stays_coherent(test_app):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     assert warning_records == []
 
     index_html = Path(app.outdir, "index.html").read_text()

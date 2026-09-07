@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -14,7 +14,7 @@ def test_links_html(test_app):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     # print(warnings)
     assert warning_records == [
         'WARNING: Config option "needs_extra_links" is deprecated. Please use "needs_links" instead. [needs.deprecated]',

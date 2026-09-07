@@ -550,11 +550,11 @@ def test_truncation_is_reported_twice(test_app: SphinxTestApp, origin: str):
     assert f'class="{NOTICE_CLASS}"' in html
     assert notice_text(2, 5) in html
 
-    warnings = app._warning.getvalue()
+    build_warnings = app._warning.getvalue()
     assert f"{origin}: showing the first 2 of 5 needs, due to the max_items limit." in (
-        warnings
+        build_warnings
     )
-    assert "[needs.max_items]" in warnings
+    assert "[needs.max_items]" in build_warnings
 
 
 @pytest.mark.parametrize(
@@ -844,8 +844,8 @@ def test_invalid_option_value_is_an_error(test_app: SphinxTestApp):
     """
     app = test_app
     app.build()
-    warnings = app._warning.getvalue()
-    assert 'Error in "needlist" directive' in warnings
+    build_warnings = app._warning.getvalue()
+    assert 'Error in "needlist" directive' in build_warnings
     assert shown_ids(app) == set()
 
 

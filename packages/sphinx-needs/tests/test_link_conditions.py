@@ -5,7 +5,7 @@ import pytest
 from sphinx.application import Sphinx
 from syrupy.filters import props
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -23,7 +23,7 @@ def test_link_conditions(test_app: Sphinx, snapshot):
     app = test_app
     app.build()
 
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
 
     assert warning_records == [
         # EXT_COND_FAIL external need links to REQ_002[status=="open"] which fails

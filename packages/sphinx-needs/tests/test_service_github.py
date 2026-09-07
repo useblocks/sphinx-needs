@@ -6,7 +6,7 @@ import responses
 from sphinx import version_info
 from syrupy.filters import props
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @responses.activate
@@ -85,7 +85,7 @@ def test_build(test_app, snapshot):
 
     app = test_app
     app.build()
-    warnings_text = "\n".join(warnings(app))
+    warnings_text = "\n".join(build_warnings(app))
     # print(warnings)
     prefix = " [docutils]" if version_info >= (8, 0) else ""
     expected_warnings = [

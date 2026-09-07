@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import warnings
+from tests.conftest import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -13,7 +13,7 @@ from tests.conftest import warnings
 def test_measure_time(test_app):
     app = test_app
     app.build()
-    warning_records = warnings(app)
+    warning_records = build_warnings(app)
     assert warning_records == [
         "<srcdir>/index.rst:49: WARNING: The 'export_id' option is deprecated, instead use the `needs_debug_filters` configuration. [needs.deprecated]"
     ]
