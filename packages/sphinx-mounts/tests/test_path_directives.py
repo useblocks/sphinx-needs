@@ -32,7 +32,10 @@ import pytest
 import sphinx
 from sphinx.errors import ExtensionError
 
-from tests.conftest import count_mount_warnings, count_warnings, write_ubproject_toml
+from sphinx_needs_testkit import (
+    warning_count,
+)
+from tests.conftest import write_ubproject_toml
 
 if TYPE_CHECKING:
     from sphinx.testing.util import SphinxTestApp
@@ -337,7 +340,7 @@ def test_graphviz_file_resolves_within_bundle(make_app, make_host_project, tmp_p
     app = _build(make_app, host)
 
     assert (bundle / "g.dot").resolve() in _resolved_deps(app, "_g/api/index")
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
 
 
 def test_uml_file_resolves_within_bundle(make_app, make_host_project, tmp_path):
@@ -360,7 +363,7 @@ def test_uml_file_resolves_within_bundle(make_app, make_host_project, tmp_path):
     app = _build(make_app, host)
 
     assert (bundle / "d.puml").resolve() in _resolved_deps(app, "_g/api/index")
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
 
 
 def test_mermaid_file_resolves_within_bundle(make_app, make_host_project, tmp_path):
@@ -659,7 +662,7 @@ def test_escape_at_the_default_path_check_warns_and_builds(
     warnings = app._warning.getvalue()
     assert "mounts.path_escape" in warnings, warnings
     assert "outside its bundle root" in warnings, warnings
-    assert count_mount_warnings(app) == 1, warnings
+    assert warning_count(app, "mounts.path_escape") == 1, warnings
     # The build really completed: the page exists, unlike under "error".
     assert (Path(app.outdir) / "_g" / "api" / "index.html").exists()
 
@@ -683,7 +686,7 @@ def test_escape_at_the_default_path_check_is_suppressible(
 
     app = _build(make_app, host)
 
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
 
 
 def test_path_check_warn_emits_warning_not_error(make_app, make_host_project, tmp_path):
@@ -699,8 +702,8 @@ def test_path_check_warn_emits_warning_not_error(make_app, make_host_project, tm
 
     assert "outside its bundle root" in app._warning.getvalue()
     assert "mounts.path_escape" in app._warning.getvalue()
-    assert count_warnings(app) == 1  # only the path_escape warning
-    assert count_mount_warnings(app) == 1
+    assert warning_count(app) == 1  # only the path_escape warning
+    assert warning_count(app, "mounts.path_escape") == 1
 
 
 def test_path_check_off_allows_escape(make_app, make_host_project, tmp_path):
@@ -715,7 +718,7 @@ def test_path_check_off_allows_escape(make_app, make_host_project, tmp_path):
     app = _build(make_app, host)
 
     assert "outside its bundle root" not in app._warning.getvalue()
-    assert count_warnings(app) == 0
+    assert warning_count(app) == 0
     # The leaked host file content really did render (documents the leak).
     html = (Path(app.outdir) / "_g" / "api" / "index.html").read_text(encoding="utf-8")
     assert "HOST_SECRET" in html
@@ -804,7 +807,7 @@ def test_files_mode_sibling_reference_within_the_mounts_roots_is_allowed(
 
     app = _build(make_app, host)
 
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     html = (Path(app.outdir) / "_g" / "rn" / "2026-q1.html").read_text(encoding="utf-8")
     assert "SHARED_TEXT" in html
 
@@ -906,7 +909,7 @@ def test_files_mode_disjoint_branches_do_not_widen_to_the_filesystem_root(
 
     warnings = app._warning.getvalue()
     assert "mounts.path_escape" in warnings, warnings
-    assert count_mount_warnings(app) == 1, warnings
+    assert warning_count(app, "mounts.path_escape") == 1, warnings
 
 
 def test_files_mode_escape_above_every_root_still_fails(
@@ -1141,7 +1144,7 @@ def test_symlinked_bundle_root_is_not_an_escape(make_app, make_host_project, tmp
 
     app = _build(make_app, host)  # must NOT raise
 
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     html = (Path(app.outdir) / "_g" / "api" / "index.html").read_text(encoding="utf-8")
     assert "IN_BUNDLE" in html
 
@@ -1546,7 +1549,7 @@ def test_changed_include_target_rereads_mounted_doc(
 
     app = make_app(srcdir=host, freshenv=True)
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
 
     # Precondition (teeth): the directive recorded its target as a dependency
     # of the mounted doc, pointing at the external file. Without this, a later
@@ -1564,7 +1567,7 @@ def test_changed_include_target_rereads_mounted_doc(
     _bump_mtime(bundle / target_name)
 
     app.build()
-    assert count_warnings(app) == 0, app._warning.getvalue()
+    assert warning_count(app) == 0, app._warning.getvalue()
     read = _docs_read_in_log(app._status.getvalue()[offset:])
 
     assert "_generated/m/index" in read, (

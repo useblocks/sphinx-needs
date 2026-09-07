@@ -11,7 +11,22 @@ import pytest
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
-pytest_plugins = ["sphinx.testing.fixtures"]
+# The workspace's shared test layer, `packages/sphinx-needs-testkit`. This suite takes two
+# things from it: the warning normalisation (`build_warnings` / `warning_count`, imported
+# by name in the test modules) and the renderer resolution, whose lazy half is the
+# `plantuml_command` fixture this line is what provides -- so a tree that lost the entry
+# fails at setup with `fixture 'plantuml_command' not found` rather than silently
+# collecting less.
+#
+# The ORDER of the list is load-bearing where both plugins define a fixture, and the kit
+# must come last; see the note in its `fixtures` module. **Nothing in this suite fences it,
+# and that is acceptable here**: the only fixture the two share is `sphinx_test_tempdir`,
+# which this suite never resolves -- it builds through sphinx's `make_app` into `tmp_path`
+# -- and could not resolve if it tried, because the kit's version needs a `tests_dir`
+# fixture that only sphinx-needs' conftest defines. The day a test here uses sphinx's `app`
+# fixture, that arrives as `fixture 'tests_dir' not found`, which is loud rather than
+# wrong. `--sn-build-dir`, which the kit also adds, does nothing in this suite.
+pytest_plugins = ["sphinx.testing.fixtures", "sphinx_needs_testkit.fixtures"]
 
 TESTS_DIR = Path(__file__).parent
 FIXTURES_DIR = TESTS_DIR / "fixtures"
@@ -131,22 +146,10 @@ def _toml_string(value: str) -> str:
     return f'"{escaped}"'
 
 
-def count_warnings(app) -> int:
-    """Total number of warning records in the captured Sphinx warning stream.
-
-    Each Sphinx warning is emitted as a single ``WARNING:`` record, so
-    counting them pins the *exact* number of warnings a scenario may emit.
-    """
-    return app._warning.getvalue().count("WARNING:")
-
-
-def count_mount_warnings(app) -> int:
-    """Number of sphinx-mounts warnings (``mounts.*`` types) captured.
-
-    Every sphinx-mounts warning carries the ``[mounts.<subtype>]`` type
-    suffix on Sphinx 8/9 natively and Sphinx 7 via the manual append, so
-    counting those occurrences pins exactly how many of *our* warnings a
-    scenario emits — independent of unrelated Sphinx toctree noise and
-    stable across supported Sphinx versions.
-    """
-    return app._warning.getvalue().count("[mounts.")
+# `count_warnings` and `count_mount_warnings` are NOT here any more. The first counted
+# occurrences of the substring ``WARNING:``; both are replaced by the workspace's one
+# normalisation, `sphinx_needs_testkit.warning_count`, which counts warning RECORDS and,
+# given a type, only those carrying exactly that ``[type]`` token -- so a scenario now
+# pins WHICH sphinx-mounts warning it emits rather than how many mounts warnings of any
+# kind. The two family assertions that genuinely mean "no mounts warning at all" spell
+# that out over `build_warnings` at their call sites.
