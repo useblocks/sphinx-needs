@@ -10,7 +10,7 @@ import pytest
 from syrupy.extensions.json import JSONSnapshotExtension
 
 from sphinx_needs.exceptions import NeedsConfigException
-from tests.conftest import build_warnings
+from tests.conftest import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -65,8 +65,7 @@ def test_variant_data_file_html(test_app):
     app = test_app
     app.build()
 
-    warning_records = build_warnings(app)
-    assert warning_records == []
+    assert_no_warnings(app)
 
     index_html = Path(app.outdir, "index.html").read_text()
 
@@ -99,8 +98,7 @@ def test_variant_data_fields_html(test_app, snapshot_json):
     app = test_app
     app.build()
 
-    warning_records = build_warnings(app)
-    assert warning_records == []
+    assert_no_warnings(app)
 
     data = json.loads(Path(app.outdir, "needs.json").read_text())
     assert data["versions"][""]["needs"] == snapshot_json
@@ -185,8 +183,7 @@ def test_variant_data_nested_inline_overrides_file(test_app):
     app = test_app
     app.build()
 
-    warning_records = build_warnings(app)
-    assert warning_records == []
+    assert_no_warnings(app)
 
     index_html = Path(app.outdir, "index.html").read_text()
 
@@ -342,8 +339,7 @@ def test_variant_data_extension_write_stays_coherent(test_app):
     app = test_app
     app.build()
 
-    warning_records = build_warnings(app)
-    assert warning_records == []
+    assert_no_warnings(app)
 
     index_html = Path(app.outdir, "index.html").read_text()
 

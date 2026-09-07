@@ -6,10 +6,6 @@ from sphinx.testing.util import SphinxTestApp
 from tests.conftest import build_warnings
 
 
-def get_warnings(app: SphinxTestApp):
-    return build_warnings(app)
-
-
 @pytest.mark.parametrize(
     "test_app",
     [
@@ -23,7 +19,7 @@ def get_warnings(app: SphinxTestApp):
 )
 def test_id_required_build_html(test_app: SphinxTestApp):
     test_app.build()
-    assert get_warnings(test_app) == [
+    assert build_warnings(test_app) == [
         "<srcdir>/index.rst:8: WARNING: Need could not be created: No ID defined, but 'needs_id_required' is set to True. [needs.create_need]"
     ]
 
@@ -35,7 +31,7 @@ def test_id_required_build_html(test_app: SphinxTestApp):
 )
 def test_duplicate_id(test_app: SphinxTestApp):
     test_app.build()
-    assert get_warnings(test_app) == [
+    assert build_warnings(test_app) == [
         "<srcdir>/index.rst:11: WARNING: Need could not be created: A need with ID 'SP_TOO_001' already exists. [needs.create_need]"
     ]
     html = (test_app.outdir / "index.html").read_text()
@@ -52,7 +48,7 @@ def test_broken_links(test_app: SphinxTestApp):
     app = test_app
     app.build()
 
-    assert get_warnings(test_app) == [
+    assert build_warnings(test_app) == [
         "<srcdir>/index.rst:12: WARNING: Need 'SP_TOO_002' has unknown outgoing link 'NOT_WORKING_LINK' in field 'links' [needs.link_outgoing]",
         "<srcdir>/index.rst:21: WARNING: linked need BROKEN_LINK not found [needs.link_ref]",
     ]
@@ -70,7 +66,7 @@ def test_broken_links(test_app: SphinxTestApp):
 )
 def test_broken_statuses(test_app: SphinxTestApp):
     test_app.build()
-    assert get_warnings(test_app) == [
+    assert build_warnings(test_app) == [
         'WARNING: Config option "needs_statuses" is deprecated. Please use "needs_fields.status.schema.enum" to define custom status field enum constraints. [needs.deprecated]',
         "ERROR: Need 'SP_TOO_002' has schema violations:\n"
         "  Severity:       violation\n"
@@ -94,7 +90,7 @@ def test_broken_statuses(test_app: SphinxTestApp):
 def test_broken_syntax(test_app: SphinxTestApp):
     test_app.build()
 
-    assert get_warnings(test_app) == [
+    assert build_warnings(test_app) == [
         "<srcdir>/index.rst:19: WARNING: Need could not be created: 'collapse' value is invalid: Cannot convert 'other' to boolean [needs.create_need]",
     ]
 
@@ -111,7 +107,7 @@ def test_broken_syntax(test_app: SphinxTestApp):
 )
 def test_broken_tags(test_app: SphinxTestApp):
     test_app.build()
-    assert get_warnings(test_app) == [
+    assert build_warnings(test_app) == [
         'WARNING: Config option "needs_tags" is deprecated. Please use "needs_fields.tags.schema.items.enum" to define custom tags field enum constraints. [needs.deprecated]',
         "ERROR: Need 'SP_TOO_003' has schema violations:\n"
         "  Severity:       violation\n"

@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from lxml import html as html_parser
 
-from tests.conftest import build_warnings
+from tests.conftest import assert_no_warnings, build_warnings
 
 
 def warning_lines(app) -> list[str]:
@@ -544,7 +544,7 @@ def test_extract_references_resolve_to_the_source_page(test_app):
     """
     app = test_app
     app.build()
-    assert warning_lines(app) == []
+    assert_no_warnings(app)
 
     extract_html = Path(app.outdir, "extract.html").read_text(encoding="utf8")
 
@@ -625,7 +625,7 @@ def test_needextract_does_not_re_emit_doctree_resolved(test_app):
     """
     app = test_app
     app.build()
-    assert warning_lines(app) == []
+    assert_no_warnings(app)
 
     recorded = Path(app.outdir, "resolved.log").read_text(encoding="utf8").split()
     # one emission per document, each with a document -- never a container
@@ -769,7 +769,7 @@ def test_needextract_discards_post_transform_state(test_app):
     """
     app = test_app
     app.build()
-    assert warning_lines(app) == []
+    assert_no_warnings(app)
 
     state = Path(app.outdir, "state.log").read_text(encoding="utf8").split()
     assert state == ["sentinel=False", "highlight_language=''"], state

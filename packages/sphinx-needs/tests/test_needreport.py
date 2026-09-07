@@ -8,7 +8,7 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 import pytest
 
 from sphinx_needs.directives.needreport import DROPDOWN_MARKER
-from tests.conftest import build_warnings
+from tests.conftest import assert_no_warnings, build_warnings
 
 SPHINX_DESIGN_INSTALLED = importlib.util.find_spec("sphinx_design") is not None
 
@@ -51,8 +51,8 @@ def test_doc_needreport(test_app):
     app = test_app
     app.build()
     # check for warning about missing options
-    build_warnings = warning_lines(app)
-    assert build_warnings == [
+    warnings = warning_lines(app)
+    assert warnings == [
         "<srcdir>/index.rst:6: WARNING: No options specified to generate need report [needs.needreport]",
         "<srcdir>/index.rst:8: WARNING: Could not load needs report template file <srcdir>/unknown.rst [needs.needreport]",
     ]
@@ -136,15 +136,15 @@ def test_render_failure_warns_and_build_survives(test_app, expected_detail):
     app = test_app
     app.build()
 
-    build_warnings = warning_lines(app)
-    assert len(build_warnings) == 1, build_warnings
-    assert build_warnings[0].startswith(
+    warnings = warning_lines(app)
+    assert len(warnings) == 1, warnings
+    assert warnings[0].startswith(
         "<srcdir>/index.rst:4: WARNING: Could not render needs report template file "
         "<srcdir>/report_template.need: "
-    ), build_warnings[0]
+    ), warnings[0]
     # the engine's own explanation is carried through, so the author can act on it
-    assert expected_detail in build_warnings[0]
-    assert build_warnings[0].endswith("[needs.needreport]")
+    assert expected_detail in warnings[0]
+    assert warnings[0].endswith("[needs.needreport]")
 
     # the build still produced its page, and the directive contributed nothing to it
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
@@ -194,8 +194,8 @@ def test_reserved_context_key_warns_but_still_overrides(test_app):
     app = test_app
     app.build()
 
-    build_warnings = warning_lines(app)
-    assert build_warnings == [
+    warnings = warning_lines(app)
+    assert warnings == [
         "<srcdir>/index.rst:4: WARNING: needs_render_context replaces the needreport "
         "context key 'types'; only 'report_directive' is meant to be set this way "
         "[needs.needreport]"
@@ -265,23 +265,23 @@ def test_absolute_report_template_explains_the_rebase(test_app):
     app = test_app
     app.build()
 
-    build_warnings = warning_lines(app)
+    warnings = warning_lines(app)
 
     if os.name == "nt":
         # the configured path is used as it stands: the template is found, and
         # there is nothing to warn about
-        assert build_warnings == []
+        assert warnings == []
         text = visible_text(Path(app.outdir, "index.html").read_text(encoding="utf8"))
         assert "Need Types" in text
         assert "Requirement" in text
     else:
-        assert len(build_warnings) == 1, build_warnings
-        assert "Could not load needs report template file" in build_warnings[0]
+        assert len(warnings) == 1, warnings
+        assert "Could not load needs report template file" in warnings[0]
         assert (
             "needs_report_template is resolved relative to the source directory"
-            in build_warnings[0]
+            in warnings[0]
         )
-        assert build_warnings[0].endswith("[needs.needreport]")
+        assert warnings[0].endswith("[needs.needreport]")
 
 
 @pytest.mark.parametrize(
@@ -413,7 +413,7 @@ def test_dropdown_provider_is_left_alone(test_app):
     app = test_app
     app.build()
 
-    assert warning_lines(app) == []
+    assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     # the dropdown path was taken: the provider rendered the section, and no
@@ -447,7 +447,7 @@ def test_sphinx_design_dropdown_output_is_unchanged(test_app):
     app = test_app
     app.build()
 
-    assert warning_lines(app) == []
+    assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     assert "sd-dropdown" in html
@@ -534,7 +534,7 @@ def test_needs_report_template_renders(test_app):
     app = test_app
     app.build()
 
-    assert warning_lines(app) == []
+    assert_no_warnings(app)
 
     text = visible_text(Path(app.outdir, "index.html").read_text(encoding="utf8"))
     # the leading "/" of the configured path is stripped, not treated as the
@@ -624,7 +624,7 @@ def test_template_that_renders_no_dropdown_is_left_alone(test_app):
     app = test_app
     app.build()
 
-    assert warning_lines(app) == []
+    assert_no_warnings(app)
 
     html = Path(app.outdir, "index.html").read_text(encoding="utf8")
     # the report is on the page, rendered by the template's own choice
@@ -708,10 +708,10 @@ def test_unrenderable_template_warns_only_about_the_render(test_app):
     app = test_app
     app.build()
 
-    build_warnings = warning_lines(app)
-    assert len(build_warnings) == 1, build_warnings
-    assert "Could not render needs report template file" in build_warnings[0]
-    assert "No loaded extension provides" not in build_warnings[0]
+    warnings = warning_lines(app)
+    assert len(warnings) == 1, warnings
+    assert "Could not render needs report template file" in warnings[0]
+    assert "No loaded extension provides" not in warnings[0]
 
 
 # -- the render-failure report cannot itself end the build -------------------
@@ -761,11 +761,11 @@ def test_render_failure_detail_that_raises_cannot_end_the_build(test_app):
     app = test_app
     app.build()
 
-    build_warnings = warning_lines(app)
+    warnings = warning_lines(app)
     # Sphinx separately notes that ``needs_render_context`` cannot be cached
     # because it holds a function, which has nothing to do with the directive
-    reported = [warning for warning in build_warnings if "needs.needreport" in warning]
-    assert len(reported) == 1, build_warnings
+    reported = [warning for warning in warnings if "needs.needreport" in warning]
+    assert len(reported) == 1, warnings
     assert "Could not render needs report template file" in reported[0]
     # the one thing that can still be said about it
     assert reported[0].endswith(": NastyError [needs.needreport]"), reported[0]
@@ -854,11 +854,11 @@ def test_reserved_context_key_warns_once_per_build(test_app):
     app = test_app
     app.build()
 
-    build_warnings = warning_lines(app)
-    assert len(build_warnings) == 1, build_warnings
+    warnings = warning_lines(app)
+    assert len(warnings) == 1, warnings
     assert (
         "needs_render_context replaces the needreport context key 'types'"
-        in (build_warnings[0])
+        in (warnings[0])
     )
 
 
@@ -947,7 +947,7 @@ def test_a_failed_fallback_render_keeps_the_report(test_app):
     app = test_app
     app.build()
 
-    assert warning_lines(app) == []
+    assert_no_warnings(app)
 
     # the default render is on the page, untouched
     block = highlighted_block(Path(app.outdir, "index.html").read_text(encoding="utf8"))

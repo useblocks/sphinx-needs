@@ -105,23 +105,23 @@ def test_needs_warnings_return_status_code(test_app):
     # Check no Sphinx raised warnings
     assert "WARNING" not in out_w_keep_going.stdout.decode("utf-8")
 
-    build_warnings = out_w_keep_going.stderr.decode("utf-8")
+    warnings = out_w_keep_going.stderr.decode("utf-8")
 
     # Check Sphinx-needs raised warnings amount
-    assert build_warnings.count("WARNING: ") == 2
+    assert warnings.count("WARNING: ") == 2
 
     # Check warnings contents
-    assert "WARNING: invalid_status: failed" in build_warnings
-    assert "failed needs: 2 (SP_TOO_001, US_63252)" in build_warnings
+    assert "WARNING: invalid_status: failed" in warnings
+    assert "failed needs: 2 (SP_TOO_001, US_63252)" in warnings
     assert (
         "used filter: status not in ['open', 'closed', 'done', 'example_2', 'example_3']"
-        in build_warnings
+        in warnings
     )
 
     # Check needs warning from custom defined filter code
-    assert "WARNING: type_match: failed" in build_warnings
-    assert "failed needs: 1 (TC_001)" in build_warnings
-    assert "used filter: my_custom_warning_check" in build_warnings
+    assert "WARNING: type_match: failed" in warnings
+    assert "failed needs: 1 (TC_001)" in warnings
+    assert "used filter: my_custom_warning_check" in warnings
 
 
 @pytest.mark.parametrize(

@@ -30,7 +30,7 @@ from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.data import SphinxNeedsData
-from tests.conftest import build_warnings
+from tests.conftest import assert_no_warnings, build_warnings
 
 CONF = """\
 extensions = ["sphinx_needs"]
@@ -484,7 +484,7 @@ def test_an_unquoted_option_value_is_dropped_without_a_diagnostic(
     app.build()
     # NOTE: current behaviour; see PR discussion.
     assert needs(app)["OPT-UNQUOTED"]["status"] is None
-    assert warning_text(app) == ""
+    assert_no_warnings(app)
 
 
 # ---------------------------------------------------------------------------
@@ -637,7 +637,7 @@ def test_a_directive_in_an_items_content_keeps_its_options(test_app: SphinxTestA
     assert (
         built["DIR-CHILD"]["content"] == ".. rubric:: A rubric\n   :class: highlighted"
     )
-    assert warning_text(app) == ""
+    assert_no_warnings(app)
 
 
 NESTED = """
@@ -731,7 +731,7 @@ def test_a_hidden_parent_does_not_take_its_child_out_of_the_page(
     index = Path(app.outdir, "index.html").read_text()
     assert 'id="HID-CHILD"' in index
     assert 'href="#HID-CHILD"' in index
-    assert warning_text(app) == ""
+    assert_no_warnings(app)
 
 
 NO_NEED_CREATED_INDEX = """
@@ -998,7 +998,7 @@ def test_the_directive_runs_in_a_markdown_document(test_app: SphinxTestApp):
     assert built["MD-A"]["doctype"] == ".md"
     # The items are on lines 6 and 7 of index.md.
     assert (built["MD-A"]["lineno"], built["MD-B"]["lineno"]) == (6, 7)
-    assert warning_text(app) == ""
+    assert_no_warnings(app)
     assert built["MD-CONTROL"]["title"] == "A control need"
 
 

@@ -88,10 +88,6 @@ SCOPES: list[dict[str, object]] = [
 """The scopes of the oracle, as the four option values a directive collects."""
 
 
-def _warnings(app: SphinxTestApp) -> list[str]:
-    return build_warnings(app)
-
-
 @CHART_SCOPE
 def test_scope_intersects_every_content_line(test_app: SphinxTestApp):
     """A scoped chart counts each content line over the scope only.
@@ -102,7 +98,7 @@ def test_scope_intersects_every_content_line(test_app: SphinxTestApp):
     """
     app = test_app
     app.build()
-    assert _warnings(app) == [INVALID_FILTER_WARNING]
+    assert build_warnings(app) == [INVALID_FILTER_WARNING]
 
     images = chart_images(Path(app.outdir, "index.html").read_text())
     # the two empty-state pies write no image, so they are not in here, and the
@@ -159,7 +155,7 @@ def test_invalid_scope_filter_warns_once_and_selects_nothing(test_app: SphinxTes
     """
     app = test_app
     app.build()
-    assert _warnings(app) == [INVALID_FILTER_WARNING]
+    assert build_warnings(app) == [INVALID_FILTER_WARNING]
 
     images = chart_images(Path(app.outdir, "invalid.html").read_text())
     svg = Path(app.outdir, "_images", images["pie invalid scope filter"]).read_text()

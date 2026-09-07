@@ -1690,10 +1690,10 @@ def test_invalid_card_warns_but_the_build_survives(
     app = make_app(srcdir=srcdir, buildername="html")
     app.build()
 
-    build_warnings = app._warning.getvalue()
-    assert "needs_card_layouts['bad_card']" in build_warnings
-    assert expected in build_warnings
-    assert "needs_card_layouts['good_card']" not in build_warnings
+    warnings = app._warning.getvalue()
+    assert "needs_card_layouts['bad_card']" in warnings
+    assert expected in warnings
+    assert "needs_card_layouts['good_card']" not in warnings
 
     # the sibling still compiled and rendered
     html = (Path(app.outdir) / "index.html").read_text()
@@ -1737,8 +1737,8 @@ def test_name_collisions_are_refused(
     app = make_app(srcdir=srcdir, buildername="html")
     app.build()
 
-    build_warnings = app._warning.getvalue()
-    assert expected in build_warnings
+    warnings = app._warning.getvalue()
+    assert expected in warnings
     # the built-in / user layout is untouched
     assert app.config.needs_layouts["clean"] == LAYOUTS["clean"]
 

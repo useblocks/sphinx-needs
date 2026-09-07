@@ -10,7 +10,7 @@ from sphinx_needs.functions.functions import (
     DynamicFunctionParsed,
     NeedAttribute,
 )
-from tests.conftest import build_warnings
+from tests.conftest import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -170,8 +170,7 @@ def test_doc_dynamic_functions(test_app, snapshot):
 def test_doc_df_calc_sum(test_app):
     app = test_app
     app.build()
-    warning_records = build_warnings(app)
-    assert warning_records == []
+    assert_no_warnings(app)
     html = Path(app.outdir, "index.html").read_text()
     assert "43210" in html  # all hours
     assert "3210" in html  # hours of linked needs
@@ -191,8 +190,7 @@ def test_doc_df_calc_sum(test_app):
 def test_doc_df_linked_values(test_app):
     app = test_app
     app.build()
-    warning_records = build_warnings(app)
-    assert warning_records == []
+    assert_no_warnings(app)
     html = Path(app.outdir, "index.html").read_text()
     assert "all_good" in html
     assert "all_bad" not in html

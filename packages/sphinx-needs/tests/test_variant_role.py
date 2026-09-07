@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import build_warnings
+from tests.conftest import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -94,8 +94,7 @@ def test_variant_role_file_html(test_app):
     app = test_app
     app.build()
 
-    warning_records = build_warnings(app)
-    assert warning_records == []
+    assert_no_warnings(app)
 
     index_html = Path(app.outdir, "index.html").read_text()
     # Value from the JSON file.

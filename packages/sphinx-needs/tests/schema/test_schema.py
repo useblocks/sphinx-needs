@@ -10,7 +10,7 @@ from sphinx.testing.util import SphinxTestApp
 from syrupy.filters import props
 
 from sphinx_needs.exceptions import NeedsConfigException
-from tests.conftest import build_warnings
+from tests.conftest import assert_no_warnings, build_warnings
 
 CURR_DIR = Path(__file__).parent
 
@@ -81,7 +81,7 @@ def test_schema_typing(test_app: SphinxTestApp, snapshot) -> None:
     test_app.build()
     warning_records = build_warnings(test_app)
     print(warning_records)
-    assert not warning_records
+    assert_no_warnings(test_app)
 
     needs = json.loads(Path(test_app.outdir, "needs.json").read_text("utf8"))
     assert needs == snapshot(exclude=props("created", "project", "creator"))
@@ -123,8 +123,7 @@ def test_schema_e2e(test_app: SphinxTestApp, snapshot) -> None:
 def test_schema_example(test_app: SphinxTestApp, snapshot) -> None:
     """Check error-free build of the example from the docs."""
     test_app.build()
-    warnings_text = "\n".join(build_warnings(test_app))
-    assert not warnings_text
+    assert_no_warnings(test_app)
 
 
 @pytest.mark.parametrize(

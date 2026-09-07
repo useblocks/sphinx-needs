@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from lxml import html as html_parser
 
-from tests.conftest import build_warnings
+from tests.conftest import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(
@@ -169,8 +169,7 @@ def test_doc_github_1664_legend(test_app):
     app.build()  # must not raise
 
     # a legend the engine cannot parse would be reported as a render warning
-    warnings_text = "\n".join(build_warnings(app))
-    assert warnings_text == ""
+    assert_no_warnings(app)
 
     debug = _debug_source(Path(app.outdir, "legend.html"))
 

@@ -36,10 +36,10 @@ def test_is_legacy_format_template(template, expected):
 def test_doc_build_html(test_app):
     app = test_app
     app.build()
-    build_warnings = app._warning.getvalue()
+    warnings = app._warning.getvalue()
     # No template-rendering warnings should be emitted for valid templates.
-    assert "link_text" not in build_warnings
-    assert "needs_role_need_template" not in build_warnings
+    assert "link_text" not in warnings
+    assert "needs_role_need_template" not in warnings
     html = Path(app.outdir, "index.html").read_text()
     assert "ROLE NEED TEMPLATE" in html
 
@@ -81,8 +81,8 @@ def test_doc_build_html_legacy_format_template(test_app):
     """A legacy str.format template keeps working but warns about deprecation."""
     app = test_app
     app.build()
-    build_warnings = app._warning.getvalue()
-    assert "deprecated str.format syntax" in build_warnings
+    warnings = app._warning.getvalue()
+    assert "deprecated str.format syntax" in warnings
     html = Path(app.outdir, "index.html").read_text()
     # Rendered via str.format (not left as literal ``{id}`` text).
     assert "[SP_TOO_001] Command line interface (implemented)" in html
@@ -98,8 +98,8 @@ def test_doc_build_html_invalid_template(test_app):
     """An invalid Jinja template warns once and falls back to ``title (id)``."""
     app = test_app
     app.build()
-    build_warnings = app._warning.getvalue()
-    assert "needs_role_need_template could not be compiled" in build_warnings
+    warnings = app._warning.getvalue()
+    assert "needs_role_need_template could not be compiled" in warnings
     html = Path(app.outdir, "index.html").read_text()
     # Fallback representation is used instead of crashing the build.
     assert "Command line interface (SP_TOO_001)" in html

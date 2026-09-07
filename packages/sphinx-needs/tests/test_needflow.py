@@ -7,7 +7,7 @@ from lxml import html as html_parser
 from sphinx import version_info
 from sphinx.config import Config
 
-from tests.conftest import build_warnings
+from tests.conftest import assert_no_warnings, build_warnings
 
 #: A ``conf.py`` for the inline source projects below.
 #: The id regex is relaxed, so that ids exercising the entity name sanitisation
@@ -93,8 +93,7 @@ def test_doc_build_html(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(build_warnings(app))
-    assert warnings_text == ""
+    assert_no_warnings(app)
 
     outdir = Path(app.outdir)
 
@@ -181,8 +180,7 @@ def test_doc_build_needflow_incl_child_needs(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(build_warnings(app))
-    assert warnings_text == ""
+    assert_no_warnings(app)
 
     outdir = Path(app.outdir)
 
@@ -342,8 +340,7 @@ def test_node_ids_are_injective(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(build_warnings(app))
-    assert warnings_text == ""
+    assert_no_warnings(app)
 
     debug = _debug_source(Path(app.outdir), "index.html")
 
@@ -418,8 +415,7 @@ def test_border_color_handling(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(build_warnings(app))
-    assert warnings_text == ""
+    assert_no_warnings(app)
 
     outdir = Path(app.outdir)
     bare = _debug_source(outdir, "index.html", 0)
@@ -494,8 +490,7 @@ def test_highlight_can_consult_other_needs(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(build_warnings(app))
-    assert warnings_text == ""
+    assert_no_warnings(app)
 
     debug = _debug_source(Path(app.outdir), "index.html")
 
@@ -657,8 +652,7 @@ def test_graphviz_alt_text(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(build_warnings(app))
-    assert warnings_text == ""
+    assert_no_warnings(app)
 
     tree = html_parser.parse(Path(app.outdir) / "index.html")
     alts = [img.attrib["alt"] for img in tree.xpath("//img[@class='graphviz']")]
@@ -745,8 +739,7 @@ def test_graphviz_label_does_not_break_html_entities(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(build_warnings(app))
-    assert warnings_text == ""
+    assert_no_warnings(app)
 
     debug = _debug_source(Path(app.outdir), "index.html")
 
@@ -810,8 +803,7 @@ def test_debug_is_a_literal_block_on_both_engines(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(build_warnings(app))
-    assert warnings_text == ""
+    assert_no_warnings(app)
 
     tree = html_parser.parse(Path(app.outdir) / "index.html")
     if app.config.needs_flow_engine == "plantuml":
@@ -981,8 +973,7 @@ def test_merging_configs_does_not_leak_into_the_next_diagram(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(build_warnings(app))
-    assert warnings_text == ""
+    assert_no_warnings(app)
 
     outdir = Path(app.outdir)
     merged = _debug_source(outdir, "index.html", 0)
@@ -1130,7 +1121,7 @@ def test_graphviz_draws_every_direction_without_warning(
     )
     app.build()
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
 
 
 def test_unknown_direction_is_rejected_as_the_option_is_parsed(
@@ -1254,7 +1245,7 @@ def test_agreeing_engine_config_does_not_warn_or_restate(
     )
     app.build()
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
 
     source = _debug_source(Path(app.outdir), "index.html")
     if engine == "plantuml":
@@ -1285,7 +1276,7 @@ def test_project_direction_default_applies_without_the_option(
     )
     app.build()
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
     assert "left to right direction" in _debug_source(Path(app.outdir), "index.html")
 
 
@@ -1306,7 +1297,7 @@ def test_option_beats_the_project_direction_default(
     )
     app.build()
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
     source = _debug_source(Path(app.outdir), "index.html")
     assert "left to right direction" not in source
     assert "' Direction" not in source
@@ -1428,7 +1419,7 @@ def test_enum_config_values_ignore_case_and_padding(
     app.build()
 
     # the value is usable, so nothing is reported and nothing falls back
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
     assert needle in _debug_source(Path(app.outdir), "index.html")
 
 
@@ -1520,7 +1511,7 @@ def test_show_link_names_takes_a_value(
     )
     app.build()
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
 
     source = _debug_source(Path(app.outdir), "index.html")
     # only the edges are inspected: a graphviz *node* always carries an HTML label
@@ -1612,7 +1603,7 @@ def test_needs_flow_show_links_accepts_a_value_or_a_boolean(
     )
     app.build()
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
 
     source = _debug_source(Path(app.outdir), "index.html")
     if label is None:
@@ -1669,7 +1660,7 @@ def test_show_link_names_option_beats_the_project_default(
     )
     app.build()
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
     source = _debug_source(Path(app.outdir), "index.html")
     assert "links outgoing" not in source
 
@@ -1825,7 +1816,7 @@ def test_bare_show_legend_still_draws_the_in_diagram_legend(
     """
     app = _build_legend(make_app, tmp_path, plantuml_command, engine, "")
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
 
     source = _debug_source(Path(app.outdir), "index.html")
     if engine == "plantuml":
@@ -1851,7 +1842,7 @@ def test_show_legend_key_selects_a_configured_legend(
     """
     app = _build_legend(make_app, tmp_path, plantuml_command, engine, " beside")
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
 
     outdir = Path(app.outdir)
     assert _legend_sections(outdir) == ["types"]
@@ -1874,7 +1865,7 @@ def test_show_legend_can_describe_link_types(
     """
     app = _build_legend(make_app, tmp_path, plantuml_command, engine, " links")
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
 
     outdir = Path(app.outdir)
     assert _legend_sections(outdir) == ["links"]
@@ -1899,7 +1890,7 @@ def test_legend_sections_keep_their_configured_order(
     """
     app = _build_legend(make_app, tmp_path, plantuml_command, engine, key)
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
     assert _legend_sections(Path(app.outdir)) == expected
 
 
@@ -1930,7 +1921,7 @@ def test_internal_placement_that_cannot_be_honoured_degrades_silently(
     )
     app.build()
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
     assert _legend_sections(Path(app.outdir)) == ["types", "links"]
 
 
@@ -1945,7 +1936,7 @@ def test_needs_flow_show_legend_supplies_the_key(make_app, tmp_path, plantuml_co
         needs_flow_show_legend="beside",
     )
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
     assert _legend_sections(Path(app.outdir)) == ["types"]
 
 
@@ -1973,7 +1964,7 @@ def test_needs_flow_show_legend_never_says_whether(
     )
     app.build()
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
     assert _legend_sections(Path(app.outdir)) == []
     assert "' Legend definition" not in _debug_source(Path(app.outdir), "index.html")
 
@@ -1989,7 +1980,7 @@ def test_option_key_beats_the_project_key(make_app, tmp_path, plantuml_command):
         needs_flow_show_legend="beside",
     )
 
-    assert "\n".join(build_warnings(app)) == ""
+    assert_no_warnings(app)
     assert _legend_sections(Path(app.outdir)) == ["links", "types"]
 
 

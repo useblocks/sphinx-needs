@@ -478,25 +478,23 @@ class TestNeedLinkFromString:
         assert link.condition is None
 
     def test_warnings_clean(self) -> None:
-        link, build_warnings = NeedLink.from_string_with_warnings(
-            'NEED-1[status=="open"]'
-        )
+        link, warnings = NeedLink.from_string_with_warnings('NEED-1[status=="open"]')
         assert link == NeedLink(id="NEED-1", condition='status=="open"')
-        assert build_warnings == []
+        assert warnings == []
 
     def test_warnings_unclosed(self) -> None:
-        link, build_warnings = NeedLink.from_string_with_warnings("NEED-1[unclosed")
+        link, warnings = NeedLink.from_string_with_warnings("NEED-1[unclosed")
         assert link.id == "NEED-1[unclosed"
         assert link.condition is None
-        assert len(build_warnings) == 1
-        assert "Unclosed" in build_warnings[0]
+        assert len(warnings) == 1
+        assert "Unclosed" in warnings[0]
 
     def test_warnings_trailing(self) -> None:
-        link, build_warnings = NeedLink.from_string_with_warnings("NEED-1[cond]extra")
+        link, warnings = NeedLink.from_string_with_warnings("NEED-1[cond]extra")
         assert link.id == "NEED-1"
         assert link.condition is None
-        assert len(build_warnings) == 1
-        assert "Unexpected text" in build_warnings[0]
+        assert len(warnings) == 1
+        assert "Unexpected text" in warnings[0]
 
     def test_parse_conditions_false_with_brackets(self) -> None:
         link = NeedLink.from_string("NEED-1[cond]", parse_conditions=False)
@@ -511,11 +509,11 @@ class TestNeedLinkFromString:
         assert link == NeedLink(id="NEED-1")
 
     def test_parse_conditions_false_with_warnings(self) -> None:
-        link, build_warnings = NeedLink.from_string_with_warnings(
+        link, warnings = NeedLink.from_string_with_warnings(
             "NEED-1[cond]", parse_conditions=False
         )
         assert link == NeedLink(id="NEED-1[cond]", condition=None)
-        assert build_warnings == []
+        assert warnings == []
 
 
 class TestNeedLinkToLinkString:

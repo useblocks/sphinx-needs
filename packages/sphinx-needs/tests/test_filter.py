@@ -12,7 +12,7 @@ from sphinx_needs.need_item import (
     NeedsContent,
 )
 from sphinx_needs.views import NeedsView
-from tests.conftest import build_warnings
+from tests.conftest import assert_no_warnings, build_warnings
 from tests.util import chart_images, pie_slice_counts
 
 
@@ -142,8 +142,7 @@ def test_this_doc_in_charts_and_need_count(test_app):
     app = test_app
     app.build()
 
-    warnings_text = "\n".join(build_warnings(app))
-    assert warnings_text.splitlines() == []
+    assert_no_warnings(app)
 
     # index.rst holds two needs, page.rst one
     html = Path(app.outdir, "index.html").read_text()

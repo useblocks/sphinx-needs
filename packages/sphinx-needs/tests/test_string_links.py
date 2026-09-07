@@ -196,11 +196,11 @@ def test_invalid_conf_warns_but_the_build_survives(
         {"bad": bad_conf, "good": GOOD_LINK},
     )
 
-    build_warnings = warnings_of(app)
-    assert "needs_string_links['bad']" in build_warnings, build_warnings
-    assert expected in build_warnings, build_warnings
-    assert "needs.string_link" in build_warnings, build_warnings
-    assert "needs_string_links['good']" not in build_warnings, build_warnings
+    warnings = warnings_of(app)
+    assert "needs_string_links['bad']" in warnings, warnings
+    assert expected in warnings, warnings
+    assert "needs.string_link" in warnings, warnings
+    assert "needs_string_links['good']" not in warnings, warnings
 
     # the sibling entry still compiled and rendered
     assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
@@ -227,9 +227,9 @@ def test_string_links_not_a_dict_warns(
     """
     app = build(make_app, sphinx_test_tempdir, value)
 
-    build_warnings = warnings_of(app)
-    assert "needs_string_links must be a dict" in build_warnings, build_warnings
-    assert "needs.string_link" in build_warnings, build_warnings
+    warnings = warnings_of(app)
+    assert "needs_string_links must be a dict" in warnings, warnings
+    assert "needs.string_link" in warnings, warnings
     assert app.config.needs_string_links == {}
     # the build still produced a page
     assert "SLINK_1" in need_html(app)
@@ -363,11 +363,9 @@ def test_empty_options_warns_but_keeps_the_entry(
         sphinx_test_tempdir,
         {"t": {**GOOD_LINK, "options": []}},
     )
-    build_warnings = warnings_of(app)
-    assert "'options' is empty, so this entry can never apply." in build_warnings, (
-        build_warnings
-    )
-    assert "needs.string_link" in build_warnings, build_warnings
+    warnings = warnings_of(app)
+    assert "'options' is empty, so this entry can never apply." in warnings, warnings
+    assert "needs.string_link" in warnings, warnings
     # warn only -- the entry is kept
     assert app.config.needs_string_links["t"]["options"] == []
 
@@ -534,10 +532,10 @@ def test_template_failure_keeps_the_value(
         sphinx_test_tempdir,
         {"t": {**GOOD_LINK, "link_name": "{{value | no_such_filter}}"}},
     )
-    build_warnings = warnings_of(app)
-    assert "Problems dealing with string to link transformation" in build_warnings
+    warnings = warnings_of(app)
+    assert "Problems dealing with string to link transformation" in warnings
     # and the warning now says where, rather than only which field
-    assert "index.rst:" in build_warnings, build_warnings
+    assert "index.rst:" in warnings, warnings
 
     meta = _meta_span(need_html(app), "ticket")
     assert "AB-1" in meta, meta
@@ -588,9 +586,9 @@ def test_unknown_key_warns_but_keeps_the_entry(
         sphinx_test_tempdir,
         {"t": {**GOOD_LINK, "link_naem": "typo"}},
     )
-    build_warnings = warnings_of(app)
-    assert "unknown key(s) 'link_naem'" in build_warnings, build_warnings
-    assert "needs.string_link" in build_warnings, build_warnings
+    warnings = warnings_of(app)
+    assert "unknown key(s) 'link_naem'" in warnings, warnings
+    assert "needs.string_link" in warnings, warnings
     assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
 
 
@@ -603,9 +601,9 @@ def test_undeclared_field_in_options_warns(
         sphinx_test_tempdir,
         {"t": {**GOOD_LINK, "options": ["ticket", "no_such_field"]}},
     )
-    build_warnings = warnings_of(app)
-    assert "'options' names 'no_such_field'" in build_warnings, build_warnings
-    assert "not a registered need field" in build_warnings, build_warnings
+    warnings = warnings_of(app)
+    assert "'options' names 'no_such_field'" in warnings, warnings
+    assert "not a registered need field" in warnings, warnings
     # warn only: the entry is still applied to the field that *is* registered
     assert 'href="https://tracker.example.com/AB-1"' in need_html(app)
 
@@ -932,9 +930,9 @@ def test_bad_regex_in_a_project_with_no_needs(
         {"bad": {**GOOD_LINK, "regex": regex}},
         index=NO_NEEDS_INDEX,
     )
-    build_warnings = warnings_of(app)
-    assert "needs_string_links['bad']" in build_warnings, build_warnings
-    assert "'regex' is not a valid regular expression" in build_warnings, build_warnings
+    warnings = warnings_of(app)
+    assert "needs_string_links['bad']" in warnings, warnings
+    assert "'regex' is not a valid regular expression" in warnings, warnings
     assert app.config.needs_string_links == {}
     assert (Path(app.outdir) / "index.html").exists()
 
@@ -962,12 +960,12 @@ def test_bytes_pattern_is_rejected(make_app: Any, sphinx_test_tempdir: Any) -> N
     app = make_app(srcdir=srcdir, buildername="html")
     app.build()
 
-    build_warnings = warnings_of(app)
-    assert "needs_string_links['bad']" in build_warnings, build_warnings
-    assert "'regex' is a bytes pattern" in build_warnings, build_warnings
-    assert "needs.string_link" in build_warnings, build_warnings
+    warnings = warnings_of(app)
+    assert "needs_string_links['bad']" in warnings, warnings
+    assert "'regex' is a bytes pattern" in warnings, warnings
+    assert "needs.string_link" in warnings, warnings
     # skipped at configuration time, so no per-value render warnings at all
-    assert "Problems dealing with string to link transformation" not in build_warnings
+    assert "Problems dealing with string to link transformation" not in warnings
     assert app.config.needs_string_links == {}
     assert "AB-1" in need_html(app)
 
