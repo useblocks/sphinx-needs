@@ -280,6 +280,98 @@ def test_pypi_is_never_asked_about_a_virtual_member(workspace, offline) -> None:
     assert asked == ["acme-core"]
 
 
+# --- (0) a PRIVATE member is never a release either --------------------------------------
+# The second, newer kind. It is built and installed like any other member -- the release
+# workflow's compat cell has to be able to install the shared test layer -- so
+# `[tool.uv] package = false` is not available to it, and the classifier is the marker.
+
+
+def test_a_private_member_is_listed_but_not_numbered(
+    workspace, capsys, offline
+) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-testkit": {"version": "0", "private": True},
+        }
+    )
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert "1. acme-core 2.0.0   depends on: -" in out
+    assert "-- acme-testkit 0   (private -- never published)" in out
+    assert "2. acme-testkit" not in out
+
+
+def test_a_tag_naming_a_private_member_is_refused(workspace, capsys, offline) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-testkit": {"version": "0", "private": True},
+        }
+    )
+    assert run(root, "--tag", "acme-testkit-v0", "--rehearsal", "--no-git") == 1
+    out = capsys.readouterr().out
+    assert "`acme-testkit` is a private member" in out
+    assert "Private :: Do Not Upload" in out
+    assert "there is nothing to release" in out
+
+
+def test_the_classifier_is_the_whole_of_the_refusal(workspace, capsys, offline) -> None:
+    """Drop the classifier and the same tag is planned: the predicate IS the classifier,
+    and nothing else in the manifest says the member is not a product."""
+    published(offline, {("acme-testkit", "0"): False})
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-testkit": {
+                "version": "0",
+                "private": True,
+                "private_classifier": False,
+            },
+        }
+    )
+    assert run(root, "--tag", "acme-testkit-v0", "--rehearsal", "--no-git") == 0
+    out = capsys.readouterr().out
+    assert "never published" not in out
+    assert '"dist": "acme-testkit"' in out
+
+
+def test_a_runtime_dependency_on_a_private_member_is_refused(
+    workspace, capsys, offline
+) -> None:
+    """The wheel would name a distribution that is never on PyPI."""
+    published(offline, {("acme-core", "2.0.0"): False})
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0", "dependencies": ["acme-testkit>=0"]},
+            "acme-testkit": {"version": "0", "private": True},
+        }
+    )
+    assert run(root, "--tag", "acme-core-v2.0.0", "--rehearsal", "--no-git") == 1
+    out = capsys.readouterr().out
+    assert "acme-core declares a runtime (or extra) dependency on acme-testkit" in out
+    assert "a private member (`Private :: Do Not Upload`)" in out
+
+
+def test_pypi_is_never_asked_about_a_private_member(workspace, offline) -> None:
+    """The planner must not turn a member it will never release into a PyPI lookup."""
+    asked: list[str] = []
+
+    def fake(name: str) -> dict:
+        asked.append(name)
+        return {}
+
+    offline.setattr(release_plan, "published_versions", fake)
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0"},
+            "acme-testkit": {"version": "0", "private": True},
+        }
+    )
+    assert run(root) == 0
+    assert asked == ["acme-core"]
+
+
 # --- (1) the tag names a member ----------------------------------------------------------
 
 

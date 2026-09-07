@@ -45,7 +45,7 @@ package = false
 {sources}
 [tool.uv.workspace]
 members = [{members}]
-"""
+{groups}"""
 
 
 def toml_list(values: list[str]) -> str:
@@ -63,6 +63,7 @@ def write_member(
     module_version: str | None = None,
     module_name: str | None = None,
     virtual: bool = False,
+    private: bool = False,
     private_classifier: bool = True,
     extra_tables: str | None = None,
 ) -> Path:
@@ -78,9 +79,10 @@ def write_member(
         lines.append(f'version = "{version}"')
     lines.append(f'requires-python = "{requires_python}"')
     lines.append(f"dependencies = [{toml_list(dependencies or [])}]")
-    if virtual and private_classifier:
-        # what check (6) demands of every virtual member; a test that wants it red passes
-        # `private_classifier=False`
+    if (virtual or private) and private_classifier:
+        # what check (6) demands of every member this repository never publishes -- a
+        # virtual one, and one the root reaches only through a dependency group. A test
+        # that wants it red passes `private_classifier=False`
         lines.append('classifiers = ["Private :: Do Not Upload"]')
     if optional_dependencies:
         lines.append("")
@@ -119,6 +121,7 @@ def workspace(tmp_path: Path):
         requires_python: str = ">=3.11,<4",
         member_globs: list[str] | None = None,
         directories: dict[str, str] | None = None,
+        root_groups: dict[str, list[str]] | None = None,
     ) -> Path:
         for name, options in members.items():
             where = (directories or {}).get(name, f"packages/{name}")
@@ -139,6 +142,15 @@ def workspace(tmp_path: Path):
                     f"{name} = {value}\n" for name, value in source_lines.items()
                 ),
                 members=toml_list(member_globs or ["packages/*"]),
+                groups=(
+                    ""
+                    if not root_groups
+                    else "\n[dependency-groups]\n"
+                    + "".join(
+                        f"{group} = [{toml_list(specs)}]\n"
+                        for group, specs in root_groups.items()
+                    )
+                ),
             ),
             encoding="utf-8",
         )
