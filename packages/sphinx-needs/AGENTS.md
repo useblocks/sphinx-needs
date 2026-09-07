@@ -125,6 +125,18 @@ skips when it finds no renderer, so request it only where a render is asserted.
 - **Edge cases**: Test error conditions, empty inputs, and boundary cases
 - **Parametrization**: Use `@pytest.mark.parametrize` to test multiple scenarios with the same test logic
 
+### Asserting on warnings
+
+Assert on a build's warnings through `tests/conftest.py`'s `warnings(app)` — or
+`assert_no_warnings(app)` / `warning_count(app, type_prefix=...)` — and never by reading the
+warning stream again. It is the suite's one normalisation: ANSI colours stripped, the source
+directory rewritten to `<srcdir>/`, one entry per warning *record* with its location attached
+and a multi-line message kept whole, and the severity token left as it was emitted so an
+`ERROR` never reads as a `WARNING`. It takes captured text as well as an application, so a
+test that shells out to `sphinx-build` asserts on the same shape as an in-process one. Call it
+after `app.build()`: a value captured before the build is a statement about application
+construction, not about the build.
+
 ### Example Test Pattern
 
 ```python
