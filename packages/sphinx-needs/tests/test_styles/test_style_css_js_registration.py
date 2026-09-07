@@ -45,6 +45,14 @@ def test_file_registration(tmp_path: Path, make_app: type[SphinxTestApp]):
     css_run_1 = len(css_files)
     script_run_1 = len(script_files)
 
+    common_css_files = [
+        x.filename.rsplit("/", maxsplit=1)[-1]
+        for x in css_files
+        if "/common_css/" in x.filename
+    ]
+    # Sphinx emits stylesheets with the same priority in registration order.
+    assert common_css_files == sorted(common_css_files)
+
     # Check for duplicates
     assert css_run_1 == len(set(css_files))
     assert script_run_1 == len(set(script_files))
