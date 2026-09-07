@@ -10,7 +10,7 @@ from sphinx import version_info
 from sphinx.testing.util import SphinxTestApp
 from syrupy.filters import props
 
-from tests.conftest import build_warnings
+from sphinx_needs_testkit import build_warnings
 
 
 @pytest.mark.parametrize(

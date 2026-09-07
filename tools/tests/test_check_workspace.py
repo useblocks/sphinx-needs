@@ -25,7 +25,7 @@ def test_green(workspace, capsys) -> None:
     root = workspace({"acme-core": {"version": "1.2.3", "module_version": "1.2.3"}})
     assert run(root) == 0
     out = capsys.readouterr().out
-    assert "the root lists every member, bare: acme-core" in out
+    assert "the root declares every member, bare: acme-core" in out
     assert "every member is sourced from the workspace" in out
     assert "requires-python >=3.11,<4" in out
     assert "no intra-workspace runtime dependencies among 1 member(s)" in out
@@ -53,7 +53,206 @@ def test_root_missing_a_member(workspace, capsys) -> None:
     assert run(root) == 1
     out = capsys.readouterr().out
     assert "::error file=pyproject.toml::`acme-core` is a workspace member" in out
-    assert "a bare `uv sync` does not install it" in out
+    assert "neither depends on it nor names it in a dependency group" in out
+
+
+# --- (1) the second route: a member declared in a dependency group ---------------------
+
+
+def test_a_member_declared_in_a_dependency_group_is_green(workspace, capsys) -> None:
+    """The shared test layer's route: installed where the group is asked for, and
+    nowhere else -- not in `.venvs/typing`, not in a docs environment."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {"version": "0", "private": True},
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["pytest", "acme-testkit"]},
+    )
+    assert run(root) == 0
+    out = capsys.readouterr().out
+    assert (
+        "the root declares every member, bare: acme-core, acme-testkit (group test)"
+        in out
+    )
+
+
+def test_a_member_in_a_group_still_needs_the_private_classifier(
+    workspace, capsys
+) -> None:
+    """Without it the member is one `git tag` away from PyPI: `release_plan.py` reads
+    exactly this line, and nothing else says the member is not a product."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {
+                "version": "0",
+                "private": True,
+                "private_classifier": False,
+            },
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "is declared only in the root's `test` dependency group" in out
+    assert 'declares no "Private ::" classifier' in out
+
+
+def test_a_member_declared_in_both_places_is_an_error(workspace, capsys) -> None:
+    """Which of the two is right decides whether the member reaches environments that
+    never ask for the group, so it cannot be both."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {"version": "0", "private": True},
+        },
+        root_dependencies=["acme-core", "acme-testkit"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "`acme-testkit` is declared twice at the root" in out
+
+
+def test_a_group_entry_naming_a_member_must_be_bare(workspace, capsys) -> None:
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {"version": "0", "private": True},
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit>=0"]},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "names the workspace member" in out
+    assert "is not bare" in out
+
+
+def test_a_group_entry_that_is_not_a_member_is_ignored(workspace, capsys) -> None:
+    """Groups are full of ordinary PyPI requirements; only a member's name is this
+    check's business."""
+    root = workspace(
+        {"acme-core": {"version": "1.0.0"}},
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["pytest>=8,<10", "sphinx~=7.4"]},
+    )
+    assert run(root) == 0
+
+
+def test_an_include_group_table_is_not_a_requirement(workspace, capsys) -> None:
+    """`{ include-group = "test" }` is a table, not a string, and must not be parsed."""
+    root = workspace(
+        {"acme-core": {"version": "1.0.0"}},
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["pytest"]},
+    )
+    manifest = root / "pyproject.toml"
+    manifest.write_text(
+        manifest.read_text(encoding="utf-8") + 'dev = [{ include-group = "test" }]\n',
+        encoding="utf-8",
+    )
+    assert run(root) == 0
+
+
+def test_a_private_member_is_not_held_to_the_tracking_policy(workspace, capsys) -> None:
+    """The cap stops a future major being co-installed with a published wheel; a member
+    that publishes none has nothing to co-install with."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.2.3"},
+            "acme-testkit": {
+                "version": "0",
+                "private": True,
+                "dependencies": ["acme-core>=1.0.0"],
+            },
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 0
+
+
+def test_any_private_prefix_classifier_counts(workspace, capsys) -> None:
+    """The rule is the PREFIX. `Private :: Internal Use Only` is as unpublishable as the
+    spelling this repository happens to use, and a predicate that tested one exact string
+    would let it through every gate here and leave PyPI to refuse the upload."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {
+                "version": "0",
+                "classifiers": ["Private :: Internal Use Only"],
+            },
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 0
+    assert "declares `Private :: Internal Use Only`" in capsys.readouterr().out
+
+
+def test_a_published_member_may_not_carry_a_private_classifier(
+    workspace, capsys
+) -> None:
+    """The converse, and it is a contradiction rather than a nicety: the member is in the
+    list that says what this repository ships, and carries the one line guaranteeing it
+    can never be shipped. Left unchecked it is planned, built, compat-celled and refused
+    by PyPI at the upload."""
+    root = workspace(
+        {
+            "acme-core": {
+                "version": "1.0.0",
+                "classifiers": ["Private :: Internal Use Only"],
+            }
+        },
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "declares the classifier `Private :: Internal Use Only`" in out
+    assert "the root depends on it in [project] dependencies" in out
+
+
+def test_a_runtime_dependency_on_a_private_member_is_an_error(
+    workspace, capsys
+) -> None:
+    """`Private :: Do Not Upload` means never on PyPI, so a published wheel naming it
+    could not be installed -- exactly as for a virtual member."""
+    root = workspace(
+        {
+            "acme-core": {"version": "2.0.0", "dependencies": ["acme-testkit>=0,<1"]},
+            "acme-testkit": {"version": "0", "private": True},
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert "a member this repository never publishes" in out
+    assert "could never be installed" in out
+
+
+def test_check_five_does_not_skip_a_private_member(workspace, capsys) -> None:
+    """Unlike a virtual member: this one IS installed, so its module is imported, and the
+    two numbers agreeing costs nothing to keep true."""
+    root = workspace(
+        {
+            "acme-core": {"version": "1.0.0"},
+            "acme-testkit": {
+                "version": "0",
+                "private": True,
+                "module_version": "0.1",
+            },
+        },
+        root_dependencies=["acme-core"],
+        root_groups={"test": ["acme-testkit"]},
+    )
+    assert run(root) == 1
+    out = capsys.readouterr().out
+    assert '__version__ = "0.1"' in out
 
 
 def test_root_depends_on_a_non_member(workspace, capsys) -> None:
@@ -164,7 +363,7 @@ def test_a_runtime_dependency_on_a_virtual_member_is_an_error(
     )
     assert run(root) == 1
     out = capsys.readouterr().out
-    assert "`acme-tools` is `[tool.uv] package = false`" in out
+    assert "`acme-tools` is a member this repository never publishes" in out
     assert "could never be installed" in out
 
 
@@ -252,7 +451,7 @@ def test_a_virtual_member_must_declare_the_private_classifier(
     assert run(root) == 1
     out = capsys.readouterr().out
     assert "::error file=packages/acme-tools/pyproject.toml::" in out
-    assert 'does not declare the classifier "Private :: Do Not Upload"' in out
+    assert 'declares no "Private ::" classifier' in out
     assert "can still be built by hand" in out
 
 
@@ -391,7 +590,7 @@ def test_every_failure_is_reported_in_one_run(workspace, capsys) -> None:
     assert run(root) == 1
     out = capsys.readouterr().out
     assert out.count("::error") == 4, out
-    assert "`acme-ext` is a workspace member but is not in the root" in out
+    assert "`acme-ext` is a workspace member but the root neither depends on it" in out
     assert "requires-python is >=3.12,<4" in out
     assert "does not admit" in out
     assert "__version__" in out

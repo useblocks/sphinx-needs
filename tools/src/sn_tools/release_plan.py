@@ -10,14 +10,20 @@ is not a clear "no" is an error, never a pass.
 
 Given a tag `<dist>-v<version>` it asserts, in order:
 
-0. `<dist>` is a member this repository actually publishes. A member declaring
-   `[tool.uv] package = false` is VIRTUAL, and this check is what makes it unreleasable.
-   The flag itself only hides the member from uv's workspace selectors (`--all-packages`
-   skips it, `--package` is refused); it is not a build prohibition, because
+0. `<dist>` is a member this repository actually publishes. Two kinds are not, and this
+   check is what makes both unreleasable. A member declaring `[tool.uv] package = false`
+   is VIRTUAL: the flag only hides it from uv's workspace selectors (`--all-packages`
+   skips it, `--package` is refused), and it is not a build prohibition, because
    `uv build tools/` falls through to PEP 517's default backend and does produce a
-   distribution. Since a tag is the only thing that starts this workflow, refusing the tag
-   here is the fence -- do not remove it as redundant. A dependency on one is refused for a
-   related reason: the wheel would name a distribution that is never on PyPI;
+   distribution. A member declaring the classifier `Private :: Do Not Upload` is PRIVATE:
+   it is built and installed like any other -- the shared test layer has to be, because
+   the release workflow's compat cell installs the `test` group outside the project -- but
+   PyPI rejects any distribution whose metadata carries a classifier beginning
+   `Private ::`, and this refusal is the same statement made where it costs nothing to
+   discover. Since a tag is the only thing that starts this workflow, refusing the tag
+   here is the fence -- do not remove either rule as redundant. A dependency on such a
+   member is refused for a related reason: the wheel would name a distribution that is
+   never on PyPI;
 1. the tag parses, and `<dist>` is a member of this workspace;
 2. `<version>` is exactly the version that member declares -- the tag cannot publish
    something the tree does not build;
@@ -104,18 +110,50 @@ class PlanError(RuntimeError):
     """A condition that must stop the release rather than be guessed at."""
 
 
+def private_classifier(project: dict[str, Any]) -> str:
+    """The `Private ::` classifier this member declares, for a message to name."""
+    return next(
+        (
+            item
+            for item in project.get("classifiers", [])
+            if isinstance(item, str) and item.startswith(PRIVATE_PREFIX)
+        ),
+        PRIVATE_CLASSIFIER,
+    )
+
+
+# PyPI rejects any distribution whose metadata carries a classifier beginning `Private ::`
+# (packaging.python.org/en/latest/guides/writing-pyproject-toml/). It is the marker for a
+# member this repository builds and installs but never publishes -- the shared test layer,
+# which the release workflow's compat cell has to be able to install.
+#
+# The PREFIX is the rule, so it is what the predicate tests. Testing one exact string
+# instead would refuse `Private :: Do Not Upload` and PLAN `Private :: Internal Use Only`,
+# which is just as unpublishable -- the tag accepted, the wheel built, the compat cell run,
+# and PyPI refusing the upload at the last possible moment.
+PRIVATE_PREFIX = "Private ::"
+PRIVATE_CLASSIFIER = "Private :: Do Not Upload"
+
+
 class Workspace(NamedTuple):
     """What `members()` reads off the manifests.
 
-    A tuple rather than a richer object so that `projects, virtual, directories =
-    members(root)` keeps reading like the two-value version it replaced. `directories` is
-    the planner's addition: it needs each member's directory to ask git which commits
-    touched the code that member ships.
+    A tuple rather than a richer object, and read by field rather than unpacked positionally
+    so that a fifth fact can be added without touching every reader. `directories` is the
+    planner's: it needs each member's directory to ask git which commits touched the code
+    that member ships. `virtual` and `private` are the two ways a member can be
+    unreleasable, kept apart because the reason -- and therefore the message -- differs.
     """
 
     projects: dict[str, dict[str, Any]]
     virtual: set[str]
     directories: dict[str, Path]
+    private: set[str]
+
+    @property
+    def unreleasable(self) -> set[str]:
+        """Every member this repository never publishes, by either route."""
+        return self.virtual | self.private
 
 
 def members(root: Path) -> Workspace:
@@ -127,11 +165,16 @@ def members(root: Path) -> Workspace:
     tools/` still produces a distribution through PEP 517's default backend -- which is why
     the caller's rules below are the actual fence, and why they are errors rather than
     warnings.
+
+    A member declaring `Private :: Do Not Upload` is private: it IS built and installed
+    like any other member, and only the classifier (plus the caller's rules below) says it
+    is never published.
     """
     manifest = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
     globs = manifest["tool"]["uv"]["workspace"]["members"]
     out: dict[str, dict[str, Any]] = {}
     virtual: set[str] = set()
+    private: set[str] = set()
     directories: dict[str, Path] = {}
     for pattern in globs:
         for path in sorted(root.glob(f"{pattern}/pyproject.toml")):
@@ -159,7 +202,12 @@ def members(root: Path) -> Workspace:
             directories[key] = path.parent
             if raw.get("tool", {}).get("uv", {}).get("package") is False:
                 virtual.add(key)
-    return Workspace(out, virtual, directories)
+            if any(
+                isinstance(item, str) and item.startswith(PRIVATE_PREFIX)
+                for item in data.get("classifiers", [])
+            ):
+                private.add(key)
+    return Workspace(out, virtual, directories, private)
 
 
 def edges(project: dict[str, Any], names: set[str]) -> set[str]:
@@ -778,7 +826,7 @@ def planner(
     root: Path, workspace: Workspace, graph: dict[str, set[str]], sequence: list[str]
 ) -> None:
     """Everything after the release order when no `--tag` was given. Prints; never gates."""
-    found, _virtual, directories = workspace
+    found, directories = workspace.projects, workspace.directories
     print()
     print("release plan -- advice, never a gate: this exits 0 whatever it finds")
     sha, branch = head_context(cwd=root)
@@ -818,17 +866,20 @@ def plan(args: argparse.Namespace) -> int:
     root: Path = args.root
     workspace = members(root)
     found, virtual = workspace.projects, workspace.virtual
+    unreleasable = workspace.unreleasable
     names = set(found)
     graph = {name: edges(data, names) for name, data in found.items()}
-    sequence = [name for name in order(graph) if name not in virtual]
+    sequence = [name for name in order(graph) if name not in unreleasable]
 
     print("release order (dependencies first):")
     for rank, name in enumerate(sequence, 1):
         deps = ", ".join(sorted(graph[name])) or "-"
         print(f"  {rank}. {name} {found[name]['version']}   depends on: {deps}")
-    # listed, but not numbered: a virtual member has no release to order
-    for name in sorted(virtual):
-        print(f"  -- {name} {found[name]['version']}   (virtual -- never published)")
+    # listed, but not numbered: a member this repository never publishes has no release to
+    # order. Both kinds are shown, with which of the two rules refuses its tag
+    for name in sorted(unreleasable):
+        why = "virtual" if name in virtual else "private"
+        print(f"  -- {name} {found[name]['version']}   ({why} -- never published)")
 
     if not args.tag:
         if args.no_git:
@@ -847,11 +898,16 @@ def plan(args: argparse.Namespace) -> int:
 
     # 1. the tag names a member, and one this repository publishes
     dist, version = split_tag(args.tag, sorted(names))
-    if dist in virtual:
+    if dist in unreleasable:
+        why = (
+            "a virtual member (`[tool.uv] package = false`)"
+            if dist in virtual
+            else "a private member (it declares the classifier "
+            f"`{private_classifier(found[dist])}`, which PyPI rejects on upload)"
+        )
         raise PlanError(
-            f"`{found[dist]['name']}` is a virtual member (`[tool.uv] package = false`): "
-            "this repository never releases it, and refusing this tag is what makes that "
-            "true -- there is nothing to release"
+            f"`{found[dist]['name']}` is {why}: this repository never releases it, and "
+            "refusing this tag is what makes that true -- there is nothing to release"
         )
 
     # 2. the tag's version is the version this tree builds
@@ -886,16 +942,20 @@ def plan(args: argparse.Namespace) -> int:
     #    ask the index -- it is a wheel that could not be installed, and it is fatal here
     #    exactly as it is in `check_workspace.py` on every pull request.
     for dependency in sorted(graph[dist]):
-        # `and dist not in virtual` is belt and braces -- rule 0 above already refused a
-        # tag naming a virtual member -- but it states the actual rule: the objection is
-        # that the WHEEL would name something never on PyPI, and only a publishable
-        # dependant has a wheel
-        if dependency in virtual and dist not in virtual:
+        # `and dist not in unreleasable` is belt and braces -- rule 0 above already
+        # refused a tag naming such a member -- but it states the actual rule: the
+        # objection is that the WHEEL would name something never on PyPI, and only a
+        # publishable dependant has a wheel
+        if dependency in unreleasable and dist not in unreleasable:
+            why = (
+                "a virtual member (`[tool.uv] package = false`)"
+                if dependency in virtual
+                else f"a private member (`{private_classifier(found[dependency])}`)"
+            )
             raise PlanError(
                 f"{found[dist]['name']} declares a runtime (or extra) dependency on "
-                f"{found[dependency]['name']}, which is a virtual member "
-                "(`[tool.uv] package = false`); the published wheel could never be "
-                f"installed: `{found[dependency]['name']}` is never on PyPI"
+                f"{found[dependency]['name']}, which is {why}; the published wheel could "
+                f"never be installed: `{found[dependency]['name']}` is never on PyPI"
             )
         needed = found[dependency]["version"]
         if on_pypi(dependency, needed):

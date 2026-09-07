@@ -3,10 +3,16 @@
 Each of these is a pair of statements in two different files that must agree, and each has
 a failure mode that no other gate in this repository can see:
 
-1. **the root lists every member, bare.** The root is a non-packaged project whose only
-   `[project] dependencies` job is to make a plain `uv sync` install every member; a member
-   missing from it silently drops out of the default environment (and of the lock's
-   `sphinx-needs-workspace` entry), and a *non*-member listed there is resolved from PyPI.
+1. **the root declares every member exactly once, bare** -- in `[project] dependencies`,
+   which is installed in every environment, or in one `[dependency-groups]` group, which
+   is installed only where that group is asked for. A member missing from both silently
+   drops out of every environment (and of the lock's `sphinx-needs-workspace` entry), and
+   a *non*-member in `[project] dependencies` is resolved from PyPI. The group route is
+   for a member that is not part of any product -- the shared test layer -- and it is not
+   a stylistic choice: `[project] dependencies` reach `.venvs/typing` and the docs
+   environments too, and the release workflow's compat cell is built from
+   `uv export --only-group test`, which sees the groups and not the project's own
+   dependencies.
 2. **every member has a `[tool.uv.sources] <name> = { workspace = true }` entry.**
 3. **every member's `requires-python` equals the root's.** uv resolves ONE lock against the
    root, so a member that floored itself higher (or failed to move when the root did) still
@@ -33,11 +39,21 @@ a failure mode that no other gate in this repository can see:
    `importlib.metadata` lookup; the number is therefore written twice and this is what
    keeps the two equal. A module with no `__version__` is skipped, not an error.
 
-6. **every virtual member declares `Private :: Do Not Upload`.** `[tool.uv] package =
-   false` only hides a member from uv's workspace selectors; `uv build <dir>/` still
-   produces a distribution through PEP 517's default backend. That classifier is what makes
-   PyPI refuse the artefact if anyone ever tries, and being one line that looks like
-   decoration it is exactly the line a future tidy-up deletes -- so it is asserted here.
+6. **every member this repository never publishes declares `Private :: Do Not Upload`.**
+   Two kinds qualify, for two different reasons. A VIRTUAL member (`[tool.uv] package =
+   false`) is hidden from uv's workspace selectors, but that is not a build prohibition:
+   `uv build <dir>/` still produces a distribution through PEP 517's default backend. A
+   member the root reaches only through a DEPENDENCY GROUP is a test-only member -- it is
+   in no product's dependency tree, and it cannot be virtual, because the release
+   workflow's compat cell has to install it. Either way the classifier is what makes PyPI
+   refuse the artefact if anyone ever tries, and it is what
+   `tools/src/sn_tools/release_plan.py` reads to refuse the tag; being one line that looks
+   like decoration it is exactly the line a future tidy-up deletes, so it is asserted here.
+   The converse is refused too: a member the root depends on in `[project] dependencies` --
+   the list of what this repository publishes -- may not carry such a classifier, because
+   PyPI would refuse the very artefact that list says is shipped. The predicate is the
+   PREFIX, not one spelling: `Private :: Internal Use Only` is as unpublishable as
+   `Private :: Do Not Upload`.
 
 7. **no member carries a table the root owns.** `[dependency-groups]`, `[tool.ruff]`,
    `[tool.pytest]` and `[tool.ty]` (with everything nested under them) are declared once,
@@ -74,6 +90,7 @@ import argparse
 import ast
 import sys
 import tomllib
+from collections.abc import Set as AbstractSet
 from pathlib import Path
 from typing import Any
 
@@ -85,7 +102,10 @@ from packaging.version import InvalidVersion, Version
 ROOT_MANIFEST = "pyproject.toml"
 # PyPI rejects any distribution whose metadata carries a classifier beginning `Private ::`
 # (packaging.python.org/en/latest/guides/writing-pyproject-toml/), which is the only thing
-# standing between a by-hand `uv build tools/` and an upload
+# standing between a by-hand `uv build tools/` and an upload. The PREFIX is the rule, so it
+# is what the predicate tests; the full spelling below is the one this repository writes and
+# the one an error message recommends
+PRIVATE_PREFIX = "Private ::"
 PRIVATE_CLASSIFIER = "Private :: Do Not Upload"
 
 # Configuration the ROOT owns, for the whole workspace, with the reason a copy in a member
@@ -166,6 +186,24 @@ class Member:
         wheel would name a distribution that is never on PyPI.
         """
         return self.data.get("tool", {}).get("uv", {}).get("package") is False
+
+    @property
+    def private(self) -> str | None:
+        """The `Private ::` classifier this member declares, if it declares one.
+
+        PyPI rejects any distribution whose metadata carries a classifier beginning
+        `Private ::`, so this is the one declaration that holds outside this repository as
+        well as inside it. The PREFIX is tested rather than the full string, because the
+        prefix is what the rule says: `Private :: Internal Use Only` is as unpublishable as
+        the spelling this repository happens to use, and a predicate that missed it would
+        let such a member through every gate here and leave PyPI to refuse the upload --
+        the last possible moment. `release_plan.py` refuses a tag naming such a member,
+        which is what actually makes it unreleasable; this class only reports the flag.
+        """
+        for classifier in self.project.get("classifiers", []):
+            if isinstance(classifier, str) and classifier.startswith(PRIVATE_PREFIX):
+                return classifier
+        return None
 
     @property
     def module(self) -> str:
@@ -252,10 +290,51 @@ def find_members(root: Path, manifest: dict[str, Any], report: Report) -> list[M
     return found
 
 
+def group_members(
+    manifest: dict[str, Any], known: AbstractSet[str], report: Report
+) -> dict[str, str]:
+    """Every workspace member named by a root `[dependency-groups]` group -> that group.
+
+    Groups hold ordinary PyPI requirements too, and those are none of this check's
+    business; only an entry naming a MEMBER is. A `{ include-group = ... }` table is not a
+    requirement at all and is skipped, as is anything else that is not a string.
+    """
+    found: dict[str, str] = {}
+    for group, specs in manifest.get("dependency-groups", {}).items():
+        for spec in specs:
+            if not isinstance(spec, str):
+                continue  # `{ include-group = "test" }`
+            try:
+                requirement = Requirement(spec)
+            except InvalidRequirement:
+                continue  # not this check's to report; uv would refuse the lock
+            key = canonicalize_name(requirement.name)
+            if key not in known:
+                continue
+            if requirement.specifier or requirement.extras or requirement.marker:
+                report.error(
+                    ROOT_MANIFEST,
+                    f"the [dependency-groups] {group} entry `{spec}` names the workspace "
+                    "member "
+                    f"`{requirement.name}`, but is not bare. uv resolves the copy on disk "
+                    "whatever the specifier says, so this constrains nothing -- it only "
+                    f"risks disagreeing with the member's own metadata. Write "
+                    f"`{requirement.name}`",
+                )
+            found.setdefault(key, group)
+    return found
+
+
 def check_root_lists_members(
     manifest: dict[str, Any], members: list[Member], report: Report
-) -> None:
-    """(1) the root depends on every member, bare, and on nothing else."""
+) -> dict[str, str]:
+    """(1) the root declares every member exactly once, bare, and depends on nothing else.
+
+    :return: each member's route into an environment -- `""` for `[project] dependencies`,
+        the group's name for a member declared in a `[dependency-groups]` group. That
+        distinction is check (6)'s input: a member reached only through a group is a
+        test-only member and is never published.
+    """
     before = report.failures
     declared: dict[str, str] = {}
     for spec in manifest.get("project", {}).get("dependencies", []):
@@ -274,12 +353,28 @@ def check_root_lists_members(
                 f"own metadata. Write `{requirement.name}`",
             )
     known = {member.key for member in members}
-    for missing in sorted(known - set(declared)):
+    in_groups = group_members(manifest, known, report)
+    routes = {key: "" for key in declared if key in known}
+    for key, group in in_groups.items():
+        if key in routes:
+            report.error(
+                ROOT_MANIFEST,
+                f"`{key}` is declared twice at the root: in [project] dependencies AND in "
+                f"the `{group}` dependency group. Declare it once -- the group is the "
+                "narrower of the two, and which one is right decides whether the member "
+                "reaches environments (`.venvs/typing`, the docs ones) that do not ask "
+                "for that group",
+            )
+            continue
+        routes[key] = group
+    for missing in sorted(known - set(routes)):
         report.error(
             ROOT_MANIFEST,
-            f"`{missing}` is a workspace member but is not in the root's [project] "
-            "dependencies, so a bare `uv sync` does not install it and nothing in the "
-            "default environment can import it. Add it (bare)",
+            f"`{missing}` is a workspace member but the root neither depends on it nor "
+            "names it in a dependency group, so nothing installs it and nothing in any "
+            "environment can import it. Add it (bare) to [project] dependencies, or -- "
+            "for a member that is part of no product -- to the group whose environments "
+            "need it",
         )
     for extra in sorted(set(declared) - known):
         report.error(
@@ -290,8 +385,16 @@ def check_root_lists_members(
         )
     if report.failures == before:
         report.ok(
-            f"the root lists every member, bare: {', '.join(sorted(known)) or '-'}"
+            "the root declares every member, bare: "
+            + (
+                ", ".join(
+                    f"{key}{f' (group {route})' if route else ''}"
+                    for key, route in sorted(routes.items())
+                )
+                or "-"
+            )
         )
+    return routes
 
 
 def check_workspace_sources(
@@ -359,7 +462,10 @@ def check_requires_python(
 
 def check_specifiers(members: list[Member], policy: bool, report: Report) -> None:
     """(4) intra-workspace runtime specifiers are honest, and tight."""
-    virtual = {member.key for member in members if member.virtual}
+    # a member this repository never publishes, by either route: virtual, or carrying the
+    # `Private :: Do Not Upload` classifier. Neither is ever on PyPI, so a published wheel
+    # naming one could not be installed
+    virtual = {member.key for member in members if member.virtual or member.private}
     versions: dict[str, Version] = {}
     for member in members:
         if "version" in member.dynamic:
@@ -397,13 +503,15 @@ def check_specifiers(members: list[Member], policy: bool, report: Report) -> Non
             # only a PUBLISHABLE dependant is refused: the objection is that the wheel
             # would name a distribution which is never on PyPI, and a virtual member ships
             # no wheel. uv resolves a virtual -> virtual edge happily, and so does this
-            if target in virtual and not member.virtual:
+            if target in virtual and not (member.virtual or member.private):
                 report.error(
                     member.relative,
-                    f"{where}: `{target}` is `[tool.uv] package = false` and is therefore "
-                    "never on PyPI, so this wheel could never be installed. A virtual "
-                    "member is repository tooling; if a published package needs its code, "
-                    "the code belongs in a published package",
+                    f"{where}: `{target}` is a member this repository never publishes "
+                    "(`[tool.uv] package = false`, or `Private :: Do Not Upload`) and is "
+                    "therefore never on PyPI, so this wheel could never be installed. "
+                    "Such a member is repository tooling or test scaffolding; if a "
+                    "published package needs its code, the code belongs in a published "
+                    "package",
                 )
                 continue
             current = versions[target]
@@ -412,7 +520,7 @@ def check_specifiers(members: list[Member], policy: bool, report: Report) -> Non
             if not requirement.specifier.contains(current, prereleases=True):
                 consequence = (
                     "so this would publish a wheel nobody can install"
-                    if not member.virtual
+                    if not (member.virtual or member.private)
                     else "so the specifier says something untrue about the tree"
                 )
                 report.error(
@@ -424,7 +532,7 @@ def check_specifiers(members: list[Member], policy: bool, report: Report) -> Non
                 continue
             # the honesty half applies to everyone; the tight-tracking half is about
             # what a PUBLISHED wheel promises, and a virtual member publishes nothing
-            if policy and not member.virtual:
+            if policy and not (member.virtual or member.private):
                 want = SpecifierSet(f">={current},<{current.major + 1}")
                 if set(requirement.specifier) != set(want):
                     report.error(
@@ -442,26 +550,63 @@ def check_specifiers(members: list[Member], policy: bool, report: Report) -> Non
         )
 
 
-def check_virtual_classifier(members: list[Member], report: Report) -> None:
-    """(6) every virtual member declares `Private :: Do Not Upload`.
+def check_private_classifier(
+    members: list[Member], routes: dict[str, str], report: Report
+) -> None:
+    """(6) every member this repository never publishes declares `Private :: Do Not Upload`.
 
-    The classifier is the second of the two fences that keep a virtual member off PyPI (the
+    The classifier is the second of the two fences that keep such a member off PyPI (the
     first is the release plan refusing its tag), and it is a single line that looks like
     decoration -- which is why it is asserted rather than trusted.
+
+    Two kinds of member qualify, and the reason each is unpublishable is different:
+
+    * VIRTUAL (`[tool.uv] package = false`) -- uv's selectors will not build it, but
+      `uv build <dir>/` still can, through PEP 517's default backend;
+    * declared only in a root DEPENDENCY GROUP -- it is in no product's dependency tree,
+      so nothing downstream could want it from an index. Such a member cannot be virtual:
+      the release workflow's compat cell installs the `test` group into an environment
+      outside the project, and a virtual member is not installable at all.
     """
     for member in sorted(members, key=lambda m: m.key):
-        if not member.virtual:
+        group = routes.get(member.key)
+        if member.virtual:
+            why = (
+                "is `[tool.uv] package = false`, which only hides it from uv's workspace "
+                "selectors -- it can still be built by hand (`uv build <dir>/` falls "
+                "through to PEP 517's default backend)"
+            )
+        elif group:
+            why = (
+                f"is declared only in the root's `{group}` dependency group, so it is "
+                "part of no product and nothing downstream could want it from an index"
+            )
+        elif member.private:
+            # the converse, and it is a contradiction rather than a nicety: the member is
+            # in the list that says "this is one of the things this repository ships", and
+            # it carries the one classifier that guarantees it can never be shipped
+            report.error(
+                member.relative,
+                f"{member.name} declares the classifier `{member.private}`, so PyPI will "
+                "refuse it and this repository can never publish it -- but the root "
+                "depends on it in [project] dependencies, which is the list of members "
+                "that ARE published. Move it to the dependency group whose environments "
+                "need it, or drop the classifier",
+            )
             continue
-        if PRIVATE_CLASSIFIER in member.project.get("classifiers", []):
-            report.ok(f"{member.relative}: declares `{PRIVATE_CLASSIFIER}`")
+        else:
+            continue
+        if member.private:
+            report.ok(f"{member.relative}: declares `{member.private}`")
         else:
             report.error(
                 member.relative,
-                f"{member.name} is `[tool.uv] package = false` but does not declare the "
-                f'classifier "{PRIVATE_CLASSIFIER}". `package = false` only hides the '
-                "member from uv's workspace selectors -- it can still be built by hand "
-                "(`uv build <dir>/` falls through to PEP 517's default backend) -- and "
-                "that classifier is what makes PyPI refuse the artefact",
+                f"{member.name} {why}, and this repository therefore never publishes it "
+                f'-- but it declares no "{PRIVATE_PREFIX}" classifier. Such a classifier '
+                f'("{PRIVATE_CLASSIFIER}" is the spelling this repository uses) is what '
+                "makes PyPI refuse the artefact, and what `release_plan.py` reads to "
+                "refuse the release tag; without one the member is one `git tag` away "
+                "from being published",
             )
 
 
@@ -529,7 +674,9 @@ def check_module_version(root: Path, members: list[Member], report: Report) -> N
             # by rule, not by accident: nothing a virtual member stamps into a module ever
             # ships, and its module name need not derive from its distribution name (this
             # repository's own `sphinx-needs-workspace-tools` is imported as `sn_tools`), so
-            # the derivation below would look in the wrong place and silently find nothing
+            # the derivation below would look in the wrong place and silently find nothing.
+            # A PRIVATE member is not exempt: it is installed, so its module is imported,
+            # and the two numbers agreeing costs nothing to keep true
             continue
         declared = member.project.get("version")
         if "version" in member.dynamic or not isinstance(declared, str):
@@ -585,12 +732,12 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     members = find_members(root, manifest, report)
-    check_root_lists_members(manifest, members, report)
+    routes = check_root_lists_members(manifest, members, report)
     check_workspace_sources(manifest, members, report)
     check_requires_python(manifest, members, report)
     check_specifiers(members, not args.no_policy, report)
     check_module_version(root, members, report)
-    check_virtual_classifier(members, report)
+    check_private_classifier(members, routes, report)
     check_root_owned_tables(members, report)
     return 1 if report.failures else 0
 

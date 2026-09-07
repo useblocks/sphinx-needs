@@ -30,7 +30,7 @@ import pytest
 from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs.api import get_needs_view
-from tests.conftest import build_warnings
+from sphinx_needs_testkit import build_warnings
 
 PROLOG = """\
 .. |project| replace:: The Project

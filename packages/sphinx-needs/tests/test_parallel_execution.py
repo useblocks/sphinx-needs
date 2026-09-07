@@ -1,9 +1,10 @@
+import re
 from pathlib import Path
 
 import pytest
 from sphinx.util.parallel import parallel_available
 
-from tests.conftest import build_warnings
+from sphinx_needs_testkit import build_warnings
 
 
 @pytest.mark.parametrize(
@@ -21,20 +22,24 @@ from tests.conftest import build_warnings
 def test_doc_build_html(test_app):
     app = test_app
     app.build()
-    warnings_text = "\n".join(build_warnings(app))
-    # the duplicate need documents can be in the same process,
-    # then the error is different in that case (error message and also the subtype)
-    deprecation_prefix = "WARNING: needs_filter_data is deprecated and will be removed in a future version. Use needs_variant_data instead. [needs.deprecated]\n"
-    assert (
-        (
-            warnings_text
-            == deprecation_prefix
-            + "<srcdir>/page_5.rst:4: WARNING: A need with ID STORY_PAGE_1 already exists, title: 'duplicate'. [needs.duplicate_id]"
-        )
-        or warnings_text
-        == deprecation_prefix
-        + "<srcdir>/page_5.rst:4: WARNING: Need could not be created: A need with ID 'STORY_PAGE_1' already exists. [needs.create_need]"
+    warnings = build_warnings(app)
+    assert warnings[0] == (
+        "WARNING: needs_filter_data is deprecated and will be removed in a future version. "
+        "Use needs_variant_data instead. [needs.deprecated]"
     )
+    # page_1 and page_5 both declare STORY_PAGE_1. Which one is reported, and how, depends on
+    # how the workers were scheduled: read in the same process the second one fails to be
+    # created (page_5, documents are read in order); read in different processes the one
+    # whose results are merged second is the duplicate, and that can be either page.
+    duplicate = re.compile(
+        r"<srcdir>/page_[15]\.rst:4: WARNING: A need with ID STORY_PAGE_1 already exists, "
+        r"title: '(duplicate|page_1 Story)'\. \[needs\.duplicate_id\]"
+    )
+    assert len(warnings) == 2, warnings
+    assert duplicate.fullmatch(warnings[1]) or warnings[1] == (
+        "<srcdir>/page_5.rst:4: WARNING: Need could not be created: "
+        "A need with ID 'STORY_PAGE_1' already exists. [needs.create_need]"
+    ), warnings[1]
 
     index_html = Path(app.outdir, "index.html").read_text()
     assert "<h1>PARALLEL TEST DOCUMENT" in index_html

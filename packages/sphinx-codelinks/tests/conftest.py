@@ -2,12 +2,24 @@ import json
 from pathlib import Path
 
 import pytest
-from docutils.nodes import document
 from syrupy.extensions.single_file import SingleFileSnapshotExtension, WriteMode
 
 from sphinx_codelinks.config import OneLineCommentStyle
 
-pytest_plugins = "sphinx.testing.fixtures"
+# The workspace's shared test layer, `packages/sphinx-needs-testkit`, which carries the
+# doctree snapshot extension this file used to hold a byte-for-byte copy of. A line that
+# resolves to nothing is a collection ERROR, not a silent loss of fixtures, which is what
+# makes this the fence that the kit is importable in every cell this suite runs in.
+# The order matters where both plugins define a fixture -- see the note in the testkit's
+# `fixtures` module -- so the testkit always comes last.
+#
+# This suite also INHERITS the kit's `test_app`, its `sphinx_test_tempdir` and the
+# `--sn-build-dir` option, and uses none of them: it builds through sphinx's `make_app`,
+# which does not depend on `sphinx_test_tempdir`. So they are inert here -- and the day a
+# test here uses sphinx's `app` fixture instead, it will need a `tests_dir` fixture in this
+# file, which the kit deliberately leaves to each suite. That arrives as
+# `fixture 'tests_dir' not found`, which is loud rather than wrong.
+pytest_plugins = ["sphinx.testing.fixtures", "sphinx_needs_testkit.fixtures"]
 
 TEST_DIR = Path(__file__).parent
 DATA_DIR = TEST_DIR / "data"
@@ -56,30 +68,10 @@ def temporary_gitignore(source_directory: Path):
     gitignore_path.unlink()
 
 
-class DoctreeSnapshotExtension(SingleFileSnapshotExtension):
-    _write_mode = WriteMode.TEXT
-    file_extension = "doctree.xml"
-
-    def serialize(self, data, **_kwargs):
-        if not isinstance(data, document):
-            raise TypeError(f"Expected document, got {type(data)}")
-        doc = data.deepcopy()
-        doc["source"] = "<source>"  # this will be a temp path
-        doc.attributes.pop("translation_progress", None)  # added in sphinx 7.1
-        return doc.pformat()
-
-
-@pytest.fixture
-def snapshot_doctree(snapshot):
-    """Snapshot fixture for doctrees.
-
-    Here we try to sanitize the doctree, to make the snapshots reproducible.
-    """
-    try:
-        return snapshot.with_defaults(extension_class=DoctreeSnapshotExtension)
-    except AttributeError:
-        # fallback for older versions of pytest-snapshot
-        return snapshot.use_extension(DoctreeSnapshotExtension)
+# `DoctreeSnapshotExtension` and `snapshot_doctree` are NOT here any more: they were a
+# byte-for-byte copy of sphinx-needs' pair (one character apart), and both now come from
+# the plugin above. The two below stay -- they serialise this package's own data
+# structures, and a snapshot extension with one consumer is that suite's code.
 
 
 class AnchorsSnapshotExtension(SingleFileSnapshotExtension):

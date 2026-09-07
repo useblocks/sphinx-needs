@@ -30,7 +30,7 @@ from sphinx.testing.util import SphinxTestApp
 
 from sphinx_needs.api import get_needs_view
 from sphinx_needs.data import SphinxNeedsData
-from tests.conftest import assert_no_warnings, build_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 CONF = """\
 extensions = ["sphinx_needs"]

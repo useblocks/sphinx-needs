@@ -10,7 +10,7 @@ from syrupy.filters import props
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.needimport import NeedimportException
 from sphinx_needs.needsfile import SphinxNeedsFileException
-from tests.conftest import assert_no_warnings, build_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 
 @pytest.mark.parametrize(

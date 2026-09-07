@@ -186,7 +186,9 @@ a file path: `poe test-codelinks -- --collect-only -q` collects **0 items**, whe
 
 ### Test Structure
 
-- Tests use `pytest` with fixtures from `conftest.py`
+- Tests use `pytest` with fixtures from `conftest.py`, which also loads the workspace's
+  shared test layer, `packages/sphinx-needs-testkit` — the doctree snapshot extension comes
+  from there rather than from a copy here
 - Snapshot testing uses `syrupy` for complex output comparisons
 - Test data is in `tests/data/`
 - Sphinx integration tests use real Sphinx projects in `tests/doc_test/`

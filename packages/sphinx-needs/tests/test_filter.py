@@ -12,7 +12,7 @@ from sphinx_needs.need_item import (
     NeedsContent,
 )
 from sphinx_needs.views import NeedsView
-from tests.conftest import assert_no_warnings, build_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 from tests.util import chart_images, pie_slice_counts
 
 

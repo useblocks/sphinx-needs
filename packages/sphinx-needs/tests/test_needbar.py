@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import assert_no_warnings
+from sphinx_needs_testkit import assert_no_warnings
 
 
 @pytest.mark.parametrize(

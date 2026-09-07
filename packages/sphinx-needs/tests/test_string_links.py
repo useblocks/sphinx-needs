@@ -19,7 +19,7 @@ from typing import Any
 
 import pytest
 
-from tests.conftest import build_warnings
+from sphinx_needs_testkit import build_warnings
 
 INDEX = """\
 String links
@@ -65,7 +65,7 @@ def build(
     extra: str = "",
 ) -> Any:
     """Build a one-page project with the given ``needs_string_links``."""
-    from tests.conftest import create_src_files_in_tmpdir
+    from sphinx_needs_testkit import create_src_files_in_tmpdir
 
     srcdir = create_src_files_in_tmpdir(
         [
@@ -333,7 +333,7 @@ def test_regex_accepts_a_compiled_pattern(
     The ``re.IGNORECASE`` case is the one that pins flag preservation: the pattern is
     lower-case only, and the value is upper-case.
     """
-    from tests.conftest import create_src_files_in_tmpdir
+    from sphinx_needs_testkit import create_src_files_in_tmpdir
 
     conf = (
         CONF_HEAD
@@ -944,7 +944,7 @@ def test_bytes_pattern_is_rejected(make_app: Any, sphinx_test_tempdir: Any) -> N
     check and then fails ``.search()`` on every single value -- trading one
     configuration warning naming the entry for two render-time warnings per value.
     """
-    from tests.conftest import create_src_files_in_tmpdir
+    from sphinx_needs_testkit import create_src_files_in_tmpdir
 
     conf = (
         CONF_HEAD + "needs_string_links = {'bad': {\n"

@@ -47,6 +47,8 @@ import pytest
 import yaml
 from sphinx.util.console import strip_colors
 
+from sphinx_needs_testkit import plantuml_conf
+
 CORPUS_ROOT = Path(__file__).parent
 CASES_DIR = CORPUS_ROOT / "cases"
 MANIFEST = CORPUS_ROOT / "manifest.json"
@@ -427,7 +429,7 @@ def _validate_legend_expectation(legend: Any, engine: str, path: Path) -> None:
         )
 
 
-def _conf_py(case: dict[str, Any], engine: str, plantuml_command: str) -> str:
+def _conf_py(case: dict[str, Any], engine: str, request: pytest.FixtureRequest) -> str:
     """Build the ``conf.py`` of a case's minimal project.
 
     Only the portable vocabulary reaches the configuration: a case cannot name a
@@ -435,10 +437,13 @@ def _conf_py(case: dict[str, Any], engine: str, plantuml_command: str) -> str:
 
     :param case: The parsed case file.
     :param engine: The engine to draw with.
-    :param plantuml_command: How to run plantuml, from the suite-wide fixture. A project
-        left on the default command renders only where a ``plantuml`` happens to be
-        installed, and the render failure everywhere else arrives as a warning that this
-        harness -- correctly -- refuses as outside the degradation registry.
+    :param request: The test's request, from which the suite-wide ``plantuml_command`` is
+        resolved -- but only for the plantuml engine. A project left on the default
+        command renders only where a ``plantuml`` happens to be installed, and the render
+        failure everywhere else arrives as a warning that this harness -- correctly --
+        refuses as outside the degradation registry; a graphviz case draws no PlantUML at
+        all, so asking for a renderer would only make half the corpus need a jar it never
+        uses.
     :return: The ``conf.py`` source.
     :raises AssertionError: If the case names configuration with no surface here.
     """
@@ -466,8 +471,9 @@ def _conf_py(case: dict[str, Any], engine: str, plantuml_command: str) -> str:
         "needs_id_required = True",
         f"needs_flow_engine = {engine!r}",
         f"needs_types = {types!r}",
-        f"plantuml = {plantuml_command!r}",
     ]
+    for key, value in plantuml_conf(request, engine == "plantuml").items():
+        lines.append(f"{key} = {value!r}")
     if links:
         lines.append(f"needs_links = {links!r}")
     if legends := case.get("legends"):
@@ -775,7 +781,7 @@ def test_manifest_matches_the_corpus() -> None:
 def test_conformance_case(
     make_app,
     tmp_path: Path,
-    plantuml_command: str,
+    request: pytest.FixtureRequest,
     path: Path,
     engine: str,
 ) -> None:
@@ -790,7 +796,7 @@ def test_conformance_case(
     if expected and (reason := expected.get("skip")):
         pytest.skip(f"{path.stem}: {reason}")
 
-    (tmp_path / "conf.py").write_text(_conf_py(case, engine, plantuml_command), "utf8")
+    (tmp_path / "conf.py").write_text(_conf_py(case, engine, request), "utf8")
     (tmp_path / "index.rst").write_text(_index_rst(case), "utf8")
 
     app = make_app(srcdir=tmp_path, buildername="html")

@@ -8,7 +8,7 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 import pytest
 
 from sphinx_needs.directives.needreport import DROPDOWN_MARKER
-from tests.conftest import assert_no_warnings, build_warnings
+from sphinx_needs_testkit import assert_no_warnings, build_warnings
 
 SPHINX_DESIGN_INSTALLED = importlib.util.find_spec("sphinx_design") is not None
 

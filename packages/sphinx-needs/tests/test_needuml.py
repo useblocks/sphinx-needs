@@ -7,7 +7,7 @@ from syrupy.filters import props
 
 from sphinx_needs.data import SphinxNeedsData
 from sphinx_needs.directives.needuml import get_debug_node_from_puml_node
-from tests.conftest import build_warnings
+from sphinx_needs_testkit import build_warnings
 
 
 @pytest.mark.parametrize(
