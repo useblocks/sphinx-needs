@@ -70,7 +70,7 @@ plantuml_output_format = "png"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates", "ub_theme/templates"]
-if Version(sphinx_needs.__version__) >= Version("8.0.0"):
+if Version(sphinx_needs.__version__) >= Version("7.0.0"):
     needs_fields = {
         "more_info": {"nullable": True},
     }

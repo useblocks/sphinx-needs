@@ -2,8 +2,8 @@ import nox
 from nox import session
 
 PYTHON_VERSIONS = ["3.11", "3.12"]
-SPHINX_VERSIONS = ["5.0", "7.2.5", "8.1.3"]
-SPHINX_NEEDS_VERSIONS = ["2.1", "4.2", "5.1", "6.0.0", "6.3.0", "8.0.0"]
+SPHINX_VERSIONS = ["7.4.7", "8.1.3"]
+SPHINX_NEEDS_VERSIONS = ["6.0.1", "6.3.0", "7.0.0", "8.0.0"]
 
 
 def run_tests(session, sphinx, sphinx_needs):

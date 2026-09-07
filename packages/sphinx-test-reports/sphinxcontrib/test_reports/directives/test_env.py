@@ -2,18 +2,10 @@ import copy
 import json
 import os
 
-import sphinx
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
-from packaging.version import Version
+from sphinx.util import logging
 
-sphinx_version = sphinx.__version__
-if Version(sphinx_version) >= Version("1.6"):
-    from sphinx.util import logging
-else:
-    import logging
-
-    logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 

@@ -40,7 +40,7 @@ tr_case_id_length = 10
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
-if Version(sphinx_needs.__version__) >= Version("8.0.0"):
+if Version(sphinx_needs.__version__) >= Version("7.0.0"):
     needs_fields = {"more_info": {"nullable": True}}
 else:
     needs_extra_options = ["more_info"]

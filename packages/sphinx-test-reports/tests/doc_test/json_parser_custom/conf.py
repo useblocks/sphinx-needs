@@ -35,7 +35,7 @@ sys.path.insert(0, os.path.abspath("../../sphinxcontrib"))
 
 extensions = ["sphinx_needs", "sphinxcontrib.test_reports"]
 
-if Version(sphinx_needs.__version__) >= Version("8.0.0"):
+if Version(sphinx_needs.__version__) >= Version("7.0.0"):
     needs_fields = {"priority": {"nullable": True}}
 else:
     needs_extra_options = ["priority"]

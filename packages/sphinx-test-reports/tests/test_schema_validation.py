@@ -19,18 +19,8 @@ import json
 from pathlib import Path
 
 import pytest
-import sphinx_needs
-from packaging.version import Version
-
-# The needs_schema_definitions / schema-validation feature was introduced in
-# sphinx-needs 6.0.0; skip on older versions that do not support it.
-SN_SUPPORTS_SCHEMAS = Version(sphinx_needs.__version__) >= Version("6.0.0")
 
 
-@pytest.mark.skipif(
-    not SN_SUPPORTS_SCHEMAS,
-    reason="needs_schema_definitions requires sphinx-needs>=6.0.0",
-)
 @pytest.mark.parametrize(
     "test_app",
     [{"buildername": "html", "srcdir": "doc_test/schema_strictness"}],
@@ -60,10 +50,6 @@ def test_strict_schema_ignores_unpopulated_test_report_fields(test_app):
     )
 
 
-@pytest.mark.skipif(
-    not SN_SUPPORTS_SCHEMAS,
-    reason="needs_schema_definitions requires sphinx-needs>=6.0.0",
-)
 @pytest.mark.parametrize(
     "test_app",
     [{"buildername": "html", "srcdir": "doc_test/schema_strictness_status"}],

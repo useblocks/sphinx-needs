@@ -5,12 +5,6 @@ from pathlib import Path
 from tempfile import mkdtemp
 
 import pytest
-from packaging.version import Version
-from sphinx import __version__ as sphinx_version
-
-if Version(sphinx_version) < Version("7.2"):
-    from sphinx.testing.path import path
-
 
 pytest_plugins = "sphinx.testing.fixtures"
 
@@ -19,11 +13,7 @@ def copy_srcdir_to_tmpdir(srcdir, tmp):
     srcdir = Path(__file__).parent.absolute() / srcdir
     tmproot = tmp / Path(srcdir).name
     shutil.copytree(srcdir, tmproot)
-    return (
-        tmproot
-        if Version(sphinx_version) >= Version("7.2")
-        else path(tmproot.absolute())
-    )
+    return tmproot
 
 
 @pytest.fixture(scope="function")

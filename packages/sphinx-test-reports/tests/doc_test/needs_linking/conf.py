@@ -78,7 +78,7 @@ source_suffix = ".rst"
 # The master toctree document.
 master_doc = "index"
 
-if Version(sphinx_needs.__version__) >= Version("8.0.0"):
+if Version(sphinx_needs.__version__) >= Version("7.0.0"):
     needs_fields = {
         "asil": {"nullable": True},
         "uses_secure": {"nullable": True},

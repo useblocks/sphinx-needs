@@ -31,7 +31,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 html_theme = "alabaster"
 
 # Register "verifies" as both a sphinx-needs field and a tr_extra_option
-if Version(sphinx_needs.__version__) >= Version("8.0.0"):
+if Version(sphinx_needs.__version__) >= Version("7.0.0"):
     needs_fields = {
         "verifies": {"nullable": True},
         "priority": {"nullable": True},

@@ -1,17 +1,9 @@
 import os
 
-import sphinx
-from packaging.version import Version
 from sphinx.application import Sphinx
 from sphinx.util.console import brown  # type: ignore[import-not-found]
+from sphinx.util.display import status_iterator
 from sphinx.util.osutil import copyfile, ensuredir
-
-sphinx_version = sphinx.__version__
-if Version(sphinx_version) >= Version("1.6"):
-    if Version(sphinx_version) >= Version("6.1"):
-        from sphinx.util.display import status_iterator
-    else:
-        from sphinx.util import status_iterator  # noqa: F401 # Sphinx 1.5
 
 STATICS_DIR_NAME = "_static"
 
@@ -83,10 +75,6 @@ def install_styles_static_files(app, env):
 
     # Be sure no "old" css layout is already set
     safe_remove_file("sphinx-test-reports/common.css", app)
-
-    if Version(sphinx_version) < Version("1.6"):
-        global status_iterator
-        status_iterator = app.status_iterator
 
     for source_file_path in status_iterator(
         iterable=files_to_copy,
