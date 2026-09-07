@@ -177,9 +177,12 @@ that look like a docs regression. `docs-codelinks` adds one host to that list,
 `sphinx-needs.readthedocs.io`, and one requirement no other build has: it reads the git
 directory's `config` and `HEAD` to turn every traced source line into a blob link, so a
 checkout with no `origin` fails it under `-nW` (a linked worktree is fine — that is what
-`_git_dir`/`_git_common_dir` in `analyse/utils.py` are for). Run the test suite serially: plantuml is load-sensitive (a
-docs or wheel build running alongside it has failed a zero-warnings assertion), and
-`-n auto` races on the shared jar copy.
+`_git_dir`/`_git_common_dir` in `analyse/utils.py` are for). The suite runs on four workers in CI (`-n 4`; pytest-xdist is in the `test` group) and can
+locally: the `-n auto` race the suite used to document was on a jar copied into every test
+project, and since #1870 the jar is one file at a fixed path that nothing copies (measured at
+`-n 4` and `-n auto`: no failure, no flake). What still holds is that plantuml is load-sensitive
+across PROCESSES you start yourself: a docs or wheel build running alongside the suite has failed a
+zero-warnings assertion, so do not overlap those.
 
 Rough runtimes on a CI-class machine, so you can decide what to background: `lint` 15 s ·
 `typecheck` seconds once `.venvs/typing` exists (the first run creates it) ·
