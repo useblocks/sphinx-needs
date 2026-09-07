@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788731598571,
+  "lastUpdate": 1788756134689,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20088,6 +20088,42 @@ window.BENCHMARK_DATA = {
             "value": 56.262268084,
             "unit": "s",
             "extra": "Commit: ae587a02b2e034faf00bf97db9c33f137fdf3b97\nBranch: master\nTime: 2026-09-06T23:51:55+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "chrisj_sewell@hotmail.com",
+            "name": "Chris Sewell",
+            "username": "chrisjsewell"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "09acc115069cfde0b5b0f5371aba4e908ead3a36",
+          "message": "🧪 Run the sphinx-needs suite on four workers in CI, and print the slowest tests in every cell (#1899)\n\n## Why\n\nThe sphinx-needs test step is the critical path of every CI run: 348–484\ns on the eleven Ubuntu cells and 567–855 s on the three Windows cells\n(measured on run 34062332057). It ran serially everywhere because\n`AGENTS.md` said `-n auto` \"races on the shared jar copy\".\n\nThat reason is gone. It described a PlantUML jar copied into every test\nproject; since #1870 the jar is one file at a fixed path under\n`vendor/plantuml/` and nothing copies it. Measured on the whole suite in\na checkout: `-n 4` and `-n auto` both pass with no failure and no flake.\n\n| | wall time |\n|---|---|\n| serial (today's CI shape) | 535 s |\n| `-n 4` | 164 s |\n\n## What changes\n\n- **`ci.yaml`**: the sphinx-needs cells pass `-n 4` (the runner's core\ncount) through the reusable unit's `pytest-args`. The extension suites\nstay as they are: they take 9–100 s and sphinx-mounts' suite asserts on\na renderer under load.\n- **`test-package.yaml` and `test-extensions.yaml`**: every pytest step\nprints `--durations=25`, so the slowest tests of a Windows cell can be\nread from the log rather than guessed at. There is no Windows machine to\nprofile on otherwise.\n- **`release.yaml`**: the compat cell stays serial, deliberately, and\nits comment now gives the true reason (it runs once per release; a flake\nthere costs a re-run at the worst moment) instead of the stale one.\n- **`AGENTS.md`**: the serial-run instruction is replaced by what still\nholds: plantuml is load-sensitive across processes you start yourself,\nso a docs or wheel build alongside the suite can still fail a\nzero-warnings assertion.\n\n`pytest-xdist` is already in the `test` group; `pytest-cov` combines\ncoverage across workers natively, so the Codecov upload is unchanged.\n\n## What this run proves\n\nThe Windows cells are the first real test at `-n 4`: the local\nmeasurement was on macOS. Read the three Windows cells' times and their\n`--durations` tails before merging; the expectation is roughly a third\nof today's.\n\n## Follow-up\n\nThe next step, measured separately, is to stop rendering PlantUML in the\n1759 tests that do not need it (only 10 do): 164 s → 99 s on top of\nthis. That is its own pull request.",
+          "timestamp": "2026-09-07T06:40:59+02:00",
+          "tree_id": "1ed7b0fbf1e1893a48df0a151603d3d2ca8a4263",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/09acc115069cfde0b5b0f5371aba4e908ead3a36"
+        },
+        "date": 1788756127845,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11221547799999598,
+            "unit": "s",
+            "extra": "Commit: 09acc115069cfde0b5b0f5371aba4e908ead3a36\nBranch: master\nTime: 2026-09-07T06:40:59+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 46.057140487,
+            "unit": "s",
+            "extra": "Commit: 09acc115069cfde0b5b0f5371aba4e908ead3a36\nBranch: master\nTime: 2026-09-07T06:40:59+02:00"
           }
         ]
       }
