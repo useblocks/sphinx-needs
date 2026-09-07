@@ -62,6 +62,7 @@ sphinx-needs = { workspace = true }
 sphinx-mounts = { workspace = true }
 sphinx-codelinks = { workspace = true }
 sphinx-needs-workspace-tools = { workspace = true }
+sphinx-needs-testkit = { workspace = true }
 
 # `packages/*` is the published distributions; `tools` is the repository's own tooling and
 # is never released (see `tools/pyproject.toml` for what makes that true, and for what
@@ -93,6 +94,19 @@ dev = [
   { include-group = "js" },
 ]
 test = [
+  # The workspace's own shared test layer, `packages/sphinx-needs-testkit`. It is HERE and
+  # not in `[project] dependencies` above, for two reasons that pull the same way.
+  # (1) The release workflow's compat cell builds its environment from
+  # `uv export --frozen --only-group test`, which sees this group and not the project's
+  # own dependencies -- so a member declared up there would be missing from the one cell
+  # that runs a suite against PUBLISHED siblings, and the suite would fail to collect.
+  # (2) `[project] dependencies` are installed in EVERY environment, including
+  # `.venvs/typing` and the docs ones, and this member depends on pytest -- which the
+  # typing environment deliberately does not have. A group is installed only where it is
+  # asked for, which is every cell that runs a suite and nowhere else.
+  # `check_workspace.py` check (1) knows about both routes, and check (6) is what asserts
+  # that a member reached this way carries `Private :: Do Not Upload`.
+  "sphinx-needs-testkit",
   "defusedxml~=0.7.1",
   "matplotlib>=3.3.0",
   "pytest>=8,<10",
@@ -246,6 +260,8 @@ src = [
   "packages/sphinx-mounts/src",
   "packages/sphinx-codelinks",
   "packages/sphinx-codelinks/src",
+  "packages/sphinx-needs-testkit",
+  "packages/sphinx-needs-testkit/src",
 ]
 
 [tool.ruff.lint]

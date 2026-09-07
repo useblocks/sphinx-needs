@@ -1,5 +1,7 @@
 # Labels pull requests by the paths they touch (.github/workflows/label-prs.yaml):
-# one entry per distribution under packages/, plus one for the repository itself.
+# one entry per package under packages/, plus one for the repository itself. The list is
+# packages, not distributions: sphinx-needs-testkit is a member this repository never
+# publishes, and a change to the shared test layer is still that package's change.
 # uv.lock is deliberately absent from the repository entry -- a member's dependency
 # change relocks it, and that is not a repository concern -- so a lock-only pull request
 # gets no label and is labelled by hand. The repository entry is an allow-list with no
@@ -13,6 +15,9 @@
 'pkg: sphinx-codelinks':
   - changed-files:
       - any-glob-to-any-file: 'packages/sphinx-codelinks/**'
+'pkg: sphinx-needs-testkit':
+  - changed-files:
+      - any-glob-to-any-file: 'packages/sphinx-needs-testkit/**'
 'pkg: workspace':
   - changed-files:
       - any-glob-to-any-file:

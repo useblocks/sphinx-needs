@@ -18,6 +18,7 @@ members = [
     "sphinx-codelinks",
     "sphinx-mounts",
     "sphinx-needs",
+    "sphinx-needs-testkit",
     "sphinx-needs-workspace",
     "sphinx-needs-workspace-tools",
 ]
@@ -2900,6 +2901,25 @@ requires-dist = [
 provides-extras = ["plotting", "docs", "theme-im", "theme-furo", "theme-pds", "theme-rtd"]
 
 [[package]]
+name = "sphinx-needs-testkit"
+version = "0"
+source = { editable = "packages/sphinx-needs-testkit" }
+dependencies = [
+    { name = "pytest" },
+    { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "extra == 'group-22-sphinx-needs-workspace-sphinx-7' or extra == 'group-22-sphinx-needs-workspace-typing' or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9')" },
+    { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version < '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-typing') or extra == 'group-22-sphinx-needs-workspace-sphinx-8' or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing')" },
+    { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (python_full_version >= '3.12' and extra != 'group-22-sphinx-needs-workspace-sphinx-7' and extra != 'group-22-sphinx-needs-workspace-sphinx-8' and extra != 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-9' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-8') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-7' and extra == 'group-22-sphinx-needs-workspace-typing') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-sphinx-9') or (extra == 'group-22-sphinx-needs-workspace-sphinx-8' and extra == 'group-22-sphinx-needs-workspace-typing')" },
+    { name = "syrupy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pytest", specifier = ">=8,<10" },
+    { name = "sphinx", specifier = ">=7.4,<10" },
+    { name = "syrupy", specifier = ">=4,<7" },
+]
+
+[[package]]
 name = "sphinx-needs-workspace"
 version = "0"
 source = { virtual = "." }
@@ -2956,6 +2976,7 @@ benchmark = [
     { name = "pytest-xdist" },
     { name = "pyyaml" },
     { name = "responses" },
+    { name = "sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid" },
     { name = "sphinxcontrib-plantuml" },
     { name = "syrupy" },
@@ -2981,6 +3002,7 @@ dev = [
     { name = "pytest-xdist" },
     { name = "pyyaml" },
     { name = "responses" },
+    { name = "sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid" },
     { name = "sphinxcontrib-plantuml" },
     { name = "syrupy" },
@@ -3013,6 +3035,7 @@ test = [
     { name = "pytest-xdist" },
     { name = "pyyaml" },
     { name = "responses" },
+    { name = "sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid" },
     { name = "sphinxcontrib-plantuml" },
     { name = "syrupy" },
@@ -3062,6 +3085,7 @@ benchmark = [
     { name = "pytest-xdist", specifier = "~=3.0" },
     { name = "pyyaml", specifier = "~=6.0" },
     { name = "responses", specifier = ">=0.22,<0.27" },
+    { name = "sphinx-needs-testkit", editable = "packages/sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid", specifier = ">=1.0.0" },
     { name = "sphinxcontrib-plantuml", specifier = ">=0.30,<1" },
     { name = "syrupy", specifier = ">=4,<7" },
@@ -3084,6 +3108,7 @@ dev = [
     { name = "pytest-xdist", specifier = "~=3.0" },
     { name = "pyyaml", specifier = "~=6.0" },
     { name = "responses", specifier = ">=0.22,<0.27" },
+    { name = "sphinx-needs-testkit", editable = "packages/sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid", specifier = ">=1.0.0" },
     { name = "sphinxcontrib-plantuml", specifier = ">=0.30,<1" },
     { name = "syrupy", specifier = ">=4,<7" },
@@ -3107,6 +3132,7 @@ test = [
     { name = "pytest-xdist", specifier = "~=3.0" },
     { name = "pyyaml", specifier = "~=6.0" },
     { name = "responses", specifier = ">=0.22,<0.27" },
+    { name = "sphinx-needs-testkit", editable = "packages/sphinx-needs-testkit" },
     { name = "sphinxcontrib-mermaid", specifier = ">=1.0.0" },
     { name = "sphinxcontrib-plantuml", specifier = ">=0.30,<1" },
     { name = "syrupy", specifier = ">=4,<7" },
