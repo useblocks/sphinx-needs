@@ -671,6 +671,7 @@ def test_escape_at_the_default_path_check_warns_and_builds(
     warnings = app._warning.getvalue()
     assert "mounts.path_escape" in warnings, warnings
     assert "outside its bundle root" in warnings, warnings
+    assert warning_count(app) == 1
     assert warning_count(app, "mounts.path_escape") == 1, warnings
     # The build really completed: the page exists, unlike under "error".
     assert (Path(app.outdir) / "_g" / "api" / "index.html").exists()
@@ -918,6 +919,7 @@ def test_files_mode_disjoint_branches_do_not_widen_to_the_filesystem_root(
 
     warnings = app._warning.getvalue()
     assert "mounts.path_escape" in warnings, warnings
+    assert warning_count(app) == 1
     assert warning_count(app, "mounts.path_escape") == 1, warnings
 
 

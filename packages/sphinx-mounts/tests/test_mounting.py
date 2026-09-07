@@ -1305,6 +1305,7 @@ def test_include_on_a_file_list_mount_warns_that_it_is_ignored(
     warnings = app._warning.getvalue()
     assert "mounts.ignored_option" in warnings, warnings
     assert "include" in warnings, warnings
+    assert warning_count(app) == 1
     assert warning_count(app, "mounts.ignored_option") == 1, warnings
     # The filter really had no effect: both files are still mounted. The
     # warning describes the situation rather than changing it.
@@ -1340,6 +1341,7 @@ def test_exclude_on_a_file_list_mount_warns_that_it_is_ignored(
     warnings = app._warning.getvalue()
     assert "mounts.ignored_option" in warnings, warnings
     assert "include and exclude" in warnings, warnings
+    assert warning_count(app) == 1
     assert warning_count(app, "mounts.ignored_option") == 1, warnings
     # `exclude` did not drop the file either.
     assert (Path(app.outdir) / "_g" / "m" / "one.html").exists()
@@ -1367,9 +1369,11 @@ def test_directory_mount_with_include_does_not_warn(
     app = make_app(srcdir=host, freshenv=True)
     app.build()
 
-    # The FAMILY, not one type: the claim is that a directory mount stays silent, whatever
-    # it might have warned about. `warning_count` matches one warning type exactly and
-    # offers no prefix, deliberately, so a family assertion is spelled out here.
+    # The FAMILY, not one type: the claim is that a directory mount stays silent whatever
+    # it might have warned about, and `warning_count` matches one type exactly, offering no
+    # prefix, deliberately. The TOTAL is not available here -- excluding `details.rst` makes
+    # the bundle's own toctree dangle, so the build emits a `toc.not_readable` and a
+    # `ref.doc` that have nothing to do with the claim (measured: `warning_count(app)` is 2).
     assert [w for w in build_warnings(app) if "[mounts." in w] == [], (
         app._warning.getvalue()
     )
@@ -1723,6 +1727,7 @@ def test_top_level_mounts_table_warns_that_it_is_deprecated(
     warnings = app._warning.getvalue()
     assert "mounts.deprecated_location" in warnings, warnings
     assert "[[source.mounts]]" in warnings, warnings
+    assert warning_count(app) == 1
     assert warning_count(app, "mounts.deprecated_location") == 1, warnings
     # The mount itself is unaffected — deprecated, not broken.
     html = _read_html(Path(app.outdir), "_generated/api-foo/details")
@@ -2802,6 +2807,7 @@ def test_dangling_attach_to_does_not_announce_a_re_read(
     app = make_app(srcdir=host, freshenv=True)
     app.build()
     # Exactly one diagnostic, and it is the missing target.
+    assert warning_count(app) == 1
     assert warning_count(app, "mounts.attach_to_missing") == 1, app._warning.getvalue()
     assert "mounts.attach_to_missing" in app._warning.getvalue()
 
