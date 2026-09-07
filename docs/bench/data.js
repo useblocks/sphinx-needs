@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788772663776,
+  "lastUpdate": 1788777588697,
   "repoUrl": "https://github.com/useblocks/sphinx-needs",
   "entries": {
     "Benchmark": [
@@ -20232,6 +20232,42 @@ window.BENCHMARK_DATA = {
             "value": 14.732674257,
             "unit": "s",
             "extra": "Commit: 7c749d79ec9f398973f2b166884e7d81247c95f3\nBranch: master\nTime: 2026-09-07T11:17:02+02:00"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "rbosch@lpci.ai",
+            "name": "Roli Bosch",
+            "username": "roli-lpci"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5ac29f258fefc58dbf3b54b4d9807264367cf961",
+          "message": "📚 Document nested ports in needflow (#1868)\n\nCloses #980.\n\nThis adds a copyable configuration and RST example for displaying\n`portin` and\n`portout` needs inside a parent block. It also shows how to keep port\nlabels\ncompact with `needs_diagram_template` and explicitly selects the\nPlantUML\nneedflow engine required by those styles.\n\nSince this documents existing behavior, the already released 8.5.0\nchangelog\nis unchanged.\n\nValidation: `uv run poe docs-needs`\n\n<!-- hermes-labs:attribution v1 -->\nThis contribution was produced by agents through [Hermes\nLabs](https://hermes-labs.ai)’ engineering infrastructure. [Rolando\nBosch](https://github.com/roli-lpci) is the responsible human\ncontributor and authorized publication from his personal GitHub account.\n<!-- /hermes-labs:attribution -->\n\nCo-authored-by: Chris Sewell <chrisj_sewell@hotmail.com>",
+          "timestamp": "2026-09-07T12:39:08+02:00",
+          "tree_id": "0718470c0d1c4dfcc22f5f813c3b728fb6a9032c",
+          "url": "https://github.com/useblocks/sphinx-needs/commit/5ac29f258fefc58dbf3b54b4d9807264367cf961"
+        },
+        "date": 1788777580157,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "Small, basic Sphinx-Needs project",
+            "value": 0.11730831799999919,
+            "unit": "s",
+            "extra": "Commit: 5ac29f258fefc58dbf3b54b4d9807264367cf961\nBranch: master\nTime: 2026-09-07T12:39:08+02:00"
+          },
+          {
+            "name": "Official Sphinx-Needs documentation (without services)",
+            "value": 10.257486667999999,
+            "unit": "s",
+            "extra": "Commit: 5ac29f258fefc58dbf3b54b4d9807264367cf961\nBranch: master\nTime: 2026-09-07T12:39:08+02:00"
           }
         ]
       }
